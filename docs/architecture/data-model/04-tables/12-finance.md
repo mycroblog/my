@@ -1,6 +1,6 @@
 ### 4.12 finance
 
-サーバーの維持費用と収入（FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../../adr/0067-finance-cost-records.md)・[ADR-0068](../../../adr/0068-billing-import.md)・[ADR-0073](../../../adr/0073-income-records-and-publication.md)）。`internal/app/finance` が所有します。
+サーバーの維持費用と収入（FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../../adr/0067-finance-cost-records.md)・[ADR-0068](../../../adr/0068-billing-import.md)・[ADR-0073](../../../adr/0073-income-records-and-publication.md)・[ADR-0098](../../../adr/0098-cost-provider-display.md)）。`internal/app/finance` が所有します。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
@@ -25,7 +25,9 @@
   按分（既定）は 1 か月より長い周期（N ≥ 2 の月、年、N ≥ 5 の週）の各回を、その回が覆う日（次の支払日の前日まで）に累積の丸めで日割りし、現金主義と 1 か月以下の周期は支払日に載せます。
   期間は暦の日付で区切り、週は ISO 8601（月曜〜日曜）です。合計は通貨ごとで、内訳は `provider_normalized`・区分・通貨でまとめます。
 - 金額は通貨の最小単位の整数で、小数の桁は `internal/domain/finance` の ISO 4217 の表（`finance.Currency.MinorUnits`。JPY は 0、USD は 2）にあります。表は ISO 4217 の現行の通貨と基金のコードのうち、小数の桁を持つもの（N.A. の貴金属・SDR・試験用のコードを除く）です。
-- `provider_normalized` は事業者の NFKC・小文字の形（`finance.NormalizeProvider`）で、表記の揺れ（全角・大文字）を内訳で 1 つにまとめます。
+- `provider_normalized` は事業者の NFKC・小文字の形（`finance.NormalizeProvider`）で、表記の揺れ（全角・大文字）を内訳で 1 つにまとめます。まとめるキーで、表示には使いません。
+  内訳の行と項目の行に出す事業者は、期間ごと・`provider_normalized` ごとに 1 つの表記で、その期間に支払いが載る項目のうち、いまのラベルの版の `revised_at` が最も新しい（同じなら版の `id` が大きい）項目の `provider` です（ADR-0098）。
+  取り込んだ費用の表記は取り込みの事業者の名前（`AWS`・`Google Cloud`）で、同じ期間・同じ `provider_normalized` に手入力の項目があればその表記を優先します。
 - 利用料金の取り込み（ADR-0068）は、`billing_sources` の事業者ごとの定期ジョブ `finance.billing_import`（24 時間ごと）が `BillingSource` ポートで事業者の請求月の費用を読み、試行ごとに `billing_import_runs` の行を 1 つ足します。
   成功した試行は、キー `(source, billing_month, service, charge_type)` ごとに最新の版と金額・通貨・確定の別・`starts_on`〜`ends_on` を比べ、違うキーだけ版を足して `imported_cost_heads` を同じトランザクションで更新します。取り直した月で事業者が返さなくなったキーは金額 0 の版になります。
   版の種類は、キーの最新の版が `final` か `correction` なら `correction`、事業者が月を確定と返せば `final`、それまでは `estimate` です（`finance.NextRevisionKind`）。同じジョブの再試行は `run_key` の一意制約で版を重ねません。
