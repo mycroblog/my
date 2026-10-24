@@ -91,12 +91,24 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
       created_at: "2026-10-16T09:30:00Z",
     },
   ];
+  // The apps the user authorized (ADR-0090 §5): the web client, an app from a metadata document with a long name that was never recorded as used, and a self-declared one.
+  let authorizedApps: Record<string, unknown>[] = [
+    { id: "0192f0c4-7a8e-7000-8000-000000000cc1", client_id: "my-web", name: "Web", registration: "first_party", first_party: true, scope: "read write follow push", authorized_at: "2026-10-01T00:00:00Z", last_used_at: "2026-10-21T09:00:00Z" },
+    { id: "0192f0c4-7a8e-7000-8000-000000000cc2", client_id: "https://a-very-long-subdomain-name-for-the-narrowest-screens.example/client.json", name: "A reader app with a very long name for the narrowest phone screens", registration: "metadata_document", first_party: false, scope: "read:statuses read:accounts write:statuses", authorized_at: "2026-10-10T12:00:00Z" },
+    { id: "0192f0c4-7a8e-7000-8000-000000000cc3", client_id: "my_ci_dyn", name: "Scribe", registration: "dynamic", first_party: false, scope: "read", authorized_at: "2026-10-12T12:00:00Z", last_used_at: "2026-10-20T08:00:00Z" },
+  ];
   const changes: unknown[] = [];
   await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
     if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    const revoked = /^\/authorized_apps\/(.+)$/.exec(path);
+    if (request.method() === "DELETE" && revoked !== null) {
+      changes.push({ revoked: revoked[1] });
+      authorizedApps = authorizedApps.filter((app) => app["id"] !== revoked[1]);
+      return route.fulfill({ status: 204 });
+    }
     switch (`${request.method()} ${path}`) {
       case "GET /instance":
         return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, sends_email: sendsEmail, rules: [], search_indexing: "deny", ai_usage: "deny" });
@@ -181,6 +193,8 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         return json(route, {
           items: [{ id: "0192f0c4-7a8e-7000-8000-000000000ab1", name: "A password manager with a long name on a narrow phone", created_at: "2026-10-16T09:30:00Z" }],
         });
+      case "GET /authorized_apps":
+        return json(route, { items: authorizedApps });
       case "GET /oauth_apps":
         return json(route, { items: oauthApps });
       case "POST /oauth_apps": {
@@ -236,6 +250,7 @@ const pages = [
   "/settings/two-factor",
   "/settings/passkeys",
   "/settings/apps",
+  "/settings/authorized-apps",
   "/settings/auto-delete",
   "/settings/account",
   "/settings/import-export",
@@ -303,6 +318,28 @@ test("registering an app shows its secret once without axe violations or horizon
   await page.reload();
   await expect(main.getByRole("region", { name: message("settings.apps.list.title") })).toBeVisible();
   await expect(page.getByText("my_cs_e2e-secret-shown-once")).toHaveCount(0);
+});
+
+test("revoking an authorized app asks first, then drops it from the list, without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+  const changes = await signedInServer(page, projectLocale());
+  await page.goto("/settings/authorized-apps");
+  const main = page.getByRole("main");
+  const name = "A reader app with a very long name for the narrowest phone screens";
+  await expect(main.getByRole("heading", { level: 3, name })).toBeVisible();
+  await expect(main.getByText(message("settings.authorized_apps.last_used.never"))).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+  // By keyboard: the button opens a dialog that asks before revoking.
+  const revoke = main.getByRole("button", { name: message("settings.list.action").replace("{action}", message("settings.authorized_apps.revoke")).replace("{name}", name) });
+  await revoke.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await dialog.getByRole("button", { name: message("settings.authorized_apps.revoke"), exact: true }).click();
+  await expect(main.getByRole("heading", { level: 3, name })).toHaveCount(0);
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  expect(changes).toContainEqual({ revoked: "0192f0c4-7a8e-7000-8000-000000000cc2" });
 });
 
 test("checking a file to import shows what it does without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {

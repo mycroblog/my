@@ -63,6 +63,8 @@ export const handlers = [
   http.get(`${apiBase}/passkeys`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationId listOAuthApps: no apps; the tests that register, change or delete one play the server themselves.
   http.get(`${apiBase}/oauth_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  // operationId listAuthorizedApps: no apps; the tests that revoke one play the server themselves.
+  http.get(`${apiBase}/authorized_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationId beginPasskeyConfirmation: the options of a confirmation with a passkey.
   http.post(`${apiBase}/passkeys/confirmation`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(passkeyConfirmationFixture satisfies Schemas["PasskeyConfirmation"])),

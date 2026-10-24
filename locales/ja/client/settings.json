@@ -1678,5 +1678,85 @@
   "settings.apps.done": {
     "defaultMessage": "完了",
     "description": "Button that closes the dialog that showed the issued tokens."
+  },
+  "settings.authorized_apps.title": {
+    "defaultMessage": "認可したアプリ",
+    "description": "Title of the settings page that lists the apps the user authorized, and its entry in the settings menu."
+  },
+  "settings.authorized_apps.description": {
+    "defaultMessage": "これらのアプリはあなたのアカウントを操作できます。取り消すとそのアプリはすぐに使えなくなり、再び使うにはもう一度許可が必要です。アプリの名前はアプリ自身の申告です。最後に使った日時は 1 時間単位でしか記録されません。",
+    "description": "Explanation at the top of the authorized apps settings page."
+  },
+  "settings.authorized_apps.empty": {
+    "defaultMessage": "認可したアプリはありません",
+    "description": "Empty state of the list of authorized apps."
+  },
+  "settings.authorized_apps.origin.first_party": {
+    "defaultMessage": "このサーバー自身のアプリ",
+    "description": "Where an authorized app comes from: the web client of this server."
+  },
+  "settings.authorized_apps.origin.user": {
+    "defaultMessage": "@{username} が登録したアプリ",
+    "description": "Where an authorized app comes from: a user registered it. {username} is the user's name without the at sign."
+  },
+  "settings.authorized_apps.origin.metadata_document": {
+    "defaultMessage": "{host} のアプリ",
+    "description": "Where an authorized app comes from: it is described by a document at a web address. {host} is the host name of that address."
+  },
+  "settings.authorized_apps.origin.dynamic": {
+    "defaultMessage": "アプリ自身が登録したアプリ",
+    "description": "Where an authorized app comes from: it registered itself and nobody vouches for it."
+  },
+  "settings.authorized_apps.unverified": {
+    "defaultMessage": "このサーバーが確認していないアプリです。",
+    "description": "Note on every authorized app that is not this server's own: the name and logo are the app's own claims."
+  },
+  "settings.authorized_apps.scope": {
+    "defaultMessage": "許可した権限",
+    "description": "Label of the scopes (permissions) the user granted to an authorized app."
+  },
+  "settings.authorized_apps.authorized_at": {
+    "defaultMessage": "最初に認可した日時",
+    "description": "Label of when the user first authorized an app."
+  },
+  "settings.authorized_apps.last_used": {
+    "defaultMessage": "最後に使った日時",
+    "description": "Label of when an authorized app last made a request."
+  },
+  "settings.authorized_apps.last_used.at": {
+    "defaultMessage": "{date}（1 時間単位）",
+    "description": "When an app was last used. {date} is a date with the hour only, because the server records the time to the hour."
+  },
+  "settings.authorized_apps.last_used.never": {
+    "defaultMessage": "使用の記録はありません",
+    "description": "Shown instead of the last use of an authorized app when no use was recorded."
+  },
+  "settings.authorized_apps.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "Button that revokes an authorized app."
+  },
+  "settings.authorized_apps.revoke.title": {
+    "defaultMessage": "「{name}」を取り消しますか？",
+    "description": "Title of the dialog that confirms revoking an authorized app. {name} is the app's name."
+  },
+  "settings.authorized_apps.revoke.description": {
+    "defaultMessage": "このアプリはすぐにあなたのアカウントにアクセスできなくなります。再び使うには、もう一度許可する必要があります。",
+    "description": "Explanation in the dialog that confirms revoking an authorized app."
+  },
+  "settings.authorized_apps.revoke.description_first_party": {
+    "defaultMessage": "これはいま使っている Web アプリです。取り消すと、このブラウザーを含むすべてのブラウザーからログアウトされ、もう一度ログインする必要があります。",
+    "description": "Warning in the dialog that confirms revoking the server's own web app."
+  },
+  "settings.authorized_apps.revoke.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the dialog without revoking the app."
+  },
+  "settings.authorized_apps.revoke.failed": {
+    "defaultMessage": "アプリを取り消せませんでした：{reason}",
+    "description": "Alert in the dialog when revoking an authorized app failed. {reason} is the error's message."
+  },
+  "settings.authorized_apps.revoked": {
+    "defaultMessage": "「{name}」を取り消しました。",
+    "description": "Announcement after an authorized app was revoked. {name} is its name."
   }
 }
