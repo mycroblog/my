@@ -1678,5 +1678,85 @@
   "settings.apps.done": {
     "defaultMessage": "Done",
     "description": "Button that closes the dialog that showed the issued tokens."
+  },
+  "settings.authorized_apps.title": {
+    "defaultMessage": "Authorized apps",
+    "description": "Title of the settings page that lists the apps the user authorized, and its entry in the settings menu."
+  },
+  "settings.authorized_apps.description": {
+    "defaultMessage": "These apps can act on your account. Revoke an app to stop it at once; it must ask for your permission again to get access. An app's name is what the app says about itself. When it was last used is recorded to the hour only.",
+    "description": "Explanation at the top of the authorized apps settings page."
+  },
+  "settings.authorized_apps.empty": {
+    "defaultMessage": "No authorized apps",
+    "description": "Empty state of the list of authorized apps."
+  },
+  "settings.authorized_apps.origin.first_party": {
+    "defaultMessage": "This server's own app",
+    "description": "Where an authorized app comes from: the web client of this server."
+  },
+  "settings.authorized_apps.origin.user": {
+    "defaultMessage": "Registered by @{username}",
+    "description": "Where an authorized app comes from: a user registered it. {username} is the user's name without the at sign."
+  },
+  "settings.authorized_apps.origin.metadata_document": {
+    "defaultMessage": "From {host}",
+    "description": "Where an authorized app comes from: it is described by a document at a web address. {host} is the host name of that address."
+  },
+  "settings.authorized_apps.origin.dynamic": {
+    "defaultMessage": "Registered by the app itself",
+    "description": "Where an authorized app comes from: it registered itself and nobody vouches for it."
+  },
+  "settings.authorized_apps.unverified": {
+    "defaultMessage": "This server has not verified this app.",
+    "description": "Note on every authorized app that is not this server's own: the name and logo are the app's own claims."
+  },
+  "settings.authorized_apps.scope": {
+    "defaultMessage": "Granted access",
+    "description": "Label of the scopes (permissions) the user granted to an authorized app."
+  },
+  "settings.authorized_apps.authorized_at": {
+    "defaultMessage": "First authorized",
+    "description": "Label of when the user first authorized an app."
+  },
+  "settings.authorized_apps.last_used": {
+    "defaultMessage": "Last used",
+    "description": "Label of when an authorized app last made a request."
+  },
+  "settings.authorized_apps.last_used.at": {
+    "defaultMessage": "{date} (to the hour)",
+    "description": "When an app was last used. {date} is a date with the hour only, because the server records the time to the hour."
+  },
+  "settings.authorized_apps.last_used.never": {
+    "defaultMessage": "No use recorded",
+    "description": "Shown instead of the last use of an authorized app when no use was recorded."
+  },
+  "settings.authorized_apps.revoke": {
+    "defaultMessage": "Revoke",
+    "description": "Button that revokes an authorized app."
+  },
+  "settings.authorized_apps.revoke.title": {
+    "defaultMessage": "Revoke “{name}”?",
+    "description": "Title of the dialog that confirms revoking an authorized app. {name} is the app's name."
+  },
+  "settings.authorized_apps.revoke.description": {
+    "defaultMessage": "The app loses access to your account at once. To use it again, you have to allow it again.",
+    "description": "Explanation in the dialog that confirms revoking an authorized app."
+  },
+  "settings.authorized_apps.revoke.description_first_party": {
+    "defaultMessage": "This is the web app you are using. Revoking it signs you out of every browser, including this one. You have to sign in again.",
+    "description": "Warning in the dialog that confirms revoking the server's own web app."
+  },
+  "settings.authorized_apps.revoke.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog without revoking the app."
+  },
+  "settings.authorized_apps.revoke.failed": {
+    "defaultMessage": "Could not revoke the app: {reason}",
+    "description": "Alert in the dialog when revoking an authorized app failed. {reason} is the error's message."
+  },
+  "settings.authorized_apps.revoked": {
+    "defaultMessage": "“{name}” was revoked.",
+    "description": "Announcement after an authorized app was revoked. {name} is its name."
   }
 }
