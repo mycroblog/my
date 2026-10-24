@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -236,7 +237,8 @@ func seconds(v string) int {
 
 // DenyOAuthClientHost records that no metadata document on host is fetched or used (ADR-0090
 // §1); byUserID is the administrator, "" for the CLI. Denying a denied host records nothing new.
-// The denial applies to the next request of each client: it does not revoke issued tokens.
+// The denial also revokes every token of the clients of the host with client_disabled, so that
+// no access token outlives it; the call is safe to repeat.
 func (s *Service) DenyOAuthClientHost(ctx context.Context, host, byUserID string) error {
 	h, err := identity.ClientHost(host)
 	if err != nil {
@@ -244,9 +246,48 @@ func (s *Service) DenyOAuthClientHost(ctx context.Context, host, byUserID string
 	}
 	d := identity.OAuthClientHostDenial{ID: s.d.IDs.NewID(), Host: h, DeniedByUserID: byUserID, DeniedAt: s.d.Clock.Now()}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		_, err := s.d.Repository.InsertOAuthClientHostDenial(ctx, tx, d)
-		return err
+		inserted, err := s.d.Repository.InsertOAuthClientHostDenial(ctx, tx, d)
+		if err != nil {
+			return err
+		}
+		clients, err := s.d.Repository.ListMetadataDocumentClientsOfHost(ctx, tx, h)
+		if err != nil {
+			return err
+		}
+		for _, c := range clients {
+			if ch, err := identity.ParseMetadataDocumentClientID(c.ClientID); err != nil || ch != h {
+				continue
+			}
+			if err := s.d.Repository.RevokeTokensOfClient(ctx, tx, c.ID, identity.TokenRevokedClientDisabled, d.DeniedAt); err != nil {
+				return err
+			}
+		}
+		if !inserted {
+			return nil
+		}
+		return s.emitOAuthHostAudit(ctx, tx, appmoderation.AuditOAuthClientHostDenied, h, d.ID, byUserID, d.DeniedAt)
 	})
+}
+
+// emitOAuthHostAudit emits the audit log entry of an administrator's operation on a host of
+// metadata documents; the host is the target's ID and label.
+func (s *Service) emitOAuthHostAudit(ctx context.Context, tx uow.Tx, action appmoderation.AuditAction, host, source, byUserID string, at time.Time) error {
+	entry := appmoderation.AuditEntry{
+		ID: s.d.IDs.NewID(), Action: action, TargetKind: appmoderation.AuditTargetOAuthClientHost, TargetID: host,
+		TargetLabel: host, SourceEventID: source, OccurredAt: at,
+	}
+	entry.ActorKind, entry.ActorUserID = appmoderation.AuditActor(byUserID)
+	return tx.Emit(ctx, appmoderation.AuditRecorded{Entry: entry})
+}
+
+// ListOAuthClientHostDenials returns the denied hosts, newest denial first, at most limit (1 to
+// MaxListLimit) of them. A before other than "" is the ID of the last denial of the previous
+// page.
+func (s *Service) ListOAuthClientHostDenials(ctx context.Context, before string, limit int) ([]identity.OAuthClientHostDenial, error) {
+	if limit < 1 || limit > MaxListLimit {
+		return nil, fmt.Errorf("identity: limit must be 1 to %d", MaxListLimit)
+	}
+	return s.d.Repository.ListOAuthClientHostDenials(ctx, before, limit)
 }
 
 // AllowOAuthClientHost lifts the denials of host; byUserID is the administrator, "" for the
@@ -258,8 +299,11 @@ func (s *Service) AllowOAuthClientHost(ctx context.Context, host, byUserID strin
 	}
 	now := s.d.Clock.Now()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		_, err := s.d.Repository.LiftOAuthClientHostDenials(ctx, tx, h, byUserID, now)
-		return err
+		lifted, err := s.d.Repository.LiftOAuthClientHostDenials(ctx, tx, h, byUserID, now)
+		if err != nil || !lifted {
+			return err
+		}
+		return s.emitOAuthHostAudit(ctx, tx, appmoderation.AuditOAuthClientHostAllowed, h, "", byUserID, now)
 	})
 }
 

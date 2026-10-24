@@ -85,6 +85,10 @@ const (
 	AuditCustomEmojiRequestApproved    = moderation.AuditCustomEmojiRequestApproved
 	AuditCustomEmojiRequestRejected    = moderation.AuditCustomEmojiRequestRejected
 	AuditPaymentReconcileQueued        = moderation.AuditPaymentReconcileQueued
+	AuditOAuthClientDisabled           = moderation.AuditOAuthClientDisabled
+	AuditOAuthClientEnabled            = moderation.AuditOAuthClientEnabled
+	AuditOAuthClientHostDenied         = moderation.AuditOAuthClientHostDenied
+	AuditOAuthClientHostAllowed        = moderation.AuditOAuthClientHostAllowed
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -104,6 +108,8 @@ const (
 	AuditTargetSupporterSubscription = moderation.AuditTargetSupporterSubscription
 	AuditTargetCustomEmojiRequest    = moderation.AuditTargetCustomEmojiRequest
 	AuditTargetPaymentProvider       = moderation.AuditTargetPaymentProvider
+	AuditTargetOAuthClient           = moderation.AuditTargetOAuthClient
+	AuditTargetOAuthClientHost       = moderation.AuditTargetOAuthClientHost
 )
 
 // AuditActorSystem is moderation.AuditActorSystem, the server itself, and AuditActorRemote

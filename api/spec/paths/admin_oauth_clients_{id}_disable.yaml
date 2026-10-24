@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+post:
+  operationId: disableOAuthClient
+  summary: Disable an OAuth client
+  description: |
+    Revokes every token of the client at once (with the reason `client_disabled`) and refuses
+    its authorization requests, token exchanges and refreshes until the disablement is lifted
+    (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+    new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+    is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
+    `manage_oauth_apps` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/OAuthClientId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminOAuthClient.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

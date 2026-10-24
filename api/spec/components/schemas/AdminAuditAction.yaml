@@ -49,7 +49,11 @@ description: |
   `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
   `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
   reconciliation with the payment provider started by hand; the ID and the label are the
-  provider's name (`stripe`).
+  provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+  every token of the client, and `oauth_client_enabled`; the label is the client's name and its
+  `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
+  tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
+  the host.
 type: string
 enum:
   - account_action_issued
@@ -127,3 +131,7 @@ enum:
   - custom_emoji_request_approved
   - custom_emoji_request_rejected
   - payment_reconcile_queued
+  - oauth_client_disabled
+  - oauth_client_enabled
+  - oauth_client_host_denied
+  - oauth_client_host_allowed

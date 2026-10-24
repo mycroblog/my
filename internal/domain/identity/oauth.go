@@ -82,6 +82,12 @@ type OAuthClientState struct {
 // Usable reports whether the client may be authorized, get tokens, and use them.
 func (s OAuthClientState) Usable() bool { return !s.Disabled && !s.Deleted }
 
+// OAuthClientListing is a client as the administrators list it: with whether it is disabled.
+type OAuthClientListing struct {
+	OAuthClient
+	Disabled bool
+}
+
 // OAuthClientDisablement records that a client was disabled (data-model §4.1,
 // oauth_client_disablements). DisabledByUserID is "" for the CLI.
 type OAuthClientDisablement struct {

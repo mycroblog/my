@@ -115,7 +115,8 @@ CREATE TABLE role_permissions (
     'manage_reports', 'manage_accounts', 'manage_domains', 'manage_rules',
     'manage_settings', 'manage_roles', 'manage_invites', 'view_audit', 'manage_jobs',
     'manage_login_recovery', 'manage_custom_emojis', 'manage_webhooks', 'manage_announcements',
-    'manage_finance', 'view_finance', 'manage_supporters', 'create_custom_emojis'
+    'manage_finance', 'view_finance', 'manage_supporters', 'create_custom_emojis',
+    'manage_oauth_apps'
   )),
   PRIMARY KEY (role_id, permission)
 ) STRICT;

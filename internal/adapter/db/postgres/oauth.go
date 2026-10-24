@@ -288,6 +288,31 @@ func (r *IdentityRepository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx
 	return wrap(err, "revoke the tokens of a client")
 }
 
+// ListOAuthClients implements identity.Repository.
+func (r *IdentityRepository) ListOAuthClients(ctx context.Context, registration identity.OAuthClientRegistration, before string, limit int) ([]identity.OAuthClientListing, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListOAuthClients(ctx, postgresgen.ListOAuthClientsParams{
+		Registration: toNullString(string(registration)), Before: toNullString(before), PageLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list oauth clients")
+	}
+	out := make([]identity.OAuthClientListing, len(rows))
+	for i, row := range rows {
+		out[i] = identity.OAuthClientListing{
+			OAuthClient: oauthClientFromRow(postgresgen.OauthClient{
+				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
+				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
+			}),
+			Disabled: row.Disabled,
+		}
+	}
+	return out, nil
+}
+
 // InsertOAuthClientDisablement implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, tx uow.Tx, dis identity.OAuthClientDisablement) (bool, error) {
 	q, err := queries(tx)

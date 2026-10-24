@@ -466,6 +466,16 @@ paths:
     $ref: ./paths/admin_invites.yaml
   /admin/invites/{id}/revoke:
     $ref: ./paths/admin_invites_{id}_revoke.yaml
+  /admin/oauth_clients:
+    $ref: ./paths/admin_oauth_clients.yaml
+  /admin/oauth_clients/{id}/disable:
+    $ref: ./paths/admin_oauth_clients_{id}_disable.yaml
+  /admin/oauth_clients/{id}/enable:
+    $ref: ./paths/admin_oauth_clients_{id}_enable.yaml
+  /admin/oauth_client_host_denials:
+    $ref: ./paths/admin_oauth_client_host_denials.yaml
+  /admin/oauth_client_host_denials/{host}:
+    $ref: ./paths/admin_oauth_client_host_denials_{host}.yaml
   /admin/webhooks:
     $ref: ./paths/admin_webhooks.yaml
   /admin/webhooks/{id}:
@@ -611,6 +621,10 @@ components:
       $ref: ./components/parameters/InstanceTextKey.yaml
     InviteId:
       $ref: ./components/parameters/InviteId.yaml
+    OAuthClientId:
+      $ref: ./components/parameters/OAuthClientId.yaml
+    OAuthClientHost:
+      $ref: ./components/parameters/OAuthClientHost.yaml
     Limit:
       $ref: ./components/parameters/Limit.yaml
     OAuthAppId:
@@ -660,6 +674,8 @@ components:
       $ref: ./components/responses/AdminInstanceHealth.yaml
     AdminInvite:
       $ref: ./components/responses/AdminInvite.yaml
+    AdminOAuthClient:
+      $ref: ./components/responses/AdminOAuthClient.yaml
     AdminRegistration:
       $ref: ./components/responses/AdminRegistration.yaml
     AdminRelay:
@@ -821,6 +837,18 @@ components:
       $ref: ./components/schemas/AdminInvite.yaml
     AdminInvitePage:
       $ref: ./components/schemas/AdminInvitePage.yaml
+    AdminOAuthClient:
+      $ref: ./components/schemas/AdminOAuthClient.yaml
+    AdminOAuthClientHostDenial:
+      $ref: ./components/schemas/AdminOAuthClientHostDenial.yaml
+    AdminOAuthClientHostDenialPage:
+      $ref: ./components/schemas/AdminOAuthClientHostDenialPage.yaml
+    AdminOAuthClientPage:
+      $ref: ./components/schemas/AdminOAuthClientPage.yaml
+    DenyOAuthClientHostRequest:
+      $ref: ./components/schemas/DenyOAuthClientHostRequest.yaml
+    OAuthClientRegistration:
+      $ref: ./components/schemas/OAuthClientRegistration.yaml
     AdminInviteState:
       $ref: ./components/schemas/AdminInviteState.yaml
     AdminJob:

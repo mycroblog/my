@@ -248,6 +248,9 @@ type Options struct {
 	// registration page that AdminInvite.url opens with the code filled in.
 	Invites    Invites
 	SignUpPath string
+	// OAuthClients runs the OAuth clients and the denied hosts of client metadata documents
+	// (admin_oauth_clients.go).
+	OAuthClients OAuthClients
 	// RateLimiter applies AnonymousLimit and AccountLimit; nil applies no limit.
 	RateLimiter *kernel.RateLimiter
 	// AnonymousLimit and AccountLimit override the package's limits of the same names when

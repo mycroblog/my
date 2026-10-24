@@ -89,6 +89,12 @@ const (
 	// AuditTargetPaymentProvider is the payment provider of the supporter program (ADR-0074);
 	// its ID and its label are the provider's name (stripe).
 	AuditTargetPaymentProvider AuditTargetKind = "payment_provider"
+	// AuditTargetOAuthClient is an OAuth client (ADR-0090 §1); its ID is oauth_clients.id and
+	// its label the client's name and client_id.
+	AuditTargetOAuthClient AuditTargetKind = "oauth_client"
+	// AuditTargetOAuthClientHost is a host whose Client ID Metadata Documents an administrator
+	// denied (ADR-0090 §1); its ID and its label are the host.
+	AuditTargetOAuthClientHost AuditTargetKind = "oauth_client_host"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -97,6 +103,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetCustomEmoji, AuditTargetWebhook, AuditTargetAnnouncement, AuditTargetInvite, AuditTargetRelay,
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
+	AuditTargetOAuthClient, AuditTargetOAuthClientHost,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -282,6 +289,16 @@ const (
 	// AuditPaymentReconcileQueued: an administrator queued a reconciliation with the payment
 	// provider now (ADR-0074 §4); the operation has no row of its own.
 	AuditPaymentReconcileQueued AuditAction = "payment_reconcile_queued"
+	// AuditOAuthClientDisabled and AuditOAuthClientEnabled: an administrator disabled an OAuth
+	// client, which revokes all its tokens, or lifted the disablement (oauth_client_disablements
+	// and oauth_client_disablement_lifts, ADR-0090 §1).
+	AuditOAuthClientDisabled AuditAction = "oauth_client_disabled"
+	AuditOAuthClientEnabled  AuditAction = "oauth_client_enabled"
+	// AuditOAuthClientHostDenied and AuditOAuthClientHostAllowed: an administrator denied the
+	// Client ID Metadata Documents of a host, which revokes the tokens of its clients, or lifted
+	// the denial (oauth_client_host_denials and oauth_client_host_denial_lifts, ADR-0090 §1).
+	AuditOAuthClientHostDenied  AuditAction = "oauth_client_host_denied"
+	AuditOAuthClientHostAllowed AuditAction = "oauth_client_host_allowed"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -364,6 +381,10 @@ var auditActions = []struct {
 	{AuditCustomEmojiRequestApproved, AuditTargetCustomEmojiRequest},
 	{AuditCustomEmojiRequestRejected, AuditTargetCustomEmojiRequest},
 	{AuditPaymentReconcileQueued, AuditTargetPaymentProvider},
+	{AuditOAuthClientDisabled, AuditTargetOAuthClient},
+	{AuditOAuthClientEnabled, AuditTargetOAuthClient},
+	{AuditOAuthClientHostDenied, AuditTargetOAuthClientHost},
+	{AuditOAuthClientHostAllowed, AuditTargetOAuthClientHost},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

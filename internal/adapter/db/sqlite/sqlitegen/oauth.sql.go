@@ -624,6 +624,85 @@ func (q *Queries) ListAuthorizedAppTokens(ctx context.Context, arg ListAuthorize
 	return items, nil
 }
 
+const listMetadataDocumentClientsOfHost = `-- name: ListMetadataDocumentClientsOfHost :many
+SELECT id, client_id FROM oauth_clients
+WHERE registration = 'metadata_document'
+  AND (client_id LIKE 'https://' || ?1 || '/%' OR client_id LIKE 'https://' || ?1 || ':%')
+`
+
+type ListMetadataDocumentClientsOfHostRow struct {
+	ID       string
+	ClientID string
+}
+
+// ListMetadataDocumentClientsOfHost lists the metadata document clients whose client_id may be
+// on a host; the caller keeps those whose host is exactly it.
+func (q *Queries) ListMetadataDocumentClientsOfHost(ctx context.Context, host sql.NullString) ([]ListMetadataDocumentClientsOfHostRow, error) {
+	rows, err := q.db.QueryContext(ctx, listMetadataDocumentClientsOfHost, host)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMetadataDocumentClientsOfHostRow{}
+	for rows.Next() {
+		var i ListMetadataDocumentClientsOfHostRow
+		if err := rows.Scan(&i.ID, &i.ClientID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOAuthClientHostDenials = `-- name: ListOAuthClientHostDenials :many
+SELECT d.id, d.host, d.denied_by_user_id, d.denied_at
+FROM oauth_client_host_denials d
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
+  AND (CAST(?1 AS TEXT) = '' OR d.id < ?1)
+ORDER BY d.id DESC
+LIMIT ?2
+`
+
+type ListOAuthClientHostDenialsParams struct {
+	Before    string
+	PageLimit int64
+}
+
+// ListOAuthClientHostDenials lists the denials of hosts that have no lift, newest first.
+func (q *Queries) ListOAuthClientHostDenials(ctx context.Context, arg ListOAuthClientHostDenialsParams) ([]OauthClientHostDenial, error) {
+	rows, err := q.db.QueryContext(ctx, listOAuthClientHostDenials, arg.Before, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OauthClientHostDenial{}
+	for rows.Next() {
+		var i OauthClientHostDenial
+		if err := rows.Scan(
+			&i.ID,
+			&i.Host,
+			&i.DeniedByUserID,
+			&i.DeniedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOAuthClientRedirectURIs = `-- name: ListOAuthClientRedirectURIs :many
 SELECT redirect_uri FROM oauth_client_redirect_uris WHERE client_id = ? ORDER BY redirect_uri
 `
@@ -641,6 +720,75 @@ func (q *Queries) ListOAuthClientRedirectURIs(ctx context.Context, clientID stri
 			return nil, err
 		}
 		items = append(items, redirect_uri)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOAuthClients = `-- name: ListOAuthClients :many
+SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at,
+  EXISTS (
+    SELECT 1 FROM oauth_client_disablements d
+    WHERE d.client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+  ) AS disabled
+FROM oauth_clients c
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id)
+  AND (CAST(?1 AS TEXT) = '' OR c.registration = ?1)
+  AND (CAST(?2 AS TEXT) = '' OR c.id < ?2)
+ORDER BY c.id DESC
+LIMIT ?3
+`
+
+type ListOAuthClientsParams struct {
+	Registration string
+	Before       string
+	PageLimit    int64
+}
+
+type ListOAuthClientsRow struct {
+	ID               string
+	ClientID         string
+	ClientSecretHash []byte
+	Name             string
+	Website          sql.NullString
+	Scope            string
+	Registration     string
+	OwnerUserID      sql.NullString
+	CreatedAt        int64
+	Disabled         bool
+}
+
+// ListOAuthClients lists the clients that are not deleted, newest first, optionally of one
+// registration route, with whether each is disabled.
+func (q *Queries) ListOAuthClients(ctx context.Context, arg ListOAuthClientsParams) ([]ListOAuthClientsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOAuthClients, arg.Registration, arg.Before, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOAuthClientsRow{}
+	for rows.Next() {
+		var i ListOAuthClientsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClientID,
+			&i.ClientSecretHash,
+			&i.Name,
+			&i.Website,
+			&i.Scope,
+			&i.Registration,
+			&i.OwnerUserID,
+			&i.CreatedAt,
+			&i.Disabled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: host
+in: path
+required: true
+description: The denied host, in lowercase and without a port.
+schema:
+  type: string
+  minLength: 1
+  maxLength: 253

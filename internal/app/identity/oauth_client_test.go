@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/identity"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/identity"
 )
@@ -46,7 +47,18 @@ func (r *clientEventsRepository) RevokeTokensOfClient(_ context.Context, _ uow.T
 	return nil
 }
 
-type directUnitOfWork struct{ uow.UnitOfWork }
+// directUnitOfWork runs a transaction without a database and keeps the events it emits.
+type directUnitOfWork struct {
+	uow.UnitOfWork
+	tx *recordingTx
+}
+
+type recordingTx struct{ events []uow.Event }
+
+func (t *recordingTx) Emit(_ context.Context, e uow.Event) error {
+	t.events = append(t.events, e)
+	return nil
+}
 
 type fixedClock time.Time
 
@@ -57,15 +69,16 @@ type fixedIDs struct{}
 func (fixedIDs) NewID() string            { return "0190a000-0000-7000-8000-000000000001" }
 func (fixedIDs) NewIDAt(time.Time) string { return "0190a000-0000-7000-8000-000000000001" }
 
-func (directUnitOfWork) Tx(_ context.Context, fn func(tx uow.Tx) error) error { return fn(nil) }
+func (u directUnitOfWork) Tx(_ context.Context, fn func(tx uow.Tx) error) error { return fn(u.tx) }
 
 func TestDisablingAndDeletingAClientRevokeItsTokensWithTheirReasons(t *testing.T) {
 	clock := fixedClock(time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC))
 	repo := &clientEventsRepository{client: domain.OAuthClient{
 		ID: "0190a000-0000-7000-8000-0000000000aa", ClientID: "app", Registration: domain.ClientRegisteredDynamically,
 	}}
+	tx := &recordingTx{}
 	s := identity.NewService(identity.Deps{
-		UnitOfWork: directUnitOfWork{}, Repository: repo, Clock: clock, IDs: fixedIDs{},
+		UnitOfWork: directUnitOfWork{tx: tx}, Repository: repo, Clock: clock, IDs: fixedIDs{},
 	})
 	admin := "0190a000-0000-7000-8000-0000000000ad"
 	if err := s.DisableOAuthClient(t.Context(), repo.client.ID, admin); err != nil {
@@ -80,6 +93,14 @@ func TestDisablingAndDeletingAClientRevokeItsTokensWithTheirReasons(t *testing.T
 	}
 	if len(repo.disablement) != 1 || repo.disablement[0].ClientID != repo.client.ID || repo.disablement[0].DisabledByUserID != admin {
 		t.Errorf("disablements = %+v, want one of the client by the admin", repo.disablement)
+	}
+	if len(tx.events) != 1 {
+		t.Fatalf("emitted events = %v, want the audit entry of the disablement only", tx.events)
+	}
+	audit, ok := tx.events[0].(appmoderation.AuditRecorded)
+	if !ok || audit.Entry.Action != appmoderation.AuditOAuthClientDisabled || audit.Entry.TargetKind != appmoderation.AuditTargetOAuthClient ||
+		audit.Entry.TargetID != repo.client.ID || audit.Entry.ActorUserID != admin || audit.Entry.SourceEventID != repo.disablement[0].ID {
+		t.Errorf("audit event = %+v, want the admin's disablement of the client", tx.events[0])
 	}
 	if len(repo.deletions) != 1 || repo.deletions[0].Reason != domain.ClientDeletedUnused || repo.deletions[0].DeletedByUserID != "" {
 		t.Errorf("deletions = %+v, want one for an unused client by the clean-up", repo.deletions)

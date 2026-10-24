@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -165,6 +166,17 @@ type OAuthRepository interface {
 	// OAuthClientHostDenied reports whether a host has a denial without a lift.
 	OAuthClientHostDenied(ctx context.Context, host string) (bool, error)
 
+	// ListOAuthClients returns the clients that are not deleted, newest first, of the
+	// registration route ("" for every route), whose ID is below before ("" from the newest).
+	ListOAuthClients(ctx context.Context, registration identity.OAuthClientRegistration, before string, limit int) ([]identity.OAuthClientListing, error)
+	// ListMetadataDocumentClientsOfHost returns the ID and client_id of the clients registered by
+	// their metadata document whose client_id URL may be on the host; the caller keeps the exact
+	// matches.
+	ListMetadataDocumentClientsOfHost(ctx context.Context, tx uow.Tx, host string) ([]identity.OAuthClient, error)
+	// ListOAuthClientHostDenials returns the denials of hosts without a lift, newest first,
+	// whose ID is below before ("" from the newest).
+	ListOAuthClientHostDenials(ctx context.Context, before string, limit int) ([]identity.OAuthClientHostDenial, error)
+
 	// FindOAuthClient returns the client with the public client_id and its redirect URIs,
 	// sorted.
 	FindOAuthClient(ctx context.Context, clientID string) (identity.OAuthClient, []string, error)
@@ -283,10 +295,17 @@ func (s *Service) DisableOAuthClient(ctx context.Context, clientID, byUserID str
 	now := s.d.Clock.Now()
 	d := identity.OAuthClientDisablement{ID: s.d.IDs.NewID(), ClientID: c.ID, DisabledByUserID: byUserID, DisabledAt: now}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if _, err := s.d.Repository.InsertOAuthClientDisablement(ctx, tx, d); err != nil {
+		inserted, err := s.d.Repository.InsertOAuthClientDisablement(ctx, tx, d)
+		if err != nil {
 			return err
 		}
-		return s.d.Repository.RevokeTokensOfClient(ctx, tx, c.ID, identity.TokenRevokedClientDisabled, now)
+		if err := s.d.Repository.RevokeTokensOfClient(ctx, tx, c.ID, identity.TokenRevokedClientDisabled, now); err != nil {
+			return err
+		}
+		if !inserted {
+			return nil
+		}
+		return s.emitOAuthClientAudit(ctx, tx, appmoderation.AuditOAuthClientDisabled, c, d.ID, byUserID, now)
 	})
 }
 
@@ -300,9 +319,51 @@ func (s *Service) EnableOAuthClient(ctx context.Context, clientID, byUserID stri
 	}
 	now := s.d.Clock.Now()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		_, err := s.d.Repository.LiftOAuthClientDisablements(ctx, tx, c.ID, byUserID, now)
-		return err
+		lifted, err := s.d.Repository.LiftOAuthClientDisablements(ctx, tx, c.ID, byUserID, now)
+		if err != nil || !lifted {
+			return err
+		}
+		return s.emitOAuthClientAudit(ctx, tx, appmoderation.AuditOAuthClientEnabled, c, "", byUserID, now)
 	})
+}
+
+// emitOAuthClientAudit emits the audit log entry of an administrator's operation on a client,
+// labeled with its name and client_id (ADR-0037, ADR-0090 §1); source is the ID of the event
+// row, "" when the operation has no row of its own.
+func (s *Service) emitOAuthClientAudit(ctx context.Context, tx uow.Tx, action appmoderation.AuditAction, c identity.OAuthClient, source, byUserID string, at time.Time) error {
+	entry := appmoderation.AuditEntry{
+		ID: s.d.IDs.NewID(), Action: action, TargetKind: appmoderation.AuditTargetOAuthClient, TargetID: c.ID,
+		TargetLabel: c.Name + " (" + c.ClientID + ")", SourceEventID: source, OccurredAt: at,
+	}
+	entry.ActorKind, entry.ActorUserID = appmoderation.AuditActor(byUserID)
+	return tx.Emit(ctx, appmoderation.AuditRecorded{Entry: entry})
+}
+
+// ListOAuthClients returns the clients that are not deleted, newest first, at most limit (1 to
+// MaxListLimit) of them, of the registration route ("" for every route) when given. A before
+// other than "" is the ID of the last client of the previous page (ADR-0090 §1).
+func (s *Service) ListOAuthClients(ctx context.Context, registration identity.OAuthClientRegistration, before string, limit int) ([]identity.OAuthClientListing, error) {
+	if limit < 1 || limit > MaxListLimit {
+		return nil, fmt.Errorf("identity: limit must be 1 to %d", MaxListLimit)
+	}
+	return s.d.Repository.ListOAuthClients(ctx, registration, before, limit)
+}
+
+// FindOAuthClientListing returns the client with the ID as the administrators list it;
+// ErrNotFound when there is none or it is deleted.
+func (s *Service) FindOAuthClientListing(ctx context.Context, clientID string) (identity.OAuthClientListing, error) {
+	c, err := s.d.Repository.FindOAuthClientByID(ctx, clientID)
+	if err != nil {
+		return identity.OAuthClientListing{}, err
+	}
+	st, err := s.d.Repository.FindOAuthClientState(ctx, c.ID)
+	if err != nil {
+		return identity.OAuthClientListing{}, err
+	}
+	if st.Deleted {
+		return identity.OAuthClientListing{}, ErrNotFound
+	}
+	return identity.OAuthClientListing{OAuthClient: c, Disabled: st.Disabled}, nil
 }
 
 // DeleteOAuthClient records that the client with the ID is deleted for the reason and revokes

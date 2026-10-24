@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: A host whose Client ID Metadata Documents an administrator denied.
+type: object
+required: [id, host, denied_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  host:
+    description: The host name in lowercase, without a port.
+    type: string
+  denied_by:
+    description: The ID of the administrator's user; omitted for a denial from the command line.
+    allOf:
+      - $ref: ./Id.yaml
+  denied_at:
+    type: string
+    format: date-time

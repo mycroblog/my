@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+get:
+  operationId: listOAuthClientHostDenials
+  summary: List the denied hosts of client metadata documents
+  description: |
+    The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+    first. Needs the `manage_oauth_apps` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of denied hosts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminOAuthClientHostDenialPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: denyOAuthClientHost
+  summary: Deny a host of client metadata documents
+  description: |
+    From now on no `client_id` URL on the host is fetched or accepted, and the authorization
+    requests, token exchanges and refreshes of its clients fail. The tokens that the clients
+    of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
+    host revokes again and records nothing new. A host that is empty or malformed, or has a
+    port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
+    permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DenyOAuthClientHostRequest.yaml
+  responses:
+    "204":
+      description: The host is denied.
+    default:
+      $ref: ../components/responses/Problem.yaml

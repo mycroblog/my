@@ -311,6 +311,10 @@ export const auditActions = [
   "custom_emoji_request_approved",
   "custom_emoji_request_rejected",
   "payment_reconcile_queued",
+  "oauth_client_disabled",
+  "oauth_client_enabled",
+  "oauth_client_host_denied",
+  "oauth_client_host_allowed",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */
@@ -337,6 +341,8 @@ export const auditTargetKinds = [
   "supporter_subscription",
   "custom_emoji_request",
   "payment_provider",
+  "oauth_client",
+  "oauth_client_host",
 ] as const satisfies readonly AuditTargetKind[];
 
 /**

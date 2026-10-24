@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: An OAuth client, as the administrators see it.
+type: object
+required: [id, client_id, name, registration, confidential, scope, disabled, created_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  client_id:
+    description: The identifier that the client sends, or the URL of its metadata document.
+    type: string
+  name:
+    description: |
+      The client's name. For a client registered by its metadata document, the name that the
+      document declares; every other name is a claim of whoever registered the client.
+    type: string
+  website:
+    description: The client's home page; omitted when it has none.
+    type: string
+  registration:
+    $ref: ./OAuthClientRegistration.yaml
+  confidential:
+    description: Whether the client has a secret (a confidential client) or not (a public client).
+    type: boolean
+  scope:
+    description: The most that the client may be granted, as space-separated scopes.
+    type: string
+  owner_id:
+    description: The ID of the user who registered the client; omitted for the other routes.
+    allOf:
+      - $ref: ./Id.yaml
+  disabled:
+    description: Whether an administrator has disabled the client and not lifted it.
+    type: boolean
+  created_at:
+    type: string
+    format: date-time

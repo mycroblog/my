@@ -6609,6 +6609,158 @@ paths:
           $ref: '#/components/responses/AdminInvite'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/oauth_clients:
+    get:
+      operationId: listAdminOAuthClients
+      summary: List the OAuth clients
+      description: |
+        Every OAuth client that is not deleted, newest first, the server's own and the clients of
+        every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+        `manage_oauth_apps` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - name: registration
+          in: query
+          required: false
+          description: Keep the clients registered by this route.
+          schema:
+            $ref: '#/components/schemas/OAuthClientRegistration'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of OAuth clients.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOAuthClientPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/oauth_clients/{id}/disable:
+    post:
+      operationId: disableOAuthClient
+      summary: Disable an OAuth client
+      description: |
+        Revokes every token of the client at once (with the reason `client_disabled`) and refuses
+        its authorization requests, token exchanges and refreshes until the disablement is lifted
+        (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+        new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+        is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
+        `manage_oauth_apps` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/OAuthClientId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminOAuthClient'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/oauth_clients/{id}/enable:
+    post:
+      operationId: enableOAuthClient
+      summary: Lift the disablement of an OAuth client
+      description: |
+        The client can be authorized again. The tokens that the disablement revoked stay revoked:
+        the users authorize the client again. Lifting nothing changes nothing. The lift is
+        recorded in the audit log. An unknown ID is a 404. Needs the `manage_oauth_apps`
+        permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/OAuthClientId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminOAuthClient'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/oauth_client_host_denials:
+    get:
+      operationId: listOAuthClientHostDenials
+      summary: List the denied hosts of client metadata documents
+      description: |
+        The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+        first. Needs the `manage_oauth_apps` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of denied hosts.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOAuthClientHostDenialPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: denyOAuthClientHost
+      summary: Deny a host of client metadata documents
+      description: |
+        From now on no `client_id` URL on the host is fetched or accepted, and the authorization
+        requests, token exchanges and refreshes of its clients fail. The tokens that the clients
+        of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
+        host revokes again and records nothing new. A host that is empty or malformed, or has a
+        port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
+        permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenyOAuthClientHostRequest'
+      responses:
+        '204':
+          description: The host is denied.
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/oauth_client_host_denials/{host}:
+    parameters:
+      - $ref: '#/components/parameters/OAuthClientHost'
+    delete:
+      operationId: allowOAuthClientHost
+      summary: Lift the denial of a host
+      description: |
+        The Client ID Metadata Documents on the host are accepted again. The tokens that the
+        denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
+        is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
+        permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      responses:
+        '204':
+          description: The host is allowed.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/webhooks:
     get:
       operationId: listAdminWebhooks
@@ -7518,6 +7670,22 @@ components:
       description: The ID of the invite.
       schema:
         $ref: '#/components/schemas/Id'
+    OAuthClientId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the OAuth client (not its `client_id`).
+      schema:
+        $ref: '#/components/schemas/Id'
+    OAuthClientHost:
+      name: host
+      in: path
+      required: true
+      description: The denied host, in lowercase and without a port.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 253
     Limit:
       name: limit
       in: query
@@ -7717,6 +7885,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminInvite'
+    AdminOAuthClient:
+      description: The OAuth client.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminOAuthClient'
     AdminRegistration:
       description: The registration.
       headers:
@@ -8714,7 +8891,11 @@ components:
         `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
         `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
         reconciliation with the payment provider started by hand; the ID and the label are the
-        provider's name (`stripe`).
+        provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+        every token of the client, and `oauth_client_enabled`; the label is the client's name and its
+        `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
+        tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
+        the host.
       type: string
       enum:
         - account_action_issued
@@ -8792,6 +8973,10 @@ components:
         - custom_emoji_request_approved
         - custom_emoji_request_rejected
         - payment_reconcile_queued
+        - oauth_client_disabled
+        - oauth_client_enabled
+        - oauth_client_host_denied
+        - oauth_client_host_allowed
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -8900,6 +9085,8 @@ components:
         - supporter_subscription
         - custom_emoji_request
         - payment_provider
+        - oauth_client
+        - oauth_client_host
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -9331,6 +9518,118 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminInvite'
+    AdminOAuthClient:
+      description: An OAuth client, as the administrators see it.
+      type: object
+      required:
+        - id
+        - client_id
+        - name
+        - registration
+        - confidential
+        - scope
+        - disabled
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        client_id:
+          description: The identifier that the client sends, or the URL of its metadata document.
+          type: string
+        name:
+          description: |
+            The client's name. For a client registered by its metadata document, the name that the
+            document declares; every other name is a claim of whoever registered the client.
+          type: string
+        website:
+          description: The client's home page; omitted when it has none.
+          type: string
+        registration:
+          $ref: '#/components/schemas/OAuthClientRegistration'
+        confidential:
+          description: Whether the client has a secret (a confidential client) or not (a public client).
+          type: boolean
+        scope:
+          description: The most that the client may be granted, as space-separated scopes.
+          type: string
+        owner_id:
+          description: The ID of the user who registered the client; omitted for the other routes.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        disabled:
+          description: Whether an administrator has disabled the client and not lifted it.
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    AdminOAuthClientHostDenial:
+      description: A host whose Client ID Metadata Documents an administrator denied.
+      type: object
+      required:
+        - id
+        - host
+        - denied_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        host:
+          description: The host name in lowercase, without a port.
+          type: string
+        denied_by:
+          description: The ID of the administrator's user; omitted for a denial from the command line.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        denied_at:
+          type: string
+          format: date-time
+    AdminOAuthClientHostDenialPage:
+      description: A page of the denied hosts, newest denial first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminOAuthClientHostDenial'
+    AdminOAuthClientPage:
+      description: A page of OAuth clients, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminOAuthClient'
+    DenyOAuthClientHostRequest:
+      description: A host to deny.
+      type: object
+      required:
+        - host
+      properties:
+        host:
+          description: |
+            The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased.
+          type: string
+          minLength: 1
+          maxLength: 253
+    OAuthClientRegistration:
+      description: |
+        The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+        server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
+        client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
+        that registered itself (RFC 7591).
+      type: string
+      enum:
+        - first_party
+        - user
+        - metadata_document
+        - dynamic
     AdminInviteState:
       description: |
         What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
@@ -14156,7 +14455,9 @@ components:
         subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
         new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
         deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-        member permission (ADR-0070). The others guard no client API operation
+        member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+        and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
+        `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
         yet.
       type: string
       enum:
@@ -14177,6 +14478,7 @@ components:
         - view_finance
         - manage_supporters
         - create_custom_emojis
+        - manage_oauth_apps
     PickerCustomEmoji:
       description: |
         A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts

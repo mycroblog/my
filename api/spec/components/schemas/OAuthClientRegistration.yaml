@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: |
+  The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+  server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
+  client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
+  that registered itself (RFC 7591).
+type: string
+enum: [first_party, user, metadata_document, dynamic]

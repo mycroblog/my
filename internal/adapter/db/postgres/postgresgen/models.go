@@ -618,6 +618,13 @@ type OauthClient struct {
 	CreatedAt        time.Time
 }
 
+type OauthClientHostDenial struct {
+	ID             string
+	Host           string
+	DeniedByUserID *string
+	DeniedAt       time.Time
+}
+
 type OauthClientMetadataDocument struct {
 	ClientID   string
 	ClientName string

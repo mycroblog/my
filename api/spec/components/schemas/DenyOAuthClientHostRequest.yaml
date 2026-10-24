@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: A host to deny.
+type: object
+required: [host]
+properties:
+  host:
+    description: |
+      The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased.
+    type: string
+    minLength: 1
+    maxLength: 253

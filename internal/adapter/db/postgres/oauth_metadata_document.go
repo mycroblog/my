@@ -61,6 +61,42 @@ func (r *IdentityRepository) LiftOAuthClientHostDenials(ctx context.Context, tx 
 	return n > 0, wrap(err, "lift oauth client host denials")
 }
 
+// ListOAuthClientHostDenials implements identity.Repository.
+func (r *IdentityRepository) ListOAuthClientHostDenials(ctx context.Context, before string, limit int) ([]identity.OAuthClientHostDenial, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListOAuthClientHostDenials(ctx, postgresgen.ListOAuthClientHostDenialsParams{Before: toNullString(before), PageLimit: n})
+	if err != nil {
+		return nil, wrap(err, "list oauth client host denials")
+	}
+	out := make([]identity.OAuthClientHostDenial, len(rows))
+	for i, row := range rows {
+		out[i] = identity.OAuthClientHostDenial{
+			ID: row.ID, Host: row.Host, DeniedByUserID: fromNullString(row.DeniedByUserID), DeniedAt: utc(row.DeniedAt),
+		}
+	}
+	return out, nil
+}
+
+// ListMetadataDocumentClientsOfHost implements identity.Repository.
+func (r *IdentityRepository) ListMetadataDocumentClientsOfHost(ctx context.Context, tx uow.Tx, host string) ([]identity.OAuthClient, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListMetadataDocumentClientsOfHost(ctx, host)
+	if err != nil {
+		return nil, wrap(err, "list oauth clients of a host")
+	}
+	out := make([]identity.OAuthClient, len(rows))
+	for i, row := range rows {
+		out[i] = identity.OAuthClient{ID: row.ID, ClientID: row.ClientID, Registration: identity.ClientRegisteredByMetadataDocument}
+	}
+	return out, nil
+}
+
 // OAuthClientHostDenied implements identity.Repository.
 func (r *IdentityRepository) OAuthClientHostDenied(ctx context.Context, host string) (bool, error) {
 	denied, err := r.db.reader().OAuthClientHostDenied(ctx, host)

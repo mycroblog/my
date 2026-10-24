@@ -225,6 +225,37 @@ SELECT EXISTS (
   WHERE d.host = sqlc.arg(host) AND NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
 ) AS denied;
 
+-- ListOAuthClients lists the clients that are not deleted, newest first, optionally of one
+-- registration route, with whether each is disabled.
+-- name: ListOAuthClients :many
+SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at,
+  EXISTS (
+    SELECT 1 FROM oauth_client_disablements d
+    WHERE d.client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+  ) AS disabled
+FROM oauth_clients c
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id)
+  AND (CAST(sqlc.arg(registration) AS TEXT) = '' OR c.registration = sqlc.arg(registration))
+  AND (CAST(sqlc.arg(before) AS TEXT) = '' OR c.id < sqlc.arg(before))
+ORDER BY c.id DESC
+LIMIT sqlc.arg(page_limit);
+
+-- ListMetadataDocumentClientsOfHost lists the metadata document clients whose client_id may be
+-- on a host; the caller keeps those whose host is exactly it.
+-- name: ListMetadataDocumentClientsOfHost :many
+SELECT id, client_id FROM oauth_clients
+WHERE registration = 'metadata_document'
+  AND (client_id LIKE 'https://' || sqlc.arg(host) || '/%' OR client_id LIKE 'https://' || sqlc.arg(host) || ':%');
+
+-- ListOAuthClientHostDenials lists the denials of hosts that have no lift, newest first.
+-- name: ListOAuthClientHostDenials :many
+SELECT d.id, d.host, d.denied_by_user_id, d.denied_at
+FROM oauth_client_host_denials d
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
+  AND (CAST(sqlc.arg(before) AS TEXT) = '' OR d.id < sqlc.arg(before))
+ORDER BY d.id DESC
+LIMIT sqlc.arg(page_limit);
+
 -- UpsertTokenFamilyLastUsed records that a token family authenticated a request at used_at.
 -- name: UpsertTokenFamilyLastUsed :exec
 INSERT INTO oauth_token_family_last_used (family_id, last_used_at)

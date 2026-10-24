@@ -59,7 +59,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		// GET /instance/documents/{kind} feeds.
 		InstanceTexts: a.Instance, Documents: a.Instance, TermsPath: web.PathAboutTerms, PrivacyPolicyPath: web.PathAboutPrivacyPolicy,
 		// The instance settings, and the invites with the registration page they open (#624).
-		Settings: a.Instance, Invites: a.Identity, SignUpPath: authpages.PathSignUp,
+		Settings: a.Instance, Invites: a.Identity, OAuthClients: a.Identity, SignUpPath: authpages.PathSignUp,
 		// The instance theme (ADR-0059) and the URLs of its stylesheets, which the web handler serves.
 		Themes: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
 		// The custom emoji of the picker and their administration (ADR-0051).

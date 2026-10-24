@@ -616,6 +616,13 @@ type OauthClient struct {
 	CreatedAt        int64
 }
 
+type OauthClientHostDenial struct {
+	ID             string
+	Host           string
+	DeniedByUserID sql.NullString
+	DeniedAt       int64
+}
+
 type OauthClientMetadataDocument struct {
 	ClientID   string
 	ClientName string

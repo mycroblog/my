@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+parameters:
+  - $ref: ../components/parameters/OAuthClientHost.yaml
+delete:
+  operationId: allowOAuthClientHost
+  summary: Lift the denial of a host
+  description: |
+    The Client ID Metadata Documents on the host are accepted again. The tokens that the
+    denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
+    is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
+    permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  responses:
+    "204":
+      description: The host is allowed.
+    default:
+      $ref: ../components/responses/Problem.yaml

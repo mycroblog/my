@@ -102,7 +102,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |
@@ -195,6 +195,7 @@
   - `expires_at` は応答の HTTP のキャッシュ指示から決めます: `no-store`・`no-cache` は `fetched_at`（次の認可要求で取り直す）、`s-maxage`・`max-age`・`Expires` があればそれ、無ければ 1 時間。上限は 24 時間です。
   - 行は取得し直せば作り直せるキャッシュで、消しても次の認可要求で戻ります。
   - 管理者の無効化は、URL ごとにはクライアント（`oauth_client_disablements`）に、ホストごとには `oauth_client_host_denials` に記録し、キャッシュには持ちません。
+    ホストの拒否は、そのホストの CIMD のクライアントの有効なトークンも `client_disabled` で失効させます（無効化と同じ理由。取り消しても失効したトークンは戻りません）。
     拒否したホストの `client_id` は取得の前に断り、認可要求・トークンの交換と更新・失効の要求を未知のクライアントと同じに断ります。ホストは小文字のホスト名（ポートなし）で照合します。
 - ファーストパーティの Web クライアント（`client_id` は `my-web`、経路は `first_party`）は起動時に冪等に登録します。リダイレクト URI は設定 `web_origin` から導くので、`oauth_client_redirect_uris` は起動のたびに設定値へ置き換える【現在値】です。
 - 認可コード・アクセストークン・リフレッシュトークンは、DB には SHA-256 ハッシュだけを保存します（ADR-0019 §4）。認可コードの 1 回性は `oauth_authorization_code_redemptions` の PK で保証します。

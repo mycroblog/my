@@ -48,6 +48,10 @@ const (
 	// holding it (ADR-0070 §2, §3). It is a member permission (ADR-0070 §1), whose limit a
 	// supporter plan sets (ADR-0072 §11).
 	PermCreateCustomEmojis Permission = "create_custom_emojis"
+	// PermManageOAuthApps: list every OAuth client, disable one and lift the disablement, and
+	// deny the hosts of Client ID Metadata Documents (ADR-0090 §1). It is server administration
+	// (ADR-0058 §4): only the built-in admin role has it by default.
+	PermManageOAuthApps Permission = "manage_oauth_apps"
 )
 
 // AllPermissions lists every permission.
@@ -56,7 +60,7 @@ func AllPermissions() []Permission {
 		PermManageReports, PermManageAccounts, PermManageDomains, PermManageRules,
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
-		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis,
+		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
 	}
 }
 

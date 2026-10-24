@@ -42,7 +42,7 @@ my admin role grant alice moderator
 my admin role revoke alice moderator
 ```
 
-- 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
+- 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
   `list` は区分ごとの列（`MODERATION`・`SERVER`・`MEMBER`）に出します。Web クライアントは区分ごとに「モデレーション」と「管理」を出し、利用者の機能はどちらにも数えません（[ADR-0058](../adr/0058-moderation-admin-separation.md)、[ADR-0070](../adr/0070-permission-split-emoji-finance.md)、[モデレーション](moderation.md#web-クライアントのモデレーションとサーバー管理)）。
 - 変更は利用者の次の要求から効きます。モデレーター向けの通知は、通知を作るときに権限を持つ人に届きます。
 - 付与と剥奪は監査ログに `role_granted`・`role_revoked`（対象の種類 `role`）で残ります。CLI の操作者は `cli` です（`my admin audit list -target-kind role`）。

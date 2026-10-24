@@ -131,6 +131,10 @@
     "defaultMessage": "Request custom emoji",
     "description": "Name of the permission create_custom_emojis: requesting new custom emoji, which an administrator approves, and changing and deleting the ones the user made."
   },
+  "admin.roles.permission.manage_oauth_apps": {
+    "defaultMessage": "OAuth apps",
+    "description": "Name of the permission manage_oauth_apps: all the OAuth clients, disabling them, and denying the hosts of client metadata documents."
+  },
   "admin.roles.permission.manage_supporters": {
     "defaultMessage": "Supporters",
     "description": "Name of the permission manage_supporters: the supporter program, its plans, and their subscriptions."

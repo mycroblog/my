@@ -16,7 +16,9 @@ description: |
   subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
   new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
   deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-  member permission (ADR-0070). The others guard no client API operation
+  member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+  and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
+  `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
   yet.
 type: string
 enum:
@@ -37,3 +39,4 @@ enum:
   - view_finance
   - manage_supporters
   - create_custom_emojis
+  - manage_oauth_apps

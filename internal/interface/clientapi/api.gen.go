@@ -299,6 +299,10 @@ const (
 	AdminAuditActionDomainStatusesRefetchQueued   AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionInviteCreated                 AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                 AdminAuditAction = "invite_revoked"
+	AdminAuditActionOauthClientDisabled           AdminAuditAction = "oauth_client_disabled"
+	AdminAuditActionOauthClientEnabled            AdminAuditAction = "oauth_client_enabled"
+	AdminAuditActionOauthClientHostAllowed        AdminAuditAction = "oauth_client_host_allowed"
+	AdminAuditActionOauthClientHostDenied         AdminAuditAction = "oauth_client_host_denied"
 	AdminAuditActionPasswordResetLinkIssued       AdminAuditAction = "password_reset_link_issued"
 	AdminAuditActionPaymentReconcileQueued        AdminAuditAction = "payment_reconcile_queued"
 	AdminAuditActionRegistrationApproved          AdminAuditAction = "registration_approved"
@@ -410,6 +414,14 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
+		return true
+	case AdminAuditActionOauthClientDisabled:
+		return true
+	case AdminAuditActionOauthClientEnabled:
+		return true
+	case AdminAuditActionOauthClientHostAllowed:
+		return true
+	case AdminAuditActionOauthClientHostDenied:
 		return true
 	case AdminAuditActionPasswordResetLinkIssued:
 		return true
@@ -537,6 +549,8 @@ const (
 	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
+	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
+	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
 	AdminAuditTargetKindPaymentProvider       AdminAuditTargetKind = "payment_provider"
 	AdminAuditTargetKindRelay                 AdminAuditTargetKind = "relay"
 	AdminAuditTargetKindReport                AdminAuditTargetKind = "report"
@@ -572,6 +586,10 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindDomain:
 		return true
 	case AdminAuditTargetKindInvite:
+		return true
+	case AdminAuditTargetKindOauthClient:
+		return true
+	case AdminAuditTargetKindOauthClientHost:
 		return true
 	case AdminAuditTargetKindPaymentProvider:
 		return true
@@ -2164,6 +2182,30 @@ func (e OAuthAppTokenTokenType) Valid() bool {
 	}
 }
 
+// Defines values for OAuthClientRegistration.
+const (
+	OAuthClientRegistrationDynamic          OAuthClientRegistration = "dynamic"
+	OAuthClientRegistrationFirstParty       OAuthClientRegistration = "first_party"
+	OAuthClientRegistrationMetadataDocument OAuthClientRegistration = "metadata_document"
+	OAuthClientRegistrationUser             OAuthClientRegistration = "user"
+)
+
+// Valid indicates whether the value is a known member of the OAuthClientRegistration enum.
+func (e OAuthClientRegistration) Valid() bool {
+	switch e {
+	case OAuthClientRegistrationDynamic:
+		return true
+	case OAuthClientRegistrationFirstParty:
+		return true
+	case OAuthClientRegistrationMetadataDocument:
+		return true
+	case OAuthClientRegistrationUser:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PaymentReconcileRunErrorKind.
 const (
 	PaymentReconcileRunErrorKindInvalidRequest   PaymentReconcileRunErrorKind = "invalid_request"
@@ -2277,6 +2319,7 @@ const (
 	PermissionManageInvites       Permission = "manage_invites"
 	PermissionManageJobs          Permission = "manage_jobs"
 	PermissionManageLoginRecovery Permission = "manage_login_recovery"
+	PermissionManageOauthApps     Permission = "manage_oauth_apps"
 	PermissionManageReports       Permission = "manage_reports"
 	PermissionManageRoles         Permission = "manage_roles"
 	PermissionManageRules         Permission = "manage_rules"
@@ -2307,6 +2350,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageJobs:
 		return true
 	case PermissionManageLoginRecovery:
+		return true
+	case PermissionManageOauthApps:
 		return true
 	case PermissionManageReports:
 		return true
@@ -3651,7 +3696,11 @@ type AdminAppealPage struct {
 // `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
 // `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
 // reconciliation with the payment provider started by hand; the ID and the label are the
-// provider's name (`stripe`).
+// provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+// every token of the client, and `oauth_client_enabled`; the label is the client's name and its
+// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
+// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
+// the host.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -3710,7 +3759,11 @@ type AdminAuditEntry struct {
 	// `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
 	// `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
 	// reconciliation with the payment provider started by hand; the ID and the label are the
-	// provider's name (`stripe`).
+	// provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+	// every token of the client, and `oauth_client_enabled`; the label is the client's name and its
+	// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
+	// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
+	// the host.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -4215,6 +4268,75 @@ type AdminJobPage struct {
 // `running`: a worker holds it. `retrying`: it ran and waits to run again. `dead`: it
 // failed for good (its handler gave up, or it used up its attempts).
 type AdminJobState string
+
+// AdminOAuthClient An OAuth client, as the administrators see it.
+type AdminOAuthClient struct {
+	// ClientId The identifier that the client sends, or the URL of its metadata document.
+	ClientId string `json:"client_id"`
+
+	// Confidential Whether the client has a secret (a confidential client) or not (a public client).
+	Confidential bool      `json:"confidential"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	// Disabled Whether an administrator has disabled the client and not lifted it.
+	Disabled bool `json:"disabled"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The client's name. For a client registered by its metadata document, the name that the
+	// document declares; every other name is a claim of whoever registered the client.
+	Name string `json:"name"`
+
+	// OwnerId The ID of the user who registered the client; omitted for the other routes.
+	OwnerId *Id `json:"owner_id,omitempty"`
+
+	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
+	// client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
+	// that registered itself (RFC 7591).
+	Registration OAuthClientRegistration `json:"registration"`
+
+	// Scope The most that the client may be granted, as space-separated scopes.
+	Scope string `json:"scope"`
+
+	// Website The client's home page; omitted when it has none.
+	Website *string `json:"website,omitempty"`
+}
+
+// AdminOAuthClientHostDenial A host whose Client ID Metadata Documents an administrator denied.
+type AdminOAuthClientHostDenial struct {
+	DeniedAt time.Time `json:"denied_at"`
+
+	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
+	DeniedBy *Id `json:"denied_by,omitempty"`
+
+	// Host The host name in lowercase, without a port.
+	Host string `json:"host"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+}
+
+// AdminOAuthClientHostDenialPage A page of the denied hosts, newest denial first.
+type AdminOAuthClientHostDenialPage struct {
+	Items []AdminOAuthClientHostDenial `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminOAuthClientPage A page of OAuth clients, newest first.
+type AdminOAuthClientPage struct {
+	Items []AdminOAuthClient `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
 
 // AdminPasswordResetLink A password reset link that an administrator issued for a local account (FR-002). It is
 // shown once.
@@ -6219,6 +6341,12 @@ type DeleteOwnAccountRequest struct {
 	Password *string `json:"password,omitempty"`
 }
 
+// DenyOAuthClientHostRequest A host to deny.
+type DenyOAuthClientHostRequest struct {
+	// Host The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased.
+	Host string `json:"host"`
+}
+
 // DomainBlock A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
 // such as `例え.jp` is accepted) and the public comment (at most 5,000 characters).
 type DomainBlock struct {
@@ -7620,6 +7748,12 @@ type OAuthAppToken struct {
 // OAuthAppTokenTokenType defines model for OAuthAppToken.TokenType.
 type OAuthAppTokenTokenType string
 
+// OAuthClientRegistration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
+// client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
+// that registered itself (RFC 7591).
+type OAuthClientRegistration string
+
 // OwnCustomEmoji A local custom emoji that the user made (ADR-0070 §3).
 type OwnCustomEmoji struct {
 	// Aliases The other names that the picker finds the emoji by.
@@ -7851,7 +7985,9 @@ type PaymentStatusWarnings string
 // subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
 // new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-// member permission (ADR-0070). The others guard no client API operation
+// member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+// and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
+// `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
 // yet.
 type Permission string
 
@@ -9628,6 +9764,14 @@ type Limit = int
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type OAuthAppId = Id
 
+// OAuthClientHost defines model for OAuthClientHost.
+type OAuthClientHost = string
+
+// OAuthClientId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type OAuthClientId = Id
+
 // RegistrationUserId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -9983,6 +10127,27 @@ type ListAdminJobsParams struct {
 
 // ListAdminJobAttemptsParams defines parameters for ListAdminJobAttempts.
 type ListAdminJobAttemptsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListOAuthClientHostDenialsParams defines parameters for ListOAuthClientHostDenials.
+type ListOAuthClientHostDenialsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListAdminOAuthClientsParams defines parameters for ListAdminOAuthClients.
+type ListAdminOAuthClientsParams struct {
+	// Registration Keep the clients registered by this route.
+	Registration *OAuthClientRegistration `form:"registration,omitempty" json:"registration,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -10382,6 +10547,9 @@ type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody = CreateInviteRequest
+
+// DenyOAuthClientHostJSONRequestBody defines body for DenyOAuthClientHost for application/json ContentType.
+type DenyOAuthClientHostJSONRequestBody = DenyOAuthClientHostRequest
 
 // ApproveRegistrationJSONRequestBody defines body for ApproveRegistration for application/json ContentType.
 type ApproveRegistrationJSONRequestBody = RegistrationDecisionRequest
@@ -10793,6 +10961,24 @@ type ServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id)
+	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
+	// (GET /admin/oauth_client_host_denials)
+	ListOAuthClientHostDenials(w http.ResponseWriter, r *http.Request, params ListOAuthClientHostDenialsParams)
+	// DenyOAuthClientHost Deny a host of client metadata documents
+	// (POST /admin/oauth_client_host_denials)
+	DenyOAuthClientHost(w http.ResponseWriter, r *http.Request)
+	// AllowOAuthClientHost Lift the denial of a host
+	// (DELETE /admin/oauth_client_host_denials/{host})
+	AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost)
+	// ListAdminOAuthClients List the OAuth clients
+	// (GET /admin/oauth_clients)
+	ListAdminOAuthClients(w http.ResponseWriter, r *http.Request, params ListAdminOAuthClientsParams)
+	// DisableOAuthClient Disable an OAuth client
+	// (POST /admin/oauth_clients/{id}/disable)
+	DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
+	// EnableOAuthClient Lift the disablement of an OAuth client
+	// (POST /admin/oauth_clients/{id}/enable)
+	EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
 	// RunPaymentReconcile Reconcile with the payment provider now
 	// (POST /admin/payment_reconciles)
 	RunPaymentReconcile(w http.ResponseWriter, r *http.Request)
@@ -14257,6 +14443,203 @@ func (siw *ServerInterfaceWrapper) RetryAdminJob(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RetryAdminJob(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOAuthClientHostDenials operation middleware
+func (siw *ServerInterfaceWrapper) ListOAuthClientHostDenials(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOAuthClientHostDenialsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOAuthClientHostDenials(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DenyOAuthClientHost operation middleware
+func (siw *ServerInterfaceWrapper) DenyOAuthClientHost(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DenyOAuthClientHost(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AllowOAuthClientHost operation middleware
+func (siw *ServerInterfaceWrapper) AllowOAuthClientHost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "host" -------------
+	var host OAuthClientHost
+
+	err = runtime.BindStyledParameterWithOptions("simple", "host", r.PathValue("host"), &host, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "host", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AllowOAuthClientHost(w, r, host)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdminOAuthClients operation middleware
+func (siw *ServerInterfaceWrapper) ListAdminOAuthClients(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdminOAuthClientsParams
+
+	// ------------- Optional query parameter "registration" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "registration", r.URL.Query(), &params.Registration, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "registration"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "registration", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdminOAuthClients(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisableOAuthClient operation middleware
+func (siw *ServerInterfaceWrapper) DisableOAuthClient(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id OAuthClientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableOAuthClient(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableOAuthClient operation middleware
+func (siw *ServerInterfaceWrapper) EnableOAuthClient(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id OAuthClientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableOAuthClient(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19030,6 +19413,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/invites", wrapper.ListInvites)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites", wrapper.CreateInvite)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites/{id}/revoke", wrapper.RevokeInvite)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/oauth_clients", wrapper.ListAdminOAuthClients)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_clients/{id}/disable", wrapper.DisableOAuthClient)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_clients/{id}/enable", wrapper.EnableOAuthClient)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/oauth_client_host_denials", wrapper.ListOAuthClientHostDenials)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_client_host_denials", wrapper.DenyOAuthClientHost)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/oauth_client_host_denials/{host}", wrapper.AllowOAuthClientHost)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/webhooks", wrapper.ListAdminWebhooks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks", wrapper.CreateWebhook)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/webhooks/{id}", wrapper.DeleteWebhook)
@@ -19160,6 +19549,15 @@ type AdminInviteJSONResponse struct {
 	Body AdminInvite
 
 	Headers AdminInviteResponseHeaders
+}
+
+type AdminOAuthClientResponseHeaders struct {
+	CacheControl *string
+}
+type AdminOAuthClientJSONResponse struct {
+	Body AdminOAuthClient
+
+	Headers AdminOAuthClientResponseHeaders
 }
 
 type AdminRegistrationResponseHeaders struct {
@@ -24540,6 +24938,332 @@ type RetryAdminJobdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RetryAdminJobdefaultApplicationProblemPlusJSONResponse) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOAuthClientHostDenialsRequestObject struct {
+	Params ListOAuthClientHostDenialsParams
+}
+
+type ListOAuthClientHostDenialsResponseObject interface {
+	VisitListOAuthClientHostDenialsResponse(w http.ResponseWriter) error
+}
+
+type ListOAuthClientHostDenials200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListOAuthClientHostDenials200JSONResponse struct {
+	Body    AdminOAuthClientHostDenialPage
+	Headers ListOAuthClientHostDenials200ResponseHeaders
+}
+
+func (response ListOAuthClientHostDenials200JSONResponse) VisitListOAuthClientHostDenialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOAuthClientHostDenialsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListOAuthClientHostDenialsdefaultApplicationProblemPlusJSONResponse) VisitListOAuthClientHostDenialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyOAuthClientHostRequestObject struct {
+	Body *DenyOAuthClientHostJSONRequestBody
+}
+
+type DenyOAuthClientHostResponseObject interface {
+	VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error
+}
+
+type DenyOAuthClientHost204Response struct {
+}
+
+func (response DenyOAuthClientHost204Response) VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse) VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AllowOAuthClientHostRequestObject struct {
+	Host OAuthClientHost `json:"host"`
+}
+
+type AllowOAuthClientHostResponseObject interface {
+	VisitAllowOAuthClientHostResponse(w http.ResponseWriter) error
+}
+
+type AllowOAuthClientHost204Response struct {
+}
+
+func (response AllowOAuthClientHost204Response) VisitAllowOAuthClientHostResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AllowOAuthClientHostdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AllowOAuthClientHostdefaultApplicationProblemPlusJSONResponse) VisitAllowOAuthClientHostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminOAuthClientsRequestObject struct {
+	Params ListAdminOAuthClientsParams
+}
+
+type ListAdminOAuthClientsResponseObject interface {
+	VisitListAdminOAuthClientsResponse(w http.ResponseWriter) error
+}
+
+type ListAdminOAuthClients200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAdminOAuthClients200JSONResponse struct {
+	Body    AdminOAuthClientPage
+	Headers ListAdminOAuthClients200ResponseHeaders
+}
+
+func (response ListAdminOAuthClients200JSONResponse) VisitListAdminOAuthClientsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminOAuthClientsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAdminOAuthClientsdefaultApplicationProblemPlusJSONResponse) VisitListAdminOAuthClientsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableOAuthClientRequestObject struct {
+	Id OAuthClientId `json:"id"`
+}
+
+type DisableOAuthClientResponseObject interface {
+	VisitDisableOAuthClientResponse(w http.ResponseWriter) error
+}
+
+type DisableOAuthClient200JSONResponse struct{ AdminOAuthClientJSONResponse }
+
+func (response DisableOAuthClient200JSONResponse) VisitDisableOAuthClientResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableOAuthClientdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DisableOAuthClientdefaultApplicationProblemPlusJSONResponse) VisitDisableOAuthClientResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableOAuthClientRequestObject struct {
+	Id OAuthClientId `json:"id"`
+}
+
+type EnableOAuthClientResponseObject interface {
+	VisitEnableOAuthClientResponse(w http.ResponseWriter) error
+}
+
+type EnableOAuthClient200JSONResponse struct{ AdminOAuthClientJSONResponse }
+
+func (response EnableOAuthClient200JSONResponse) VisitEnableOAuthClientResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableOAuthClientdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EnableOAuthClientdefaultApplicationProblemPlusJSONResponse) VisitEnableOAuthClientResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34834,6 +35558,24 @@ type StrictServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(ctx context.Context, request RetryAdminJobRequestObject) (RetryAdminJobResponseObject, error)
+	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
+	// (GET /admin/oauth_client_host_denials)
+	ListOAuthClientHostDenials(ctx context.Context, request ListOAuthClientHostDenialsRequestObject) (ListOAuthClientHostDenialsResponseObject, error)
+	// DenyOAuthClientHost Deny a host of client metadata documents
+	// (POST /admin/oauth_client_host_denials)
+	DenyOAuthClientHost(ctx context.Context, request DenyOAuthClientHostRequestObject) (DenyOAuthClientHostResponseObject, error)
+	// AllowOAuthClientHost Lift the denial of a host
+	// (DELETE /admin/oauth_client_host_denials/{host})
+	AllowOAuthClientHost(ctx context.Context, request AllowOAuthClientHostRequestObject) (AllowOAuthClientHostResponseObject, error)
+	// ListAdminOAuthClients List the OAuth clients
+	// (GET /admin/oauth_clients)
+	ListAdminOAuthClients(ctx context.Context, request ListAdminOAuthClientsRequestObject) (ListAdminOAuthClientsResponseObject, error)
+	// DisableOAuthClient Disable an OAuth client
+	// (POST /admin/oauth_clients/{id}/disable)
+	DisableOAuthClient(ctx context.Context, request DisableOAuthClientRequestObject) (DisableOAuthClientResponseObject, error)
+	// EnableOAuthClient Lift the disablement of an OAuth client
+	// (POST /admin/oauth_clients/{id}/enable)
+	EnableOAuthClient(ctx context.Context, request EnableOAuthClientRequestObject) (EnableOAuthClientResponseObject, error)
 	// RunPaymentReconcile Reconcile with the payment provider now
 	// (POST /admin/payment_reconciles)
 	RunPaymentReconcile(ctx context.Context, request RunPaymentReconcileRequestObject) (RunPaymentReconcileResponseObject, error)
@@ -37806,6 +38548,167 @@ func (sh *strictHandler) RetryAdminJob(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RetryAdminJobResponseObject); ok {
 		if err := validResponse.VisitRetryAdminJobResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOAuthClientHostDenials operation middleware
+func (sh *strictHandler) ListOAuthClientHostDenials(w http.ResponseWriter, r *http.Request, params ListOAuthClientHostDenialsParams) {
+	var request ListOAuthClientHostDenialsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOAuthClientHostDenials(ctx, request.(ListOAuthClientHostDenialsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOAuthClientHostDenials")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOAuthClientHostDenialsResponseObject); ok {
+		if err := validResponse.VisitListOAuthClientHostDenialsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DenyOAuthClientHost operation middleware
+func (sh *strictHandler) DenyOAuthClientHost(w http.ResponseWriter, r *http.Request) {
+	var request DenyOAuthClientHostRequestObject
+
+	var body DenyOAuthClientHostJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DenyOAuthClientHost(ctx, request.(DenyOAuthClientHostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DenyOAuthClientHost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DenyOAuthClientHostResponseObject); ok {
+		if err := validResponse.VisitDenyOAuthClientHostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AllowOAuthClientHost operation middleware
+func (sh *strictHandler) AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost) {
+	var request AllowOAuthClientHostRequestObject
+
+	request.Host = host
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AllowOAuthClientHost(ctx, request.(AllowOAuthClientHostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AllowOAuthClientHost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AllowOAuthClientHostResponseObject); ok {
+		if err := validResponse.VisitAllowOAuthClientHostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAdminOAuthClients operation middleware
+func (sh *strictHandler) ListAdminOAuthClients(w http.ResponseWriter, r *http.Request, params ListAdminOAuthClientsParams) {
+	var request ListAdminOAuthClientsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAdminOAuthClients(ctx, request.(ListAdminOAuthClientsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAdminOAuthClients")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAdminOAuthClientsResponseObject); ok {
+		if err := validResponse.VisitListAdminOAuthClientsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableOAuthClient operation middleware
+func (sh *strictHandler) DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId) {
+	var request DisableOAuthClientRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableOAuthClient(ctx, request.(DisableOAuthClientRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableOAuthClient")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableOAuthClientResponseObject); ok {
+		if err := validResponse.VisitDisableOAuthClientResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableOAuthClient operation middleware
+func (sh *strictHandler) EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId) {
+	var request EnableOAuthClientRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableOAuthClient(ctx, request.(EnableOAuthClientRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableOAuthClient")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableOAuthClientResponseObject); ok {
+		if err := validResponse.VisitEnableOAuthClientResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

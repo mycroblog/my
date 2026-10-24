@@ -85,6 +85,10 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   custom_emoji_request_approved: "client:admin.audit_log.action.custom_emoji_request_approved",
   custom_emoji_request_rejected: "client:admin.audit_log.action.custom_emoji_request_rejected",
   payment_reconcile_queued: "client:admin.audit_log.action.payment_reconcile_queued",
+  oauth_client_disabled: "client:admin.audit_log.action.oauth_client_disabled",
+  oauth_client_enabled: "client:admin.audit_log.action.oauth_client_enabled",
+  oauth_client_host_denied: "client:admin.audit_log.action.oauth_client_host_denied",
+  oauth_client_host_allowed: "client:admin.audit_log.action.oauth_client_host_allowed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -110,6 +114,8 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   supporter_subscription: "client:admin.audit_log.target_kind.supporter_subscription",
   custom_emoji_request: "client:admin.audit_log.target_kind.custom_emoji_request",
   payment_provider: "client:admin.audit_log.target_kind.payment_provider",
+  oauth_client: "client:admin.audit_log.target_kind.oauth_client",
+  oauth_client_host: "client:admin.audit_log.target_kind.oauth_client_host",
 };
 
 /** Who performed an operation without a user's account to show. */

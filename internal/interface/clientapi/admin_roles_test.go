@@ -204,7 +204,7 @@ func TestGrantAndRevokeRoles(t *testing.T) {
 		{Id: fakeRoleIDs["admin"], Key: "admin", Position: 1000, Permissions: []clientapi.Permission{
 			"manage_reports", "manage_accounts", "manage_domains", "manage_rules", "manage_settings", "manage_roles",
 			"manage_invites", "view_audit", "manage_jobs", "manage_login_recovery", "manage_custom_emojis", "manage_webhooks",
-			"manage_announcements", "manage_finance", "view_finance", "manage_supporters", "create_custom_emojis",
+			"manage_announcements", "manage_finance", "view_finance", "manage_supporters", "create_custom_emojis", "manage_oauth_apps",
 		}},
 		{Id: fakeRoleIDs["moderator"], Key: "moderator", Position: 100, Permissions: []clientapi.Permission{"manage_reports", "manage_accounts", "view_audit"}},
 	}}

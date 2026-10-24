@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+post:
+  operationId: enableOAuthClient
+  summary: Lift the disablement of an OAuth client
+  description: |
+    The client can be authorized again. The tokens that the disablement revoked stay revoked:
+    the users authorize the client again. Lifting nothing changes nothing. The lift is
+    recorded in the audit log. An unknown ID is a 404. Needs the `manage_oauth_apps`
+    permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/OAuthClientId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminOAuthClient.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

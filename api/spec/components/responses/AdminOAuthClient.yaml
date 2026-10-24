@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: The OAuth client.
+headers:
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/AdminOAuthClient.yaml

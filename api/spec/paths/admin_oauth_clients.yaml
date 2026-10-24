@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+get:
+  operationId: listAdminOAuthClients
+  summary: List the OAuth clients
+  description: |
+    Every OAuth client that is not deleted, newest first, the server's own and the clients of
+    every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+    `manage_oauth_apps` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: registration
+      in: query
+      required: false
+      description: Keep the clients registered by this route.
+      schema:
+        $ref: ../components/schemas/OAuthClientRegistration.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of OAuth clients.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminOAuthClientPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

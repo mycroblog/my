@@ -502,5 +502,29 @@
   "admin.audit_log.target_kind.payment_provider": {
     "defaultMessage": "決済の事業者",
     "description": "Kind of target of an audited operation: the payment provider of the supporter program, shown by its name (stripe)."
+  },
+  "admin.audit_log.action.oauth_client_disabled": {
+    "defaultMessage": "OAuth のアプリを無効にした",
+    "description": "Kind of an audited operation: an administrator disabled an OAuth client, which revoked all its tokens."
+  },
+  "admin.audit_log.action.oauth_client_enabled": {
+    "defaultMessage": "OAuth のアプリの無効化を取り消した",
+    "description": "Kind of an audited operation: an administrator lifted the disablement of an OAuth client."
+  },
+  "admin.audit_log.action.oauth_client_host_denied": {
+    "defaultMessage": "OAuth のアプリのホストを拒否した",
+    "description": "Kind of an audited operation: an administrator denied the client metadata documents of a host, which revoked the tokens of its clients."
+  },
+  "admin.audit_log.action.oauth_client_host_allowed": {
+    "defaultMessage": "OAuth のアプリのホストの拒否を取り消した",
+    "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
+  },
+  "admin.audit_log.target_kind.oauth_client": {
+    "defaultMessage": "OAuth のアプリ",
+    "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
+  },
+  "admin.audit_log.target_kind.oauth_client_host": {
+    "defaultMessage": "OAuth のアプリのホスト",
+    "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
   }
 }
