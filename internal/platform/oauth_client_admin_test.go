@@ -33,7 +33,10 @@ func TestOAuthClientAdministration(t *testing.T) {
 	}
 	admin := alice.User.ID
 	verifier := strings.Repeat("v", 43)
+	// authorize fetches the no-store document every time, so it forgets the URL's fetch limit
+	// (ADR-0090 §7) first.
 	authorize := func(clientID string) (identity.Authorization, error) {
+		resetFetchLimit(t, app, clientID)
 		return app.Identity.ValidateAuthorization(ctx, identity.AuthorizationRequest{
 			ResponseType: "code", ClientID: clientID, RedirectURI: metadataRedirect, Scope: "read",
 			CodeChallenge: domain.S256Challenge(verifier), CodeChallengeMethod: domain.CodeChallengeMethodS256,
