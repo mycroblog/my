@@ -694,5 +694,37 @@
   "admin.settings.title": {
     "defaultMessage": "Server settings",
     "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "Apps",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "Which routes apps may use to get a client ID. With all of them off, only the server's own apps work. Turning one off does not disable the apps already registered.",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "Users register apps",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "Signed-in users register apps in their settings, for bots and scripts of their own.",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "Client ID Metadata Documents",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "Apps use the URL of a metadata document they host as their client ID. The server fetches the document.",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "Dynamic client registration",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "Apps register themselves without signing in (RFC 7591), for tools that cannot use a metadata document.",
+    "description": "Description of the checkbox of dynamic client registration."
   }
 }

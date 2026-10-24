@@ -694,5 +694,37 @@
   "admin.settings.title": {
     "defaultMessage": "サーバーの設定",
     "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "アプリ",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "アプリがクライアント ID を得られる経路を選びます。すべて無効にすると、このサーバー自身のアプリだけが使えます。経路を無効にしても、登録済みのアプリは無効になりません。",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "利用者によるアプリの登録",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "ログインした利用者が設定の画面でアプリを登録できます。自分のボットやスクリプト向けです。",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "CIMD のクライアント",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "アプリが自分で置いたメタデータ文書の URL をクライアント ID として使います。サーバーがその文書を取得します。",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "動的クライアント登録",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "アプリがサインインなしで自分を登録します（RFC 7591）。メタデータ文書を使えないツール向けです。",
+    "description": "Description of the checkbox of dynamic client registration."
   }
 }

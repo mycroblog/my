@@ -243,6 +243,24 @@ describe("the server's policies", () => {
     expect(settings.patches).toHaveLength(1);
   });
 
+  test("switches the three routes by which apps register, all on by default", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const apps = await screen.findByRole("region", { name: "Apps" });
+    for (const label of ["Users register apps", "Client ID Metadata Documents", "Dynamic client registration"]) {
+      expect(within(apps).getByRole("checkbox", { name: label })).toBeChecked();
+    }
+
+    await user.click(within(apps).getByRole("checkbox", { name: "Users register apps" }));
+    await user.click(within(apps).getByRole("checkbox", { name: "Dynamic client registration" }));
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { user_app_registration: "false", dynamic_client_registration: "false" } }]);
+    expect(within(apps).getByRole("checkbox", { name: "Users register apps" })).not.toBeChecked();
+    expect(within(apps).getByRole("checkbox", { name: "Client ID Metadata Documents" })).toBeChecked();
+  });
+
   test("publishes the running costs, saying that the breakdown reveals the providers", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

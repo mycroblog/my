@@ -32,6 +32,10 @@ export { CustomEmojiSettings, type CustomEmojiTab } from "./components/CustomEmo
 export { acceptedEmojiTypes, categoryLimit, federatedEmojiBytes, maxAliases, shortcodePattern } from "./api/customEmojis";
 export { requestStateLabels } from "./components/CustomEmojiRequests";
 export { parseAliases } from "./hooks/useCustomEmojis";
+// The OAuth apps: every client by registration route, disabling them, and denying the hosts of Client ID Metadata
+// Documents (ADR-0090 §1), for manage_oauth_apps.
+export { hostDenialsQueryOptions, type OAuthClientFilter, oauthClientsQueryOptions } from "./api/oauthApps";
+export { OAuthAppSettings, type OAuthAppTab } from "./components/OAuthAppSettings";
 // The server's announcements to every local user (FR-726), for manage_announcements.
 export { adminAnnouncementsQueryOptions } from "./api/announcements";
 export { AnnouncementSettings } from "./components/AnnouncementSettings";

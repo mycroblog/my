@@ -18,6 +18,9 @@ import { languageName, selectableLocales } from "./languages";
 /** The settings of the form, in the order of its sections. */
 const policyKeys = [
   "registration_mode",
+  "user_app_registration",
+  "oauth_metadata_document_clients",
+  "dynamic_client_registration",
   "default_locale",
   "local_timeline_access",
   "federated_timeline_access",

@@ -325,6 +325,27 @@ function PoliciesForm() {
       <DetailSection title={t("client:admin.settings.registration.title")}>
         <PolicyRadios form={form} setting="registration_mode" label={t("client:admin.settings.registration.mode")} description={t("client:admin.settings.registration.description")} />
       </DetailSection>
+      <DetailSection title={t("client:admin.settings.oauth_apps.title")}>
+        <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
+        <PolicyCheckbox
+          form={form}
+          setting="user_app_registration"
+          label={t("client:admin.settings.oauth_apps.user")}
+          description={t("client:admin.settings.oauth_apps.user.description")}
+        />
+        <PolicyCheckbox
+          form={form}
+          setting="oauth_metadata_document_clients"
+          label={t("client:admin.settings.oauth_apps.metadata_document")}
+          description={t("client:admin.settings.oauth_apps.metadata_document.description")}
+        />
+        <PolicyCheckbox
+          form={form}
+          setting="dynamic_client_registration"
+          label={t("client:admin.settings.oauth_apps.dynamic")}
+          description={t("client:admin.settings.oauth_apps.dynamic.description")}
+        />
+      </DetailSection>
       <DetailSection title={t("client:admin.settings.language.title")}>
         <Select
           label={t("client:admin.settings.language.default")}
