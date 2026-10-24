@@ -43,6 +43,9 @@ export { PasskeySettings } from "./components/PasskeySettings";
 // The user's own OAuth apps: registering, secrets, and tokens issued to the user (ADR-0090).
 export { oauthAppsQueryOptions } from "./api/oauthApps";
 export { OAuthAppSettings } from "./components/OAuthAppSettings";
+// The apps the user authorized, and revoking them (ADR-0090 §5).
+export { authorizedAppsQueryOptions } from "./api/authorizedApps";
+export { AuthorizedApps } from "./components/AuthorizedApps";
 export { useUserDisplaySettings } from "./hooks/useUserDisplaySettings";
 // Uploading an image and waiting for the server to process it, which the admin screen of custom emoji shares.
 export { acceptedImageTypes, type MediaAttachment, MediaProcessingError, uploadImage } from "./api/media";
