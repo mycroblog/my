@@ -18,11 +18,15 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math"
 	"mime"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 )
 
 // Paths of the endpoints.
@@ -51,6 +55,44 @@ const HeaderRefresh = "X-My-Token-Refresh"
 // maxFormBytes bounds a request body; the fields are a few tokens and URIs.
 const maxFormBytes = 16 << 10
 
+// Rate limits of the endpoints that are open to third-party apps (ADR-0090 §7, ADR-0019 §5).
+var (
+	// TokenLimit bounds the requests to /oauth/token of one client from one IP address.
+	TokenLimit = kernel.Limit{Name: "oauth.token", Max: 60, Window: time.Minute}
+	// RegisterIPLimit bounds the dynamic registrations from one IP address (IPv6 by /64),
+	// RegisterLimit those of the whole instance.
+	RegisterIPLimit = kernel.Limit{Name: "oauth.register.ip", Max: 5, Window: time.Hour}
+	RegisterLimit   = kernel.Limit{Name: "oauth.register", Max: 100, Window: time.Hour}
+)
+
+// limited takes one request of key from each limit in order and, over one of them, answers
+// 429 with Retry-After and returns true. Without a RateLimiter, or when the store fails, it
+// lets the request through: the limit protects the server and must not take it down.
+func (h *Handler) limited(w http.ResponseWriter, r *http.Request, limits ...limitKey) bool {
+	if h.o.RateLimiter == nil {
+		return false
+	}
+	for _, l := range limits {
+		d, err := h.o.RateLimiter.Take(r.Context(), l.limit, l.key)
+		if err != nil {
+			h.o.Logger.WarnContext(r.Context(), "oauth rate limit unavailable", slog.String("limit", l.limit.Name), slog.Any("error", err))
+			continue
+		}
+		if !d.Allowed {
+			w.Header().Set("Retry-After", strconv.Itoa(max(int(math.Ceil(d.RetryAfter.Seconds())), 1)))
+			writeError(w, http.StatusTooManyRequests, &appidentity.OAuthError{Code: "temporarily_unavailable", Description: "too many requests; retry after the time in Retry-After"})
+			return true
+		}
+	}
+	return false
+}
+
+// limitKey is a limit with the key to take from it.
+type limitKey struct {
+	limit kernel.Limit
+	key   string
+}
+
 // Identity is what the endpoints need from the identity module; *identity.Service implements it.
 type Identity interface {
 	WebClientID() string
@@ -70,6 +112,8 @@ type Options struct {
 	// the cross-origin protection and allowed by CORS with credentials, so that the web client
 	// can receive and send its cookie.
 	WebOrigin string
+	// RateLimiter applies TokenLimit, RegisterIPLimit, and RegisterLimit; nil applies none.
+	RateLimiter *kernel.RateLimiter
 	// Origin is the origin of the server, the issuer of the tokens and the base of the
 	// endpoint URLs in the metadata (RFC 8414 §2).
 	Origin string
@@ -160,6 +204,9 @@ type errorResponse struct {
 func (h *Handler) token(w http.ResponseWriter, r *http.Request) {
 	form, creds, basic, ok := h.parse(w, r)
 	if !ok {
+		return
+	}
+	if h.limited(w, r, limitKey{TokenLimit, creds.ClientID + " " + kernel.ClientKey(kernel.RequestClientIP(r))}) {
 		return
 	}
 	ctx := r.Context()

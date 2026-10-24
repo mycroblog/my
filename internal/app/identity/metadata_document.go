@@ -88,7 +88,8 @@ func (s *Service) metadataDocumentClient(ctx context.Context, c identity.OAuthCl
 // refreshMetadataDocument makes sure that a fresh copy of the metadata document at clientID is
 // stored, fetching it when there is none or the stored one is stale. The fetch goes through the
 // SSRF-guarded HTTPClient without following redirects, reads at most 5 KB, and happens before
-// the transaction (ADR-0003); a failure stores nothing, so it is not cached. It fails with an
+// the transaction (ADR-0003); a failure stores nothing, so it is not cached. It fails with a *kernel.RateLimitedError when
+// the fetch limits are used up (ADR-0090 §7), and with an
 // error wrapping errMetadataDocumentClient when the client may not be used.
 func (s *Service) refreshMetadataDocument(ctx context.Context, clientID string) error {
 	host, err := s.usableMetadataDocumentHost(ctx, clientID)
@@ -119,6 +120,9 @@ func (s *Service) refreshMetadataDocument(ctx context.Context, clientID string) 
 		if err != nil && !errors.Is(err, ErrNotFound) {
 			return err
 		}
+	}
+	if err := s.takeMetadataDocumentFetch(ctx, clientID, host); err != nil {
+		return err
 	}
 	meta, ttl, err := s.fetchMetadataDocument(ctx, clientID, now)
 	if err != nil {

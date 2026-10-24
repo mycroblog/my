@@ -155,6 +155,9 @@ type Config struct {
 	// without a usable token may go unused, before the clean-up deletes it (ADR-0090 §1).
 	DynamicClientUnredeemedTTL time.Duration
 	DynamicClientIdleTTL       time.Duration
+	// OAuthClientRateLimits caps the client API requests per 5 minutes of the OAuth clients
+	// named by their public client_id, across all their users (ADR-0090 §7).
+	OAuthClientRateLimits map[string]int64
 	// MetricsExporter is the Meter adapter (ADR-0055 §2); MetricsListen is the address of the
 	// scrape of prometheus, and the EMF fields configure emf.
 	MetricsExporter      string
@@ -266,6 +269,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
 		slog.Duration("dynamic_client_unredeemed_ttl", c.DynamicClientUnredeemedTTL),
 		slog.Duration("dynamic_client_idle_ttl", c.DynamicClientIdleTTL),
+		slog.Any("oauth_client_rate_limits", c.OAuthClientRateLimits),
 		slog.String("metrics_exporter", c.MetricsExporter),
 		slog.String("metrics_listen", c.MetricsListen),
 		slog.String("metrics_emf_namespace", c.MetricsEMFNamespace),

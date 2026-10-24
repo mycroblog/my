@@ -254,6 +254,10 @@ type Options struct {
 	// their Max is set.
 	AnonymousLimit kernel.Limit
 	AccountLimit   kernel.Limit
+	// ClientLimit returns the limit that the administrator put on the client with the public
+	// client_id, on top of the per-account limit: the requests of all its users share it
+	// (ADR-0090 §7). nil, or false, leaves a client unlimited, which is the default.
+	ClientLimit func(clientID string) (kernel.Limit, bool)
 
 	// Locales resolves the locale of problem documents (ADR-0009 §2). Its UserLocale step
 	// finds the authenticated user with ViewerFrom.

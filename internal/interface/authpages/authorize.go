@@ -4,10 +4,13 @@ package authpages
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/i18n"
 )
@@ -109,7 +112,13 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request, re
 	ctx := r.Context()
 	a, err := h.o.OAuth.ValidateAuthorization(ctx, req)
 	var oe *appidentity.OAuthError
+	var limited *kernel.RateLimitedError
 	switch {
+	case errors.As(err, &limited):
+		// The fetch of the client's metadata document is rate limited (ADR-0090 §7).
+		w.Header().Set("Retry-After", strconv.Itoa(max(int(math.Ceil(limited.RetryAfter.Seconds())), 1)))
+		h.renderError(w, r, http.StatusTooManyRequests, (*i18n.Localizer).ServerAuthAuthorizeRateLimited)
+		return
 	case errors.Is(err, appidentity.ErrUnknownClient), errors.Is(err, appidentity.ErrInvalidRedirectURI):
 		// Never redirect to an unverified URI (RFC 6749 §4.1.2.1).
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerAuthAuthorizeInvalid)

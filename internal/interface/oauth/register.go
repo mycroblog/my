@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 )
 
 // registerCORS lets any origin call the registration endpoint, which takes no credentials, so
@@ -60,6 +61,9 @@ type registrationResponse struct {
 // register serves dynamic client registration (RFC 7591): no authentication, public clients
 // only.
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
+	if h.limited(w, r, limitKey{RegisterIPLimit, kernel.ClientKey(kernel.RequestClientIP(r))}, limitKey{RegisterLimit, "instance"}) {
+		return
+	}
 	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != "application/json" {
 		writeError(w, http.StatusBadRequest, &appidentity.OAuthError{Code: appidentity.OAuthInvalidClientMetadata, Description: "the body must be application/json"})
 		return

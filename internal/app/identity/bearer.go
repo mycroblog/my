@@ -25,7 +25,9 @@ type Bearer struct {
 	FamilyID string
 	// ClientID is the ID of the OAuthClient (not its public client_id).
 	ClientID string
-	UserID   string
+	// ClientPublicID is the client's public client_id.
+	ClientPublicID string
+	UserID         string
 	// AccountID is the local account the user logs in as.
 	AccountID string
 	Scope     identity.Scope
@@ -57,7 +59,7 @@ func (s *Service) AuthenticateBearer(ctx context.Context, accessToken string) (B
 		return Bearer{}, err
 	}
 	return Bearer{
-		TokenID: tok.ID, FamilyID: tok.FamilyID, ClientID: tok.ClientID, UserID: tok.UserID,
+		TokenID: tok.ID, FamilyID: tok.FamilyID, ClientID: tok.ClientID, ClientPublicID: client.ClientID, UserID: tok.UserID,
 		AccountID: access.AccountID, Scope: tok.Scope, FirstParty: client.FirstParty(), ExpiresAt: tok.ExpiresAt,
 	}, nil
 }

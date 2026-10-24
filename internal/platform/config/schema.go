@@ -715,6 +715,14 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.DynamicClientIdleTTL, _ = time.ParseDuration(v) },
 	},
 	{
+		key:   "oauth_client_rate_limits",
+		doc:   "Caps on the client API requests of OAuth clients (ADR-0090 §7), for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.",
+		check: checkClientRateLimits,
+		set: func(c *Config, v string) {
+			c.OAuthClientRateLimits, _ = parseClientRateLimits(v)
+		},
+	},
+	{
 		key: "metrics_exporter",
 		doc: "Where the service metrics go (ADR-0055 §2): the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.",
 		def: "none",
@@ -1073,6 +1081,33 @@ func checkListen(v string) error {
 }
 
 // checkLabelKeys accepts comma-separated metric label keys such as my.surface.
+func checkClientRateLimits(v string) error {
+	_, err := parseClientRateLimits(v)
+	return err
+}
+
+// parseClientRateLimits parses `client_id=requests` pairs. The client_id of a metadata document
+// is a URL that may hold "=", so each pair splits at its last "=".
+func parseClientRateLimits(v string) (map[string]int64, error) {
+	limits := map[string]int64{}
+	for pair := range strings.SplitSeq(v, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		i := strings.LastIndex(pair, "=")
+		if i <= 0 {
+			return nil, errors.New("must be comma-separated client_id=requests pairs, such as app-id=3000")
+		}
+		n, err := strconv.ParseInt(strings.TrimSpace(pair[i+1:]), 10, 64)
+		if err != nil || n < 1 {
+			return nil, fmt.Errorf("the cap of %q must be a positive integer", pair[:i])
+		}
+		limits[strings.TrimSpace(pair[:i])] = n
+	}
+	return limits, nil
+}
+
 func checkLabelKeys(v string) error {
 	for k := range strings.SplitSeq(v, ",") {
 		k = strings.TrimSpace(k)

@@ -88,6 +88,13 @@ func (l *Localizer) ServerAuthAuthorizeOriginUserUnknown() string {
 	return l.format("server:auth.authorize.origin.user_unknown", nil)
 }
 
+// ServerAuthAuthorizeRateLimited formats "server:auth.authorize.rate_limited". Error page (HTTP 429) when the authorization page could not fetch a client's metadata document because its fetch limits are used up.
+//
+//	en: Too many authorization requests were made for this application. Wait a little and try again.
+func (l *Localizer) ServerAuthAuthorizeRateLimited() string {
+	return l.format("server:auth.authorize.rate_limited", nil)
+}
+
 // ServerAuthAuthorizeRedirectNotice formats "server:auth.authorize.redirect_notice". Note under the permissions on the authorization (consent) page. {host} is the host name the application receives the answer at.
 //
 //	en: After you choose, you will be sent back to {host}.

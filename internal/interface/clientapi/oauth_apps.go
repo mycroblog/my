@@ -138,6 +138,9 @@ func (s *Server) CreateOAuthApp(ctx context.Context, req CreateOAuthAppRequestOb
 	if !req.Body.ClientType.Valid() {
 		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "client_type")), nil
 	}
+	if p, h, limited := s.LimitProblem(ctx, OAuthAppRegisterLimit, v.UserID); limited {
+		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
+	}
 	in := appidentity.OAuthAppInput{
 		Name: req.Body.Name, RedirectURIs: req.Body.RedirectUris, Scope: req.Body.Scope,
 		Confidential: req.Body.ClientType == OAuthAppClientTypeConfidential,

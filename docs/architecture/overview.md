@@ -42,6 +42,9 @@ Remote servers ──AP──►│                               │
 - **モジュラーモノリス + ヘキサゴナル（Ports & Adapters）**。[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)
 - 1 つのコードベースから、ターゲット別の **エントリポイント** が必要なアダプタだけを組み込んで起動する。
 - Web とワーカーは同一成果物。役割（`web` / `worker` / `all`）は設定で切り替える。
+- **クライアントの認可**: 自前の Web・モバイルのクライアントも、サードパーティのアプリも、同じ OAuth 2.0 の認可サーバー（Authorization Code + PKCE S256、リフレッシュトークンのローテーション）で `/api/v1` を呼ぶ。
+  サードパーティは利用者による登録・Client ID Metadata Document・動的クライアント登録（RFC 7591）で `client_id` を得て、毎回の同意の画面を通る。管理者・支払い・アカウントの保安の操作は一次のクライアントだけが行える。
+  [ADR-0090](../adr/0090-third-party-oauth-apps.md)、仕様は [client-api §4](client-api.md#4-認可oauth-20)、開発者向けの手引きは [third-party-apps](../reference/third-party-apps.md)。
 
 ## 2. モジュール（境界づけられたコンテキスト）
 

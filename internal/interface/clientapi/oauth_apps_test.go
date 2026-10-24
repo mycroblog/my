@@ -11,6 +11,7 @@ import (
 	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -149,7 +150,8 @@ func (f *fakeOAuthApps) IssueOAuthAppTokens(_ context.Context, userID, id, scope
 func newOAuthAppEnv(t *testing.T) (*authEnv, *fakeOAuthApps) {
 	t.Helper()
 	f := &fakeOAuthApps{}
-	return newAuthEnv(t, func(o *clientapi.Options) { o.OAuthApps = f }), f
+	// Without a RateLimiter, so that the many registrations of a test stay under no limit.
+	return newAuthEnv(t, func(o *clientapi.Options) { o.OAuthApps = f; o.RateLimiter = nil }), f
 }
 
 const confidentialAppBody = `{"name":"Bot","website":"https://bot.example/","redirect_uris":["https://bot.example/cb"],"scope":"read write:statuses","client_type":"confidential"}`
@@ -268,5 +270,38 @@ func TestOAuthAppChanges(t *testing.T) {
 	}
 	if !pub.App.Disabled {
 		t.Errorf("app = %+v, want it disabled", pub.App)
+	}
+}
+
+func TestOAuthAppRegistrationIsRateLimited(t *testing.T) {
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.OAuthApps = &fakeOAuthApps{} })
+	body := `{"name":"Script","redirect_uris":["http://127.0.0.1/cb"],"scope":"read","client_type":"public"}`
+	for i := range clientapi.OAuthAppRegisterLimit.Max {
+		if res := e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", body); res.StatusCode != http.StatusCreated {
+			t.Fatalf("registration %d = %d, want 201", i, res.StatusCode)
+		}
+	}
+	res := e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", body)
+	if res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") == "" {
+		t.Errorf("registration over the limit = %d, Retry-After %q, want 429 with Retry-After", res.StatusCode, res.Header.Get("Retry-After"))
+	}
+}
+
+func TestClientLimitCapsAllUsersOfAClient(t *testing.T) {
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.ClientLimit = func(id string) (kernel.Limit, bool) {
+			return kernel.Limit{Name: "test.client", Max: 2, Window: time.Minute}, id == "public-client-1"
+		}
+	})
+	for i, token := range []string{"read", "bob"} {
+		res := e.get(t, "/instance", map[string]string{"Authorization": "Bearer " + token})
+		if res.StatusCode != http.StatusOK || !strings.HasPrefix(res.Header.Get("RateLimit-Policy"), `"client";q=2`) {
+			t.Fatalf("request %d = %d, RateLimit-Policy %q, want 200 under the client policy", i, res.StatusCode, res.Header.Get("RateLimit-Policy"))
+		}
+	}
+	// A different user of the same client shares the cap.
+	res := e.get(t, "/instance", map[string]string{"Authorization": "Bearer write"})
+	if res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") == "" {
+		t.Errorf("request over the client cap = %d, Retry-After %q, want 429 with Retry-After", res.StatusCode, res.Header.Get("Retry-After"))
 	}
 }

@@ -10,8 +10,10 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/interface/authpages"
@@ -30,6 +32,9 @@ type fakeOAuth struct {
 }
 
 func (f *fakeOAuth) ValidateAuthorization(_ context.Context, req appidentity.AuthorizationRequest) (appidentity.Authorization, error) {
+	if req.ClientID == "limited" {
+		return appidentity.Authorization{}, &kernel.RateLimitedError{RetryAfter: 90 * time.Second}
+	}
 	clients := map[string]struct {
 		c   identity.OAuthClient
 		uri string
@@ -276,5 +281,13 @@ func TestConsentShowsProvenanceAndWarnsOfUnverifiedApps(t *testing.T) {
 	body = get("cimd-claimed", "https://mobile.example/cb")
 	if !strings.Contains(body, "Comes from mobile.example") || strings.Contains(body, impersonation) {
 		t.Errorf("CIMD app with a claimed https redirect: want the origin and no impersonation warning\n%s", body)
+	}
+}
+
+func TestAuthorizeAnswers429WhenTheMetadataDocumentFetchIsLimited(t *testing.T) {
+	b := signedIn(t, newOAuthServer(t, newFakeIdentity(), &fakeOAuth{}))
+	w := b.do(http.MethodGet, authorizeQuery("limited", appRedirect), nil, map[string]string{"Accept-Language": "en"})
+	if w.Code != http.StatusTooManyRequests || w.Header().Get("Retry-After") != "90" || w.Header().Get("Location") != "" {
+		t.Errorf("status = %d, Retry-After %q, Location %q, want a 429 page with Retry-After 90", w.Code, w.Header().Get("Retry-After"), w.Header().Get("Location"))
 	}
 }

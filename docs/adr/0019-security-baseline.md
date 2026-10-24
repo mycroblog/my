@@ -1,6 +1,6 @@
 # ADR-0019: セキュリティベースライン
 
-- Status: Accepted（一部を ADR-0032（§7 の送信の署名の既定）、ADR-0046（§10 の govulncheck） が置き換える）
+- Status: Accepted（§5 の制限に ADR-0090（OAuth をサードパーティのアプリに開く）の制限が加わる。一部を ADR-0032（§7 の送信の署名の既定）、ADR-0046（§10 の govulncheck） が置き換える）
 - Date: 2026-10-16
 - Deciders: @rosylilly
 - Issue: #34
