@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useRef, useState } from "react";
 import {
   composeRenderProps,
   Input,
@@ -9,6 +9,7 @@ import {
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { FieldDescription, FieldError, FieldLabel, type FieldTextProps, fieldControl } from "./Field";
+import type { FieldLayers } from "./TextArea";
 import { type TextHighlight, TextAreaMirror } from "./TextAreaMirror";
 
 const textField = tv({
@@ -76,7 +77,12 @@ export interface TextFieldProps extends Omit<RACTextFieldProps, "children">, Fie
  * control sits at the end of the input (inset-inline-end), and the text keeps clear of it. With `highlights`, their
  * ranges are painted behind the text.
  */
-export function TextField({
+export function TextField(props: TextFieldProps) {
+  return <TextFieldControl {...props} />;
+}
+
+/** TextField with the layers that TextFieldAutocomplete adds (kit-internal; not exported from the package). */
+export function TextFieldControl({
   label,
   description,
   errorMessage,
@@ -89,17 +95,22 @@ export function TextField({
   value,
   defaultValue,
   onChange,
+  layers,
   ...props
-}: TextFieldProps) {
+}: TextFieldProps & { layers?: FieldLayers | undefined }) {
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
-  const layered = highlights !== undefined;
+  // Highlights without TextFieldAutocomplete's layers (whose mirror draws them) bring a mirror of their own.
+  const ownMirror = layers === undefined && highlights !== undefined;
+  const layered = layers !== undefined || ownMirror;
   const { root, input, control, action } = textField({ grow, shrink, withAction: endAction !== undefined, layered });
   const field = (
     <Input
-      ref={inputRef}
+      {...layers?.inputProps}
+      // The layers of a text field hold its input.
+      ref={(layers?.inputRef ?? inputRef) as RefObject<HTMLInputElement | null>}
       className={input()}
-      {...(layered ? { dir: "auto" } : {})}
+      {...(ownMirror ? { dir: "auto" } : {})}
       {...(placeholder === undefined ? {} : { placeholder })}
     />
   );
@@ -125,8 +136,10 @@ export function TextField({
         field
       ) : (
         <div className={control()}>
-          {layered && <TextAreaMirror textareaRef={inputRef} text={text} caret={null} highlights={highlights} singleLine />}
+          {layers?.behind}
+          {ownMirror && <TextAreaMirror textareaRef={inputRef} text={text} caret={null} highlights={highlights} singleLine />}
           {field}
+          {layers?.after}
           {endAction !== undefined && <div className={action()}>{endAction}</div>}
         </div>
       )}

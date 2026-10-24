@@ -41,6 +41,19 @@ func (c OAuthClient) Public() bool { return c.SecretHash == nil }
 // asked to consent to. It is the one place that decides it (ADR-0090 §1).
 func (c OAuthClient) FirstParty() bool { return c.Registration == ClientRegisteredFirstParty }
 
+// AuthorizedAppToken is a token of a user that still works, with the client it was issued to
+// (ADR-0090 §5). The authorized apps of a user are these tokens grouped by client.
+type AuthorizedAppToken struct {
+	FamilyID string
+	Scope    Scope
+	Client   OAuthClient
+	// AuthorizedAt is when the token's family was first issued.
+	AuthorizedAt time.Time
+	// LastUsedAt is when the family last authenticated a request, to the hour; nil when no use
+	// was recorded.
+	LastUsedAt *time.Time
+}
+
 // OAuthClientRegistration is the route by which a client was registered (ADR-0090 §1,
 // oauth_clients.registration).
 type OAuthClientRegistration string

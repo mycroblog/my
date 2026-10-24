@@ -27,6 +27,8 @@ type fakeIdentity struct {
 
 	registrations []appidentity.DynamicRegistrationRequest
 	registerErr   error
+
+	dynamic, cimd bool
 }
 
 func issued(rt string) appidentity.IssuedTokens {
@@ -65,6 +67,14 @@ func (f *fakeIdentity) RefreshWebClient(_ context.Context, rt string) (appidenti
 	return issued("my_rt_rotated"), nil
 }
 
+func (f *fakeIdentity) DynamicClientRegistrationEnabled(context.Context) (bool, error) {
+	return f.dynamic, nil
+}
+
+func (f *fakeIdentity) MetadataDocumentClientsEnabled(context.Context) (bool, error) {
+	return f.cimd, nil
+}
+
 func (f *fakeIdentity) RevokeToken(_ context.Context, in appidentity.RevokeRequest) error {
 	f.revokes = append(f.revokes, in)
 	return nil
@@ -76,7 +86,7 @@ func (m mux) Handle(pattern string, h http.Handler) { m.ServeMux.Handle(pattern,
 
 func newServer(t *testing.T, id *fakeIdentity) http.Handler {
 	t.Helper()
-	h, err := oauth.New(oauth.Options{Identity: id, WebOrigin: "https://web.example"})
+	h, err := oauth.New(oauth.Options{Identity: id, WebOrigin: "https://web.example", Origin: "https://social.example"})
 	if err != nil {
 		t.Fatal(err)
 	}

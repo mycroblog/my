@@ -258,3 +258,9 @@ func (s *Service) AllowOAuthClientHost(ctx context.Context, host, byUserID strin
 		return err
 	})
 }
+
+// MetadataDocumentClientsEnabled reports whether the instance accepts Client ID Metadata
+// Document clients, for the authorization server metadata.
+func (s *Service) MetadataDocumentClientsEnabled(ctx context.Context) (bool, error) {
+	return s.metadataDocumentsEnabled(ctx)
+}

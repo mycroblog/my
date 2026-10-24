@@ -122,6 +122,14 @@ type OAuthRepository interface {
 	// RevokeTokensOfClient revokes every token of a client whose access or refresh token has
 	// not expired at at and that has no revocation yet.
 	RevokeTokensOfClient(ctx context.Context, tx uow.Tx, clientID string, reason identity.TokenRevocationReason, at time.Time) error
+	// UpsertTokenFamilyLastUsed records that a token family authenticated a request at at.
+	UpsertTokenFamilyLastUsed(ctx context.Context, tx uow.Tx, familyID string, at time.Time) error
+	// ListAuthorizedAppTokens returns the tokens of a user that have no revocation and an
+	// access or refresh token that has not expired at now, with their clients.
+	ListAuthorizedAppTokens(ctx context.Context, userID string, now time.Time) ([]identity.AuthorizedAppToken, error)
+	// RevokeTokensOfUserAndClient revokes every token of the client that the user holds and that
+	// has no revocation yet, and returns how many it revoked.
+	RevokeTokensOfUserAndClient(ctx context.Context, tx uow.Tx, userID, clientID string, reason identity.TokenRevocationReason, at time.Time) (int64, error)
 	// InsertOAuthClientDisablement records d and reports whether it did; false means the client
 	// was disabled already.
 	InsertOAuthClientDisablement(ctx context.Context, tx uow.Tx, d identity.OAuthClientDisablement) (bool, error)
@@ -743,5 +751,6 @@ func (s *Service) AuthenticateAccessToken(ctx context.Context, accessToken strin
 	if !state.Usable() || tok.AccessExpired(s.d.Clock.Now()) {
 		return identity.AccessToken{}, ErrInvalidAccessToken
 	}
+	s.recordTokenUse(ctx, tok.FamilyID)
 	return tok, nil
 }

@@ -323,3 +323,47 @@ func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx u
 	})
 	return n == 1, wrap(err, "insert oauth client deletion")
 }
+
+// UpsertTokenFamilyLastUsed implements identity.Repository.
+func (r *IdentityRepository) UpsertTokenFamilyLastUsed(ctx context.Context, tx uow.Tx, familyID string, at time.Time) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.UpsertTokenFamilyLastUsed(ctx, postgresgen.UpsertTokenFamilyLastUsedParams{FamilyID: familyID, LastUsedAt: at})
+	return wrap(err, "record the last use of a token family")
+}
+
+// ListAuthorizedAppTokens implements identity.Repository.
+func (r *IdentityRepository) ListAuthorizedAppTokens(ctx context.Context, userID string, now time.Time) ([]identity.AuthorizedAppToken, error) {
+	rows, err := r.db.reader().ListAuthorizedAppTokens(ctx, postgresgen.ListAuthorizedAppTokensParams{UserID: userID, Now: now})
+	if err != nil {
+		return nil, wrap(err, "list authorized app tokens")
+	}
+	out := make([]identity.AuthorizedAppToken, len(rows))
+	for i, row := range rows {
+		t := identity.AuthorizedAppToken{
+			FamilyID: row.FamilyID, Scope: identity.Scope(row.TokenScope), AuthorizedAt: utc(row.AuthorizedAt),
+			Client: oauthClientFromRow(postgresgen.OauthClient{
+				ID: row.ID, ClientID: row.ClientID, ClientSecretHash: row.ClientSecretHash, Name: row.Name, Website: row.Website,
+				Scope: row.Scope, Registration: row.Registration, OwnerUserID: row.OwnerUserID, CreatedAt: row.CreatedAt,
+			}),
+		}
+		if row.LastUsedAt != nil {
+			u := utc(*row.LastUsedAt)
+			t.LastUsedAt = &u
+		}
+		out[i] = t
+	}
+	return out, nil
+}
+
+// RevokeTokensOfUserAndClient implements identity.Repository.
+func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx uow.Tx, userID, clientID string, reason identity.TokenRevocationReason, at time.Time) (int64, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.RevokeTokensOfUserAndClient(ctx, postgresgen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, ClientID: clientID})
+	return n, wrap(err, "revoke the tokens of a user and a client")
+}

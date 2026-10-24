@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: |
+  An app the authenticated user authorized: the user's grants of one OAuth client that still
+  work. The name, the website and the logo are what the app says about itself; `registration`,
+  `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+type: object
+required: [id, client_id, name, registration, first_party, scope, authorized_at]
+properties:
+  id:
+    description: The ID of the client, which `DELETE /authorized_apps/{id}` takes.
+    $ref: ./Id.yaml
+  client_id:
+    description: |
+      The client's public identifier. For an app registered by its Client ID Metadata Document it
+      is the document's `https` URL, whose host shows where the app comes from.
+    type: string
+  name:
+    description: The app's name, as the app gives it.
+    type: string
+  website:
+    description: The app's home page, as the app gives it. Absent when it gave none.
+    type: string
+  registration:
+    description: |
+      How the app was registered: `first_party` for the server's own client, `user` for an app a
+      user registered, `metadata_document` for a Client ID Metadata Document, and `dynamic` for
+      dynamic client registration (self-declared).
+    type: string
+    enum: [first_party, user, metadata_document, dynamic]
+  registered_by:
+    description: The username of the user who registered the app (`user` only). Absent otherwise.
+    type: string
+  first_party:
+    description: Whether the app is one of the server's own clients.
+    type: boolean
+  scope:
+    description: The scopes the user granted, space separated, as the union of the app's working grants.
+    type: string
+  authorized_at:
+    description: When the user first authorized the app (the oldest of its working grants).
+    type: string
+    format: date-time
+  last_used_at:
+    description: |
+      When the app last made a request with a grant of the user, exact to the hour. Absent when
+      no use was recorded.
+    type: string
+    format: date-time

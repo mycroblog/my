@@ -3,6 +3,26 @@
     "defaultMessage": "閉じる",
     "description": "Accessible name of the × button that closes the new-post sheet. The draft is kept."
   },
+  "compose.completion.suggestions": {
+    "defaultMessage": "候補",
+    "description": "Accessible name of the list of suggestions that opens under the text of a post, a content warning or a profile while the user types a mention after @, a hashtag after # or an emoji after : (ADR-0092)."
+  },
+  "compose.completion.count": {
+    "defaultMessage": "{count, plural, other {候補 # 件}}",
+    "description": "Announced to screen readers when the list of suggestions for the typed mention, hashtag or emoji opens or changes. {count} is how many suggestions it shows."
+  },
+  "compose.completion.loading": {
+    "defaultMessage": "候補を読み込んでいます…",
+    "description": "Shown in the place of the suggestions, and announced, while the suggestions for the typed mention or hashtag take a moment to arrive."
+  },
+  "compose.completion.empty": {
+    "defaultMessage": "候補はありません",
+    "description": "Shown in the place of the suggestions, and announced, when nothing matches the typed mention, hashtag or emoji."
+  },
+  "compose.completion.tag_posts": {
+    "defaultMessage": "{count, plural, other {# 件の投稿}}",
+    "description": "How many public posts carry a hashtag, shown after the hashtag in the list of suggestions while the user types a hashtag. {count} is the number of posts."
+  },
   "compose.failed": {
     "defaultMessage": "投稿を送信できませんでした：{reason}",
     "description": "Error after publishing a post failed. The draft is kept. {reason} is the error message."

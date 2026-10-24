@@ -165,8 +165,8 @@ ON CONFLICT (token_id) DO NOTHING;
 -- ListUnusedDynamicOAuthClients returns the IDs of the dynamically registered clients that have no
 -- deletion and are unused (ADR-0090 section 1), oldest first: no authorization code was exchanged
 -- and the client was registered before unredeemed_before, or it has no token that was issued after
--- idle_before or that is still usable at now (until the last use of a token family is recorded,
--- the issue time of its newest token stands for it).
+-- idle_before, whose family was used after idle_before (oauth_token_family_last_used), or that is
+-- still usable at now.
 -- name: ListUnusedDynamicOAuthClients :many
 SELECT c.id FROM oauth_clients c
 WHERE c.registration = 'dynamic'
@@ -181,6 +181,7 @@ WHERE c.registration = 'dynamic'
       SELECT 1 FROM oauth_access_tokens t
       WHERE t.client_id = c.id::text
         AND (t.issued_at >= sqlc.arg(idle_before)::timestamptz
+          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= sqlc.arg(idle_before)::timestamptz)
           OR ((t.expires_at > sqlc.arg(now)::timestamptz OR t.refresh_expires_at > sqlc.arg(now)::timestamptz)
             AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)))))
   )
@@ -223,3 +224,33 @@ SELECT EXISTS (
   SELECT 1 FROM oauth_client_host_denials d
   WHERE d.host = sqlc.arg(host)::text AND NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
 ) AS denied;
+
+-- UpsertTokenFamilyLastUsed records that a token family authenticated a request at used_at.
+-- name: UpsertTokenFamilyLastUsed :exec
+INSERT INTO oauth_token_family_last_used (family_id, last_used_at)
+VALUES ($1, $2)
+ON CONFLICT (family_id) DO UPDATE SET last_used_at = excluded.last_used_at;
+
+-- ListAuthorizedAppTokens returns the tokens of a user that still work (no revocation, an access
+-- or refresh token that has not expired at now) with the client, when the token's family was
+-- first issued, and when it was last used (NULL when it never was recorded).
+-- name: ListAuthorizedAppTokens :many
+SELECT t.family_id, t.scope AS token_scope,
+  (SELECT min(f.issued_at) FROM oauth_access_tokens f WHERE f.family_id = t.family_id)::timestamptz AS authorized_at,
+  u.last_used_at,
+  c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
+FROM oauth_access_tokens t
+JOIN oauth_clients c ON c.id::text = t.client_id
+LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
+WHERE t.user_id = sqlc.arg(user_id)
+  AND (t.expires_at > sqlc.arg(now)::timestamptz OR t.refresh_expires_at > sqlc.arg(now)::timestamptz)
+  AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id)
+ORDER BY t.family_id;
+
+-- RevokeTokensOfUserAndClient revokes every token of the client that the user holds and that has
+-- no revocation yet.
+-- name: RevokeTokensOfUserAndClient :execrows
+INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
+SELECT t.id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz FROM oauth_access_tokens t
+WHERE t.user_id = sqlc.arg(user_id) AND t.client_id = sqlc.arg(client_id)::text
+ON CONFLICT (token_id) DO NOTHING;

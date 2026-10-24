@@ -156,7 +156,11 @@
 | `oauth_authorization_code_redemptions` | イベント | `code_hash`（PK）, `token_id`, `redeemed_at` | 一意 `(token_id)`。`token_id` は交換で発行した系列の最初のトークン |
 | `oauth_access_tokens` | リソース | `id`, `family_id`, `client_id`, `user_id`, `access_token_hash`, `refresh_token_hash`（NULL 可）, `scope`, `rotated_from_token_id`（NULL 可）, `issued_at`, `expires_at`, `refresh_expires_at`（NULL 可） | 一意 `(access_token_hash)`, `(refresh_token_hash)`。インデックス `(family_id)`, `(user_id)`（処分による失効）, `(client_id)`（クライアントの無効化・削除による失効）。`refresh_token_hash` と `refresh_expires_at` は同時に NULL |
 | `oauth_token_revocations` | イベント | `token_id`（PK）, `reason`（`enum(user, rotation, refresh_reuse, code_reuse, password_changed, moderation, account_deleted, client_disabled, client_deleted)`）, `revoked_at` | |
+| `oauth_token_family_last_used` | 現在値 | `family_id`（PK）, `last_used_at` | アクセストークンの認証で、系列ごとに 1 時間に 1 回まで更新する（`KeyValueStore` の名前空間 `oauth_last_used` の `IncrBy` で間引く）。行は系列が使われてから作る |
 
+- 認可したアプリの一覧（ADR-0090 §5、FR-003）は、そのためのテーブルを持たず、有効なトークン（失効のイベントが無く、アクセストークンか更新トークンが期限内）を利用者とクライアントで束ねて導きます。
+  付与したスコープは束ねたトークンのスコープの和集合、最初に認可した日時は系列の最初のトークンの `issued_at` の最小、最後に使った日時は `oauth_token_family_last_used` の最大です。
+  取り消しは、その利用者とクライアントのトークンすべてに `oauth_token_revocations`（`user`）を記録します。
 - セッションは、サーバーが返す画面（ログイン・登録・認可同意）の Cookie `__Host-my_session` です（ADR-0019 §4、ADR-0030）。
   ログインのたびに新しいトークンを発行し、ブラウザが持っていた古いセッションは `replaced` で失効させます。
 - ローカルアカウントの `deleted`（§4.2）は、同じトランザクションでその利用者の有効なセッションとトークンを `account_deleted` で失効させます（`identity.RegisterLifecycleProjectors`）。

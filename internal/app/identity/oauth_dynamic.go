@@ -293,3 +293,13 @@ func (s *Service) RegisterClientJobs(reg *queue.JobHandlerRegistry, sched *queue
 	})
 	sched.Add(queue.Schedule{Name: JobDeleteUnusedClients, Every: UnusedClientsInterval, Job: queue.NewJob{Type: JobDeleteUnusedClients}})
 }
+
+// DynamicClientRegistrationEnabled reports whether the instance accepts dynamic client
+// registration (the dynamic_client_registration setting), for the authorization server
+// metadata.
+func (s *Service) DynamicClientRegistrationEnabled(ctx context.Context) (bool, error) {
+	if s.d.DynamicClientRegistration == nil {
+		return false, nil
+	}
+	return s.d.DynamicClientRegistration(ctx)
+}

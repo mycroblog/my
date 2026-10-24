@@ -29,6 +29,8 @@ export {
   type TextAreaAutocompleteProps,
   type TextAutocompleteSuggestion,
   type TextAutocompleteWord,
+  TextFieldAutocomplete,
+  type TextFieldAutocompleteProps,
 } from "./TextAreaAutocomplete";
 export type { TextHighlight, TextHighlightKind } from "./TextAreaMirror";
 export { TextField, type TextFieldProps } from "./TextField";

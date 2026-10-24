@@ -44,6 +44,9 @@ type Options struct {
 	// InstanceThumbnail returns the image that represents the instance (the thumbnail setting)
 	// for a reader of locale, for Instance.thumbnail; nil, or a nil image, leaves it out.
 	InstanceThumbnail func(ctx context.Context) (*InstanceImage, error)
+	// ResourceMetadataURL is the URL of the protected resource metadata (RFC 9728), which the
+	// WWW-Authenticate challenge of a 401 response names as resource_metadata; "" leaves it out.
+	ResourceMetadataURL string
 	// SendsEmail tells whether the instance sends email (the setting mail is not none), for
 	// Instance.sends_email.
 	SendsEmail bool
@@ -79,6 +82,8 @@ type Options struct {
 	TwoFactor TwoFactorSettings
 	// Passkeys runs the viewer's passkeys; nil answers their operations 404.
 	Passkeys PasskeySettings
+	// AuthorizedApps runs the viewer's authorized OAuth apps; nil answers their operations 404.
+	AuthorizedApps AuthorizedApps
 	// OAuthApps runs the OAuth apps that the viewer registers; nil answers their operations 404.
 	OAuthApps OAuthAppSettings
 	// Media runs the media use cases and presents profile images; nil serves no media

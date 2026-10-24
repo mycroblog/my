@@ -6,7 +6,13 @@ import { userEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Sheet } from "./Dialog";
-import { type TextAutocompleteSuggestion, type TextAutocompleteWord, TextAreaAutocomplete, type TextAreaAutocompleteProps } from "./TextAreaAutocomplete";
+import {
+  type TextAutocompleteSuggestion,
+  type TextAutocompleteWord,
+  TextAreaAutocomplete,
+  type TextAreaAutocompleteProps,
+  TextFieldAutocomplete,
+} from "./TextAreaAutocomplete";
 
 type Account = TextAutocompleteSuggestion & { name: string };
 
@@ -341,5 +347,62 @@ describe("TextAreaAutocomplete", () => {
     await screen.findByRole("listbox");
     await user.keyboard("{Enter}");
     expect(textbox).toHaveValue("@alice ");
+  });
+
+  it("asks for each word after the pause queryDelay gives it", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const loadSuggestions = vi.fn(loadAccounts);
+      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+      render(<Field loadSuggestions={loadSuggestions} queryDelay={(word) => (word.trigger === "#" ? 0 : 1000)} />);
+      const textbox = screen.getByRole("textbox", { name: "Post" });
+      await user.type(textbox, "#a");
+      await waitFor(() => {
+        expect(loadSuggestions).toHaveBeenCalledTimes(1);
+      });
+      await user.type(textbox, " @al");
+      vi.advanceTimersByTime(500);
+      expect(loadSuggestions).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(600);
+      await waitFor(() => {
+        expect(loadSuggestions).toHaveBeenCalledTimes(2);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("TextFieldAutocomplete", () => {
+  it("completes the word in a one-line input, which stays a textbox", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TextFieldAutocomplete<Account>
+        label="Name"
+        triggers={{ ":": 2 }}
+        findWord={findWord}
+        loadSuggestions={loadAccounts}
+        renderSuggestion={(account) => account.name}
+        suggestionsLabel="Suggestions"
+        formatSuggestionCount={(count) => `${String(count)} suggestions`}
+        loadingLabel="Loading suggestions"
+        emptyLabel="No suggestions"
+        queryDelay={0}
+        onChange={onChange}
+      />,
+    );
+    const textbox = screen.getByRole("textbox", { name: "Name" });
+    expect(textbox.tagName).toBe("INPUT");
+    expect(textbox).toHaveAttribute("spellcheck", "true");
+    await user.type(textbox, "@al");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await user.type(textbox, " :ali");
+    const listbox = await screen.findByRole("listbox", { name: "Suggestions" });
+    expect(textbox).toHaveAttribute("aria-controls", listbox.id);
+    expect(textbox).toHaveAttribute("aria-autocomplete", "list");
+    await user.keyboard("{Enter}");
+    expect(textbox).toHaveValue("@al @alice ");
+    expect(onChange).toHaveBeenLastCalledWith("@al @alice ");
   });
 });

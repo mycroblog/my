@@ -509,3 +509,29 @@ func TestLimitProblem(t *testing.T) {
 		t.Error("a Server without a RateLimiter limits")
 	}
 }
+
+// TestChallengeNamesTheResourceMetadata checks that a 401 names the protected resource metadata
+// (RFC 9728 §5.1) when the server has one, and that the challenge of a 403 does not.
+func TestChallengeNamesTheResourceMetadata(t *testing.T) {
+	const metadata = "https://social.example/.well-known/oauth-protected-resource"
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.ResourceMetadataURL = metadata })
+	tests := []struct {
+		name, authorization, want string
+	}{
+		{"no credential", "", `Bearer resource_metadata="` + metadata + `"`},
+		{"invalid token", "Bearer nope", `Bearer error="invalid_token", resource_metadata="` + metadata + `"`},
+		{"insufficient scope", "Bearer write", `Bearer error="insufficient_scope", scope="read:accounts"`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/accounts/verify_credentials", nil)
+			if tt.authorization != "" {
+				req.Header.Set("Authorization", tt.authorization)
+			}
+			res := e.spec.Serve(t, e.h, req)
+			if got := res.Header.Get("WWW-Authenticate"); got != tt.want {
+				t.Errorf("WWW-Authenticate = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

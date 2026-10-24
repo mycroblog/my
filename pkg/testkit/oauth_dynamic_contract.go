@@ -162,6 +162,8 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 	never := e.registerDynamic(t, s).Client
 	used := e.registerDynamic(t, s).Client
 	usedTokens := e.dynamicTokens(t, s, used.ClientID, userID)
+	active := e.registerDynamic(t, s).Client // its token is used 89 days in
+	activeTokens := e.dynamicTokens(t, s, active.ClientID, userID)
 	revoked := e.registerDynamic(t, s).Client
 	revokedTokens := e.dynamicTokens(t, s, revoked.ClientID, userID)
 	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -187,6 +189,12 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 	}
 
 	e.clock.Advance(88 * day) // 89 days after the first registration
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.h.Identity.UpsertTokenFamilyLastUsed(ctx, tx, activeTokens.Token.FamilyID, e.clock.Now())
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	sweep(1, "after 89 days: the client that was never used since a day")
 	wantKnown(fresh.ClientID, false, "the client never used")
 	wantKnown(used.ClientID, true, "the client with tokens issued 89 days ago")
@@ -196,6 +204,7 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 	sweep(2, "after 91 days: the clients idle for 90 days")
 	wantKnown(used.ClientID, false, "the idle client")
 	wantKnown(revoked.ClientID, false, "the idle client with revoked tokens")
+	wantKnown(active.ClientID, true, "the client whose token family was used 2 days ago")
 	e.wantAccess(t, usedTokens.AccessToken, false, "the access token of a deleted client")
 	if _, _, err := e.h.Identity.FindOAuthClient(ctx, third.ClientID); err != nil {
 		t.Errorf("FindOAuthClient(user's client) = %v; the clean-up must keep it", err)

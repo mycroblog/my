@@ -26,6 +26,7 @@ import { type Draft, isEmptyDraft } from "./draftStore";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
 import { countCharacters, defaultVisibility, domainMentions, postedVisibility, visibilities } from "./policy";
+import { rememberTags } from "./recentTags";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
 import { useUnreachedMentions } from "./useUnreachedMentions";
@@ -295,6 +296,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     const body = requestBody(draft, visibility, language);
     store.send(idempotencyKey, body);
     send.mutate({ idempotencyKey, body });
+    rememberTags(draft.text);
     document.getElementById(composeTextId)?.focus();
   };
 

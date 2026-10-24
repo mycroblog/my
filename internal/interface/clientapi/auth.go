@@ -210,7 +210,7 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (*Viewer, 
 		return &Viewer{UserID: b.UserID, AccountID: b.AccountID, TokenID: b.TokenID, ClientID: b.ClientID, FamilyID: b.FamilyID, Scope: b.Scope, FirstParty: b.FirstParty}, true
 	case errors.Is(err, appidentity.ErrInvalidAccessToken):
 		if s.limit(w, r, policyIP, s.o.AnonymousLimit, s.clientKey(r)) {
-			w.Header().Set("WWW-Authenticate", `Bearer error="invalid_token"`)
+			w.Header().Set("WWW-Authenticate", s.challenge(`error="invalid_token"`))
 			s.writeProblem(w, r, http.StatusUnauthorized, ProblemTypeInvalidToken, s.localizer(r).ServerErrorsInvalidToken(), "")
 		}
 	case errors.Is(err, appidentity.ErrAccountUnavailable):
@@ -230,7 +230,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request, a operationAc
 		if a.Anonymous {
 			return true
 		}
-		w.Header().Set("WWW-Authenticate", "Bearer")
+		w.Header().Set("WWW-Authenticate", s.challenge(""))
 		s.writeProblem(w, r, http.StatusUnauthorized, ProblemTypeUnauthenticated, s.localizer(r).ServerErrorsUnauthenticated(), "")
 		return false
 	}
@@ -252,4 +252,20 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request, a operationAc
 		return false
 	}
 	return true
+}
+
+// challenge returns the Bearer challenge of a 401 response with params (RFC 6750 §3), adding the
+// URL of the protected resource metadata when the server has one (RFC 9728 §5.1).
+func (s *Server) challenge(params string) string {
+	c := "Bearer"
+	if params != "" {
+		c += " " + params
+	}
+	if s.o.ResourceMetadataURL != "" {
+		if params != "" {
+			c += ","
+		}
+		c += ` resource_metadata="` + s.o.ResourceMetadataURL + `"`
+	}
+	return c
 }

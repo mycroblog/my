@@ -12,7 +12,7 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useLocale, useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
-import { type AttachmentView, countCharacters, type LanguageOption, languageOptions } from "../../compose";
+import { type AttachmentView, countCharacters, type LanguageOption, languageOptions, rememberTags } from "../../compose";
 import {
   cacheEditedStatus,
   editStatus,
@@ -160,6 +160,7 @@ export function useEditStatusForm(post: Status, source: StatusSource, maxCharact
     save: (onSaved) => {
       if (!canSave) return;
       save.mutate(requestBody(post, draft), { onSuccess: onSaved });
+      rememberTags(draft.text);
     },
   };
 }

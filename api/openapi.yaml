@@ -45,6 +45,8 @@ tags:
     description: The authenticated user's two-factor authentication.
   - name: passkeys
     description: The authenticated user's passkeys, which sign in instead of the password.
+  - name: authorized_apps
+    description: The apps the authenticated user authorized with OAuth, and revoking them.
   - name: oauth-apps
     description: The OAuth apps that the authenticated user registered, and tokens of them for the user's own account.
   - name: moderation
@@ -1458,6 +1460,60 @@ paths:
       responses:
         '204':
           description: The passkey is removed.
+        default:
+          $ref: '#/components/responses/Problem'
+  /authorized_apps:
+    get:
+      operationId: listAuthorizedApps
+      x-first-party-only: true
+      summary: List the apps the authenticated user authorized
+      description: |
+        One entry per client for which the user holds a grant that still works, most recently used
+        first (an app without a recorded use after those with one, newest authorization first). A
+        revoked or expired grant is not listed. The server's own web client is listed too
+        (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+      tags:
+        - authorized_apps
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          description: The authorized apps.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizedAppList'
+        default:
+          $ref: '#/components/responses/Problem'
+  /authorized_apps/{id}:
+    delete:
+      operationId: revokeAuthorizedApp
+      x-first-party-only: true
+      summary: Revoke an authorized app
+      description: |
+        Revokes every grant of the app that the user holds, so that its access and refresh tokens
+        stop working at once (the next request with one is a 401). Revoking the server's own web
+        client signs the user out of every browser, this one included. An app the user holds no
+        working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+      tags:
+        - authorized_apps
+      security:
+        - oauth2:
+            - write:accounts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the app (the `id` of an authorized app).
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '204':
+          description: The app is revoked.
         default:
           $ref: '#/components/responses/Problem'
   /oauth_apps:
@@ -7291,8 +7347,8 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, deleting the account, the user's own OAuth
-        apps) are marked
+        (password, two-factor authentication, passkeys, authorized apps, deleting the account, the user's own
+        OAuth apps) are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
       flows:
@@ -13853,6 +13909,75 @@ components:
           description: When `confirmation_token` stops working.
           type: string
           format: date-time
+    AuthorizedApp:
+      description: |
+        An app the authenticated user authorized: the user's grants of one OAuth client that still
+        work. The name, the website and the logo are what the app says about itself; `registration`,
+        `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+      type: object
+      required:
+        - id
+        - client_id
+        - name
+        - registration
+        - first_party
+        - scope
+        - authorized_at
+      properties:
+        id:
+          description: The ID of the client, which `DELETE /authorized_apps/{id}` takes.
+          $ref: '#/components/schemas/Id'
+        client_id:
+          description: |
+            The client's public identifier. For an app registered by its Client ID Metadata Document it
+            is the document's `https` URL, whose host shows where the app comes from.
+          type: string
+        name:
+          description: The app's name, as the app gives it.
+          type: string
+        website:
+          description: The app's home page, as the app gives it. Absent when it gave none.
+          type: string
+        registration:
+          description: |
+            How the app was registered: `first_party` for the server's own client, `user` for an app a
+            user registered, `metadata_document` for a Client ID Metadata Document, and `dynamic` for
+            dynamic client registration (self-declared).
+          type: string
+          enum:
+            - first_party
+            - user
+            - metadata_document
+            - dynamic
+        registered_by:
+          description: The username of the user who registered the app (`user` only). Absent otherwise.
+          type: string
+        first_party:
+          description: Whether the app is one of the server's own clients.
+          type: boolean
+        scope:
+          description: The scopes the user granted, space separated, as the union of the app's working grants.
+          type: string
+        authorized_at:
+          description: When the user first authorized the app (the oldest of its working grants).
+          type: string
+          format: date-time
+        last_used_at:
+          description: |
+            When the app last made a request with a grant of the user, exact to the hour. Absent when
+            no use was recorded.
+          type: string
+          format: date-time
+    AuthorizedAppList:
+      description: The apps the authenticated user authorized, one per client, most recently used first.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorizedApp'
     PasskeyList:
       description: The authenticated user's passkeys, oldest first.
       type: object

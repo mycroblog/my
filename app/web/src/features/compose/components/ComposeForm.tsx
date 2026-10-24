@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Checkbox, Cluster, Dialog, DialogActions, Hint, InlineError, Spinner, Stack, Text, TextArea, TextField } from "@my/ui";
+import { Box, Button, Checkbox, Cluster, Dialog, DialogActions, Hint, InlineError, Spinner, Stack, Text } from "@my/ui";
 import type { SubmitEvent } from "react";
 import { useLocale, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
@@ -9,6 +9,7 @@ import { type ComposeController, composeTextId } from "../hooks/useCompose";
 import { type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
 import { useFormatRemaining } from "../hooks/useFormatRemaining";
 import { AttachmentList } from "./AttachmentList";
+import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
 import { ComposeTools } from "./ComposeTools";
 import { Outbox } from "./Outbox";
 import { PollEditor } from "./PollEditor";
@@ -61,7 +62,8 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
         {form.replyTo.status !== "none" && <ReplyContext replyTo={form.replyTo} onCancel={form.cancelReply} />}
         {form.quoteOf.status !== "none" && <ReplyContext kind="quote" replyTo={form.quoteOf} onCancel={form.cancelQuote} />}
         {draft.hasWarning && (
-          <TextField
+          <CompletionTextField
+            completes="emoji"
             label={t("client:compose.warning.label")}
             description={t("client:compose.warning.description")}
             value={draft.spoilerText}
@@ -71,7 +73,8 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
             highlights={textHighlights(draft.spoilerText, { tokens: "shortcodes", shortcodes })}
           />
         )}
-        <TextArea
+        <CompletionTextArea
+          completes="all"
           id={composeTextId}
           label={t("client:compose.text.label")}
           value={draft.text}

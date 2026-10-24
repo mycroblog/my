@@ -30,7 +30,7 @@
   - **入れ方**: 対象の入力欄のカーソルの位置（選択していればその範囲）に、Unicode 絵文字は選んだ肌の色の文字そのもの（空白を足さない）を、カスタム絵文字は `:shortcode:` を入れる（サーバーが前後に英数字とコロンのない shortcode だけを読むので、必要なら前後に空白を足す）。
     選ぶとポップオーバーを閉じて入力欄にフォーカスを戻し、カーソルを入れた絵文字の後ろに置く。Shift を押しながら選ぶ（`keepOpen`。タッチでは渡らない）と閉じず、フォーカスはグリッドに残り、次の絵文字はその後ろに入る。
   - **保存**: よく使う絵文字は端末ごとに localStorage（`my:emoji:recent`。版 2、`hooks/frequentEmojis.ts`）に 32 個まで持つ。Unicode 絵文字は肌の色を外した基の列、カスタム絵文字は `:shortcode:` を 1 つの列に混ぜ、使った回数を 1 週間で半分になるように減衰させた値の順に並べる（減衰はどの絵文字にも同じ率で効くので、使ったときに並べた順がそのまま次に使うまで正しい）。
-    まだ無いときは、リアクションの既定の群（👍 ❤️ 😆 …）を出す。版 1（最近使ったカスタム絵文字の shortcode の配列）は読み替えず、既定として読む。ADR-0092 の補完が使う `useFrequentEmojis` を `index.ts` から出す。
+    まだ無いときは、リアクションの既定の群（👍 ❤️ 😆 …）を出す。版 1（最近使ったカスタム絵文字の shortcode の配列）は読み替えず、既定として読む。ADR-0092 の補完（`hooks/emojiSuggestions.ts`）も、この順でよく使う絵文字を先に並べる。
     肌の色は localStorage（`my:emoji:skin-tone`）に保存し、異体のある絵文字はその色で表示して入れる（複数の人の絵文字は全員に同じ色）。
   - **リアクション**（ADR-0091 §7、ADR-0052、§13）も同じピッカー（節の組み立て・データの読み込み・よく使う・肌の色を `hooks/emojiPickerContent.ts` で共有し、ポップオーバーの中身は `components/EmojiPickerPanel.tsx`）を使い、選んだ絵文字を入れる代わりにリアクションする。
 - **Unicode 絵文字の表示**（ADR-0095）: ピッカー・補完・リアクション・投稿の本文・名前の Unicode 絵文字は、どれも `--font-sans` の先頭の `my Noto Color Emoji`（`@my/ui/emoji.css`）で描き、OS のフォントで描けるかを canvas で判定して隠すことはしない（フォントは `EMOJI_VERSION` のすべてを描くことを生成のときに確かめる）。
@@ -55,8 +55,22 @@
   選択肢は 2 つの空の欄から始まり、「選択肢を追加」で 4 つまで足し、3 つ目からは欄ごとの削除のボタン（アイコンとツールチップ）で外す。各欄は 50 文字まで。期間（5 分〜7 日の `Select`。既定は 1 日）、複数選択と締め切りまで票数を隠すのチェックボックスを持つ。
   空の選択肢があるか、前後の空白を除いて同じ選択肢が 2 つあるときは送信できず、同じ選択肢は欄の下に理由を出す。投票は下書きに入り、本文と一緒に `POST /statuses` の `poll` で送る。投票のある投稿は編集できない（API）。
 - **文字数**: `GET /instance` の `limits.max_post_characters` から CW の文字数を引いたものを本文の上限にし、`TextArea` の文字数カウンタで示す。数え方はサーバーと同じコードポイント。上限を超えると送信できない。
+- **補完**（ADR-0092 §1〜§3・§5、FR-119）: 入力中の `@` のアカウント・`#` のハッシュタグ・`:` の絵文字を、入力欄の下の候補から入れる。
+  - **部品**: `features/compose` の `CompletionTextArea`・`CompletionTextField`（`components/CompletionFields.tsx`。`index.ts` から出し、投稿の編集とプロフィールも使う）が、`@my/ui` の `TextAreaAutocomplete`・`TextFieldAutocomplete` に `hooks/useTextCompletion.ts` の起点・語の見つけ方（`lib/textTokens.ts` の `activeWord`）・候補の関数・文言と、候補の中身を渡す。
+    入力欄は `textbox` のまま `aria-autocomplete="list"`・`aria-controls`・`aria-activedescendant` を持ち、候補は `listbox` の `option`、件数・読み込み中（300 ms を超えたとき）・「候補はありません」は `role="status"` で告げる。キー（上下・Enter・Tab・Esc）と IME の扱いは `@my/ui` の README の `TextAreaAutocomplete` の項のとおり。
+  - **対象**: 投稿フォームと投稿の編集のダイアログの本文、プロフィールの自己紹介と補足情報の値は `@`・`#`・`:`、CW とプロフィールの表示名は `:` だけ（ADR-0092 §5 の表）。投票の選択肢と補足情報のラベルには付けない。
+  - **問い合わせ**: `@` と `#` は 1 文字から、入力が 200 ms 止まってから `GET /accounts/search`・`GET /tags/search`（`api/completion.ts`）を引く。`q` ごとに `staleTime` 60 秒で持ち、文字を消して戻っても問い合わせない。新しい語が前の語の要求を取り消す（`cancelQueries`）。
+    `@` の `q` が完全な `user@domain` で、結果に同じ `acct` がないときは、`GET /accounts/lookup` を引き、見つかれば先頭に足す。外のアカウントを取り込まないモード（`off` / `outbound`、ADR-0076）では `resolve` を送らない。
+    失敗（429 を含む）は候補を閉じるだけで知らせない。
+  - **最近使ったタグ**: 投稿の送信（と編集の保存）で本文のハッシュタグを localStorage（`my:compose:recent-tags`、`hooks/recentTags.ts`）の先頭に入れ、16 個まで持つ（NFKC・小文字で同じものは 1 つ）。`#` の候補は、そのうち打った語で始まるものを新しい順に先に、続けてサーバーの候補を並べ、8 件まで出す。
+    セッションが終わると消す（利用者が書いたものなので）。
+  - **絵文字**: `:` の後に 2 文字から、サーバーに問い合わせず、すぐに出す。`features/emoji` の `useEmojiSuggestions` が、ピッカーと同じ `GET /custom_emojis` の query と Unicode 絵文字のデータ（初めてのときは読み込みを待つ。読めなければカスタム絵文字だけ）を、ピッカーの検索と同じ `searchEmojis`（shortcode・名前の前方一致 → 別名・キーワードの前方一致 → 部分一致）で照らし、よく使う絵文字（`my:emoji:recent`）を使った順に先に並べ、8 件まで出す。
+    Unicode 絵文字は選んだ肌の色（`my:emoji:skin-tone`）の文字、カスタム絵文字は `:shortcode:` を入れる。
+  - **入れ方**: 入力中の語を候補の値（ローカルのアカウントは `@user`、外は `@user@domain`、`#Tag`、`:shortcode:` か絵文字の文字）で置き換え、後ろに空白がなければ半角空白を 1 つ足す（取り消しの履歴に残す `execCommand("insertText")`）。
+  - **候補の見た目**: アカウントはアバター・表示名（`dir="auto"`、カスタム絵文字は画像）・`@acct`、タグは `#名前` と使われている投稿の数（端末の最近使ったタグでサーバーが知らないものは数なし）、絵文字は画像（代替テキストは隣の文字と重なるので読ませない）か文字と、`:shortcode:` か CLDR の名前。
+  - **テスト**: `features/compose/completion.test.tsx` が、各起点の候補と確定、lookup の条件と `resolve`、CW と表示名で `:` だけが開くこと、最近使ったタグの保存と並び、よく使う絵文字と肌の色、失敗で閉じることを MSW で検査する。E2E（`e2e/compose.spec.ts`）が候補の流れを axe と ARIA スナップショットで検査する。
 - **強調表示**（ADR-0092 §4・§5、FR-119）: 入力中のメンション・ハッシュタグ・URL・`:shortcode:`・文字数の上限を超えた部分の背景を、入力欄の後ろの層に塗る。
-  - **区間**: `lib/textHighlights.ts` の `textHighlights` が、`lib/textTokens.ts` の `textTokens`（サーバーの `ParseText`・`ScanShortcodes` と同じ規則）から作り、`@my/ui` の `TextArea`・`TextField`（と `TextAreaAutocomplete`）の `highlights` に渡す。
+  - **区間**: `lib/textHighlights.ts` の `textHighlights` が、`lib/textTokens.ts` の `textTokens`（サーバーの `ParseText`・`ScanShortcodes` と同じ規則）から作り、`@my/ui` の `TextArea`・`TextField`（と補完の `TextAreaAutocomplete`・`TextFieldAutocomplete`）の `highlights` に渡す。
     `:shortcode:` は、手元のカスタム絵文字（ピッカーと同じ `GET /custom_emojis` の query。`features/emoji` の `useCustomEmojiShortcodes`）の shortcode にあるものだけを塗る。
     上限を超えた部分は、上限のコードポイントの後ろから終わりまでで、トークンと重なればそちらを上限の色で塗る。本文の上限は上の「文字数」の値（`max_post_characters` から CW を引いたもの）、プロフィールの自己紹介と補足情報の値はそれぞれの上限。
     メンションの解決の結果では見た目を変えず、絵文字を画像にもしない。

@@ -47,6 +47,8 @@ tags:
     description: The authenticated user's two-factor authentication.
   - name: passkeys
     description: The authenticated user's passkeys, which sign in instead of the password.
+  - name: authorized_apps
+    description: The apps the authenticated user authorized with OAuth, and revoking them.
   - name: oauth-apps
     description: The OAuth apps that the authenticated user registered, and tokens of them for the user's own account.
   - name: moderation
@@ -170,6 +172,10 @@ paths:
     $ref: ./paths/passkeys_confirmation.yaml
   /passkeys/{id}:
     $ref: ./paths/passkeys_{id}.yaml
+  /authorized_apps:
+    $ref: ./paths/authorized_apps.yaml
+  /authorized_apps/{id}:
+    $ref: ./paths/authorized_apps_{id}.yaml
   /oauth_apps:
     $ref: ./paths/oauth_apps.yaml
   /oauth_apps/{id}:
@@ -525,8 +531,8 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, deleting the account, the user's own OAuth
-        apps) are marked
+        (password, two-factor authentication, passkeys, authorized apps, deleting the account, the user's own
+        OAuth apps) are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
       flows:
@@ -1233,6 +1239,10 @@ components:
       $ref: ./components/schemas/PasskeyAssertion.yaml
     PasskeyConfirmation:
       $ref: ./components/schemas/PasskeyConfirmation.yaml
+    AuthorizedApp:
+      $ref: ./components/schemas/AuthorizedApp.yaml
+    AuthorizedAppList:
+      $ref: ./components/schemas/AuthorizedAppList.yaml
     PasskeyList:
       $ref: ./components/schemas/PasskeyList.yaml
     PasskeyRegistration:

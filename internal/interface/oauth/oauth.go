@@ -32,6 +32,12 @@ const (
 	PathRevoke  = "/oauth/revoke"
 	// PathRegister is the dynamic client registration endpoint (RFC 7591).
 	PathRegister = "/oauth/register"
+	// PathAuthorize is the authorization endpoint, served by authpages.
+	PathAuthorize = "/oauth/authorize"
+	// PathAuthorizationServerMetadata is the authorization server metadata (RFC 8414).
+	PathAuthorizationServerMetadata = "/.well-known/oauth-authorization-server"
+	// PathProtectedResourceMetadata is the protected resource metadata (RFC 9728).
+	PathProtectedResourceMetadata = "/.well-known/oauth-protected-resource"
 )
 
 // CookieRefreshToken carries the web client's refresh token. The __Host- prefix makes
@@ -52,6 +58,8 @@ type Identity interface {
 	RefreshAccessToken(ctx context.Context, in appidentity.RefreshRequest) (appidentity.IssuedTokens, error)
 	RefreshWebClient(ctx context.Context, refreshToken string) (appidentity.IssuedTokens, error)
 	RevokeToken(ctx context.Context, in appidentity.RevokeRequest) error
+	DynamicClientRegistrationEnabled(ctx context.Context) (bool, error)
+	MetadataDocumentClientsEnabled(ctx context.Context) (bool, error)
 	RegisterDynamicClient(ctx context.Context, req appidentity.DynamicRegistrationRequest) (appidentity.DynamicRegistration, error)
 }
 
@@ -62,6 +70,9 @@ type Options struct {
 	// the cross-origin protection and allowed by CORS with credentials, so that the web client
 	// can receive and send its cookie.
 	WebOrigin string
+	// Origin is the origin of the server, the issuer of the tokens and the base of the
+	// endpoint URLs in the metadata (RFC 8414 §2).
+	Origin string
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
 }
@@ -100,6 +111,8 @@ func (h *Handler) Register(r Router) {
 		r.Handle("POST "+path, h.cors(fn))
 		r.Handle("OPTIONS "+path, h.cors(nil))
 	}
+	r.Handle("GET "+PathAuthorizationServerMetadata, http.HandlerFunc(h.authorizationServerMetadata))
+	r.Handle("GET "+PathProtectedResourceMetadata, http.HandlerFunc(h.protectedResourceMetadata))
 	r.Handle("POST "+PathRegister, registerCORS(http.HandlerFunc(h.register)))
 	r.Handle("OPTIONS "+PathRegister, registerCORS(nil))
 }

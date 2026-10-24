@@ -3,11 +3,11 @@
 // modal dialog (WAI-ARIA APG, dialog pattern) holding the compose form's fields for what an edit may change:
 // the content warning, the text with its counter and the emoji picker in its corner, the images' descriptions, the
 // sensitivity of the media, and the language. The visibility and the reply target stay as they were.
-import { Button, Checkbox, Cluster, Dialog, Hint, InlineError, LanguageIcon, Select, SelectItem, Spinner, Stack, TextArea, TextField, ToggleButton, Tooltip, TooltipTrigger, WarningIcon } from "@my/ui";
+import { Button, Checkbox, Cluster, Dialog, Hint, InlineError, LanguageIcon, Select, SelectItem, Spinner, Stack, ToggleButton, Tooltip, TooltipTrigger, WarningIcon } from "@my/ui";
 import { type SubmitEvent, useId } from "react";
 import { useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
-import { AttachmentList, useFormatRemaining } from "../../compose";
+import { AttachmentList, CompletionTextArea, CompletionTextField, useFormatRemaining } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import type { Status, StatusSource } from "../api/status";
 import { useEditSource, useEditStatusForm } from "../hooks/useEditStatus";
@@ -83,7 +83,8 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
   return (
     <Stack as="form" aria-label={t("client:status.edit.title")} onSubmit={onSubmit} gap="3" container>
       {form.hasWarning && (
-        <TextField
+        <CompletionTextField
+          completes="emoji"
           label={t("client:compose.warning.label")}
           description={t("client:compose.warning.description")}
           value={form.spoilerText}
@@ -93,7 +94,8 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
           highlights={textHighlights(form.spoilerText, { tokens: "shortcodes", shortcodes })}
         />
       )}
-      <TextArea
+      <CompletionTextArea
+        completes="all"
         id={textId}
         label={t("client:compose.text.label")}
         value={form.text}

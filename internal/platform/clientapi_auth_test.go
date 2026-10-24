@@ -147,7 +147,7 @@ func TestClientAPIAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	res, p = get(map[string]string{"Authorization": "Bearer " + fine.AccessToken})
-	if res.StatusCode != http.StatusUnauthorized || p.Type != clientapi.ProblemTypeInvalidToken || res.Header.Get("WWW-Authenticate") != `Bearer error="invalid_token"` {
+	if res.StatusCode != http.StatusUnauthorized || p.Type != clientapi.ProblemTypeInvalidToken || !strings.HasPrefix(res.Header.Get("WWW-Authenticate"), `Bearer error="invalid_token", resource_metadata="`) {
 		t.Errorf("revoked token = %d %s, want 401 invalid_token", res.StatusCode, p.Type)
 	}
 

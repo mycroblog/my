@@ -398,6 +398,13 @@ CREATE TABLE oauth_token_revocations (
   revoked_at timestamptz NOT NULL
 );
 
+-- Current value: when a token family last authenticated an API request, at the precision of one
+-- hour (ADR-0090 §5). The row of a family exists once it has been used.
+CREATE TABLE oauth_token_family_last_used (
+  family_id uuid NOT NULL PRIMARY KEY,
+  last_used_at timestamptz NOT NULL
+);
+
 -- ---------------------------------------------------------------------------------------------
 -- identity: registration, invites, email verification, and one-time tokens
 -- (data-model/04-tables/01-identity.md §4.1, FR-001, FR-002).

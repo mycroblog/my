@@ -12,12 +12,12 @@ import {
   ProfileHeaderImage,
   Stack,
   Text,
-  TextArea,
   TextField,
 } from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
+import { CompletionTextArea, CompletionTextField } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import { acceptedImageTypes } from "../api/media";
 import { characterCount, type FieldDraft, type ImageControl, profileLimits, type ServerCrawlerPolicy, useProfileForm } from "../hooks/useProfileForm";
@@ -55,7 +55,8 @@ export function ProfileForm() {
           }
         />
         <Stack gap="1">
-          <TextField
+          <CompletionTextField
+            completes="emoji"
             id={displayNameId}
             label={t("client:settings.profile.display_name")}
             description={t("client:settings.profile.display_name.description", { max: String(profileLimits.displayName) })}
@@ -75,7 +76,8 @@ export function ProfileForm() {
           />
         </Stack>
         <Stack gap="1">
-          <TextArea
+          <CompletionTextArea
+            completes="all"
             id={noteId}
             label={t("client:settings.profile.note")}
             value={form.note.value}
@@ -288,7 +290,8 @@ function FieldRow({ field, number, onChange, onRemove, lengthCheck }: FieldRowPr
         // A missing label is reported when the form is submitted, as the content is often typed first.
         validate={(name) => (name === "" && field.value !== "" ? t("client:settings.profile.field.name_required") : null)}
       />
-      <TextField
+      <CompletionTextField
+        completes="all"
         label={t("client:settings.profile.field.value")}
         value={field.value}
         onChange={(value) => {

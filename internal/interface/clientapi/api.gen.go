@@ -1012,6 +1012,30 @@ func (e AdminWebhookStateReason) Valid() bool {
 	}
 }
 
+// Defines values for AuthorizedAppRegistration.
+const (
+	AuthorizedAppRegistrationDynamic          AuthorizedAppRegistration = "dynamic"
+	AuthorizedAppRegistrationFirstParty       AuthorizedAppRegistration = "first_party"
+	AuthorizedAppRegistrationMetadataDocument AuthorizedAppRegistration = "metadata_document"
+	AuthorizedAppRegistrationUser             AuthorizedAppRegistration = "user"
+)
+
+// Valid indicates whether the value is a known member of the AuthorizedAppRegistration enum.
+func (e AuthorizedAppRegistration) Valid() bool {
+	switch e {
+	case AuthorizedAppRegistrationDynamic:
+		return true
+	case AuthorizedAppRegistrationFirstParty:
+		return true
+	case AuthorizedAppRegistrationMetadataDocument:
+		return true
+	case AuthorizedAppRegistrationUser:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BadgeColor.
 const (
 	BadgeColorBlue    BadgeColor = "blue"
@@ -5048,6 +5072,57 @@ type AnnouncementList struct {
 type AppealModerationActionRequest struct {
 	// Text Why the moderators should reconsider the action, as plain text.
 	Text string `json:"text"`
+}
+
+// AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
+// work. The name, the website and the logo are what the app says about itself; `registration`,
+// `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+type AuthorizedApp struct {
+	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
+	AuthorizedAt time.Time `json:"authorized_at"`
+
+	// ClientId The client's public identifier. For an app registered by its Client ID Metadata Document it
+	// is the document's `https` URL, whose host shows where the app comes from.
+	ClientId string `json:"client_id"`
+
+	// FirstParty Whether the app is one of the server's own clients.
+	FirstParty bool `json:"first_party"`
+
+	// Id The ID of the client, which `DELETE /authorized_apps/{id}` takes.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LastUsedAt When the app last made a request with a grant of the user, exact to the hour. Absent when
+	// no use was recorded.
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
+
+	// Name The app's name, as the app gives it.
+	Name string `json:"name"`
+
+	// RegisteredBy The username of the user who registered the app (`user` only). Absent otherwise.
+	RegisteredBy *string `json:"registered_by,omitempty"`
+
+	// Registration How the app was registered: `first_party` for the server's own client, `user` for an app a
+	// user registered, `metadata_document` for a Client ID Metadata Document, and `dynamic` for
+	// dynamic client registration (self-declared).
+	Registration AuthorizedAppRegistration `json:"registration"`
+
+	// Scope The scopes the user granted, space separated, as the union of the app's working grants.
+	Scope string `json:"scope"`
+
+	// Website The app's home page, as the app gives it. Absent when it gave none.
+	Website *string `json:"website,omitempty"`
+}
+
+// AuthorizedAppRegistration How the app was registered: `first_party` for the server's own client, `user` for an app a
+// user registered, `metadata_document` for a Client ID Metadata Document, and `dynamic` for
+// dynamic client registration (self-declared).
+type AuthorizedAppRegistration string
+
+// AuthorizedAppList The apps the authenticated user authorized, one per client, most recently used first.
+type AuthorizedAppList struct {
+	Items []AuthorizedApp `json:"items"`
 }
 
 // AutoDeletePolicy The authenticated user's automatic deletion of their own old posts (FR-118). A post is
@@ -10895,6 +10970,12 @@ type ServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	// ListAuthorizedApps List the apps the authenticated user authorized
+	// (GET /authorized_apps)
+	ListAuthorizedApps(w http.ResponseWriter, r *http.Request)
+	// RevokeAuthorizedApp Revoke an authorized app
+	// (DELETE /authorized_apps/{id})
+	RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id)
 	// ListBlocks List the accounts that the viewer blocks
 	// (GET /blocks)
 	ListBlocks(w http.ResponseWriter, r *http.Request, params ListBlocksParams)
@@ -15657,6 +15738,46 @@ func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListAuthorizedApps operation middleware
+func (siw *ServerInterfaceWrapper) ListAuthorizedApps(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAuthorizedApps(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeAuthorizedApp operation middleware
+func (siw *ServerInterfaceWrapper) RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeAuthorizedApp(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListBlocks operation middleware
 func (siw *ServerInterfaceWrapper) ListBlocks(w http.ResponseWriter, r *http.Request) {
 
@@ -18729,6 +18850,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/passkeys/registration", wrapper.BeginPasskeyRegistration)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/passkeys/confirmation", wrapper.BeginPasskeyConfirmation)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/passkeys/{id}", wrapper.DeletePasskey)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/authorized_apps", wrapper.ListAuthorizedApps)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/authorized_apps/{id}", wrapper.RevokeAuthorizedApp)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/oauth_apps", wrapper.ListOAuthApps)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps", wrapper.CreateOAuthApp)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.DeleteOAuthApp)
@@ -28012,6 +28135,113 @@ func (response MarkAnnouncementReaddefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type ListAuthorizedAppsRequestObject struct {
+}
+
+type ListAuthorizedAppsResponseObject interface {
+	VisitListAuthorizedAppsResponse(w http.ResponseWriter) error
+}
+
+type ListAuthorizedApps200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAuthorizedApps200JSONResponse struct {
+	Body    AuthorizedAppList
+	Headers ListAuthorizedApps200ResponseHeaders
+}
+
+func (response ListAuthorizedApps200JSONResponse) VisitListAuthorizedAppsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAuthorizedAppsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAuthorizedAppsdefaultApplicationProblemPlusJSONResponse) VisitListAuthorizedAppsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeAuthorizedAppRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type RevokeAuthorizedAppResponseObject interface {
+	VisitRevokeAuthorizedAppResponse(w http.ResponseWriter) error
+}
+
+type RevokeAuthorizedApp204Response struct {
+}
+
+func (response RevokeAuthorizedApp204Response) VisitRevokeAuthorizedAppResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeAuthorizedAppdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeAuthorizedAppdefaultApplicationProblemPlusJSONResponse) VisitRevokeAuthorizedAppResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListBlocksRequestObject struct {
 	Params ListBlocksParams
 }
@@ -34781,6 +35011,12 @@ type StrictServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(ctx context.Context, request MarkAnnouncementReadRequestObject) (MarkAnnouncementReadResponseObject, error)
+	// ListAuthorizedApps List the apps the authenticated user authorized
+	// (GET /authorized_apps)
+	ListAuthorizedApps(ctx context.Context, request ListAuthorizedAppsRequestObject) (ListAuthorizedAppsResponseObject, error)
+	// RevokeAuthorizedApp Revoke an authorized app
+	// (DELETE /authorized_apps/{id})
+	RevokeAuthorizedApp(ctx context.Context, request RevokeAuthorizedAppRequestObject) (RevokeAuthorizedAppResponseObject, error)
 	// ListBlocks List the accounts that the viewer blocks
 	// (GET /blocks)
 	ListBlocks(ctx context.Context, request ListBlocksRequestObject) (ListBlocksResponseObject, error)
@@ -39203,6 +39439,56 @@ func (sh *strictHandler) MarkAnnouncementRead(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MarkAnnouncementReadResponseObject); ok {
 		if err := validResponse.VisitMarkAnnouncementReadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAuthorizedApps operation middleware
+func (sh *strictHandler) ListAuthorizedApps(w http.ResponseWriter, r *http.Request) {
+	var request ListAuthorizedAppsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAuthorizedApps(ctx, request.(ListAuthorizedAppsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAuthorizedApps")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAuthorizedAppsResponseObject); ok {
+		if err := validResponse.VisitListAuthorizedAppsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeAuthorizedApp operation middleware
+func (sh *strictHandler) RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RevokeAuthorizedAppRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeAuthorizedApp(ctx, request.(RevokeAuthorizedAppRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeAuthorizedApp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeAuthorizedAppResponseObject); ok {
+		if err := validResponse.VisitRevokeAuthorizedAppResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

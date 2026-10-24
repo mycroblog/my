@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | FR-001 登録モード | M | `instance_settings`（`registration_mode`）, `registration_applications`, `registration_decisions`, `invites`, `invite_redemptions` |
 | FR-002 メール + パスワード | M | `user_email_addresses`, `user_email_verifications`, `user_primary_emails`, `password_credentials`, `user_tokens` |
-| FR-003 OAuth 2.0 + PKCE | M | `oauth_clients`, `oauth_client_disablements`, `oauth_client_disablement_lifts`, `oauth_client_deletions`, `oauth_client_redirect_uris`, `oauth_client_metadata_documents`, `oauth_client_host_denials`, `oauth_client_host_denial_lifts`, `oauth_authorization_codes`, `oauth_access_tokens`, `sessions` |
+| FR-003 OAuth 2.0 + PKCE | M | `oauth_clients`, `oauth_client_disablements`, `oauth_client_disablement_lifts`, `oauth_client_deletions`, `oauth_client_redirect_uris`, `oauth_client_metadata_documents`, `oauth_client_host_denials`, `oauth_client_host_denial_lifts`, `oauth_authorization_codes`, `oauth_access_tokens`, `oauth_token_revocations`, `oauth_token_family_last_used`, `sessions` |
 | FR-004 パスキー | C | `passkey_credentials`, `passkey_credential_revocations`, `password_credential_removals` |
 | FR-005 TOTP | S | `totp_enrollments`, `totp_recovery_codes`, `totp_recovery_code_uses` |
 | FR-006 プロフィール | M | `account_profile_revisions`, `account_profile_fields`, `account_profile_heads` |

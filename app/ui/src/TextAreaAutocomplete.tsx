@@ -18,6 +18,8 @@
 //   whenever the list opens or its options change.
 // The popover sits right under the caret's line (above it when the visual viewport has no room below), as wide as the
 // text area. The caret's line comes from the mirror (TextAreaMirror), the layer the highlight (§4) also draws on.
+// TextFieldAutocomplete is the same completion around a one-line TextField (the content warning and the display name,
+// ADR-0092 §5): its mirror is the single-line one, and the popover opens under the whole input.
 import {
   type ReactNode,
   use,
@@ -31,6 +33,7 @@ import {
   Autocomplete,
   AutocompleteStateContext,
   FieldInputContext,
+  SelectableCollectionContext,
   ListBox,
   ListBoxItem,
   Popover,
@@ -38,8 +41,9 @@ import {
   useSlottedContext,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import { TextAreaField, type TextAreaProps } from "./TextArea";
-import { TextAreaMirror } from "./TextAreaMirror";
+import { type FieldLayers, TextAreaField, type TextAreaProps } from "./TextArea";
+import { type TextHighlight, TextAreaMirror } from "./TextAreaMirror";
+import { TextFieldControl, type TextFieldProps as KitTextFieldProps } from "./TextField";
 
 /** The word being typed at the caret: from its trigger to the caret, [start, end) in UTF-16 units. */
 export interface TextAutocompleteWord {
@@ -88,7 +92,7 @@ const autocomplete = tv({
 type FieldKeyboardEvent = Parameters<NonNullable<TextFieldProps["onKeyDown"]>>[0];
 
 /** Replaces `word` with `value` and a space (unless whitespace follows), keeping one undo step when the browser can. */
-function insertCompletion(textarea: HTMLTextAreaElement, word: TextAutocompleteWord, value: string) {
+function insertCompletion(textarea: HTMLTextAreaElement | HTMLInputElement, word: TextAutocompleteWord, value: string) {
   const next = textarea.value.charAt(word.end);
   const spaced = /\s/u.test(next);
   const insert = spaced ? value : `${value} `;
@@ -188,7 +192,8 @@ type View = "closed" | "list" | "loading" | "empty";
 
 type Placement = "bottom" | "top";
 
-export type TextAreaAutocompleteProps<T extends TextAutocompleteSuggestion> = TextAreaProps & {
+/** The completion's own props, the same for a text area and a text input. */
+type CompletionProps<T extends TextAutocompleteSuggestion> = {
   /**
    * The trigger characters this field completes, each with the fewest characters its query needs before suggestions are
    * asked for, e.g. `{ "@": 1, "#": 1, ":": 2 }` (ADR-0092 §3). A word whose trigger is not here is not completed.
@@ -211,8 +216,37 @@ export type TextAreaAutocompleteProps<T extends TextAutocompleteSuggestion> = Te
   loadingLabel: string;
   /** Shown and announced when there are no suggestions. */
   emptyLabel: string;
-  /** How long typing must pause before `loadSuggestions` is called, in ms; 0 for local data. */
-  queryDelay?: number;
+  /**
+   * How long typing must pause before `loadSuggestions` is called, in ms; 0 for local data. A function gives the pause
+   * of each word, so a field can ask the server after a pause and offer local data at once.
+   */
+  queryDelay?: number | ((word: TextAutocompleteWord) => number);
+};
+
+export type TextAreaAutocompleteProps<T extends TextAutocompleteSuggestion> = TextAreaProps & CompletionProps<T>;
+
+export type TextFieldAutocompleteProps<T extends TextAutocompleteSuggestion> = KitTextFieldProps & CompletionProps<T>;
+
+/** What the field takes from the completion: the value, the props that win over Autocomplete's, and the layers. */
+type CompletedProps = {
+  value: string;
+  onChange: (next: string) => void;
+  spellCheck: "true";
+  autoCorrect: "on";
+  enterKeyHint: "enter";
+  layers: FieldLayers;
+};
+
+/** The field the completion is around: a text area or a one-line text field, with its own props. */
+type CompletedField = { kind: "area"; props: TextAreaProps } | { kind: "line"; props: KitTextFieldProps };
+
+type TextAutocompleteProps<T extends TextAutocompleteSuggestion> = CompletionProps<T> & {
+  /** The field; a text input has one line, under which the popover opens. */
+  field: CompletedField;
+  value: string | undefined;
+  defaultValue: string | undefined;
+  onChange: ((value: string) => void) | undefined;
+  highlights: readonly TextHighlight[] | undefined;
 };
 
 /**
@@ -220,7 +254,89 @@ export type TextAreaAutocompleteProps<T extends TextAutocompleteSuggestion> = Te
  * It takes every prop of TextArea (label, character count, end action, value / onChange) and the completion's
  * own: the triggers, how to find the word, the suggestions function, how to render an option, and its strings.
  */
-export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
+export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>(props: TextAreaAutocompleteProps<T>) {
+  const { completion, value, defaultValue, onChange, highlights, field } = splitProps(props);
+  return (
+    <TextAutocomplete
+      {...completion}
+      // The rest of a generic union loses its branches; the character count's props are still paired as TextAreaProps pairs them.
+      field={{ kind: "area", props: field as TextAreaProps }}
+      value={value}
+      defaultValue={defaultValue}
+      onChange={onChange}
+      highlights={highlights}
+    />
+  );
+}
+
+/**
+ * A TextField (one line) that completes the word being typed after a trigger character, as TextAreaAutocomplete does
+ * (ADR-0092 §3, §5: the content warning and the display name). The popover opens under the input.
+ */
+export function TextFieldAutocomplete<T extends TextAutocompleteSuggestion>(props: TextFieldAutocompleteProps<T>) {
+  const { completion, value, defaultValue, onChange, highlights, field } = splitProps(props);
+  return (
+    <TextAutocomplete
+      {...completion}
+      field={{ kind: "line", props: field }}
+      value={value}
+      defaultValue={defaultValue}
+      onChange={onChange}
+      highlights={highlights}
+    />
+  );
+}
+
+/**
+ * The end action (the emoji picker's button) outside the completion's contexts. React context reaches through the
+ * picker's portal, so without this its search field would take Autocomplete's input props and its menus and grid the
+ * collection props meant for the list of suggestions.
+ */
+function isolated(endAction: ReactNode): ReactNode {
+  if (endAction === undefined) return undefined;
+  return (
+    <AutocompleteStateContext value={null}>
+      <FieldInputContext value={null}>
+        <SelectableCollectionContext value={null}>{endAction}</SelectableCollectionContext>
+      </FieldInputContext>
+    </AutocompleteStateContext>
+  );
+}
+
+/** Splits the props of a field with completion into the completion's, the value's and the field's own. */
+function splitProps<T extends TextAutocompleteSuggestion, F extends { value?: string | undefined; defaultValue?: string | undefined; onChange?: ((value: string) => void) | undefined; highlights?: readonly TextHighlight[] | undefined }>({
+  triggers,
+  findWord,
+  loadSuggestions,
+  renderSuggestion,
+  suggestionsLabel,
+  formatSuggestionCount,
+  loadingLabel,
+  emptyLabel,
+  queryDelay,
+  value,
+  defaultValue,
+  onChange,
+  highlights,
+  ...field
+}: F & CompletionProps<T>) {
+  const completion: CompletionProps<T> = {
+    triggers,
+    findWord,
+    loadSuggestions,
+    renderSuggestion,
+    suggestionsLabel,
+    formatSuggestionCount,
+    loadingLabel,
+    emptyLabel,
+    ...(queryDelay === undefined ? {} : { queryDelay }),
+  };
+  return { completion, value, defaultValue, onChange, highlights, field };
+}
+
+/** The completion around a text area or a text input (`field`). */
+function TextAutocomplete<T extends TextAutocompleteSuggestion>({
+  field,
   triggers,
   findWord,
   loadSuggestions,
@@ -234,8 +350,8 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
   value,
   defaultValue,
   onChange,
-  ...props
-}: TextAreaAutocompleteProps<T>) {
+}: TextAutocompleteProps<T>) {
+  const singleLine = field.kind === "line";
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "");
   const text = value ?? uncontrolledValue;
   // The caret while the selection is collapsed, else null.
@@ -247,7 +363,7 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
   const [results, setResults] = useState<Results<T> | null>(null);
   const [slowKey, setSlowKey] = useState<string | null>(null);
   const [placement, setPlacement] = useState<Placement>("bottom");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
   const caretRef = useRef<HTMLSpanElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLElement>(null);
@@ -276,6 +392,7 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
   const wordStart = word?.start;
   const wordEnd = word?.end;
   const wordQuery = word?.query;
+  const delay = word === null ? 0 : typeof queryDelay === "number" ? queryDelay : queryDelay(word);
   useEffect(() => {
     if (key === null || wordTrigger === undefined || wordStart === undefined || wordEnd === undefined || wordQuery === undefined) return;
     const lookup: TextAutocompleteWord = { trigger: wordTrigger, start: wordStart, end: wordEnd, query: wordQuery };
@@ -301,13 +418,13 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
             settle({ key, start: wordStart, status: "failed" });
           },
         );
-    }, queryDelay);
+    }, delay);
     return () => {
       clearTimeout(timer);
       clearTimeout(slowTimer);
       controller.abort();
     };
-  }, [key, wordTrigger, wordStart, wordEnd, wordQuery, queryDelay]);
+  }, [key, wordTrigger, wordStart, wordEnd, wordQuery, delay]);
 
   const readCaret = () => {
     const textarea = inputRef.current;
@@ -335,6 +452,18 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
     const anchor = anchorRef.current;
     if (textarea === null || marker === null || anchor === null) return;
     const box = textarea.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewTop = viewport?.offsetTop ?? 0;
+    const viewBottom = viewTop + (viewport?.height ?? window.innerHeight);
+    const needed = Math.min(popoverRef.current?.scrollHeight ?? listMaxHeight, listMaxHeight);
+    if (singleLine) {
+      // An input has one line, the whole box: the popover opens under it, or above it without room below.
+      const side: Placement = viewBottom - box.bottom >= needed || viewBottom - box.bottom >= box.top - viewTop ? "bottom" : "top";
+      anchor.style.top = "0px";
+      anchor.style.height = `${String(box.height)}px`;
+      setPlacement(side);
+      return;
+    }
     const mark = marker.getBoundingClientRect();
     const style = getComputedStyle(textarea);
     const lineHeight = Number.parseFloat(style.lineHeight) || mark.height;
@@ -345,10 +474,6 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
     // A caret line scrolled out of the text area is taken to be at its edge.
     const lineTop = Math.min(Math.max(contentTop + line * lineHeight, box.top), box.bottom);
     const lineBottom = Math.min(Math.max(contentTop + (line + 1) * lineHeight, box.top), box.bottom);
-    const viewport = window.visualViewport;
-    const viewTop = viewport?.offsetTop ?? 0;
-    const viewBottom = viewTop + (viewport?.height ?? window.innerHeight);
-    const needed = Math.min(popoverRef.current?.scrollHeight ?? listMaxHeight, listMaxHeight);
     const below = viewBottom - lineBottom;
     const above = lineTop - viewTop;
     const side: Placement = below >= needed || below >= above ? "bottom" : "top";
@@ -396,8 +521,9 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
 
   const accept = (suggestion: T) => {
     const textarea = inputRef.current;
-    if (textarea === null || textarea.selectionStart !== textarea.selectionEnd) return;
-    const at = findWord(textarea.value, textarea.selectionStart);
+    const cursor = textarea?.selectionStart ?? null;
+    if (textarea === null || cursor === null || cursor !== textarea.selectionEnd) return;
+    const at = findWord(textarea.value, cursor);
     if (at === null) return;
     insertCompletion(textarea, at, suggestion.value);
     readCaret();
@@ -415,59 +541,65 @@ export function TextAreaAutocomplete<T extends TextAutocompleteSuggestion>({
 
   const status = view === "list" ? formatSuggestionCount(items.length) : view === "loading" ? loadingLabel : view === "empty" ? emptyLabel : "";
 
+  const completedProps: CompletedProps = {
+    value: text,
+    onChange: handleChange,
+    // Autocomplete turns these off for a search field; a post keeps spell checking, autocorrect and a return key.
+    spellCheck: "true",
+    autoCorrect: "on",
+    enterKeyHint: "enter",
+    layers: {
+      inputRef,
+      inputProps: {
+        dir: "auto",
+        onSelect: readCaret,
+        onFocus: () => {
+          setFocused(true);
+          readCaret();
+        },
+        // React Aria's virtual focus sends the field a blur of its own when an option takes virtual focus;
+        // focus has left only when the field is no longer the active element.
+        onBlur: (event) => {
+          setFocused(event.currentTarget.ownerDocument.activeElement === event.currentTarget);
+        },
+        onCompositionStart: () => {
+          setComposing(true);
+        },
+        onCompositionEnd: () => {
+          setComposing(false);
+          readCaret();
+        },
+      },
+      behind: (
+        <TextAreaMirror
+          textareaRef={inputRef}
+          text={text}
+          caret={caret ?? text.length}
+          caretRef={caretRef}
+          highlights={highlights}
+          singleLine={singleLine}
+          onSync={placeAnchor}
+        />
+      ),
+      after: (
+        <>
+          <div ref={anchorRef} aria-hidden className={styles.anchor()} />
+          <span role="status" className={styles.status()}>
+            {status}
+          </span>
+        </>
+      ),
+    },
+  };
+
   return (
     <Autocomplete inputValue={text}>
       <KeyOverrides isOpen={view !== "closed"} onTab={acceptFocused} onEscape={dismiss}>
-        <TextAreaField
-          {...props}
-          value={text}
-          onChange={handleChange}
-          // Autocomplete turns these off for a search field; a post keeps spell checking, autocorrect and a return key.
-          spellCheck="true"
-          autoCorrect="on"
-          enterKeyHint="enter"
-          layers={{
-            inputRef,
-            inputProps: {
-              dir: "auto",
-              onSelect: readCaret,
-              onFocus: () => {
-                setFocused(true);
-                readCaret();
-              },
-              // React Aria's virtual focus sends the textarea a blur of its own when an option takes virtual focus;
-              // focus has left only when the textarea is no longer the active element.
-              onBlur: (event) => {
-                setFocused(event.currentTarget.ownerDocument.activeElement === event.currentTarget);
-              },
-              onCompositionStart: () => {
-                setComposing(true);
-              },
-              onCompositionEnd: () => {
-                setComposing(false);
-                readCaret();
-              },
-            },
-            behind: (
-              <TextAreaMirror
-                textareaRef={inputRef}
-                text={text}
-                caret={caret ?? text.length}
-                caretRef={caretRef}
-                highlights={highlights}
-                onSync={placeAnchor}
-              />
-            ),
-            after: (
-              <>
-                <div ref={anchorRef} aria-hidden className={styles.anchor()} />
-                <span role="status" className={styles.status()}>
-                  {status}
-                </span>
-              </>
-            ),
-          }}
-        />
+        {field.kind === "area" ? (
+          <TextAreaField {...field.props} endAction={isolated(field.props.endAction)} {...completedProps} />
+        ) : (
+          <TextFieldControl {...field.props} endAction={isolated(field.props.endAction)} {...completedProps} />
+        )}
       </KeyOverrides>
       {view !== "closed" && (
         <Popover

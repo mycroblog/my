@@ -192,6 +192,8 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 | `POST /oauth/token/refresh` | `internal/interface/oauth` | Web クライアント専用。`__Host-my_rt` Cookie だけを読み、新しいアクセストークンだけを返す |
 | `POST /oauth/revoke` | `internal/interface/oauth` | トークンの失効（RFC 7009）。トークンの系列全体を失効させる |
 | `POST /oauth/register` | `internal/interface/oauth` | 動的クライアント登録（RFC 7591、[ADR-0090 §1](../adr/0090-third-party-oauth-apps.md)）。認証なし・JSON の本文・public client（`token_endpoint_auth_method: none`）だけ。`scope` は一次専用を除いた範囲に置き換え、`201` で `client_id` などを返す。CORS は任意のオリジンに開く（資格情報なし）。インスタンス設定 `dynamic_client_registration` が `false` なら `403`（`access_denied`）。RFC 7592 と software statement は受けない |
+| `GET /.well-known/oauth-authorization-server` | `internal/interface/oauth` | Authorization Server Metadata（RFC 8414、[ADR-0090 §6](../adr/0090-third-party-oauth-apps.md)）。`issuer`・各エンドポイント・`scopes_supported`（一次専用を除く）・`response_types_supported: ["code"]`・`grant_types_supported`・`code_challenge_methods_supported: ["S256"]`・`token_endpoint_auth_methods_supported` を返す。`registration_endpoint` は `dynamic_client_registration` が有効なとき、`client_id_metadata_document_supported` は `oauth_metadata_document_clients` が有効なときだけ出す。匿名で取れ、`Cache-Control: public, max-age=300`。OpenID Connect の発見（`openid-configuration`）は出さない |
+| `GET /.well-known/oauth-protected-resource` | `internal/interface/oauth` | Protected Resource Metadata（RFC 9728）。`resource`（`/api/v1`）・`authorization_servers`・`scopes_supported`・`bearer_methods_supported: ["header"]`。`/api/v1` の `401` の `WWW-Authenticate` は `resource_metadata` にこの URL を付ける |
 
 - PKCE は `S256` だけを受け付けます。`redirect_uri` は認可リクエストで必須で、登録済みの値と完全一致で照合します。
 - 認可応答は `303` のリダイレクトで、`code`（または `error`）・`state`・`iss`（RFC 9207）を付けます。
@@ -220,7 +222,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
   （作者自身の投稿も同じ。可視性の判定は `content.CanView` のまま、`Viewer.DirectDenied` で絞ります）。送信は `write:statuses` のままです（[ADR-0090](../adr/0090-third-party-oauth-apps.md) §4）。
 - 一次のクライアントだけのスコープ（`admin`・`admin:read`・`admin:write`・`write:supporters`、`identity.FirstPartyOnlyScope`）は、一次でないクライアントの認可要求に含まれたら `invalid_scope` にし、
   広いスコープ（`write`）経由でも一次でないクライアントのトークンには許しません。
-  アカウントの保安の操作（パスワード・二要素認証・パスキー・アカウントの削除）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
+  アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
   それ以外は 403 `/api/v1/problems/first-party-only` です。
   クライアントが一次かどうかの判定は `identity.OAuthClient.FirstParty` の 1 か所です。
 - 操作には細かいスコープを書きます（`verifyAccountCredentials` は `read:accounts`）。クライアントは広いスコープでも細かいスコープでも要求できます。

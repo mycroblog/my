@@ -357,6 +357,21 @@ export const skinToneKey = declareKey<z.infer<typeof skinTone>>("my:emoji:skin-t
   userData: false,
 });
 
+/** How many hashtags `recentTagsKey` keeps (ADR-0092 §1). */
+export const maxRecentTags = 16;
+
+/**
+ * The hashtags used lately in posts sent from this browser, the latest first, as typed without `#` (features/compose,
+ * ADR-0092 §1): the completion after "#" ranks them first. They are what the user posted, so they go when the session ends.
+ */
+export const recentTagsKey = declareKey<readonly string[]>("my:compose:recent-tags", {
+  area: "local",
+  version: 1,
+  defaultValue: [],
+  parse: schemaParser(z.array(z.string().min(1).max(100)).max(maxRecentTags)),
+  userData: true,
+});
+
 /** The order of the navigation's items and the ones the user hid, by their IDs; checked further by features/settings. */
 export type StoredNavigation = { order: readonly string[]; hidden: readonly string[] };
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { type ReactNode, type Ref, useEffect, useId, useRef, useState } from "react";
+import { type FocusEvent, type ReactNode, type RefObject, useEffect, useId, useRef, useState } from "react";
 import {
   composeRenderProps,
   TextArea as RACTextArea,
@@ -100,13 +100,27 @@ export type TextAreaProps = Omit<RACTextFieldProps, "children"> &
     highlights?: readonly TextHighlight[];
   };
 
-/** What TextAreaAutocomplete adds to the text area: props of the textarea and the layers of its box (kit-internal). */
-export type TextAreaLayers = {
-  inputRef: Ref<HTMLTextAreaElement>;
-  inputProps: Omit<RACTextAreaProps, "className" | "placeholder" | "rows">;
-  /** Rendered in the textarea's box before it, so it sits behind the textarea (the mirror). */
+/** The props that TextAreaAutocomplete gives the textarea or input of its field (kit-internal). */
+type LayeredInputProps = {
+  dir: "auto";
+  onSelect: () => void;
+  onFocus: () => void;
+  onBlur: (event: FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+  onCompositionStart: () => void;
+  onCompositionEnd: () => void;
+};
+
+/**
+ * What TextAreaAutocomplete and TextFieldAutocomplete add to the field: props of its textarea or input and the layers of
+ * its box (kit-internal).
+ */
+export type FieldLayers = {
+  /** The ref of the control; the completion holds a textarea or an input in one ref. */
+  inputRef: RefObject<HTMLTextAreaElement | HTMLInputElement | null>;
+  inputProps: LayeredInputProps;
+  /** Rendered in the control's box before it, so it sits behind the control (the mirror). */
   behind: ReactNode;
-  /** Rendered in the textarea's box after it (the anchor of the suggestions). */
+  /** Rendered in the control's box after it (the anchor of the suggestions). */
   after: ReactNode;
 };
 
@@ -145,7 +159,7 @@ export function TextAreaField({
   highlights,
   layers,
   ...props
-}: TextAreaProps & { layers?: TextAreaLayers }) {
+}: TextAreaProps & { layers?: FieldLayers | undefined }) {
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "");
   const text = value ?? uncontrolledValue;
   // Highlights without TextAreaAutocomplete's layers (whose mirror draws them) bring a mirror of their own.
@@ -190,7 +204,8 @@ export function TextAreaField({
     <RACTextArea
       {...layers?.inputProps}
       {...(ownMirror ? { dir: "auto" } : {})}
-      ref={layers?.inputRef ?? highlightRef}
+      // The layers of a text area hold its textarea.
+      ref={(layers?.inputRef ?? highlightRef) as RefObject<HTMLTextAreaElement | null>}
       className={styles.input()}
       {...(placeholder === undefined ? {} : { placeholder })}
       {...(rows === undefined ? {} : { rows })}

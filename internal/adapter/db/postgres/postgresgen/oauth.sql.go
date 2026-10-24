@@ -549,6 +549,78 @@ func (q *Queries) LiftOAuthClientHostDenials(ctx context.Context, arg LiftOAuthC
 	return result.RowsAffected(), nil
 }
 
+const listAuthorizedAppTokens = `-- name: ListAuthorizedAppTokens :many
+SELECT t.family_id, t.scope AS token_scope,
+  (SELECT min(f.issued_at) FROM oauth_access_tokens f WHERE f.family_id = t.family_id)::timestamptz AS authorized_at,
+  u.last_used_at,
+  c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
+FROM oauth_access_tokens t
+JOIN oauth_clients c ON c.id::text = t.client_id
+LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
+WHERE t.user_id = $1
+  AND (t.expires_at > $2::timestamptz OR t.refresh_expires_at > $2::timestamptz)
+  AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id)
+ORDER BY t.family_id
+`
+
+type ListAuthorizedAppTokensParams struct {
+	UserID string
+	Now    time.Time
+}
+
+type ListAuthorizedAppTokensRow struct {
+	FamilyID         string
+	TokenScope       string
+	AuthorizedAt     time.Time
+	LastUsedAt       *time.Time
+	ID               string
+	ClientID         string
+	ClientSecretHash []byte
+	Name             string
+	Website          *string
+	Scope            string
+	Registration     string
+	OwnerUserID      *string
+	CreatedAt        time.Time
+}
+
+// ListAuthorizedAppTokens returns the tokens of a user that still work (no revocation, an access
+// or refresh token that has not expired at now) with the client, when the token's family was
+// first issued, and when it was last used (NULL when it never was recorded).
+func (q *Queries) ListAuthorizedAppTokens(ctx context.Context, arg ListAuthorizedAppTokensParams) ([]ListAuthorizedAppTokensRow, error) {
+	rows, err := q.db.Query(ctx, listAuthorizedAppTokens, arg.UserID, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAuthorizedAppTokensRow{}
+	for rows.Next() {
+		var i ListAuthorizedAppTokensRow
+		if err := rows.Scan(
+			&i.FamilyID,
+			&i.TokenScope,
+			&i.AuthorizedAt,
+			&i.LastUsedAt,
+			&i.ID,
+			&i.ClientID,
+			&i.ClientSecretHash,
+			&i.Name,
+			&i.Website,
+			&i.Scope,
+			&i.Registration,
+			&i.OwnerUserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOAuthClientRedirectURIs = `-- name: ListOAuthClientRedirectURIs :many
 SELECT redirect_uri FROM oauth_client_redirect_uris WHERE client_id = $1 ORDER BY redirect_uri
 `
@@ -587,6 +659,7 @@ WHERE c.registration = 'dynamic'
       SELECT 1 FROM oauth_access_tokens t
       WHERE t.client_id = c.id::text
         AND (t.issued_at >= $2::timestamptz
+          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= $2::timestamptz)
           OR ((t.expires_at > $3::timestamptz OR t.refresh_expires_at > $3::timestamptz)
             AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)))))
   )
@@ -604,8 +677,8 @@ type ListUnusedDynamicOAuthClientsParams struct {
 // ListUnusedDynamicOAuthClients returns the IDs of the dynamically registered clients that have no
 // deletion and are unused (ADR-0090 section 1), oldest first: no authorization code was exchanged
 // and the client was registered before unredeemed_before, or it has no token that was issued after
-// idle_before or that is still usable at now (until the last use of a token family is recorded,
-// the issue time of its newest token stands for it).
+// idle_before, whose family was used after idle_before (oauth_token_family_last_used), or that is
+// still usable at now.
 func (q *Queries) ListUnusedDynamicOAuthClients(ctx context.Context, arg ListUnusedDynamicOAuthClientsParams) ([]string, error) {
 	rows, err := q.db.Query(ctx, listUnusedDynamicOAuthClients,
 		arg.UnredeemedBefore,
@@ -752,6 +825,35 @@ func (q *Queries) RevokeTokensOfUser(ctx context.Context, arg RevokeTokensOfUser
 	return err
 }
 
+const revokeTokensOfUserAndClient = `-- name: RevokeTokensOfUserAndClient :execrows
+INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
+SELECT t.id, $1::text, $2::timestamptz FROM oauth_access_tokens t
+WHERE t.user_id = $3 AND t.client_id = $4::text
+ON CONFLICT (token_id) DO NOTHING
+`
+
+type RevokeTokensOfUserAndClientParams struct {
+	Reason    string
+	RevokedAt time.Time
+	UserID    string
+	ClientID  string
+}
+
+// RevokeTokensOfUserAndClient revokes every token of the client that the user holds and that has
+// no revocation yet.
+func (q *Queries) RevokeTokensOfUserAndClient(ctx context.Context, arg RevokeTokensOfUserAndClientParams) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeTokensOfUserAndClient,
+		arg.Reason,
+		arg.RevokedAt,
+		arg.UserID,
+		arg.ClientID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const tokenFamilyActive = `-- name: TokenFamilyActive :one
 SELECT EXISTS (
   SELECT 1 FROM oauth_access_tokens t
@@ -804,5 +906,22 @@ func (q *Queries) UpsertOAuthClientMetadataDocument(ctx context.Context, arg Ups
 		arg.FetchedAt,
 		arg.ExpiresAt,
 	)
+	return err
+}
+
+const upsertTokenFamilyLastUsed = `-- name: UpsertTokenFamilyLastUsed :exec
+INSERT INTO oauth_token_family_last_used (family_id, last_used_at)
+VALUES ($1, $2)
+ON CONFLICT (family_id) DO UPDATE SET last_used_at = excluded.last_used_at
+`
+
+type UpsertTokenFamilyLastUsedParams struct {
+	FamilyID   string
+	LastUsedAt time.Time
+}
+
+// UpsertTokenFamilyLastUsed records that a token family authenticated a request at used_at.
+func (q *Queries) UpsertTokenFamilyLastUsed(ctx context.Context, arg UpsertTokenFamilyLastUsedParams) error {
+	_, err := q.db.Exec(ctx, upsertTokenFamilyLastUsed, arg.FamilyID, arg.LastUsedAt)
 	return err
 }

@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+get:
+  operationId: listAuthorizedApps
+  x-first-party-only: true
+  summary: List the apps the authenticated user authorized
+  description: |
+    One entry per client for which the user holds a grant that still works, most recently used
+    first (an app without a recorded use after those with one, newest authorization first). A
+    revoked or expired grant is not listed. The server's own web client is listed too
+    (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+  tags: [authorized_apps]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The authorized apps.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AuthorizedAppList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

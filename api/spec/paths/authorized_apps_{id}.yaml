@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+delete:
+  operationId: revokeAuthorizedApp
+  x-first-party-only: true
+  summary: Revoke an authorized app
+  description: |
+    Revokes every grant of the app that the user holds, so that its access and refresh tokens
+    stop working at once (the next request with one is a 401). Revoking the server's own web
+    client signs the user out of every browser, this one included. An app the user holds no
+    working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+  tags: [authorized_apps]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the app (the `id` of an authorized app).
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  responses:
+    "204":
+      description: The app is revoked.
+    default:
+      $ref: ../components/responses/Problem.yaml

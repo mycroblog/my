@@ -79,11 +79,26 @@ async function load(locale: UnicodeEmojiLocale): Promise<UnicodeEmojiSet> {
  * failed load starts again. Called from the picker button's events (hover, focus, opening), never while rendering.
  */
 export function preloadUnicodeEmoji(locale: string): void {
+  loadUnicodeEmojiSet(locale).catch(() => undefined);
+}
+
+/** The loads on their way or done, by locale; a failed one is started again. */
+const loads = new Map<UnicodeEmojiLocale, Promise<UnicodeEmojiSet>>();
+
+/**
+ * The Unicode emoji named in the locale closest to `locale`, loading them unless they are loaded or on their way (the
+ * completion after ":", ADR-0092 §2, waits for them); a failed load starts again.
+ */
+export function loadUnicodeEmojiSet(locale: string): Promise<UnicodeEmojiSet> {
   const key = unicodeEmojiLocale(locale);
-  const status = states.get(key)?.status;
-  if (status === "loading" || status === "ready") return;
+  const state = states.get(key);
+  if (state?.status === "ready") return Promise.resolve(state.emoji);
+  const pending = loads.get(key);
+  if (pending !== undefined && state?.status === "loading") return pending;
   setState(key, loading);
-  load(key).then(
+  const promise = load(key);
+  loads.set(key, promise);
+  promise.then(
     (emoji) => {
       setState(key, { status: "ready", emoji });
     },
@@ -91,6 +106,7 @@ export function preloadUnicodeEmoji(locale: string): void {
       setState(key, failed);
     },
   );
+  return promise;
 }
 
 function subscribe(listener: () => void): () => void {

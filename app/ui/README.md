@@ -353,6 +353,7 @@ string through props or children.
 | `TextField` | `TextField` + `Input` | `label`, `description`, `errorMessage`, `placeholder`; `grow` takes the room left in a row; `highlights` (below) |
 | `TextArea` | `TextField` + `TextArea` | as `TextField`, plus `rows` and the character count below |
 | `TextAreaAutocomplete` | `Autocomplete` + `TextField` + `TextArea`, `Popover` + `ListBox` | as `TextArea`, plus the completion of the word after a trigger character (below) |
+| `TextFieldAutocomplete` | `Autocomplete` + `TextField` + `Input`, `Popover` + `ListBox` | as `TextField`, plus the same completion on one line (below) |
 | `Checkbox` | `CheckboxField` + `CheckboxButton` | children as the label, `description`, `errorMessage`, `isIndeterminate` |
 | `Switch` | `SwitchField` + `SwitchButton` | children as the label, `description`, `errorMessage` |
 | `RadioGroup`, `Radio` | `RadioGroup`, `RadioField` + `RadioButton` | `orientation`: `vertical` (default) / `horizontal`; a `description` per `Radio` |
@@ -378,7 +379,7 @@ string through props or children.
   ([ADR-0092](../../docs/adr/0092-composer-autocomplete-highlight.md) §3). It knows no domain: it takes `triggers` (each trigger
   character with the fewest query characters it needs), `findWord` (the word at the caret; the web passes `activeWord` of
   `lib/textTokens.ts`), `loadSuggestions(word, signal)` (sync or async; asked after typing pauses for `queryDelay`, 200 ms by
-  default, aborted when the word changes, a rejection just closes the list), `renderSuggestion`, and the strings `suggestionsLabel`,
+  default or a function of the word, so local data can answer at once; aborted when the word changes, a rejection just closes the list), `renderSuggestion`, and the strings `suggestionsLabel`,
   `formatSuggestionCount`, `loadingLabel` and `emptyLabel`. A suggestion is `{ id, value, textValue }`; `value` replaces the word.
   - The textarea stays a `textbox` with `aria-autocomplete="list"`, `aria-controls` and `aria-activedescendant`; the chosen option
     has `aria-selected="true"`; a `role="status"` region announces the count, loading (after 300 ms) and no results, which the
@@ -392,6 +393,11 @@ string through props or children.
     below. The caret's line comes from `TextAreaMirror`, an `aria-hidden` copy of the text laid out with the textarea's own
     font, spacing, line height, padding and borders behind the transparent textarea, which the highlight layer also uses.
     The mirrored textarea is `dir="auto"` and has a whole-pixel line height, so the scrolled mirror lines up in every engine.
+  - `endAction` (the emoji picker's button) is rendered outside Autocomplete's contexts, which would otherwise reach the
+    picker through its portal and take over its search field, menus and grid.
+- `TextFieldAutocomplete` is the same completion on a one-line `TextField` (a content warning, a display name): it takes
+  every prop of `TextField` and the completion's own, its mirror is the single-line one, and the popover opens under the
+  whole input (above it without room below).
 - `TextArea`, `TextField` and `TextAreaAutocomplete` take `highlights`, the ranges to highlight while typing
   ([ADR-0092](../../docs/adr/0092-composer-autocomplete-highlight.md) §4): `{ kind, start, end }` in UTF-16 units, where `kind`
   is `mention`, `hashtag`, `url`, `shortcode` or `over` (text over the limit, which wins where it overlaps a token). The kit
