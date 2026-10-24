@@ -5,14 +5,28 @@ package platform
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/oauth"
 	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform/config"
 )
+
+// clientLimits returns the clientapi.Options.ClientLimit of the per-client caps of
+// oauth_client_rate_limits (ADR-0090 §7): 5-minute windows like the per-account limit.
+func clientLimits(caps map[string]int64) func(string) (kernel.Limit, bool) {
+	if len(caps) == 0 {
+		return nil
+	}
+	return func(clientID string) (kernel.Limit, bool) {
+		n, ok := caps[clientID]
+		return kernel.Limit{Name: "api.client", Max: n, Window: 5 * time.Minute}, ok
+	}
+}
 
 // setUpClientAPI registers the client API on every module, and makes the data of the webhook
 // messages the admin API's representation (ADR-0060). It comes after every module it serves.
@@ -66,7 +80,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		Supporters: a.Supporters, OwnSupporters: a.Supporters, CommerceDisclosurePath: web.PathAboutCommerceDisclosure,
 		// The payment provider's state and the reconciliation by hand (ADR-0074 §4).
 		Payments:    a.paymentsAPI(),
-		RateLimiter: a.RateLimiter, Locales: a.Locales, RequestID: RequestID, Logger: a.Logger, Meter: a.Meter,
+		RateLimiter: a.RateLimiter, ClientLimit: clientLimits(cfg.OAuthClientRateLimits),
+		Locales: a.Locales, RequestID: RequestID, Logger: a.Logger, Meter: a.Meter,
 	})
 	api.Register(clientAPIRouter{a})
 	// The data of the webhook messages is the admin API's representation (ADR-0060).

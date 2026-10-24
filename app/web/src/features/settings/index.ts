@@ -40,6 +40,9 @@ export { PasswordSettings } from "./components/PasswordSettings";
 // Passkeys, which sign in instead of the password (FR-004).
 export { passkeysQueryOptions } from "./api/passkeys";
 export { PasskeySettings } from "./components/PasskeySettings";
+// The user's own OAuth apps: registering, secrets, and tokens issued to the user (ADR-0090).
+export { oauthAppsQueryOptions } from "./api/oauthApps";
+export { OAuthAppSettings } from "./components/OAuthAppSettings";
 export { useUserDisplaySettings } from "./hooks/useUserDisplaySettings";
 // Uploading an image and waiting for the server to process it, which the admin screen of custom emoji shares.
 export { acceptedImageTypes, type MediaAttachment, MediaProcessingError, uploadImage } from "./api/media";

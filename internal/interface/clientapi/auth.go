@@ -65,6 +65,9 @@ type Viewer struct {
 	// TokenID and ClientID identify the access token and its OAuth client (the row IDs).
 	TokenID  string
 	ClientID string
+	// ClientPublicID is the client's public client_id, which the administrator names in the
+	// per-client rate limits.
+	ClientPublicID string
 	// FamilyID identifies the grant of the access token: its token family, which refreshing
 	// keeps. A Web Push subscription belongs to it.
 	FamilyID string
@@ -175,6 +178,12 @@ func (s *Server) guard(pattern string, next http.Handler) http.Handler {
 			// The Viewer goes in first, so that every answer from here on is in the user's locale.
 			r = r.WithContext(WithViewer(r.Context(), *v))
 			ok = s.limit(w, r, policyAccount, s.o.AccountLimit, v.AccountID)
+			// An administrator may cap one client across all its users (ADR-0090 §7).
+			if ok && s.o.ClientLimit != nil {
+				if lim, capped := s.o.ClientLimit(v.ClientPublicID); capped {
+					ok = s.limit(w, r, policyClient, lim, v.ClientID)
+				}
+			}
 		}
 		if !ok || !s.authorize(w, r, a, v) {
 			return
@@ -207,7 +216,7 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (*Viewer, 
 	}
 	switch {
 	case err == nil:
-		return &Viewer{UserID: b.UserID, AccountID: b.AccountID, TokenID: b.TokenID, ClientID: b.ClientID, FamilyID: b.FamilyID, Scope: b.Scope, FirstParty: b.FirstParty}, true
+		return &Viewer{UserID: b.UserID, AccountID: b.AccountID, TokenID: b.TokenID, ClientID: b.ClientID, ClientPublicID: b.ClientPublicID, FamilyID: b.FamilyID, Scope: b.Scope, FirstParty: b.FirstParty}, true
 	case errors.Is(err, appidentity.ErrInvalidAccessToken):
 		if s.limit(w, r, policyIP, s.o.AnonymousLimit, s.clientKey(r)) {
 			w.Header().Set("WWW-Authenticate", s.challenge(`error="invalid_token"`))

@@ -66,7 +66,7 @@ func oauthUsesClientMetadataDocuments(t *testing.T, e *accountEnv) {
 		redirect  = "https://app.example/cb"
 		redirect2 = "https://app.example/cb2"
 	)
-	web := &metadataWeb{docs: map[string]string{}, maxAge: "60"}
+	web := &metadataWeb{docs: map[string]string{}, maxAge: "600"}
 	web.set(id, `{"client_id":"`+id+`","client_name":"Pocket","redirect_uris":["`+redirect+`"],"scope":"read write"}`)
 	s := e.newIdentityWith(func(d *appidentity.Deps) { d.HTTP = web })
 	userID := e.register(t, "alice").User.ID
@@ -100,13 +100,14 @@ func oauthUsesClientMetadataDocuments(t *testing.T, e *accountEnv) {
 		t.Errorf("stored client = %+v %v, %v; want the host as its fixed name and the document's redirect URI", stored, uris, err)
 	}
 	doc, err := e.h.Identity.FindOAuthClientMetadataDocument(ctx, stored.ID)
-	if err != nil || doc.Name != "Pocket" || !doc.FetchedAt.Equal(e.clock.Now()) || !doc.ExpiresAt.Equal(e.clock.Now().Add(time.Minute)) {
-		t.Errorf("stored document = %+v, %v; want Pocket fetched now for a minute", doc, err)
+	if err != nil || doc.Name != "Pocket" || !doc.FetchedAt.Equal(e.clock.Now()) || !doc.ExpiresAt.Equal(e.clock.Now().Add(10*time.Minute)) {
+		t.Errorf("stored document = %+v, %v; want Pocket fetched now for ten minutes", doc, err)
 	}
 
 	// Within max-age the stored document answers; after it the document is fetched again and
-	// replaces the name, the scope, and the redirect URIs.
-	e.clock.Advance(59 * time.Second)
+	// replaces the name, the scope, and the redirect URIs. max-age is above the 5 minutes that
+	// the URL limit leaves between two fetches (ADR-0090 §7).
+	e.clock.Advance(599 * time.Second)
 	if _, err := authorize(redirect); err != nil || web.count() != 1 {
 		t.Errorf("ValidateAuthorization(cached) = %v after %d fetches, want 1", err, web.count())
 	}

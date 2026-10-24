@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the settings feature (web-client/README.md §7): the user's own profile, its badges, and
-// preferences, the automatic deletion of old posts, passkeys, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
+// preferences, the automatic deletion of old posts, passkeys, the user's own OAuth apps, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
 // data, the CSV exports and imports, and deleting the account. Unblocking and unmuting are the account
 // actions of the profile feature's handlers.
 import { http, HttpResponse } from "msw";
@@ -61,6 +61,8 @@ export const handlers = [
   }),
   // operationId listPasskeys: no passkeys; the tests that add or remove one play the server themselves.
   http.get(`${apiBase}/passkeys`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  // operationId listOAuthApps: no apps; the tests that register, change or delete one play the server themselves.
+  http.get(`${apiBase}/oauth_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationId beginPasskeyConfirmation: the options of a confirmation with a passkey.
   http.post(`${apiBase}/passkeys/confirmation`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(passkeyConfirmationFixture satisfies Schemas["PasskeyConfirmation"])),

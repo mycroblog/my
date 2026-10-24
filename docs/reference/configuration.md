@@ -114,6 +114,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`job_attempt_retention`](#job_attempt_retention) | `MY_JOB_ATTEMPT_RETENTION` | `720h` | no | no |
 | [`dynamic_client_unredeemed_ttl`](#dynamic_client_unredeemed_ttl) | `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL` | `24h` | no | no |
 | [`dynamic_client_idle_ttl`](#dynamic_client_idle_ttl) | `MY_DYNAMIC_CLIENT_IDLE_TTL` | `2160h` | no | no |
+| [`oauth_client_rate_limits`](#oauth_client_rate_limits) | `MY_OAUTH_CLIENT_RATE_LIMITS` | none | no | no |
 | [`metrics_exporter`](#metrics_exporter) | `MY_METRICS_EXPORTER` | `none` | no | no |
 | [`metrics_listen`](#metrics_listen) | `MY_METRICS_LISTEN` | `127.0.0.1:9464` | no | no |
 | [`metrics_emf_namespace`](#metrics_emf_namespace) | `MY_METRICS_EMF_NAMESPACE` | `my` | no | no |
@@ -846,6 +847,14 @@ How long a dynamically registered OAuth client without a usable token may go unu
 
 - Environment variable: `MY_DYNAMIC_CLIENT_IDLE_TTL`
 - Default: `2160h`
+- Required: no
+
+### `oauth_client_rate_limits`
+
+Caps on the client API requests of OAuth clients (ADR-0090 §7), for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.
+
+- Environment variable: `MY_OAUTH_CLIENT_RATE_LIMITS`
+- Default: none
 - Required: no
 
 ### `metrics_exporter`

@@ -105,7 +105,7 @@ type authEnv struct {
 var createdAt = time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
 
 func bearer(scope identity.Scope, accountID string) appidentity.Bearer {
-	return appidentity.Bearer{TokenID: testkit.NamedID("tok-" + string(scope)), FamilyID: testkit.NamedID("fam-" + string(scope)), ClientID: "client-1", UserID: userOf(accountID), AccountID: accountID, Scope: scope, FirstParty: true}
+	return appidentity.Bearer{TokenID: testkit.NamedID("tok-" + string(scope)), FamilyID: testkit.NamedID("fam-" + string(scope)), ClientID: "client-1", ClientPublicID: "public-client-1", UserID: userOf(accountID), AccountID: accountID, Scope: scope, FirstParty: true}
 }
 
 // thirdParty returns b as the token of a client that is not this server's own.

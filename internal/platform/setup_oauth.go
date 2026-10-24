@@ -9,7 +9,7 @@ import (
 
 // setUpOAuth registers the OAuth token endpoints.
 func (a *App) setUpOAuth(cfg *config.Config) error {
-	tokens, err := oauth.New(oauth.Options{Identity: a.Identity, WebOrigin: cfg.WebOrigin, Origin: cfg.ServerOrigin(), Logger: a.Logger})
+	tokens, err := oauth.New(oauth.Options{Identity: a.Identity, WebOrigin: cfg.WebOrigin, Origin: cfg.ServerOrigin(), RateLimiter: a.RateLimiter, Logger: a.Logger})
 	if err != nil {
 		return err
 	}

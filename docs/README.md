@@ -23,6 +23,7 @@
 - [ビルドタグ](reference/build-tags.md)（アダプタをバイナリから外すタグと、その検査）
 - [コマンド](reference/commands.md)（go-task のタスクと、固定しているツールチェーン）
 - [webhook リファレンス](reference/webhooks.md)（受け手が受け取るヘッダ・署名・イベント・本文）
+- [サードパーティのアプリの開発者向けの手引き（英語）](reference/third-party-apps.md)（アプリの登録・認可の流れ・スコープ・レート制限・API の安定性）
 
 ## 運用
 

@@ -813,6 +813,7 @@ describe("the settings page", () => {
       "/settings/mutes",
       "/settings/domain-mutes",
       "/settings/import-export",
+      "/settings/apps",
       "/settings/account-status",
       "/settings/account",
     ]);

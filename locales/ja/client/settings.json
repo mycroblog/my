@@ -1406,5 +1406,277 @@
   "settings.push.type.quote": {
     "defaultMessage": "引用",
     "description": "Checkbox of the push notification settings: notifications when someone quotes the user's post."
+  },
+  "settings.apps.title": {
+    "defaultMessage": "開発",
+    "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
+  },
+  "settings.apps.description": {
+    "defaultMessage": "ボットやスクリプト、クライアントなど自分のアプリを登録して、アカウントで使うための情報を発行します。ほかの人が認可するときは、このサーバーが確認していないアプリとして扱われます。",
+    "description": "Explanation at the top of the development settings page."
+  },
+  "settings.apps.new.title": {
+    "defaultMessage": "アプリを登録",
+    "description": "Heading of the form that registers an OAuth app on the development settings page."
+  },
+  "settings.apps.name": {
+    "defaultMessage": "名前",
+    "description": "Label of the name field of an OAuth app."
+  },
+  "settings.apps.name.description": {
+    "defaultMessage": "アプリを認可する人に表示されます。{max}文字までです。",
+    "description": "Description of the name field of an OAuth app. {max} is the most characters."
+  },
+  "settings.apps.name.required": {
+    "defaultMessage": "アプリの名前を入力してください。",
+    "description": "Error when the name of an OAuth app is empty."
+  },
+  "settings.apps.website": {
+    "defaultMessage": "サイト",
+    "description": "Label of the optional website field of an OAuth app."
+  },
+  "settings.apps.website.description": {
+    "defaultMessage": "任意です。アプリのホームページの URL です（https または http で始まるもの）。",
+    "description": "Description of the website field of an OAuth app."
+  },
+  "settings.apps.redirect_uris": {
+    "defaultMessage": "リダイレクト URI",
+    "description": "Label of the field of the redirect URIs of an OAuth app."
+  },
+  "settings.apps.redirect_uris.description": {
+    "defaultMessage": "1 行に 1 つ、{max}個までです。https の URL、アプリ独自のスキーム（com.example.app の形式）、ループバックの URL（127.0.0.1 の http）を使えます。",
+    "description": "Description of the redirect URIs field of an OAuth app. {max} is the most URIs."
+  },
+  "settings.apps.redirect_uris.required": {
+    "defaultMessage": "リダイレクト URI を 1 つ以上入力してください。",
+    "description": "Error when the redirect URIs of an OAuth app are empty."
+  },
+  "settings.apps.scope": {
+    "defaultMessage": "スコープ",
+    "description": "Label of the field of the scopes of an OAuth app."
+  },
+  "settings.apps.scope.description": {
+    "defaultMessage": "アプリが要求できる範囲の上限を、スペースで区切って入力します（例：「read write」）。管理やサポーターのスコープはアプリには使えません。",
+    "description": "Description of the scopes field of an OAuth app."
+  },
+  "settings.apps.scope.required": {
+    "defaultMessage": "スコープを 1 つ以上入力してください。",
+    "description": "Error when the scopes of an OAuth app are empty."
+  },
+  "settings.apps.client_type": {
+    "defaultMessage": "種類",
+    "description": "Legend of the choice between a public and a confidential OAuth app."
+  },
+  "settings.apps.client_type.public": {
+    "defaultMessage": "公開（public）",
+    "description": "Choice of a public OAuth app."
+  },
+  "settings.apps.client_type.public.description": {
+    "defaultMessage": "シークレットはありません。ブラウザ上、モバイル、コマンドラインのアプリ向けです。",
+    "description": "Description of the choice of a public OAuth app."
+  },
+  "settings.apps.client_type.confidential": {
+    "defaultMessage": "非公開（confidential）",
+    "description": "Choice of a confidential OAuth app."
+  },
+  "settings.apps.client_type.confidential.description": {
+    "defaultMessage": "1 度だけ表示されるシークレットがあります。ボットやサーバーで動くアプリ向けです。",
+    "description": "Description of the choice of a confidential OAuth app."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "アプリを登録",
+    "description": "Button that registers an OAuth app."
+  },
+  "settings.apps.register_failed": {
+    "defaultMessage": "アプリを登録できませんでした：{reason}",
+    "description": "Alert when registering an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "アプリ「{name}」を登録しました。",
+    "description": "Status after an OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.list.title": {
+    "defaultMessage": "登録したアプリ",
+    "description": "Heading of the list of the user's OAuth apps."
+  },
+  "settings.apps.empty": {
+    "defaultMessage": "登録したアプリはありません",
+    "description": "Empty state of the list of the user's OAuth apps."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "クライアント ID",
+    "description": "Label of the client ID of an OAuth app."
+  },
+  "settings.apps.type.public": {
+    "defaultMessage": "公開アプリ",
+    "description": "Label of a public OAuth app in the list."
+  },
+  "settings.apps.type.confidential": {
+    "defaultMessage": "非公開アプリ",
+    "description": "Label of a confidential OAuth app in the list."
+  },
+  "settings.apps.created_at": {
+    "defaultMessage": "{date}に登録",
+    "description": "When an OAuth app was registered. {date} is a date and time."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "管理者がこのアプリを無効にしました。認可も利用もできません。",
+    "description": "Note on an OAuth app that an administrator disabled."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "編集",
+    "description": "Button that opens the dialog to change an OAuth app."
+  },
+  "settings.apps.edit.title": {
+    "defaultMessage": "{name}を編集",
+    "description": "Title of the dialog that changes an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.edit.description": {
+    "defaultMessage": "発行済みのトークンは、認可されたスコープのまま使えます。",
+    "description": "Note in the dialog that changes an OAuth app."
+  },
+  "settings.apps.edit.close": {
+    "defaultMessage": "閉じる",
+    "description": "Label of the close button of the dialogs of the development settings."
+  },
+  "settings.apps.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes a dialog of the development settings without changing anything."
+  },
+  "settings.apps.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the changes to an OAuth app."
+  },
+  "settings.apps.save_failed": {
+    "defaultMessage": "アプリを保存できませんでした：{reason}",
+    "description": "Alert when saving an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.saved": {
+    "defaultMessage": "アプリ「{name}」を保存しました。",
+    "description": "Announcement after an OAuth app was saved. {name} is the app's name."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "削除",
+    "description": "Button that deletes an OAuth app."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "{name}を削除しますか？",
+    "description": "Title of the dialog that confirms deleting an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.delete.description": {
+    "defaultMessage": "アプリを完全に削除します。ほかの人が認可したものも含め、このアプリのトークンはすべて使えなくなります。元に戻せません。",
+    "description": "Explanation in the dialog that confirms deleting an OAuth app."
+  },
+  "settings.apps.delete.failed": {
+    "defaultMessage": "アプリを削除できませんでした：{reason}",
+    "description": "Alert when deleting an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.deleted": {
+    "defaultMessage": "アプリ「{name}」を削除しました。",
+    "description": "Announcement after an OAuth app was deleted. {name} is the app's name."
+  },
+  "settings.apps.rotate": {
+    "defaultMessage": "シークレットを再発行",
+    "description": "Button that gives a confidential OAuth app a new secret."
+  },
+  "settings.apps.rotate.title": {
+    "defaultMessage": "{name}のシークレットを再発行しますか？",
+    "description": "Title of the dialog that confirms a new secret for an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.rotate.description": {
+    "defaultMessage": "古いシークレットはすぐに使えなくなり、新しいシークレットを設定するまでアプリはトークンを更新できません。新しいシークレットは 1 度だけ表示されます。",
+    "description": "Explanation in the dialog that confirms a new secret for an OAuth app."
+  },
+  "settings.apps.rotate.failed": {
+    "defaultMessage": "シークレットを再発行できませんでした：{reason}",
+    "description": "Alert when giving an OAuth app a new secret failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "トークンを発行",
+    "description": "Button that opens the dialog to issue tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.title": {
+    "defaultMessage": "{name}のトークンを発行",
+    "description": "Title of the dialog that issues tokens of an OAuth app to the user. {name} is the app's name."
+  },
+  "settings.apps.token.description": {
+    "defaultMessage": "ボットやスクリプト用に、このアプリのアクセストークンとリフレッシュトークンをあなた自身のアカウント向けに発行します。持っている人はスコープの範囲であなたとして操作できるので、秘密にしてください。",
+    "description": "Explanation in the dialog that issues tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.scope": {
+    "defaultMessage": "スコープ",
+    "description": "Label of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.scope.description": {
+    "defaultMessage": "スペースで区切り、アプリのスコープの範囲内で入力します。空にするとすべてになります。",
+    "description": "Description of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.submit": {
+    "defaultMessage": "トークンを発行",
+    "description": "Button that issues tokens of an OAuth app."
+  },
+  "settings.apps.token.failed": {
+    "defaultMessage": "トークンを発行できませんでした：{reason}",
+    "description": "Alert when issuing tokens failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token.result.title": {
+    "defaultMessage": "{name}のトークン",
+    "description": "Title of the dialog that shows the tokens that were issued. {name} is the app's name."
+  },
+  "settings.apps.token.result.notice": {
+    "defaultMessage": "このトークンは今回しか表示されません。コピーして安全な場所に保管してください。もう一度表示することはできません。",
+    "description": "Notice that issued tokens are shown once."
+  },
+  "settings.apps.token.result.expires": {
+    "defaultMessage": "アクセストークンの有効期間は{minutes, plural, other {#分}}です。リフレッシュトークンで更新すると、両方が新しくなります。",
+    "description": "Explanation of the lifetime of the issued access token. {minutes} is the number of minutes."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "アクセストークン",
+    "description": "Label of the issued access token."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "リフレッシュトークン",
+    "description": "Label of the issued refresh token."
+  },
+  "settings.apps.token.granted_scope": {
+    "defaultMessage": "スコープ：{scope}",
+    "description": "The scopes of the issued tokens. {scope} is a list of scopes."
+  },
+  "settings.apps.secret.title": {
+    "defaultMessage": "{name}のクライアントシークレット",
+    "description": "Heading of the notice that shows the secret of an OAuth app once. {name} is the app's name."
+  },
+  "settings.apps.secret.notice": {
+    "defaultMessage": "シークレットが表示されるのは今回だけです。今のうちにコピーして安全な場所に保管してください。なくした場合は再発行できます。",
+    "description": "Notice that the secret of an OAuth app is shown once."
+  },
+  "settings.apps.secret.public": {
+    "defaultMessage": "アプリ「{name}」にシークレットはありません。クライアント ID は下に表示しています。",
+    "description": "Notice after a public OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.secret.client_secret": {
+    "defaultMessage": "クライアントシークレット",
+    "description": "Label of the secret of an OAuth app."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "コピー",
+    "description": "Button that copies a value to the clipboard."
+  },
+  "settings.apps.copy.label": {
+    "defaultMessage": "コピー：{name}",
+    "description": "Accessible name of a button that copies a value. {name} is the value's label."
+  },
+  "settings.apps.copied": {
+    "defaultMessage": "クリップボードにコピーしました。",
+    "description": "Toast after a value was copied."
+  },
+  "settings.apps.copy_failed": {
+    "defaultMessage": "コピーできませんでした。文字列を選択して自分でコピーしてください。",
+    "description": "Toast when copying a value failed."
+  },
+  "settings.apps.done": {
+    "defaultMessage": "完了",
+    "description": "Button that closes the dialog that showed the issued tokens."
   }
 }

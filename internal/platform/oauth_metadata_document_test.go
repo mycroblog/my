@@ -5,16 +5,19 @@ package platform_test
 import (
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/httpclient"
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform"
@@ -180,6 +183,8 @@ func TestOAuthMetadataDocumentClients(t *testing.T) {
 	// document is fixed.
 	flaky := site.json("/flaky.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"],"token_endpoint_auth_method":"private_key_jwt"}`)
 	wantRefused(flaky, "a private_key_jwt client")
+	// The failed fetch counted against the URL's limit (ADR-0090 §7): wait it out.
+	resetFetchLimit(t, app, flaky)
 	site.json("/flaky.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`)
 	if _, err := authorize(flaky); err != nil {
 		t.Errorf("ValidateAuthorization(fixed document) = %v", err)
@@ -195,6 +200,7 @@ func TestOAuthMetadataDocumentClients(t *testing.T) {
 	// A no-store document is fetched for every authorization.
 	noStore := site.json("/nostore.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`, "Cache-Control", "no-store")
 	for range 2 {
+		resetFetchLimit(t, app, noStore)
 		if _, err := authorize(noStore); err != nil {
 			t.Errorf("ValidateAuthorization(no-store) = %v", err)
 		}
@@ -261,4 +267,72 @@ func TestOAuthMetadataDocumentInternalAddress(t *testing.T) {
 func isOAuthError(err error, code string) bool {
 	var e *identity.OAuthError
 	return errors.As(err, &e) && e.Code == code
+}
+
+// resetFetchLimit forgets the fetches counted against the URL limit of clientID, as if the
+// limit's window had passed.
+func resetFetchLimit(t *testing.T, app *platform.App, clientID string) {
+	t.Helper()
+	lim := identity.MetadataDocumentURLLimit
+	index := time.Now().UnixMilli() / lim.Window.Milliseconds()
+	for i := index - 1; i <= index+1; i++ {
+		key := fmt.Sprintf("%s:%d:%s", lim.Name, i, clientID)
+		if err := app.KV.Delete(t.Context(), kernel.RateLimitNamespace, key); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// TestOAuthMetadataDocumentFetchLimits checks the limits of the fetch of a metadata document
+// (ADR-0090 §7): a URL is fetched once in 5 minutes, a host 30 times an hour, and over a limit
+// the authorization request fails with a rate-limit error without fetching.
+func TestOAuthMetadataDocumentFetchLimits(t *testing.T) {
+	t.Parallel()
+	site := newMetadataSite(t)
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), HTTPClient: site.client()})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	authorize := func(clientID string) error {
+		_, err := app.Identity.ValidateAuthorization(t.Context(), identity.AuthorizationRequest{
+			ResponseType: "code", ClientID: clientID, RedirectURI: metadataRedirect, Scope: "read",
+			CodeChallenge: domain.S256Challenge(strings.Repeat("v", 43)), CodeChallengeMethod: domain.CodeChallengeMethodS256,
+		})
+		return err
+	}
+	wantLimited := func(err error, what string) {
+		t.Helper()
+		var limited *kernel.RateLimitedError
+		if !errors.As(err, &limited) || limited.RetryAfter <= 0 {
+			t.Errorf("%s = %v, want a *kernel.RateLimitedError with a RetryAfter", what, err)
+		}
+	}
+
+	noStore := site.json("/nostore.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`, "Cache-Control", "no-store")
+	if err := authorize(noStore); err != nil {
+		t.Fatalf("first authorization = %v", err)
+	}
+	wantLimited(authorize(noStore), "the second fetch of one URL")
+	if n := site.count("/nostore.json"); n != 1 {
+		t.Errorf("fetches = %d, want 1: a limited request does not fetch", n)
+	}
+
+	// 29 more URLs of the host use up its 30 fetches an hour.
+	for i := range 29 {
+		id := site.json(fmt.Sprintf("/doc%d.json", i), `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`)
+		if err := authorize(id); err != nil {
+			t.Fatalf("fetch %d = %v", i+2, err)
+		}
+	}
+	over := site.json("/over.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`)
+	wantLimited(authorize(over), "the 31st fetch from one host")
+	if n := site.count("/over.json"); n != 0 {
+		t.Errorf("fetches over the host limit = %d, want 0", n)
+	}
+	// A cached document needs no fetch, so the limits do not apply to it.
+	if err := authorize(site.url("/doc0.json")); err != nil {
+		t.Errorf("authorization of a cached document = %v", err)
+	}
 }

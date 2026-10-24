@@ -78,6 +78,19 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
     { role_id: supporterBadgeId, label: "Supporter of the medium plan", color: "green", displayed: false },
     { role_id: "0192f0c4-7a8e-7000-8000-0000000000b2", label: "داعم", color: "pink", displayed: true },
   ];
+  // The user's own OAuth apps (ADR-0090): one registered already, with a long name.
+  const oauthApps: Record<string, unknown>[] = [
+    {
+      id: "0192f0c4-7a8e-7000-8000-000000000bb1",
+      client_id: "my_ci_a-very-long-client-identifier-for-the-narrowest-screens",
+      name: "A bot with a very long name for the narrowest phone screens",
+      redirect_uris: ["http://127.0.0.1/callback"],
+      scope: "read write",
+      client_type: "confidential",
+      disabled: false,
+      created_at: "2026-10-16T09:30:00Z",
+    },
+  ];
   const changes: unknown[] = [];
   await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
   await page.route("**/api/v1/**", async (route) => {
@@ -168,6 +181,14 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         return json(route, {
           items: [{ id: "0192f0c4-7a8e-7000-8000-000000000ab1", name: "A password manager with a long name on a narrow phone", created_at: "2026-10-16T09:30:00Z" }],
         });
+      case "GET /oauth_apps":
+        return json(route, { items: oauthApps });
+      case "POST /oauth_apps": {
+        const body = request.postDataJSON() as { name: string; redirect_uris: string[]; scope: string; client_type: string };
+        const app = { id: "0192f0c4-7a8e-7000-8000-000000000bb2", client_id: "my_ci_registered", ...body, disabled: false, created_at: "2026-10-21T09:30:00Z" };
+        oauthApps.push(app);
+        return json(route, { app, client_secret: "my_cs_e2e-secret-shown-once" }, 201);
+      }
       case "POST /two_factor/totp/setup":
         return json(route, totpSetup);
       default:
@@ -214,6 +235,7 @@ const pages = [
   "/settings/password",
   "/settings/two-factor",
   "/settings/passkeys",
+  "/settings/apps",
   "/settings/auto-delete",
   "/settings/account",
   "/settings/import-export",
@@ -257,6 +279,30 @@ test("two-factor setup shows the QR code and the key without axe violations or h
   await expect(page.getByRole("main").getByRole("textbox")).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
+});
+
+test("registering an app shows its secret once without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+  await signedInServer(page, projectLocale());
+  await page.goto("/settings/apps");
+  const main = page.getByRole("main");
+  const form = main.getByRole("region", { name: message("settings.apps.new.title") });
+  await form.getByRole("textbox", { name: message("settings.apps.name") }).first().fill("E2E bot");
+  await form.getByRole("textbox", { name: message("settings.apps.redirect_uris") }).fill("http://127.0.0.1/callback");
+  // By keyboard: the radio's input is visually hidden under its drawn circle.
+  const confidential = form.getByRole("radio", { name: message("settings.apps.client_type.confidential") });
+  await confidential.focus();
+  await page.keyboard.press("Space");
+  await expect(confidential).toBeChecked();
+  await form.getByRole("button", { name: message("settings.apps.register"), exact: true }).click();
+  const notice = main.getByRole("region", { name: message("settings.apps.secret.title").replace("{name}", "E2E bot") });
+  await expect(notice.getByText("my_cs_e2e-secret-shown-once")).toBeVisible();
+  await expect(notice).toBeFocused();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+  // The secret is not kept: a new visit does not show it again.
+  await page.reload();
+  await expect(main.getByRole("region", { name: message("settings.apps.list.title") })).toBeVisible();
+  await expect(page.getByText("my_cs_e2e-secret-shown-once")).toHaveCount(0);
 });
 
 test("checking a file to import shows what it does without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {

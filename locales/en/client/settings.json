@@ -1406,5 +1406,277 @@
   "settings.push.type.quote": {
     "defaultMessage": "Quotes",
     "description": "Checkbox of the push notification settings: notifications when someone quotes the user's post."
+  },
+  "settings.apps.title": {
+    "defaultMessage": "Development",
+    "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
+  },
+  "settings.apps.description": {
+    "defaultMessage": "Register apps of your own, such as a bot, a script, or a client, and get what they need to use your account. Other people authorize an app you register like any app this server has not verified.",
+    "description": "Explanation at the top of the development settings page."
+  },
+  "settings.apps.new.title": {
+    "defaultMessage": "Register an app",
+    "description": "Heading of the form that registers an OAuth app on the development settings page."
+  },
+  "settings.apps.name": {
+    "defaultMessage": "Name",
+    "description": "Label of the name field of an OAuth app."
+  },
+  "settings.apps.name.description": {
+    "defaultMessage": "Shown to people who authorize the app. Up to {max} characters.",
+    "description": "Description of the name field of an OAuth app. {max} is the most characters."
+  },
+  "settings.apps.name.required": {
+    "defaultMessage": "Enter a name for the app.",
+    "description": "Error when the name of an OAuth app is empty."
+  },
+  "settings.apps.website": {
+    "defaultMessage": "Website",
+    "description": "Label of the optional website field of an OAuth app."
+  },
+  "settings.apps.website.description": {
+    "defaultMessage": "Optional. The app's home page, starting with https:// or http://.",
+    "description": "Description of the website field of an OAuth app."
+  },
+  "settings.apps.redirect_uris": {
+    "defaultMessage": "Redirect URIs",
+    "description": "Label of the field of the redirect URIs of an OAuth app."
+  },
+  "settings.apps.redirect_uris.description": {
+    "defaultMessage": "One per line, up to {max}. An https URL, an app scheme such as com.example.app:/callback, or a loopback URL such as http://127.0.0.1/callback.",
+    "description": "Description of the redirect URIs field of an OAuth app. {max} is the most URIs."
+  },
+  "settings.apps.redirect_uris.required": {
+    "defaultMessage": "Enter at least one redirect URI.",
+    "description": "Error when the redirect URIs of an OAuth app are empty."
+  },
+  "settings.apps.scope": {
+    "defaultMessage": "Scopes",
+    "description": "Label of the field of the scopes of an OAuth app."
+  },
+  "settings.apps.scope.description": {
+    "defaultMessage": "The most the app may ask for, separated by spaces, for example “read write”. Administration and supporter scopes are not available to apps.",
+    "description": "Description of the scopes field of an OAuth app."
+  },
+  "settings.apps.scope.required": {
+    "defaultMessage": "Enter at least one scope.",
+    "description": "Error when the scopes of an OAuth app are empty."
+  },
+  "settings.apps.client_type": {
+    "defaultMessage": "Type",
+    "description": "Legend of the choice between a public and a confidential OAuth app."
+  },
+  "settings.apps.client_type.public": {
+    "defaultMessage": "Public",
+    "description": "Choice of a public OAuth app."
+  },
+  "settings.apps.client_type.public.description": {
+    "defaultMessage": "No secret. For a single-page, mobile, or command-line app.",
+    "description": "Description of the choice of a public OAuth app."
+  },
+  "settings.apps.client_type.confidential": {
+    "defaultMessage": "Confidential",
+    "description": "Choice of a confidential OAuth app."
+  },
+  "settings.apps.client_type.confidential.description": {
+    "defaultMessage": "Has a secret that is shown once. For a bot or an app that runs on a server.",
+    "description": "Description of the choice of a confidential OAuth app."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "Register app",
+    "description": "Button that registers an OAuth app."
+  },
+  "settings.apps.register_failed": {
+    "defaultMessage": "The app was not registered: {reason}",
+    "description": "Alert when registering an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "The app “{name}” was registered.",
+    "description": "Status after an OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.list.title": {
+    "defaultMessage": "Your apps",
+    "description": "Heading of the list of the user's OAuth apps."
+  },
+  "settings.apps.empty": {
+    "defaultMessage": "No apps yet",
+    "description": "Empty state of the list of the user's OAuth apps."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "Client ID",
+    "description": "Label of the client ID of an OAuth app."
+  },
+  "settings.apps.type.public": {
+    "defaultMessage": "Public app",
+    "description": "Label of a public OAuth app in the list."
+  },
+  "settings.apps.type.confidential": {
+    "defaultMessage": "Confidential app",
+    "description": "Label of a confidential OAuth app in the list."
+  },
+  "settings.apps.created_at": {
+    "defaultMessage": "Registered {date}",
+    "description": "When an OAuth app was registered. {date} is a date and time."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "An administrator disabled this app. It cannot be authorized or used.",
+    "description": "Note on an OAuth app that an administrator disabled."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "Edit",
+    "description": "Button that opens the dialog to change an OAuth app."
+  },
+  "settings.apps.edit.title": {
+    "defaultMessage": "Edit {name}",
+    "description": "Title of the dialog that changes an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.edit.description": {
+    "defaultMessage": "The tokens the app already holds keep working with the scopes they were granted.",
+    "description": "Note in the dialog that changes an OAuth app."
+  },
+  "settings.apps.edit.close": {
+    "defaultMessage": "Close",
+    "description": "Label of the close button of the dialogs of the development settings."
+  },
+  "settings.apps.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes a dialog of the development settings without changing anything."
+  },
+  "settings.apps.save": {
+    "defaultMessage": "Save",
+    "description": "Button that saves the changes to an OAuth app."
+  },
+  "settings.apps.save_failed": {
+    "defaultMessage": "The app was not saved: {reason}",
+    "description": "Alert when saving an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.saved": {
+    "defaultMessage": "The app “{name}” was saved.",
+    "description": "Announcement after an OAuth app was saved. {name} is the app's name."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "Delete",
+    "description": "Button that deletes an OAuth app."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "Delete {name}?",
+    "description": "Title of the dialog that confirms deleting an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.delete.description": {
+    "defaultMessage": "The app is deleted for good, and every token of it stops working, also for other people who authorized it. This cannot be undone.",
+    "description": "Explanation in the dialog that confirms deleting an OAuth app."
+  },
+  "settings.apps.delete.failed": {
+    "defaultMessage": "The app was not deleted: {reason}",
+    "description": "Alert when deleting an OAuth app failed. {reason} is the server's explanation."
+  },
+  "settings.apps.deleted": {
+    "defaultMessage": "The app “{name}” was deleted.",
+    "description": "Announcement after an OAuth app was deleted. {name} is the app's name."
+  },
+  "settings.apps.rotate": {
+    "defaultMessage": "New secret",
+    "description": "Button that gives a confidential OAuth app a new secret."
+  },
+  "settings.apps.rotate.title": {
+    "defaultMessage": "Give {name} a new secret?",
+    "description": "Title of the dialog that confirms a new secret for an OAuth app. {name} is the app's name."
+  },
+  "settings.apps.rotate.description": {
+    "defaultMessage": "The old secret stops working at once, so the app cannot refresh its tokens until you give it the new one. The new secret is shown once.",
+    "description": "Explanation in the dialog that confirms a new secret for an OAuth app."
+  },
+  "settings.apps.rotate.failed": {
+    "defaultMessage": "The secret was not replaced: {reason}",
+    "description": "Alert when giving an OAuth app a new secret failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "Issue token",
+    "description": "Button that opens the dialog to issue tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.title": {
+    "defaultMessage": "Issue a token of {name}",
+    "description": "Title of the dialog that issues tokens of an OAuth app to the user. {name} is the app's name."
+  },
+  "settings.apps.token.description": {
+    "defaultMessage": "Issues an access token and a refresh token of this app for your own account, for a bot or a script. Anyone who has them can act as you within the scopes, so keep them secret.",
+    "description": "Explanation in the dialog that issues tokens of an OAuth app to the user."
+  },
+  "settings.apps.token.scope": {
+    "defaultMessage": "Scopes",
+    "description": "Label of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.scope.description": {
+    "defaultMessage": "Separated by spaces, within the app's scopes. Leave empty for all of them.",
+    "description": "Description of the scopes field of the dialog that issues tokens."
+  },
+  "settings.apps.token.submit": {
+    "defaultMessage": "Issue token",
+    "description": "Button that issues tokens of an OAuth app."
+  },
+  "settings.apps.token.failed": {
+    "defaultMessage": "The token was not issued: {reason}",
+    "description": "Alert when issuing tokens failed. {reason} is the server's explanation."
+  },
+  "settings.apps.token.result.title": {
+    "defaultMessage": "Tokens of {name}",
+    "description": "Title of the dialog that shows the tokens that were issued. {name} is the app's name."
+  },
+  "settings.apps.token.result.notice": {
+    "defaultMessage": "These tokens are shown only now. Copy them and keep them safe; they cannot be shown again.",
+    "description": "Notice that issued tokens are shown once."
+  },
+  "settings.apps.token.result.expires": {
+    "defaultMessage": "The access token lasts {minutes, plural, one {# minute} other {# minutes}}. Refresh it with the refresh token, which replaces both.",
+    "description": "Explanation of the lifetime of the issued access token. {minutes} is the number of minutes."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "Access token",
+    "description": "Label of the issued access token."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "Refresh token",
+    "description": "Label of the issued refresh token."
+  },
+  "settings.apps.token.granted_scope": {
+    "defaultMessage": "Scopes: {scope}",
+    "description": "The scopes of the issued tokens. {scope} is a list of scopes."
+  },
+  "settings.apps.secret.title": {
+    "defaultMessage": "Client secret of {name}",
+    "description": "Heading of the notice that shows the secret of an OAuth app once. {name} is the app's name."
+  },
+  "settings.apps.secret.notice": {
+    "defaultMessage": "This is the only time the secret is shown. Copy it now and keep it safe; if you lose it, give the app a new one.",
+    "description": "Notice that the secret of an OAuth app is shown once."
+  },
+  "settings.apps.secret.public": {
+    "defaultMessage": "The app “{name}” has no secret. Its client ID is shown below.",
+    "description": "Notice after a public OAuth app was registered. {name} is the app's name."
+  },
+  "settings.apps.secret.client_secret": {
+    "defaultMessage": "Client secret",
+    "description": "Label of the secret of an OAuth app."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "Copy",
+    "description": "Button that copies a value to the clipboard."
+  },
+  "settings.apps.copy.label": {
+    "defaultMessage": "Copy: {name}",
+    "description": "Accessible name of a button that copies a value. {name} is the value's label."
+  },
+  "settings.apps.copied": {
+    "defaultMessage": "Copied to the clipboard.",
+    "description": "Toast after a value was copied."
+  },
+  "settings.apps.copy_failed": {
+    "defaultMessage": "Could not copy. Select the text and copy it yourself.",
+    "description": "Toast when copying a value failed."
+  },
+  "settings.apps.done": {
+    "defaultMessage": "Done",
+    "description": "Button that closes the dialog that showed the issued tokens."
   }
 }

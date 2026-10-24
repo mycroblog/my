@@ -23,12 +23,16 @@ var (
 	// ResolveLimit bounds the remote accounts one account fetches with lookupAccount's resolve
 	// (FR-305): each fetch is WebFinger and actor requests to another server.
 	ResolveLimit = kernel.Limit{Name: "api.resolve", Max: 30, Window: 5 * time.Minute}
+	// OAuthAppRegisterLimit bounds the OAuth apps one user registers (ADR-0090 §7); the 25 apps
+	// a user may keep are a separate cap.
+	OAuthAppRegisterLimit = kernel.Limit{Name: "oauth.app.register", Max: 5, Window: time.Hour}
 )
 
 // Names of the rate-limit policies in the RateLimit and RateLimit-Policy fields.
 const (
 	policyIP      = "ip"
 	policyAccount = "account"
+	policyClient  = "client"
 )
 
 // limit takes one request of key from lim, the policy called name, and sets the
