@@ -1,0 +1,214 @@
+{
+  "admin.oauth_apps.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes a dialog of the OAuth apps screen without changing anything."
+  },
+  "admin.oauth_apps.change_failed": {
+    "defaultMessage": "アプリを変更できませんでした：{reason}",
+    "description": "Error of disabling or enabling an app, or of denying or allowing a host. {reason} says why."
+  },
+  "admin.oauth_apps.column.app": {
+    "defaultMessage": "アプリ",
+    "description": "Column header of the app's name."
+  },
+  "admin.oauth_apps.column.created": {
+    "defaultMessage": "登録日時",
+    "description": "Column header of when an app was registered."
+  },
+  "admin.oauth_apps.column.registration": {
+    "defaultMessage": "登録の経路",
+    "description": "Column header of the registration route."
+  },
+  "admin.oauth_apps.column.scope": {
+    "defaultMessage": "付与できる上限",
+    "description": "Column header of the scopes an app may be granted at most."
+  },
+  "admin.oauth_apps.confidential": {
+    "defaultMessage": "シークレットあり",
+    "description": "An app that is a confidential client."
+  },
+  "admin.oauth_apps.deny_host": {
+    "defaultMessage": "ホストを拒否",
+    "description": "Button on an app that denies the host of its metadata document."
+  },
+  "admin.oauth_apps.deny_host_of": {
+    "defaultMessage": "ホスト{host}を拒否する",
+    "description": "Accessible name of the button that denies the host of an app's metadata document. {host} is the host name."
+  },
+  "admin.oauth_apps.disable": {
+    "defaultMessage": "無効にする",
+    "description": "Button that disables an app, and the confirming button of its dialog."
+  },
+  "admin.oauth_apps.disable.description": {
+    "defaultMessage": "このアプリのトークンをすべてすぐに失効させ、サインイン、トークンの交換、更新を拒否します。有効に戻しても失効したトークンは戻らず、利用者はもう一度サインインします。",
+    "description": "Description of the dialog that confirms disabling an app."
+  },
+  "admin.oauth_apps.disable.title": {
+    "defaultMessage": "{name}を無効にしますか？",
+    "description": "Title of the dialog that confirms disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disable_app": {
+    "defaultMessage": "{name}を無効にする",
+    "description": "Accessible name of the button that disables an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.disabled": {
+    "defaultMessage": "無効",
+    "description": "Marks an app that an administrator disabled."
+  },
+  "admin.oauth_apps.disabled_done": {
+    "defaultMessage": "{name}を無効にし、トークンを失効させました。",
+    "description": "Status after disabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.empty": {
+    "defaultMessage": "アプリはありません",
+    "description": "Heading of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.empty.description": {
+    "defaultMessage": "この経路で登録されたアプリはありません。",
+    "description": "Description of the empty list of OAuth apps."
+  },
+  "admin.oauth_apps.enable": {
+    "defaultMessage": "有効にする",
+    "description": "Button that lifts the disablement of an app."
+  },
+  "admin.oauth_apps.enable_app": {
+    "defaultMessage": "{name}を有効にする",
+    "description": "Accessible name of the button that lifts the disablement of an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.enabled_done": {
+    "defaultMessage": "{name}を有効にしました。",
+    "description": "Status after enabling an app. {name} is the app's name."
+  },
+  "admin.oauth_apps.filter.all": {
+    "defaultMessage": "すべての経路",
+    "description": "Choice of the filter that keeps every app."
+  },
+  "admin.oauth_apps.filter.label": {
+    "defaultMessage": "登録の経路",
+    "description": "Label of the filter that keeps the apps of one registration route."
+  },
+  "admin.oauth_apps.first_party_note": {
+    "defaultMessage": "無効にできません",
+    "description": "Says that the server's own app has no disable button."
+  },
+  "admin.oauth_apps.hosts.allow": {
+    "defaultMessage": "許可する",
+    "description": "Button that lifts the denial of a host."
+  },
+  "admin.oauth_apps.hosts.allow_host": {
+    "defaultMessage": "ホスト{host}を許可する",
+    "description": "Accessible name of the button that lifts the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.allowed_done": {
+    "defaultMessage": "{host}を許可し直しました。",
+    "description": "Status after lifting the denial of a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.column.denied": {
+    "defaultMessage": "拒否した日時",
+    "description": "Column header of when a host was denied."
+  },
+  "admin.oauth_apps.hosts.column.host": {
+    "defaultMessage": "ホスト",
+    "description": "Column header of a denied host."
+  },
+  "admin.oauth_apps.hosts.denied_done": {
+    "defaultMessage": "{host}を拒否し、そのアプリのトークンを失効させました。",
+    "description": "Status after denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny": {
+    "defaultMessage": "拒否する",
+    "description": "Confirming button of the dialog that denies a host."
+  },
+  "admin.oauth_apps.hosts.deny.description": {
+    "defaultMessage": "これ以降、そのホストの client_id の URL は取得も受け入れもされません。そのホストのアプリのトークンはすぐに失効し、ホストを許可し直しても戻りません。",
+    "description": "Description of the dialog that confirms denying a host."
+  },
+  "admin.oauth_apps.hosts.deny.title": {
+    "defaultMessage": "{host}を拒否しますか？",
+    "description": "Title of the dialog that confirms denying a host. {host} is the host name."
+  },
+  "admin.oauth_apps.hosts.deny_new": {
+    "defaultMessage": "ホストを拒否する",
+    "description": "Button that opens the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.deny_new.title": {
+    "defaultMessage": "ホストを拒否する",
+    "description": "Title of the dialog that denies a host by its name."
+  },
+  "admin.oauth_apps.hosts.description": {
+    "defaultMessage": "拒否したホストの client_id の URL は取得も受け入れもされず、そのホストのアプリはサインインできません。",
+    "description": "Explains the list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty": {
+    "defaultMessage": "拒否したホストはありません",
+    "description": "Heading of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.empty.description": {
+    "defaultMessage": "ホストを拒否すると、そのメタデータ文書を使うアプリを止められます。",
+    "description": "Description of the empty list of denied hosts."
+  },
+  "admin.oauth_apps.hosts.host": {
+    "defaultMessage": "ホスト名",
+    "description": "Label of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.host.description": {
+    "defaultMessage": "client_id の URL のホスト名です（例：app.example）。スキーム、ポート、パスは付けません。",
+    "description": "Description of the field of the host to deny."
+  },
+  "admin.oauth_apps.hosts.title": {
+    "defaultMessage": "拒否したホスト",
+    "description": "Heading of the list of denied hosts, and its table caption."
+  },
+  "admin.oauth_apps.list.description": {
+    "defaultMessage": "削除されていないすべてのアプリを新しい順に並べています。アプリを無効にするとトークンをすぐに失効させ、有効に戻すまでサインインを拒否します。",
+    "description": "Explains the list of OAuth apps."
+  },
+  "admin.oauth_apps.list.title": {
+    "defaultMessage": "アプリ",
+    "description": "Heading of the list of OAuth apps, and its table caption."
+  },
+  "admin.oauth_apps.owner": {
+    "defaultMessage": "登録した利用者：{id}",
+    "description": "The ID of the user who registered an app. {id} is the user's ID."
+  },
+  "admin.oauth_apps.public": {
+    "defaultMessage": "シークレットなし",
+    "description": "An app that is a public client."
+  },
+  "admin.oauth_apps.registration.dynamic": {
+    "defaultMessage": "動的登録",
+    "description": "Registration route of an app that registered itself (RFC 7591)."
+  },
+  "admin.oauth_apps.registration.first_party": {
+    "defaultMessage": "このサーバー",
+    "description": "Registration route of the server's own apps."
+  },
+  "admin.oauth_apps.registration.metadata_document": {
+    "defaultMessage": "メタデータ文書",
+    "description": "Registration route of an app whose client ID is the URL of its metadata document."
+  },
+  "admin.oauth_apps.registration.user": {
+    "defaultMessage": "利用者",
+    "description": "Registration route of an app that a signed-in user registered."
+  },
+  "admin.oauth_apps.summary": {
+    "defaultMessage": "このサーバーにサインインできるアプリを一覧し、無効にしたり、アプリのメタデータ文書のホストを拒否したりします。",
+    "description": "Description of the OAuth apps screen in the administration menu."
+  },
+  "admin.oauth_apps.tabs.apps": {
+    "defaultMessage": "アプリ",
+    "description": "Tab that lists the OAuth apps."
+  },
+  "admin.oauth_apps.tabs.hosts": {
+    "defaultMessage": "拒否したホスト",
+    "description": "Tab that lists the denied hosts of app metadata documents."
+  },
+  "admin.oauth_apps.tabs.label": {
+    "defaultMessage": "OAuth のアプリの区分",
+    "description": "Accessible name of the tabs of the OAuth apps screen."
+  },
+  "admin.oauth_apps.title": {
+    "defaultMessage": "OAuth のアプリ",
+    "description": "Heading of the OAuth apps screen, and its link in the administration menu."
+  }
+}

@@ -151,6 +151,26 @@ export function relayFixture(id: string, overrides: Partial<Schemas["AdminRelay"
   };
 }
 
+/** An OAuth client as the admin API answers it: an app that a user registered at 2026-10-22T00:00:00Z, enabled, with `overrides`. */
+export function oauthClientFixture(id: string, overrides: Partial<Schemas["AdminOAuthClient"]> = {}): Schemas["AdminOAuthClient"] {
+  return {
+    id,
+    client_id: `client-${id}`,
+    name: "Tootle",
+    registration: "user",
+    confidential: false,
+    scope: "read write",
+    disabled: false,
+    created_at: "2026-10-22T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** A denied host as the admin API answers it, denied at 2026-10-23T00:00:00Z, with `overrides`. */
+export function hostDenialFixture(id: string, host: string, overrides: Partial<Schemas["AdminOAuthClientHostDenial"]> = {}): Schemas["AdminOAuthClientHostDenial"] {
+  return { id, host, denied_at: "2026-10-23T00:00:00Z", ...overrides };
+}
+
 /** An announcement as the admin API answers it, written at 2026-10-21T00:00:00Z as a draft, with `overrides`. */
 export function adminAnnouncementFixture(id: string, overrides: Partial<Schemas["AdminAnnouncement"]> = {}): Schemas["AdminAnnouncement"] {
   return {
@@ -198,6 +218,9 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "income_visibility", kind: "enum", default: "private", choices: ["private", "totals", "plans"] },
   { key: "supporter_list_visibility", kind: "enum", default: "off", choices: ["off", "public", "signed_in"] },
   { key: "federation_mode", kind: "enum", default: "both", choices: ["off", "inbound", "outbound", "both"] },
+  { key: "user_app_registration", kind: "bool", default: "true" },
+  { key: "oauth_metadata_document_clients", kind: "bool", default: "true" },
+  { key: "dynamic_client_registration", kind: "bool", default: "true" },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */
@@ -427,6 +450,20 @@ export const handlers = [
     return withViewer(request, () => HttpResponse.json(left));
   }),
   http.delete(`${apiBase}/admin/relays/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  // operationIds listAdminOAuthClients, disableOAuthClient, enableOAuthClient, listOAuthClientHostDenials,
+  // denyOAuthClientHost, allowOAuthClientHost: no clients and no denied hosts; the changes are answered as asked.
+  http.get(`${apiBase}/admin/oauth_clients`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientPage"]))),
+  http.post(`${apiBase}/admin/oauth_clients/:id/disable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"]), { disabled: true }))),
+  ),
+  http.post(`${apiBase}/admin/oauth_clients/:id/enable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"])))),
+  ),
+  http.get(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientHostDenialPage"])),
+  ),
+  http.post(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/admin/oauth_client_host_denials/:host`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
   // operationIds listAdminAnnouncements, createAdminAnnouncement, getAdminAnnouncement, updateAdminAnnouncement,
   // publishAdminAnnouncement, withdrawAdminAnnouncement: no announcements; a new or changed one is answered as sent.
   http.get(`${apiBase}/admin/announcements`, ({ request }) =>
