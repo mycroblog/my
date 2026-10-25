@@ -155,6 +155,8 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/accounts/aliases":                                       {Operation: "addAccountAlias", Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/aliases/remove":                                {Operation: "removeAccountAlias", Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/delete":                                        {Operation: "deleteOwnAccount", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
+	"POST /api/v1/accounts/move":                                          {Operation: "moveOwnAccount", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
+	"POST /api/v1/accounts/move/cancel":                                   {Operation: "cancelOwnAccountMove", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/password":                                      {Operation: "changePassword", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/password/remove":                               {Operation: "removePassword", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/{id}/block":                                    {Operation: "blockAccount", Scopes: []string{"write:blocks"}},

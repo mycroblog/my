@@ -65,6 +65,9 @@ type FanOutDeps struct {
 	Relays RelayInboxes
 	// Modes reads the federation mode when each batch runs (ADR-0076); nil federates both ways.
 	Modes ModeSettings
+	// Moves reads the moves of local accounts: the movedTo of the Updates of their actors and the
+	// Moves they send (ADR-0089); nil means that no account moved, and fails the Moves.
+	Moves MoveReader
 	// Host is the serving domain of the activity and object URIs (ADR-0018).
 	Host string
 	// AccountDomain is the domain of local handles in mentions; empty means Host.
@@ -171,7 +174,7 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	if err != nil {
 		return err
 	}
-	if !federation.Sends(mode, act, subj.suspended) {
+	if !federation.Sends(mode, act, subj.retracting()) {
 		return fmt.Errorf("%w: %s %s skipped in mode %s", ErrFederationRestricted, act.Type, act.ID, mode)
 	}
 	phases := subj.phases()
@@ -193,7 +196,7 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	// of one activity agree on its phases whatever the mode was when each ran; it finds no one.
 	var targets []target
 	var next string
-	if !phases[idx].adds() || federation.AddsRecipients(mode, act, subj.suspended) {
+	if !phases[idx].adds() || federation.AddsRecipients(mode, act, subj.retracting()) {
 		if targets, next, err = f.batch(ctx, act, subj, phases[idx], p.After); err != nil {
 			return err
 		}
@@ -327,11 +330,18 @@ type subject struct {
 	// sharedInboxes sends an actor's Update to every known shared inbox too
 	// (fanOutPayload.SharedInboxes).
 	sharedInboxes bool
+	// movedTo is the actor that the local actor of an account activity moved to, the movedTo of
+	// its Update, or the target of its Move; "" when it has not moved (ADR-0089).
+	movedTo federation.IRI
 	// report is the forwarded report a Flag is about.
 	report appmoderation.Report
 	// inbox is the only recipient of an activity of the relay membership.
 	inbox federation.IRI
 }
+
+// retracting reports whether the Update of an actor takes something back rather than publishing
+// the profile: its suspension, or its move (federation.OutboundFlows).
+func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 
 // phases returns the sources of recipients of the activity, in order (data-model §7,
 // federation.md §7.1).
@@ -345,6 +355,7 @@ type subject struct {
 //   - Update of an actor: its followers. Delete of an actor, and the Update of a suspension or
 //     of its end: its followers, then every shared inbox known to the instance (data-model §8,
 //     federation.md §11.1).
+//   - Move of an actor: its followers (ADR-0089).
 //   - Follow, Accept, Reject, and Undo Follow: the other account of the follow.
 //   - Like and Undo Like: the author of the favourited status.
 //   - Create of a vote: the author of the poll's status.
@@ -372,6 +383,8 @@ func (s subject) phases() []phase {
 		return []phase{phaseFollowers}
 	case federation.OutboundFollow:
 		return []phase{phaseCounterpart}
+	case federation.OutboundMove:
+		return []phase{phaseFollowers}
 	case federation.OutboundFavourite, federation.OutboundPollVote:
 		return []phase{phaseStatusAuthor}
 	case federation.OutboundStatus:
@@ -413,6 +426,9 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 	if act.ObjectKind == federation.OutboundFollow {
 		s.followURI = federation.IRI(p.FollowURI)
 		return f.followSubject(ctx, s)
+	}
+	if act.ObjectKind == federation.OutboundMove {
+		return f.moveSubject(ctx, s)
 	}
 	revisionID := p.RevisionID
 	if act.ObjectKind == federation.OutboundAccount {
@@ -499,6 +515,48 @@ func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error)
 	if !a.Lifecycle.Active() && (!s.suspended || a.Deleted()) {
 		return subject{}, fmt.Errorf("%w: account %s is not active", errGone, act.ObjectID)
 	}
+	if s.movedTo, err = LocalActorMovedTo(ctx, f.d.Moves, a); err != nil {
+		return subject{}, err
+	}
+	return s, nil
+}
+
+// moveSubject loads the move of a Move, its local actor, and the actor it moves to. The Move of
+// an actor that is no longer active has nothing to send; a cancelled move is still sent, since
+// its Update came first and the cancellation's Update follows it.
+func (f *FanOut) moveSubject(ctx context.Context, s subject) (subject, error) {
+	act := s.act
+	if act.Type != federation.ActivityMove || f.d.Moves == nil {
+		return subject{}, fmt.Errorf("%w: %s of the move %s", federation.ErrInvalidOutbound, act.Type, act.ObjectID)
+	}
+	m, err := f.d.Moves.FindMove(ctx, act.ObjectID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return subject{}, fmt.Errorf("%w: move %s", errGone, act.ObjectID)
+	case err != nil:
+		return subject{}, err
+	case m.AccountID != act.ActorAccountID:
+		return subject{}, fmt.Errorf("%w: the move %s is not of %s", federation.ErrInvalidOutbound, m.ID, act.ActorAccountID)
+	}
+	a, err := f.d.Accounts.FindByID(ctx, m.AccountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return subject{}, fmt.Errorf("%w: account %s", errGone, m.AccountID)
+	case err != nil:
+		return subject{}, err
+	case !a.Account.IsLocal() || a.IsInstanceActor():
+		return subject{}, fmt.Errorf("%w: the Move of %s, which is not a local user's", federation.ErrInvalidOutbound, m.AccountID)
+	case !a.Lifecycle.Active():
+		return subject{}, fmt.Errorf("%w: account %s is not active", errGone, m.AccountID)
+	}
+	t, err := f.d.Moves.FindByID(ctx, m.TargetAccountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return subject{}, fmt.Errorf("%w: account %s", errGone, m.TargetAccountID)
+	case err != nil:
+		return subject{}, err
+	}
+	s.actor, s.movedTo = a, federation.IRI(t.Account.URI)
 	return s, nil
 }
 
@@ -609,7 +667,7 @@ func (f *FanOut) resolve(ctx context.Context, act federation.OutboundActivity, s
 // the accounts that voted in a poll, ContextObjectFetch, since they saw the status to vote in it
 // without being among the accounts that a delivery pushes it to.
 func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity, s subject, accountIDs []string, followers bool, view appcontent.ViewContext) ([]target, error) {
-	judged := act.Type != federation.ActivityDelete && act.ObjectKind != federation.OutboundAccount
+	judged := act.Type != federation.ActivityDelete && act.ObjectKind != federation.OutboundAccount && act.ObjectKind != federation.OutboundMove
 	var out []target
 	for _, id := range accountIDs {
 		if id == s.actorID {

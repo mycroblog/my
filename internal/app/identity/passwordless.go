@@ -46,6 +46,20 @@ var PasswordRemovalLimit = kernel.Limit{Name: "password_removal.passkey", Max: 5
 // user's own account, per user.
 var SelfDeletionLimit = kernel.Limit{Name: "self_deletion.confirmation", Max: 5, Window: time.Hour}
 
+// MoveConfirmationLimit bounds the wrong passwords and passkeys that confirm the move of a
+// user's own account (ADR-0089), per user.
+var MoveConfirmationLimit = kernel.Limit{Name: "move.confirmation", Max: 5, Window: time.Hour}
+
+// ConfirmMove checks that a user confirms the move of their own account (FR-009, ADR-0089) with
+// the current password, or with a passkey for a user without one. It fails as confirm does,
+// counting the wrong ones against MoveConfirmationLimit, and changes nothing.
+func (s *Service) ConfirmMove(ctx context.Context, userID string, c Confirmation) error {
+	if s.d.RateLimiter == nil {
+		return errors.New("identity: ConfirmMove needs a RateLimiter")
+	}
+	return s.confirm(ctx, MoveConfirmationLimit, userID, c)
+}
+
 // Confirmation is how a signed-in user confirms an operation: the current password, or a passkey
 // when Passkey has a token.
 type Confirmation struct {

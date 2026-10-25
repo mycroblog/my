@@ -1,4 +1,12 @@
 {
+  "errors.account_moved": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɥɐs ɯoʌǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.account_not_moved": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɥɐs uoʇ ɯoʌǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.account_unavailable": {
     "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɔɐuuoʇ nsǝ ʇɥǝ ɐdd ɹıƃɥʇ uoʍ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -177,6 +185,22 @@
   },
   "errors.missing_permission_detail": {
     "defaultMessage": "‮⅄onɹ ɹoʅǝs uǝǝp ʇɥǝ dǝɹɯıssıou {permission}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_alias_missing": {
+    "defaultMessage": "‮⊥ɥǝ ɐɔɔonuʇ ʇo ɯoʌǝ ʇo poǝs uoʇ ʅısʇ ʎonɹ ɐɔɔonuʇ ɐs ɐu ɐʅıɐs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "‮⊥ɥǝ ɐɔɔonuʇ ʇo ɯoʌǝ ʇo ɥɐs ɯoʌǝp ıʇsǝʅɟ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_target_unavailable": {
+    "defaultMessage": "‮⅄on ɔɐuuoʇ ɯoʌǝ ʇo ʇɥɐʇ ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɯoʌǝp ʇoo ɹǝɔǝuʇʅʎ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.not_found": {

@@ -30,6 +30,7 @@ func (a *App) setUpActivityPub(cfg *config.Config, version string) {
 		Images:      a.Media.Images,
 		EmojiTags:   a.Media.EmojiTags,
 		Aliases:     a.Accounts,
+		Moves:       a.Accounts,
 		// The federation mode decides which documents are served (ADR-0076).
 		Modes: federationModes{a},
 	})

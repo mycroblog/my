@@ -89,7 +89,7 @@
 | `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
-| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset)`）, `email_address_id`（NULL 可）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間 |
+| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum(email_moderator_notifications)`。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は利用者設定のメールの項目の列名で、使うとその設定を off にする |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
 - パスワードリセットのトークン（FR-002）は、期限内で使われておらず、発行がパスワードの最後の変化（`password_credentials` の最新行の `set_at`、削除されていればその `removed_at`）より前でないときだけ使えます。

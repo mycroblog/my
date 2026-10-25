@@ -94,6 +94,8 @@ type Options struct {
 	EmojiTags appfederation.EmojiTagReader
 	// Aliases reads the aliases of local actors (alsoKnownAs, ADR-0089); nil serves none.
 	Aliases appfederation.AliasReader
+	// Moves tells the actor that a local actor moved to, its movedTo (ADR-0089); nil serves none.
+	Moves appfederation.MoveReader
 	// Inbox receives the activities POSTed to the inboxes; nil serves no inbox.
 	Inbox Inbox
 	// Modes reads the federation mode (ADR-0076) per request; nil federates both ways.

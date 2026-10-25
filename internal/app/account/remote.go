@@ -27,6 +27,10 @@ type (
 	Alias      = account.Alias
 )
 
+// MoveInitiatedBySelf is the initiator of a local account's own move; see
+// account.MoveInitiatedBySelf.
+const MoveInitiatedBySelf = account.MoveInitiatedBySelf
+
 // ErrMoveTooSoon reports a move of an account to another target too soon after its newest
 // move; see account.ErrMoveTooSoon.
 var ErrMoveTooSoon = account.ErrMoveTooSoon

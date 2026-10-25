@@ -164,8 +164,9 @@ type AuditQuery struct {
 }
 
 // RegisterAuditProjector registers the projector that writes the audit log entry of every
-// AuditRecorded, and of every appcontent.CustomEmojiAdministered and
-// appcontent.CustomEmojiRequestRecorded, into the transaction that
+// AuditRecorded, of every appcontent.CustomEmojiAdministered and
+// appcontent.CustomEmojiRequestRecorded, and of the appaccount.Moved that carry an audit ID, into
+// the transaction that
 // emits it. An invalid entry fails the operation: an operation that cannot be audited does not
 // happen.
 func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
@@ -184,6 +185,20 @@ func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return r.Project(ctx, tx, AuditRecorded{Entry: customEmojiRequestAuditEntry(e.(appcontent.CustomEmojiRequestRecorded))})
+	})
+	// The account module cannot emit AuditRecorded either: the local move of a limited account to
+	// a local one is audited from appaccount.Moved, whose AuditID it sets (ADR-0089).
+	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appaccount.Moved)
+		if ev.AuditID == "" {
+			return nil
+		}
+		entry := AuditEntry{
+			ID: ev.AuditID, Action: moderation.AuditAccountMoved, TargetKind: moderation.AuditTargetAccount,
+			TargetID: ev.Move.AccountID, TargetLabel: ev.SourceLabel, SourceEventID: ev.Move.ID, OccurredAt: ev.Move.OccurredAt,
+		}
+		entry.ActorKind, entry.ActorUserID = moderation.AuditActor(ev.ByUserID)
+		return r.Project(ctx, tx, AuditRecorded{Entry: entry})
 	})
 }
 

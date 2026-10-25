@@ -522,5 +522,29 @@
   "errors.domain_mutes.too_many": {
     "defaultMessage": "ミュートできるドメインの数の上限に達しています。先にどれかのミュートを解除してください。",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
+  },
+  "errors.account_moved": {
+    "defaultMessage": "このアカウントは移転しました。",
+    "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
+  },
+  "errors.account_not_moved": {
+    "defaultMessage": "このアカウントは移転していません。",
+    "description": "API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved."
+  },
+  "errors.move_alias_missing": {
+    "defaultMessage": "移転先のアカウントの別名に、このアカウントがありません。",
+    "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "移転先のアカウントは移転済みです。",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
+  },
+  "errors.move_target_unavailable": {
+    "defaultMessage": "そのアカウントへは移転できません。",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "前回の移転から時間が経っていません。",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
   }
 }

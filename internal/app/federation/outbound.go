@@ -127,6 +127,8 @@ type RecorderDeps struct {
 //   - account.aliases_changed of a local account: Update of the actor, recorded only when the
 //     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor.
+//   - account.moved of a local account's own move: Update of the actor, which carries movedTo,
+//     and Move (ADR-0089); account.move_cancelled: Update of the actor, without movedTo.
 //   - graph.followed / follow_requested / follow_accepted / follow_rejected / follow_terminated
 //     between a local and a remote account: Follow, Accept, Reject, and Undo Follow
 //     (registerFollowProjectors).
@@ -247,6 +249,41 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		return rec.record(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityDelete, ActorAccountID: ev.Event.AccountID,
 			ObjectKind: federation.OutboundAccount, ObjectID: ev.Event.AccountID, CreatedAt: ev.Event.OccurredAt,
+		}, "")
+	})
+	registerMoveProjectors(r, rec)
+}
+
+// registerMoveProjectors records what the move of a local account sends to its followers
+// (ADR-0089): the Update of the actor, whose movedTo Misskey reads when the Move arrives, then
+// the Move; and the Update of the actor when the move is cancelled. The moves of remote accounts
+// send nothing.
+func registerMoveProjectors(r *uow.Projectors, rec recorder) {
+	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appaccount.Moved)
+		if !ok || ev.Move.InitiatedBy != appaccount.MoveInitiatedBySelf {
+			return nil
+		}
+		m := ev.Move
+		if err := rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityUpdate, ActorAccountID: m.AccountID,
+			ObjectKind: federation.OutboundAccount, ObjectID: m.AccountID, CreatedAt: m.OccurredAt,
+		}, ""); err != nil {
+			return err
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityMove, ActorAccountID: m.AccountID,
+			ObjectKind: federation.OutboundMove, ObjectID: m.ID, CreatedAt: m.OccurredAt,
+		}, "")
+	})
+	r.Register(appaccount.EventMoveCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appaccount.MoveCancelled)
+		if !ok {
+			return nil
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityUpdate, ActorAccountID: ev.Move.AccountID,
+			ObjectKind: federation.OutboundAccount, ObjectID: ev.Move.AccountID, CreatedAt: ev.Cancellation.CancelledAt,
 		}, "")
 	})
 }

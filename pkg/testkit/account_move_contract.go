@@ -32,9 +32,10 @@ import (
 // followers to the target (a Follow to the target and an Undo Follow to the source), keeps the
 // follow of a follower that blocks the target, copies the blocks and mutes of the source to the
 // target, notifies each follower once with account_moved, and changes nothing when it runs
-// again. It also verifies the aliases of local accounts (account_aliases, aliasesAddAndRemove)
-// and that a Move to a local account is recorded only when that account names the source among
-// its aliases. The target is fetched from a fake origin; nothing goes over the network.
+// again. The moves of local accounts are verified too (account_move_out_contract.go), and so are
+// the aliases of local accounts (account_aliases, aliasesAddAndRemove) and that a Move to a local
+// account is recorded only when that account names the source among its aliases. The target is
+// fetched from a fake origin; nothing goes over the network.
 func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 	t.Helper()
 	cases := []struct {
@@ -46,6 +47,9 @@ func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 		{"MigratesTheLocalRelationships", movesMigrate},
 		{"KeepsTheAliasesOfLocalAccounts", aliasesAddAndRemove},
 		{"AcceptsAMoveToALocalAccountWithTheAlias", movesToLocalAlias},
+		{"SendsALocalMove", movesSendLocal},
+		{"RefusesAndCancelsLocalMoves", movesRefuseAndCancelLocal},
+		{"MovesWithinTheServer", movesWithinTheServer},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newMoveEnv(t, newHarness)) })

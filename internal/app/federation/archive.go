@@ -35,6 +35,9 @@ func (o *Objects) ArchiveActor(ctx context.Context, accountID string, w io.Write
 	if images.AlsoKnownAs, err = LocalActorAliases(ctx, o.d.Aliases, a); err != nil {
 		return err
 	}
+	if images.MovedTo, err = LocalActorMovedTo(ctx, o.d.Moves, a); err != nil {
+		return err
+	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	return enc.Encode(LocalActorDocument(o.d.Host, a, "", images))

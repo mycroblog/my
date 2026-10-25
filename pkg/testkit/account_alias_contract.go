@@ -15,9 +15,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// actorUpdates returns how many Updates of the actor accountID the outbound projectors recorded
+// recordedActorUpdates returns how many Updates of the actor accountID the outbound projectors recorded
 // and enqueued so far.
-func (e *moveEnv) actorUpdates(t *testing.T, accountID string) int {
+func (e *moveEnv) recordedActorUpdates(t *testing.T, accountID string) int {
 	t.Helper()
 	e.jobs.mu.Lock()
 	pending := slices.Clone(e.jobs.pending)
@@ -104,7 +104,7 @@ func aliasesAddAndRemove(t *testing.T, e *moveEnv) {
 		t.Errorf("HasAlias after RemoveAlias = %v, %v, want false", ok, err)
 	}
 	// Five additions and one removal, each an Update of the actor.
-	if got := e.actorUpdates(t, alice); got != account.MaxAliases+1 {
+	if got := e.recordedActorUpdates(t, alice); got != account.MaxAliases+1 {
 		t.Errorf("Updates of the actor = %d, want %d", got, account.MaxAliases+1)
 	}
 	// A mode that does not publish records none.
@@ -112,7 +112,7 @@ func aliasesAddAndRemove(t *testing.T, e *moveEnv) {
 	if _, added, err := e.accounts.AddAlias(ctx, alice, old); err != nil || !added {
 		t.Fatalf("AddAlias in mode inbound = %v, %v, want added", added, err)
 	}
-	if got := e.actorUpdates(t, alice); got != account.MaxAliases+1 {
+	if got := e.recordedActorUpdates(t, alice); got != account.MaxAliases+1 {
 		t.Errorf("Updates of the actor after a change in mode inbound = %d, want still %d", got, account.MaxAliases+1)
 	}
 }

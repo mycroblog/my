@@ -146,6 +146,10 @@ paths:
     $ref: ./paths/preferences_supporter_listing.yaml
   /accounts/delete:
     $ref: ./paths/accounts_delete.yaml
+  /accounts/move:
+    $ref: ./paths/accounts_move.yaml
+  /accounts/move/cancel:
+    $ref: ./paths/accounts_move_cancel.yaml
   /accounts/password:
     $ref: ./paths/accounts_password.yaml
   /accounts/password/remove:
@@ -1133,6 +1137,8 @@ components:
       $ref: ./components/schemas/DecideAppealRequest.yaml
     DeleteOwnAccountRequest:
       $ref: ./components/schemas/DeleteOwnAccountRequest.yaml
+    MoveOwnAccountRequest:
+      $ref: ./components/schemas/MoveOwnAccountRequest.yaml
     DomainBlock:
       $ref: ./components/schemas/DomainBlock.yaml
     DomainBlockImportPreview:

@@ -24,12 +24,19 @@ const (
 // target is dropped (ADR-0089; Mastodon waits 7 days per account, GoToSocial a week).
 const RemoteMoveInterval = 7 * 24 * time.Hour
 
+// LocalMoveInterval is how long after its newest move a local account cannot move again, also
+// after cancelling that move (ADR-0089; the wait of Mastodon).
+const LocalMoveInterval = 30 * 24 * time.Hour
+
 var (
 	// ErrSelfMove reports a move whose account and target are the same.
 	ErrSelfMove = errors.New("account: an account cannot move to itself")
 	// ErrMoveTooSoon reports a move of an account to another target within the interval after
 	// its newest move.
 	ErrMoveTooSoon = errors.New("account: the account moved too recently")
+	// ErrMovedBefore reports a local move to a target that the account moved to once already:
+	// an account moves to one target once (account_moves is unique per account and target).
+	ErrMovedBefore = errors.New("account: the account moved to the target before")
 )
 
 // Move is the event that an account moved to another (account_moves, ADR-0089). An account
@@ -71,6 +78,22 @@ func (m Move) FollowsRemote(latest *Move) (bool, error) {
 		return false, ErrMoveTooSoon
 	}
 	return true, nil
+}
+
+// FollowsLocal reports whether a local move m may follow the account's newest move latest (nil
+// for none): it must come LocalMoveInterval after latest, cancelled or not (ErrMoveTooSoon), and
+// go to a target the account never moved to (ErrMovedBefore, which the repository reports for
+// the older moves).
+func (m Move) FollowsLocal(latest *Move) error {
+	switch {
+	case latest == nil:
+		return nil
+	case m.OccurredAt.Sub(latest.OccurredAt) < LocalMoveInterval:
+		return ErrMoveTooSoon
+	case latest.TargetAccountID == m.TargetAccountID:
+		return ErrMovedBefore
+	}
+	return nil
 }
 
 // MoveCancellation is the event that a local account cancelled its move

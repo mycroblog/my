@@ -15,9 +15,9 @@ import (
 )
 
 // noIndexPrefixes are the paths whose responses are not pages for search engines: the client
-// API, the sign-in and OAuth screens, ActivityPub documents, /.well-known/, and NodeInfo
-// (ADR-0057). Their responses carry X-Robots-Tag: noindex.
-var noIndexPrefixes = []string{"/api/", "/oauth/", "/auth/", "/ap/", "/.well-known/", "/nodeinfo/"}
+// API, the sign-in and OAuth screens, the email unsubscribe links, ActivityPub documents,
+// /.well-known/, and NodeInfo (ADR-0057). Their responses carry X-Robots-Tag: noindex.
+var noIndexPrefixes = []string{"/api/", "/oauth/", "/auth/", "/mail/", "/ap/", "/.well-known/", "/nodeinfo/"}
 
 // noArchivePaths are the API paths whose responses, problems included, carry X-Robots-Tag:
 // noindex, noarchive whatever the instance states: the supporter list (ADR-0071 §4).

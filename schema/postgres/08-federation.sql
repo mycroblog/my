@@ -44,7 +44,7 @@ CREATE TABLE outbound_activities (
   activity_uri text NOT NULL,
   type text NOT NULL,
   actor_account_id uuid NOT NULL,
-  object_type text NOT NULL CHECK (object_type IN ('status', 'boost', 'favourite', 'follow', 'block', 'account', 'report', 'poll_vote', 'relay', 'quote', 'refusal')),
+  object_type text NOT NULL CHECK (object_type IN ('status', 'boost', 'favourite', 'follow', 'block', 'account', 'report', 'poll_vote', 'relay', 'quote', 'refusal', 'move')),
   object_id uuid NOT NULL,
   created_at timestamptz NOT NULL
 );

@@ -115,6 +115,10 @@
     "defaultMessage": "Contact: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
   },
+  "mail.signature.unsubscribe": {
+    "defaultMessage": "Stop these emails: {url}",
+    "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
+  },
   "mail.supporter_payment_failed.action": {
     "defaultMessage": "Update your payment method",
     "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."

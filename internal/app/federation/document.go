@@ -274,7 +274,11 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if images.AlsoKnownAs, err = LocalActorAliases(ctx, f.d.Aliases, s.actor); err != nil {
 			return nil, err
 		}
+		images.MovedTo = s.movedTo
 		return accountDocument(f.d.Host, act, s.actor, images, s.suspended)
+	}
+	if act.ObjectKind == federation.OutboundMove {
+		return moveDocument(act, s.actor, s.movedTo)
 	}
 	if act.ObjectKind == federation.OutboundFavourite || act.ObjectKind == federation.OutboundPollVote ||
 		act.ObjectKind == federation.OutboundRelay || act.ObjectKind == federation.OutboundQuote || act.ObjectKind == federation.OutboundRefusal ||
@@ -341,6 +345,16 @@ func accountDocument(host string, act federation.OutboundActivity, a appaccount.
 		// The embedded actor has no context of its own; the Update carries the actor's.
 		doc.Context = federation.ActorLDContext()
 	}
+	return doc.Marshal()
+}
+
+// moveDocument builds the Move of local actor a to the actor target (ADR-0089, FEP-7628's push
+// mode, as Mastodon sends it): its actor and object are a, and it is addressed to a's followers.
+func moveDocument(act federation.OutboundActivity, a appaccount.Actor, target federation.IRI) ([]byte, error) {
+	actor := federation.IRI(a.Account.URI)
+	aud := federation.Audience{To: []federation.IRI{federation.FollowersOf(actor)}}
+	doc := federation.NewActivityDocument(act.ActivityURI, federation.ActivityMove, actor, act.CreatedAt, aud, actor)
+	doc.Target = target
 	return doc.Marshal()
 }
 

@@ -23,6 +23,7 @@ const errorHeadings: Readonly<Record<ErrorKind, PlainClientMessageKey>> = {
   server: "client:shell.error.server.heading",
   "not-found": "client:shell.error.not_found.heading",
   forbidden: "client:shell.error.forbidden.heading",
+  closed: "client:shell.error.closed.heading",
   unexpected: "client:shell.error.unexpected.heading",
 };
 

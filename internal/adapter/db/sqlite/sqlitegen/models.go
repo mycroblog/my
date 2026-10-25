@@ -1173,13 +1173,14 @@ type UserRegistrationState struct {
 }
 
 type UserToken struct {
-	ID             string
-	UserID         string
-	Purpose        string
-	EmailAddressID sql.NullString
-	TokenHash      []byte
-	ExpiresAt      int64
-	IssuedAt       int64
+	ID                  string
+	UserID              string
+	Purpose             string
+	EmailAddressID      sql.NullString
+	UnsubscribeCategory sql.NullString
+	TokenHash           []byte
+	ExpiresAt           int64
+	IssuedAt            int64
 }
 
 type WebhookEndpointFailure struct {
