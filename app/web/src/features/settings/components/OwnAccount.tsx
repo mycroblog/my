@@ -46,6 +46,17 @@ export function OwnAccount() {
   );
 }
 
+/** The archives of the user's data alone, for the screen of a closed server, where nothing else of the account page is open. */
+export function DataExportsSection() {
+  const t = useT();
+  const exports = useDataExports();
+  return (
+    <Section title={t("client:settings.account.export.title")}>
+      <ExportsView exports={exports} />
+    </Section>
+  );
+}
+
 /** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
 function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
   const headingId = useId();

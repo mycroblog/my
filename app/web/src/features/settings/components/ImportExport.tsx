@@ -84,6 +84,17 @@ export function ImportExport() {
   );
 }
 
+/** The CSV files to download alone, for the screen of a closed server, where importing is closed. */
+export function CsvExportsSection() {
+  const t = useT();
+  const exports = useCsvExports();
+  return (
+    <Section title={t("client:settings.import_export.export.title")}>
+      <ExportsView exports={exports} />
+    </Section>
+  );
+}
+
 /** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
 function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
   const headingId = useId();

@@ -271,3 +271,11 @@
   - キャッシュ済みの Service Worker が古いシェルを出しても、API の応答で同じ表示になる。
   `src/lib/api/client.test.ts` がトークンとセッションが残ること（要求・401 の後の更新・起動時の再開）と終わった後の再読み込みを、`src/maintenance.test.tsx` が表示・フォーカス・再読み込みのボタン・`Retry-After` の後の聞き直しを MSW で検査し、
   `e2e/maintenance.spec.ts` が表示の axe・横スクロールと、終わった後にサインインしたまま元の画面に戻ることを検査する。
+- **サービスの終了の予告とクローズ**（`features/closure`、`lib/closure.ts`、[ADR-0088](../../adr/0088-service-shutdown-modes.md) §2・§4）: `GET /instance` の `closure` を読む。
+  - 予告中（`state: announced`）は、`AppLayout` が `ConnectionBanner` の下に閉じられない帯（`@my/ui` の `NoticeBanner`、名前付きの `region`、ライブリージョンにはしない）を全画面に置く。サインインの画面・サーバーの情報のページ・管理画面の外枠にも出る。
+    閉鎖日・クローズ後に持ち出せる期限・移転できること・運営者のメッセージ（`dir="auto"`・`lang=""`）と、データのエクスポートの画面（`/settings/account`）へのリンクを示す。短い画面では固定せず、ページと一緒に流れる。
+  - クローズ後（`closed` / `delivery_completed`）、サインインしていない訪問者には、閉鎖したことと持ち出しの期限を同じ帯で示す。サインインした利用者（管理画面を除く）には、`AppLayout` がアプリの代わりに閉鎖の画面（`ClosedScreen`、`StandalonePage`）を出す。
+    閉鎖日・期限・運営者のメッセージ、アーカイブの要求とダウンロード（設定の `DataExportsSection`）、CSV のダウンロード（`CsvExportsSection`）、サインアウトだけを置く。client API が断るほかの操作への導線は置かない。
+  - ページが `403 service-closed` で失敗したときのエラーの見出しは「このサーバーは閉鎖されました」で、理由はサーバーの `detail` が示す（`errorKind` の `closed`）。
+  - 移転の設定の画面（ADR-0089）が無い間、帯は移転できることを文で示すだけで、画面へのリンクは置かない。
+  `e2e/service-closure.spec.ts` が予告の帯（サインインとサーバーの情報、キーボードでの到達）とクローズの画面の axe・横スクロールを検査する。

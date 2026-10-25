@@ -303,7 +303,7 @@ entries:
     paths: ["app/web/src/lib/api/**", "app/web/src/lib/auth/**", "app/web/src/lib/sse/**"]
     docs: ["docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/adr/0030-web-client-token-handling.md", "docs/adr/0045-client-server-cache-policy.md"]
   - name: web-feature-admin
-    paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/documents/**"]
+    paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
     docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
