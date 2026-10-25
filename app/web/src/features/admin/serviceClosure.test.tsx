@@ -122,8 +122,15 @@ describe("the service closure screen", () => {
     await user.click(within(dialog).getByRole("button", { name: "Close the server" }));
     expect(closure.writes).toHaveLength(0);
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(await within(dialog).findByText("This is not the server's domain.")).toBeInTheDocument();
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveFocus();
+    // The error stays when the focus leaves the field, so the dialog does not shrink under a press; an edit clears it.
+    await user.tab();
+    expect(within(dialog).getByText("This is not the server's domain.")).toBeInTheDocument();
 
     await user.clear(field);
+    expect(within(dialog).queryByText("This is not the server's domain.")).toBeNull();
     await user.type(field, "MY.example");
     await user.click(within(dialog).getByRole("button", { name: "Close the server" }));
     expect(await screen.findByText("The server is closed. Its deliveries start now.")).toBeInTheDocument();
