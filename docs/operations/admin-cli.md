@@ -50,3 +50,24 @@ my admin role revoke alice moderator
 - `admin` を持つ最後の 1 人からは剥奪できません（終了コード 1）。先に別の利用者に `admin` を付与します。
 - 管理 API は `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`、`PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}` で、権限 `manage_roles` を要します。
   API では、自分のロールの最も高い `position` より上のロールは付与・剥奪できません（403）。最後の `admin` の剥奪は 409 です。
+
+## Exporting the maintenance page
+
+`my maintenance export` writes the page of the maintenance mode ([ADR-0084](../adr/0084-maintenance-mode.md)) as static HTML,
+for a load balancer, CDN, or reverse proxy to serve while `my serve` itself cannot run (an image being replaced, a revision that does not start).
+It uses the same template as the maintenance mode, so both show the same words and look.
+
+```sh
+my maintenance export -out ./maintenance -lang en,ja            # reads the database for at most 5 seconds
+my maintenance export -out ./maintenance -lang en,ja -offline   # the configuration and the default theme only
+```
+
+- Output: `<dir>/<locale>.html` for each locale of `-lang`, for front ends that choose a page by `Accept-Language`,
+  and `<dir>/index.html` with every locale one after another, for those that cannot.
+  The pages have inline CSS, no script, and no external resource; their Content-Security-Policy is in a `<meta>` element.
+- Words: the settings `maintenance_server_name`, `maintenance_message`, `maintenance_until`, and `status_page_url`
+  ([configuration reference](../reference/configuration.md)).
+- Without `-offline`, it also reads the instance's name (when `maintenance_server_name` is unset), its default locale (when `-lang` is not given),
+  and the token overrides of its theme. The theme's custom CSS is never included. When the database cannot be read,
+  it prints a warning, writes the pages from the configuration and the default theme, and exits 0.
+- Run it again whenever those settings or the theme change, and before each maintenance, so that the pages in the front end stay current.
