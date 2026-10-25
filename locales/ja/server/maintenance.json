@@ -1,0 +1,26 @@
+{
+  "maintenance.description": {
+    "defaultMessage": "{server} はメンテナンスのため一時的に利用できません。しばらくしてからもう一度お試しください。",
+    "description": "Explanation under the heading of the maintenance page. {server} is the server's name, or its host name."
+  },
+  "maintenance.document_title": {
+    "defaultMessage": "メンテナンス中 – {server}",
+    "description": "<title> of the maintenance page. {server} is the server's name, or its host name."
+  },
+  "maintenance.notice": {
+    "defaultMessage": "管理者からのお知らせ",
+    "description": "Heading over the administrators' notice (maintenance_message) on the maintenance page."
+  },
+  "maintenance.status_page": {
+    "defaultMessage": "稼働状況を確認する",
+    "description": "Text of the link to the instance's status page (status_page_url) on the maintenance page."
+  },
+  "maintenance.title": {
+    "defaultMessage": "メンテナンス中",
+    "description": "Heading of the maintenance page (ADR-0084) and the title of the maintenance problem of the client API."
+  },
+  "maintenance.until": {
+    "defaultMessage": "終了予定",
+    "description": "Label of the time the maintenance is expected to end, shown in UTC next to it on the maintenance page."
+  }
+}

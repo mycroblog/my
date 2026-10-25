@@ -1,0 +1,26 @@
+{
+  "maintenance.description": {
+    "defaultMessage": "{server} is temporarily unavailable for maintenance. Please try again later.",
+    "description": "Explanation under the heading of the maintenance page. {server} is the server's name, or its host name."
+  },
+  "maintenance.document_title": {
+    "defaultMessage": "Under maintenance – {server}",
+    "description": "<title> of the maintenance page. {server} is the server's name, or its host name."
+  },
+  "maintenance.notice": {
+    "defaultMessage": "Notice from the administrators",
+    "description": "Heading over the administrators' notice (maintenance_message) on the maintenance page."
+  },
+  "maintenance.status_page": {
+    "defaultMessage": "Check the service status",
+    "description": "Text of the link to the instance's status page (status_page_url) on the maintenance page."
+  },
+  "maintenance.title": {
+    "defaultMessage": "Under maintenance",
+    "description": "Heading of the maintenance page (ADR-0084) and the title of the maintenance problem of the client API."
+  },
+  "maintenance.until": {
+    "defaultMessage": "Expected to end",
+    "description": "Label of the time the maintenance is expected to end, shown in UTC next to it on the maintenance page."
+  }
+}

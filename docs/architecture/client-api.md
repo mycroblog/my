@@ -86,6 +86,10 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   本文は RFC 9457 の `application/problem+json` です。
 - 状態コード以上の意味を持たない問題は `type: about:blank` です。クライアントが分岐に使う問題には、安定した `type` の URI（`/api/v1/problems/<名前>` の相対参照）を割り当て、
   spec の `#/components/schemas/Problem` の説明に列挙します。認証・認可の `type` は §4.2 の表のとおりです。
+- メンテナンスモード（[ADR-0084](../adr/0084-maintenance-mode.md)）の間は、`/api/*` のすべての操作（`GET /instance/health` を除く）と OAuth の JSON の端点が
+  503 と `Retry-After` と `type: /api/v1/problems/maintenance` の問題を返します。拡張メンバーは `message`（告知文）・`until`（終了予定、RFC 3339）・
+  `status_page_url`（ステータスページ）で、設定されたものだけが入ります。応答は `internal/interface/maintenance` が通常のルート表を通さずに書き、
+  クライアントはトークンを捨てずにメンテナンスの表示にします。
 - `title` と `detail` は `internal/i18n` の `server` 名前空間からローカライズし、`Content-Language` を返します。
   ロケールは `i18n.Resolver` が ADR-0009 §2 の順（利用者設定 → `Accept-Language` → インスタンス設定 `default_locale` → `en`）で決めます。
   サーバーの HTTP 応答（クライアント API、ログイン画面、HTML の外枠、プラットフォームの問題応答）はすべて `platform.App.Locales` の同じ Resolver を使います。

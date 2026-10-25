@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/app/supporters"
@@ -65,6 +67,15 @@ type field struct {
 	set func(*Config, string)
 }
 
+// maintenanceKeys are the settings LoadMaintenance reads: the maintenance mode (ADR-0084 §2)
+// reads only these and never the adapters' keys.
+var maintenanceKeys = map[string]bool{
+	"host": true, "account_domain": true, "web_origin": true, "listen": true,
+	"trusted_proxies": true, "trusted_proxy_header": true, "status_page_url": true,
+	"maintenance": true, "maintenance_server_name": true, "maintenance_message": true,
+	"maintenance_until": true, "maintenance_retry_after": true,
+}
+
 // env returns the environment variable that sets f.
 func (f *field) env() string { return EnvPrefix + strings.ToUpper(f.key) }
 
@@ -105,6 +116,47 @@ var schema = []field{
 		doc:   "Address of the instance's status page, an absolute `https` URL on a service apart from the server (ADR-0085 §6). Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page (ADR-0084), which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.",
 		check: checkStatusPageURL,
 		set:   func(c *Config, v string) { c.StatusPageURL = v },
+	},
+	{
+		key: "maintenance",
+		doc: "Starts `my serve` in the maintenance mode (ADR-0084), also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying (docs/operations/maintenance.md).",
+		def: "false",
+		choices: []choice{
+			{value: "false", inV0: true, doc: "Normal operation."},
+			{value: "true", inV0: true, doc: "Maintenance mode."},
+		},
+		set: func(c *Config, v string) { c.Maintenance = v == "true" },
+	},
+	{
+		key:    "maintenance_server_name",
+		defDoc: "value of `host`",
+		doc:    "Name of the server on the maintenance page and the exported maintenance pages (`my maintenance export`). The instance's own name is in the database, which the maintenance mode does not read.",
+		check:  checkMaintenanceServerName,
+		set:    func(c *Config, v string) { c.MaintenanceServerName = v },
+	},
+	{
+		key:   "maintenance_message",
+		doc:   "Notice of the maintenance as plain text, at most 2,000 characters, shown on the maintenance page and in the `message` of the maintenance problem of the client API. The same text is shown in every locale.",
+		check: checkMaintenanceMessage,
+		set:   func(c *Config, v string) { c.MaintenanceMessage = v },
+	},
+	{
+		key:   "maintenance_until",
+		doc:   "When the maintenance is expected to end, as an RFC 3339 time such as `2026-10-24T03:00:00Z`. The maintenance page shows it in UTC, the maintenance problem has it as `until`, and while it is in the future `Retry-After` counts the seconds to it (at most 86,400).",
+		check: checkRFC3339,
+		set: func(c *Config, v string) {
+			c.MaintenanceUntil, _ = time.Parse(time.RFC3339, v)
+		},
+	},
+	{
+		key:   "maintenance_retry_after",
+		doc:   "Seconds of the `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, from 1 to 86,400.",
+		def:   "600",
+		check: checkRetryAfter,
+		set: func(c *Config, v string) {
+			n, _ := strconv.Atoi(v)
+			c.MaintenanceRetryAfter = time.Duration(n) * time.Second
+		},
 	},
 	{
 		key:    "web_origin",
@@ -1071,6 +1123,41 @@ func checkStatusPageURL(v string) error {
 	u, err := url.Parse(v)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
 		return errors.New("must be an absolute https URL without user info or fragment")
+	}
+	return nil
+}
+
+// MaxMaintenanceMessage is the most characters maintenance_message may have (ADR-0084 §2).
+const MaxMaintenanceMessage = 2000
+
+// MaxRetryAfter is the most seconds a maintenance response asks clients to wait (ADR-0084 §3).
+const MaxRetryAfter = 86400
+
+func checkMaintenanceServerName(v string) error {
+	if strings.TrimSpace(v) == "" || utf8.RuneCountInString(v) > 200 || strings.ContainsFunc(v, unicode.IsControl) {
+		return errors.New("must be at most 200 characters on one line and not blank")
+	}
+	return nil
+}
+
+func checkMaintenanceMessage(v string) error {
+	if !utf8.ValidString(v) || utf8.RuneCountInString(v) > MaxMaintenanceMessage {
+		return fmt.Errorf("must be at most %d characters", MaxMaintenanceMessage)
+	}
+	return nil
+}
+
+func checkRFC3339(v string) error {
+	if _, err := time.Parse(time.RFC3339, v); err != nil {
+		return errors.New("must be an RFC 3339 time, such as 2026-10-24T03:00:00Z")
+	}
+	return nil
+}
+
+func checkRetryAfter(v string) error {
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 1 || n > MaxRetryAfter {
+		return fmt.Errorf("must be a whole number of seconds from 1 to %d", MaxRetryAfter)
 	}
 	return nil
 }

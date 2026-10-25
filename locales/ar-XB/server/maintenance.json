@@ -1,0 +1,26 @@
+{
+  "maintenance.description": {
+    "defaultMessage": "‮{server} ıs ʇǝɯdoɹɐɹıʅʎ nuɐʌɐıʅɐqʅǝ ɟoɹ ɯɐıuʇǝuɐuɔǝ. Ԁʅǝɐsǝ ʇɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "maintenance.document_title": {
+    "defaultMessage": "‮∩upǝɹ ɯɐıuʇǝuɐuɔǝ – {server}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "maintenance.notice": {
+    "defaultMessage": "‮Noʇıɔǝ ɟɹoɯ ʇɥǝ ɐpɯıuısʇɹɐʇoɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "maintenance.status_page": {
+    "defaultMessage": "‮Ↄɥǝɔʞ ʇɥǝ sǝɹʌıɔǝ sʇɐʇns‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "maintenance.title": {
+    "defaultMessage": "‮∩upǝɹ ɯɐıuʇǝuɐuɔǝ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "maintenance.until": {
+    "defaultMessage": "‮Ǝxdǝɔʇǝp ʇo ǝup‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  }
+}

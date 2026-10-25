@@ -14817,6 +14817,12 @@ components:
           allow the operation.
         - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
           already.
+        - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+          answers every operation with this problem and `Retry-After`. Keep the tokens, show the
+          maintenance, and retry after `Retry-After`. Its members besides the standard ones,
+          each present only when the operator set it: `message`, the administrators' notice in
+          plain text; `until`, when the maintenance is expected to end (RFC 3339); and
+          `status_page_url`, the instance's status page.
       type: object
       required:
         - type
