@@ -15,6 +15,13 @@ function message(key: string): string {
   return text;
 }
 
+/** The whole name of a button whose message `key` holds the app's `{name}`, which comes in a directional isolate. */
+function appButtonName(key: string): RegExp {
+  const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const [before = "", after = ""] = message(key).split("{name}");
+  return new RegExp(`^${escape(before)}[\u2066-\u2068]${escape(appName)}\u2069${escape(after)}$`, "u");
+}
+
 const operator = {
   id: "0192f0c4-7a8e-7000-8000-000000000001",
   username: "alice",
@@ -98,17 +105,17 @@ test.describe("OAuth apps", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await table.getByRole("button", { name: message("admin.oauth_apps.disable"), exact: true }).click();
+    await table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.oauth_apps.disable"), exact: true }).click();
 
-    const enable = table.getByRole("button", { name: message("admin.oauth_apps.enable"), exact: true });
+    const enable = table.getByRole("button", { name: appButtonName("admin.oauth_apps.enable_app") });
     await expect(enable).toBeVisible();
     await expect(table.getByText(message("admin.oauth_apps.disabled"), { exact: true })).toBeVisible();
     await enable.click();
-    await expect(table.getByRole("button", { name: message("admin.oauth_apps.disable"), exact: true })).toBeVisible();
+    await expect(table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") })).toBeVisible();
     expect(actions).toEqual([`POST /admin/oauth_clients/${appId}/disable`, `POST /admin/oauth_clients/${appId}/enable`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
