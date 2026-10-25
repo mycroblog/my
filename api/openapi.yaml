@@ -6724,6 +6724,53 @@ paths:
           $ref: '#/components/responses/AdminServiceClosure'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/closure/check:
+    get:
+      operationId: getAdminServiceClosureCheck
+      summary: Check the server before its closure
+      description: |
+        What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+        deliveries, the supporter subscriptions that it cancels, the account migrations that have
+        not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+        permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminServiceClosureCheck'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/closure/close:
+    post:
+      operationId: closeService
+      summary: Close the server
+      description: |
+        Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+        closure whose `closes_at` has passed can close; before it, without an announcement, or once
+        closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+        server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+        in the audit log and cancels every supporter subscription that goes on, in the same
+        transaction. From then on, the client API serves only the users' own data and exports
+        (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseServiceRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminServiceClosure'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/oauth_clients:
     get:
       operationId: listAdminOAuthClients
@@ -8117,6 +8164,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminServiceClosure'
+    AdminServiceClosureCheck:
+      description: The checks before the closure of the service.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminServiceClosureCheck'
     AdminWebhook:
       description: The webhook.
       headers:
@@ -9020,8 +9076,10 @@ components:
         `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
         tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
         the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-        the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-        and the label are `service_closure`.
+        the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+        `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+        the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+        `service_closure`.
       type: string
       enum:
         - account_action_issued
@@ -9105,6 +9163,8 @@ components:
         - oauth_client_host_allowed
         - service_closure_announced
         - service_closure_withdrawn
+        - service_closure_closed
+        - service_closure_delivery_completed
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -10804,6 +10864,58 @@ components:
             `closes_at`, which the admin screen and the CLI warn about: the users may not have the
             time to export their data and move their accounts. A short notice is allowed.
           type: boolean
+    AdminServiceClosureCheck:
+      description: |
+        What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+        screen and the CLI show it with the confirmation of the closure.
+      type: object
+      required:
+        - local_accounts
+        - delivery_inboxes
+        - estimated_deletes
+        - live_supporter_subscriptions
+        - pending_migrations
+        - retention_holds
+      properties:
+        local_accounts:
+          description: The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
+          type: integer
+          minimum: 0
+        delivery_inboxes:
+          description: The shared inboxes known to the server, which each `Delete` goes to.
+          type: integer
+          minimum: 0
+        estimated_deletes:
+          description: The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
+          type: integer
+          minimum: 0
+        live_supporter_subscriptions:
+          description: The supporter subscriptions that go on, which the closure cancels at once without a refund.
+          type: integer
+          minimum: 0
+        pending_migrations:
+          description: |
+            The account migrations (the sending of a `Move` and the jobs that move the followers,
+            ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+            the admin screen and the CLI warn while it is not 0.
+          type: integer
+          minimum: 0
+        retention_holds:
+          description: |
+            The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+            their records with the CLI before discarding the data of the closed server.
+          type: integer
+          minimum: 0
+    CloseServiceRequest:
+      description: The confirmation of the closure of the server.
+      type: object
+      required:
+        - confirm_domain
+      properties:
+        confirm_domain:
+          description: The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
+          type: string
+          maxLength: 253
     AnnounceServiceClosureRequest:
       description: The schedule of an announcement of the closure of the service.
       type: object
@@ -15018,8 +15130,18 @@ components:
         - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
           reason in `theme_errors` (`PUT /admin/theme`).
         - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
-          allow the operation: withdrawing an announcement when none is in effect, or announcing
-          the closure of a server that is closed already (`/admin/closure/announcement`).
+          allow the operation: withdrawing an announcement when none is in effect, announcing the
+          closure of a server that is closed already (`/admin/closure/announcement`), or closing a
+          server whose closure is not announced or whose `closes_at` has not come
+          (`POST /admin/closure/close`).
+        - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+          server serves only the operations with which the users take their data away: their own
+          account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
+          `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
+          (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+          the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
+          `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
+          this problem; signing in and resetting a password stay available outside the client API.
         - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
           allowed. Unmute one first.
         - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:

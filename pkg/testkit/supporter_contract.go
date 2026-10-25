@@ -997,7 +997,17 @@ func supporterRebuild(t *testing.T, e *supporterEnv) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return []any{plans, subs, due, live}
+		var liveIDs []string
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			liveIDs, err = e.h.Supporters.LiveSubscriptionIDs(ctx, tx)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if int64(len(liveIDs)) != live {
+			t.Errorf("LiveSubscriptionIDs = %v, want the %d of CountLiveSubscriptions", liveIDs, live)
+		}
+		return []any{plans, subs, due, live, liveIDs}
 	}
 	before := snapshot()
 	if err := supporters.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Supporters); err != nil {

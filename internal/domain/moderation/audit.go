@@ -302,11 +302,15 @@ const (
 	// the denial (oauth_client_host_denials and oauth_client_host_denial_lifts, ADR-0090 §1).
 	AuditOAuthClientHostDenied  AuditAction = "oauth_client_host_denied"
 	AuditOAuthClientHostAllowed AuditAction = "oauth_client_host_allowed"
-	// AuditServiceClosureAnnounced and AuditServiceClosureWithdrawn: a holder of
-	// manage_service_closure announced the closure of the service or changed its dates, or
-	// withdrew the announcement (service_closure_events, ADR-0088 §1).
-	AuditServiceClosureAnnounced AuditAction = "service_closure_announced"
-	AuditServiceClosureWithdrawn AuditAction = "service_closure_withdrawn"
+	// AuditServiceClosureAnnounced, AuditServiceClosureWithdrawn, and AuditServiceClosureClosed:
+	// a holder of manage_service_closure announced the closure of the service or changed its
+	// dates, withdrew the announcement, or closed the server (service_closure_events, ADR-0088
+	// §1). AuditServiceClosureDeliveryCompleted: the server recorded that the Delete of every
+	// local account was delivered.
+	AuditServiceClosureAnnounced         AuditAction = "service_closure_announced"
+	AuditServiceClosureWithdrawn         AuditAction = "service_closure_withdrawn"
+	AuditServiceClosureClosed            AuditAction = "service_closure_closed"
+	AuditServiceClosureDeliveryCompleted AuditAction = "service_closure_delivery_completed"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -395,6 +399,8 @@ var auditActions = []struct {
 	{AuditOAuthClientHostAllowed, AuditTargetOAuthClientHost},
 	{AuditServiceClosureAnnounced, AuditTargetInstance},
 	{AuditServiceClosureWithdrawn, AuditTargetInstance},
+	{AuditServiceClosureClosed, AuditTargetInstance},
+	{AuditServiceClosureDeliveryCompleted, AuditTargetInstance},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

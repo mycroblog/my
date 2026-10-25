@@ -90,6 +90,10 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   503 と `Retry-After` と `type: /api/v1/problems/maintenance` の問題を返します。拡張メンバーは `message`（告知文）・`until`（終了予定、RFC 3339）・
   `status_page_url`（ステータスページ）で、設定されたものだけが入ります。応答は `internal/interface/maintenance` が通常のルート表を通さずに書き、
   クライアントはトークンを捨てずにメンテナンスの表示にします。
+- サービスのクローズ（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）の後は、`Server.guard` が操作ごとに `instance.ClosureAllows` を引き、
+  利用者がデータを持ち出すための操作（自分のアカウントと設定の読み取り・エクスポート・セッション・`GET /instance` など。一覧は
+  `internal/interface/clientapi/closure_gate.go` の `closureOperations`）と、クローズに続く管理の操作だけを通します。ほかの操作とストリーミングは
+  403 と `type: /api/v1/problems/service-closed` の問題を返し、開いているストリームは次のハートビートで閉じます。ハンドラはクローズを見ません。
 - `title` と `detail` は `internal/i18n` の `server` 名前空間からローカライズし、`Content-Language` を返します。
   ロケールは `i18n.Resolver` が ADR-0009 §2 の順（利用者設定 → `Accept-Language` → インスタンス設定 `default_locale` → `en`）で決めます。
   サーバーの HTTP 応答（クライアント API、ログイン画面、HTML の外枠、プラットフォームの問題応答）はすべて `platform.App.Locales` の同じ Resolver を使います。

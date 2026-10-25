@@ -54,8 +54,10 @@ description: |
   `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
   tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
   the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-  the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-  and the label are `service_closure`.
+  the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+  `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+  the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+  `service_closure`.
 type: string
 enum:
   - account_action_issued
@@ -139,3 +141,5 @@ enum:
   - oauth_client_host_allowed
   - service_closure_announced
   - service_closure_withdrawn
+  - service_closure_closed
+  - service_closure_delivery_completed

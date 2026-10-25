@@ -185,7 +185,7 @@ func (s *Server) guard(pattern string, next http.Handler) http.Handler {
 				}
 			}
 		}
-		if !ok || !s.authorize(w, r, a, v) {
+		if !ok || !s.authorize(w, r, a, v) || s.closureRefuses(w, r, a.Operation) {
 			return
 		}
 		// A path ID that is not canonical names nothing: the 404 of a missing resource. It comes

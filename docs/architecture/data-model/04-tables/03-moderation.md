@@ -117,7 +117,7 @@
   | `oauth_client_enabled` | `oauth_client` | `oauth_clients.id` | クライアントの名前と `client_id` | なし（取り消しの行は無効化の行の ID が主キー） |
   | `oauth_client_host_denied` | `oauth_client_host` | ホスト | ホスト | `oauth_client_host_denials.id` |
   | `oauth_client_host_allowed` | `oauth_client_host` | ホスト | ホスト | なし |
-  | `service_closure_announced`, `service_closure_withdrawn` | `instance` | `service_closure` | `service_closure` | `service_closure_events.id` |
+  | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` | `instance` | `service_closure` | `service_closure` | `service_closure_events.id` |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |

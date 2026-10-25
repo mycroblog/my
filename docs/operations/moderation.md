@@ -319,7 +319,7 @@ my admin report reopen <report id>
 | `payment_provider` | `payment_reconcile_queued`（決済の事業者との照合を手で始めた。対象の名前は事業者の名前） |
 | `oauth_client` | `oauth_client_disabled`・`oauth_client_enabled`（OAuth のクライアントの無効化と取り消し。無効化は全トークンを失効させる。対象の名前はクライアントの名前と `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`・`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否と取り消し。拒否はそのホストのクライアントのトークンを失効させる。対象の名前はホスト） |
-| `instance` | `service_closure_announced`・`service_closure_withdrawn`（サービスの終了の予告・日付の変更と、予告の取り消し。対象の名前は `service_closure`） |
+| `instance` | `service_closure_announced`・`service_closure_withdrawn`・`service_closure_closed`・`service_closure_delivery_completed`（サービスの終了の予告・日付の変更、予告の取り消し、クローズ、クローズの配送の完了。対象の名前は `service_closure`） |
 
 一覧は、対象が今もあるかを示します。保持期間を過ぎて消えたアカウント・通報・異議申し立て・登録の拒否と、削除されたロール・カスタム絵文字・webhook は、記録時の名前だけを出し、画面へのリンクを出しません。
 

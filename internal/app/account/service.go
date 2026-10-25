@@ -466,6 +466,11 @@ func (s *Service) KnownSharedInboxes(ctx context.Context, after string, limit in
 	return s.d.Repository.ListKnownSharedInboxes(ctx, after, limit)
 }
 
+// CountKnownSharedInboxes counts the shared inboxes of KnownSharedInboxes.
+func (s *Service) CountKnownSharedInboxes(ctx context.Context) (int, error) {
+	return s.d.Repository.CountKnownSharedInboxes(ctx)
+}
+
 // AccountDomain returns the domain of an account (account.LocalDomain for a local one). It
 // fails with ErrNotFound when there is none.
 func (s *Service) AccountDomain(ctx context.Context, id string) (string, error) {

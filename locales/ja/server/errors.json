@@ -255,9 +255,17 @@
     "defaultMessage": "このサポーターのプランは加入を受け付けていません。",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
   },
+  "errors.service_closed": {
+    "defaultMessage": "このサーバーはクローズしました。",
+    "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
+  },
+  "errors.service_closed_detail": {
+    "defaultMessage": "サーバーはクローズしました。サインインして、データをエクスポートすることはできます。",
+    "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
+  },
   "errors.service_closure.state": {
     "defaultMessage": "いまのサービスの終了の状態ではこの操作はできません。",
-    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes."
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes."
   },
   "errors.supporters.subscription_state": {
     "defaultMessage": "いまの加入の状態ではこの操作はできません。",

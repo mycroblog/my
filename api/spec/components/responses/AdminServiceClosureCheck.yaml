@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The checks before the closure of the service.
+headers:
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/AdminServiceClosureCheck.yaml

@@ -241,6 +241,8 @@ type Repository interface {
 	ListSubscriptions(ctx context.Context, f SubscriptionFilter) ([]SubscriptionRecord, error)
 	// LiveSubscriptionIDsOfPlan returns inside tx the live subscriptions of a plan.
 	LiveSubscriptionIDsOfPlan(ctx context.Context, tx uow.Tx, planID string) ([]string, error)
+	// LiveSubscriptionIDs returns inside tx every live subscription, in order.
+	LiveSubscriptionIDs(ctx context.Context, tx uow.Tx) ([]string, error)
 	// CountLiveSubscriptions counts the live subscriptions; tx may be nil.
 	CountLiveSubscriptions(ctx context.Context, tx uow.Tx) (int64, error)
 	// CountMembers counts the subscriptions in a member state, by plan.

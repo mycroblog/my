@@ -22,6 +22,8 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		Accounts: instanceAccounts{a},
 		// The terms of service, the privacy policy (#489), and the announcements (FR-726) are Markdown.
 		Documents: markdown.New(),
+		// The checks before the closure of the service count over other modules.
+		ClosureCounts: closureCounts{a},
 	})
 }
 
@@ -33,4 +35,32 @@ func (m instanceMedia) CheckImage(ctx context.Context, mediaID string) error {
 		return errors.New("media files are not set up")
 	}
 	return m.a.Media.CheckImage(ctx, mediaID)
+}
+
+// closureCounts counts what the closure of the service ends (ADR-0088 §1) with the account,
+// supporters, and moderation modules. The modules set up later are read at call time.
+type closureCounts struct{ a *App }
+
+func (c closureCounts) CountLocalUsers(ctx context.Context) (int, error) {
+	return c.a.Accounts.CountLocalUsers(ctx)
+}
+
+func (c closureCounts) CountKnownSharedInboxes(ctx context.Context) (int, error) {
+	return c.a.Accounts.CountKnownSharedInboxes(ctx)
+}
+
+func (c closureCounts) LiveSubscriptionCount(ctx context.Context) (int, error) {
+	if c.a.Supporters == nil {
+		return 0, nil
+	}
+	return c.a.Supporters.LiveSubscriptionCount(ctx)
+}
+
+// PendingMigrations counts no migration: the sending of Move and the jobs that move the
+// followers (ADR-0089) have no use case that counts them yet.
+func (c closureCounts) PendingMigrations(context.Context) (int, error) { return 0, nil }
+
+func (c closureCounts) HeldAccounts(ctx context.Context) (int, error) {
+	ids, err := c.a.Moderation.HeldAccountIDs(ctx)
+	return len(ids), err
 }

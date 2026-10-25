@@ -67,7 +67,21 @@ my admin closure withdraw                                                 # 予�
 - 予告から閉鎖日までが 30 日より短いと、標準エラーに警告を出します（予告はそのまま記録します）。
 - 日付の変更は新しい予告として記録し、取り消しの後の予告は新しい予告です。サーバーを閉じた後は、予告も取り消しもできません（終了コード 1）。
 - 予告・日付の変更・取り消しは監査ログに `service_closure_announced`・`service_closure_withdrawn`（対象の種類 `instance`）で残ります（`my admin audit list -target-kind instance`）。
-- 管理 API は `GET /api/v1/admin/closure`、`PUT` / `DELETE /api/v1/admin/closure/announcement` で、権限 `manage_service_closure`（組み込みのロールでは `admin` だけ）を要します。
+- 管理 API は `GET /api/v1/admin/closure`、`PUT` / `DELETE /api/v1/admin/closure/announcement`、`GET /api/v1/admin/closure/check`、`POST /api/v1/admin/closure/close` で、権限 `manage_service_closure`（組み込みのロールでは `admin` だけ）を要します。
+
+閉鎖日を過ぎたら、サーバーをクローズします（FR-809）。クローズは取り消せません。
+
+```sh
+my admin closure check                                      # クローズで終わるものの点検
+my admin closure close                                      # 点検を示し、y とドメイン名の入力で確かめてクローズ
+my admin closure close -confirm-domain social.example       # 自動化: 質問の代わりにドメイン名を渡す
+```
+
+- `check` と `close` は、ローカルアカウント数・宛先の inbox（既知の shared inbox）の数・送る `Delete` の数の見積もり（その積）・続いているサポーターの加入の数・終わっていない移転（`Move`、[ADR-0089](../adr/0089-account-migration-move.md)）の数・保全（`retention_holds`）のあるアカウントの数を示します。
+  移転が残っているときと保全があるときは、標準エラーに警告を出します。保全のあるアカウントの記録は、データを破棄する前に `my admin account export-moderation` で書き出して保管してください。
+- `close` は、予告がないときと閉鎖日の前には何も聞かずに断ります（終了コード 1）。`y` 以外の答えと、サーバーのドメイン（設定の `host`、大文字と小文字は区別しない）と違う入力でも、何も変えずに終了コード 1 で終わります。
+- クローズは監査ログに `service_closure_closed` で残り、同じトランザクションで、続いているサポーターの加入をすべて終え（理由 `service_closed`）、決済事業者のサブスクリプションをすぐ解約するジョブ（`CancelNow`）を積みます。
+- クローズの後、client API は、自分のアカウントと設定の読み取り・エクスポート（`/exports`、`/csv_exports`）・セッション（`/authorized_apps`）・`GET /instance` と、クローズの状態とジョブのキューの管理の操作だけを通し、ほかは `403`（`/api/v1/problems/service-closed`）で断ります。ストリームは止まり、Web Push は送りません。サインインとパスワードの再設定はできます。
 
 ## Exporting the maintenance page
 
