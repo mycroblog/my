@@ -261,6 +261,13 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.BlobFSDir = v },
 	},
 	{
+		key:    "media_origin",
+		defDoc: "the server's own origin (`https://{host}`)",
+		doc:    "Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/` (ADR-0005). It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).",
+		check:  checkMediaOrigin,
+		set:    func(c *Config, v string) { c.MediaOrigin = v },
+	},
+	{
 		key:   "media_max_image_bytes",
 		doc:   "Largest accepted image upload in bytes (ADR-0019 §8).",
 		def:   strconv.Itoa(16 << 20),
@@ -1193,6 +1200,27 @@ func checkOrigin(v string) error {
 		return errors.New("must be lower case")
 	}
 	return nil
+}
+
+// checkMediaOrigin accepts an origin that is https, or http on a loopback host.
+func checkMediaOrigin(v string) error {
+	if err := checkOrigin(v); err != nil {
+		return err
+	}
+	u, _ := url.Parse(v)
+	if u.Scheme == "http" && !isLoopbackHost(u.Hostname()) {
+		return errors.New("must be https; http is accepted only for localhost, 127.0.0.1, or [::1]")
+	}
+	return nil
+}
+
+// isLoopbackHost reports whether host is localhost or a loopback IP address.
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func checkListen(v string) error {

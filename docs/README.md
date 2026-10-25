@@ -36,6 +36,7 @@
 - [鍵暗号化鍵（KEK）の管理](operations/key-management.md)
 - [DB の初期化と作り直し](operations/database.md)
 - [サーバーの起動・停止とヘルスチェック](operations/running.md)
+- [メディア配信に CDN を置く（media_origin・オリジンプル・キャッシュと削除）](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
 - [サービスの終了（予告・クローズ・静的な閉鎖のページ・データの破棄）](operations/service-closure.md)
 - [外形監視とステータスページ（UptimeRobot・Better Stack・Gatus・Uptime Kuma・Upptime）](operations/monitoring.md)

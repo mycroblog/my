@@ -144,7 +144,7 @@ func renderShell(d shellData) (document, error) {
 }
 
 // contentSecurityPolicy is the policy of the web client's documents (ADR-0019 §9). It has no
-// nonce, so that the shell can be cached (ADR-0028). The client API and media are on the
+// nonce, so that the shell can be cached (ADR-0028). The client API is on the
 // server's own origin. Trusted Types are required for every script sink, and `trusted-types`
 // allows exactly the client's two policies, each created once (no 'allow-duplicates'):
 // my-server-sanitized-html (@my/ui PostContent, the server-sanitized post HTML) and
@@ -165,6 +165,18 @@ const contentSecurityPolicy = "default-src 'none'; " +
 	"object-src 'none'; " +
 	"require-trusted-types-for 'script'; " +
 	"trusted-types my-server-sanitized-html my-service-worker"
+
+// withMediaOrigin lets the policy's images and media come from the CDN origin of the media files
+// (media_origin) as well; an empty origin leaves it unchanged.
+func withMediaOrigin(csp, origin string) string {
+	if origin == "" {
+		return csp
+	}
+	return strings.NewReplacer(
+		"img-src 'self' blob:", "img-src 'self' blob: "+origin,
+		"media-src 'self' blob:", "media-src 'self' blob: "+origin,
+	).Replace(csp)
+}
 
 // upgradeInsecureRequests ends the policy of a server served over HTTPS. A server served over plain
 // HTTP on localhost leaves it out: WebKit upgrades even loopback requests, which then fail.

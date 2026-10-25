@@ -473,3 +473,30 @@ func TestDevViteOrigin(t *testing.T) {
 		}
 	}
 }
+
+// TestShellCSPMediaOrigin checks that the policy lets images and media load from the CDN origin of
+// the media files, and from nowhere else, and that it is unchanged when they are on the server.
+func TestShellCSPMediaOrigin(t *testing.T) {
+	csp := func(o web.Options) string {
+		_, mux := newHandler(t, o)
+		return get(mux, "/", nil).Header().Get("Content-Security-Policy")
+	}
+	base := csp(web.Options{})
+	for _, same := range []string{"", "https://social.example"} {
+		if got := csp(web.Options{MediaOrigin: same}); got != base {
+			t.Errorf("media origin %q: CSP = %q, want it unchanged %q", same, got, base)
+		}
+	}
+	got := csp(web.Options{MediaOrigin: "https://media.example"})
+	for _, want := range []string{"img-src 'self' blob: https://media.example;", "media-src 'self' blob: https://media.example;"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("CSP %q lacks %s", got, want)
+		}
+	}
+	if strings.Count(got, "media.example") != 2 {
+		t.Errorf("CSP %q names the media origin outside img-src and media-src", got)
+	}
+	if _, err := web.New(web.Options{Host: "social.example", Build: fakeBuild(), MediaOrigin: "media.example"}); err == nil {
+		t.Error("New accepted a media origin without a scheme")
+	}
+}

@@ -25,7 +25,7 @@
 ## Cloudflare（実行環境としては対象外）
 
 - [ADR-0001](../adr/0001-server-language-and-runtime.md) により、Cloudflare Workers（と D1 / Cloudflare Queues）は v0 の実行環境の対象外。
-- ただし **R2（S3 互換 API）と CDN は他ターゲットと組み合わせて使える**。R2 は転送量（egress）課金がなく、メディア配信のコストを下げる候補。
+- ただし **R2（S3 互換 API）と CDN は他ターゲットと組み合わせて使える**。R2 は転送量（egress）課金がなく、メディア配信のコストを下げる候補。メディアの前に CDN を置くには `media_origin` を設定する（[メディア配信に CDN を置く](../operations/cdn.md)）。
 - Cloudflare Containers 上での実行は将来の検討事項（需要があれば別 ADR）。
 
 ### R2（Blob 用途のみ）

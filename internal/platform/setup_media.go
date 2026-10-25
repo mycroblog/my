@@ -86,7 +86,7 @@ func (a *App) setMedia(cfg *config.Config, repo content.MediaRepository, emojis 
 func (a *App) setBlobs(cfg *config.Config) error {
 	switch cfg.Blob {
 	case "fs":
-		store, err := blobfs.New(blobfs.Options{Dir: cfg.BlobFSDir, BaseURL: cfg.ServerOrigin()})
+		store, err := blobfs.New(blobfs.Options{Dir: cfg.BlobFSDir, BaseURL: cfg.MediaBaseURL()})
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards conte
 		// The account module's avatars and headers are what the avatars policy keeps.
 		UnitOfWork: a.UnitOfWork, Blobs: a.Blobs, Clock: a.Clock, ProfileImages: a.Accounts,
 		MaxCacheSize: cfg.RemoteMediaCacheMaxBytes, EmojiMaxBytes: cfg.RemoteCustomEmojiMaxBytes, Processor: a.MediaProcessor,
-		Keys: keys, BaseURL: cfg.ServerOrigin(), Logger: a.Logger,
+		Keys: keys, BaseURL: cfg.MediaBaseURL(), Logger: a.Logger,
 		// The federation mode decides which remote files are fetched (ADR-0076).
 		Federation: a.mediaGate(),
 		// The images of link cards are remote files without an owner (ADR-0062 §3).
