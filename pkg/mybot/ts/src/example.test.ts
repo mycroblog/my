@@ -28,8 +28,7 @@ test("example: a command", async () => {
 
 // A test of a scheduled job: the bot's clock is the server's, which the test moves on to the job's next time.
 test("example: a scheduled job", async () => {
-  const srv = new Server();
-  srv.clock.set(Date.parse("2026-10-25T08:59:00Z"));
+  const srv = new Server({ now: Date.parse("2026-10-25T08:59:00Z") });
   const bot = new Bot(srv.options());
   bot.every(
     "0 9 * * *",

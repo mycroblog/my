@@ -48,8 +48,7 @@ describe("every", () => {
   });
 
   test("runs at each time, posts once per run, and records the last run", async () => {
-    const srv = new Server();
-    srv.clock.set(Date.parse("2026-10-25T08:59:00Z"));
+    const srv = new Server({ now: Date.parse("2026-10-25T08:59:00Z") });
     const options = srv.options();
     const bot = new Bot(options);
     const errors: unknown[] = [];
@@ -95,8 +94,7 @@ describe("every", () => {
   });
 
   test('catchUp "latest" runs the newest missed time once, and "skip" none', async () => {
-    const srv = new Server();
-    srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+    const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
     const options = srv.options();
     // The bot last ran the job two days ago: the runs of yesterday and today were missed.
     await options.store.setLastRun("latest", Date.parse("2026-10-23T09:00:00Z"));
@@ -131,8 +129,7 @@ describe("every", () => {
   });
 
   test('catchUp "latest" runs a job that never ran at its newest past time', async () => {
-    const srv = new Server();
-    srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+    const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
     const bot = new Bot(srv.options());
     bot.every(
       "0 9 * * *",
@@ -150,8 +147,7 @@ describe("every", () => {
 
 describe("runOnce", () => {
   test("handles the missed notifications and the due jobs once, and returns", async () => {
-    const srv = new Server();
-    srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+    const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
     const options = srv.options({ catchUpLimit: 0 });
     await options.store.setLastRun("daily", Date.parse("2026-10-23T09:00:00Z"));
     const alice = srv.account("alice");
@@ -192,8 +188,7 @@ describe("runOnce", () => {
   });
 
   test("returns when its signal aborts, leaving the unfinished job due", async () => {
-    const srv = new Server();
-    srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+    const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
     const options = srv.options({ shutdownGrace: 10 });
     const bot = new Bot(options);
     let started!: () => void;

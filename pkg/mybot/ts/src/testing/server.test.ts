@@ -105,4 +105,19 @@ describe("Clock", () => {
       clock.set(0);
     }).toThrow();
   });
+
+  test("starts at the current time, or at the option now of the server", () => {
+    const before = Date.now() - 1000;
+    const now = new Server().clock.now();
+    expect(now).toBeGreaterThanOrEqual(before);
+    expect(now).toBeLessThanOrEqual(Date.now());
+
+    // A time in the past stays settable on any day.
+    const at = Date.parse("2001-02-03T04:05:06Z");
+    const fixed = new Server({ now: at });
+    expect(fixed.clock.now()).toBe(at);
+    expect(fixed.me.created_at).toBe(new Date(at).toISOString());
+    fixed.clock.set(at + 3_600_000);
+    expect(fixed.clock.now()).toBe(at + 3_600_000);
+  });
 });

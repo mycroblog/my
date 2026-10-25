@@ -278,7 +278,9 @@ posts, _ := srv.WaitPosted(ctx, 1) // posts[0].Request.Text is "@alice pong"
 - `Posted`, `Reactions`, `Favourites`, and `Follows` return what the bot did; like the server, it posts once per
   Idempotency-Key.
 - `srv.Clock().WaitForSleepers(ctx, n)` waits for the scheduled jobs (and the pruning of the Store) to sleep, and
-  `Advance` or `Set` moves them on.
+  `Advance` or `Set` moves them on. The `Clock` starts at the current time; a test of fixed times starts it before
+  them with `mybottest.NewServer(mybottest.WithClockAt(t))`, since `Set` cannot move it back, so that the test runs
+  the same on any day.
 
 The [examples](#examples) have tests of each kind.
 

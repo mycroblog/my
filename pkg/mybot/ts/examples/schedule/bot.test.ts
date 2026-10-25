@@ -4,8 +4,7 @@ import { Server } from "@mycroblog/mybot/testing";
 import { createBot } from "./bot.ts";
 
 test("the scheduled bot greets at 9:00", async () => {
-  const srv = new Server();
-  srv.clock.set(Date.parse("2026-10-26T08:59:00+09:00"));
+  const srv = new Server({ now: Date.parse("2026-10-26T08:59:00+09:00") });
   const options = srv.options();
   // The bot posted yesterday's greeting, so catchUp "latest" has nothing to run when it starts. A job that never ran
   // would post its newest past time, yesterday's 9:00, at once.
@@ -28,8 +27,7 @@ test("the scheduled bot greets at 9:00", async () => {
 });
 
 test("a bot stopped for three mornings posts the newest of them once", async () => {
-  const srv = new Server();
-  srv.clock.set(Date.parse("2026-10-26T12:00:00Z"));
+  const srv = new Server({ now: Date.parse("2026-10-26T12:00:00Z") });
   const options = srv.options();
   await options.store.setLastRun("morning", Date.parse("2026-10-23T09:00:00Z"));
   const bot = createBot(options);
