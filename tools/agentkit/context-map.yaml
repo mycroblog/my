@@ -214,6 +214,7 @@ entries:
     docs: ["docs/adr/0086-email-delivery.md#6-mailses", "docs/operations/email.md"]
     notes:
       - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
+      - "mail/smtp also runs on Mailpit containers (mailpit_test.go and internal/platform/mailpit_test.go through pkg/testkit/mailpittest), only with TEST_MAIL=container: `scripts/task.sh go:test-mail` (CI job mail-integration in the slow suite). The development Mailpit is deploy/docker/mailpit with scripts/mailpit-cert.sh; its image pin matches mailpittest.DefaultImage."
   - name: adapter-billing
     paths: ["internal/adapter/billing/**"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
@@ -265,7 +266,7 @@ entries:
     paths: ["pkg/testkit/**"]
     docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0041-postgres-tests-on-pgmem.md"]
   - name: testkit-backends
-    paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/fixtures/**"]
+    paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/mailpittest/**", "pkg/testkit/fixtures/**"]
     docs: ["docs/adr/0041-postgres-tests-on-pgmem.md"]
 
   # --- Client libraries -----------------------------------------------------------------------------------

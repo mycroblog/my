@@ -25,7 +25,7 @@ env:
 jobs:
   go-cache:
     # The Go module, build, and golangci-lint cache that .github/actions/setup-go restores in ci.yml,
-    # postgres-contract.yml, and stream-contract.yml. It is built from empty directories once a day (the date is in the
+    # postgres-contract.yml, stream-contract.yml, and mail-integration.yml. It is built from empty directories once a day (the date is in the
     # key) and for each new Go or go.sum, so it holds one build's worth of entries instead of growing with every push.
     # It holds exactly what the jobs that restore it read, built one after another with their settings (setup-go sets
     # CGO_ENABLED=0 in both): the modules, the builds of the packages and the Go tools (go:warm), the test binaries

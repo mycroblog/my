@@ -2,7 +2,7 @@ name: Slow suite
 
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
 # live interoperability test with Mastodon, GoToSocial, and Misskey, the PostgreSQL tests on a real postgres container
-# (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the Docker Compose smoke test (linux/amd64)
+# (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, golangci-lint over everything with the build tag sets, and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
 # and it runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`. Every job checks out the commit
 # of the run (github.sha), so a caller tests the commit it was started on.
@@ -32,6 +32,9 @@ jobs:
 
   stream-contract:
     uses: ./.github/workflows/stream-contract.yml
+
+  mail-integration:
+    uses: ./.github/workflows/mail-integration.yml
 
   docker:
     # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
@@ -116,7 +119,7 @@ jobs:
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
   result:
     if: always()
-    needs: [web-e2e, federation-live, postgres-contract, stream-contract, docker, go-static, codeql]
+    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, docker, go-static, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

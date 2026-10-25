@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Development override of compose.yaml: adds Mailpit (mailpit/compose.yaml) and points `my serve` at it with
+# mail = smtp, so that the server's emails (verification, password reset, notifications) appear in Mailpit's web UI on
+# http://127.0.0.1:8025 instead of reaching anyone (docs/operations/email.md, "開発環境"). Never use it in production.
+#
+#   scripts/mailpit-cert.sh
+#   docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
+
+include:
+  - mailpit/compose.yaml
+
+services:
+  my:
+    depends_on:
+      mailpit:
+        condition: service_started
+    environment:
+      MY_MAIL: smtp
+      MY_MAIL_FROM: ${MY_MAIL_FROM:-noreply@localhost}
+      MY_SMTP_HOST: mailpit
+      MY_SMTP_PORT: "1025"
+      # mail = smtp verifies Mailpit's certificate: trust the CA of scripts/mailpit-cert.sh instead of the system roots.
+      SSL_CERT_FILE: /run/mailpit/ca.pem
+    volumes:
+      - ${MAILPIT_CERTS:-../../.tmp/mailpit}/ca.pem:/run/mailpit/ca.pem:ro

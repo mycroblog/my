@@ -68,6 +68,13 @@ tasks:
     cmds:
       - go test -count=1 ./internal/adapter/stream/...
 
+  test-mail:
+    desc: Run the mail = smtp integration tests on Mailpit containers (pkg/testkit/mailpittest) (needs Docker; CI in the slow suite)
+    env:
+      TEST_MAIL: container
+    cmds:
+      - go test -count=1 -run Mailpit ./internal/adapter/mail/smtp/ ./internal/platform/
+
   warm:
     desc: Download the modules and build the packages and the Go tools once, so that the Go checks a CI job runs in parallel read the build cache instead of each compiling the same packages
     cmds:
