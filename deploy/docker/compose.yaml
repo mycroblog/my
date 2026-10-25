@@ -50,6 +50,12 @@ services:
       MY_BLOB_FS_DIR: /data/blobs
       # The KEK reaches the container as a Docker secret file, not as an environment variable (ADR-0019 §6).
       MY_KEK_FILE: /run/secrets/my_kek
+      # The status page and the maintenance mode (docs/operations/maintenance.md): MY_MAINTENANCE=true answers every
+      # request with the maintenance page or problem until the service is recreated without it.
+      MY_STATUS_PAGE_URL: ${MY_STATUS_PAGE_URL:-}
+      MY_MAINTENANCE: ${MY_MAINTENANCE:-false}
+      MY_MAINTENANCE_MESSAGE: ${MY_MAINTENANCE_MESSAGE:-}
+      MY_MAINTENANCE_UNTIL: ${MY_MAINTENANCE_UNTIL:-}
     secrets:
       - my_kek
     volumes:
