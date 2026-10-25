@@ -168,65 +168,43 @@ jobs:
     uses: ./.github/workflows/ui-test.yml
 
   lint:
-    # golangci-lint on the lines a pull request changes (ADR-0079). The merge queue does not run it: stacking two pull
-    # requests rarely adds an issue, and never breaks the build; the slow suite lints everything. The analysis covers
-    # every package either way, so its speed comes from the golangci-lint cache that main.yml builds.
+    # golangci-lint over the modules a pull request changes (ADR-0079), through the area tasks. The merge queue does not
+    # run it: stacking two pull requests rarely adds an issue, and never breaks the build; the slow suite lints
+    # everything. Its speed comes from the golangci-lint cache that main.yml builds.
     needs: changes
     if: >-
       github.event_name == 'pull_request' &&
       (needs.changes.outputs.lint-go == 'true' || needs.changes.outputs.lint-agentkit == 'true' || needs.changes.outputs.mykit == 'true')
     runs-on: ubuntu-latest
-    # only-new-issues reads the pull request's diff.
-    permissions:
-      contents: read
-      pull-requests: read
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Go
         uses: ./.github/actions/setup-go
         id: go
-      - parallel:
-          # The action adds the issues to the pull request as annotations; its cache is the one setup-go restores.
-          - name: go:lint
-            if: needs.changes.outputs.lint-go == 'true'
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              only-new-issues: true
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
-          - name: agentkit:lint
-            if: needs.changes.outputs.lint-agentkit == 'true'
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              working-directory: tools/agentkit
-              only-new-issues: true
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
-          - name: mykit:lint
-            if: needs.changes.outputs.mykit == 'true'
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              working-directory: pkg/mykit
-              only-new-issues: true
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
-      # A fourth parallel instance of the action fails to read the event payload (`Unexpected end of JSON input`), so
-      # the bot library's lint runs after the others.
-      - name: mykit:mybot-lint
-        if: needs.changes.outputs.mykit == 'true'
+      # One install of golangci-lint for every lint, and no other use of the action: instances of it that run in
+      # parallel read the event payload while each other writes it (`Unexpected end of JSON input`), and each downloads
+      # the binary to the same path.
+      - name: Install golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v${{ steps.go.outputs.golangci-lint }}
-          working-directory: pkg/mybot
-          only-new-issues: true
+          install-only: true
           skip-cache: true
+      # The lint tasks pass --allow-serial-runners, so the instances wait for each other's lock.
+      - parallel:
+          - name: go:lint
+            if: needs.changes.outputs.lint-go == 'true'
+            run: scripts/task.sh go:lint
+          - name: agentkit:lint
+            if: needs.changes.outputs.lint-agentkit == 'true'
+            run: scripts/task.sh agentkit:lint
+          - name: mykit:lint
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:lint
+          - name: mykit:mybot-lint
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-lint
 
   docker-smoke:
     # The Docker Compose smoke test (linux/amd64, ADR-0079): what only the images show, beyond the Go tests that already
