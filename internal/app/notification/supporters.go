@@ -143,11 +143,12 @@ type SupporterMailDeps struct {
 	Mailer    kernel.Mailer
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
-	// Host is the server's domain name, which the emails name the instance by when it has no
-	// display name.
+	// Host is the server's domain name, which the emails name the instance by when MailSite
+	// gives no name.
 	Host string
-	// InstanceName returns the instance's display name; nil or "" names it by Host.
-	InstanceName func(ctx context.Context) string
+	// MailSite returns the instance as its emails name it (ADR-0086 §2, §3); nil names it by
+	// Host.
+	MailSite func(ctx context.Context) kernel.MailSite
 	// WebOrigin is the origin of the web client that the emails link to.
 	WebOrigin string
 }
@@ -184,25 +185,35 @@ func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, job supporterE
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return box.Locale }}
 	l := users.Localizer(ctx, "")
 	origin := strings.TrimSuffix(d.WebOrigin, "/")
-	name := d.Host
-	if d.InstanceName != nil {
-		if n := d.InstanceName(ctx); n != "" {
-			name = n
-		}
+	site := mailSite(ctx, d.Host, d.MailSite)
+	name := site.Name
+	// The emails are about the user's paid subscription, so they are transactional: no
+	// preference turns them off (ADR-0086 §3).
+	draft := kernel.MailDraft{
+		Category: kernel.MailTransactional, To: box.Address,
+		Action: &kernel.MailAction{Label: l.ServerMailActionOpenNotifications(), URL: origin + "/notifications"},
+		Reason: l.ServerMailReasonSupporter(name),
 	}
-	m := kernel.MailMessage{To: box.Address}
 	switch job.Type {
 	case notification.TypeSupporterPaymentFailed:
-		m.Subject = l.ServerMailSupporterPaymentFailedSubject(name)
-		m.Text = l.ServerMailSupporterPaymentFailedBody(job.GraceEndsAt.UTC().Format(graceLayout), name, job.PlanName, origin+"/settings/supporter")
+		draft.Subject = l.ServerMailSupporterPaymentFailedSubject(name)
+		draft.Paragraphs = []string{
+			l.ServerMailSupporterPaymentFailedBody(name, job.PlanName),
+			l.ServerMailSupporterPaymentFailedDetail(job.GraceEndsAt.UTC().Format(graceLayout)),
+		}
+		draft.Action = &kernel.MailAction{Label: l.ServerMailSupporterPaymentFailedAction(), URL: origin + "/settings/supporter"}
 	case notification.TypeSupporterSubscriptionEnded:
-		m.Subject = l.ServerMailSupporterSubscriptionEndedSubject(name)
-		m.Text = l.ServerMailSupporterSubscriptionEndedBody(name, job.PlanName, job.EndReason, origin+"/notifications")
+		draft.Subject = l.ServerMailSupporterSubscriptionEndedSubject(name)
+		draft.Paragraphs = []string{l.ServerMailSupporterSubscriptionEndedBody(name, job.PlanName, job.EndReason)}
 	case notification.TypeSupporterPlanRetired:
-		m.Subject = l.ServerMailSupporterPlanRetiredSubject(name)
-		m.Text = l.ServerMailSupporterPlanRetiredBody(name, job.PlanName, origin+"/notifications")
+		draft.Subject = l.ServerMailSupporterPlanRetiredSubject(name)
+		draft.Paragraphs = []string{l.ServerMailSupporterPlanRetiredBody(name, job.PlanName), l.ServerMailSupporterPlanRetiredDetail()}
 	default:
 		return nil
+	}
+	m, err := kernel.MailComposer{Site: site, Words: l}.Compose(draft)
+	if err != nil {
+		return fmt.Errorf("notification: compose the %s email of %s: %w", job.Type, job.NotificationID, err)
 	}
 	if err := d.Mailer.Send(ctx, m); err != nil {
 		return fmt.Errorf("notification: send the %s email of %s: %w", job.Type, job.NotificationID, err)

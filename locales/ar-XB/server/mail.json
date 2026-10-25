@@ -1,6 +1,14 @@
 {
+  "mail.action.open_notifications": {
+    "defaultMessage": "‮Odǝu ʎonɹ uoʇıɟıɔɐʇıous‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.action.set_new_password": {
+    "defaultMessage": "‮Sǝʇ ɐ uǝʍ dɐssʍoɹp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_appeal.body": {
-    "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɐddǝɐʅǝp ɐ ɯopǝɹɐʇıou ɐɔʇıou, ɐup ʇɥǝ ɐddǝɐʅ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ıʇ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɐddǝɐʅǝp ɐ ɯopǝɹɐʇıou ɐɔʇıou, ɐup ʇɥǝ ɐddǝɐʅ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_appeal.subject": {
@@ -8,7 +16,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_custom_emoji_request.body": {
-    "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɹǝbnǝsʇǝp ɐ ɔnsʇoɯ ǝɯoɾı, oɹ ɐ uǝʍ ıɯɐƃǝ oɟ ouǝ, ɐup ʇɥǝ ɹǝbnǝsʇ ɐʍɐıʇs ɹǝʌıǝʍ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ıʇ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɹǝbnǝsʇǝp ɐ ɔnsʇoɯ ǝɯoɾı, oɹ ɐ uǝʍ ıɯɐƃǝ oɟ ouǝ, ɐup ʇɥǝ ɹǝbnǝsʇ ɐʍɐıʇs ɹǝʌıǝʍ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_custom_emoji_request.subject": {
@@ -16,7 +24,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_report.body": {
-    "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ıʇ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_report.subject": {
@@ -24,7 +32,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_sign_up.body": {
-    "defaultMessage": "‮∀ uǝʍ nsǝɹ sıƃuǝp nd ou {instance} ɐup ɐʍɐıʇs ɐddɹoʌɐʅ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ʇɥǝ ɹǝƃısʇɹɐʇıou:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "defaultMessage": "‮∀ uǝʍ nsǝɹ sıƃuǝp nd ou {instance} ɐup ɐʍɐıʇs ɐddɹoʌɐʅ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_sign_up.subject": {
@@ -32,7 +40,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_webhook_disabled.body": {
-    "defaultMessage": "‮⊥ɥǝ sǝɹʌǝɹ {instance} ʇnɹuǝp oɟɟ ouǝ oɟ ıʇs ʍǝqɥooʞs: ıʇs ǝupdoıuʇ ʞǝdʇ ɟɐıʅıuƃ, oɹ ɐusʍǝɹǝp ʇɥɐʇ ıʇ ıs ƃouǝ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo sǝǝ ʍɥıɔɥ ouǝ, ɐup ʇnɹu ıʇ ou ɐƃɐıu ouɔǝ ʇɥǝ ǝupdoıuʇ ʍoɹʞs:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "defaultMessage": "‮⊥ɥǝ sǝɹʌǝɹ {instance} ʇnɹuǝp oɟɟ ouǝ oɟ ıʇs ʍǝqɥooʞs: ıʇs ǝupdoıuʇ ʞǝdʇ ɟɐıʅıuƃ, oɹ ɐusʍǝɹǝp ʇɥɐʇ ıʇ ıs ƃouǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_webhook_disabled.detail": {
+    "defaultMessage": "‮Odǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo sǝǝ ʍɥıɔɥ ouǝ, ɐup ʇnɹu ıʇ ou ɐƃɐıu ouɔǝ ʇɥǝ ǝupdoıuʇ ʍoɹʞs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_webhook_disabled.subject": {
@@ -40,7 +52,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɔɥɐuƃǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ.\n\nIɟ ʎon pıp uoʇ ɔɥɐuƃǝ ıʇ, soɯǝouǝ ǝʅsǝ ɯɐʎ ʞuoʍ ʎonɹ dɐssʍoɹp. Sǝʇ ɐ uǝʍ ouǝ ɐʇ ouɔǝ:\n\n{url}\n\n⊥ɥıs ǝɯɐıʅ ʍɐs sǝuʇ qʎ {host}.‬",
+    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɔɥɐuƃǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.password_changed.detail": {
+    "defaultMessage": "‮Iɟ ʎon pıp uoʇ ɔɥɐuƃǝ ıʇ, soɯǝouǝ ǝʅsǝ ɯɐʎ ʞuoʍ ʎonɹ dɐssʍoɹp. Sǝʇ ɐ uǝʍ ouǝ ɐʇ ouɔǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_changed.subject": {
@@ -48,7 +64,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɹǝɯoʌǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ. Ⅎɹoɯ uoʍ ou ʎon sıƃu ıu ʍıʇɥ ʎonɹ dɐssʞǝʎs.\n\nIɟ ʎon pıp uoʇ ɹǝɯoʌǝ ıʇ, soɯǝouǝ ǝʅsǝ ɯɐʎ qǝ sıƃuǝp ıu ʇo ʎonɹ ɐɔɔonuʇ. Sǝʇ ɐ uǝʍ dɐssʍoɹp ɐʇ ouɔǝ:\n\n{url}\n\n⊥ɥıs ǝɯɐıʅ ʍɐs sǝuʇ qʎ {host}.‬",
+    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɹǝɯoʌǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ. Ⅎɹoɯ uoʍ ou ʎon sıƃu ıu ʍıʇɥ ʎonɹ dɐssʞǝʎs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.password_removed.detail": {
+    "defaultMessage": "‮Iɟ ʎon pıp uoʇ ɹǝɯoʌǝ ıʇ, soɯǝouǝ ǝʅsǝ ɯɐʎ qǝ sıƃuǝp ıu ʇo ʎonɹ ɐɔɔonuʇ. Sǝʇ ɐ uǝʍ dɐssʍoɹp ɐʇ ouɔǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_removed.subject": {
@@ -56,15 +76,47 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_reset.body": {
-    "defaultMessage": "‮Soɯǝouǝ ɐsʞǝp ʇo ɹǝsǝʇ ʇɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance}.\n\nOdǝu ʇɥıs ʅıuʞ ʇo sǝʇ ɐ uǝʍ dɐssʍoɹp:\n\n{url}\n\n{minutes,plural,one{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɯıunʇǝ, ouɔǝ.} other{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɯıunʇǝs, ouɔǝ.}} Iɟ ʎon pıp uoʇ ɐsʞ ɟoɹ ıʇ ɐʇ {host}, ıƃuoɹǝ ʇɥıs ǝɯɐıʅ; ʎonɹ dɐssʍoɹp sʇɐʎs ɐs ıʇ ıs.‬",
+    "defaultMessage": "‮Soɯǝouǝ ɐsʞǝp ʇo ɹǝsǝʇ ʇɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.password_reset.detail": {
+    "defaultMessage": "‮{minutes,plural,one{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɯıunʇǝ, ouɔǝ.} other{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɯıunʇǝs, ouɔǝ.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.password_reset.reason": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ soɯǝouǝ ɐsʞǝp ʇo ɹǝsǝʇ ʎonɹ dɐssʍoɹp ɐʇ {host}. Iɟ ıʇ ʍɐs uoʇ ʎon, ıƃuoɹǝ ʇɥıs ǝɯɐıʅ; ʎonɹ dɐssʍoɹp sʇɐʎs ɐs ıʇ ıs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_reset.subject": {
     "defaultMessage": "‮ᴚǝsǝʇ ʎonɹ dɐssʍoɹp ɟoɹ {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.reason.account": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʇɥıs ɐppɹǝss qǝʅouƃs ʇo ʎonɹ ɐɔɔonuʇ ou {instance}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.reason.moderator_notifications": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.reason.supporter": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝ, oɹ snqsɔɹıqǝp, ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.signature.contact": {
+    "defaultMessage": "‮Ↄouʇɐɔʇ: {email}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.supporter_payment_failed.action": {
+    "defaultMessage": "‮∩dpɐʇǝ ʎonɹ dɐʎɯǝuʇ ɯǝʇɥop‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.supporter_payment_failed.body": {
-    "defaultMessage": "‮∀ dɐʎɯǝuʇ ɟoɹ ʎonɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ɟɐıʅǝp.\n\n⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ {endsAt} (∩⊥Ↄ). Iɟ uo dɐʎɯǝuʇ snɔɔǝǝps qʎ ʇɥǝu, ʇɥǝʎ ǝup. ∩dpɐʇǝ ʎonɹ dɐʎɯǝuʇ ɯǝʇɥop ɥǝɹǝ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝ ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
+    "defaultMessage": "‮∀ dɐʎɯǝuʇ ɟoɹ ʎonɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ɟɐıʅǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.supporter_payment_failed.detail": {
+    "defaultMessage": "‮⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ {endsAt} (∩⊥Ↄ). Iɟ uo dɐʎɯǝuʇ snɔɔǝǝps qʎ ʇɥǝu, ʇɥǝʎ ǝup.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_payment_failed.subject": {
@@ -72,7 +124,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.body": {
-    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɹǝʇıɹǝp ʇɥǝ snddoɹʇǝɹ dʅɐu “{plan}” ʇɥɐʇ ʎon snqsɔɹıqǝ ʇo.\n\n⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝ ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
+    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɹǝʇıɹǝp ʇɥǝ snddoɹʇǝɹ dʅɐu “{plan}” ʇɥɐʇ ʎon snqsɔɹıqǝ ʇo.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.subject": {
@@ -80,15 +136,27 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ǝupǝp, ɐup ıʇs qǝuǝɟıʇs ʍıʇɥ ıʇ. {reason,select,account_suspended{⅄onɹ ɐɔɔonuʇ ʍɐs snsdǝupǝp.} lapsed{No dɐʎɯǝuʇ snɔɔǝǝpǝp ʍıʇɥıu 7 pɐʎs ɐɟʇǝɹ ɐ dɐʎɯǝuʇ ɟɐıʅǝp, oɹ ʇɥǝ snqsɔɹıdʇıou ʍɐs dɐnsǝp.} other{⊥ɥǝ snqsɔɹıdʇıou ʍɐs ɔɐuɔǝʅǝp.} plan_retired{⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs ɹǝʇıɹǝp ʇɥǝ dʅɐu.} reversed{∀ dɐʎɯǝuʇ ʍɐs ɹǝɟnupǝp ıu ɟnʅʅ oɹ ɔɥɐɹƃǝp qɐɔʞ.} staff{∀u ɐpɯıuısʇɹɐʇoɹ ɔɐuɔǝʅǝp ʇɥǝ snqsɔɹıdʇıou.}}\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝp ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
+    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ǝupǝp, ɐup ıʇs qǝuǝɟıʇs ʍıʇɥ ıʇ. {reason,select,account_suspended{⅄onɹ ɐɔɔonuʇ ʍɐs snsdǝupǝp.} lapsed{No dɐʎɯǝuʇ snɔɔǝǝpǝp ʍıʇɥıu 7 pɐʎs ɐɟʇǝɹ ɐ dɐʎɯǝuʇ ɟɐıʅǝp, oɹ ʇɥǝ snqsɔɹıdʇıou ʍɐs dɐnsǝp.} other{⊥ɥǝ snqsɔɹıdʇıou ʍɐs ɔɐuɔǝʅǝp.} plan_retired{⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs ɹǝʇıɹǝp ʇɥǝ dʅɐu.} reversed{∀ dɐʎɯǝuʇ ʍɐs ɹǝɟnupǝp ıu ɟnʅʅ oɹ ɔɥɐɹƃǝp qɐɔʞ.} staff{∀u ɐpɯıuısʇɹɐʇoɹ ɔɐuɔǝʅǝp ʇɥǝ snqsɔɹıdʇıou.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu ou {instance} ǝupǝp‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.verify_email.action": {
+    "defaultMessage": "‮Ↄouɟıɹɯ ʎonɹ ǝɯɐıʅ ɐppɹǝss‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.verify_email.body": {
-    "defaultMessage": "‮Mǝʅɔoɯǝ ʇo {instance}.\n\nOdǝu ʇɥıs ʅıuʞ ʇo ɔouɟıɹɯ ʎonɹ ǝɯɐıʅ ɐppɹǝss:\n\n{url}\n\n{hours,plural,one{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɥonɹ.} other{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɥonɹs.}} Iɟ ʎon pıp uoʇ sıƃu nd ɐʇ {host}, ıƃuoɹǝ ʇɥıs ǝɯɐıʅ.‬",
+    "defaultMessage": "‮Mǝʅɔoɯǝ ʇo {instance}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.verify_email.detail": {
+    "defaultMessage": "‮{hours,plural,one{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɥonɹ.} other{⊥ɥǝ ʅıuʞ ʍoɹʞs ɟoɹ # ɥonɹs.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.verify_email.reason": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʇɥıs ɐppɹǝss ʍɐs nsǝp ʇo sıƃu nd ɐʇ {host}. Iɟ ʎon pıp uoʇ sıƃu nd, ıƃuoɹǝ ʇɥıs ǝɯɐıʅ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.verify_email.subject": {

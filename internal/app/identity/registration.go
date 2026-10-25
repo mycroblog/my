@@ -382,10 +382,12 @@ func (s *Service) RegistrationMode(ctx context.Context) (identity.RegistrationMo
 }
 
 // mailContext is what an email to a user names: the localizer of the user's locale, the
-// instance's host, and its name for readers of that locale.
+// instance's host, and its name for readers of that locale, with the composer that adds the
+// common signature and envelope (ADR-0086 §2).
 type mailContext struct {
 	l          *i18n.Localizer
 	host, name string
+	composer   kernel.MailComposer
 }
 
 // mailContext returns the mailContext of an email to a user whose locale is locale.
@@ -402,12 +404,18 @@ func (s *Service) mailContext(ctx context.Context, locale string) (mailContext, 
 	if u, err := url.Parse(s.d.BaseURL); err == nil && u.Host != "" {
 		m.host = u.Host
 	}
-	m.name = m.host
-	if s.d.InstanceName != nil {
-		if n := s.d.InstanceName(ctx); n != "" {
-			m.name = n
-		}
+	var site kernel.MailSite
+	if s.d.MailSite != nil {
+		site = s.d.MailSite(ctx)
 	}
+	if site.Name == "" {
+		site.Name = m.host
+	}
+	if site.URL == "" {
+		site.URL = s.d.BaseURL
+	}
+	m.name = site.Name
+	m.composer = kernel.MailComposer{Site: site, Words: m.l}
 	return m, nil
 }
 

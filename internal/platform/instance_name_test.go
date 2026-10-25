@@ -85,17 +85,27 @@ func TestInstanceNameAndDomain(t *testing.T) {
 	}
 	check("例のソーシャル", "例のソーシャル")
 
-	// The verification email of a sign-up names the instance, and the domain where it says where
-	// the user signed up.
-	if _, err := app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingRegistrationMode, Value: "open"}); err != nil {
-		t.Fatal(err)
+	// The verification email of a sign-up names the instance as its sender and in its signature,
+	// the domain where it says where the user signed up, and the contact address as its Reply-To
+	// and in its signature (ADR-0086 §2, §3).
+	for key, value := range map[instance.SettingKey]string{
+		instance.SettingRegistrationMode: "open", instance.SettingContactEmail: "admin@example.com",
+	} {
+		if _, err := app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: key, Value: value}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if _, err := app.Identity.SignUp(ctx, identity.SignUpInput{
 		Username: "bob", Email: "bob@example.com", Password: "correct horse battery staple", Locale: "ja",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	var mail struct{ Subject, Text string }
+	var mail struct {
+		FromName string `json:"from_name"`
+		ReplyTo  string `json:"reply_to"`
+		Subject  string
+		Text     string
+	}
 	for line := range strings.Lines(logs.String()) {
 		if strings.Contains(line, "mail not sent") {
 			if err := json.Unmarshal([]byte(line), &mail); err != nil {
@@ -104,7 +114,9 @@ func TestInstanceNameAndDomain(t *testing.T) {
 		}
 	}
 	if mail.Subject != "例のソーシャル のメールアドレスの確認" || !strings.HasPrefix(mail.Text, "例のソーシャル へようこそ。") ||
-		!strings.Contains(mail.Text, cfg.Host+" に登録した覚えがない場合") {
+		!strings.Contains(mail.Text, cfg.Host+" の登録にこのメールアドレスが使われた") ||
+		!strings.Contains(mail.Text, "\n-- \n例のソーシャル\nhttps://"+cfg.Host+"\n連絡先: admin@example.com\n") ||
+		mail.FromName != "例のソーシャル" || mail.ReplyTo != "admin@example.com" {
 		t.Errorf("verification email = %+v, want the name and the domain", mail)
 	}
 }

@@ -3,7 +3,8 @@
 // Package smtp implements the mailer port over SMTP with the standard library's net/smtp
 // (mail = smtp). It always upgrades the connection with STARTTLS and verifies the server's
 // certificate before it authenticates or sends anything, and refuses servers that do not offer
-// STARTTLS. Messages are plain text in UTF-8, quoted-printable encoded.
+// STARTTLS. Messages are plain text in UTF-8, quoted-printable encoded; the HTML body of a
+// kernel.MailMessage is not sent yet.
 //
 // A reply of 5xx to RCPT TO with an enhanced status code 5.1.x (RFC 3463: the address does
 // not exist) fails with kernel.ErrRecipientRejected, any other 5xx to RCPT TO or DATA with
@@ -16,11 +17,10 @@ package smtp
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"crypto/tls"
-	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"mime"
 	"mime/quotedprintable"
 	"net"
@@ -28,9 +28,11 @@ import (
 	"net/smtp"
 	"net/textproto"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 )
@@ -175,23 +177,29 @@ func reply(command string, err error) error {
 	return fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrMailRejected)
 }
 
-// compose returns the message in RFC 5322 form with CRLF line ends.
+// compose returns the message in RFC 5322 form with CRLF line ends. From carries the server's
+// name as its display name (RFC 2047), Reply-To the contact address when there is one,
+// Message-ID a UUIDv7 at the domain of the sender, and Auto-Submitted marks every message as
+// sent by a program so that auto-responders do not answer it (RFC 3834).
 func (m *Mailer) compose(msg kernel.MailMessage, now time.Time) ([]byte, error) {
-	id := make([]byte, 16)
-	_, _ = rand.Read(id) // crypto/rand.Read never returns an error
 	domain := m.o.From[strings.LastIndexByte(m.o.From, '@')+1:]
 	var b bytes.Buffer
 	header := func(name, value string) { b.WriteString(name + ": " + value + "\r\n") }
-	header("From", m.o.From)
+	header("From", fold((&mail.Address{Name: msg.FromName, Address: m.o.From}).String()))
 	header("To", msg.To)
-	// Fold between encoded words so that no header line exceeds the SMTP line limit.
-	header("Subject", strings.ReplaceAll(mime.QEncoding.Encode("utf-8", msg.Subject), "?= =?", "?=\r\n =?"))
+	if msg.ReplyTo != "" {
+		header("Reply-To", msg.ReplyTo)
+	}
+	header("Subject", fold(mime.QEncoding.Encode("utf-8", msg.Subject)))
 	header("Date", now.Format(time.RFC1123Z))
-	header("Message-ID", "<"+hex.EncodeToString(id)+"@"+domain+">")
+	header("Message-ID", "<"+uuid.NewV7().String()+"@"+domain+">")
 	header("MIME-Version", "1.0")
 	header("Content-Type", "text/plain; charset=utf-8")
 	header("Content-Transfer-Encoding", "quoted-printable")
 	header("Auto-Submitted", "auto-generated")
+	for _, name := range slices.Sorted(maps.Keys(msg.Headers)) {
+		header(name, msg.Headers[name])
+	}
 	b.WriteString("\r\n")
 	qp := quotedprintable.NewWriter(&b)
 	if _, err := qp.Write([]byte(strings.ReplaceAll(msg.Text, "\r\n", "\n"))); err != nil {
@@ -202,3 +210,7 @@ func (m *Mailer) compose(msg kernel.MailMessage, now time.Time) ([]byte, error) 
 	}
 	return b.Bytes(), nil
 }
+
+// fold breaks a header value between its encoded words (RFC 2047) so that no header line
+// exceeds the SMTP line limit.
+func fold(value string) string { return strings.ReplaceAll(value, "?= =?", "?=\r\n =?") }

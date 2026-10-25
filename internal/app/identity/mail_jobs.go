@@ -167,10 +167,15 @@ func (s *Service) sendVerificationEmail(ctx context.Context, job verificationEma
 	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertUserToken(ctx, tx, t) }); err != nil {
 		return err
 	}
-	return s.send(ctx, JobVerificationEmail, job.UserID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, JobVerificationEmail, job.UserID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailVerifyEmailSubject(m.name),
-		Text:    m.l.ServerMailVerifyEmailBody(m.host, int(EmailVerificationTTL/time.Hour), m.name, s.link(PathVerifyEmail, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailVerifyEmailBody(m.name),
+			m.l.ServerMailVerifyEmailDetail(int(EmailVerificationTTL / time.Hour)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailVerifyEmailAction(), URL: s.link(PathVerifyEmail, secret)},
+		Reason: m.l.ServerMailVerifyEmailReason(m.host),
 	})
 }
 
@@ -207,10 +212,15 @@ func (s *Service) sendPasswordResetEmail(ctx context.Context, job passwordResetE
 	if err != nil {
 		return err
 	}
-	return s.send(ctx, JobPasswordResetEmail, job.UserID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, JobPasswordResetEmail, job.UserID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailPasswordResetSubject(m.name),
-		Text:    m.l.ServerMailPasswordResetBody(m.host, m.name, int(PasswordResetTTL/time.Minute), s.link(PathResetPassword, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailPasswordResetBody(m.name),
+			m.l.ServerMailPasswordResetDetail(int(PasswordResetTTL / time.Minute)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathResetPassword, secret)},
+		Reason: m.l.ServerMailPasswordResetReason(m.host),
 	})
 }
 
@@ -236,25 +246,34 @@ func (s *Service) sendPasswordNoticeEmail(ctx context.Context, job passwordNotic
 	if err != nil {
 		return err
 	}
-	msg := kernel.MailMessage{To: email.Address}
+	d := kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathForgotPassword, "")},
+		Reason: m.l.ServerMailReasonAccount(m.name),
+	}
 	switch job.Notice {
 	case passwordChanged:
-		msg.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordChangedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordChangedBody(m.name), m.l.ServerMailPasswordChangedDetail()}
 	case passwordRemoved:
-		msg.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordRemovedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordRemovedBody(m.name), m.l.ServerMailPasswordRemovedDetail()}
 	default:
 		return nil
 	}
-	return s.send(ctx, JobPasswordNoticeEmail, job.UserID, msg)
+	return s.send(ctx, JobPasswordNoticeEmail, job.UserID, m.composer, d)
 }
 
-// send sends m, the email of the job jobType to userID. Its error names the job's type and the
-// user's ID with the Mailer's error, which never contains the address or the body.
-func (s *Service) send(ctx context.Context, jobType, userID string, m kernel.MailMessage) error {
+// send composes d with c and sends it, the email of the job jobType to userID. Its error names
+// the job's type and the user's ID with the composer's or the Mailer's error, which never
+// contains the address or the body.
+func (s *Service) send(ctx context.Context, jobType, userID string, c kernel.MailComposer, d kernel.MailDraft) error {
 	if s.d.Mailer == nil {
 		return nil
+	}
+	m, err := c.Compose(d)
+	if err != nil {
+		return fmt.Errorf("identity: compose the %s email of user %s: %w", jobType, userID, err)
 	}
 	if err := s.d.Mailer.Send(ctx, m); err != nil {
 		return fmt.Errorf("identity: send the %s email of user %s: %w", jobType, userID, err)
