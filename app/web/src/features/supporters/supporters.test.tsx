@@ -143,7 +143,8 @@ describe("the page of the supporter plans", () => {
   test("re-reads the subscription when the checkout returns, and waits for its confirmation", async () => {
     server.use(enabledInstance(), plansHandler());
     const { requests } = subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { state: "pending", plan_name: "Basic" }) });
-    await renderApp({ path: "/settings/supporter?checkout=success" });
+    // The provider adds its checkout's ID under a key of its own.
+    await renderApp({ path: "/settings/supporter?checkout=success&checkout_id=cs_test_1" });
 
     expect(await screen.findByText(/Confirming your payment with the payment provider/u)).toBeInTheDocument();
     expect(requests.map((r) => r.path)).toEqual(["/supporter/subscription/sync"]);

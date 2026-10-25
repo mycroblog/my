@@ -236,13 +236,14 @@ func (h *pages) verifiedToken(ctx context.Context, id string) (bool, error) {
 	return !tk.Used && verifiedThreeDSecure[tk.Card.ThreeDSecureStatus], nil
 }
 
-// successURL returns the success URL of a checkout with its ref.
+// successURL returns the success URL of a checkout with its ref as checkout_id, a key apart from
+// the checkout=success of the client API's return URLs.
 func successURL(st pageState) string {
 	sep := "?"
 	if strings.Contains(st.Return, "?") {
 		sep = "&"
 	}
-	return st.Return + sep + "checkout=" + url.QueryEscape(string(checkoutRef(st.Customer, st.LocalID, st.Exp)))
+	return st.Return + sep + "checkout_id=" + url.QueryEscape(string(checkoutRef(st.Customer, st.LocalID, st.Exp)))
 }
 
 // checkoutView returns the view of the checkout form of st.

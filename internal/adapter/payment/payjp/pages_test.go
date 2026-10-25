@@ -157,7 +157,7 @@ func TestCheckoutSubscribesOnce(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("checkout = %d %s", rec.Code, rec.Body)
 	}
-	if loc := rec.Header().Get("Location"); loc != "https://my.example/supporter/done?checkout="+url.QueryEscape(string(c.Ref)) {
+	if loc := rec.Header().Get("Location"); loc != "https://my.example/supporter/done?checkout_id="+url.QueryEscape(string(c.Ref)) {
 		t.Errorf("Location = %q, want the success URL with the checkout", loc)
 	}
 	subs := e.subscriptionsOf("my_local-1")
