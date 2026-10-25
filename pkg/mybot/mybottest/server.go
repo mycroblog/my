@@ -85,11 +85,28 @@ type event struct {
 	data []byte
 }
 
+// ServerOption is an option of NewServer.
+type ServerOption func(*serverOptions)
+
+type serverOptions struct {
+	clockAt time.Time
+}
+
+// WithClockAt starts the server's Clock at the time at instead of the current time. A test that moves the Clock
+// to fixed times (Clock.Set) starts it at or before the first of them, so that it runs the same on any day.
+func WithClockAt(at time.Time) ServerOption {
+	return func(o *serverOptions) { o.clockAt = at }
+}
+
 // NewServer starts a server whose own account, Me, is the bot account "bot" with the bot flag, and whose Clock
-// is at the current time. Close it when the test ends.
-func NewServer() *Server {
+// is at the current time, or at the time of WithClockAt. Close it when the test ends.
+func NewServer(opts ...ServerOption) *Server {
+	o := serverOptions{clockAt: time.Now().UTC().Truncate(time.Second)}
+	for _, opt := range opts {
+		opt(&o)
+	}
 	s := &Server{
-		clock:    NewClock(time.Now().UTC().Truncate(time.Second)),
+		clock:    NewClock(o.clockAt),
 		statuses: map[string]mykit.Status{},
 		keys:     map[string]int{},
 		streams:  map[*stream]struct{}{},

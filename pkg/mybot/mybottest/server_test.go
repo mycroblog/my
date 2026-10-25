@@ -46,6 +46,28 @@ func newServer(t *testing.T) *mybottest.Server {
 	return srv
 }
 
+func TestNewServerClock(t *testing.T) {
+	before := time.Now().Add(-time.Second)
+	if now := newServer(t).Clock().Now(); now.Before(before) || now.After(time.Now()) {
+		t.Errorf("Clock().Now() = %s, want the current time", now)
+	}
+
+	// A time in the past stays settable on any day.
+	at := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
+	srv := mybottest.NewServer(mybottest.WithClockAt(at))
+	t.Cleanup(srv.Close)
+	if now := srv.Clock().Now(); !now.Equal(at) {
+		t.Errorf("Clock().Now() = %s, want %s", now, at)
+	}
+	if created := srv.Me().CreatedAt; !created.Equal(at) {
+		t.Errorf("Me().CreatedAt = %s, want %s", created, at)
+	}
+	srv.Clock().Set(at.Add(time.Hour))
+	if now := srv.Clock().Now(); !now.Equal(at.Add(time.Hour)) {
+		t.Errorf("Clock().Now() after Set = %s, want %s", now, at.Add(time.Hour))
+	}
+}
+
 func waitCtx(t *testing.T) context.Context {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)

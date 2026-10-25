@@ -46,6 +46,16 @@ export type WaitOptions = {
   signal?: AbortSignal;
 };
 
+/** The options of new Server. */
+export type ServerOptions = {
+  /**
+   * The time at which the server's clock starts, in milliseconds since the Unix epoch; the current time by default.
+   * A test that moves the clock to fixed times (clock.set) starts it at or before the first of them, so that it runs
+   * the same on any day.
+   */
+  now?: number;
+};
+
 /** A logger that drops everything, the logger of Server.options. */
 export const quietLogger: Logger = { debug() {}, info() {}, warn() {}, error() {} };
 
@@ -133,9 +143,12 @@ export class Server {
   #held: (() => void)[] | null = null;
   #listeners = new Set<() => void>();
 
-  /** A server whose own account, me, is the bot account "bot" with the bot flag, and whose clock is at the current time. */
-  constructor() {
-    this.clock = new Clock(Math.floor(Date.now() / 1000) * 1000);
+  /**
+   * A server whose own account, me, is the bot account "bot" with the bot flag, and whose clock is at the current
+   * time, or at the option now.
+   */
+  constructor(options: ServerOptions = {}) {
+    this.clock = new Clock(options.now ?? Math.floor(Date.now() / 1000) * 1000);
     const me = newAccount(this.#newId(), "bot", this.clock.now());
     this.#me = {
       ...me,

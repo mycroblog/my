@@ -53,9 +53,8 @@ func Example() {
 
 // A test of a scheduled job: the bot's clock is the server's, which the test moves on to the job's next time.
 func Example_every() {
-	srv := mybottest.NewServer()
+	srv := mybottest.NewServer(mybottest.WithClockAt(time.Date(2026, 10, 25, 8, 59, 0, 0, time.UTC)))
 	defer srv.Close()
-	srv.Clock().Set(time.Date(2026, 10, 25, 8, 59, 0, 0, time.UTC))
 
 	bot, err := mybot.New(srv.Config())
 	if err != nil {

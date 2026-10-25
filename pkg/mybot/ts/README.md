@@ -243,7 +243,9 @@ await done;
 - `posted()`, `reactions()`, `favourites()`, and `follows()` return what the bot did; like the server, it posts once
   per Idempotency-Key.
 - `clock.waitForSleepers(n)` waits for the scheduled jobs (and the pruning of the store) to sleep, and
-  `clock.advance(ms)` or `clock.set(at)` moves them on.
+  `clock.advance(ms)` or `clock.set(at)` moves them on. The clock starts at the current time; a test of fixed times
+  starts it before them with `new Server({ now: Date.parse("2026-10-25T08:59:00Z") })`, since `clock.set` cannot move
+  it back, so that the test runs the same on any day.
 
 ## Runtimes
 

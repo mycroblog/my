@@ -82,8 +82,7 @@ try {
   check(plainText("<p>a &amp; b</p>") === "a & b", "plainText");
 
   // The scheduled jobs (croner and the time zones of Intl) and the fake server of @mycroblog/mybot/testing.
-  const srv = new Server();
-  srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+  const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
   const scheduled = new Bot(srv.options());
   scheduled.every("0 9 * * *", async (ctx) => {
     await ctx.post("good morning");

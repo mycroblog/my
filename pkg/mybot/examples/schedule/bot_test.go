@@ -28,13 +28,12 @@ func start(t *testing.T, bot *mybot.Bot) (context.Context, func()) {
 }
 
 func TestMorning(t *testing.T) {
-	srv := mybottest.NewServer()
-	defer srv.Close()
 	tokyo, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv.Clock().Set(time.Date(2026, 10, 26, 8, 59, 0, 0, tokyo))
+	srv := mybottest.NewServer(mybottest.WithClockAt(time.Date(2026, 10, 26, 8, 59, 0, 0, tokyo)))
+	defer srv.Close()
 	cfg := srv.Config()
 	// The bot posted yesterday's greeting, so CatchUp Latest has nothing to run when it starts. A job that never
 	// ran would post its newest past time, yesterday's 9:00, at once.
@@ -71,9 +70,8 @@ func TestMorning(t *testing.T) {
 
 // A bot that was stopped for three mornings posts the newest of them once when it starts, with CatchUp Latest.
 func TestMorningCatchUp(t *testing.T) {
-	srv := mybottest.NewServer()
+	srv := mybottest.NewServer(mybottest.WithClockAt(time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC)))
 	defer srv.Close()
-	srv.Clock().Set(time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC))
 	cfg := srv.Config()
 	if err := cfg.Store.SetLastRun(t.Context(), "morning", time.Date(2026, 10, 23, 9, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
