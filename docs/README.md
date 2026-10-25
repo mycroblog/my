@@ -13,6 +13,7 @@
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Serving media through a CDN (media_origin, origin pull, caching and purging)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
+- [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
 - [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
 - [External monitoring and status pages (UptimeRobot, Better Stack, Gatus, Uptime Kuma, Upptime)](operations/monitoring.md)
 - [Alerts and runbook (Prometheus alerting rules, what to do when an alert fires, telling users about an incident)](operations/alerts.md)

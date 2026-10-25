@@ -133,7 +133,7 @@ entries:
       - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
   - name: platform
     paths: ["internal/platform/**", "cmd/my/**"]
-    docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0010-configuration-and-packaging.md"]
+    docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0010-configuration-and-packaging.md", "docs/operations/production-checklist.md"]
     checks: [go, docker]
     notes:
       - "A change to the config schema regenerates docs/reference/configuration.md (`scripts/task.sh go:config-docs`)."

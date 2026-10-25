@@ -62,3 +62,59 @@ func printLoadErrorEnv(w io.Writer, err error, lookupEnv func(string) (string, b
 		}
 	}
 }
+
+// printReadiness writes the findings of config.Readiness and of the instance settings to w,
+// the errors and then the warnings, each group under a summary in the locale of the process
+// environment; the English technical detail follows the name of each setting.
+func printReadiness(w io.Writer, findings []config.Finding, lookupEnv func(string) (string, bool)) {
+	var errs, warns []config.Finding
+	for _, f := range findings {
+		if f.Severity == config.SeverityError {
+			errs = append(errs, f)
+		} else {
+			warns = append(warns, f)
+		}
+	}
+	b, err := i18n.Load()
+	if err != nil {
+		for _, f := range append(errs, warns...) {
+			_, _ = fmt.Fprintf(w, "%s: %s\n", f.Severity, findingLine(f))
+		}
+		return
+	}
+	l := b.Localizer(b.EnvLocale(lookupEnv))
+	if len(errs) > 0 {
+		_, _ = fmt.Fprintln(w, l.ServerConfigReadinessErrors(len(errs)))
+		for _, f := range errs {
+			_, _ = fmt.Fprintf(w, "  - %s\n", findingLine(f))
+		}
+	}
+	if len(warns) > 0 {
+		_, _ = fmt.Fprintln(w, l.ServerConfigReadinessWarnings(len(warns)))
+		for _, f := range warns {
+			_, _ = fmt.Fprintf(w, "  - %s\n", findingLine(f))
+		}
+	}
+}
+
+// findingLine is a finding's environment variable (or key) and its detail; a finding without a
+// key is its detail alone.
+func findingLine(f config.Finding) string {
+	name := f.Env()
+	if name == "" {
+		name = f.Key
+	}
+	if name == "" {
+		return f.Message
+	}
+	return name + ": " + f.Message
+}
+
+// warnReadiness logs a warning for each finding of config.Readiness. my serve starts anyway;
+// `my config check` fails on the errors among them.
+func warnReadiness(ctx context.Context, logger *slog.Logger, cfg *config.Config) {
+	for _, f := range config.Readiness(cfg) {
+		logger.WarnContext(ctx, "a setting is not ready for production",
+			slog.String("env", f.Env()), slog.String("severity", string(f.Severity)), slog.String("detail", f.Message))
+	}
+}
