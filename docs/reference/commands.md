@@ -61,6 +61,7 @@ Coding agents run the workflow steps through agentkit ([tools/agentkit/README.md
 | `db:up` / `db:down` | Start / remove the dev PostgreSQL container (`my` and dev DB `my_dev`, bootstrapped) |
 | `db:atlas` | Install the pinned Atlas Community Edition into `bin/atlas` |
 | `docker:check` | `docker:dockerfile-check`: the Dockerfile's Go, Node.js, and Bun images match `.tool-versions` |
+| `docker:alert-rules` | Check `deploy/monitoring/prometheus/alerts.yml` and run its unit tests `alerts.test.yml` with promtool in the pinned Prometheus image ([alerts](../operations/alerts.md)). Not part of `check` (CI job `docker-smoke`) |
 | `docker:build` [`VERSION=...`] | Build the server image `my:<version>` (`Dockerfile` target `app`; target `schema` is the Atlas image) |
 | `docker:smoke` | Build and start `deploy/docker/compose.yaml`, create an admin, check WebFinger / Actor / NodeInfo, tear down (CI job `docker-smoke`: pull requests that touch the docker context; and the slow suite) |
 | `docker:build-arm64` | Build both images (targets `schema` and `app`) for linux/arm64; needs an arm64 host or QEMU (CI: the slow suite only) |

@@ -1,0 +1,252 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# promtool unit tests of alerts.yml: `promtool test rules alerts.test.yml` (scripts/task.sh docker:alert-rules).
+# The expected annotations also check that the templates render.
+
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - name: queue backlog and stall
+    interval: 1m
+    input_series:
+      # Two processes report the same instance-wide gauge; the oldest job waits a minute longer each minute.
+      - series: my_queue_oldest_ready_age_seconds{job="my", instance="a:9464"}
+        values: 0+60x40
+      - series: my_queue_oldest_ready_age_seconds{job="my", instance="b:9464"}
+        values: 0+60x40
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MyQueueBacklog
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: MyQueueBacklog
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: Jobs wait more than 5 minutes for a worker
+              description: The oldest ready job of the database queue has waited 20m 0s.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuebacklog
+      - eval_time: 33m
+        alertname: MyQueueStalled
+        exp_alerts: []
+      - eval_time: 36m
+        alertname: MyQueueStalled
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: Jobs wait more than 30 minutes for a worker
+              description: >-
+                The oldest ready job of the database queue has waited 36m 0s; deliveries, notifications, and emails
+                are late.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuestalled
+
+  - name: dead jobs
+    interval: 1m
+    input_series:
+      # One more failed job every 2 minutes: 30 an hour.
+      - series: my_queue_dead{job="my", instance="a:9464"}
+        values: 0+0.5x120
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MyDeadJobsIncreasing
+        exp_alerts: []
+      - eval_time: 90m
+        alertname: MyDeadJobsIncreasing
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: More than 10 jobs failed for good in the last hour
+              description: The number of failed jobs grew by 30 in the last hour.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeadjobsincreasing
+
+  - name: stale snapshot
+    interval: 1m
+    input_series:
+      - series: my_metrics_snapshot_age_seconds{job="my", instance="a:9464", my_metrics_snapshot_part="queue"}
+        values: 600+60x30
+      - series: my_metrics_snapshot_age_seconds{job="my", instance="a:9464", my_metrics_snapshot_part="totals"}
+        values: 600x30
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MyMetricsSnapshotStale
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              my_metrics_snapshot_part: queue
+            exp_annotations:
+              summary: The instance-wide gauges are not refreshed
+              description: >-
+                The queue part of the metrics snapshot is 30m 0s old, so the queue and storage alerts see old values.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymetricssnapshotstale
+
+  - name: deliveries
+    interval: 1m
+    input_series:
+      # 60 attempts a minute: every one fails after the first 10 minutes.
+      - series: my_delivery_attempts_total{job="my", instance="a:9464", my_outcome="success"}
+        values: 0+60x10 600x50
+      - series: my_delivery_attempts_total{job="my", instance="a:9464", my_outcome="retry"}
+        values: 0x10 0+60x50
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MyDeliveryAllFailing
+        exp_alerts: []
+      - eval_time: 50m
+        alertname: MyDeliveryAllFailing
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: Almost every delivery attempt fails
+              description: >-
+                100% of the delivery attempts failed in the last 15 minutes; the cause is most likely on this
+                server's side.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryallfailing
+      - eval_time: 50m
+        alertname: MyDeliveryFailuresHigh
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: More than half of the delivery attempts fail
+              description: 100% of the delivery attempts failed in the last 15 minutes.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryfailureshigh
+
+  - name: http errors and latency
+    interval: 1m
+    input_series:
+      # 600 requests a minute, 60 of them 5xx (10%), all of them between 0.25 s and 0.5 s.
+      - series: http_server_request_duration_seconds_count{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/timelines/home", http_response_status_code="200"}
+        values: 0+540x60
+      - series: http_server_request_duration_seconds_count{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/timelines/home", http_response_status_code="500"}
+        values: 0+60x60
+      - series: http_server_request_duration_seconds_bucket{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/timelines/home", le="0.25"}
+        values: 0x60
+      - series: http_server_request_duration_seconds_bucket{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/timelines/home", le="0.5"}
+        values: 0+600x60
+      - series: http_server_request_duration_seconds_bucket{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/timelines/home", le="+Inf"}
+        values: 0+600x60
+      # A stream held open for minutes does not count.
+      - series: http_server_request_duration_seconds_bucket{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/streaming", le="0.5"}
+        values: 0x60
+      - series: http_server_request_duration_seconds_bucket{job="my", instance="a:9464", my_surface="client_api", http_route="/api/v1/streaming", le="+Inf"}
+        values: 0+6000x60
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MyHTTPErrorsHigh
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              summary: More than 5% of the requests fail with a 5xx
+              description: 10% of the HTTP requests answered 5xx in the last 5 minutes.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorshigh
+      - eval_time: 50m
+        alertname: MyAPILatencyHigh
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: The client API's 95th percentile is over 300 ms
+              description: The 95th percentile of the client API requests is 487.5ms.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myapilatencyhigh
+
+  - name: restarts and memory
+    interval: 1m
+    input_series:
+      # The process starts again every 15 minutes.
+      - series: process_uptime_seconds{job="my", instance="a:9464"}
+        values: 0+60x14 0+60x14 0+60x14 0+60x14
+      - series: go_memory_used_bytes{job="my", instance="a:9464", go_memory_type="stack"}
+        values: 10000000x30
+      - series: go_memory_used_bytes{job="my", instance="a:9464", go_memory_type="other"}
+        values: 440000000x30
+      - series: go_memory_limit_bytes{job="my", instance="a:9464"}
+        values: 482344960x30
+    alert_rule_test:
+      - eval_time: 55m
+        alertname: MyProcessRestarting
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              job: my
+              instance: a:9464
+            exp_annotations:
+              summary: a:9464 restarted 3 times in an hour
+              description: The process behind a:9464 keeps restarting.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myprocessrestarting
+      - eval_time: 20m
+        alertname: MyMemoryNearLimit
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              job: my
+              instance: a:9464
+            exp_annotations:
+              summary: a:9464 uses more than 90% of GOMEMLIMIT
+              description: The Go runtime of a:9464 uses 93.29% of its memory limit.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymemorynearlimit
+
+  - name: database pool
+    interval: 1m
+    input_series:
+      - series: db_client_connection_count{job="my", instance="a:9464", db_client_connection_pool_name="postgres", db_client_connection_state="used"}
+        values: 19x30
+      - series: db_client_connection_count{job="my", instance="a:9464", db_client_connection_pool_name="postgres", db_client_connection_state="idle"}
+        values: 1x30
+      - series: db_client_connection_max{job="my", instance="a:9464", db_client_connection_pool_name="postgres"}
+        values: 20x30
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MyDBPoolSaturated
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              job: my
+              instance: a:9464
+              db_client_connection_pool_name: postgres
+            exp_annotations:
+              summary: a:9464 uses more than 90% of its database connections
+              description: 95% of the postgres pool is in use.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolsaturated
+
+  - name: email
+    interval: 1m
+    input_series:
+      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="identity.verification_email", my_outcome="retry"}
+        values: 0+10x60
+      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="identity.verification_email", my_outcome="success"}
+        values: 0+1x60
+      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="identity.password_reset_email", my_outcome="dead"}
+        values: 0x30 1x30
+      # Other job types do not count.
+      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="federation.deliver", my_outcome="dead"}
+        values: 0+5x60
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MyEmailFailing
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: MyEmailFailing
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: Emails failed for good in the last hour
+              description: "Email jobs that ran out of retries or were refused for good in the last hour: 1."
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailfailing
+      - eval_time: 40m
+        alertname: MyEmailRetrying
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: Most email sends fail and wait for a retry
+              description: 90.36% of the email job runs failed and will be retried.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailretrying

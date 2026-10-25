@@ -40,6 +40,7 @@
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
 - [サービスの終了（予告・クローズ・静的な閉鎖のページ・データの破棄）](operations/service-closure.md)
 - [外形監視とステータスページ（UptimeRobot・Better Stack・Gatus・Uptime Kuma・Upptime）](operations/monitoring.md)
+- [Alerts and runbook (Prometheus alerting rules, what to do when an alert fires, telling users about an incident)](operations/alerts.md)
 - [リンクプレビュー（OGP / X Card / fediverse:creator）](operations/link-previews.md)
 - [検索エンジンと AI クローラー（robots.txt・noindex・AI の拒否の表明）](operations/crawlers.md)
 - [サーバー単位の webhook](operations/webhooks.md)
