@@ -101,6 +101,12 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.SourceURL = v },
 	},
 	{
+		key:   "status_page_url",
+		doc:   "Address of the instance's status page, an absolute `https` URL on a service apart from the server (ADR-0085 §6). Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page (ADR-0084), which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.",
+		check: checkStatusPageURL,
+		set:   func(c *Config, v string) { c.StatusPageURL = v },
+	},
+	{
 		key:    "web_origin",
 		defDoc: "`https://{host}`",
 		doc:    "Origin (`scheme://host[:port]`) of the web client. The client API allows only this origin by CORS (ADR-0019 §4). Set it when the web client is served from another origin, for example a development server at `http://localhost:5173`. An origin on `host` is where the server itself serves the web client, and the client served there calls the API at it: set `http://localhost:8080` (with `host` = `localhost:8080`) to run the server over plain HTTP on localhost, where the sign-in screens, the OAuth issuer, the client API, the links to the instance's pages in its responses, media URLs, and email and invite links are all on `http://localhost:8080`. ActivityPub ids stay under `https://{host}/` in every setup.",
@@ -1056,6 +1062,15 @@ func checkSourceURL(v string) error {
 		}
 	default:
 		return errors.New(msg)
+	}
+	return nil
+}
+
+// checkStatusPageURL accepts an absolute https URL without user info or fragment.
+func checkStatusPageURL(v string) error {
+	u, err := url.Parse(v)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
+		return errors.New("must be an absolute https URL without user info or fragment")
 	}
 	return nil
 }

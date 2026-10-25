@@ -762,6 +762,38 @@ func TestServerOrigin(t *testing.T) {
 	}
 }
 
+// TestStatusPageURL checks that status_page_url is empty by default and takes only an absolute https URL
+// (ADR-0085 §6).
+func TestStatusPageURL(t *testing.T) {
+	cfg, _, err := Load(source(minimal(), nil))
+	if err != nil || cfg.StatusPageURL != "" {
+		t.Fatalf("default: StatusPageURL = %q, err = %v", cfg.StatusPageURL, err)
+	}
+	for _, v := range []string{"https://status.example.org", "https://example.org/status?page=1"} {
+		cfg, _, err := Load(source(with(minimal(), "MY_STATUS_PAGE_URL", v), nil))
+		if err != nil {
+			t.Errorf("%q: %v", v, err)
+			continue
+		}
+		if cfg.StatusPageURL != v {
+			t.Errorf("%q: StatusPageURL = %q", v, cfg.StatusPageURL)
+		}
+	}
+	for _, v := range []string{
+		"http://status.example.org",
+		"https:///no-host",
+		"https://user@status.example.org",
+		"https://status.example.org#now",
+		"mailto:status@example.org",
+		"/status",
+		"status.example.org",
+	} {
+		if _, _, err := Load(source(with(minimal(), "MY_STATUS_PAGE_URL", v), nil)); err == nil || !strings.Contains(err.Error(), "status_page_url (MY_STATUS_PAGE_URL)") {
+			t.Errorf("%q: err = %v, want a status_page_url error", v, err)
+		}
+	}
+}
+
 // TestSourceURL checks that source_url takes an https URL or a mailto: address (AGPL-3.0 section 13) and that the
 // server refuses to start with anything else.
 func TestSourceURL(t *testing.T) {

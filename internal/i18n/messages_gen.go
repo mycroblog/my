@@ -844,6 +844,13 @@ func (l *Localizer) ServerAuthSignedInTitle() string {
 	return l.format("server:auth.signed_in.title", nil)
 }
 
+// ServerAuthStatusPageLink formats "server:auth.status_page.link". Text of the link to the instance's status page (ADR-0085) in the footer of the server-rendered pages, shown only when the operator set status_page_url.
+//
+//	en: Service status
+func (l *Localizer) ServerAuthStatusPageLink() string {
+	return l.format("server:auth.status_page.link", nil)
+}
+
 // ServerAuthStatusActionDeletesIn formats "server:auth.status.action_deletes_in". When a ban deletes the user's account, in place of its end, on the page of a signed-in user whose account is restricted. {days} is the time left, rounded up to whole days.
 //
 //	en: {days, plural, one {Your account will be deleted in # day} other {Your account will be deleted in # days}}

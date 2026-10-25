@@ -36,6 +36,8 @@ type Config struct {
 	Host          string
 	AccountDomain string
 	SourceURL     string
+	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
+	StatusPageURL string
 	// WebOrigin is the origin of the web client that the client API allows by CORS.
 	WebOrigin string
 	Role      Role
@@ -194,6 +196,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("host", c.Host),
 		slog.String("account_domain", c.AccountDomain),
 		slog.String("source_url", c.SourceURL),
+		slog.String("status_page_url", c.StatusPageURL),
 		slog.String("web_origin", c.WebOrigin),
 		slog.String("role", string(c.Role)),
 		slog.String("listen", c.Listen),

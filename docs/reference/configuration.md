@@ -39,6 +39,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`host`](#host) | `MY_HOST` | none | yes | no |
 | [`account_domain`](#account_domain) | `MY_ACCOUNT_DOMAIN` | value of `host` | no | no |
 | [`source_url`](#source_url) | `MY_SOURCE_URL` | `https://github.com/mycroblog/my` | no | no |
+| [`status_page_url`](#status_page_url) | `MY_STATUS_PAGE_URL` | none | no | no |
 | [`web_origin`](#web_origin) | `MY_WEB_ORIGIN` | `https://{host}` | no | no |
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
@@ -147,6 +148,14 @@ Where users get the source code of the running server, as an `https` URL or a `m
 
 - Environment variable: `MY_SOURCE_URL`
 - Default: `https://github.com/mycroblog/my`
+- Required: no
+
+### `status_page_url`
+
+Address of the instance's status page, an absolute `https` URL on a service apart from the server (ADR-0085 §6). Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page (ADR-0084), which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.
+
+- Environment variable: `MY_STATUS_PAGE_URL`
+- Default: none
 - Required: no
 
 ### `web_origin`
