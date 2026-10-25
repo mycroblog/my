@@ -5,14 +5,18 @@ package mybot
 import (
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/mycroblog/my/pkg/mykit"
 )
 
-// job is one event to handle: a notification, or a post of the home timeline.
+// job is one event to handle: a notification, a post of the home timeline, or a run of a scheduled job.
 type job struct {
 	notification *mykit.Notification
 	status       *mykit.Status
+	// every and at are a run of a scheduled job.
+	every *everyJob
+	at    time.Time
 	// sender is the key of the sender's queue.
 	sender string
 }

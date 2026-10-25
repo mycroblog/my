@@ -59,6 +59,10 @@ type Config struct {
 	// source of one's own. The bot does not save its tokens.
 	TokenSource mykit.TokenSource
 
+	// Clock tells the time and waits, for the scheduled jobs, the send budget, and the reply limits. Nil means
+	// the clock of the system; a test replaces it to move the time on.
+	Clock Clock
+
 	// Store keeps the state of the bot across restarts. Nil means a FileStore at DefaultStatePath.
 	Store Store
 	// Logger receives the log of the bot. Nil means slog.Default().
@@ -73,8 +77,9 @@ type Config struct {
 	// PollInterval is the interval of Polling. Zero means DefaultPollInterval.
 	PollInterval time.Duration
 	// CatchUpLimit is how old a notification the catch-up still handles: after a long stop, older ones are
-	// skipped. Zero means DefaultCatchUpLimit; a negative value turns the catch-up off.
-	CatchUpLimit time.Duration
+	// skipped. Nil means DefaultCatchUpLimit, and zero turns the catch-up off (ADR-0094 §3), such as
+	// CatchUpLimit: new(time.Duration(0)).
+	CatchUpLimit *time.Duration
 	// ProcessedRetention is how long the processed notifications are remembered, longer than CatchUpLimit. Zero
 	// means DefaultProcessedRetention.
 	ProcessedRetention time.Duration
@@ -120,8 +125,8 @@ func (c Config) withDefaults() Config {
 	if c.PollInterval <= 0 {
 		c.PollInterval = DefaultPollInterval
 	}
-	if c.CatchUpLimit == 0 {
-		c.CatchUpLimit = DefaultCatchUpLimit
+	if c.CatchUpLimit == nil {
+		c.CatchUpLimit = new(DefaultCatchUpLimit)
 	}
 	if c.ProcessedRetention <= 0 {
 		c.ProcessedRetention = DefaultProcessedRetention
@@ -177,6 +182,7 @@ func (e *ScopeError) Error() string {
 type Bot struct {
 	cfg        Config
 	h          handlers
+	every      []*everyJob
 	middleware []Middleware
 	logger     *slog.Logger
 
@@ -216,6 +222,10 @@ func New(cfg Config) (*Bot, error) {
 		}
 		store = fs
 	}
+	clock := cfg.Clock
+	if clock == nil {
+		clock = systemClock{}
+	}
 	return &Bot{
 		cfg:     cfg,
 		logger:  cfg.Logger,
@@ -223,8 +233,8 @@ func New(cfg Config) (*Bot, error) {
 		budget:  newBudget(cfg.PostRate, cfg.WriteRate),
 		replies: newReplyLimiter(cfg.ReplyLimits),
 		tracker: newTracker(),
-		now:     time.Now,
-		sleep:   sleepContext,
+		now:     clock.Now,
+		sleep:   clock.Sleep,
 	}, nil
 }
 
@@ -403,6 +413,10 @@ func (b *Bot) Run(ctx context.Context) error {
 
 	var wg sync.WaitGroup
 	wg.Go(func() { b.pruneLoop(runCtx) })
+	b.submitDue(runCtx, false)
+	for _, j := range b.every {
+		wg.Go(func() { b.schedule(runCtx, j) })
+	}
 
 	var err error
 	switch b.cfg.Mode {
@@ -413,7 +427,54 @@ func (b *Bot) Run(ctx context.Context) error {
 	}
 	cancelRun()
 	wg.Wait()
+	b.shutdown(cancelHandlers)
 
+	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return nil
+	}
+	return err
+}
+
+// RunOnce starts the bot, handles once what is due, and returns, for a bot that a cron or a job runner such as
+// Cloud Run jobs starts again and again (ADR-0094 §9): the notifications since the Store's position, back to
+// Config.CatchUpLimit, and for each scheduled job the newest of its past times after its last run, whatever its
+// CatchUp. It returns when their handlers have returned. When ctx ends first, it shuts down as Run does, and
+// what did not finish is due again on the next run. It returns the errors of starting that Run returns, and that
+// of reading the notifications.
+func (b *Bot) RunOnce(ctx context.Context) error {
+	b.running.Lock()
+	if b.started {
+		b.running.Unlock()
+		return ErrRunning
+	}
+	b.started = true
+	b.running.Unlock()
+
+	if err := b.start(ctx); err != nil {
+		return err
+	}
+	b.prune(ctx)
+
+	handlerCtx, cancelHandlers := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelHandlers()
+	b.dispatcher = newDispatcher(b.cfg.Concurrency, func(j job) { b.process(handlerCtx, j) })
+
+	err := b.catchUp(ctx)
+	b.submitDue(ctx, true)
+	select {
+	case <-b.dispatcher.done():
+	case <-ctx.Done():
+	}
+	b.shutdown(cancelHandlers)
+	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return nil
+	}
+	return err
+}
+
+// shutdown stops the dispatcher, waits for the running handlers for ShutdownGrace, and cancels those still
+// running, which record nothing.
+func (b *Bot) shutdown(cancelHandlers context.CancelFunc) {
 	b.dispatcher.stop()
 	timer := time.NewTimer(b.cfg.ShutdownGrace)
 	defer timer.Stop()
@@ -426,11 +487,6 @@ func (b *Bot) Run(ctx context.Context) error {
 		b.logger.Warn("mybot: cancelled the handlers still running after the grace period", "grace", b.cfg.ShutdownGrace)
 	}
 	cancelHandlers()
-
-	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
-		return nil
-	}
-	return err
 }
 
 // stream receives the event stream until ctx ends or the server refuses it, catching up after every connection.
@@ -501,7 +557,7 @@ func (b *Bot) poll(ctx context.Context) error {
 // catchUp reads the notifications newest first back to the Store's position, or to CatchUpLimit, and hands them
 // to the handlers oldest first (ADR-0094 §3).
 func (b *Bot) catchUp(ctx context.Context) error {
-	if b.cfg.CatchUpLimit < 0 {
+	if *b.cfg.CatchUpLimit <= 0 {
 		return nil
 	}
 	pos, err := b.store.Position(ctx)
@@ -510,7 +566,7 @@ func (b *Bot) catchUp(ctx context.Context) error {
 	}
 	b.tracker.hold()
 	defer b.releaseHold()
-	cutoff := b.now().Add(-b.cfg.CatchUpLimit)
+	cutoff := b.now().Add(-*b.cfg.CatchUpLimit)
 	limit := 40
 	var found []mykit.Notification
 	for n, err := range mykit.All(ctx, func(ctx context.Context, c *mykit.Cursor) ([]mykit.Notification, *mykit.Cursor, error) {
@@ -554,6 +610,10 @@ func (b *Bot) submitNotification(n *mykit.Notification) {
 
 // process handles one job and records its notification processed.
 func (b *Bot) process(ctx context.Context, j job) {
+	if j.every != nil {
+		b.runScheduled(ctx, j)
+		return
+	}
 	n := j.notification
 	if n != nil {
 		done, err := b.store.IsProcessed(ctx, n.Id)
@@ -656,8 +716,26 @@ func (b *Bot) pruneLoop(ctx context.Context) {
 	}
 }
 
+// Clock is the time of a bot: Config.Clock.
+type Clock interface {
+	// Now is the current time.
+	Now() time.Time
+	// Sleep waits for d, or returns the error of ctx when it ends first. It returns at once for d <= 0.
+	Sleep(ctx context.Context, d time.Duration) error
+}
+
+// systemClock is the Clock of the system.
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now() }
+
+func (systemClock) Sleep(ctx context.Context, d time.Duration) error { return sleepContext(ctx, d) }
+
 // sleepContext waits for d, or returns the error of ctx when it ends first.
 func sleepContext(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return ctx.Err()
+	}
 	timer := time.NewTimer(d)
 	defer timer.Stop()
 	select {
