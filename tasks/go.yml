@@ -104,7 +104,7 @@ tasks:
     deps: [":web:build"]
     vars:
       VERSION:
-        sh: '{{if .VERSION}}echo {{shellQuote .VERSION}}{{else}}git describe --tags --match ''v[0-9]*'' --always --dirty 2>/dev/null || echo dev{{end}}'
+        sh: '{{if .VERSION}}echo {{shellQuote .VERSION}}{{else}}git describe --tags --match "v[0-9]*" --always --dirty 2>/dev/null || echo dev{{end}}'
     env:
       CGO_ENABLED: "0"
     cmds:

@@ -57,6 +57,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runConfig(fs.Args()[1:], stdout, stderr)
 	case "admin":
 		return runAdmin(fs.Args()[1:], os.Stdin, stdout, stderr)
+	case "db":
+		return runDB(fs.Args()[1:], stdout, stderr)
 	case "instance":
 		return runInstance(fs.Args()[1:], os.Stdin, stdout, stderr)
 	case "invite":
@@ -90,6 +92,8 @@ Commands:
             (my admin create|account|domain|report|audit|role|signup-block)
   config    Check the configuration and generate the Web Push key
             (my config check|vapid-key)
+  db        Run the data upgrade steps of a release upgrade, or check
+            before applying its schema (my db upgrade [-check])
   instance  Read and change the instance settings and rules
             (my instance list|get|set|history|rule)
   invite    Manage invite codes (my invite create|list|revoke)

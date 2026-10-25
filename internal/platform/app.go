@@ -23,6 +23,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
@@ -179,6 +180,9 @@ type App struct {
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
 	Projections *projection.Service
+	// DataUpgrades runs and checks the data upgrade steps (`my db upgrade`, ADR-0087 §4); the
+	// readiness check requires every step that it registers.
+	DataUpgrades *dbupgrade.Service
 	// FanOut turns the outbound activities that the federation projectors record into
 	// deliveries (docs/architecture/federation.md §7).
 	FanOut *federation.FanOut
@@ -301,6 +305,9 @@ type AppOptions struct {
 	// limit (clientapi.AccountLimit). Tests only, to reach the limit in a few requests and a
 	// short window (pkg/mykit/integration).
 	ClientAPIAccountLimit kernel.Limit
+	// DataUpgrades, when set, replaces the data upgrade steps and prerequisites of this release.
+	// Tests only, to run test steps through `my db upgrade` and the readiness check.
+	DataUpgrades *DataUpgrades
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -395,6 +402,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	a.setUpRetention(cfg, repos.retention, repos.statuses)
 	a.setUpProjections(repos.projections, repos.projectionRepositories())
+	if err := a.setUpDataUpgrades(repos.dataUpgrades, opts.DataUpgrades); err != nil {
+		return nil, err
+	}
 	if err := a.setUpStreams(ctx, cfg, opts.StreamBus); err != nil {
 		return nil, err
 	}
@@ -516,14 +526,20 @@ func newKeyManager(cfg *config.Config) (kernel.KeyManager, error) {
 	}
 }
 
-// Ready reports whether the App can serve requests: the database is reachable and every table
-// of its schema file exists, and the Valkey server, when the App uses one, answers.
+// Ready reports whether the App can serve requests: the database is reachable, every table
+// of its schema file exists, and it recorded every data upgrade step of this release
+// (`my db upgrade`), and the Valkey server, when the App uses one, answers.
 func (a *App) Ready(ctx context.Context) error {
 	if a.ready == nil {
 		return errors.New("no database")
 	}
 	if err := a.ready(ctx); err != nil {
 		return err
+	}
+	if a.DataUpgrades != nil {
+		if err := a.DataUpgrades.Ready(ctx); err != nil {
+			return err
+		}
 	}
 	if a.valkey != nil {
 		return a.valkey.Ping(ctx)

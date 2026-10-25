@@ -81,6 +81,7 @@ Remote servers ──AP──►│                               │
   | `internal/app/blob`, `internal/app/media` | 標準ライブラリだけ（`BlobStore` / `MediaProcessor` ポート） |
   | `internal/app/stream` | 標準ライブラリ、`internal/app/kernel`（生存の印の KV）、`internal/app/queue`（後始末の定期ジョブ）（リアルタイム更新の `Publisher` / `Subscriber` / `Bus` / `Sweeper` ポート、プロセス内ブローカー、プロセス間の中継） |
   | `internal/app/projection` | 標準ライブラリ、`internal/app/uow`、`internal/app/queue`（投影の再構築と検証。各モジュールの再構築関数は composition root が渡す） |
+  | `internal/app/dbupgrade` | 標準ライブラリ、`internal/app/kernel`（`Clock`）、`internal/app/uow`（更新の手順の実行と記録。手順の関数と投影の作り直しは composition root が渡す） |
   | `internal/app/metrics` | 標準ライブラリ、`internal/app/kernel`（KV と `Meter`）、`internal/app/queue`（キューの滞留と定期ジョブ）（インスタンス全体の指標のスナップショット、ADR-0055 §4。件数と容量を数える関数は composition root が渡す） |
   | `internal/i18n` | 標準ライブラリ、`locales`（埋め込みカタログ）、MessageFormat エンジンだけ（`app` と `interface` から使う末端のライブラリ） |
   | `internal/interface/*` | `app` と `domain`（`adapter` / `platform` は不可。`pkg/testkit` はテストからだけ可） |
@@ -219,6 +220,7 @@ internal/
   app/media/         # MediaProcessor ポート、形式の判定、上限の既定値
   app/stream/        # リアルタイム更新の Publisher / Subscriber / Bus / Sweeper ポート、プロセス内ブローカー Hub、プロセス間の中継 Relay、定期ジョブ stream.sweep
   app/projection/    # 投影の再構築と検証（my projection、定期ジョブ projection.verify）と、表を列に依存せず読み書きする Store ポート
+  app/dbupgrade/     # 版の間の更新の手順（my db upgrade、ADR-0087）の実行と記録、contract の前提の検査（my db upgrade --check）、readiness の確認
   app/metrics/       # インスタンス全体の指標のスナップショット（KV の名前空間 metrics、定期ジョブ metrics.snapshot。ADR-0055 §4）
   interface/
     clientapi/       # 独自クライアント API（api/openapi.yaml から生成したインターフェイスを実装）。スタッフの操作（/admin/*、ADR-0058）の入口もここだけ

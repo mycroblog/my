@@ -6,19 +6,19 @@ body:
   - type: textarea
     id: what
     attributes:
-      label: What happened / 何が起きたか
+      label: What happened
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected / 期待する動作
+      label: Expected
     validations:
       required: true
   - type: textarea
     id: repro
     attributes:
-      label: Steps to reproduce / 再現手順
+      label: Steps to reproduce
     validations:
       required: true
   - type: input
