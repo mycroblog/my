@@ -3,9 +3,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/mycroblog/my/internal/i18n"
@@ -18,6 +20,18 @@ import (
 // follows its localized line. Any other error is printed as is.
 func printLoadError(w io.Writer, err error) {
 	printLoadErrorEnv(w, err, os.LookupEnv)
+}
+
+// unknownEnvMessage describes an environment variable of config.UnknownEnv.
+func unknownEnvMessage(name string) string {
+	return fmt.Sprintf("the environment variable %s starts with %s but is not a setting, so it is ignored", name, config.EnvPrefix)
+}
+
+// warnUnknownEnv logs a warning for each environment variable of config.UnknownEnv.
+func warnUnknownEnv(ctx context.Context, logger *slog.Logger, src config.Source) {
+	for _, name := range config.UnknownEnv(src) {
+		logger.WarnContext(ctx, unknownEnvMessage(name), slog.String("env", name))
+	}
 }
 
 func printLoadErrorEnv(w io.Writer, err error, lookupEnv func(string) (string, bool)) {
