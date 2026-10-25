@@ -71,6 +71,17 @@ func (q *Queries) GetEmailSuppression(ctx context.Context, emailAddressID string
 	return i, err
 }
 
+const getPrimaryEmailAddressIDByNormalized = `-- name: GetPrimaryEmailAddressIDByNormalized :one
+SELECT email_address_id FROM user_primary_emails WHERE address_normalized = ?
+`
+
+func (q *Queries) GetPrimaryEmailAddressIDByNormalized(ctx context.Context, addressNormalized string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getPrimaryEmailAddressIDByNormalized, addressNormalized)
+	var email_address_id string
+	err := row.Scan(&email_address_id)
+	return email_address_id, err
+}
+
 const insertEmailDeliveryFailure = `-- name: InsertEmailDeliveryFailure :execrows
 
 

@@ -241,6 +241,11 @@ entries:
     notes:
       - "internal/interface/maintenance depends only on the standard library and internal/i18n; the maintenance mode opens no adapter (platform.NewMaintenanceApp never calls NewApp)."
       - "The maintenance responses (ADR-0084 §3) and `my maintenance export` render the same template (maintenance.Render)."
+  - name: mail-events
+    paths: ["internal/interface/mailevents/**", "internal/platform/setup_mailevents.go"]
+    docs: ["docs/adr/0086-email-delivery.md#5-バウンス苦情", "docs/operations/email.md"]
+    notes:
+      - "POST /mail/events/ses exists only with ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]

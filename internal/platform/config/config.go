@@ -104,6 +104,9 @@ type Config struct {
 	// SESRegion and SESConfigurationSet configure mail = ses.
 	SESRegion           string
 	SESConfigurationSet string
+	// SESSNSTopicARN is the SNS topic of the SES notifications; set, it opens
+	// POST /mail/events/ses (ADR-0086 §5).
+	SESSNSTopicARN string
 	// Captcha is the CAPTCHA service, or "none"; the keys configure it (ADR-0042).
 	Captcha          string
 	CaptchaSiteKey   string
@@ -256,6 +259,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("smtp_password", redact(c.SMTPPassword != "")),
 		slog.String("ses_region", c.SESRegion),
 		slog.String("ses_configuration_set", c.SESConfigurationSet),
+		slog.String("ses_sns_topic_arn", c.SESSNSTopicARN),
 		slog.String("captcha", c.Captcha),
 		slog.String("captcha_site_key", c.CaptchaSiteKey),
 		slog.String("captcha_secret_key", redact(c.CaptchaSecretKey != "")),
