@@ -158,7 +158,7 @@ CREATE TABLE supporter_subscription_transitions (
   price_id TEXT NOT NULL,
   period_ends_at INTEGER,
   reason TEXT NOT NULL CHECK (reason IN (
-    'started', 'synced', 'grace_expired', 'reversed', 'plan_retired', 'account_closed', 'account_suspended', 'staff'
+    'started', 'synced', 'grace_expired', 'reversed', 'plan_retired', 'account_closed', 'account_suspended', 'staff', 'service_closed'
   )),
   occurred_at INTEGER NOT NULL,
   CHECK ((state IN ('pending', 'abandoned')) = (period_ends_at IS NULL))

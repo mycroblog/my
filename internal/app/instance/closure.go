@@ -129,6 +129,8 @@ func (s *Service) recordClosure(ctx context.Context, e instance.ClosureEvent) (i
 		action = appmoderation.AuditServiceClosureAnnounced
 	case instance.ClosureEventWithdrawn:
 		action = appmoderation.AuditServiceClosureWithdrawn
+	case instance.ClosureEventClosed:
+		action = appmoderation.AuditServiceClosureClosed
 	default:
 		return instance.Closure{}, fmt.Errorf("record service closure: unsupported event %s", e.Kind)
 	}
@@ -163,4 +165,95 @@ func (s *Service) recordClosure(ctx context.Context, e instance.ClosureEvent) (i
 		return instance.Closure{}, fmt.Errorf("record service closure %s: %w", e.Kind, err)
 	}
 	return out, nil
+}
+
+// Closes reports whether the event closes the server.
+func (e ClosureRecorded) Closes() bool { return e.Event.Kind == instance.ClosureEventClosed }
+
+// CloseService closes the server for good (FR-809, ADR-0088 §1), by byUserID ("" for the CLI),
+// and audits it in the same transaction. The modules that the closure ends subscribe to
+// ClosureRecorded in the same transaction: the supporters module cancels every live
+// subscription. It fails with an error wrapping instance.ErrClosureNotDue before closes_at and
+// instance.ErrClosureTransition without an announcement or once closed. The callers ask for
+// the confirmation (the domain name) before calling it.
+func (s *Service) CloseService(ctx context.Context, byUserID string) (instance.Closure, error) {
+	return s.recordClosure(ctx, instance.ClosureEvent{Kind: instance.ClosureEventClosed, ByUserID: byUserID})
+}
+
+// ClosureCounts counts what the closure of the service ends, for its checks (ADR-0088 §1). The
+// composition root implements it over the account, supporters, and moderation modules.
+type ClosureCounts interface {
+	// CountLocalUsers counts the local accounts of users that are not deleted.
+	CountLocalUsers(ctx context.Context) (int, error)
+	// CountKnownSharedInboxes counts the shared inboxes that the Delete of a local account
+	// reaches.
+	CountKnownSharedInboxes(ctx context.Context) (int, error)
+	// LiveSubscriptionCount counts the supporter subscriptions that go on.
+	LiveSubscriptionCount(ctx context.Context) (int, error)
+	// PendingMigrations counts the account migrations (ADR-0089: the sending of a Move and the
+	// jobs that move the followers) that have not ended.
+	PendingMigrations(ctx context.Context) (int, error)
+	// HeldAccounts counts the accounts that a retention hold (ADR-0038) preserves.
+	HeldAccounts(ctx context.Context) (int, error)
+}
+
+// ClosureCheck is what the operator reviews before closing the server (ADR-0088 §1, §4, §5).
+type ClosureCheck struct {
+	// LocalAccounts is the number of local accounts that the closure sends a Delete of, and
+	// DeliveryInboxes the number of inboxes that each Delete goes to; EstimatedDeletes is their
+	// product, the estimate of the deliveries.
+	LocalAccounts, DeliveryInboxes, EstimatedDeletes int
+	// LiveSupporterSubscriptions is the number of supporter subscriptions that the closure
+	// cancels at once.
+	LiveSupporterSubscriptions int
+	// PendingMigrations is the number of account migrations that have not ended; they must end
+	// before the closure's deliveries (ADR-0089).
+	PendingMigrations int
+	// RetentionHolds is the number of accounts under a retention hold, whose records the
+	// operator exports before discarding the data (ADR-0088 §5).
+	RetentionHolds int
+}
+
+// CheckClosure returns the checks before the closure. Without ClosureCounts every count is 0.
+func (s *Service) CheckClosure(ctx context.Context) (ClosureCheck, error) {
+	var out ClosureCheck
+	c := s.d.ClosureCounts
+	if c == nil {
+		return out, nil
+	}
+	for _, f := range []struct {
+		name  string
+		count func(context.Context) (int, error)
+		into  *int
+	}{
+		{"local accounts", c.CountLocalUsers, &out.LocalAccounts},
+		{"delivery inboxes", c.CountKnownSharedInboxes, &out.DeliveryInboxes},
+		{"live supporter subscriptions", c.LiveSubscriptionCount, &out.LiveSupporterSubscriptions},
+		{"pending migrations", c.PendingMigrations, &out.PendingMigrations},
+		{"retention holds", c.HeldAccounts, &out.RetentionHolds},
+	} {
+		n, err := f.count(ctx)
+		if err != nil {
+			return ClosureCheck{}, fmt.Errorf("check the service closure: %s: %w", f.name, err)
+		}
+		*f.into = n
+	}
+	out.EstimatedDeletes = out.LocalAccounts * out.DeliveryInboxes
+	return out, nil
+}
+
+// ClosureAllows reports whether the current state of the service closure runs op
+// (instance.ClosureAllows), read per call so that a change applies at once.
+func (s *Service) ClosureAllows(ctx context.Context, op instance.ClosureOperation) (bool, error) {
+	c, err := s.Closure(ctx)
+	if err != nil {
+		return false, err
+	}
+	return instance.ClosureAllows(c.CurrentState(), op), nil
+}
+
+// PushStopped reports whether the service closure stops Web Push (instance.ClosureStream).
+func (s *Service) PushStopped(ctx context.Context) (bool, error) {
+	ok, err := s.ClosureAllows(ctx, instance.ClosureStream)
+	return !ok, err
 }

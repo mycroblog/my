@@ -36,6 +36,8 @@ type RemoteRepository interface {
 	// ListKnownSharedInboxes returns at most limit distinct shared inboxes of the heads of
 	// remote actors that are not deleted, ordered, after the shared inbox after.
 	ListKnownSharedInboxes(ctx context.Context, after string, limit int) ([]string, error)
+	// CountKnownSharedInboxes counts the shared inboxes of ListKnownSharedInboxes.
+	CountKnownSharedInboxes(ctx context.Context) (int, error)
 
 	// LatestHandleVerification returns the newest handle check of a remote actor.
 	LatestHandleVerification(ctx context.Context, tx uow.Tx, accountID string) (account.HandleVerification, error)

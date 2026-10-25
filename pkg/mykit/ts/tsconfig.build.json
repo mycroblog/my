@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "//": "The build of the npm package: ESM JavaScript and type declarations in dist/ (the build script).",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  }
+}

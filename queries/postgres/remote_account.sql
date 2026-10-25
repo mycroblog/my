@@ -68,6 +68,15 @@ WHERE h.shared_inbox_url IS NOT NULL AND h.shared_inbox_url > CAST(@after AS tex
   )
 ORDER BY h.shared_inbox_url LIMIT @batch_limit;
 
+-- CountKnownSharedInboxes counts the shared inboxes of ListKnownSharedInboxes, for the estimate of
+-- the deliveries of the closure of the service (ADR-0088 section 1).
+-- name: CountKnownSharedInboxes :one
+SELECT COUNT(DISTINCT h.shared_inbox_url) FROM remote_account_heads h
+WHERE h.shared_inbox_url IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM account_lifecycle_states s WHERE s.account_id = h.account_id AND s.state = 'deleted'
+  );
+
 -- name: InsertRemoteAccountHandleVerification :exec
 INSERT INTO remote_account_handle_verifications (id, account_id, username, domain, outcome, checked_at)
 VALUES (@id, @account_id, @username, @domain, @outcome, @checked_at);

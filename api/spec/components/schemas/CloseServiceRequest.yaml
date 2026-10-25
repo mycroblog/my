@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The confirmation of the closure of the server.
+type: object
+required: [confirm_domain]
+properties:
+  confirm_domain:
+    description: The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
+    type: string
+    maxLength: 253

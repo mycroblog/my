@@ -3,32 +3,38 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // runAdminClosure implements `my admin closure <subcommand>`: the announcement of the closure of
-// the service, its withdrawal, and its state (FR-808, ADR-0088 §1).
-func runAdminClosure(args []string, stdout, stderr io.Writer) int {
-	sub, code := dispatch("admin closure", args, []string{"announce", "withdraw", "status"}, stderr, adminClosureUsage)
+// the service, its withdrawal, its state, the checks before the closure, and the closure (FR-808,
+// FR-809, ADR-0088 §1). stdin answers the confirmations of close.
+func runAdminClosure(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	sub, code := dispatch("admin closure", args, []string{"announce", "withdraw", "status", "check", "close"}, stderr, adminClosureUsage)
 	if code >= 0 || len(args) == 0 {
 		return max(code, 0)
 	}
-	var closesAt, exportUntil, message string
+	var closesAt, exportUntil, message, confirmDomain string
 	c, code := parseSubcommand("my admin closure "+sub, args[1:], 0, stderr, adminClosureUsage, func(fs *flag.FlagSet) {
-		if sub != "announce" {
-			return
+		switch sub {
+		case "announce":
+			fs.StringVar(&closesAt, "closes-at", "", "when the server closes, as RFC 3339 or a date (UTC midnight) (required)")
+			fs.StringVar(&exportUntil, "export-until", "", "until when the users may export their data, not before -closes-at (default: 30 days after it)")
+			fs.StringVar(&message, "message", "", "the operator's message to the users, in plain text")
+		case "close":
+			fs.StringVar(&confirmDomain, "confirm-domain", "", "the domain of the server, which confirms the closure without the questions (for automation)")
 		}
-		fs.StringVar(&closesAt, "closes-at", "", "when the server closes, as RFC 3339 or a date (UTC midnight) (required)")
-		fs.StringVar(&exportUntil, "export-until", "", "until when the users may export their data, not before -closes-at (default: 30 days after it)")
-		fs.StringVar(&message, "message", "", "the operator's message to the users, in plain text")
 	})
 	if code >= 0 {
 		return code
@@ -61,16 +67,21 @@ func runAdminClosure(args []string, stdout, stderr io.Writer) int {
 		closure, err = app.Instance.AnnounceClosure(ctx, in)
 	case "withdraw":
 		closure, err = app.Instance.WithdrawClosure(ctx, "")
+	case "check":
+		check, err := app.Instance.CheckClosure(ctx)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
+			return 1
+		}
+		printClosureCheck(stdout, stderr, check)
+		return 0
+	case "close":
+		return closeService(ctx, c, app.Instance, confirmDomain, stdin, stdout, stderr)
 	default:
 		closure, err = app.Instance.Closure(ctx)
 	}
-	switch {
-	case errors.Is(err, instance.ErrClosureTransition):
-		_, _ = fmt.Fprintf(stderr, "%s: the service closure in its current state does not allow that; nothing was changed (%v)\n", c.name, err)
-		return 1
-	case err != nil:
-		_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
-		return 1
+	if code := closureError(c.name, err, stderr); code >= 0 {
+		return code
 	}
 	printClosure(stdout, closure)
 	if closure.ShortNotice() && closure.CurrentState() == instance.ClosureAnnounced {
@@ -78,6 +89,78 @@ func runAdminClosure(args []string, stdout, stderr io.Writer) int {
 			int(instance.ClosureNoticeWarning/(24*time.Hour)))
 	}
 	return 0
+}
+
+// closureError prints a refused or failed change of the closure and returns its exit code, or -1
+// for no error.
+func closureError(name string, err error, stderr io.Writer) int {
+	switch {
+	case err == nil:
+		return -1
+	case errors.Is(err, instance.ErrClosureTransition):
+		_, _ = fmt.Fprintf(stderr, "%s: the service closure in its current state does not allow that; nothing was changed (%v)\n", name, err)
+	default:
+		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
+	}
+	return 1
+}
+
+// closureService is what `my admin closure close` uses of the instance module.
+type closureService interface {
+	Closure(ctx context.Context) (instance.Closure, error)
+	CheckClosure(ctx context.Context) (appinstance.ClosureCheck, error)
+	CloseService(ctx context.Context, byUserID string) (instance.Closure, error)
+}
+
+// closeService closes the server after its checks and two confirmations (ADR-0088 §1): "y" to
+// the question and the domain of the server typed on stdin, or -confirm-domain for automation.
+// It refuses at once a closure that the state does not allow, before asking anything.
+func closeService(ctx context.Context, c subcommand, svc closureService, confirmDomain string, stdin io.Reader, stdout, stderr io.Writer) int {
+	cfg, _, err := config.Load(config.Source{File: *c.file})
+	if err != nil {
+		printLoadError(stderr, err)
+		return 1
+	}
+	current, err := svc.Closure(ctx)
+	if code := closureError(c.name, err, stderr); code >= 0 {
+		return code
+	}
+	if code := closureError(c.name, current.Check(instance.ClosureEventClosed, time.Now()), stderr); code >= 0 {
+		return code
+	}
+	check, err := svc.CheckClosure(ctx)
+	if err != nil {
+		_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
+		return 1
+	}
+	printClosure(stdout, current)
+	printClosureCheck(stdout, stderr, check)
+	if confirmDomain == "" {
+		in := bufio.NewReader(stdin)
+		_, _ = fmt.Fprintf(stderr, "Close %s for good? This cannot be undone. [y/N] ", cfg.Host)
+		if answer := readAnswer(in); answer != "y" && answer != "yes" {
+			_, _ = fmt.Fprintf(stderr, "%s: not confirmed; nothing was changed\n", c.name)
+			return 1
+		}
+		_, _ = fmt.Fprint(stderr, "Type the domain of the server to confirm: ")
+		confirmDomain = readAnswer(in)
+	}
+	if !strings.EqualFold(strings.TrimSpace(confirmDomain), cfg.Host) {
+		_, _ = fmt.Fprintf(stderr, "%s: the domain does not match %s; nothing was changed\n", c.name, cfg.Host)
+		return 1
+	}
+	closure, err := svc.CloseService(ctx, "")
+	if code := closureError(c.name, err, stderr); code >= 0 {
+		return code
+	}
+	printClosure(stdout, closure)
+	return 0
+}
+
+// readAnswer reads one line of an answer, trimmed and in lower case; "" at the end of the input.
+func readAnswer(r *bufio.Reader) string {
+	line, _ := r.ReadString('\n')
+	return strings.ToLower(strings.TrimSpace(line))
 }
 
 // parseClosureTime reads an RFC 3339 time, or a date as its midnight in UTC.
@@ -100,13 +183,28 @@ func printClosure(w io.Writer, c instance.Closure) {
 	}
 }
 
+// printClosureCheck prints the checks before the closure, and on stderr the warnings about the
+// account migrations that have not ended (ADR-0089) and the retention holds (ADR-0038).
+func printClosureCheck(w, stderr io.Writer, c appinstance.ClosureCheck) {
+	_, _ = fmt.Fprintf(w, "local accounts: %d\ndelivery inboxes: %d\nestimated Delete deliveries: %d\nlive supporter subscriptions: %d\npending migrations: %d\nretention holds: %d\n",
+		c.LocalAccounts, c.DeliveryInboxes, c.EstimatedDeletes, c.LiveSupporterSubscriptions, c.PendingMigrations, c.RetentionHolds)
+	if c.PendingMigrations > 0 {
+		_, _ = fmt.Fprintf(stderr, "warning: %d account migrations (Move) have not ended; let them end before closing, or their followers may not move\n", c.PendingMigrations)
+	}
+	if c.RetentionHolds > 0 {
+		_, _ = fmt.Fprintf(stderr, "warning: %d accounts are under a retention hold; export their records (my admin account export-moderation) before discarding the data\n", c.RetentionHolds)
+	}
+}
+
 func adminClosureUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my admin closure announce -closes-at <time> [-export-until <time>] [-message <text>] [-config <file>]
   my admin closure withdraw [-config <file>]
   my admin closure status [-config <file>]
+  my admin closure check [-config <file>]
+  my admin closure close [-confirm-domain <domain>] [-config <file>]
 
-The closure of the service (FR-808, ADR-0088, docs/operations/admin-cli.md).
+The closure of the service (FR-808, FR-809, ADR-0088, docs/operations/admin-cli.md).
 
 announce announces that the server closes at -closes-at, or changes the dates of
 the announcement in effect. The users may export their data until -export-until
@@ -116,7 +214,16 @@ no lower bound, but an announcement that gives the users less than 30 days is
 warned about on standard error. withdraw withdraws the announcement: the server
 runs on as before. status prints the state and the schedule in effect.
 
-Every announcement, change of the dates, and withdrawal is in the audit log as
-the CLI's. The server keeps running after the closing date until it is closed.
+check prints what the closure would end: the local accounts and the inboxes
+that their Delete goes to, the supporter subscriptions that it cancels, the
+account migrations that have not ended, and the accounts under a retention hold.
+
+close closes the server for good once the closing date has passed: it cannot be
+undone. It prints the checks, then asks "y" and the domain of the server on
+standard input; -confirm-domain gives the domain instead, without the questions.
+From then on, the users can only sign in and export their data.
+
+Every change is in the audit log as the CLI's. The server keeps running after
+the closing date until it is closed.
 `)
 }

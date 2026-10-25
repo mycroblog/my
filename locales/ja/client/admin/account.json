@@ -426,5 +426,45 @@
   "admin.account.password_reset.copy_failed": {
     "defaultMessage": "リンクをコピーできませんでした。",
     "description": "Toast when copying the password reset link failed."
+  },
+  "admin.account.email_suppression.title": {
+    "defaultMessage": "メールの配信",
+    "description": "Heading of the region of a local account's admin page about the suppression of its email address (emails no longer reach it)."
+  },
+  "admin.account.email_suppression.hard_bounce": {
+    "defaultMessage": "このアドレスにメールが届いていません。メールが返送されました。サーバーは、利用者が求めた確認のメール以外を送りません。",
+    "description": "Text while the account's primary address is suppressed after a hard bounce."
+  },
+  "admin.account.email_suppression.complaint": {
+    "defaultMessage": "受信者がメールを迷惑メールとして報告しました。サーバーは通知のメールを送らなくなりますが、ログインやアカウントの保護に必要なメールは送ります。",
+    "description": "Text while the account's primary address is suppressed after a spam complaint."
+  },
+  "admin.account.email_suppression.since": {
+    "defaultMessage": "{since}から",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "admin.account.email_suppression.lift": {
+    "defaultMessage": "抑止を解除",
+    "description": "Button (and the confirmation's button) that lifts the email suppression of the account."
+  },
+  "admin.account.email_suppression.lift.description": {
+    "defaultMessage": "利用者がメールボックスを直したあとに使います。それでも届かなければ、また抑止されます。解除は監査ログに記録されます。",
+    "description": "Explanation above the button that lifts the email suppression. The lift is recorded in the audit log."
+  },
+  "admin.account.email_suppression.confirm.title": {
+    "defaultMessage": "{handle}のメールの抑止を解除しますか？",
+    "description": "Title of the confirmation of lifting the email suppression. {handle} is the account's handle."
+  },
+  "admin.account.email_suppression.confirm.description": {
+    "defaultMessage": "サーバーはこのアドレスにまたメールを送ります。",
+    "description": "Body of the confirmation of lifting the email suppression."
+  },
+  "admin.account.email_suppression.lifted": {
+    "defaultMessage": "{handle}のメールの抑止を解除しました。",
+    "description": "Status message after lifting the email suppression of the account {handle}."
+  },
+  "admin.account.email_suppression.failed": {
+    "defaultMessage": "抑止を解除できませんでした：{reason}",
+    "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
   }
 }

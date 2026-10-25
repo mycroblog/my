@@ -318,6 +318,8 @@ export const auditActions = [
   "oauth_client_host_allowed",
   "service_closure_announced",
   "service_closure_withdrawn",
+  "service_closure_closed",
+  "service_closure_delivery_completed",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */

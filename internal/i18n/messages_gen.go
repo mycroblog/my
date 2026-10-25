@@ -1635,7 +1635,21 @@ func (l *Localizer) ServerErrorsSelfRelationship() string {
 	return l.format("server:errors.self_relationship", nil)
 }
 
-// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes.
+// ServerErrorsServiceClosed formats "server:errors.service_closed". API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports.
+//
+//	en: This server is closed.
+func (l *Localizer) ServerErrorsServiceClosed() string {
+	return l.format("server:errors.service_closed", nil)
+}
+
+// ServerErrorsServiceClosedDetail formats "server:errors.service_closed_detail". API error detail for HTTP 403 when the server is closed: what the users can still do.
+//
+//	en: The server has closed. You can still sign in and export your data.
+func (l *Localizer) ServerErrorsServiceClosedDetail() string {
+	return l.format("server:errors.service_closed_detail", nil)
+}
+
+// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes.
 //
 //	en: The service closure does not allow that in its current state.
 func (l *Localizer) ServerErrorsServiceClosureState() string {

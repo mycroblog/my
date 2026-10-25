@@ -29,6 +29,8 @@ import {
   cacheLiftedAccountAction,
   type AdminPasswordResetLink,
   disableAccountTwoFactorMutation,
+  liftAccountEmailSuppressionMutation,
+  refreshAccountEmailSuppression,
   issuePasswordResetLinkMutation,
   liftAccountActionMutation,
   refreshAccountTwoFactor,
@@ -345,6 +347,53 @@ export function useRemoveTwoFactor(accountId: string, handle: string, onRemoved:
     onError: (error) => {
       // Removed elsewhere already: the page shows the account as it is now.
       if (error instanceof ApiError && error.status === 409) void refreshAccountTwoFactor(queryClient, api, accountId);
+    },
+  });
+  return {
+    open: () => {
+      mutation.reset();
+      setIsOpen(true);
+    },
+    isOpen,
+    confirm: () => {
+      if (!isOpen || mutation.isPending) return;
+      mutation.mutate(accountId);
+    },
+    cancel: () => {
+      setIsOpen(false);
+      mutation.reset();
+    },
+    isPending: mutation.isPending,
+    error: isOpen && mutation.isError ? errorMessage(mutation.error) : undefined,
+    status,
+  };
+}
+
+/** Lifting the email suppression of a local account, which asks first in a confirmation. */
+export type LiftEmailSuppression = RemoveTwoFactor;
+
+/**
+ * Lifting the suppression of the primary email address of local account `accountId`, whose handle (isolated) is
+ * `handle`. It is done once the account's page and the audit log, which records it, are fetched again;
+ * `onLifted()` is called then, just before the button that lifts it goes away. A 409 means it was lifted elsewhere
+ * already: the page is fetched again and shows the account as it is now.
+ */
+export function useLiftEmailSuppression(accountId: string, handle: string, onLifted: () => void): LiftEmailSuppression {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const mutation = useMutation({
+    ...liftAccountEmailSuppressionMutation(api),
+    onSuccess: async () => {
+      await refreshAccountEmailSuppression(queryClient, api, accountId);
+      setIsOpen(false);
+      onLifted();
+      setStatus(t("client:admin.account.email_suppression.lifted", { handle }));
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) void refreshAccountEmailSuppression(queryClient, api, accountId);
     },
   });
   return {

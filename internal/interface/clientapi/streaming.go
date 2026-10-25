@@ -18,6 +18,7 @@ import (
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
@@ -155,6 +156,9 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 			if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
 				return // revoked, expired, or the account became unusable
 			}
+			if s.streamClosed(ctx) {
+				return // the server was closed (ADR-0088 §2)
+			}
 			if st.write(": heartbeat\n\n") != nil {
 				return
 			}
@@ -167,6 +171,17 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+// streamClosed reports whether the service closure stops the open streams: guard refuses new
+// ones, and every heartbeat ends an open one once the server is closed. A failed read keeps the
+// stream; the next heartbeat reads again.
+func (s *Server) streamClosed(ctx context.Context) bool {
+	if s.o.Closures == nil {
+		return false
+	}
+	c, err := s.o.Closures.Closure(ctx)
+	return err == nil && !instance.ClosureAllows(c.CurrentState(), instance.ClosureStream)
 }
 
 // errStreamWrite reports a write to the client that failed: the client went or stopped reading.

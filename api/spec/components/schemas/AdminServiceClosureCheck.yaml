@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+  screen and the CLI show it with the confirmation of the closure.
+type: object
+required:
+  - local_accounts
+  - delivery_inboxes
+  - estimated_deletes
+  - live_supporter_subscriptions
+  - pending_migrations
+  - retention_holds
+properties:
+  local_accounts:
+    description: The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
+    type: integer
+    minimum: 0
+  delivery_inboxes:
+    description: The shared inboxes known to the server, which each `Delete` goes to.
+    type: integer
+    minimum: 0
+  estimated_deletes:
+    description: The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
+    type: integer
+    minimum: 0
+  live_supporter_subscriptions:
+    description: The supporter subscriptions that go on, which the closure cancels at once without a refund.
+    type: integer
+    minimum: 0
+  pending_migrations:
+    description: |
+      The account migrations (the sending of a `Move` and the jobs that move the followers,
+      ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+      the admin screen and the CLI warn while it is not 0.
+    type: integer
+    minimum: 0
+  retention_holds:
+    description: |
+      The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+      their records with the CLI before discarding the data of the closed server.
+    type: integer
+    minimum: 0

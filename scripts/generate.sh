@@ -5,12 +5,13 @@
 # api/openapi.yaml with the Redocly CLI version that REDOCLY_VERSION names (set by tasks/api.yml), then,
 # from the bundle, the Go server interface and the client of pkg/mykit (ADR-0093) with the oapi-codegen version
 # pinned in tools/go.mod, the per-operation security metadata that the client API enforces
-# (internal/interface/clientapi/internal/securitygen), and the TypeScript types of the web client with
-# the openapi-typescript version pinned in app/web/package.json (needs `scripts/task.sh web:install`).
-# The bundle and the Go code are committed; the TypeScript types are not (ADR-0081).
+# (internal/interface/clientapi/internal/securitygen), the TypeScript types of @mycroblog/mykit (pkg/mykit/ts) and
+# of the web client with the openapi-typescript version pinned in their package.json (needs
+# `scripts/task.sh web:install`). The bundle, the Go code, and the types of @mycroblog/mykit, which its npm package and
+# Go module ship, are committed; the web client's types are not (ADR-0081).
 #
 #   scripts/generate.sh          regenerate every target in place
-#   scripts/generate.sh --ts     regenerate only the TypeScript types, from the committed bundle
+#   scripts/generate.sh --ts     regenerate only the web client's TypeScript types, from the committed bundle
 #   scripts/generate.sh --check  generate the committed targets into a scratch directory and fail if they differ
 #
 # Generated files get the SPDX header that the generators omit: MIT for pkg/mykit (ADR-0093 §2), AGPL-3.0-only for
@@ -58,6 +59,9 @@ security_out="internal/interface/clientapi/security.gen.go"
 # The web client's types, relative to the repository root (web-client/README.md S9).
 ts_out="app/web/src/lib/api/schema.gen.ts"
 
+# The types of @mycroblog/mykit, relative to the repository root (committed, MIT).
+mykit_ts_out="pkg/mykit/ts/src/schema.gen.ts"
+
 # generate CONFIG OUT LICENSE writes the code that CONFIG generates from the spec to OUT, with the SPDX header of
 # LICENSE.
 generate() {
@@ -68,12 +72,13 @@ generate() {
   rm "$out.tmp"
 }
 
-# generate_ts OUT writes the TypeScript types of the spec to OUT.
+# generate_ts PACKAGE OUT LICENSE writes the TypeScript types of the spec to OUT with the openapi-typescript of the
+# package directory PACKAGE, under the SPDX header of LICENSE.
 generate_ts() {
-  local out="$1"
+  local package="$1" out="$2" license="$3"
   mkdir -p "$(dirname "$out")"
-  (cd "$root" && app/web/node_modules/.bin/openapi-typescript "$spec" --output "$out.tmp" >/dev/null)
-  printf '%s\n' "$header" | cat - "$out.tmp" > "$out"
+  (cd "$root" && "$package/node_modules/.bin/openapi-typescript" "$spec" --output "$out.tmp" >/dev/null)
+  printf '// SPDX-License-Identifier: %s\n' "$license" | cat - "$out.tmp" > "$out"
   rm "$out.tmp"
 }
 
@@ -89,7 +94,7 @@ generate_security() {
 # The generators read the bundle at $spec.
 if [ "${1:-}" = "--ts" ]; then
   spec="$root/$bundle_out"
-  generate_ts "$root/$ts_out"
+  generate_ts app/web "$root/$ts_out" AGPL-3.0-only
   exit 0
 fi
 if [ "${1:-}" != "--check" ]; then
@@ -100,7 +105,8 @@ if [ "${1:-}" != "--check" ]; then
     generate "$config" "$root/$out" "$license"
   done
   generate_security "$root/$security_out"
-  generate_ts "$root/$ts_out"
+  generate_ts pkg/mykit/ts "$root/$mykit_ts_out" MIT
+  generate_ts app/web "$root/$ts_out" AGPL-3.0-only
   exit 0
 fi
 
@@ -121,6 +127,10 @@ for target in "${targets[@]}"; do
 done
 generate_security "$scratch/$security_out"
 if ! diff -u "$root/$security_out" "$scratch/$security_out"; then
+  stale=1
+fi
+generate_ts pkg/mykit/ts "$scratch/$mykit_ts_out" MIT
+if ! diff -u "$root/$mykit_ts_out" "$scratch/$mykit_ts_out"; then
   stale=1
 fi
 if [ "$stale" -ne 0 ]; then
