@@ -21,7 +21,8 @@ TypeScript だけが読む生成物（`app/web/src/routeTree.gen.ts`・`app/web/
 タスクは [go-task](https://taskfile.dev/) で、`Taskfile.yml` と `tasks/<area>.yml` に書いてあります（[ADR-0080](docs/adr/0080-task-runner-go-task.md)）。`scripts/task.sh` が `tools/go.mod` で固定した版を `bin/task` にビルドして実行します。PATH 上の `task` は使いません。タスクの一覧は `scripts/task.sh --list` で出ます。
 
 `scripts/task.sh check` はコンテキスト（docs・Go・i18n・API・`app/ui`・`app/web`・Docker・agentkit）ごとのタスク（`docs:check`・`go:check`・`i18n:check`・`api:check`・`ui:check`・`web:check`・`docker:check`・`agentkit:check`）を、各コンテキストの中の検査も含めて並列に実行します（`CHECKS="go web"` で一部だけ）。並列数は `TASK_CONCURRENCY` で制限でき、手元では `scripts/task.sh` が CPU 数の半分を既定にします。
-Go のテストは偽サーバー（pstest・`httptest`・pgmem など）を `127.0.0.1:0` で listen し、ポートは OS が選びます。
+Go のテストは偽サーバー（pstest・`httptest` など）を `127.0.0.1:0` で listen し、ポートは OS が選びます。pgmem への接続は TCP ではなく Unix ソケットを通ります（`pkg/testkit/pgtest`）。
+テストを書くときは偽サーバーへの接続を増やさないよう、クライアントを使い回し、Google Cloud の gRPC クライアントには `option.WithGRPCConnectionPool(1)` を渡します（既定は最大 4 接続）。
 テストが `listen tcp 127.0.0.1:0: bind: address already in use` で落ちるのは、同じマシンで並列に流したテストの接続（TIME_WAIT は 60 秒残ります）が
 エフェメラルポートの範囲（`/proc/sys/net/ipv4/ip_local_port_range`）を使い切ったときです。WSL2 の mirrored ネットワーキングでは、Windows とポートを分け合うため
 この範囲が 4,096 ポート（44620〜48715）しかなく、複数の `check` を同時に流すと使い切ります。`TASK_CONCURRENCY` で並列数を下げるか、同時に流す `check` の数を減らします。

@@ -41,6 +41,7 @@ func TestBillingImportOfABudget(t *testing.T) {
 	opts := []option.ClientOption{
 		option.WithEndpoint(srv.Addr), option.WithoutAuthentication(),
 		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		option.WithGRPCConnectionPool(1), // one loopback connection per client, not up to four
 	}
 	ctx := t.Context()
 	c, err := pubsubv2.NewClient(ctx, "my-billing", opts...)

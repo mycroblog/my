@@ -80,6 +80,9 @@ func newBudgetFake(t *testing.T, subscribe bool, reactors ...pstest.ServerReacto
 		option.WithEndpoint(srv.Addr),
 		option.WithoutAuthentication(),
 		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		// One connection per client instead of the default pool of up to four keeps the
+		// tests' loopback ports few.
+		option.WithGRPCConnectionPool(1),
 	}}
 	c, err := pubsubv2.NewClient(t.Context(), "my-billing", f.opts...)
 	if err != nil {

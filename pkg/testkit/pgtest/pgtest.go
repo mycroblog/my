@@ -9,7 +9,8 @@
 //
 //   - TEST_POSTGRES_URL: an existing server, as a postgres:// URL whose user may create databases.
 //   - TEST_POSTGRES: without TEST_POSTGRES_URL, "pgmem" (the default) runs pgmem, PostgreSQL in
-//     memory inside the test process, and "container" starts a container with testcontainers-go.
+//     memory inside the test process, served on a Unix socket so that the tests' connections
+//     take no TCP port, and "container" starts a container with testcontainers-go.
 //   - TEST_POSTGRES_IMAGE: the container image; it defaults to the one `scripts/task.sh db:up` uses.
 //   - TEST_POSTGRES_REQUIRED: when non-empty, a container that cannot start because Docker is
 //     unavailable fails the tests instead of skipping them. CI sets it.
@@ -25,9 +26,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -159,14 +163,64 @@ func setUp() {
 	s.template, s.err = createTemplate(context.Background())
 }
 
+// startPgmem starts pgmem and serves it on a Unix socket in a new temporary directory, so the
+// connections of the tests take no loopback TCP port: ephemeral ports are few on some machines
+// (4,096 under WSL2 mirrored networking) and every closed connection holds one for a minute in
+// TIME_WAIT (CONTRIBUTING.md). pgmem itself still listens on one TCP port, which nothing uses.
 func startPgmem() error {
 	srv, err := pgmem.Start(context.Background(), pgmem.Options{Database: "my", User: "my"})
 	if err != nil {
 		return fmt.Errorf("start pgmem: %w", err)
 	}
-	server.url = srv.DSN()
-	server.stop = func() { _ = srv.Close() }
+	dir, err := os.MkdirTemp("", "pgtest")
+	if err != nil {
+		_ = srv.Close()
+		return fmt.Errorf("start pgmem: %w", err)
+	}
+	// The socket's name is the one pgx and libpq look for in the host directory on port 5432.
+	ln, err := net.Listen("unix", filepath.Join(dir, ".s.PGSQL.5432"))
+	if err != nil {
+		_ = srv.Close()
+		_ = os.RemoveAll(dir)
+		return fmt.Errorf("start pgmem: %w", err)
+	}
+	go servePgmem(ln, srv)
+	// A host that starts with "/" is the directory of a Unix socket.
+	server.url = (&url.URL{
+		Scheme:   "postgres",
+		User:     url.User("my"),
+		Path:     "/my",
+		RawQuery: url.Values{"host": {dir}, "sslmode": {"disable"}}.Encode(),
+	}).String()
+	server.stop = func() {
+		_ = ln.Close()
+		_ = srv.Close()
+		_ = os.RemoveAll(dir)
+	}
 	return nil
+}
+
+// servePgmem joins every connection accepted on ln to an in-process connection of srv, until ln
+// is closed.
+func servePgmem(ln net.Listener, srv *pgmem.Server) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		go func() {
+			defer func() { _ = c.Close() }()
+			s, err := srv.Dial(context.Background(), "", "")
+			if err != nil {
+				return
+			}
+			defer func() { _ = s.Close() }()
+			done := make(chan struct{}, 2)
+			go func() { _, _ = io.Copy(s, c); done <- struct{}{} }()
+			go func() { _, _ = io.Copy(c, s); done <- struct{}{} }()
+			<-done // one side closed; the deferred Closes end the other copy
+		}()
+	}
 }
 
 func startContainer() error {
