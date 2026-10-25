@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The viewer's relationship with the account after the change.
 headers:
   Cache-Control:

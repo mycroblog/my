@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a custom emoji request cannot be decided or withdrawn. `not_pending`: it was already
   approved, rejected, withdrawn, or lapsed. `requester_cannot_create`: the requester no longer

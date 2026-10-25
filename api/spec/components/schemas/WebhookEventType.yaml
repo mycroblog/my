@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An event that a webhook subscribes to (ADR-0060). Subscribing needs, besides
   `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for

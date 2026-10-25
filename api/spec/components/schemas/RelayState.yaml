@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Where the membership of a relay stands. `pending`: the `Follow` is sent and not
   answered. `accepted`: public posts go to the relay and, with `receive`, come from it.

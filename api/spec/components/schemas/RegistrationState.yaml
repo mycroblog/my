@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Where a registration stands: `pending` waits for a moderator, `approved` lets the user
   sign in, and `rejected` keeps them out.

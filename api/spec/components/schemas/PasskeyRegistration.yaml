@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The start of a passkey registration.
 type: object
 required: [options, registration_token, expires_at]

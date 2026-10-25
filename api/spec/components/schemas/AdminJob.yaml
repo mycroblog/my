@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A job of the job queue.
 type: object
 required: [id, type, state, payload, attempts, created_at]

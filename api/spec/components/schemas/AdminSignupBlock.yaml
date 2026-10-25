@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A block on sign-ups from the registration page (FR-719).
 type: object
 required: [id, kind, value, severity, state, created_at]

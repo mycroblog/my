@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The state of the job queue (ADR-0064).
 type: object
 required: [adapter, pending_listing, counts]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The IANA time zone (`UTC`, `Asia/Tokyo`) in which a payment provider's money movements fall
   on their dates: the provider's reporting time zone, or `UTC` when it could not be read

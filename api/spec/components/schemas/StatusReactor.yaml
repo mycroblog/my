@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: One emoji reaction to a status, with the account that reacted.
 type: object
 required: [account, emoji, created_at]

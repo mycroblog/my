@@ -7,6 +7,14 @@
     "defaultMessage": "[Şḗḗŧ ȧȧ ƞḗḗẇ ƥȧȧşşẇǿǿřḓ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "[Ȧƞ ȧȧƈƈǿǿŭŭƞŧ ŧħȧȧŧ ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} ŀīḿīŧ ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ. Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ īŧ ḿǿǿṽḗḗḓ ŧǿǿ ḓǿǿḗḗş ƞǿǿŧ ɠḗḗŧ ŧħḗḗ ŀīḿīŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "[Ȧƞ ȧȧƈƈǿǿŭŭƞŧ ŀīḿīŧḗḗḓ ǿǿƞ {instance} ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_appeal.body": {
     "defaultMessage": "[Ȧ ŭŭşḗḗř ǿǿƒ {instance} ȧȧƥƥḗḗȧȧŀḗḗḓ ȧȧ ḿǿǿḓḗḗřȧȧŧīǿǿƞ ȧȧƈŧīǿǿƞ, ȧȧƞḓ ŧħḗḗ ȧȧƥƥḗḗȧȧŀ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş.]",
     "description": "Generated from en by tools/i18n; do not edit."

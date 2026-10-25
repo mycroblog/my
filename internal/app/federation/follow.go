@@ -43,7 +43,8 @@ type FollowReader interface {
 //     block) rejected, and graph.follow_terminated of a remote follower that the local followee
 //     removed: Reject.
 //   - graph.follow_terminated of a local follower's follow of a remote account that the
-//     follower ended (unfollowed, or by a block or moderation): Undo Follow.
+//     follower ended (unfollowed, or by a block, moderation, or the move of the followee to
+//     another account): Undo Follow.
 //   - graph.follow_terminated of a remote follower's follow of a local account that moderation
 //     ended (the suspension of the follower): Reject.
 //
@@ -140,7 +141,7 @@ func registerFollowProjectors(r *uow.Projectors, rec recorder) {
 		switch ev.Termination.Reason {
 		case appgraph.TerminatedRemovedByFollowee:
 			return answered(ctx, tx, federation.ActivityReject, ev.Follow, at)
-		case appgraph.TerminatedUnfollowed, appgraph.TerminatedBlocked, appgraph.TerminatedModeration:
+		case appgraph.TerminatedUnfollowed, appgraph.TerminatedBlocked, appgraph.TerminatedModeration, appgraph.TerminatedMoved:
 			followerLocal, followeeLocal, err := sides(ctx, tx, ev.Follow)
 			switch {
 			case err != nil:

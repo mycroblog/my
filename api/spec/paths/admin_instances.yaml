@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 get:
   operationId: listInstanceHealth
   summary: List the remote servers with delivery failures or marked unavailable

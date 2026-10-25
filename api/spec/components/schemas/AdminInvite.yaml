@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An invite that lets people sign up while the registration mode is `invite`.
 type: object
 required: [id, code, url, uses, state, created_at]

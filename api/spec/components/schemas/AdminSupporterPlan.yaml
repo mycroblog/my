@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
   monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes

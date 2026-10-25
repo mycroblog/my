@@ -120,7 +120,11 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
-	presented, err := s.presentedAccounts(ctx, ns, severances)
+	moves, err := s.notifiedMoves(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	presented, err := s.presentedAccounts(ctx, ns, severances, moves)
 	if err != nil {
 		return nil, err
 	}
@@ -234,6 +238,13 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		if sv, ok := severances[n.SeveranceID]; ok {
 			item.RelationshipSeverance = newRelationshipSeverance(sv)
 		}
+		if m, ok := moves[n.AccountMoveID]; ok {
+			item.AccountMove = &m.view
+			if n.AccountMoveOutcome != "" {
+				outcome := AccountMoveOutcome(n.AccountMoveOutcome)
+				item.AccountMove.Outcome = &outcome
+			}
+		}
 		if item.Reaction, err = s.reactionEmojiOf(ctx, n); err != nil {
 			return nil, err
 		}
@@ -244,13 +255,17 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 
 // presentedAccounts returns, for each of ns, the ID of the account that its account property
 // presents: the source account, for an admin_sign_up the local account of the user who signed
-// up, and for a relationships_severed the suspended account of severances; "" for none.
-func (s *Server) presentedAccounts(ctx context.Context, ns []notification.Notification, severances map[string]moderation.SeveranceRecord) ([]string, error) {
+// up, for a relationships_severed the suspended account of severances, and for an
+// admin_account_moved the account that moved; "" for none.
+func (s *Server) presentedAccounts(ctx context.Context, ns []notification.Notification, severances map[string]moderation.SeveranceRecord, moves map[string]notifiedMove) ([]string, error) {
 	out := make([]string, len(ns))
 	for i, n := range ns {
 		out[i] = n.SourceAccountID
 		if sv, ok := severances[n.SeveranceID]; ok {
 			out[i] = sv.TargetAccountID
+		}
+		if m, ok := moves[n.AccountMoveID]; ok && n.Type == notification.TypeAdminAccountMoved {
+			out[i] = m.move.AccountID
 		}
 		if n.Type != notification.TypeAdminSignUp || n.SubjectUserID == "" || s.o.UserAccounts == nil {
 			continue
@@ -375,6 +390,42 @@ func (s *Server) notifiedSeverances(ctx context.Context, accountID string, ns []
 			return nil, fmt.Errorf("clientapi: the severance %s of notification %s: %w", n.SeveranceID, n.ID, err)
 		}
 		out[n.SeveranceID] = sv
+	}
+	return out, nil
+}
+
+// notifiedMove is a move that a notification tells of, with its target presented.
+type notifiedMove struct {
+	move appaccount.Move
+	view AccountMove
+}
+
+// notifiedMoves returns, by ID, the moves that the account_moved and admin_account_moved
+// notifications ns tell of, each with its target; a move that no longer exists is left out.
+func (s *Server) notifiedMoves(ctx context.Context, ns []notification.Notification) (map[string]notifiedMove, error) {
+	out := map[string]notifiedMove{}
+	if s.o.Moves == nil {
+		return out, nil
+	}
+	for _, n := range ns {
+		if n.AccountMoveID == "" {
+			continue
+		}
+		if _, ok := out[n.AccountMoveID]; ok {
+			continue
+		}
+		m, err := s.o.Moves.FindMove(ctx, n.AccountMoveID)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+			continue
+		case err != nil:
+			return nil, fmt.Errorf("clientapi: the move %s of notification %s: %w", n.AccountMoveID, n.ID, err)
+		}
+		target, err := s.presentedTarget(ctx, m.TargetAccountID)
+		if err != nil {
+			return nil, err
+		}
+		out[n.AccountMoveID] = notifiedMove{move: m, view: AccountMove{Target: target}}
 	}
 	return out, nil
 }

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The last attempt of a billing import; omitted before the first.
 type: object
 required: [outcome, error_kind, requests, bytes_billed, occurred_at]

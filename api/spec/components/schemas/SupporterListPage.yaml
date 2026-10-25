@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A page of the supporter list: the members by plan, in the order of `plans`, newest first
   within a plan.

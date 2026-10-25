@@ -1,4 +1,12 @@
 {
+  "push.account_moved": {
+    "defaultMessage": "[{name} ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.admin_account_moved": {
+    "defaultMessage": "[Ȧƞ ȧȧƈƈǿǿŭŭƞŧ ŧħȧȧŧ ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} ŀīḿīŧ ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_appeal": {
     "defaultMessage": "[Ȧ ƞḗḗẇ ȧȧƥƥḗḗȧȧŀ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A page of the posts and boosts of an account, newest first.
 headers:
   Cache-Control:

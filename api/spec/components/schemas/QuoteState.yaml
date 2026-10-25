@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
   `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and

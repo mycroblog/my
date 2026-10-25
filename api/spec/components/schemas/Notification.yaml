@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A notification of something that happened to the authenticated user.
 type: object
 required: [id, type, created_at]
@@ -47,6 +47,8 @@ properties:
     $ref: ./SupporterSubscription.yaml
   relationship_severance:
     $ref: ./RelationshipSeverance.yaml
+  account_move:
+    $ref: ./AccountMove.yaml
   reaction:
     description: The emoji of a `reaction`; omitted for the other types.
     $ref: ./ReactionEmoji.yaml

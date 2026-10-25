@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
   `application/json` with the headers `webhook-id`, `webhook-timestamp`, and

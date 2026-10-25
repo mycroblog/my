@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What importing a row would do. `importable`: it issues the actions of `issue`.
   `already_applied`: an action in effect of each of the row's kinds covers the domain

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The whole theme; tokens left out go back to their defaults.
 type: object
 required: [tokens, custom_css]

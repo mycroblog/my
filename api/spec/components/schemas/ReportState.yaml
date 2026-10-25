@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `open`: the report awaits the moderators. `resolved`: the moderators handled it.
 type: string

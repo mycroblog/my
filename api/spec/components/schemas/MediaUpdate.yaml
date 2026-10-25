@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The changes to a media file; a property left out keeps its value.
 type: object
 properties:

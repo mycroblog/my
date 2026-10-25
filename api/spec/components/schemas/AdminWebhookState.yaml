@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Whether the webhook receives the messages of its events.
 type: string
 enum: [enabled, disabled]

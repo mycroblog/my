@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: What awaits the moderators; a count whose permission the user lacks is omitted.
 type: object
 properties:

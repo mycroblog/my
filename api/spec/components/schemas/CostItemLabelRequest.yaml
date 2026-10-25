@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A change of a cost item's label; an omitted property keeps its value.
 type: object
 properties:

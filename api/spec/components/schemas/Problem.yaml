@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An RFC 9457 problem document. Besides `about:blank`, `type` is one of
 
@@ -86,6 +86,9 @@ description: |
     deleted; `reason` says why.
   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
     reason in `theme_errors` (`PUT /admin/theme`).
+  - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
+    allow the operation: withdrawing an announcement when none is in effect, or announcing
+    the closure of a server that is closed already (`/admin/closure/announcement`).
   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
     allowed. Unmute one first.
   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:

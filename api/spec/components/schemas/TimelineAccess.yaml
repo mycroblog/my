@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who may read a public timeline (the instance settings `local_timeline_access` and
   `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;

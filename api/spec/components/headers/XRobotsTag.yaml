@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The statement to search engines (ADR-0057) of a response that states more than the default `noindex`.
 schema:
   type: string

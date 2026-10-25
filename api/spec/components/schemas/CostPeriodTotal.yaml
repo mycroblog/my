@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
   of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown

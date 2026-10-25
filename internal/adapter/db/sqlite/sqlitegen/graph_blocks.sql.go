@@ -304,6 +304,59 @@ func (q *Queries) InsertDomainMute(ctx context.Context, arg InsertDomainMutePara
 	return result.RowsAffected()
 }
 
+const listActiveMutersPage = `-- name: ListActiveMutersPage :many
+SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
+FROM mutes
+WHERE target_account_id = ?1
+  AND (expires_at IS NULL OR expires_at > CAST(?2 AS INTEGER))
+  AND account_id > CAST(?3 AS TEXT)
+ORDER BY account_id
+LIMIT ?4
+`
+
+type ListActiveMutersPageParams struct {
+	TargetAccountID string
+	Now             int64
+	After           string
+	PageLimit       int64
+}
+
+// ListActiveMutersPage pages the mutes of a target that have not expired at now, by the
+// muting account; an empty after starts at the first.
+func (q *Queries) ListActiveMutersPage(ctx context.Context, arg ListActiveMutersPageParams) ([]Mute, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveMutersPage,
+		arg.TargetAccountID,
+		arg.Now,
+		arg.After,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Mute{}
+	for rows.Next() {
+		var i Mute
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.TargetAccountID,
+			&i.HideNotifications,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActiveMutesPage = `-- name: ListActiveMutesPage :many
 SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
 FROM mutes
@@ -487,6 +540,46 @@ func (q *Queries) ListBlockHistories(ctx context.Context) ([]ListBlockHistoriesR
 			&i.CreatedAt,
 			&i.RetractedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBlockersPage = `-- name: ListBlockersPage :many
+SELECT blocker_account_id, blocked_account_id, block_id
+FROM block_edges
+WHERE blocked_account_id = ?1
+  AND block_id > CAST(?2 AS TEXT)
+ORDER BY block_id
+LIMIT ?3
+`
+
+type ListBlockersPageParams struct {
+	AccountID string
+	After     string
+	PageLimit int64
+}
+
+// ListBlockersPage pages the edges into a blocked account in block order; an empty after starts
+// at the first.
+func (q *Queries) ListBlockersPage(ctx context.Context, arg ListBlockersPageParams) ([]BlockEdge, error) {
+	rows, err := q.db.QueryContext(ctx, listBlockersPage, arg.AccountID, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BlockEdge{}
+	for rows.Next() {
+		var i BlockEdge
+		if err := rows.Scan(&i.BlockerAccountID, &i.BlockedAccountID, &i.BlockID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

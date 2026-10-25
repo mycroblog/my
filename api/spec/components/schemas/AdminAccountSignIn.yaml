@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Where one sign-in came from.
 type: object
 required: [signed_in_at]

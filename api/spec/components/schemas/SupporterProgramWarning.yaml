@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What an administrator should look at in the supporter program. `no_provider`: no payment
   provider is configured. `no_email`: the server sends no email, so nobody can verify an

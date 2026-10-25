@@ -11,7 +11,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 spec="$root/api/spec"
-spdx='# SPDX-License-Identifier: AGPL-3.0-only'
+spdx='# SPDX-License-Identifier: MIT'
 
 failed=0
 

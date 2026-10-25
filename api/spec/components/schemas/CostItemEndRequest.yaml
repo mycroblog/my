@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The end of a cost item: `ends_on` is the last date a payment can fall on (included), on or
   after the start date, and omitted for no end. The last payment before it still covers the

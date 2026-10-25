@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How much of the income the holders of `view_finance` read (the instance setting
   `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;

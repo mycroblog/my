@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How the report was resolved, present only while it is resolved. `actioned`: a moderator
   took an action on the target. `dismissed`: there was nothing to act on.

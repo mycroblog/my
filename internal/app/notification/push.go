@@ -457,6 +457,10 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		p.Title = l.ServerPushReportResolved(instance)
 	case notification.TypeRelationshipsSevered:
 		p.Title = l.ServerPushRelationshipsSevered(instance)
+	case notification.TypeAccountMoved:
+		p.Title, p.Path = l.ServerPushAccountMoved(name), "/@"+source.Acct
+	case notification.TypeAdminAccountMoved:
+		p.Title = l.ServerPushAdminAccountMoved(instance)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

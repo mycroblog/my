@@ -519,6 +519,14 @@
     "defaultMessage": "OAuth のアプリのホストの拒否を取り消した",
     "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
   },
+  "admin.audit_log.action.service_closure_announced": {
+    "defaultMessage": "サービスの終了を予告した",
+    "description": "Kind of an audited operation: an administrator announced the closure of the service or changed its dates."
+  },
+  "admin.audit_log.action.service_closure_withdrawn": {
+    "defaultMessage": "サービスの終了の予告を取り消した",
+    "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth のアプリ",
     "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
@@ -526,5 +534,9 @@
   "admin.audit_log.target_kind.oauth_client_host": {
     "defaultMessage": "OAuth のアプリのホスト",
     "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
+  },
+  "admin.audit_log.target_kind.instance": {
+    "defaultMessage": "インスタンス",
+    "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
   }
 }

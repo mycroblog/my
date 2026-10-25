@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A hashtag that the prefix search of hashtags found (ADR-0092).
 type: object
 required: [name, statuses_count]

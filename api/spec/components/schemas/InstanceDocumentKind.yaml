@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The kind of an instance document: the terms of service, the privacy policy, and the
   commerce disclosures of the supporter plans. Each is the instance text of the same name

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A media file, as an upload of the user (the media operations) or as an attachment of
   a status (`Status.media_attachments`). `url`, `preview_url`, `variants`, and `blurhash`

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+  the server closes; absent when none is announced. Clients show it on every screen with the
+  way to export the data and to move the account.
+type: object
+required: [state, closes_at, export_until]
+properties:
+  state:
+    $ref: ./ServiceClosureState.yaml
+  closes_at:
+    description: When the server closes; it may have passed already.
+    type: string
+    format: date-time
+  export_until:
+    description: Until when the users may still sign in and export their data after the closure.
+    type: string
+    format: date-time
+  message:
+    description: The operator's message to the users, as plain text; omitted when there is none.
+    type: string

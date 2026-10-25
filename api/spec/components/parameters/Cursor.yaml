@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 name: cursor
 in: query
 description: The `next_cursor` of the previous page; omitted for the first page.

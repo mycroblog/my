@@ -94,6 +94,7 @@ my を改変して動かす（パッチを当てる、フォークをビルド�
 | `http.server.active_requests` | UpDownCounter | `my.surface` |
 | `my.inbox.activities` | Counter | `activity.type`（既知の Activity の型か `other`）、`my.outcome`（`accepted` / `duplicate` / `rejected` / `ignored` / `error`） |
 | `my.relay.activities` | Counter | `my.outcome`（`admitted` / `over_limit` / `restricted` / `not_receiving`。リレーが運んだアクティビティを取り込んだか、なぜ捨てたか。[連合リレー](relays.md)） |
+| `my.move.activities` | Counter | `my.outcome`（`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`。受けた `Move` を記録したか、なぜ捨てたか。[federation.md §3.4](../architecture/federation.md)） |
 | `my.delivery.attempts` | Counter | `my.outcome`（`success` / `retry` / `gone` / `failed`。`gone` は 410 と、利用できない・停止したサーバーで送らなかったもの） |
 | `my.delivery.duration` | Histogram・秒 | `my.outcome` |
 | `my.job.duration` | Histogram・秒 | `my.job.type`（登録済みのジョブの型か `other`）、`my.outcome`（`success` / `retry` / `dead`） |

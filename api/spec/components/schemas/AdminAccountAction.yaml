@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A moderation action on an account (FR-703).
 type: object
 required: [id, account_id, kind, reason_category, issuer, notify_target, state, issued_at]

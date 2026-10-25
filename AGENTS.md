@@ -90,6 +90,9 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 - Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`; `!` for breaking).
 - License is AGPL-3.0-only ([ADR-0011](docs/adr/0011-license.md)). New source files start with `SPDX-License-Identifier: AGPL-3.0-only`;
   only add dependencies with AGPL-compatible licenses.
+  The exception is MIT ([ADR-0093](docs/adr/0093-api-client-library-mykit.md) §2): `api/spec/`, `api/openapi.yaml`, `pkg/mykit/` and `pkg/mybot/`
+  start with `SPDX-License-Identifier: MIT` (`# ...` in YAML) and depend only on permissive licenses (MIT, Apache-2.0, BSD, ISC and the like), never GPL-family ones.
+  The generated code of the server and the web client stays `AGPL-3.0-only`. `scripts/task.sh api:license-scope` checks the identifiers.
 - Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a feature branch
   (branches are deleted on merge). Before merge, link the PR instead.
 - Do not commit secrets, `.env` files, or credentials. Do not run destructive commands against remote resources.

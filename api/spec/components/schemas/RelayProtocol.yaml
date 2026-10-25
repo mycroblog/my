@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
   collection. `litepub`: at its actor, by a `Follow` of the actor.

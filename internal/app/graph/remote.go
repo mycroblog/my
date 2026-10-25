@@ -298,6 +298,7 @@ const (
 	TerminatedRemovedByFollowee = graph.TerminatedRemovedByFollowee
 	TerminatedBlocked           = graph.TerminatedBlocked
 	TerminatedModeration        = graph.TerminatedModeration
+	TerminatedMoved             = graph.TerminatedMoved
 )
 
 // ErrSelfFollow reports a follow of an account by itself; see graph.ErrSelfFollow.

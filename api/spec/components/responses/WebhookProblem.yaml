@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The webhook breaks a rule; nothing was changed.
 headers:
   Content-Language:

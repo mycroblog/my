@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: The schedule of an announcement of the closure of the service.
+type: object
+required: [closes_at]
+properties:
+  closes_at:
+    description: When the server closes. It has no lower bound, so that the server can close at short notice.
+    type: string
+    format: date-time
+  export_until:
+    description: |
+      Until when the users may export their data after the closure; not before `closes_at`.
+      30 days after `closes_at` when omitted.
+    type: string
+    format: date-time
+  message:
+    description: The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none.
+    type: string
+    maxLength: 5000

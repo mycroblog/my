@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A money movement of the payment provider as the income records keep it (ADR-0073 §2, §6):
   recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a

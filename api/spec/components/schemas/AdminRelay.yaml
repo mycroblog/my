@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A relay that the instance joins or joined (ADR-0061).
 type: object
 required: [id, protocol, url, inbox_url, receive, state, state_changed_at, taken_last_day, dropped_last_day, domain_suspended, created_at]

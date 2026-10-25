@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How much of the instance's costs everyone may read (the instance setting
   `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and

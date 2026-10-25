@@ -7,6 +7,14 @@
     "defaultMessage": "Set a new password",
     "description": "Label of the link in an email that sets a new password."
   },
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "An account that the moderators of {instance} limit moved to another account. The account it moved to does not get the limit.",
+    "description": "Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "An account limited on {instance} moved to another account",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_appeal.body": {
     "defaultMessage": "A user of {instance} appealed a moderation action, and the appeal awaits the moderators.",
     "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."

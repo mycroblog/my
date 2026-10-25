@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The confirmation of the deletion of the user's own account: `password` or `passkey`.
 type: object

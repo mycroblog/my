@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
   it gets no first-party-only scope and calls no account security operation.

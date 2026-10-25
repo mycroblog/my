@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A price for the payments on or after `effective_on`, on or after the start date: a raise,
   a cut, or the correction of a mistake (`effective_on` = the start date corrects every

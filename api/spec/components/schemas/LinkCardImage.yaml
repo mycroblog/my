@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The image of a link card, served by this server's media proxy in the small size of an
   attachment's image. An animated image is its first frame.

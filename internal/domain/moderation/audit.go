@@ -95,6 +95,9 @@ const (
 	// AuditTargetOAuthClientHost is a host whose Client ID Metadata Documents an administrator
 	// denied (ADR-0090 §1); its ID and its label are the host.
 	AuditTargetOAuthClientHost AuditTargetKind = "oauth_client_host"
+	// AuditTargetInstance is the instance itself, for its service closure (ADR-0088 §1); its ID
+	// and its label are "service_closure".
+	AuditTargetInstance AuditTargetKind = "instance"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -103,7 +106,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetCustomEmoji, AuditTargetWebhook, AuditTargetAnnouncement, AuditTargetInvite, AuditTargetRelay,
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
-	AuditTargetOAuthClient, AuditTargetOAuthClientHost,
+	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -299,6 +302,11 @@ const (
 	// the denial (oauth_client_host_denials and oauth_client_host_denial_lifts, ADR-0090 §1).
 	AuditOAuthClientHostDenied  AuditAction = "oauth_client_host_denied"
 	AuditOAuthClientHostAllowed AuditAction = "oauth_client_host_allowed"
+	// AuditServiceClosureAnnounced and AuditServiceClosureWithdrawn: a holder of
+	// manage_service_closure announced the closure of the service or changed its dates, or
+	// withdrew the announcement (service_closure_events, ADR-0088 §1).
+	AuditServiceClosureAnnounced AuditAction = "service_closure_announced"
+	AuditServiceClosureWithdrawn AuditAction = "service_closure_withdrawn"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -385,6 +393,8 @@ var auditActions = []struct {
 	{AuditOAuthClientEnabled, AuditTargetOAuthClient},
 	{AuditOAuthClientHostDenied, AuditTargetOAuthClientHost},
 	{AuditOAuthClientHostAllowed, AuditTargetOAuthClientHost},
+	{AuditServiceClosureAnnounced, AuditTargetInstance},
+	{AuditServiceClosureWithdrawn, AuditTargetInstance},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

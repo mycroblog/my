@@ -224,6 +224,9 @@ type Options struct {
 	// Themes reads and replaces the instance theme for the admin operations and Instance.theme
 	// (admin_theme.go); nil answers no theme and 404 to the admin operations.
 	Themes Themes
+	// Closures reads, announces, and withdraws the service closure for the admin operations and
+	// Instance.closure (admin_closure.go); nil answers no closure and 404 to the admin operations.
+	Closures ServiceClosures
 	// ThemeStylesheetPath returns the path, on Origin, of a theme revision's stylesheet
 	// (web.ThemeStylesheetPath); nil leaves the stylesheet URLs and Instance.theme out.
 	ThemeStylesheetPath func(revisionID string) string
@@ -238,6 +241,10 @@ type Options struct {
 	// Severances reads the follows that the viewer's relationships_severed notifications tell
 	// of; nil leaves them out of the notifications.
 	Severances Severances
+	// Moves reads the moves of accounts (ADR-0089): the target that an account's own endpoints
+	// show as moved, and the moves that account_moved and admin_account_moved tell of; nil shows
+	// none.
+	Moves AccountMoves
 	// ReportCounts and RegistrationCounts count what awaits the moderators (admin_counts.go);
 	// nil leaves the count out.
 	ReportCounts       ReportCounts

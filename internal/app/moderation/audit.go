@@ -89,6 +89,8 @@ const (
 	AuditOAuthClientEnabled            = moderation.AuditOAuthClientEnabled
 	AuditOAuthClientHostDenied         = moderation.AuditOAuthClientHostDenied
 	AuditOAuthClientHostAllowed        = moderation.AuditOAuthClientHostAllowed
+	AuditServiceClosureAnnounced       = moderation.AuditServiceClosureAnnounced
+	AuditServiceClosureWithdrawn       = moderation.AuditServiceClosureWithdrawn
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -110,6 +112,7 @@ const (
 	AuditTargetPaymentProvider       = moderation.AuditTargetPaymentProvider
 	AuditTargetOAuthClient           = moderation.AuditTargetOAuthClient
 	AuditTargetOAuthClientHost       = moderation.AuditTargetOAuthClientHost
+	AuditTargetInstance              = moderation.AuditTargetInstance
 )
 
 // AuditActorSystem is moderation.AuditActorSystem, the server itself, and AuditActorRemote

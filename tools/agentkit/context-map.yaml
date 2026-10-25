@@ -45,7 +45,7 @@ entries:
   - name: build-and-ci
     paths: ["Taskfile.yml", "tasks/**", ".github/**", "scripts/**", ".claude/**"]
     docs: ["docs/agents/workflow.md#what-ci-runs-where", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0080-task-runner-go-task.md", "docs/adr/0083-ci-steps-not-tasks.md", "docs/operations/releasing.md"]
-    checks: [docs, go, i18n, api, ui, web, docker, agentkit]
+    checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
     notes:
       - "Taskfile.yml, tasks/, workflows and scripts/changed-contexts.sh select every check context: run `scripts/task.sh check`."
@@ -144,6 +144,11 @@ entries:
   - name: module-graph
     paths: ["internal/domain/graph/**", "internal/app/graph/**"]
     docs: ["docs/architecture/data-model/04-tables/05-graph.md#45-graph"]
+  - name: account-move
+    paths: ["internal/domain/account/move*.go", "internal/app/account/move.go", "internal/app/graph/migrate.go", "internal/app/federation/move.go", "pkg/testkit/account_move_contract.go"]
+    docs: ["docs/adr/0089-account-migration-move.md#decision決定", "docs/architecture/federation.md#34-アクティビティごとのハンドラ", "docs/architecture/data-model/04-tables/02-account.md#移転adr-0089"]
+    notes:
+      - "A Move is recorded by the account module (account.moved); the graph module migrates the local follows, blocks and mutes in graph.migrate_follows, idempotently."
   - name: module-timeline
     paths: ["internal/domain/timeline/**", "internal/app/timeline/**"]
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
@@ -157,7 +162,7 @@ entries:
       - "ActivityPub wire formats and federated URIs stay spec-compliant even in v0."
   - name: module-instance
     paths: ["internal/domain/instance/**", "internal/app/instance/**"]
-    docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md"]
+    docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md", "docs/adr/0088-service-shutdown-modes.md"]
   - name: module-webhook
     paths: ["internal/domain/webhook/**", "internal/app/webhook/**"]
     docs: ["docs/architecture/data-model/04-tables/11-webhook.md#411-webhook", "docs/reference/webhooks.md"]
@@ -206,7 +211,7 @@ entries:
   - name: client-api
     paths: ["internal/interface/clientapi/**", "api/**"]
     docs: ["docs/architecture/client-api.md#3-エンドポイントを追加する手順", "docs/architecture/client-api.md#2-規約"]
-    checks: [api, go, web]
+    checks: [api, go, web, mykit]
     shared: true
     notes:
       - "Edit api/spec/ (one file per path and component; list new files in api/spec/openapi.yaml), never api/openapi.yaml; then `scripts/task.sh api:generate`."
@@ -242,6 +247,15 @@ entries:
   - name: testkit-backends
     paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/fixtures/**"]
     docs: ["docs/adr/0041-postgres-tests-on-pgmem.md"]
+
+  # --- Client libraries -----------------------------------------------------------------------------------
+  - name: mykit
+    paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh"]
+    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+    checks: [mykit]
+    notes:
+      - "pkg/mykit is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`): it never imports or requires the server module, and its dependencies are permissive only (`scripts/task.sh mykit:check`)."
+      - "api.gen.go is generated from api/openapi.yaml by `scripts/task.sh api:generate` (pkg/mykit/oapi-codegen.yaml); the hand-written files hold only the cross-cutting layer (auth, errors, paging, retries, uploads), never per-endpoint helpers."
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace

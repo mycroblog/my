@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A request for an archive of the user's data.
 type: object
 required: [id, state, requested_at]

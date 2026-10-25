@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The supporter plans that take subscriptions, by rank.
 type: object
 required: [items]

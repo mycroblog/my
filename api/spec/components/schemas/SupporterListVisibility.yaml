@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
   §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;

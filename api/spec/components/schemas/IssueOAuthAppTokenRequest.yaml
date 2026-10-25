@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The scope of the tokens of an app for the authenticated user.
 type: object
 properties:

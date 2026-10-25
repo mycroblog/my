@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An appeal of an action on the user's own account.
 type: object
 required: [text]

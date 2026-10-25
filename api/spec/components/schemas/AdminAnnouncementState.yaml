@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `draft`: no user sees it. `published`: every local user sees it within its window.
   `withdrawn`: taken down for good.

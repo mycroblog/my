@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A supporter plan that takes subscriptions. The name and the description are written by
   the administrators in any language; render them with `dir="auto"`.

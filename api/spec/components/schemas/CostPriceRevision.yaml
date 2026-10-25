@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A price of a cost item for its payments on or after `effective_on`, until a later
   revision; of revisions with the same date, the last recorded wins.

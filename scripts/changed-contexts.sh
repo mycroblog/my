@@ -21,6 +21,7 @@
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
+#   mykit   pkg/mykit, the Go client library, a module of its own (mykit:check)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
@@ -28,7 +29,7 @@
 # and web), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
-ALL=(docs go i18n api ui web docker shell schema agentkit)
+ALL=(docs go i18n api ui web docker shell schema agentkit mykit)
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -113,6 +114,16 @@ classify() {
       select_contexts shell
       return
       ;;
+    # pkg/mykit is a Go module of its own too (ADR-0093). Its generated client comes from the spec, and the license
+    # scope check of the api context reads its SPDX headers, which mykit:check runs as well.
+    pkg/mykit/*.md)
+      select_contexts docs
+      return
+      ;;
+    pkg/mykit/*)
+      select_contexts mykit
+      return
+      ;;
   esac
   case "$path" in
     *.md | .markdownlint-cli2.jsonc | docs/* | scripts/adr-new.sh | scripts/adr-numbers.sh)
@@ -148,8 +159,14 @@ classify() {
       ;;
   esac
   case "$path" in
-    internal/interface/clientapi/* | app/web/src/lib/api/* | scripts/generate.sh | scripts/api-spec-check.sh)
+    internal/interface/clientapi/* | app/web/src/lib/api/* | scripts/generate.sh | scripts/api-spec-check.sh | scripts/license-scope-check.sh)
       select_contexts api
+      known=1
+      ;;
+  esac
+  case "$path" in
+    scripts/mykit-mod-check.sh)
+      select_contexts mykit
       known=1
       ;;
   esac
@@ -193,10 +210,10 @@ while IFS= read -r path; do
   [ -n "$path" ] && classify "$path"
 done <<< "$files"
 
-# Dependents: @my/ui is compiled into app/web, the API code is generated into Go and app/web,
+# Dependents: @my/ui is compiled into app/web, the API code is generated into Go, app/web, and pkg/mykit,
 # the Go i18n accessors are Go, and the schema is embedded into Go.
 [ -n "${selected[ui]:-}" ] && select_contexts web
-[ -n "${selected[api]:-}" ] && select_contexts go web
+[ -n "${selected[api]:-}" ] && select_contexts go web mykit
 [ -n "${selected[i18n]:-}" ] && select_contexts go
 
 for c in "${ALL[@]}"; do

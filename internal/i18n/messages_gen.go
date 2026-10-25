@@ -1586,6 +1586,13 @@ func (l *Localizer) ServerErrorsSelfRelationship() string {
 	return l.format("server:errors.self_relationship", nil)
 }
 
+// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes.
+//
+//	en: The service closure does not allow that in its current state.
+func (l *Localizer) ServerErrorsServiceClosureState() string {
+	return l.format("server:errors.service_closure.state", nil)
+}
+
 // ServerErrorsServiceUnavailable formats "server:errors.service_unavailable". Error title for HTTP 503 when the server cannot handle the request for now, e.g. another server it needs to reach is not responding.
 //
 //	en: The service is temporarily unavailable. Please try again later.
@@ -2020,6 +2027,20 @@ func (l *Localizer) ServerMailActionSetNewPassword() string {
 	return l.format("server:mail.action.set_new_password", nil)
 }
 
+// ServerMailAdminAccountMovedBody formats "server:mail.admin_account_moved.body". Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account that the moderators of {instance} limit moved to another account. The account it moved to does not get the limit.
+func (l *Localizer) ServerMailAdminAccountMovedBody(instance string) string {
+	return l.format("server:mail.admin_account_moved.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminAccountMovedSubject formats "server:mail.admin_account_moved.subject". Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account limited on {instance} moved to another account
+func (l *Localizer) ServerMailAdminAccountMovedSubject(instance string) string {
+	return l.format("server:mail.admin_account_moved.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminAppealBody formats "server:mail.admin_appeal.body". Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A user of {instance} appealed a moderation action, and the appeal awaits the moderators.
@@ -2417,6 +2438,20 @@ func (l *Localizer) ServerPreviewHeaderAlt(name string) string {
 //	en: {name} (@{handle})
 func (l *Localizer) ServerPreviewTitle(handle string, name string) string {
 	return l.format("server:preview.title", map[string]any{"handle": handle, "name": name})
+}
+
+// ServerPushAccountMoved formats "server:push.account_moved". Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account.
+//
+//	en: {name} moved to another account
+func (l *Localizer) ServerPushAccountMoved(name string) string {
+	return l.format("server:push.account_moved", map[string]any{"name": name})
+}
+
+// ServerPushAdminAccountMoved formats "server:push.admin_account_moved". Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account that the moderators of {instance} limit moved to another account
+func (l *Localizer) ServerPushAdminAccountMoved(instance string) string {
+	return l.format("server:push.admin_account_moved", map[string]any{"instance": instance})
 }
 
 // ServerPushAdminAppeal formats "server:push.admin_appeal". Web Push notification to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none.
