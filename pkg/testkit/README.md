@@ -31,6 +31,17 @@ name can be used again; `SetUnreachable` makes every call wait for its context. 
 nightly), or a running emulator at `TEST_AWS_ENDPOINT`; otherwise the test is skipped. `TEST_AWS_REQUIRED` makes a
 missing Docker fail the tests. The package's `TestMain` calls `os.Exit(awstest.Main(m))`.
 
+## A whole server in the test process
+
+testkit holds no server: it depends only on application ports and domain types, never on the composition root
+(depguard, [ADR-0002](../../docs/adr/0002-modular-monolith-hexagonal.md)). The tests that drive the whole server over
+HTTP, such as the integration tests of the client library in `pkg/mykit/integration`
+([ADR-0093](../../docs/adr/0093-api-client-library-mykit.md) §8), use `internal/platform/platformtest`:
+`platformtest.Start(t, opts)` builds the App on a new SQLite database with the schema applied and serves it with
+`platform.Serve` on a free local port until the test ends, `User` creates a user, and `AuthorizationCode` issues the
+code that the web client's authorization page would, for the client to exchange at `POST /oauth/token`.
+`Options.AccountLimit` shrinks the client API's per-account rate limit to reach a 429 in a few requests.
+
 ## Federation fixtures
 
 `fixtures/federation/` holds AS2 documents (activities, objects, actors) that other implementations send, for the

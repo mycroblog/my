@@ -293,6 +293,10 @@ type AppOptions struct {
 	// the fake adapter of internal/adapter/payment/fake.
 	PaymentProvider supporters.PaymentProvider
 	SupporterSync   supporters.Syncer
+	// ClientAPIAccountLimit, when its Max is set, replaces the client API's per-account rate
+	// limit (clientapi.AccountLimit). Tests only, to reach the limit in a few requests and a
+	// short window (pkg/mykit/integration).
+	ClientAPIAccountLimit kernel.Limit
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -433,7 +437,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpMediaHTTP()
-	a.setUpClientAPI(cfg, opts.Version)
+	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
 	return a, nil
 }

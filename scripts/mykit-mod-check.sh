@@ -6,13 +6,16 @@
 # users' dependency graph never takes in the server's. go.mod lists the indirect requirements too, so a dependency
 # that pulls the server in fails as well. The libraries' own modules (github.com/mycroblog/my/pkg/mykit and
 # .../pkg/mybot) are not the server's: mybot requires mykit, and replaces it with its sibling directory so that both
-# are built from the same commit; no other replacement is allowed. It reads go.mod only, offline.
+# are built from the same commit; no other replacement is allowed. It also fails when the root go.mod (the server
+# module) names pkg/mykit, pkg/mybot, or a test module of theirs (pkg/*/integration), which only those test modules
+# join with the server. It reads the go.mod files only, offline.
 #
-#   scripts/mykit-mod-check.sh [GO_MOD]   (default: pkg/mykit/go.mod)
+#   scripts/mykit-mod-check.sh [GO_MOD [ROOT_GO_MOD]]   (default: pkg/mykit/go.mod and go.mod)
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 gomod="${1:-$root/pkg/mykit/go.mod}"
+rootmod="${2:-$root/go.mod}"
 server=github.com/mycroblog/my
 libraries=("$server/pkg/mykit" "$server/pkg/mybot")
 
@@ -54,5 +57,14 @@ for p in "${paths[@]}"; do
       ;;
   esac
 done
+# The server module must not take in the libraries (or their test modules) either.
+while IFS= read -r p; do
+  case "$p" in
+    "$server"/pkg/mykit | "$server"/pkg/mykit/* | "$server"/pkg/mybot | "$server"/pkg/mybot/*)
+      echo "$rootmod names $p: the server module must not require the client libraries; only their test modules join them (ADR-0093 §1)" >&2
+      failed=1
+      ;;
+  esac
+done < <(go mod edit -json "$rootmod" | paths_of | sort -u)
 [ "$failed" -eq 0 ] || exit 1
-echo "$module does not depend on $server"
+echo "$module does not depend on $server, which does not require it"
