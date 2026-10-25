@@ -41,6 +41,33 @@ func (e AIUsage) Valid() bool {
 	}
 }
 
+// Defines values for AccountMoveOutcome.
+const (
+	AccountMoveOutcomeBlockedBy   AccountMoveOutcome = "blocked_by"
+	AccountMoveOutcomeBlocking    AccountMoveOutcome = "blocking"
+	AccountMoveOutcomeDomainMuted AccountMoveOutcome = "domain_muted"
+	AccountMoveOutcomeFollowed    AccountMoveOutcome = "followed"
+	AccountMoveOutcomeRequested   AccountMoveOutcome = "requested"
+)
+
+// Valid indicates whether the value is a known member of the AccountMoveOutcome enum.
+func (e AccountMoveOutcome) Valid() bool {
+	switch e {
+	case AccountMoveOutcomeBlockedBy:
+		return true
+	case AccountMoveOutcomeBlocking:
+		return true
+	case AccountMoveOutcomeDomainMuted:
+		return true
+	case AccountMoveOutcomeFollowed:
+		return true
+	case AccountMoveOutcomeRequested:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
@@ -2071,6 +2098,8 @@ func (e ModerationAppealState) Valid() bool {
 
 // Defines values for NotificationType.
 const (
+	NotificationTypeAccountMoved               NotificationType = "account_moved"
+	NotificationTypeAdminAccountMoved          NotificationType = "admin_account_moved"
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
@@ -2098,6 +2127,10 @@ const (
 // Valid indicates whether the value is a known member of the NotificationType enum.
 func (e NotificationType) Valid() bool {
 	switch e {
+	case NotificationTypeAccountMoved:
+		return true
+	case NotificationTypeAdminAccountMoved:
+		return true
 	case NotificationTypeAdminAppeal:
 		return true
 	case NotificationTypeAdminCustomEmojiRequest:
@@ -3247,6 +3280,9 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
+	// Moved An account, as clients show it (FR-006).
+	Moved *Account `json:"moved,omitempty"`
+
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
@@ -3288,6 +3324,28 @@ type AccountFieldSource struct {
 	// Value The value as plain text, at most 255 characters.
 	Value string `json:"value"`
 }
+
+// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+// its posts stay where they are.
+type AccountMove struct {
+	// Outcome What became of the user's follow of the moved account, for an `account_moved` only:
+	// `followed`, the user follows `target` instead; `requested`, the user's follow of
+	// `target` awaits its approval instead; and the user still follows the moved account
+	// when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+	// the user mutes the server of `target` (`domain_muted`).
+	Outcome *AccountMoveOutcome `json:"outcome,omitempty"`
+
+	// Target An account, as clients show it (FR-006).
+	Target *Account `json:"target,omitempty"`
+}
+
+// AccountMoveOutcome What became of the user's follow of the moved account, for an `account_moved` only:
+// `followed`, the user follows `target` instead; `requested`, the user's follow of
+// `target` awaits its approval instead; and the user still follows the moved account
+// when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+// the user mutes the server of `target` (`domain_muted`).
+type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
@@ -6029,6 +6087,9 @@ type CredentialAccount struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
+	// Moved An account, as clients show it (FR-006).
+	Moved *Account `json:"moved,omitempty"`
+
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
@@ -7565,6 +7626,11 @@ type Notification struct {
 	// Account An account, as clients show it (FR-006).
 	Account *Account `json:"account,omitempty"`
 
+	// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+	// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+	// its posts stay where they are.
+	AccountMove *AccountMove `json:"account_move,omitempty"`
+
 	// AppealId The appeal that an `admin_appeal` is about.
 	AppealId *Id `json:"appeal_id,omitempty"`
 
@@ -7659,6 +7725,11 @@ type Notification struct {
 	// (the administrators retired the plan; the subscription ends with its period). Each is
 	// sent once per change of the subscription. A client must not lead from them to
 	// subscribing or paying where it offers no way to subscribe.
+	// `account_moved` tells that an account that the user followed (`account`) moved to another
+	// one; its `account_move` carries the target and what became of the user's follow. It is
+	// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+	// account that the moderators limit moved, and the target does not get the limit; its
+	// `account_move` carries the target, and it has no `account`.
 	Type NotificationType `json:"type"`
 }
 
@@ -7726,6 +7797,11 @@ type NotificationPage struct {
 // (the administrators retired the plan; the subscription ends with its period). Each is
 // sent once per change of the subscription. A client must not lead from them to
 // subscribing or paying where it offers no way to subscribe.
+// `account_moved` tells that an account that the user followed (`account`) moved to another
+// one; its `account_move` carries the target and what became of the user's follow. It is
+// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+// account that the moderators limit moved, and the target does not get the limit; its
+// `account_move` carries the target, and it has no `account`.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
