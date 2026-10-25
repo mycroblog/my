@@ -197,6 +197,9 @@ SELECT l.subscription_id FROM supporter_live_subscriptions l
 JOIN supporter_subscription_heads h ON h.subscription_id = l.subscription_id
 WHERE h.plan_id = ? ORDER BY l.subscription_id;
 
+-- name: ListLiveSupporterSubscriptionIDs :many
+SELECT subscription_id FROM supporter_live_subscriptions ORDER BY subscription_id;
+
 -- name: CountSupporterLiveSubscriptions :one
 SELECT COUNT(*) FROM supporter_live_subscriptions;
 

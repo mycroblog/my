@@ -15,7 +15,7 @@ Web クライアントは、スタッフの画面を 2 つに分けます（[ADR
 | 区分 | 権限 | 画面 |
 | --- | --- | --- |
 | モデレーション（`/moderation`） | `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit` | 通報（`/moderation/reports`）・異議申し立て（`/moderation/appeals`）・アカウント（`/moderation/accounts`）・登録の審査（`/moderation/registrations`）・登録の拒否リスト（`/moderation/signup-blocks`）・招待（`/moderation/invites`）・ドメインへの処分（`/moderation/domain-actions`）・連合先（`/moderation/instances`）・監査ログ（`/moderation/audit-log`） |
-| サーバー管理（`/admin`） | `manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps` | サーバーの設定（`/admin/settings`）・ルール（`/admin/rules`）・規約とポリシー（`/admin/documents`）・ジョブのキューと失敗したジョブ（`/admin/jobs`）・カスタム絵文字（`/admin/custom-emojis`）・お知らせ（`/admin/announcements`）・Webhook（`/admin/webhooks`）・費用と利用料金の取り込み（`/admin/finance`、`manage_finance`）。`manage_login_recovery`（ログインの回復: 二要素認証の解除とパスワードリセットのリンクの発行）はアカウントのページ（`/moderation/accounts/{id}`、`manage_accounts` も要る）の区画に出ます |
+| サーバー管理（`/admin`） | `manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`・`manage_service_closure` | サーバーの設定（`/admin/settings`）・ルール（`/admin/rules`）・規約とポリシー（`/admin/documents`）・ジョブのキューと失敗したジョブ（`/admin/jobs`）・カスタム絵文字（`/admin/custom-emojis`）・お知らせ（`/admin/announcements`）・Webhook（`/admin/webhooks`）・費用と利用料金の取り込み（`/admin/finance`、`manage_finance`）。`manage_login_recovery`（ログインの回復: 二要素認証の解除とパスワードリセットのリンクの発行）はアカウントのページ（`/moderation/accounts/{id}`、`manage_accounts` も要る）の区画に出ます |
 
 - 「モデレーション」のバッジは、未解決の通報・承認待ちの登録・審査待ちの異議申し立ての合計です（[モデレーターへの通知と未対応の件数](#モデレーターへの通知と未対応の件数)）。「管理」には件数を出しません。
 - 組み込みの `moderator` は `manage_reports`・`manage_accounts`・`view_audit` だけを持ち、「管理」は出ません。ドメインへの処分と連合先の画面（`manage_domains`）も出ないので、
@@ -137,6 +137,10 @@ my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
   リンクは 1 時間・1 回だけ使え、その後にパスワードがほかの方法で変わると使えなくなります。どちらで発行しても監査ログに `password_reset_link_issued` を記録します。
   リンクを持つ人は誰でもパスワードを設定できるので、本人であることをメールなど別の経路で確かめてから、本人にだけ渡してください。
   新しいパスワードを設定すると、その利用者のすべてのセッションとアプリのトークンが失効します。パスキーと二要素認証はそのまま残ります。
+- `GET /api/v1/admin/accounts/{id}` の `email_suppression` は、ローカルのアカウントの主アドレスへの送信を止めていることを示します（ADR-0086 §5）。
+  `hard_bounce`（宛先が存在しない）は確認のメールを除くすべてのメールを、`complaint`（迷惑メールとしての報告）は通知と告知のメールだけを止めます。パスワードのリセットのメールも止まるので、必要なら上のリンクを発行して渡します。
+  利用者が確認のメールを求めてアドレスを確認し直すと、ハードバウンスの抑止は解けます。
+  利用者がメールボックスを直したなど、送ってよいと確かめたときは、`POST /api/v1/admin/accounts/{id}/email_suppression/lift`（権限 `manage_accounts`）で解除します。監査ログに `email_suppression_lifted` を記録します。
 - 検索は 1 ページを埋めるのに 400 アカウントまで読みます。条件に合うアカウントが少ないと、短いページや空のページにも `next_cursor` が付くので、続けて読みます。
 
 ## ドメイン単位の処分
@@ -296,7 +300,7 @@ my admin report reopen <report id>
 
 | 対象の種類 | 操作 |
 | --- | --- |
-| `account` | `account_action_issued`・`account_action_lifted`（アカウントへの処分の発行・解除）・`account_deletion_cancelled`（`ban` の異議申し立てを覆したことによる削除の取り消し）・`revealed_private_data`（IP アドレスとメールアドレスの表示）・`two_factor_disabled`（二要素認証の解除）・`password_reset_link_issued`（パスワードリセットのリンクの発行）・`account_moved`（制限中のローカルのアカウントの、ローカルのアカウントへの移転。制限は移転先に引き継がないので、移転先に付けるかを決める）・`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
+| `account` | `account_action_issued`・`account_action_lifted`（アカウントへの処分の発行・解除）・`account_deletion_cancelled`（`ban` の異議申し立てを覆したことによる削除の取り消し）・`revealed_private_data`（IP アドレスとメールアドレスの表示）・`two_factor_disabled`（二要素認証の解除）・`password_reset_link_issued`（パスワードリセットのリンクの発行）・`email_suppression_lifted`（メールの抑止の解除）・`account_moved`（制限中のローカルのアカウントの、ローカルのアカウントへの移転。制限は移転先に引き継がないので、移転先に付けるかを決める）・`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
 | `status` | `status_refetch_queued`（リモートの投稿の取り直し。対象の名前は投稿の URI） |
 | `domain` | `domain_action_issued`・`domain_action_lifted`（ドメイン単位の処分の発行・解除）・`domain_statuses_refetch_queued`（ドメインのアカウントの投稿の取り直し） |
 | `report` | `report_assigned`・`report_unassigned`・`report_resolved`・`report_reopened`・`report_note_added`（通報の担当・担当の解除・解決・再開・メモ） |
@@ -319,6 +323,7 @@ my admin report reopen <report id>
 | `payment_provider` | `payment_reconcile_queued`（決済の事業者との照合を手で始めた。対象の名前は事業者の名前） |
 | `oauth_client` | `oauth_client_disabled`・`oauth_client_enabled`（OAuth のクライアントの無効化と取り消し。無効化は全トークンを失効させる。対象の名前はクライアントの名前と `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`・`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否と取り消し。拒否はそのホストのクライアントのトークンを失効させる。対象の名前はホスト） |
+| `instance` | `service_closure_announced`・`service_closure_withdrawn`・`service_closure_closed`・`service_closure_delivery_completed`（サービスの終了の予告・日付の変更、予告の取り消し、クローズ、クローズの配送の完了。対象の名前は `service_closure`） |
 
 一覧は、対象が今もあるかを示します。保持期間を過ぎて消えたアカウント・通報・異議申し立て・登録の拒否と、削除されたロール・カスタム絵文字・webhook は、記録時の名前だけを出し、画面へのリンクを出しません。
 

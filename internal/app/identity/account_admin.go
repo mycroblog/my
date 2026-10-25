@@ -142,6 +142,9 @@ type AdminAccountDetail struct {
 	// it is confirmed; the address itself is Reveal's.
 	HasEmail      bool
 	EmailVerified bool
+	// EmailSuppression is the suppression of the primary address (ADR-0086 §5); nil when it
+	// is not suppressed.
+	EmailSuppression *identity.EmailSuppression
 	// Roles are the user's roles, highest position first.
 	Roles []identity.Role
 	// TwoFactorEnabled reports whether the user signs in with two-factor authentication.
@@ -492,10 +495,17 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 	case !errors.Is(err, ErrNotFound):
 		return AdminAccountDetail{}, err
 	}
-	_, verified, err := repo.FindPrimaryEmail(ctx, a.UserID)
+	email, verified, err := repo.FindPrimaryEmail(ctx, a.UserID)
 	switch {
 	case err == nil:
 		out.HasEmail, out.EmailVerified = true, verified
+		sup, ok, err := findSuppression(ctx, repo, email.ID)
+		if err != nil {
+			return AdminAccountDetail{}, err
+		}
+		if ok {
+			out.EmailSuppression = &sup
+		}
 	case !errors.Is(err, ErrNotFound):
 		return AdminAccountDetail{}, err
 	}

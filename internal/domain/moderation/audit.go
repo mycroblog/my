@@ -95,6 +95,9 @@ const (
 	// AuditTargetOAuthClientHost is a host whose Client ID Metadata Documents an administrator
 	// denied (ADR-0090 §1); its ID and its label are the host.
 	AuditTargetOAuthClientHost AuditTargetKind = "oauth_client_host"
+	// AuditTargetInstance is the instance itself, for its service closure (ADR-0088 §1); its ID
+	// and its label are "service_closure".
+	AuditTargetInstance AuditTargetKind = "instance"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -103,7 +106,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetCustomEmoji, AuditTargetWebhook, AuditTargetAnnouncement, AuditTargetInvite, AuditTargetRelay,
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
-	AuditTargetOAuthClient, AuditTargetOAuthClientHost,
+	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -185,6 +188,9 @@ const (
 	// AuditPasswordResetLinkIssued: an administrator issued a password reset link for the user
 	// of a local account (user_tokens, purpose password_reset).
 	AuditPasswordResetLinkIssued AuditAction = "password_reset_link_issued"
+	// AuditEmailSuppressionLifted: a moderator lifted the suppression of the primary email
+	// address of a local account (email_suppression_lifts, reason moderator).
+	AuditEmailSuppressionLifted AuditAction = "email_suppression_lifted"
 	// AuditAccountMoved: a local account that moderation limits moved to another local account,
 	// which does not inherit the limit (account_moves, ADR-0089); the user who moved is the
 	// actor, and the entry tells the moderators to decide on the target.
@@ -303,6 +309,15 @@ const (
 	// the denial (oauth_client_host_denials and oauth_client_host_denial_lifts, ADR-0090 §1).
 	AuditOAuthClientHostDenied  AuditAction = "oauth_client_host_denied"
 	AuditOAuthClientHostAllowed AuditAction = "oauth_client_host_allowed"
+	// AuditServiceClosureAnnounced, AuditServiceClosureWithdrawn, and AuditServiceClosureClosed:
+	// a holder of manage_service_closure announced the closure of the service or changed its
+	// dates, withdrew the announcement, or closed the server (service_closure_events, ADR-0088
+	// §1). AuditServiceClosureDeliveryCompleted: the server recorded that the Delete of every
+	// local account was delivered.
+	AuditServiceClosureAnnounced         AuditAction = "service_closure_announced"
+	AuditServiceClosureWithdrawn         AuditAction = "service_closure_withdrawn"
+	AuditServiceClosureClosed            AuditAction = "service_closure_closed"
+	AuditServiceClosureDeliveryCompleted AuditAction = "service_closure_delivery_completed"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -340,6 +355,7 @@ var auditActions = []struct {
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
+	{AuditEmailSuppressionLifted, AuditTargetAccount},
 	{AuditAccountMoved, AuditTargetAccount},
 	{AuditCustomEmojiCreated, AuditTargetCustomEmoji},
 	{AuditCustomEmojiImageReplaced, AuditTargetCustomEmoji},
@@ -390,6 +406,10 @@ var auditActions = []struct {
 	{AuditOAuthClientEnabled, AuditTargetOAuthClient},
 	{AuditOAuthClientHostDenied, AuditTargetOAuthClientHost},
 	{AuditOAuthClientHostAllowed, AuditTargetOAuthClientHost},
+	{AuditServiceClosureAnnounced, AuditTargetInstance},
+	{AuditServiceClosureWithdrawn, AuditTargetInstance},
+	{AuditServiceClosureClosed, AuditTargetInstance},
+	{AuditServiceClosureDeliveryCompleted, AuditTargetInstance},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

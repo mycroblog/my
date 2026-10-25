@@ -31,6 +31,8 @@ type Deps struct {
 	// Documents renders the document texts (the terms of service and the privacy policy) to
 	// HTML; nil publishes no documents.
 	Documents DocumentRenderer
+	// ClosureCounts counts what the closure of the service ends, for its checks; nil counts 0.
+	ClosureCounts ClosureCounts
 }
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to

@@ -18,6 +18,28 @@ type UserPreferences interface {
 	Preferences(ctx context.Context, userID string) (appidentity.UserPreferences, error)
 	// UpdatePreferences fails with a *appidentity.PreferenceError for invalid input.
 	UpdatePreferences(ctx context.Context, userID string, in appidentity.PreferencesUpdate) (appidentity.UserPreferences, error)
+	// PrimaryEmailSuppression returns the suppression of the user's primary address (ADR-0086
+	// §5) and whether it is suppressed.
+	PrimaryEmailSuppression(ctx context.Context, userID string) (identity.EmailSuppression, bool, error)
+}
+
+// newEmailSuppression presents a suppression; nil for an address that is not suppressed.
+func newEmailSuppression(sup identity.EmailSuppression, ok bool) *EmailSuppression {
+	if !ok {
+		return nil
+	}
+	return &EmailSuppression{Kind: EmailSuppressionKind(sup.Kind), Since: sup.Since.UTC()}
+}
+
+// preferencesOf presents the preferences p of userID with the suppression of their address.
+func (s *Server) preferencesOf(ctx context.Context, userID string, p appidentity.UserPreferences) (Preferences, error) {
+	out := newPreferences(p)
+	sup, ok, err := s.o.Preferences.PrimaryEmailSuppression(ctx, userID)
+	if err != nil {
+		return Preferences{}, fmt.Errorf("clientapi: the email suppression of %s: %w", userID, err)
+	}
+	out.EmailSuppression = newEmailSuppression(sup, ok)
+	return out, nil
 }
 
 func newPreferences(p appidentity.UserPreferences) Preferences {
@@ -43,8 +65,12 @@ func (s *Server) GetPreferences(ctx context.Context, _ GetPreferencesRequestObje
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the preferences of %s: %w", v.UserID, err)
 	}
+	body, err := s.preferencesOf(ctx, v.UserID, p)
+	if err != nil {
+		return nil, err
+	}
 	cache := cacheNoStore
-	return GetPreferences200JSONResponse{Body: newPreferences(p), Headers: GetPreferences200ResponseHeaders{CacheControl: &cache}}, nil
+	return GetPreferences200JSONResponse{Body: body, Headers: GetPreferences200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // UpdatePreferences serves PATCH /api/v1/preferences.
@@ -86,6 +112,10 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update the preferences of %s: %w", v.UserID, err)
 	}
+	body, err := s.preferencesOf(ctx, v.UserID, p)
+	if err != nil {
+		return nil, err
+	}
 	cache := cacheNoStore
-	return UpdatePreferences200JSONResponse{Body: newPreferences(p), Headers: UpdatePreferences200ResponseHeaders{CacheControl: &cache}}, nil
+	return UpdatePreferences200JSONResponse{Body: body, Headers: UpdatePreferences200ResponseHeaders{CacheControl: &cache}}, nil
 }

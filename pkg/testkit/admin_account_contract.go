@@ -50,6 +50,7 @@ func AdminAccountContract(t *testing.T, newHarness AdminAccountFactory) {
 		{"ShowsTheDetails", adminAccountDetails},
 		{"RevealsAndAudits", adminAccountReveals},
 		{"DisablesTwoFactorAndAudits", adminAccountDisablesTwoFactor},
+		{"LiftsEmailSuppressionsAndAudits", adminAccountLiftsEmailSuppressions},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newAdminAccountEnv(t, newHarness)) })

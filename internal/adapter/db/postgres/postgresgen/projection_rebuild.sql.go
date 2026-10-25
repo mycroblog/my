@@ -50,6 +50,15 @@ func (q *Queries) DeleteAllDomainRestrictions(ctx context.Context) error {
 	return err
 }
 
+const deleteAllEmailSuppressions = `-- name: DeleteAllEmailSuppressions :exec
+DELETE FROM email_suppressions
+`
+
+func (q *Queries) DeleteAllEmailSuppressions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteAllEmailSuppressions)
+	return err
+}
+
 const deleteAllFeedAuthorRestrictions = `-- name: DeleteAllFeedAuthorRestrictions :exec
 DELETE FROM feed_author_restrictions
 `
@@ -389,6 +398,29 @@ WHERE NOT EXISTS (SELECT 1 FROM cost_item_cancellations c WHERE c.cost_item_id =
 // canceled, with its newest label revision and end change (no end without one).
 func (q *Queries) RebuildCostItemHeads(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, rebuildCostItemHeads)
+	return err
+}
+
+const rebuildEmailSuppressions = `-- name: RebuildEmailSuppressions :exec
+INSERT INTO email_suppressions (email_address_id, kind, failure_id)
+SELECT f.email_address_id, f.kind, f.id FROM email_delivery_failures f
+WHERE NOT EXISTS (
+    SELECT 1 FROM email_suppression_lifts l1 WHERE l1.email_address_id = f.email_address_id AND l1.lifted_at >= f.occurred_at)
+  AND (f.kind = 'hard_bounce' OR NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures h WHERE h.email_address_id = f.email_address_id AND h.kind = 'hard_bounce'
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l2 WHERE l2.email_address_id = h.email_address_id AND l2.lifted_at >= h.occurred_at)))
+  AND NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures o WHERE o.email_address_id = f.email_address_id AND o.kind = f.kind
+      AND (o.occurred_at < f.occurred_at OR (o.occurred_at = f.occurred_at AND o.id < f.id))
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l3 WHERE l3.email_address_id = o.email_address_id AND l3.lifted_at >= o.occurred_at))
+`
+
+// The rule of email_suppressions (data-model 4.1): of the failures of an address after its last
+// lift, the earliest hard bounce, or the earliest complaint when there is no hard bounce.
+func (q *Queries) RebuildEmailSuppressions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, rebuildEmailSuppressions)
 	return err
 }
 

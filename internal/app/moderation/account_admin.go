@@ -28,6 +28,7 @@ const (
 	AuditRevealedPrivateData     = moderation.AuditRevealedPrivateData
 	AuditTwoFactorDisabled       = moderation.AuditTwoFactorDisabled
 	AuditPasswordResetLinkIssued = moderation.AuditPasswordResetLinkIssued
+	AuditEmailSuppressionLifted  = moderation.AuditEmailSuppressionLifted
 	AuditTargetAccount           = moderation.AuditTargetAccount
 )
 

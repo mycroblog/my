@@ -12,6 +12,13 @@ allOf:
           Whether the primary email address of a local account is verified; omitted when
           it has none.
         type: boolean
+      email_suppression:
+        description: |
+          The suppression of the primary email address of a local account; omitted when it
+          is not suppressed. A moderator lifts it with
+          `POST /admin/accounts/{id}/email_suppression/lift`.
+        allOf:
+          - $ref: ./EmailSuppression.yaml
       two_factor_enabled:
         description: |
           Whether the user of a local account signs in with two-factor authentication;

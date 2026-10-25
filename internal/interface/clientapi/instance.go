@@ -118,6 +118,10 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.Thumbnail, err = s.instanceThumbnail(ctx); err != nil {
 		return nil, err
 	}
+	// The closure of the service while one is announced (FR-808, ADR-0088 §2).
+	if out.Closure, err = s.instanceClosure(ctx); err != nil {
+		return nil, err
+	}
 
 	cache := cachePublic
 	if _, ok := ViewerFrom(ctx); ok {

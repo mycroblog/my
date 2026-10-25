@@ -749,6 +749,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | リレー（§13） | 参加・送信・受信をしない | 受信だけ | 送信だけ（受信は捨てる） | 送受信 |
 
 `off` では、ローカルの Actor・投稿・コレクションがどれも `404` です（`410` にしません）。NodeInfo は `metadata.federationMode` にモードを出します。
+NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`state`。`none`・`announced`・`closed`・`delivery_completed`）と、予告の後は閉鎖日（`closesAt`）と持ち出しの期限（`exportUntil`）を出します（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）。
 
 非同期の inbox は、型を次の流れに対応させます。
 

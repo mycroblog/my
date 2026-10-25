@@ -42,7 +42,7 @@ my admin role grant alice moderator
 my admin role revoke alice moderator
 ```
 
-- 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
+- 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`・`manage_service_closure`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
   `list` は区分ごとの列（`MODERATION`・`SERVER`・`MEMBER`）に出します。Web クライアントは区分ごとに「モデレーション」と「管理」を出し、利用者の機能はどちらにも数えません（[ADR-0058](../adr/0058-moderation-admin-separation.md)、[ADR-0070](../adr/0070-permission-split-emoji-finance.md)、[モデレーション](moderation.md#web-クライアントのモデレーションとサーバー管理)）。
 - 変更は利用者の次の要求から効きます。モデレーター向けの通知は、通知を作るときに権限を持つ人に届きます。
 - 付与と剥奪は監査ログに `role_granted`・`role_revoked`（対象の種類 `role`）で残ります。CLI の操作者は `cli` です（`my admin audit list -target-kind role`）。
@@ -50,6 +50,38 @@ my admin role revoke alice moderator
 - `admin` を持つ最後の 1 人からは剥奪できません（終了コード 1）。先に別の利用者に `admin` を付与します。
 - 管理 API は `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`、`PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}` で、権限 `manage_roles` を要します。
   API では、自分のロールの最も高い `position` より上のロールは付与・剥奪できません（403）。最後の `admin` の剥奪は 409 です。
+
+## サービスの終了の予告
+
+サーバーを閉じるときは、まず終了を予告します（FR-808、[ADR-0088](../adr/0088-service-shutdown-modes.md)）。
+予告の間もサーバーはいつもどおり動き、`GET /api/v1/instance` の `closure` と NodeInfo の `metadata.serviceClosure` が状態と日付を示します。
+
+```sh
+my admin closure announce -closes-at 2027-01-31T15:00:00Z -message "ご利用ありがとうございました。"
+my admin closure announce -closes-at 2027-02-28 -export-until 2027-04-30   # 日付の変更（日付だけなら UTC の 0 時）
+my admin closure status                                                   # 状態と、効いている予定
+my admin closure withdraw                                                 # 予告の取り消し
+```
+
+- `-closes-at` に下限はありません。`-export-until`（データの持ち出しの期限）は `-closes-at` 以後で、省くと閉鎖日の 30 日後です。
+- 予告から閉鎖日までが 30 日より短いと、標準エラーに警告を出します（予告はそのまま記録します）。
+- 日付の変更は新しい予告として記録し、取り消しの後の予告は新しい予告です。サーバーを閉じた後は、予告も取り消しもできません（終了コード 1）。
+- 予告・日付の変更・取り消しは監査ログに `service_closure_announced`・`service_closure_withdrawn`（対象の種類 `instance`）で残ります（`my admin audit list -target-kind instance`）。
+- 管理 API は `GET /api/v1/admin/closure`、`PUT` / `DELETE /api/v1/admin/closure/announcement`、`GET /api/v1/admin/closure/check`、`POST /api/v1/admin/closure/close` で、権限 `manage_service_closure`（組み込みのロールでは `admin` だけ）を要します。
+
+閉鎖日を過ぎたら、サーバーをクローズします（FR-809）。クローズは取り消せません。
+
+```sh
+my admin closure check                                      # クローズで終わるものの点検
+my admin closure close                                      # 点検を示し、y とドメイン名の入力で確かめてクローズ
+my admin closure close -confirm-domain social.example       # 自動化: 質問の代わりにドメイン名を渡す
+```
+
+- `check` と `close` は、ローカルアカウント数・宛先の inbox（既知の shared inbox）の数・送る `Delete` の数の見積もり（その積）・続いているサポーターの加入の数・終わっていない移転（`Move`、[ADR-0089](../adr/0089-account-migration-move.md)）の数・保全（`retention_holds`）のあるアカウントの数を示します。
+  移転が残っているときと保全があるときは、標準エラーに警告を出します。保全のあるアカウントの記録は、データを破棄する前に `my admin account export-moderation` で書き出して保管してください。
+- `close` は、予告がないときと閉鎖日の前には何も聞かずに断ります（終了コード 1）。`y` 以外の答えと、サーバーのドメイン（設定の `host`、大文字と小文字は区別しない）と違う入力でも、何も変えずに終了コード 1 で終わります。
+- クローズは監査ログに `service_closure_closed` で残り、同じトランザクションで、続いているサポーターの加入をすべて終え（理由 `service_closed`）、決済事業者のサブスクリプションをすぐ解約するジョブ（`CancelNow`）を積みます。
+- クローズの後、client API は、自分のアカウントと設定の読み取り・エクスポート（`/exports`、`/csv_exports`）・セッション（`/authorized_apps`）・`GET /instance` と、クローズの状態とジョブのキューの管理の操作だけを通し、ほかは `403`（`/api/v1/problems/service-closed`）で断ります。ストリームは止まり、Web Push は送りません。サインインとパスワードの再設定はできます。
 
 ## Exporting the maintenance page
 

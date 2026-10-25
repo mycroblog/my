@@ -15,6 +15,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   revealed_private_data: "client:admin.audit_log.action.revealed_private_data",
   two_factor_disabled: "client:admin.audit_log.action.two_factor_disabled",
   password_reset_link_issued: "client:admin.audit_log.action.password_reset_link_issued",
+  email_suppression_lifted: "client:admin.audit_log.action.email_suppression_lifted",
   account_moved: "client:admin.audit_log.action.account_moved",
   domain_action_issued: "client:admin.audit_log.action.domain_action_issued",
   domain_action_lifted: "client:admin.audit_log.action.domain_action_lifted",
@@ -90,6 +91,10 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   oauth_client_enabled: "client:admin.audit_log.action.oauth_client_enabled",
   oauth_client_host_denied: "client:admin.audit_log.action.oauth_client_host_denied",
   oauth_client_host_allowed: "client:admin.audit_log.action.oauth_client_host_allowed",
+  service_closure_announced: "client:admin.audit_log.action.service_closure_announced",
+  service_closure_withdrawn: "client:admin.audit_log.action.service_closure_withdrawn",
+  service_closure_closed: "client:admin.audit_log.action.service_closure_closed",
+  service_closure_delivery_completed: "client:admin.audit_log.action.service_closure_delivery_completed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -117,6 +122,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   payment_provider: "client:admin.audit_log.target_kind.payment_provider",
   oauth_client: "client:admin.audit_log.target_kind.oauth_client",
   oauth_client_host: "client:admin.audit_log.target_kind.oauth_client_host",
+  instance: "client:admin.audit_log.target_kind.instance",
 };
 
 /** Who performed an operation without a user's account to show. */

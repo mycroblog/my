@@ -294,86 +294,91 @@ func (e AdminAnnouncementState) Valid() bool {
 
 // Defines values for AdminAuditAction.
 const (
-	AdminAuditActionAccountActionIssued           AdminAuditAction = "account_action_issued"
-	AdminAuditActionAccountActionLifted           AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled      AdminAuditAction = "account_deletion_cancelled"
-	AdminAuditActionAccountMoved                  AdminAuditAction = "account_moved"
-	AdminAuditActionAccountStatusesRefetchQueued  AdminAuditAction = "account_statuses_refetch_queued"
-	AdminAuditActionAnnouncementCreated           AdminAuditAction = "announcement_created"
-	AdminAuditActionAnnouncementPublished         AdminAuditAction = "announcement_published"
-	AdminAuditActionAnnouncementUpdated           AdminAuditAction = "announcement_updated"
-	AdminAuditActionAnnouncementWithdrawn         AdminAuditAction = "announcement_withdrawn"
-	AdminAuditActionAppealOverturned              AdminAuditAction = "appeal_overturned"
-	AdminAuditActionAppealUpheld                  AdminAuditAction = "appeal_upheld"
-	AdminAuditActionBillingImportQueued           AdminAuditAction = "billing_import_queued"
-	AdminAuditActionCostItemCanceled              AdminAuditAction = "cost_item_canceled"
-	AdminAuditActionCostItemCreated               AdminAuditAction = "cost_item_created"
-	AdminAuditActionCostItemEndChanged            AdminAuditAction = "cost_item_end_changed"
-	AdminAuditActionCostItemPriceRevised          AdminAuditAction = "cost_item_price_revised"
-	AdminAuditActionCostItemRelabeled             AdminAuditAction = "cost_item_relabeled"
-	AdminAuditActionCustomEmojiCopied             AdminAuditAction = "custom_emoji_copied"
-	AdminAuditActionCustomEmojiCreated            AdminAuditAction = "custom_emoji_created"
-	AdminAuditActionCustomEmojiDeleted            AdminAuditAction = "custom_emoji_deleted"
-	AdminAuditActionCustomEmojiDisabled           AdminAuditAction = "custom_emoji_disabled"
-	AdminAuditActionCustomEmojiEnabled            AdminAuditAction = "custom_emoji_enabled"
-	AdminAuditActionCustomEmojiImageReplaced      AdminAuditAction = "custom_emoji_image_replaced"
-	AdminAuditActionCustomEmojiRequestApproved    AdminAuditAction = "custom_emoji_request_approved"
-	AdminAuditActionCustomEmojiRequestRejected    AdminAuditAction = "custom_emoji_request_rejected"
-	AdminAuditActionCustomEmojiRequestSubmitted   AdminAuditAction = "custom_emoji_request_submitted"
-	AdminAuditActionCustomEmojiRequestWithdrawn   AdminAuditAction = "custom_emoji_request_withdrawn"
-	AdminAuditActionCustomEmojiUpdated            AdminAuditAction = "custom_emoji_updated"
-	AdminAuditActionDomainActionIssued            AdminAuditAction = "domain_action_issued"
-	AdminAuditActionDomainActionLifted            AdminAuditAction = "domain_action_lifted"
-	AdminAuditActionDomainStatusesRefetchQueued   AdminAuditAction = "domain_statuses_refetch_queued"
-	AdminAuditActionInviteCreated                 AdminAuditAction = "invite_created"
-	AdminAuditActionInviteRevoked                 AdminAuditAction = "invite_revoked"
-	AdminAuditActionOauthClientDisabled           AdminAuditAction = "oauth_client_disabled"
-	AdminAuditActionOauthClientEnabled            AdminAuditAction = "oauth_client_enabled"
-	AdminAuditActionOauthClientHostAllowed        AdminAuditAction = "oauth_client_host_allowed"
-	AdminAuditActionOauthClientHostDenied         AdminAuditAction = "oauth_client_host_denied"
-	AdminAuditActionPasswordResetLinkIssued       AdminAuditAction = "password_reset_link_issued"
-	AdminAuditActionPaymentReconcileQueued        AdminAuditAction = "payment_reconcile_queued"
-	AdminAuditActionRegistrationApproved          AdminAuditAction = "registration_approved"
-	AdminAuditActionRegistrationRejected          AdminAuditAction = "registration_rejected"
-	AdminAuditActionRelayAccepted                 AdminAuditAction = "relay_accepted"
-	AdminAuditActionRelayAdded                    AdminAuditAction = "relay_added"
-	AdminAuditActionRelayFollowed                 AdminAuditAction = "relay_followed"
-	AdminAuditActionRelayRejected                 AdminAuditAction = "relay_rejected"
-	AdminAuditActionRelayRemoved                  AdminAuditAction = "relay_removed"
-	AdminAuditActionRelayUnfollowed               AdminAuditAction = "relay_unfollowed"
-	AdminAuditActionReportAssigned                AdminAuditAction = "report_assigned"
-	AdminAuditActionReportNoteAdded               AdminAuditAction = "report_note_added"
-	AdminAuditActionReportReopened                AdminAuditAction = "report_reopened"
-	AdminAuditActionReportResolved                AdminAuditAction = "report_resolved"
-	AdminAuditActionReportUnassigned              AdminAuditAction = "report_unassigned"
-	AdminAuditActionRevealedPrivateData           AdminAuditAction = "revealed_private_data"
-	AdminAuditActionRoleCreated                   AdminAuditAction = "role_created"
-	AdminAuditActionRoleDeleted                   AdminAuditAction = "role_deleted"
-	AdminAuditActionRoleGranted                   AdminAuditAction = "role_granted"
-	AdminAuditActionRoleRevoked                   AdminAuditAction = "role_revoked"
-	AdminAuditActionRoleUpdated                   AdminAuditAction = "role_updated"
-	AdminAuditActionRuleAdded                     AdminAuditAction = "rule_added"
-	AdminAuditActionRuleMoved                     AdminAuditAction = "rule_moved"
-	AdminAuditActionRuleRetired                   AdminAuditAction = "rule_retired"
-	AdminAuditActionRuleRevised                   AdminAuditAction = "rule_revised"
-	AdminAuditActionSettingChanged                AdminAuditAction = "setting_changed"
-	AdminAuditActionSignupBlockAdded              AdminAuditAction = "signup_block_added"
-	AdminAuditActionSignupBlockLifted             AdminAuditAction = "signup_block_lifted"
-	AdminAuditActionStatusRefetchQueued           AdminAuditAction = "status_refetch_queued"
-	AdminAuditActionSupporterPlanCreated          AdminAuditAction = "supporter_plan_created"
-	AdminAuditActionSupporterPlanRetired          AdminAuditAction = "supporter_plan_retired"
-	AdminAuditActionSupporterPlanRevised          AdminAuditAction = "supporter_plan_revised"
-	AdminAuditActionSupporterProgramDisabled      AdminAuditAction = "supporter_program_disabled"
-	AdminAuditActionSupporterProgramEnabled       AdminAuditAction = "supporter_program_enabled"
-	AdminAuditActionSupporterSubscriptionCanceled AdminAuditAction = "supporter_subscription_canceled"
-	AdminAuditActionTextChanged                   AdminAuditAction = "text_changed"
-	AdminAuditActionTwoFactorDisabled             AdminAuditAction = "two_factor_disabled"
-	AdminAuditActionWebhookCreated                AdminAuditAction = "webhook_created"
-	AdminAuditActionWebhookDeleted                AdminAuditAction = "webhook_deleted"
-	AdminAuditActionWebhookDisabled               AdminAuditAction = "webhook_disabled"
-	AdminAuditActionWebhookEnabled                AdminAuditAction = "webhook_enabled"
-	AdminAuditActionWebhookSecretRotated          AdminAuditAction = "webhook_secret_rotated"
-	AdminAuditActionWebhookUpdated                AdminAuditAction = "webhook_updated"
+	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
+	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
+	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
+	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
+	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
+	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
+	AdminAuditActionAnnouncementUpdated             AdminAuditAction = "announcement_updated"
+	AdminAuditActionAnnouncementWithdrawn           AdminAuditAction = "announcement_withdrawn"
+	AdminAuditActionAppealOverturned                AdminAuditAction = "appeal_overturned"
+	AdminAuditActionAppealUpheld                    AdminAuditAction = "appeal_upheld"
+	AdminAuditActionBillingImportQueued             AdminAuditAction = "billing_import_queued"
+	AdminAuditActionCostItemCanceled                AdminAuditAction = "cost_item_canceled"
+	AdminAuditActionCostItemCreated                 AdminAuditAction = "cost_item_created"
+	AdminAuditActionCostItemEndChanged              AdminAuditAction = "cost_item_end_changed"
+	AdminAuditActionCostItemPriceRevised            AdminAuditAction = "cost_item_price_revised"
+	AdminAuditActionCostItemRelabeled               AdminAuditAction = "cost_item_relabeled"
+	AdminAuditActionCustomEmojiCopied               AdminAuditAction = "custom_emoji_copied"
+	AdminAuditActionCustomEmojiCreated              AdminAuditAction = "custom_emoji_created"
+	AdminAuditActionCustomEmojiDeleted              AdminAuditAction = "custom_emoji_deleted"
+	AdminAuditActionCustomEmojiDisabled             AdminAuditAction = "custom_emoji_disabled"
+	AdminAuditActionCustomEmojiEnabled              AdminAuditAction = "custom_emoji_enabled"
+	AdminAuditActionCustomEmojiImageReplaced        AdminAuditAction = "custom_emoji_image_replaced"
+	AdminAuditActionCustomEmojiRequestApproved      AdminAuditAction = "custom_emoji_request_approved"
+	AdminAuditActionCustomEmojiRequestRejected      AdminAuditAction = "custom_emoji_request_rejected"
+	AdminAuditActionCustomEmojiRequestSubmitted     AdminAuditAction = "custom_emoji_request_submitted"
+	AdminAuditActionCustomEmojiRequestWithdrawn     AdminAuditAction = "custom_emoji_request_withdrawn"
+	AdminAuditActionCustomEmojiUpdated              AdminAuditAction = "custom_emoji_updated"
+	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
+	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
+	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
+	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
+	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
+	AdminAuditActionOauthClientDisabled             AdminAuditAction = "oauth_client_disabled"
+	AdminAuditActionOauthClientEnabled              AdminAuditAction = "oauth_client_enabled"
+	AdminAuditActionOauthClientHostAllowed          AdminAuditAction = "oauth_client_host_allowed"
+	AdminAuditActionOauthClientHostDenied           AdminAuditAction = "oauth_client_host_denied"
+	AdminAuditActionPasswordResetLinkIssued         AdminAuditAction = "password_reset_link_issued"
+	AdminAuditActionPaymentReconcileQueued          AdminAuditAction = "payment_reconcile_queued"
+	AdminAuditActionRegistrationApproved            AdminAuditAction = "registration_approved"
+	AdminAuditActionRegistrationRejected            AdminAuditAction = "registration_rejected"
+	AdminAuditActionRelayAccepted                   AdminAuditAction = "relay_accepted"
+	AdminAuditActionRelayAdded                      AdminAuditAction = "relay_added"
+	AdminAuditActionRelayFollowed                   AdminAuditAction = "relay_followed"
+	AdminAuditActionRelayRejected                   AdminAuditAction = "relay_rejected"
+	AdminAuditActionRelayRemoved                    AdminAuditAction = "relay_removed"
+	AdminAuditActionRelayUnfollowed                 AdminAuditAction = "relay_unfollowed"
+	AdminAuditActionReportAssigned                  AdminAuditAction = "report_assigned"
+	AdminAuditActionReportNoteAdded                 AdminAuditAction = "report_note_added"
+	AdminAuditActionReportReopened                  AdminAuditAction = "report_reopened"
+	AdminAuditActionReportResolved                  AdminAuditAction = "report_resolved"
+	AdminAuditActionReportUnassigned                AdminAuditAction = "report_unassigned"
+	AdminAuditActionRevealedPrivateData             AdminAuditAction = "revealed_private_data"
+	AdminAuditActionRoleCreated                     AdminAuditAction = "role_created"
+	AdminAuditActionRoleDeleted                     AdminAuditAction = "role_deleted"
+	AdminAuditActionRoleGranted                     AdminAuditAction = "role_granted"
+	AdminAuditActionRoleRevoked                     AdminAuditAction = "role_revoked"
+	AdminAuditActionRoleUpdated                     AdminAuditAction = "role_updated"
+	AdminAuditActionRuleAdded                       AdminAuditAction = "rule_added"
+	AdminAuditActionRuleMoved                       AdminAuditAction = "rule_moved"
+	AdminAuditActionRuleRetired                     AdminAuditAction = "rule_retired"
+	AdminAuditActionRuleRevised                     AdminAuditAction = "rule_revised"
+	AdminAuditActionServiceClosureAnnounced         AdminAuditAction = "service_closure_announced"
+	AdminAuditActionServiceClosureClosed            AdminAuditAction = "service_closure_closed"
+	AdminAuditActionServiceClosureDeliveryCompleted AdminAuditAction = "service_closure_delivery_completed"
+	AdminAuditActionServiceClosureWithdrawn         AdminAuditAction = "service_closure_withdrawn"
+	AdminAuditActionSettingChanged                  AdminAuditAction = "setting_changed"
+	AdminAuditActionSignupBlockAdded                AdminAuditAction = "signup_block_added"
+	AdminAuditActionSignupBlockLifted               AdminAuditAction = "signup_block_lifted"
+	AdminAuditActionStatusRefetchQueued             AdminAuditAction = "status_refetch_queued"
+	AdminAuditActionSupporterPlanCreated            AdminAuditAction = "supporter_plan_created"
+	AdminAuditActionSupporterPlanRetired            AdminAuditAction = "supporter_plan_retired"
+	AdminAuditActionSupporterPlanRevised            AdminAuditAction = "supporter_plan_revised"
+	AdminAuditActionSupporterProgramDisabled        AdminAuditAction = "supporter_program_disabled"
+	AdminAuditActionSupporterProgramEnabled         AdminAuditAction = "supporter_program_enabled"
+	AdminAuditActionSupporterSubscriptionCanceled   AdminAuditAction = "supporter_subscription_canceled"
+	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
+	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
+	AdminAuditActionWebhookCreated                  AdminAuditAction = "webhook_created"
+	AdminAuditActionWebhookDeleted                  AdminAuditAction = "webhook_deleted"
+	AdminAuditActionWebhookDisabled                 AdminAuditAction = "webhook_disabled"
+	AdminAuditActionWebhookEnabled                  AdminAuditAction = "webhook_enabled"
+	AdminAuditActionWebhookSecretRotated            AdminAuditAction = "webhook_secret_rotated"
+	AdminAuditActionWebhookUpdated                  AdminAuditAction = "webhook_updated"
 )
 
 // Valid indicates whether the value is a known member of the AdminAuditAction enum.
@@ -441,6 +446,8 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
+	case AdminAuditActionEmailSuppressionLifted:
+		return true
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
@@ -502,6 +509,14 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionRuleRetired:
 		return true
 	case AdminAuditActionRuleRevised:
+		return true
+	case AdminAuditActionServiceClosureAnnounced:
+		return true
+	case AdminAuditActionServiceClosureClosed:
+		return true
+	case AdminAuditActionServiceClosureDeliveryCompleted:
+		return true
+	case AdminAuditActionServiceClosureWithdrawn:
 		return true
 	case AdminAuditActionSettingChanged:
 		return true
@@ -578,6 +593,7 @@ const (
 	AdminAuditTargetKindCustomEmoji           AdminAuditTargetKind = "custom_emoji"
 	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
+	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
 	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
 	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
@@ -614,6 +630,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindCustomEmojiRequest:
 		return true
 	case AdminAuditTargetKindDomain:
+		return true
+	case AdminAuditTargetKindInstance:
 		return true
 	case AdminAuditTargetKindInvite:
 		return true
@@ -1627,6 +1645,24 @@ func (e DomainBlockSeverity) Valid() bool {
 	}
 }
 
+// Defines values for EmailSuppressionKind.
+const (
+	EmailSuppressionKindComplaint  EmailSuppressionKind = "complaint"
+	EmailSuppressionKindHardBounce EmailSuppressionKind = "hard_bounce"
+)
+
+// Valid indicates whether the value is a known member of the EmailSuppressionKind enum.
+func (e EmailSuppressionKind) Valid() bool {
+	switch e {
+	case EmailSuppressionKindComplaint:
+		return true
+	case EmailSuppressionKindHardBounce:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FinanceViewerIncome.
 const (
 	FinanceViewerIncomePlans  FinanceViewerIncome = "plans"
@@ -2346,24 +2382,25 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
-	PermissionCreateCustomEmojis  Permission = "create_custom_emojis"
-	PermissionManageAccounts      Permission = "manage_accounts"
-	PermissionManageAnnouncements Permission = "manage_announcements"
-	PermissionManageCustomEmojis  Permission = "manage_custom_emojis"
-	PermissionManageDomains       Permission = "manage_domains"
-	PermissionManageFinance       Permission = "manage_finance"
-	PermissionManageInvites       Permission = "manage_invites"
-	PermissionManageJobs          Permission = "manage_jobs"
-	PermissionManageLoginRecovery Permission = "manage_login_recovery"
-	PermissionManageOauthApps     Permission = "manage_oauth_apps"
-	PermissionManageReports       Permission = "manage_reports"
-	PermissionManageRoles         Permission = "manage_roles"
-	PermissionManageRules         Permission = "manage_rules"
-	PermissionManageSettings      Permission = "manage_settings"
-	PermissionManageSupporters    Permission = "manage_supporters"
-	PermissionManageWebhooks      Permission = "manage_webhooks"
-	PermissionViewAudit           Permission = "view_audit"
-	PermissionViewFinance         Permission = "view_finance"
+	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionManageAccounts       Permission = "manage_accounts"
+	PermissionManageAnnouncements  Permission = "manage_announcements"
+	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
+	PermissionManageDomains        Permission = "manage_domains"
+	PermissionManageFinance        Permission = "manage_finance"
+	PermissionManageInvites        Permission = "manage_invites"
+	PermissionManageJobs           Permission = "manage_jobs"
+	PermissionManageLoginRecovery  Permission = "manage_login_recovery"
+	PermissionManageOauthApps      Permission = "manage_oauth_apps"
+	PermissionManageReports        Permission = "manage_reports"
+	PermissionManageRoles          Permission = "manage_roles"
+	PermissionManageRules          Permission = "manage_rules"
+	PermissionManageServiceClosure Permission = "manage_service_closure"
+	PermissionManageSettings       Permission = "manage_settings"
+	PermissionManageSupporters     Permission = "manage_supporters"
+	PermissionManageWebhooks       Permission = "manage_webhooks"
+	PermissionViewAudit            Permission = "view_audit"
+	PermissionViewFinance          Permission = "view_finance"
 )
 
 // Valid indicates whether the value is a known member of the Permission enum.
@@ -2394,6 +2431,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageRoles:
 		return true
 	case PermissionManageRules:
+		return true
+	case PermissionManageServiceClosure:
 		return true
 	case PermissionManageSettings:
 		return true
@@ -2695,6 +2734,30 @@ func (e ServerHealthStatus) Valid() bool {
 	case ServerHealthStatusOk:
 		return true
 	case ServerHealthStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceClosureState.
+const (
+	ServiceClosureStateAnnounced         ServiceClosureState = "announced"
+	ServiceClosureStateClosed            ServiceClosureState = "closed"
+	ServiceClosureStateDeliveryCompleted ServiceClosureState = "delivery_completed"
+	ServiceClosureStateNone              ServiceClosureState = "none"
+)
+
+// Valid indicates whether the value is a known member of the ServiceClosureState enum.
+func (e ServiceClosureState) Valid() bool {
+	switch e {
+	case ServiceClosureStateAnnounced:
+		return true
+	case ServiceClosureStateClosed:
+		return true
+	case ServiceClosureStateDeliveryCompleted:
+		return true
+	case ServiceClosureStateNone:
 		return true
 	default:
 		return false
@@ -3505,6 +3568,11 @@ type AdminAccountDetail struct {
 	// Actions The newest 20 actions on the account, newest first.
 	Actions []AdminAccountAction `json:"actions"`
 
+	// EmailSuppression The suppression of the primary email address of a local account; omitted when it
+	// is not suppressed. A moderator lifts it with
+	// `POST /admin/accounts/{id}/email_suppression/lift`.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
+
 	// EmailVerified Whether the primary email address of a local account is verified; omitted when
 	// it has none.
 	EmailVerified *bool `json:"email_verified,omitempty"`
@@ -3734,8 +3802,9 @@ type AdminAppealPage struct {
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
-// a new password for the account's user), `account_moved` (a limited local account moved to
-// another local account, which does not inherit the limit). On a `domain`:
+// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+// suppression of the primary email address of the account's user), `account_moved` (a limited
+// local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3783,7 +3852,11 @@ type AdminAppealPage struct {
 // every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 // `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 // tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
-// the host.
+// the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
+// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+// `service_closure`.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -3798,8 +3871,9 @@ type AdminAuditEntry struct {
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
-	// a new password for the account's user), `account_moved` (a limited local account moved to
-	// another local account, which does not inherit the limit). On a `domain`:
+	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+	// suppression of the primary email address of the account's user), `account_moved` (a limited
+	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -3847,7 +3921,11 @@ type AdminAuditEntry struct {
 	// every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 	// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 	// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
-	// the host.
+	// the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
+	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+	// `service_closure`.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -4793,6 +4871,63 @@ type AdminSameIpAccounts struct {
 	Ip       string         `json:"ip"`
 }
 
+// AdminServiceClosure The service closure as its administrators see it (ADR-0088 §1).
+type AdminServiceClosure struct {
+	// AnnouncedAt When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
+	AnnouncedAt *time.Time `json:"announced_at,omitempty"`
+
+	// ChangedAt When the state last changed; omitted for `none`.
+	ChangedAt *time.Time `json:"changed_at,omitempty"`
+
+	// ClosesAt When the server closes; omitted for `none`.
+	ClosesAt *time.Time `json:"closes_at,omitempty"`
+
+	// ExportUntil Until when the users may export their data after the closure; omitted for `none`.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+
+	// Message The operator's message to the users; omitted when there is none.
+	Message *string `json:"message,omitempty"`
+
+	// ShortNotice Whether the announcement gives the users less than 30 days from `announced_at` to
+	// `closes_at`, which the admin screen and the CLI warn about: the users may not have the
+	// time to export their data and move their accounts. A short notice is allowed.
+	ShortNotice bool `json:"short_notice"`
+
+	// State Where the server is in its closure (ADR-0088 §1):
+	//
+	// - `none`: no closure is announced.
+	// - `announced`: the closure is announced; the server runs as before until it closes.
+	// - `closed`: the server is closed and delivers the deletion of its local accounts to the
+	//   other servers. The users can still sign in and export their data until `export_until`.
+	// - `delivery_completed`: the server is closed and those deliveries have ended.
+	State ServiceClosureState `json:"state"`
+}
+
+// AdminServiceClosureCheck What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+// screen and the CLI show it with the confirmation of the closure.
+type AdminServiceClosureCheck struct {
+	// DeliveryInboxes The shared inboxes known to the server, which each `Delete` goes to.
+	DeliveryInboxes int `json:"delivery_inboxes"`
+
+	// EstimatedDeletes The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
+	EstimatedDeletes int `json:"estimated_deletes"`
+
+	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund.
+	LiveSupporterSubscriptions int `json:"live_supporter_subscriptions"`
+
+	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
+	LocalAccounts int `json:"local_accounts"`
+
+	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers,
+	// ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+	// the admin screen and the CLI warn while it is not 0.
+	PendingMigrations int `json:"pending_migrations"`
+
+	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+	// their records with the CLI before discarding the data of the closed server.
+	RetentionHolds int `json:"retention_holds"`
+}
+
 // AdminSetting An instance setting: its value and what it accepts. Every value is a string in its
 // canonical form, whatever its kind.
 type AdminSetting struct {
@@ -5245,6 +5380,19 @@ type AdminWebhookState string
 // it after the deliveries kept failing, without a success, for 72 hours and 20 attempts.
 type AdminWebhookStateReason string
 
+// AnnounceServiceClosureRequest The schedule of an announcement of the closure of the service.
+type AnnounceServiceClosureRequest struct {
+	// ClosesAt When the server closes. It has no lower bound, so that the server can close at short notice.
+	ClosesAt time.Time `json:"closes_at"`
+
+	// ExportUntil Until when the users may export their data after the closure; not before `closes_at`.
+	// 30 days after `closes_at` when omitted.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+
+	// Message The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none.
+	Message *string `json:"message,omitempty"`
+}
+
 // Announcement An announcement of the server to every local user (FR-726), as the user sees it.
 type Announcement struct {
 	// Content The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
@@ -5514,6 +5662,12 @@ type ChangePasswordRequest struct {
 
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+}
+
+// CloseServiceRequest The confirmation of the closure of the server.
+type CloseServiceRequest struct {
+	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
+	ConfirmDomain string `json:"confirm_domain"`
 }
 
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
@@ -6544,6 +6698,21 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
+// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+// email) stops every email but the verification email that the user asks for; verifying the
+// address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+// notification and announcement emails only.
+type EmailSuppression struct {
+	Kind EmailSuppressionKind `json:"kind"`
+
+	// Since When the failure that started the suppression happened.
+	Since time.Time `json:"since"`
+}
+
+// EmailSuppressionKind defines model for EmailSuppression.Kind.
+type EmailSuppressionKind string
+
 // EnableTotpRequest The setup to enroll and a code of the app that shows it has the secret.
 type EnableTotpRequest struct {
 	// Code The six-digit code that the app shows now.
@@ -6870,6 +7039,11 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// Closure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+	// the server closes; absent when none is announced. Clients show it on every screen with the
+	// way to export the data and to move the account.
+	Closure *InstanceClosure `json:"closure,omitempty"`
+
 	// CommerceDisclosureUrl The web client's page of the commerce disclosures of the supporter plans (`/about/commerce`,
 	// the URL that the operators give the payment provider), which needs no sign-in and shows
 	// `GET /instance/documents/commerce_disclosure`; omitted when the instance has none.
@@ -6977,6 +7151,29 @@ type Instance struct {
 
 	// Version The server version.
 	Version string `json:"version"`
+}
+
+// InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+// the server closes; absent when none is announced. Clients show it on every screen with the
+// way to export the data and to move the account.
+type InstanceClosure struct {
+	// ClosesAt When the server closes; it may have passed already.
+	ClosesAt time.Time `json:"closes_at"`
+
+	// ExportUntil Until when the users may still sign in and export their data after the closure.
+	ExportUntil time.Time `json:"export_until"`
+
+	// Message The operator's message to the users, as plain text; omitted when there is none.
+	Message *string `json:"message,omitempty"`
+
+	// State Where the server is in its closure (ADR-0088 §1):
+	//
+	// - `none`: no closure is announced.
+	// - `announced`: the closure is announced; the server runs as before until it closes.
+	// - `closed`: the server is closed and delivers the deletion of its local accounts to the
+	//   other servers. The users can still sign in and export their data until `export_until`.
+	// - `delivery_completed`: the server is closed and those deliveries have ended.
+	State ServiceClosureState `json:"state"`
 }
 
 // InstanceContact How people reach the instance's operators (the instance settings `contact_account` and
@@ -8107,7 +8304,9 @@ type PaymentStatusWarnings string
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
 // member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-// `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
+// `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+// of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
+// admin role by default, ADR-0088). The others guard no client API operation
 // yet.
 type Permission string
 
@@ -8231,6 +8430,11 @@ type Preferences struct {
 	// primary address. Off for a new user.
 	EmailModeratorNotifications bool `json:"email_moderator_notifications"`
 
+	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
+	// After a `hard_bounce`, the user asks for the verification email again to show that the
+	// address works.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
+
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale string `json:"locale"`
 
@@ -8344,6 +8548,19 @@ type PreviewDomainBlockImportRequest struct {
 //     deleted; `reason` says why.
 //   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
 //     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
+//     allow the operation: withdrawing an announcement when none is in effect, announcing the
+//     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
+//     server whose closure is not announced or whose `closes_at` has not come
+//     (`POST /admin/closure/close`).
+//   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+//     server serves only the operations with which the users take their data away: their own
+//     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
+//     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
+//     (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
+//     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
+//     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
 //   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
@@ -8778,6 +8995,15 @@ type ServerHealth struct {
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
 // schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
 type ServerHealthStatus string
+
+// ServiceClosureState Where the server is in its closure (ADR-0088 §1):
+//
+//   - `none`: no closure is announced.
+//   - `announced`: the closure is announced; the server runs as before until it closes.
+//   - `closed`: the server is closed and delivers the deletion of its local accounts to the
+//     other servers. The users can still sign in and export their data until `export_until`.
+//   - `delivery_completed`: the server is closed and those deliveries have ended.
+type ServiceClosureState string
 
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
@@ -10662,6 +10888,12 @@ type OverturnAppealJSONRequestBody = DecideAppealRequest
 // UpholdAppealJSONRequestBody defines body for UpholdAppeal for application/json ContentType.
 type UpholdAppealJSONRequestBody = DecideAppealRequest
 
+// AnnounceServiceClosureJSONRequestBody defines body for AnnounceServiceClosure for application/json ContentType.
+type AnnounceServiceClosureJSONRequestBody = AnnounceServiceClosureRequest
+
+// CloseServiceJSONRequestBody defines body for CloseService for application/json ContentType.
+type CloseServiceJSONRequestBody = CloseServiceRequest
+
 // CreateCostItemJSONRequestBody defines body for CreateCostItem for application/json ContentType.
 type CreateCostItemJSONRequestBody = CostItemCreateRequest
 
@@ -10940,6 +11172,9 @@ type ServerInterface interface {
 	// CreateAccountAction Take a moderation action on an account
 	// (POST /admin/accounts/{id}/actions)
 	CreateAccountAction(w http.ResponseWriter, r *http.Request, id AdminAccountId)
+	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+	// (POST /admin/accounts/{id}/email_suppression/lift)
+	LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 	// (POST /admin/accounts/{id}/password_reset_link)
 	IssueAdminAccountPasswordResetLink(w http.ResponseWriter, r *http.Request, id AdminAccountId)
@@ -11000,6 +11235,21 @@ type ServerInterface interface {
 	// RunBillingImport Import a provider's usage charges now
 	// (POST /admin/billing_imports/{source}/runs)
 	RunBillingImport(w http.ResponseWriter, r *http.Request, source BillingSourceName)
+	// GetAdminServiceClosure Read the service closure
+	// (GET /admin/closure)
+	GetAdminServiceClosure(w http.ResponseWriter, r *http.Request)
+	// WithdrawServiceClosure Withdraw the announcement of the closure
+	// (DELETE /admin/closure/announcement)
+	WithdrawServiceClosure(w http.ResponseWriter, r *http.Request)
+	// AnnounceServiceClosure Announce the closure of the service
+	// (PUT /admin/closure/announcement)
+	AnnounceServiceClosure(w http.ResponseWriter, r *http.Request)
+	// GetAdminServiceClosureCheck Check the server before its closure
+	// (GET /admin/closure/check)
+	GetAdminServiceClosureCheck(w http.ResponseWriter, r *http.Request)
+	// CloseService Close the server
+	// (POST /admin/closure/close)
+	CloseService(w http.ResponseWriter, r *http.Request)
 	// ListCostItems List the cost items
 	// (GET /admin/cost_items)
 	ListCostItems(w http.ResponseWriter, r *http.Request, params ListCostItemsParams)
@@ -12614,6 +12864,32 @@ func (siw *ServerInterfaceWrapper) CreateAccountAction(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// LiftAdminAccountEmailSuppression operation middleware
+func (siw *ServerInterfaceWrapper) LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AdminAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LiftAdminAccountEmailSuppression(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // IssueAdminAccountPasswordResetLink operation middleware
 func (siw *ServerInterfaceWrapper) IssueAdminAccountPasswordResetLink(w http.ResponseWriter, r *http.Request) {
 
@@ -13212,6 +13488,76 @@ func (siw *ServerInterfaceWrapper) RunBillingImport(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RunBillingImport(w, r, source)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminServiceClosure operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminServiceClosure(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminServiceClosure(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WithdrawServiceClosure operation middleware
+func (siw *ServerInterfaceWrapper) WithdrawServiceClosure(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WithdrawServiceClosure(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AnnounceServiceClosure operation middleware
+func (siw *ServerInterfaceWrapper) AnnounceServiceClosure(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnnounceServiceClosure(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminServiceClosureCheck operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminServiceClosureCheck(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminServiceClosureCheck(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CloseService operation middleware
+func (siw *ServerInterfaceWrapper) CloseService(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CloseService(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19596,6 +19942,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/reveal", wrapper.RevealAdminAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/two_factor/disable", wrapper.DisableAdminAccountTwoFactor)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/password_reset_link", wrapper.IssueAdminAccountPasswordResetLink)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/email_suppression/lift", wrapper.LiftAdminAccountEmailSuppression)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/roles", wrapper.ListRoles)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/roles", wrapper.CreateRole)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/roles/{role}", wrapper.DeleteRole)
@@ -19623,6 +19970,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/invites", wrapper.ListInvites)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites", wrapper.CreateInvite)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites/{id}/revoke", wrapper.RevokeInvite)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/closure", wrapper.GetAdminServiceClosure)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/closure/announcement", wrapper.WithdrawServiceClosure)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/closure/announcement", wrapper.AnnounceServiceClosure)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/closure/check", wrapper.GetAdminServiceClosureCheck)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/closure/close", wrapper.CloseService)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/oauth_clients", wrapper.ListAdminOAuthClients)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_clients/{id}/disable", wrapper.DisableOAuthClient)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_clients/{id}/enable", wrapper.EnableOAuthClient)
@@ -19822,6 +20174,24 @@ type AdminRuleJSONResponse struct {
 	Body AdminRule
 
 	Headers AdminRuleResponseHeaders
+}
+
+type AdminServiceClosureResponseHeaders struct {
+	CacheControl *string
+}
+type AdminServiceClosureJSONResponse struct {
+	Body AdminServiceClosure
+
+	Headers AdminServiceClosureResponseHeaders
+}
+
+type AdminServiceClosureCheckResponseHeaders struct {
+	CacheControl *string
+}
+type AdminServiceClosureCheckJSONResponse struct {
+	Body AdminServiceClosureCheck
+
+	Headers AdminServiceClosureCheckResponseHeaders
 }
 
 type AdminSettingListResponseHeaders struct {
@@ -21578,6 +21948,52 @@ func (response CreateAccountActiondefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type LiftAdminAccountEmailSuppressionRequestObject struct {
+	Id AdminAccountId `json:"id"`
+}
+
+type LiftAdminAccountEmailSuppressionResponseObject interface {
+	VisitLiftAdminAccountEmailSuppressionResponse(w http.ResponseWriter) error
+}
+
+type LiftAdminAccountEmailSuppression204Response struct {
+}
+
+func (response LiftAdminAccountEmailSuppression204Response) VisitLiftAdminAccountEmailSuppressionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse) VisitLiftAdminAccountEmailSuppressionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type IssueAdminAccountPasswordResetLinkRequestObject struct {
 	Id AdminAccountId `json:"id"`
 }
@@ -22673,6 +23089,288 @@ type RunBillingImportdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RunBillingImportdefaultApplicationProblemPlusJSONResponse) VisitRunBillingImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminServiceClosureRequestObject struct {
+}
+
+type GetAdminServiceClosureResponseObject interface {
+	VisitGetAdminServiceClosureResponse(w http.ResponseWriter) error
+}
+
+type GetAdminServiceClosure200JSONResponse struct {
+	AdminServiceClosureJSONResponse
+}
+
+func (response GetAdminServiceClosure200JSONResponse) VisitGetAdminServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminServiceClosuredefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminServiceClosuredefaultApplicationProblemPlusJSONResponse) VisitGetAdminServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawServiceClosureRequestObject struct {
+}
+
+type WithdrawServiceClosureResponseObject interface {
+	VisitWithdrawServiceClosureResponse(w http.ResponseWriter) error
+}
+
+type WithdrawServiceClosure200JSONResponse struct {
+	AdminServiceClosureJSONResponse
+}
+
+func (response WithdrawServiceClosure200JSONResponse) VisitWithdrawServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawServiceClosuredefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response WithdrawServiceClosuredefaultApplicationProblemPlusJSONResponse) VisitWithdrawServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnnounceServiceClosureRequestObject struct {
+	Body *AnnounceServiceClosureJSONRequestBody
+}
+
+type AnnounceServiceClosureResponseObject interface {
+	VisitAnnounceServiceClosureResponse(w http.ResponseWriter) error
+}
+
+type AnnounceServiceClosure200JSONResponse struct {
+	AdminServiceClosureJSONResponse
+}
+
+func (response AnnounceServiceClosure200JSONResponse) VisitAnnounceServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnnounceServiceClosuredefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AnnounceServiceClosuredefaultApplicationProblemPlusJSONResponse) VisitAnnounceServiceClosureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminServiceClosureCheckRequestObject struct {
+}
+
+type GetAdminServiceClosureCheckResponseObject interface {
+	VisitGetAdminServiceClosureCheckResponse(w http.ResponseWriter) error
+}
+
+type GetAdminServiceClosureCheck200JSONResponse struct {
+	AdminServiceClosureCheckJSONResponse
+}
+
+func (response GetAdminServiceClosureCheck200JSONResponse) VisitGetAdminServiceClosureCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminServiceClosureCheckdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminServiceClosureCheckdefaultApplicationProblemPlusJSONResponse) VisitGetAdminServiceClosureCheckResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseServiceRequestObject struct {
+	Body *CloseServiceJSONRequestBody
+}
+
+type CloseServiceResponseObject interface {
+	VisitCloseServiceResponse(w http.ResponseWriter) error
+}
+
+type CloseService200JSONResponse struct {
+	AdminServiceClosureJSONResponse
+}
+
+func (response CloseService200JSONResponse) VisitCloseServiceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseServicedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CloseServicedefaultApplicationProblemPlusJSONResponse) VisitCloseServiceResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35771,6 +36469,9 @@ type StrictServerInterface interface {
 	// CreateAccountAction Take a moderation action on an account
 	// (POST /admin/accounts/{id}/actions)
 	CreateAccountAction(ctx context.Context, request CreateAccountActionRequestObject) (CreateAccountActionResponseObject, error)
+	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+	// (POST /admin/accounts/{id}/email_suppression/lift)
+	LiftAdminAccountEmailSuppression(ctx context.Context, request LiftAdminAccountEmailSuppressionRequestObject) (LiftAdminAccountEmailSuppressionResponseObject, error)
 	// IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 	// (POST /admin/accounts/{id}/password_reset_link)
 	IssueAdminAccountPasswordResetLink(ctx context.Context, request IssueAdminAccountPasswordResetLinkRequestObject) (IssueAdminAccountPasswordResetLinkResponseObject, error)
@@ -35831,6 +36532,21 @@ type StrictServerInterface interface {
 	// RunBillingImport Import a provider's usage charges now
 	// (POST /admin/billing_imports/{source}/runs)
 	RunBillingImport(ctx context.Context, request RunBillingImportRequestObject) (RunBillingImportResponseObject, error)
+	// GetAdminServiceClosure Read the service closure
+	// (GET /admin/closure)
+	GetAdminServiceClosure(ctx context.Context, request GetAdminServiceClosureRequestObject) (GetAdminServiceClosureResponseObject, error)
+	// WithdrawServiceClosure Withdraw the announcement of the closure
+	// (DELETE /admin/closure/announcement)
+	WithdrawServiceClosure(ctx context.Context, request WithdrawServiceClosureRequestObject) (WithdrawServiceClosureResponseObject, error)
+	// AnnounceServiceClosure Announce the closure of the service
+	// (PUT /admin/closure/announcement)
+	AnnounceServiceClosure(ctx context.Context, request AnnounceServiceClosureRequestObject) (AnnounceServiceClosureResponseObject, error)
+	// GetAdminServiceClosureCheck Check the server before its closure
+	// (GET /admin/closure/check)
+	GetAdminServiceClosureCheck(ctx context.Context, request GetAdminServiceClosureCheckRequestObject) (GetAdminServiceClosureCheckResponseObject, error)
+	// CloseService Close the server
+	// (POST /admin/closure/close)
+	CloseService(ctx context.Context, request CloseServiceRequestObject) (CloseServiceResponseObject, error)
 	// ListCostItems List the cost items
 	// (GET /admin/cost_items)
 	ListCostItems(ctx context.Context, request ListCostItemsRequestObject) (ListCostItemsResponseObject, error)
@@ -37305,6 +38021,32 @@ func (sh *strictHandler) CreateAccountAction(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// LiftAdminAccountEmailSuppression operation middleware
+func (sh *strictHandler) LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
+	var request LiftAdminAccountEmailSuppressionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LiftAdminAccountEmailSuppression(ctx, request.(LiftAdminAccountEmailSuppressionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LiftAdminAccountEmailSuppression")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LiftAdminAccountEmailSuppressionResponseObject); ok {
+		if err := validResponse.VisitLiftAdminAccountEmailSuppressionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // IssueAdminAccountPasswordResetLink operation middleware
 func (sh *strictHandler) IssueAdminAccountPasswordResetLink(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
 	var request IssueAdminAccountPasswordResetLinkRequestObject
@@ -37848,6 +38590,140 @@ func (sh *strictHandler) RunBillingImport(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RunBillingImportResponseObject); ok {
 		if err := validResponse.VisitRunBillingImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminServiceClosure operation middleware
+func (sh *strictHandler) GetAdminServiceClosure(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminServiceClosureRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminServiceClosure(ctx, request.(GetAdminServiceClosureRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminServiceClosure")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminServiceClosureResponseObject); ok {
+		if err := validResponse.VisitGetAdminServiceClosureResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WithdrawServiceClosure operation middleware
+func (sh *strictHandler) WithdrawServiceClosure(w http.ResponseWriter, r *http.Request) {
+	var request WithdrawServiceClosureRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WithdrawServiceClosure(ctx, request.(WithdrawServiceClosureRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WithdrawServiceClosure")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WithdrawServiceClosureResponseObject); ok {
+		if err := validResponse.VisitWithdrawServiceClosureResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AnnounceServiceClosure operation middleware
+func (sh *strictHandler) AnnounceServiceClosure(w http.ResponseWriter, r *http.Request) {
+	var request AnnounceServiceClosureRequestObject
+
+	var body AnnounceServiceClosureJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AnnounceServiceClosure(ctx, request.(AnnounceServiceClosureRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AnnounceServiceClosure")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AnnounceServiceClosureResponseObject); ok {
+		if err := validResponse.VisitAnnounceServiceClosureResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminServiceClosureCheck operation middleware
+func (sh *strictHandler) GetAdminServiceClosureCheck(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminServiceClosureCheckRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminServiceClosureCheck(ctx, request.(GetAdminServiceClosureCheckRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminServiceClosureCheck")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminServiceClosureCheckResponseObject); ok {
+		if err := validResponse.VisitGetAdminServiceClosureCheckResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CloseService operation middleware
+func (sh *strictHandler) CloseService(w http.ResponseWriter, r *http.Request) {
+	var request CloseServiceRequestObject
+
+	var body CloseServiceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CloseService(ctx, request.(CloseServiceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CloseService")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CloseServiceResponseObject); ok {
+		if err := validResponse.VisitCloseServiceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
