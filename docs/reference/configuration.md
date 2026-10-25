@@ -118,6 +118,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_provider`](#payments_provider) | `MY_PAYMENTS_PROVIDER` | `none` | no | no |
 | [`payments_stripe_secret_key`](#payments_stripe_secret_key) | `MY_PAYMENTS_STRIPE_SECRET_KEY` | none | when `payments_provider = stripe` | yes |
 | [`payments_stripe_webhook_secret`](#payments_stripe_webhook_secret) | `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` | none | when `payments_provider = stripe` | yes |
+| [`payments_payjp_secret_key`](#payments_payjp_secret_key) | `MY_PAYMENTS_PAYJP_SECRET_KEY` | none | when `payments_provider = payjp` | yes |
+| [`payments_payjp_public_key`](#payments_payjp_public_key) | `MY_PAYMENTS_PAYJP_PUBLIC_KEY` | none | when `payments_provider = payjp` | no |
+| [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments_provider = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`dead_job_retention`](#dead_job_retention) | `MY_DEAD_JOB_RETENTION` | `720h` | no | no |
@@ -869,7 +872,7 @@ The pull subscription of the Pub/Sub topic of a monthly Cloud Billing budget tha
 
 ### `payments_provider`
 
-The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout, and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.
+The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page, ADR-0099), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.
 
 - Environment variable: `MY_PAYMENTS_PROVIDER`
 - Default: `none`
@@ -879,6 +882,7 @@ The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users
 | --- | --- | --- |
 | `none` | yes | No payments: the webhook endpoint and the reconciliation do not run. |
 | `stripe` | yes | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
+| `payjp` | yes | PAY.JP on its API v1 (ADR-0099): plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
 
 ### `payments_stripe_secret_key`
 
@@ -895,6 +899,30 @@ The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments
 - Environment variable: `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` or `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET_FILE`
 - Default: none
 - Required: when `payments_provider = stripe`
+
+### `payments_payjp_secret_key`
+
+The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp` (ADR-0099 §7). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.
+
+- Environment variable: `MY_PAYMENTS_PAYJP_SECRET_KEY` or `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`
+- Default: none
+- Required: when `payments_provider = payjp`
+
+### `payments_payjp_public_key`
+
+The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js (ADR-0099 §3, §7).
+
+- Environment variable: `MY_PAYMENTS_PAYJP_PUBLIC_KEY`
+- Default: none
+- Required: when `payments_provider = payjp`
+
+### `payments_payjp_webhook_token`
+
+The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp` (ADR-0099 §4). Test and live mode have different tokens.
+
+- Environment variable: `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` or `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN_FILE`
+- Default: none
+- Required: when `payments_provider = payjp`
 
 ### `payments_reconcile_interval`
 

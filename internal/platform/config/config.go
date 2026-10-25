@@ -161,8 +161,13 @@ type Config struct {
 	PaymentsProvider string
 	// PaymentsStripeSecretKey and PaymentsStripeWebhookSecret are the API key and the webhook
 	// endpoint's signing secret of payments_provider = stripe (ADR-0074 §5).
-	PaymentsStripeSecretKey      string
-	PaymentsStripeWebhookSecret  string
+	PaymentsStripeSecretKey     string
+	PaymentsStripeWebhookSecret string
+	// PaymentsPayjpSecretKey, PaymentsPayjpPublicKey, and PaymentsPayjpWebhookToken are the keys
+	// and the webhook token of payments_provider = payjp (ADR-0099 §7).
+	PaymentsPayjpSecretKey       string
+	PaymentsPayjpPublicKey       string
+	PaymentsPayjpWebhookToken    string
 	PaymentsReconcileInterval    time.Duration
 	PaymentsReconcileMaxRequests int
 	// DeadJobRetention is how long a dead job is kept after it failed (FR-803).
@@ -302,6 +307,9 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("payments_provider", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),
+		slog.String("payments_payjp_secret_key", redact(c.PaymentsPayjpSecretKey != "")),
+		slog.String("payments_payjp_public_key", c.PaymentsPayjpPublicKey),
+		slog.String("payments_payjp_webhook_token", redact(c.PaymentsPayjpWebhookToken != "")),
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.Duration("dead_job_retention", c.DeadJobRetention),
