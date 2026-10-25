@@ -5,7 +5,7 @@ version: "3"
 
 vars:
   VERSION:
-    sh: '{{if .VERSION}}echo {{shellQuote .VERSION}}{{else}}git describe --tags --always --dirty 2>/dev/null || echo dev{{end}}'
+    sh: '{{if .VERSION}}echo {{shellQuote .VERSION}}{{else}}git describe --tags --match "v[0-9]*" --always --dirty 2>/dev/null || echo dev{{end}}'
 
 tasks:
   check:
