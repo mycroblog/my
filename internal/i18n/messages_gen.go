@@ -2174,6 +2174,48 @@ func (l *Localizer) ServerMailVerifyEmailSubject(instance string) string {
 	return l.format("server:mail.verify_email.subject", map[string]any{"instance": instance})
 }
 
+// ServerMaintenanceDescription formats "server:maintenance.description". Explanation under the heading of the maintenance page. {server} is the server's name, or its host name.
+//
+//	en: {server} is temporarily unavailable for maintenance. Please try again later.
+func (l *Localizer) ServerMaintenanceDescription(server string) string {
+	return l.format("server:maintenance.description", map[string]any{"server": server})
+}
+
+// ServerMaintenanceDocumentTitle formats "server:maintenance.document_title". <title> of the maintenance page. {server} is the server's name, or its host name.
+//
+//	en: Under maintenance – {server}
+func (l *Localizer) ServerMaintenanceDocumentTitle(server string) string {
+	return l.format("server:maintenance.document_title", map[string]any{"server": server})
+}
+
+// ServerMaintenanceNotice formats "server:maintenance.notice". Heading over the administrators' notice (maintenance_message) on the maintenance page.
+//
+//	en: Notice from the administrators
+func (l *Localizer) ServerMaintenanceNotice() string {
+	return l.format("server:maintenance.notice", nil)
+}
+
+// ServerMaintenanceStatusPage formats "server:maintenance.status_page". Text of the link to the instance's status page (status_page_url) on the maintenance page.
+//
+//	en: Check the service status
+func (l *Localizer) ServerMaintenanceStatusPage() string {
+	return l.format("server:maintenance.status_page", nil)
+}
+
+// ServerMaintenanceTitle formats "server:maintenance.title". Heading of the maintenance page (ADR-0084) and the title of the maintenance problem of the client API.
+//
+//	en: Under maintenance
+func (l *Localizer) ServerMaintenanceTitle() string {
+	return l.format("server:maintenance.title", nil)
+}
+
+// ServerMaintenanceUntil formats "server:maintenance.until". Label of the time the maintenance is expected to end, shown in UTC next to it on the maintenance page.
+//
+//	en: Expected to end
+func (l *Localizer) ServerMaintenanceUntil() string {
+	return l.format("server:maintenance.until", nil)
+}
+
 // ServerModerationActionCategory formats "server:moderation.action.category". Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category.
 //
 //	en: {category, select, spam {Spam} legal {Legal reasons} violation {Violation of the instance's rules} other {Other}}

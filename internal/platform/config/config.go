@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -38,6 +39,14 @@ type Config struct {
 	SourceURL     string
 	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
 	StatusPageURL string
+	// Maintenance starts the maintenance mode (ADR-0084). MaintenanceServerName, MaintenanceMessage,
+	// and MaintenanceUntil (zero for none) fill the maintenance page; MaintenanceRetryAfter is the
+	// Retry-After when MaintenanceUntil is zero or past.
+	Maintenance           bool
+	MaintenanceServerName string
+	MaintenanceMessage    string
+	MaintenanceUntil      time.Time
+	MaintenanceRetryAfter time.Duration
 	// WebOrigin is the origin of the web client that the client API allows by CORS.
 	WebOrigin string
 	Role      Role
@@ -197,6 +206,11 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("account_domain", c.AccountDomain),
 		slog.String("source_url", c.SourceURL),
 		slog.String("status_page_url", c.StatusPageURL),
+		slog.Bool("maintenance", c.Maintenance),
+		slog.String("maintenance_server_name", c.MaintenanceServerName),
+		slog.Int("maintenance_message_length", utf8.RuneCountInString(c.MaintenanceMessage)),
+		slog.Time("maintenance_until", c.MaintenanceUntil),
+		slog.Duration("maintenance_retry_after", c.MaintenanceRetryAfter),
 		slog.String("web_origin", c.WebOrigin),
 		slog.String("role", string(c.Role)),
 		slog.String("listen", c.Listen),
@@ -363,7 +377,35 @@ type Source struct {
 // Load resolves, validates, and returns the configuration together with the
 // resolved settings. On failure the error is a *ValidationError listing every
 // issue, and the settings are still returned for display.
-func Load(src Source) (*Config, []Setting, error) {
+func Load(src Source) (*Config, []Setting, error) { return load(src, false) }
+
+// LoadMaintenance is Load for the maintenance mode (ADR-0084 §2): it reads and validates only the
+// settings marked for it (the listen address, the host and origins, the proxies, status_page_url,
+// and the maintenance_* settings), so that a configuration whose adapter settings are wrong or
+// unreachable still starts. The settings it does not read are absent from the returned list.
+func LoadMaintenance(src Source) (*Config, []Setting, error) { return load(src, true) }
+
+// MaintenanceRequested reads only the maintenance setting, from the environment or the TOML
+// file, for my serve to choose between the normal start and the maintenance mode before loading
+// the rest. An invalid value or an unreadable file is an error.
+func MaintenanceRequested(src Source) (bool, error) {
+	src, file, issues := open(src)
+	f := &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == "maintenance" })]
+	v, _, srcIssues := resolve(f, src, file)
+	issues = append(issues, srcIssues...)
+	if len(issues) == 0 {
+		if err := validate(f, v); err != nil {
+			issues = append(issues, Issue{Key: f.key, Message: err.Error()})
+		}
+	}
+	if len(issues) > 0 {
+		return false, &ValidationError{Issues: issues}
+	}
+	return v == "true", nil
+}
+
+// open fills the defaults of src and reads its TOML file.
+func open(src Source) (Source, map[string]any, []Issue) {
 	if src.LookupEnv == nil {
 		src.LookupEnv = os.LookupEnv
 	}
@@ -388,13 +430,21 @@ func Load(src Source) (*Config, []Setting, error) {
 	for _, k := range unknownKeys(file) {
 		issues = append(issues, Issue{Message: fmt.Sprintf("config file %s: unknown key %q", path, k)})
 	}
+	return src, file, issues
+}
 
+// load reads every setting, or with maintenance only those the maintenance mode reads.
+func load(src Source, maintenance bool) (*Config, []Setting, error) {
+	src, file, issues := open(src)
 	cfg := &Config{}
 	settings := make([]Setting, 0, len(schema))
 	valid := map[string]string{}
 	present := map[string]bool{}
 	for i := range schema {
 		f := &schema[i]
+		if maintenance && !maintenanceKeys[f.key] {
+			continue
+		}
 		v, origin, srcIssues := resolve(f, src, file)
 		issues = append(issues, srcIssues...)
 		s := Setting{Key: f.key, Env: f.env(), Value: v, Secret: f.secret, Origin: origin}
@@ -420,7 +470,9 @@ func Load(src Source) (*Config, []Setting, error) {
 		valid[f.key] = v
 		f.set(cfg, v)
 	}
-	issues = append(issues, crossChecks(valid, present)...)
+	if !maintenance {
+		issues = append(issues, crossChecks(valid, present)...)
+	}
 	if cfg.AccountDomain == "" {
 		cfg.AccountDomain = cfg.Host
 	}

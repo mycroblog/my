@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+{{with .MetaCSP}}<meta http-equiv="Content-Security-Policy" content="{{.}}">
+{{end}}<title>{{.Title}}</title>
+<style>{{.CSS}}</style>
+</head>
+<body>
+<main>
+{{range .Sections}}{{$s := .}}<section lang="{{.Lang}}" dir="{{.Dir}}" aria-labelledby="maintenance-{{.Lang}}">
+<p class="server" dir="auto">{{.ServerName}}</p>
+<h1 id="maintenance-{{.Lang}}">{{.L.ServerMaintenanceTitle}}</h1>
+<p>{{.L.ServerMaintenanceDescription .ServerName}}</p>
+{{with .Message}}<h2>{{$s.L.ServerMaintenanceNotice}}</h2>
+<p class="message" dir="auto" lang="">{{.}}</p>
+{{end}}{{if .Until}}<dl>
+<dt>{{.L.ServerMaintenanceUntil}}</dt>
+<dd><time datetime="{{.Until}}">{{.UntilText}}</time></dd>
+</dl>
+{{end}}{{with .StatusPageURL}}<p><a href="{{.}}" rel="noopener">{{$s.L.ServerMaintenanceStatusPage}}</a></p>
+{{end}}</section>
+{{end}}</main>
+</body>
+</html>

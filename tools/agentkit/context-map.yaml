@@ -216,6 +216,12 @@ entries:
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
+  - name: maintenance
+    paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go"]
+    docs: ["docs/adr/0084-maintenance-mode.md#decision決定", "docs/adr/0085-uptime-monitoring-status-page.md#4-メンテナンスモードとの関係"]
+    notes:
+      - "internal/interface/maintenance depends only on the standard library and internal/i18n; the maintenance mode opens no adapter (platform.NewMaintenanceApp never calls NewApp)."
+      - "The maintenance responses (ADR-0084 §3) and `my maintenance export` render the same template (maintenance.Render)."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]

@@ -32,6 +32,7 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 	cfs := flag.NewFlagSet("my config check", flag.ContinueOnError)
 	cfs.SetOutput(stderr)
 	file := cfs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")
+	maint := cfs.Bool("maintenance", false, "check only the settings that the maintenance mode reads")
 	if err := cfs.Parse(args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -43,7 +44,11 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	_, settings, err := config.Load(config.Source{File: *file})
+	load := config.Load
+	if *maint {
+		load = config.LoadMaintenance
+	}
+	_, settings, err := load(config.Source{File: *file})
 	tw := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "KEY\tVALUE\tSOURCE")
 	for _, s := range settings {
@@ -59,11 +64,13 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 }
 
 func configUsage(w io.Writer) {
-	_, _ = fmt.Fprint(w, `Usage: my config check [-config <file>]
+	_, _ = fmt.Fprint(w, `Usage: my config check [-config <file>] [-maintenance]
        my config vapid-key
 
 check validates the configuration from the environment, the TOML file, and
 defaults, listing every problem at once. Exits 1 if the configuration is invalid.
+With -maintenance it checks only the settings that the maintenance mode reads
+(ADR-0084), leaving the adapters' settings unread.
 
 vapid-key generates a key pair for Web Push and prints the private key, the
 value of MY_VAPID_PRIVATE_KEY, and the public key that browsers subscribe with.

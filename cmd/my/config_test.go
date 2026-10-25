@@ -89,6 +89,28 @@ func TestRunConfig(t *testing.T) {
 			wantStderr: []string{"The required setting MY_CAPTCHA_SITE_KEY is not set.", "captcha_site_key: required when captcha is not none"},
 			wantAbsent: []string{captchaSecret},
 		},
+		{
+			name:       "maintenance leaves the adapters unread",
+			args:       []string{"config", "check", "-maintenance"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DB": "mysql", "MY_MAINTENANCE_UNTIL": "2026-10-24T03:00:00Z"},
+			wantCode:   0,
+			wantStdout: []string{"maintenance_until", "configuration OK"},
+			wantAbsent: []string{"database_url", "mysql"},
+		},
+		{
+			name:       "maintenance checks its settings",
+			args:       []string{"config", "check", "-maintenance"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_MAINTENANCE_UNTIL": "tomorrow", "LC_ALL": "C"},
+			wantCode:   1,
+			wantStderr: []string{"maintenance_until: must be an RFC 3339 time"},
+		},
+		{
+			name:       "the normal check rejects maintenance settings too",
+			args:       []string{"config", "check"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_MAINTENANCE_RETRY_AFTER": "0", "LC_ALL": "C"},
+			wantCode:   1,
+			wantStderr: []string{"maintenance_retry_after: must be a whole number of seconds"},
+		},
 		{name: "no subcommand", args: []string{"config"}, wantCode: 2, wantStderr: []string{"Usage: my config check"}},
 		{name: "unknown subcommand", args: []string{"config", "nope"}, wantCode: 2, wantStderr: []string{`unknown subcommand "nope"`}},
 		{name: "extra argument", args: []string{"config", "check", "x"}, wantCode: 2, wantStderr: []string{`unexpected argument "x"`}},
@@ -96,7 +118,8 @@ func TestRunConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LANGUAGE", "")
-			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DB", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY"} {
+			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DB", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
+				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER"} {
 				t.Setenv(k, tt.env[k]) // restores the original value after the test
 				if _, ok := tt.env[k]; !ok {
 					if err := os.Unsetenv(k); err != nil {

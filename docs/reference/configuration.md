@@ -40,6 +40,11 @@ An instance setting that has never been set reads as its default, which is defin
 | [`account_domain`](#account_domain) | `MY_ACCOUNT_DOMAIN` | value of `host` | no | no |
 | [`source_url`](#source_url) | `MY_SOURCE_URL` | `https://github.com/mycroblog/my` | no | no |
 | [`status_page_url`](#status_page_url) | `MY_STATUS_PAGE_URL` | none | no | no |
+| [`maintenance`](#maintenance) | `MY_MAINTENANCE` | `false` | no | no |
+| [`maintenance_server_name`](#maintenance_server_name) | `MY_MAINTENANCE_SERVER_NAME` | value of `host` | no | no |
+| [`maintenance_message`](#maintenance_message) | `MY_MAINTENANCE_MESSAGE` | none | no | no |
+| [`maintenance_until`](#maintenance_until) | `MY_MAINTENANCE_UNTIL` | none | no | no |
+| [`maintenance_retry_after`](#maintenance_retry_after) | `MY_MAINTENANCE_RETRY_AFTER` | `600` | no | no |
 | [`web_origin`](#web_origin) | `MY_WEB_ORIGIN` | `https://{host}` | no | no |
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
@@ -156,6 +161,51 @@ Address of the instance's status page, an absolute `https` URL on a service apar
 
 - Environment variable: `MY_STATUS_PAGE_URL`
 - Default: none
+- Required: no
+
+### `maintenance`
+
+Starts `my serve` in the maintenance mode (ADR-0084), also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{"status":"maintenance"}`. Switch it by redeploying (docs/operations/maintenance.md).
+
+- Environment variable: `MY_MAINTENANCE`
+- Default: `false`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `false` | yes | Normal operation. |
+| `true` | yes | Maintenance mode. |
+
+### `maintenance_server_name`
+
+Name of the server on the maintenance page and the exported maintenance pages (`my maintenance export`). The instance's own name is in the database, which the maintenance mode does not read.
+
+- Environment variable: `MY_MAINTENANCE_SERVER_NAME`
+- Default: value of `host`
+- Required: no
+
+### `maintenance_message`
+
+Notice of the maintenance as plain text, at most 2,000 characters, shown on the maintenance page and in the `message` of the maintenance problem of the client API. The same text is shown in every locale.
+
+- Environment variable: `MY_MAINTENANCE_MESSAGE`
+- Default: none
+- Required: no
+
+### `maintenance_until`
+
+When the maintenance is expected to end, as an RFC 3339 time such as `2026-10-24T03:00:00Z`. The maintenance page shows it in UTC, the maintenance problem has it as `until`, and while it is in the future `Retry-After` counts the seconds to it (at most 86,400).
+
+- Environment variable: `MY_MAINTENANCE_UNTIL`
+- Default: none
+- Required: no
+
+### `maintenance_retry_after`
+
+Seconds of the `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, from 1 to 86,400.
+
+- Environment variable: `MY_MAINTENANCE_RETRY_AFTER`
+- Default: `600`
 - Required: no
 
 ### `web_origin`
