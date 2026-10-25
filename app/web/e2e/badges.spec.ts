@@ -4,7 +4,7 @@
 // the author lines of the account's posts. `vite preview` has no API, so the spec plays the signed-in user's server
 // with page.route.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Account = components["schemas"]["Account"];

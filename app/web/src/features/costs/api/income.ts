@@ -8,7 +8,7 @@
 // the gross or the fees; only the administrators' costs screen reads those (the admin feature).
 import { queryOptions } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { type CostBasis, type CostGranularity, totalsQuery } from "./costs";
 

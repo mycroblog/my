@@ -4,7 +4,7 @@
 // `invalid-theme` problem whose `theme_errors` say why, one by one.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { refreshAuditLog } from "../../moderation";
 

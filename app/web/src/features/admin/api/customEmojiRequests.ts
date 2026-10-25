@@ -7,7 +7,7 @@
 // audit log; an approval also changes the emoji and what the picker offers.
 import { infiniteQueryOptions, type InfiniteData, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { pageQuery, refreshAuditLog } from "../../moderation";
 

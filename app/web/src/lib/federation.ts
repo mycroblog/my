@@ -6,7 +6,7 @@
 // and says what stays on this server.
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 import type { Api } from "./api/client";
-import type { components } from "./api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { useApi } from "./auth/SessionProvider";
 import { ApiError } from "./errors";
 import { shellQueryReader } from "./query";

@@ -5,7 +5,7 @@
 // permission the viewer's roles lack.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import type { Permission } from "./staff";
 
 export type AdminCounts = components["schemas"]["AdminCounts"];

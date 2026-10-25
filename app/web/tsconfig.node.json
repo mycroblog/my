@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "//": "Tool configs, the scripts of scripts/, the Vite plugins of vite-plugins/ and E2E specs, which run on Node.js. DOM is for the callbacks E2E specs run in the page with page.evaluate.",
   "compilerOptions": {
+    "customConditions": ["@mycroblog/source"],
     "lib": ["ES2023", "DOM"],
     "types": ["node"],
     "allowImportingTsExtensions": true

@@ -3,7 +3,7 @@
 // posts. They take their types from the TypeScript types generated from api/openapi.yaml (web-client/README.md S9);
 // API types are never written by hand here. A fixture that only one feature uses lives in that feature's
 // test/handlers.ts.
-import type { components } from "../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 /** The schemas of api/openapi.yaml, for the fixtures and the MSW handlers of the features. */
 export type Schemas = components["schemas"];

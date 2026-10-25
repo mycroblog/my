@@ -2,7 +2,7 @@
 // The queries of the session feature (web-client/README.md S1): every feature keeps its `queryOptions` in its
 // api/ directory, built from the openapi-react-query client so that keys and types come from the spec.
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 /** An account, as the client API returns it. */
 export type Account = components["schemas"]["Account"];

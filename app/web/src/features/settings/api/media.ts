@@ -3,7 +3,7 @@
 // that the admin screens set: the server accepts a file, processes it in the background, and is polled until the file is ready
 // (api/openapi.yaml, uploadMedia and getMedia).
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 export type MediaAttachment = components["schemas"]["MediaAttachment"];
 

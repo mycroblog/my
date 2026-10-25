@@ -7,7 +7,7 @@
 // spec's routes fail their requests while offline, as the network would.
 // Texts come from the project's catalog, so the spec finds the same elements in every locale.
 import type { BrowserContext, Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, openFromNavigation as openFromNavigationItem, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 

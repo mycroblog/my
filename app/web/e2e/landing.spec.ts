@@ -4,7 +4,7 @@
 // Names change with the locale, so elements are found by role, structure, addresses, and the instance's own text,
 // which is in English in every project.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Instance = components["schemas"]["Instance"];

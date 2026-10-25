@@ -5,7 +5,7 @@
 // OAuth refresh and the client API with `page.route`; each answer to the stream is one response body
 // that ends, so the client also reconnects throughout, as it does after the server ends a stream.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Status = components["schemas"]["Status"];

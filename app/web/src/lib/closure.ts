@@ -4,7 +4,7 @@
 // `delivery_completed`) once the server has closed. The server decides every request; the app shows the notice
 // and, once closed, the screen of the export.
 import { useQuery } from "@tanstack/react-query";
-import type { components } from "./api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { useApi } from "./auth/SessionProvider";
 import { shellQueryReader } from "./query";
 

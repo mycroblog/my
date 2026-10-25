@@ -4,7 +4,7 @@
 // no API, so the spec answers the token refresh and the client API with `page.route`. Names come from the project's
 // catalog.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 

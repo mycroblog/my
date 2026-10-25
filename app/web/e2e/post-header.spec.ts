@@ -6,7 +6,7 @@
 // domain while a remote one's has it (web-client/13-status-detail-and-actions.md §13). The accounts are the client's shared test
 // fixtures (src/test/fixtures.ts), and `vite preview` has no client API, so the spec answers the local
 // timeline itself.
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { longDomainAccountFixture, longNameAccountFixture, rtlNameAccountFixture } from "../src/test/fixtures.ts";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, expectPostHeadersInTwoLines, test } from "./fixtures";
 

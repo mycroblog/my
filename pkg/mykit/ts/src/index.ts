@@ -7,7 +7,7 @@ export { apiBasePath, createClient, type Api, type ClientOptions } from "./clien
 export { idempotencyKeyOperations } from "./idempotency.js";
 export { codeChallenge, exchange, newCodeVerifier, OAuthError, tokenPath, type OAuthConfig } from "./oauth.js";
 export { all, type Page, type PageFetcher } from "./paging.js";
-export { NetworkError, ProblemError, problemTypeAboutBlank, type Problem } from "./problem.js";
+export { NetworkError, ProblemError, problemFromResponse, problemTypeAboutBlank, type Problem } from "./problem.js";
 export type { components, operations, paths } from "./schema.gen.js";
 export {
   defaultHeartbeatTimeout,

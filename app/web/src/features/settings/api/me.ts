@@ -3,7 +3,7 @@
 // openapi-react-query client, so the account here shares its cache entry with the session's viewer.
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { updateCachedAccount } from "../../profile";
 
 type Schemas = components["schemas"];

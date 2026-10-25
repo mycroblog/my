@@ -7,7 +7,7 @@
 // plays the server with page.route; names change with the locale, so the elements are found by role, by address and by
 // the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 

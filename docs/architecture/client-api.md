@@ -25,9 +25,9 @@
 | `internal/interface/clientapi/openapi.go` | 手書きの `GET /openapi.yaml`。バンドルした spec（`api.Spec`）をそのまま返す（§2.6） |
 | `internal/interface/clientapi/streaming.go` | 手書きの `GET /streaming`（SSE、§5） |
 | `internal/interface/clientapi/apitest` | ハンドラの応答を spec と照合するテストヘルパー |
-| `app/web/src/lib/api/schema.gen.ts` | 生成物。Web クライアントの型（openapi-typescript）。コミットせず（ADR-0081）、型を読むタスクが先に `scripts/task.sh api:generate-ts` で作る |
+| `pkg/mykit/api.gen.go`, `pkg/mykit/ts/src/schema.gen.ts` | 生成物。API クライアントライブラリ `pkg/mykit` の Go のクライアントと型（oapi-codegen）と、`@mycroblog/mykit` の TS の型（openapi-typescript）。コミットする。Web クライアントは `@mycroblog/mykit` の型を使う（[ADR-0093](../adr/0093-api-client-library-mykit.md) §3） |
 | `scripts/api-spec-check.sh` | ルートが `api/spec/` のすべてのファイルを列挙し、各ファイルが `SPDX-License-Identifier: MIT` の見出しで始まることの検査（`scripts/task.sh api:spec-check`、`scripts/task.sh api:check` に含む） |
-| `scripts/generate.sh` | 生成スクリプト（`scripts/task.sh api:generate` / `api:generate-ts` / `api:generate-check`）。`api/spec/` をバンドルしてから、バンドルを生成器に渡す。TS の型の生成に `app/web` の依存を使うので、先に `scripts/task.sh web:install` を実行する（`api:generate` の依存で自動） |
+| `scripts/generate.sh` | 生成スクリプト（`scripts/task.sh api:generate` / `api:generate-check`）。`api/spec/` をバンドルしてから、バンドルを生成器に渡す。TS の型の生成に `pkg/mykit/ts` の依存を使うので、先に `scripts/task.sh web:install` を実行する（`api:generate` の依存で自動） |
 
 列挙型の定数は `<型名><値>`（`StatusVisibilityPublic`）の名前で生成します（`oapi-codegen.yaml` の `always-prefix-enum-values`）。別の列挙型を足しても名前が衝突・変化しません。
 
@@ -168,7 +168,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
    新しいスキーマ・応答・パラメータは `api/spec/components/<種類>/<名前>.yaml` に書き、ルートの `components` に名前の順で足します。
    `security` は §4.2 の 3 つの形のどれかで書き、アクセストークンを受け付ける操作は必要なスコープを必ず挙げます（挙げないと `scripts/task.sh api:generate` が失敗します）。
 2. `scripts/task.sh api:lint` で spec を検査します。問題の場所は分割したファイルで示されます。
-3. `scripts/task.sh api:generate` でバンドルの `api/openapi.yaml`、`internal/interface/clientapi/api.gen.go`・`security.gen.go` と Web クライアントの `app/web/src/lib/api/schema.gen.ts`（コミットしない）を再生成します。`StrictServerInterface` に新しいメソッドが増え、未実装のためビルドが失敗します。
+3. `scripts/task.sh api:generate` でバンドルの `api/openapi.yaml`、`internal/interface/clientapi/api.gen.go`・`security.gen.go` と `pkg/mykit` の `api.gen.go`・`ts/src/schema.gen.ts`（Web クライアントが読む型）を再生成します。`StrictServerInterface` に新しいメソッドが増え、未実装のためビルドが失敗します。
    main を取り込んだあとも、生成物は手でマージせず `scripts/task.sh api:generate` で作り直します。
 4. `internal/interface/clientapi` にメソッドを実装します。アプリケーション層（`internal/app/<module>`）のユースケースを呼び、
    ドメインの型を生成された応答型に詰め替えます。必要な依存は `clientapi.Options` に追加し、`platform.NewApp` で渡します。

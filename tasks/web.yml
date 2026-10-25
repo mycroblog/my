@@ -42,9 +42,9 @@ tasks:
       - bun install --frozen-lockfile
 
   generate:
-    desc: Generate the uncommitted files the client workspace reads (route tree, API types, i18n accessors and client pseudo-locales, theme tokens)
+    desc: Generate the uncommitted files the client workspace reads (route tree, i18n accessors and client pseudo-locales, theme tokens)
     run: once
-    deps: [routes-gen, tokens-gen-ts, ":api:generate-ts", ":i18n:gen-ts"]
+    deps: [routes-gen, tokens-gen-ts, ":i18n:gen-ts"]
 
   routes-gen:
     desc: Generate app/web/src/routeTree.gen.ts from app/web/src/routes without Vite (app/web/scripts/routes.ts)

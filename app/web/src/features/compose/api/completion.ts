@@ -5,7 +5,7 @@
 // newer word replaces is cancelled.
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { lookupAccountQueryOptions } from "./compose";
 
 export type Account = components["schemas"]["Account"];

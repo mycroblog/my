@@ -5,7 +5,7 @@
 // posting). Types come from the spec (S9).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { isPostListQuery } from "../../../lib/query";
 
 export type Status = components["schemas"]["Status"];

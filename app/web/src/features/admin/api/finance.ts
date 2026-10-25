@@ -8,7 +8,7 @@
 // subscribers (GET /admin/income_movements); the payment provider records it, and nobody changes it here.
 import { infiniteQueryOptions, type QueryClient, queryOptions } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { type CostBasis, type CostGranularity, type Money, totalsQuery } from "../../costs";
 import { pageQuery, refreshAuditLog } from "../../moderation";

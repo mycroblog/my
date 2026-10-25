@@ -4,7 +4,7 @@
 // infinite queries whose keys end with "pages" (web-client/10-api-client-and-auth.md §10).
 import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 type Schemas = components["schemas"];

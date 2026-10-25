@@ -87,6 +87,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@my/ui": "workspace:*",
+        "@mycroblog/mykit": "workspace:*",
         "@tanstack/react-query": "5.104.1",
         "@tanstack/react-router": "1.170.41",
         "openapi-fetch": "0.17.0",
@@ -120,7 +121,6 @@
         "@vitejs/plugin-react": "6.1.2",
         "jsdom": "30.1.2",
         "msw": "3.0.2",
-        "openapi-typescript": "7.13.0",
         "oxc-transform-react": "0.153.0",
         "react-aria": "3.52.1",
         "tailwindcss": "4.3.3",

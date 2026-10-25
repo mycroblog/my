@@ -9,7 +9,7 @@ import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tans
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import { isPostListQuery } from "../../../lib/query";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 type Schemas = components["schemas"];
 

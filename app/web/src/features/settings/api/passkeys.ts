@@ -5,7 +5,7 @@
 // server's own sign-in page (web-client/08-server-rendered-pages.md §8).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { createPasskey, getPasskey, passkeyPromptFailure } from "../../../lib/webauthn";
 

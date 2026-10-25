@@ -4,7 +4,7 @@
 // emoji of their unicode-range, and each browser picks the format its tech() supports: COLRv1 in Chromium and Firefox,
 // OpenType-SVG in WebKit. It plays the landing page against `vite preview`, whose client API it answers with page.route.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, test } from "./fixtures";
 
 type Instance = components["schemas"]["Instance"];

@@ -4,7 +4,7 @@
 // (PUT /preferences/badges/{role_id}). A badge is hidden until the user shows it, and shows on the profile only.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { credentialsQueryOptions } from "./me";
 
