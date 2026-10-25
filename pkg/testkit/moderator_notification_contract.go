@@ -13,6 +13,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -78,6 +79,11 @@ func (s *stubStaff) Mailbox(_ context.Context, accountID string) (appnotificatio
 	defer s.mu.Unlock()
 	m, ok := s.mail[accountID]
 	return m, ok, nil
+}
+
+// UnsubscribeLink returns a link that names accountID.
+func (s *stubStaff) UnsubscribeLink(_ context.Context, accountID string) (string, error) {
+	return "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + accountID, nil
 }
 
 // recordingOutbox is a queue.Outbox that keeps the jobs it is given.
@@ -210,6 +216,14 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	if len(sent) != 1 || sent[0].To != "mod@example.com" || !strings.Contains(sent[0].Subject, contractHost) ||
 		!strings.Contains(sent[0].Text, "https://web.example/notifications") || strings.Contains(sent[0].Text, first.Report.ID) {
 		t.Errorf("sent = %+v, want one email to mod linking to the notifications", sent)
+	}
+	// It is a notification that its recipient can stop with one click (ADR-0086 §4).
+	if len(sent) == 1 {
+		link := "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + mod
+		if sent[0].Category != kernel.MailNotification || sent[0].Headers[kernel.HeaderListUnsubscribe] != "<"+link+">" ||
+			sent[0].Headers[kernel.HeaderListUnsubscribePost] != "List-Unsubscribe=One-Click" || !strings.Contains(sent[0].Text, link) {
+			t.Errorf("sent = %+v, want a notification with the unsubscribe link in its headers and text", sent[0])
+		}
 	}
 	// A moderator who turned email off, or lost the permission, gets none.
 	e.staff.email(mod, "")

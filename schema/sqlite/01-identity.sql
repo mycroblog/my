@@ -516,15 +516,18 @@ CREATE TABLE invite_revocations (
   revoked_at INTEGER NOT NULL
 ) STRICT;
 
--- Resource: a one-time token sent to a user. token_hash is the SHA-256 digest of the token.
+-- Resource: a token sent to a user. token_hash is the SHA-256 digest of the token. An
+-- email_unsubscribe token names the unsubscribable category of email it turns off (ADR-0086 §4).
 CREATE TABLE user_tokens (
   id TEXT NOT NULL PRIMARY KEY,
   user_id TEXT NOT NULL,
-  purpose TEXT NOT NULL CHECK (purpose IN ('email_verification', 'password_reset')),
+  purpose TEXT NOT NULL CHECK (purpose IN ('email_verification', 'password_reset', 'email_unsubscribe')),
   email_address_id TEXT,
+  unsubscribe_category TEXT CHECK (unsubscribe_category IN ('email_moderator_notifications')),
   token_hash BLOB NOT NULL,
   expires_at INTEGER NOT NULL,
-  issued_at INTEGER NOT NULL
+  issued_at INTEGER NOT NULL,
+  CHECK ((purpose = 'email_unsubscribe') = (unsubscribe_category IS NOT NULL))
 ) STRICT;
 CREATE UNIQUE INDEX user_tokens_token_hash ON user_tokens (token_hash);
 
