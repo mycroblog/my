@@ -471,6 +471,14 @@ jobs:
           - name: mykit:mybot-server-dep-check
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:mybot-server-dep-check
+          # An echo bot against a server in the test process, and the fake of mybottest against the spec
+          # (pkg/mybot/integration, ADR-0094 §10), as mykit's integration tests.
+          - name: mykit:mybot-integration-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-integration-test
+          - name: mykit:mybot-integration-vet
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-integration-vet
           - name: api:license-scope (mykit)
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh api:license-scope
