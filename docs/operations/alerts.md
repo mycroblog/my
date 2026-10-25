@@ -406,7 +406,7 @@ The media files take more than you planned for. This is growth, not a failure. S
 Email jobs failed for good in the last hour: verification, password reset, password notices, notifications, or the closure emails.
 Users who wait for a verification or reset email cannot finish.
 
-**Check** the job screen filtered on the email job types (they end in `_email`), and the last errors. [Sending email](email.md#送信の失敗を見る)
+**Check** the job screen filtered on the email job types (they end in `_email`), and the last errors. [Sending email](email.md#look-at-send-failures)
 lists the errors and what they mean.
 
 Fix:
