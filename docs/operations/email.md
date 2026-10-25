@@ -197,7 +197,7 @@ domain). If DKIM aligns, DMARC passes.
 ## Look at send failures
 
 Look at send failures on the jobs dashboard (`/admin/jobs`, permission `manage_jobs`; see
-[the job queue and failed jobs](running.md#ジョブのキューと失敗したジョブdead-job)).
+[the job queue and failed jobs](running.md#the-job-queue-and-failed-dead-jobs)).
 Filter by job type to see only email jobs (in the admin API, `GET /api/v1/admin/jobs?type=identity.verification_email`).
 The types are in the table above.
 

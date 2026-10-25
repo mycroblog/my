@@ -4,7 +4,7 @@
 サーバーを止めて静的な閉鎖のページに切り替えるまでを順に書きます。
 決定は [ADR-0088](../adr/0088-service-shutdown-modes.md)、要件は FR-808・FR-809（[機能要件](../requirements/01-functional.md)）、
 連合の振る舞いは [federation.md §15](../architecture/federation.md#15-サービスの終了)、各コマンドの詳しい説明は
-[管理者とロール](admin-cli.md#サービスの終了の予告) です。
+[管理者とロール](admin-cli.md#announcing-the-end-of-the-service) です。
 
 ## 流れ
 

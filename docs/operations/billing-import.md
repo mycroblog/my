@@ -1,34 +1,34 @@
-# クラウドの利用料金の取り込み
+# Importing cloud usage costs
 
-運営者向けの手順です。決定は [ADR-0068](../adr/0068-billing-import.md)（費用の記録は [ADR-0067](../adr/0067-finance-cost-records.md)）、設定のキーは [設定リファレンス](../reference/configuration.md#billing_sources) です。
+A guide for operators. The configuration keys are described in the [configuration reference](../reference/configuration.md#billing_sources).
 
-設定 `billing_sources` に挙げた事業者の利用料金を、サーバーが 24 時間ごとに取り込んで費用に載せます（FR-904）。既定は空で、何も取り込みません。
-取り込むのは今月と先月（月の 15 日まで、または先月が確定するまで）の請求月の費用で、サービスと費用の種類（利用・クレジット・返金・税・サポート・料金・その他）ごとに 1 行になります。
-事業者が月を締めるまでは見込み、締めた後は確定、確定の後に値が変わったら修正として記録し、過去の記録は書き換えません。
-取り込みの状態（最後の成功、最後の失敗の種類、今月の要求数）は管理画面の費用のページと `GET /api/v1/admin/billing_imports` で見られます。
+The server imports the usage charges of the providers listed in the setting `billing_sources` every 24 hours and adds them to the instance's costs. The default is empty, which imports nothing.
+It imports the charges of the current and the previous billing month (through the 15th of the month, or until the previous month is final), as one line per service and charge type (usage, credit, refund, tax, support, fee, other).
+Until the provider closes a month, the values are recorded as estimates; after it closes, as final; and when a value changes after it is final, as a correction. Records of the past are never rewritten.
+The state of the imports (the last success, the kind of the last failure, and the number of requests this month) is shown on the costs page of the administration and by `GET /api/v1/admin/billing_imports`.
 
-認証の鍵をこのサーバーの設定には置きません。各事業者の SDK の既定の認証の連鎖（AWS は実行ロール・環境変数・共有の認証ファイル、Google Cloud は Application Default Credentials）が読むものを、実行環境に渡します。
+No credentials are kept in this server's configuration. Give the runtime environment what the default credential chain of each provider's SDK reads (for AWS, the execution role, environment variables, or shared credential files; for Google Cloud, Application Default Credentials).
 
-## AWS（`billing_sources = aws`）
+## AWS (`billing_sources = aws`)
 
-AWS Cost Explorer の `GetCostAndUsage` を、請求月（UTC の暦月）ごと・サービス（`SERVICE`）と記録の種類（`RECORD_TYPE`）ごとに 1 回呼びます。エンドポイントは常に `us-east-1` です。
-金額は USD で、Cost Explorer が月を見込み（`Estimated`）と示す間は前日までの額を見込みとして、そうでなくなったら確定として記録します。
-build tag `no_billing_aws` で build したバイナリは `aws` を拒みます（[ビルドタグ](../reference/build-tags.md)）。
+The server calls `GetCostAndUsage` of AWS Cost Explorer once per billing month (a UTC calendar month), grouped by service (`SERVICE`) and record type (`RECORD_TYPE`). The endpoint is always `us-east-1`.
+Amounts are in USD. While Cost Explorer marks a month as estimated (`Estimated`), the server records the amount up to the previous day as an estimate, and once it no longer does, as final.
+A binary built with the build tag `no_billing_aws` refuses `aws` (see [build-tags.md](../reference/build-tags.md)).
 
-### 費用と上限
+### Cost and limits
 
-Cost Explorer の API は、ページ付けされた要求 1 回ごとに $0.01 かかります。小さなアカウントなら 1 日 1 回・1 ページで、月に約 $0.31 です。
-想定外の課金を防ぐため、要求の数を UTC の日ごと（`billing_aws_max_requests_per_day`、既定 4）と UTC の暦月ごと（`billing_aws_max_requests_per_month`、既定 120 = $1.20）に数え、上限に達したら呼ばずに止めます。
-定期の取り込み・ジョブの再試行・管理画面の「今すぐ取り込む」をすべて数えます。上限に達した取り込みは `request_cap` の失敗として残り、日の上限なら翌日、月の上限なら翌月の初日の取り込みが再び試します。
+The Cost Explorer API charges $0.01 for each paginated request. A small account needs one request of one page a day, about $0.31 a month.
+To prevent unexpected charges, the server counts requests per UTC day (`billing_aws_max_requests_per_day`, default 4) and per UTC calendar month (`billing_aws_max_requests_per_month`, default 120 = $1.20), and stops without calling once a limit is reached.
+Scheduled imports, job retries, and "Import now" in the administration all count. An import that hits a limit is recorded as a failure of kind `request_cap`, and the import of the next day (for the daily limit) or of the first day of the next month (for the monthly limit) tries again.
 
-### Cost Explorer を有効にする
+### Enable Cost Explorer
 
-1. Billing and Cost Management のコンソールで Cost Explorer を開き、有効にします。一度有効にすると無効にはできません。データが揃うまで最大 24 時間かかります。
-2. 有効でないアカウントは `DataUnavailableException` を返し、取り込みは `not_enabled` の失敗になります。
+1. Open Cost Explorer in the Billing and Cost Management console and enable it. It cannot be disabled once enabled. It takes up to 24 hours for data to be ready.
+2. An account where it is not enabled returns `DataUnavailableException`, and the import fails with `not_enabled`.
 
-### IAM の権限
+### IAM permissions
 
-必要な権限は `ce:GetCostAndUsage` だけです（リソースは `*`）。
+The only permission needed is `ce:GetCostAndUsage` (resource `*`).
 
 ```json
 {
@@ -39,22 +39,22 @@ Cost Explorer の API は、ページ付けされた要求 1 回ごとに $0.01 
 }
 ```
 
-実行環境ごとの渡し方:
+How to pass credentials in each runtime environment:
 
-| 実行環境 | 認証 |
+| Runtime | Credentials |
 | --- | --- |
-| AWS Lambda / ECS | 実行ロール（タスクロール）にこのポリシーを付けます。設定は要りません |
-| Google Cloud（Cloud Run） | 下の「Cloud Run から web identity で呼ぶ」の IAM ロールを作り、`billing_aws_role_arn` にその ARN を設定します。AWS の鍵は要りません |
-| 自前のサーバー | このポリシーを付けた IAM ユーザーのアクセスキーを `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`（または共有の認証ファイルと `AWS_PROFILE`）で渡します。シークレットストアから渡してください |
+| AWS Lambda / ECS | Attach this policy to the execution role (task role). No configuration is needed |
+| Google Cloud (Cloud Run) | Create the IAM role of "Calling from Cloud Run with web identity" below and set its ARN in `billing_aws_role_arn`. No AWS keys are needed |
+| Your own server | Pass the access key of an IAM user with this policy in `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or a shared credentials file and `AWS_PROFILE`). Pass it from a secret store |
 
-権限がない、または認証情報が無効なときは `permission` の失敗になります。
+Missing permissions or invalid credentials fail with `permission`.
 
-### Cloud Run から web identity で呼ぶ
+### Calling from Cloud Run with web identity
 
-`billing_aws_role_arn` を設定すると、サーバーはメタデータサーバーから Cloud Run のサービスアカウントの Google の ID トークン（audience はそのロールの ARN）を取り、`AssumeRoleWithWebIdentity` でそのロールの一時的な認証情報を得ます。
+When `billing_aws_role_arn` is set, the server gets a Google ID token of the Cloud Run service account from the metadata server (the audience is the role's ARN) and exchanges it for temporary credentials of that role with `AssumeRoleWithWebIdentity`.
 
-1. Google Cloud で、Cloud Run のサービスのサービスアカウントの一意の ID（数字の `uniqueId`、`gcloud iam service-accounts describe <メール> --format='value(uniqueId)'`）を控えます。
-2. AWS の IAM で、上の権限のポリシーを付けたロールを作り、信頼ポリシーで `accounts.google.com` を信頼します。
+1. In Google Cloud, note the unique ID (the numeric `uniqueId`) of the service account of the Cloud Run service: `gcloud iam service-accounts describe <email> --format='value(uniqueId)'`.
+2. In AWS IAM, create a role with the policy of the permissions above, and make its trust policy trust `accounts.google.com`.
 
    ```json
    {
@@ -66,8 +66,8 @@ Cost Explorer の API は、ページ付けされた要求 1 回ごとに $0.01 
          "Action": "sts:AssumeRoleWithWebIdentity",
          "Condition": {
            "StringEquals": {
-             "accounts.google.com:aud": "<サービスアカウントの uniqueId>",
-             "accounts.google.com:oaud": "<このロールの ARN>"
+             "accounts.google.com:aud": "<uniqueId of the service account>",
+             "accounts.google.com:oaud": "<ARN of this role>"
            }
          }
        }
@@ -75,191 +75,191 @@ Cost Explorer の API は、ページ付けされた要求 1 回ごとに $0.01 
    }
    ```
 
-   `accounts.google.com:aud` はトークンの `azp`（サービスアカウントの ID）、`accounts.google.com:oaud` はトークンの `aud`（サーバーが要求する audience = ロールの ARN）に対応します。
-3. `MY_BILLING_AWS_ROLE_ARN=arn:aws:iam::<アカウント ID>:role/<ロール名>` を設定します。
+   `accounts.google.com:aud` corresponds to the token's `azp` (the service account's ID), and `accounts.google.com:oaud` to the token's `aud` (the audience the server requests, which is the role's ARN).
+3. Set `MY_BILLING_AWS_ROLE_ARN=arn:aws:iam::<account ID>:role/<role name>`.
 
-この組み立ては実アカウントでの確認がまだです（#882）。
+This setup has not yet been verified on a real account.
 
-### Organizations の連結アカウントから呼ぶ
+### Calling from a linked account of Organizations
 
-AWS Organizations の管理アカウントは、組織のすべてのメンバーアカウントの費用を見られます。メンバーアカウント（連結アカウント）の認証情報で呼ぶときは、
-管理アカウントの Cost Explorer の設定（Preferences）で「Linked Account Access」を有効にしておく必要があります。無効だと IAM の権限に関係なく拒否され、取り込みは `not_enabled` か `permission` の失敗になります。
+The management account of AWS Organizations can see the costs of every member account of the organization. To call with the credentials of a member (linked) account,
+turn on "Linked Account Access" in the management account's Cost Explorer preferences. When it is off, the call is refused whatever the IAM permissions are, and the import fails with `not_enabled` or `permission`.
 
-### どの費用を取り込むか（絞り込み）
+### Choosing which costs to import (filtering)
 
-`billing_aws_filter` で選びます。
+Choose with `billing_aws_filter`.
 
-| `billing_aws_filter` | 取り込む費用 | 追加の設定 |
+| `billing_aws_filter` | Costs imported | Additional settings |
 | --- | --- | --- |
-| `none`（既定） | 認証情報で見えるすべての費用 | なし |
-| `linked_account` | 指定したメンバーアカウントの費用（`LINKED_ACCOUNT`） | `billing_aws_linked_accounts`（12 桁のアカウント ID、カンマ区切り） |
-| `tag` | 指定したコスト配分タグの付いたリソースの費用 | `billing_aws_tag`（`key=value`、例 `app=my`） |
+| `none` (default) | Every cost the credentials can see | None |
+| `linked_account` | The costs of the member accounts you name (`LINKED_ACCOUNT`) | `billing_aws_linked_accounts` (12-digit account IDs, comma-separated) |
+| `tag` | The costs of resources that carry the cost allocation tag you name | `billing_aws_tag` (`key=value`, for example `app=my`) |
 
-いちばん正確なのは、このサーバーだけのための AWS アカウント（Organizations のメンバーアカウントでもよい）を用意し、`none`（そのアカウントの認証情報で呼ぶ）か `linked_account`（管理アカウントから呼ぶ）で取ることです。
-タグを付けられない税・サポート料・一部のクレジットは、タグの絞り込みから漏れることがあります（実アカウントでの確認は #882）。
+The most accurate setup is an AWS account dedicated to this server (it may be a member account of Organizations), imported with `none` (calling with that account's credentials) or `linked_account` (calling from the management account).
+Taxes, support fees, and some credits cannot carry a tag, and may fall out of a tag filter (not yet verified on a real account).
 
-### コスト配分タグを有効にする（`billing_aws_filter = tag`）
+### Activating a cost allocation tag (`billing_aws_filter = tag`)
 
-リソースに付けたタグは、コスト配分タグとして有効にするまで請求のデータに出ません。
+A tag on a resource does not appear in the billing data until you activate it as a cost allocation tag.
 
-1. このサーバーのリソース（Lambda 関数、RDS、S3 のバケット、CloudFront など）に同じタグ（例 `app=my`）を付けます。
-2. Billing and Cost Management のコンソールの「コスト配分タグ」で、そのタグキーを選んで有効にします。タグを付けてからこの一覧に出るまで最大 24 時間、有効にしてから請求のデータに反映されるまでさらに最大 24 時間かかります。
-3. 有効にする前の期間の費用は、同じ画面の「バックフィル」（API の `StartCostAllocationTagBackfill`）で遡って反映できます。
-4. `MY_BILLING_AWS_FILTER=tag` と `MY_BILLING_AWS_TAG=app=my` を設定します。
+1. Put the same tag (for example `app=my`) on this server's resources (Lambda functions, RDS, S3 buckets, CloudFront, and so on).
+2. In "Cost allocation tags" of the Billing and Cost Management console, select the tag key and activate it. It takes up to 24 hours for a tag to show in this list after you attach it, and up to another 24 hours after activation for it to show in the billing data.
+3. To reflect the costs of the period before activation, use "Backfill" on the same screen (the API `StartCostAllocationTagBackfill`).
+4. Set `MY_BILLING_AWS_FILTER=tag` and `MY_BILLING_AWS_TAG=app=my`.
 
-### 指標
+### Metric
 
-`billing_aws_metric` は、割引（Savings Plans・リザーブドインスタンス・個別の価格）の後の `NetUnblendedCost`（既定。請求書に近い）か、割引の前の `UnblendedCost` です。
-Cost Explorer の値と請求書は更新の時期と丸めで違うことがあり、違うときは請求書の額が正です。
+`billing_aws_metric` is either `NetUnblendedCost` (the default, closer to the invoice), which is after discounts (Savings Plans, reserved instances, negotiated prices), or `UnblendedCost`, which is before them.
+Cost Explorer's values and the invoice can differ because of update timing and rounding. When they differ, the invoice is right.
 
-### 失敗の種類
+### Kinds of failure
 
-| 種類 | AWS の応答 | 直し方 |
+| Kind | AWS response | How to fix |
 | --- | --- | --- |
-| `permission` | `AccessDeniedException`、無効な認証情報 | IAM の権限と認証情報の渡し方を確かめる |
-| `not_enabled` | `DataUnavailableException` | Cost Explorer を有効にする。連結アカウントなら Linked Account Access を有効にする |
-| `not_found` | `BillExpirationException` | 取り込む期間の請求のデータが Cost Explorer にもうない |
-| `throttled` | `LimitExceededException` | ジョブが時間を置いて再試行する（要求の上限に数える） |
-| `unavailable` | 5xx、ネットワークの失敗 | ジョブが時間を置いて再試行する（要求の上限に数える） |
-| `invalid_response` | 読めない応答、`ValidationException` など | 設定（タグ・アカウント ID）を確かめる |
-| `request_cap` | （呼ばない） | 上限の日・月が明けるのを待つか、上限を上げる |
+| `permission` | `AccessDeniedException`, invalid credentials | Check the IAM permissions and how the credentials are passed |
+| `not_enabled` | `DataUnavailableException` | Enable Cost Explorer. For a linked account, enable Linked Account Access |
+| `not_found` | `BillExpirationException` | Cost Explorer no longer has the billing data of the period to import |
+| `throttled` | `LimitExceededException` | The job retries after a pause (it counts toward the request limit) |
+| `unavailable` | 5xx, network failure | The job retries after a pause (it counts toward the request limit) |
+| `invalid_response` | An unreadable response, `ValidationException`, and the like | Check the settings (tag, account IDs) |
+| `request_cap` | (no call is made) | Wait for the limiting day or month to pass, or raise the limit |
 
-`throttled` と `unavailable` のほかは再試行しても直らないので、記録してそのまま終わり、翌日の定期の取り込みが再び試します。
+Retrying cannot fix a failure other than `throttled` and `unavailable`, so the server records it and stops, and the next day's scheduled import tries again.
 
-## Google Cloud（`billing_sources = gcp`）
+## Google Cloud (`billing_sources = gcp`)
 
-Google Cloud には実際の費用を返す API がないため、Cloud Billing の BigQuery への export（標準の使用料金）を、BigQuery の `jobs.query` で 1 日 1 回集計します（`billing_gcp_method = bigquery`、既定）。
-export を用意できないときは、予算の Pub/Sub 通知から合計の概算だけを取り込む簡易な方法もあります（[予算の通知で取り込む](#予算の通知で取り込むbilling_gcp_method--budget)）。
-請求月は export の `invoice.month` で、米国太平洋時間（夏時間あり）の暦月です。日付も太平洋時間のまま記録します。
-金額は請求先アカウントの通貨で、請求月・サービス（`service.description`）・費用の種類（`cost_type`）ごとに `NUMERIC` で合計し、クレジット（`credits[]`）はサービスごとに 1 つのクレジットの行にします。export の訂正の打ち消しの行も合計に入ります。
-export には確定の印がないので、翌月の 5 日（太平洋時間）からの取り込みでその月を確定とし、それまでは月の初日から最後の利用の日までの見込みとして記録します。確定の後も 15 日までは取り直し、違いは修正として記録します。
-build tag `no_billing_gcp` で build したバイナリは `gcp` を拒みます（[ビルドタグ](../reference/build-tags.md)）。
+Google Cloud has no API that returns actual costs, so the server aggregates the Cloud Billing export to BigQuery (standard usage cost) once a day with a BigQuery `jobs.query` (`billing_gcp_method = bigquery`, the default).
+When you cannot set up the export, there is also a simple method that imports only an approximate total from the Pub/Sub notifications of a budget (see [Importing from budget notifications](#importing-from-budget-notifications-billing_gcp_method--budget)).
+The billing month is the export's `invoice.month`, a calendar month in US Pacific time (with daylight saving time). Dates are recorded in Pacific time as they are.
+Amounts are in the billing account's currency, summed as `NUMERIC` per billing month, service (`service.description`), and charge type (`cost_type`), and credits (`credits[]`) become one credit line per service. The export's correction rows that cancel earlier rows are part of the sum.
+The export has no mark for finality, so the import that runs from the 5th (Pacific time) of the next month treats the month as final, and until then records it as an estimate from the first day of the month to the day of the last usage. After it is final, the import still reads the month again until the 15th and records any difference as a correction.
+A binary built with the build tag `no_billing_gcp` refuses `gcp` (see [build-tags.md](../reference/build-tags.md)).
 
-### 費用と上限
+### Cost and limits
 
-1 回の取り込みは 1 回のクエリで、BigQuery はクエリごとにスキャンしたバイト数（最低 10 MB）を課金します。小さなアカウントなら月に 0.3 GB ほどで、毎月最初の 1 TiB の無料枠（請求先アカウントのほかの用途と共有）に収まり、$0 です。
-想定外のスキャンを防ぐため、クエリに必ず `maximumBytesBilled`（`billing_gcp_max_bytes_billed`、既定 1 GiB）を付けます。超えるクエリは課金されずに失敗し、`bytes_cap` の失敗として残ります。課金されたバイト数は管理画面に出ます。
+One import is one query, and BigQuery bills the bytes each query scans (at least 10 MB). A small account scans about 0.3 GB a month, which fits the first 1 TiB a month of the free tier (shared with the billing account's other uses), so it costs $0.
+To prevent unexpected scans, every query carries `maximumBytesBilled` (`billing_gcp_max_bytes_billed`, default 1 GiB). A query that would exceed it is not billed and fails, and it is recorded as a failure of kind `bytes_cap`. The administration shows the billed bytes.
 
-### BigQuery への export を有効にする
+### Enable the export to BigQuery
 
-運営者が一度だけ、コンソールで設定します（API での設定の方法は見つかっていません）。
+The operator sets this up once, in the console (no way to set it through an API has been found).
 
-1. 請求先アカウントに紐づいたプロジェクトに、BigQuery のデータセット（例 `billing_export`）を作ります。場所はマルチリージョン（`US` か `EU`）にします。今月と先月の分が遡って入ります（リージョンだと有効にした日からになります）。場所は後で変えられません。
-   テーブルの有効期限は付けないでください。消えた行は戻りません。
-2. 「お支払い → 課金データのエクスポート → BigQuery Export」で「標準の使用料金」を有効にし、1. のデータセットを選びます。設定には請求先アカウントの「請求先アカウント費用管理者」か「請求先アカウント管理者」と、プロジェクトの BigQuery ユーザーの役割が要ります。
-3. 数時間から 1 日ほどでテーブル `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`（ID のハイフンは `_`）が作られます。
-4. `MY_BILLING_GCP_TABLE=<プロジェクト>.billing_export.gcp_billing_export_v1_<BILLING_ACCOUNT_ID>` を設定します。
+1. In a project linked to the billing account, create a BigQuery dataset (for example `billing_export`). Choose a multi-region location (`US` or `EU`). The data of the current and the previous month is backfilled (with a single region, the data starts the day you enable it). The location cannot be changed later.
+   Do not set an expiration on the tables. Rows that expire do not come back.
+2. Under "Billing > Billing export > BigQuery export", enable "Standard usage cost" and select the dataset of step 1. The setup needs "Billing Account Costs Manager" or "Billing Account Administrator" on the billing account and the BigQuery User role on the project.
+3. After a few hours to a day, the table `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>` is created (the hyphens of the ID become `_`).
+4. Set `MY_BILLING_GCP_TABLE=<project>.billing_export.gcp_billing_export_v1_<BILLING_ACCOUNT_ID>`.
 
-データセットやテーブルが見つからないときは `not_found` の失敗になります。
+When the dataset or the table cannot be found, the import fails with `not_found`.
 
-### IAM の役割
+### IAM roles
 
-取り込むサーバーのサービスアカウントに、次の 2 つを付けます。
+Give the importing server's service account these two roles.
 
-| 役割 | 付ける場所 | 用途 |
+| Role | Where to grant it | Use |
 | --- | --- | --- |
-| `roles/bigquery.jobUser`（BigQuery ジョブユーザー） | クエリを実行するプロジェクト（`billing_gcp_query_project`、空ならテーブルのプロジェクト） | `bigquery.jobs.create`。スキャンのバイトはこのプロジェクトに課金されます |
-| `roles/bigquery.dataViewer`（BigQuery データ閲覧者） | export のデータセット | `bigquery.tables.getData` |
+| `roles/bigquery.jobUser` (BigQuery Job User) | The project that runs the query (`billing_gcp_query_project`, or the table's project when empty) | `bigquery.jobs.create`. The scanned bytes are billed to this project |
+| `roles/bigquery.dataViewer` (BigQuery Data Viewer) | The export's dataset | `bigquery.tables.getData` |
 
 ```sh
-gcloud projects add-iam-policy-binding <クエリのプロジェクト> \
-  --member=serviceAccount:<サービスアカウント> --role=roles/bigquery.jobUser
-bq add-iam-policy-binding --member=serviceAccount:<サービスアカウント> \
-  --role=roles/bigquery.dataViewer <プロジェクト>:billing_export
+gcloud projects add-iam-policy-binding <query project> \
+  --member=serviceAccount:<service account> --role=roles/bigquery.jobUser
+bq add-iam-policy-binding --member=serviceAccount:<service account> \
+  --role=roles/bigquery.dataViewer <project>:billing_export
 ```
 
-クエリのプロジェクトで BigQuery API が有効でないときは `not_enabled`、役割が足りないときは `permission` の失敗になります。
+When the BigQuery API is not enabled in the query project, the import fails with `not_enabled`, and when a role is missing, with `permission`.
 
-認証は Application Default Credentials（ADC）です。
+Authentication is Application Default Credentials (ADC).
 
-| 実行環境 | 認証 |
+| Runtime | Credentials |
 | --- | --- |
-| Google Cloud（Cloud Run） | サービスのサービスアカウントで ADC。鍵も設定も要りません |
-| AWS Lambda | Workload Identity Federation（AWS の種類）の credential configuration のファイルを置き、`GOOGLE_APPLICATION_CREDENTIALS` でそのパスを渡します（実アカウントでの確認は #882） |
-| 自前のサーバー | Workload Identity Federation か、サービスアカウントの JSON 鍵を `GOOGLE_APPLICATION_CREDENTIALS` で渡します。鍵はシークレットストアから渡してください |
+| Google Cloud (Cloud Run) | ADC with the service's service account. No key and no configuration |
+| AWS Lambda | Place a credential configuration file of Workload Identity Federation (the AWS type) and pass its path in `GOOGLE_APPLICATION_CREDENTIALS` (not yet verified on a real account) |
+| Your own server | Workload Identity Federation, or a service account JSON key passed in `GOOGLE_APPLICATION_CREDENTIALS`. Pass a key from a secret store |
 
-### どの費用を取り込むか（絞り込み）
+### Choosing which costs to import (filtering)
 
-既定では請求先アカウントのすべての費用を取り込みます。いちばん正確なのは、このサーバーだけのための請求先アカウントを使い、絞らずに取ることです。
+By default the server imports every cost of the billing account. The most accurate setup is a billing account dedicated to this server, imported without filters.
 
-| 設定 | 取り込む費用 |
+| Setting | Costs imported |
 | --- | --- |
-| `billing_gcp_projects`（プロジェクト ID、カンマ区切り） | 指定したプロジェクトの費用（`project.id`） |
-| `billing_gcp_label`（`key=value`、例 `app=my`） | 指定したラベルの付いたリソースの費用（`labels`） |
+| `billing_gcp_projects` (project IDs, comma-separated) | The costs of the projects you name (`project.id`) |
+| `billing_gcp_label` (`key=value`, for example `app=my`) | The costs of resources that carry the label you name (`labels`) |
 
-両方を設定すると、両方に当てはまる費用だけを取り込みます。
-税など請求書の単位の費用はプロジェクトもラベルも持たないことがあり、そのときは絞り込みから漏れます（実アカウントでの確認は #882）。
+When you set both, the server imports only the costs that match both.
+Costs at the level of the invoice, such as tax, may carry neither a project nor a label, and then fall out of the filter (not yet verified on a real account).
 
-### 失敗の種類
+### Kinds of failure
 
-| 種類 | BigQuery の応答 | 直し方 |
+| Kind | BigQuery response | How to fix |
 | --- | --- | --- |
-| `permission` | 401、403（`accessDenied`） | サービスアカウントの役割と認証情報の渡し方を確かめる |
-| `not_enabled` | 403（`accessNotConfigured` など） | クエリのプロジェクトで BigQuery API を有効にする |
-| `not_found` | 404 | `billing_gcp_table` と export の設定を確かめる |
-| `bytes_cap` | 400（`bytesBilledLimitExceeded`） | スキャンが `billing_gcp_max_bytes_billed` を超えた。テーブルが大きいなら上限を上げる |
-| `throttled` | 429、403（`rateLimitExceeded`・`quotaExceeded`） | ジョブが時間を置いて再試行する |
-| `unavailable` | 5xx、ネットワークの失敗、終わらないクエリ | ジョブが時間を置いて再試行する |
-| `invalid_response` | 読めない応答、月の中で通貨が混ざる行、ほかの 400 | export のテーブル（標準の使用料金か）を確かめる |
+| `permission` | 401, 403 (`accessDenied`) | Check the service account's roles and how the credentials are passed |
+| `not_enabled` | 403 (`accessNotConfigured` and the like) | Enable the BigQuery API in the query project |
+| `not_found` | 404 | Check `billing_gcp_table` and the export setup |
+| `bytes_cap` | 400 (`bytesBilledLimitExceeded`) | The scan exceeded `billing_gcp_max_bytes_billed`. Raise the limit if the table is large |
+| `throttled` | 429, 403 (`rateLimitExceeded`, `quotaExceeded`) | The job retries after a pause |
+| `unavailable` | 5xx, network failure, a query that does not finish | The job retries after a pause |
+| `invalid_response` | An unreadable response, rows that mix currencies within a month, any other 400 | Check the export table (is it the standard usage cost?) |
 
-`throttled` と `unavailable` のほかは再試行しても直らないので、記録してそのまま終わり、翌日の定期の取り込みが再び試します。
+Retrying cannot fix a failure other than `throttled` and `unavailable`, so the server records it and stops, and the next day's scheduled import tries again.
 
-### 予算の通知で取り込む（`billing_gcp_method = budget`）
+### Importing from budget notifications (`billing_gcp_method = budget`)
 
-BigQuery の export を用意できないときの簡易な方法です。Cloud Billing の予算（Budget）が Pub/Sub のトピックに送る通知を、pull のサブスクリプションから 1 日 1 回読みます。
-push にしないので、通知でサーバー（Cloud Run など）を起こしません。
+This is a simple method for when you cannot set up the BigQuery export. Once a day, the server reads from a pull subscription the notifications that a Cloud Billing budget sends to a Pub/Sub topic.
+It uses pull rather than push, so a notification never wakes the server (Cloud Run, for example).
 
-この方法で取り込めるのは、**見込みに基づく合計の概算だけ**です。
+This method imports **only an approximate total based on estimates**.
 
-- 通知の `costAmount` は予算の期間の累計の見込みで、サービスの内訳も費用の種類もありません。取り込むのは月ごと・予算ごとの 1 行（サービスの名前は予算の表示名、費用の種類は利用、区分はその他）だけです。クレジットと税は予算の設定どおり合計に含まれます。
-- 確定は BigQuery と同じく、翌月の 5 日（太平洋時間）からの取り込みで立てます。予算の通知は請求書の締めを知らないので、確定とした値も請求書の額とずれることがあります。
-- 見込みの月は、月の初日から最後の通知が発行された日（太平洋時間）までの費用として記録します。
-- 絞り込みは予算の範囲（プロジェクト、サービス、ラベル 1 つのキーと値）で決まり、`billing_gcp_projects` と `billing_gcp_label` は使いません。
+- A notification's `costAmount` is the estimated cumulative cost of the budget period, with no breakdown by service or charge type. The server imports only one line per month and budget (the service name is the budget's display name, the charge type is usage, and the category is other). Credits and taxes are in the total as the budget is configured.
+- As with BigQuery, a month becomes final in the import that runs from the 5th (Pacific time) of the next month. A budget notification knows nothing about the invoice closing, so even a value treated as final can differ from the invoice amount.
+- An estimated month is recorded as the cost from the first day of the month to the day (Pacific time) the last notification was published.
+- Filtering is decided by the budget's scope (projects, services, one label key and value), and `billing_gcp_projects` and `billing_gcp_label` are not used.
 
-#### 予算・トピック・サブスクリプションを用意する
+#### Prepare the budget, the topic, and the subscription
 
-1. トピックと、このサーバーだけが読む pull のサブスクリプションを作ります。保持期間と失効の理由は下の「通知の読み方」を見てください。
+1. Create a topic and a pull subscription that only this server reads. See "How notifications are read" below for the reasons behind the retention period and the expiration.
 
    ```sh
-   gcloud pubsub topics create billing-budget --project=<プロジェクト>
-   gcloud pubsub subscriptions create my-billing-budget --project=<プロジェクト> \
+   gcloud pubsub topics create billing-budget --project=<project>
+   gcloud pubsub subscriptions create my-billing-budget --project=<project> \
      --topic=billing-budget --ack-deadline=60 \
      --message-retention-duration=31d --expiration-period=never
    ```
 
-2. コンソールの「お支払い → 予算とアラート」で予算を作ります。期間は**月次**にしてください（月次でない予算の通知は `invalid_response` になります）。
-   範囲でこのサーバーのプロジェクトを選び、「管理 → Pub/Sub トピックをこの予算に接続する」で 1. のトピックを選びます。
-   予算の作成には請求先アカウントの「請求先アカウント費用管理者」か「請求先アカウント管理者」と、トピックのプロジェクトの `pubsub.topics.setIamPolicy`・`pubsub.topics.list` が要ります。
-   最初の通知が届くまで数時間かかり、その後は 1 日に数回届きます。
-3. 取り込むサーバーのサービスアカウントに、サブスクリプションの `roles/pubsub.subscriber`（Pub/Sub サブスクライバー）を付けます。メッセージの pull と確認応答（`pubsub.subscriptions.consume`）に使います。
+2. In the console, under "Billing > Budgets & alerts", create a budget. Make its period **monthly** (a notification of a budget that is not monthly fails with `invalid_response`).
+   Select this server's project as the scope, and under "Manage notifications > Connect a Pub/Sub topic to this budget" select the topic of step 1.
+   Creating the budget needs "Billing Account Costs Manager" or "Billing Account Administrator" on the billing account, and `pubsub.topics.setIamPolicy` and `pubsub.topics.list` on the topic's project.
+   The first notification takes a few hours to arrive, and after that several arrive a day.
+3. Give the importing server's service account `roles/pubsub.subscriber` (Pub/Sub Subscriber) on the subscription. It is used to pull messages and acknowledge them (`pubsub.subscriptions.consume`).
 
    ```sh
-   gcloud pubsub subscriptions add-iam-policy-binding my-billing-budget --project=<プロジェクト> \
-     --member=serviceAccount:<サービスアカウント> --role=roles/pubsub.subscriber
+   gcloud pubsub subscriptions add-iam-policy-binding my-billing-budget --project=<project> \
+     --member=serviceAccount:<service account> --role=roles/pubsub.subscriber
    ```
 
-4. `MY_BILLING_GCP_METHOD=budget` と `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<プロジェクト>/subscriptions/my-billing-budget` を設定します。
+4. Set `MY_BILLING_GCP_METHOD=budget` and `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`.
 
-認証は BigQuery と同じ Application Default Credentials です（上の [IAM の役割](#iam-の役割) の表）。
-build tag `no_billing_gcp` はこの方法も外します。Pub/Sub のクライアントライブラリは `stream = pubsub` と共有なので、バイナリから外れるのは `no_pubsub` も付けたときだけです（[ビルドタグ](../reference/build-tags.md)）。
+Authentication is the same Application Default Credentials as for BigQuery (see the table in [IAM roles](#iam-roles) above).
+The build tag `no_billing_gcp` removes this method too. The Pub/Sub client library is shared with `stream = pubsub`, so it leaves the binary only when you also set `no_pubsub` (see [build-tags.md](../reference/build-tags.md)).
 
-#### 通知の読み方
+#### How notifications are read
 
-- 1 回の取り込みは、新しいメッセージが来なくなるまで Pull を繰り返し、予算と月ごとに発行の時刻が最も新しい通知を採ります。Pub/Sub の重複の配信、同じ値の通知の繰り返し、順序の入れ替わりはこれで吸収するので、同じ通知を何度受けても合計は 1 回分です。
-  取り込みの要求数として数えるのは Pull の回数で、ふつうはメッセージのある 1 回と空の 1 回の 2 回です。最後に行う確認応答（`Acknowledge`・`ModifyAckDeadline`）は数えません。
-- 確認応答（ack）するのは、同じ予算と月のより新しい通知に置き換えられた通知と、取り込みの対象から外れた月（確定として記録された先月）の通知だけです。対象の月の最新の通知は ack せずにサブスクリプションへ返すので、次の取り込みも同じ通知を読み直し、新しい通知が届かない日も値は変わりません。
-- そのため、サブスクリプションのメッセージの保持期間は **14 日以上（31 日を推奨）** にしてください。月の予算の最後の通知は翌月の 2 日ごろに届き、先月は 15 日まで取り直すためです。保持が切れて通知がなくなった月は、費用 0 として記録されます。
-- サブスクリプションは既定で 31 日使われないと失効します。失効を「なし」にしておくと、取り込みを止めていた間も消えません。
-- 予算の通知のほかのメッセージをトピックに送らないでください。予算の通知として読めないメッセージはその回の取り込みを `invalid_response` で失敗させ、次の回で止まらないように ack します。
-- 費用: 1 日数十通で、Pub/Sub の無料枠（毎月 10 GiB）に収まり $0 です。上限は持ちません。
+- One import repeats Pull until no new message arrives, and takes, for each budget and month, the notification with the latest publish time. This absorbs duplicate Pub/Sub deliveries, repeated notifications with the same value, and reordering, so receiving the same notification many times counts once in the total.
+  The number of requests counted for an import is the number of Pulls, normally two: one that returns messages and one that comes back empty. The acknowledgments made at the end (`Acknowledge`, `ModifyAckDeadline`) are not counted.
+- The server acknowledges (acks) only a notification that a newer notification of the same budget and month has replaced, and a notification of a month that is no longer imported (the previous month, once it has been recorded as final). The latest notification of an imported month is not acked but returned to the subscription, so the next import reads the same notification again, and the value does not change on a day with no new notification.
+- Therefore, set the subscription's message retention to **at least 14 days (31 days recommended)**. The last notification of a month's budget arrives around the 2nd of the next month, and the previous month is read again until the 15th. A month whose notifications have expired is recorded as a cost of 0.
+- By default a subscription expires after 31 days without use. Set the expiration to "never" so that it survives a period in which imports were stopped.
+- Do not send other messages to the topic. A message that cannot be read as a budget notification fails that import with `invalid_response`, and is acked so that the next import does not stall on it.
+- Cost: a few dozen messages a day fit the Pub/Sub free tier (10 GiB a month), so it costs $0. The server sets no limit.
 
-#### 失敗の種類（予算の通知）
+#### Kinds of failure (budget notifications)
 
-| 種類 | Pub/Sub の応答 | 直し方 |
+| Kind | Pub/Sub response | How to fix |
 | --- | --- | --- |
-| `permission` | `PERMISSION_DENIED`、`UNAUTHENTICATED` | サブスクリプションの `roles/pubsub.subscriber` と認証情報の渡し方を確かめる |
-| `not_enabled` | `PERMISSION_DENIED`（`SERVICE_DISABLED`） | サブスクリプションのプロジェクトで Pub/Sub API を有効にする |
-| `not_found` | `NOT_FOUND` | `billing_gcp_budget_subscription` とサブスクリプションの失効を確かめる |
-| `throttled` | `RESOURCE_EXHAUSTED` | ジョブが時間を置いて再試行する |
-| `unavailable` | `UNAVAILABLE`、`INTERNAL` など、ネットワークの失敗 | ジョブが時間を置いて再試行する |
-| `invalid_response` | 予算の通知として読めないメッセージ、月次でない予算、同じ表示名の 2 つの予算 | 予算を月次にし、表示名を分け、トピックにほかのメッセージを送らない |
+| `permission` | `PERMISSION_DENIED`, `UNAUTHENTICATED` | Check `roles/pubsub.subscriber` on the subscription and how the credentials are passed |
+| `not_enabled` | `PERMISSION_DENIED` (`SERVICE_DISABLED`) | Enable the Pub/Sub API in the subscription's project |
+| `not_found` | `NOT_FOUND` | Check `billing_gcp_budget_subscription` and whether the subscription has expired |
+| `throttled` | `RESOURCE_EXHAUSTED` | The job retries after a pause |
+| `unavailable` | `UNAVAILABLE`, `INTERNAL`, and the like, network failure | The job retries after a pause |
+| `invalid_response` | A message that cannot be read as a budget notification, a budget that is not monthly, two budgets with the same display name | Make the budget monthly, give the budgets distinct display names, and send no other messages to the topic |
