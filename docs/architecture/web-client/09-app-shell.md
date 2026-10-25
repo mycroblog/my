@@ -259,3 +259,15 @@
   その間、オフラインの帯（`ConnectionBanner` が出す 1 つの `OfflineBanner`）に、リクエストが多すぎることと、読み込み直す時刻（秒まで）を出す。オフラインのときはオフラインの文言を優先する。
   `src/shell.test.tsx` が外枠の 4 つの要求の失敗（5xx と 429）・前の値の保持・再読み込み後の表示言語・429 の帯とその時刻での取り直し・アカウントの区画の再試行を MSW で検査し、
   `e2e/rate-limit.spec.ts` が 429 の帯の axe・横スクロール・ARIA スナップショットと、時刻での取り直しを検査する。
+- **メンテナンス**（`lib/maintenance.ts`、`src/Maintenance.tsx`、[ADR-0084](../../adr/0084-maintenance-mode.md) §3）: メンテナンスモードのサーバーは、client API と OAuth の JSON の端点に `503` と Problem（`type: /api/v1/problems/maintenance`）と `Retry-After` を返す。
+  API クライアントとセッションはこれを `MaintenanceError`（`ApiError` に、告知文 `notice`・終了予定 `until`・ステータスページ `statusPageUrl` を足したもの。形の正しいものだけ持つ）にし、
+  ページに 1 つの `Maintenance`（React の外のストア、`lib/services.ts` が作る）に知らせる。この 503 ではトークンを捨てず、更新の失敗として扱わず、サインアウトしない（§10）。
+  - 外枠（`App.tsx` の `MaintenanceGate`）は、ストアがメンテナンス中の間、ルーターの代わりに画面全体をメンテナンスの表示（`StandalonePage` の `main`）にする。
+    見出し（`h1`。表示したときにフォーカスを移し、`document.title` も「メンテナンス中」にする）・説明・告知文（管理者の文なので `dir="auto"`・`lang=""`、改行を保つ）・
+    終了予定（表示のロケールとタイムゾーンで `Intl` で整形）・ステータスページへのリンク（`ExternalLink`）を、サーバーが設定したものだけ出し、最後に「再読み込み」のボタンを置く。
+  - `Retry-After` の時刻に `GET /instance` でサーバーに聞き直す（時刻が理由なので Effect のタイマー）。まだメンテナンス中なら新しい Problem の時刻でまた待ち、応答がないときや時刻が過ぎているときは 30 秒待つ。
+    「再読み込み」はすぐに聞き直し、まだメンテナンス中ならそのことを `useAnnouncer` で知らせる。
+  - メンテナンス中と知った後に API が 2xx を返したら、メンテナンスが終わったので、ページを 1 度だけ再読み込みする。セッションは Cookie から再開し、同じアドレスの画面と、その loader と Query が最初から読み込まれる。
+  - キャッシュ済みの Service Worker が古いシェルを出しても、API の応答で同じ表示になる。
+  `src/lib/api/client.test.ts` がトークンとセッションが残ること（要求・401 の後の更新・起動時の再開）と終わった後の再読み込みを、`src/maintenance.test.tsx` が表示・フォーカス・再読み込みのボタン・`Retry-After` の後の聞き直しを MSW で検査し、
+  `e2e/maintenance.spec.ts` が表示の axe・横スクロールと、終わった後にサインインしたまま元の画面に戻ることを検査する。

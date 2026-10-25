@@ -17,6 +17,8 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
   - 失敗した応答は `lib/errors.ts` の `ApiError`（RFC 9457 の problem そのものに `message` を足したもの）に、通信の失敗は `NetworkError` にして投げる。
     どちらも `message` がローカライズ済みで、そのまま表示できる（`NetworkError` は、ブラウザがオフラインならそう言う文言になる。§9 のオフライン）。応答が届いたか届かなかったかは `lib/network.ts` に伝える。problem でない本文（プロキシの HTML など）は、クライアントのカタログの文言（`client:api.error.status`）にする。
     生成された型は失敗をすべて problem と呼ぶので、表示する文言は `errorMessage(error)` で取る。
+  - メンテナンスの Problem（`503`、`type: /api/v1/problems/maintenance`、ADR-0084 §3）は `MaintenanceError`（`ApiError` の一種）にし、`lib/maintenance.ts` に知らせる。その後の 2xx の応答も知らせ、メンテナンスの終わりにする（§9 のメンテナンス）。
+    この 503 は 401 ではないのでトークンを更新しない。401 の後の更新が OAuth の端点でこの 503 に当たったときも、トークンを捨てずに `MaintenanceError` を投げる。
 - **セッション**（`lib/auth/session.ts`）: アクセストークンはこのオブジェクトのメモリにだけ置き、localStorage・sessionStorage・IndexedDB・読める Cookie には書かない。
   リフレッシュトークンは HttpOnly の `__Host-my_rt` Cookie にあり、`POST /oauth/token/refresh`（`X-My-Token-Refresh: 1`、`credentials: "include"`）だけがそれを読む。
   - サーバーはリフレッシュトークンを厳格にローテーションし、同じトークンが 2 度使われるとトークン系列ごと失効させる。そこで、更新はオリジンで 1 つの Web Lock（`navigator.locks.request("my:oauth-refresh", …)`）の中で行う。
@@ -26,7 +28,8 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
   - サインイン・サインアウト・セッションの終了（更新が 4xx で断られた）も BroadcastChannel で他のタブに伝える。
   - 利用者が変わったとき（サインイン、またはセッションのあったタブでの終了）、`lib/auth/userData.ts` が Query のキャッシュをすべて消す。セッションが終わったときは、`lib/pwa` の `clearCaches()` で Cache Storage もすべて消す（§11）。
     セッションが終わったときは、`lib/storage` で利用者のデータと宣言したキー（投稿の下書き（§12）とオフラインで読むホームのタイムライン（§11））も消す（§2「ブラウザの保存」）。サインインでは下書きを消さない（キーにアカウントの ID を含める）。ホームのタイムラインは前の利用者のものなので、サインインでも消す。
-  - 起動時のセッションの再開がサーバーに届かなかったとき（オフラインで開いた）は、サインインしていないものとして動きつつ、`unreachable` を立てる。次の `restore()`（ルートの loader・`requireSignIn`）がもう一度更新を試す。
+  - 起動時のセッションの再開がサーバーに届かなかったとき（オフラインで開いた）と、更新の端点がメンテナンスの Problem を返したとき（`MaintenanceError`。`lib/maintenance.ts` に知らせる）は、サインインしていないものとして動きつつ、`unreachable` を立てる。
+    どちらも Cookie を消さず、他のタブにサインアウトを伝えない。次の `restore()`（ルートの loader・`requireSignIn`）がもう一度更新を試す。
     再開できたら利用者が変わったものとして扱い（Query のキャッシュを消す）、サーバーがセッションはないと答えたら、セッションが終わったものとして利用者のデータを消す。
   - 状態（`unknown` / `signed-in` / `signed-out`）は `useSessionStatus()` で読む。サーバーのデータである閲覧者のアカウントは Context に置かず、`features/session` の `useViewer()` が Query で取る（S2、S6）。
 - **ログイン**（`lib/auth/signIn.ts`、Authorization Code + PKCE）: `/login` のボタンが、新しい verifier（32 バイトの乱数）と `state` を作り、S256 の challenge を付けてサーバーの認可画面（`/oauth/authorize`）にページごと遷移する。

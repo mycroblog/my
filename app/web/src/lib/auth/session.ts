@@ -9,7 +9,12 @@
 // under one Web Lock of the origin (navigator.locks, shared by every tab), and the tab that refreshed
 // posts the new access token on a BroadcastChannel. A tab that waited for the lock uses the token that
 // arrived meanwhile; if none did, its own refresh sends the cookie that the previous one rotated in.
-import { NetworkError } from "../errors";
+//
+// The server's maintenance mode answers the OAuth endpoints with the 503 of the maintenance problem (ADR-0084 §3). The
+// session survives it: a refresh that meets it keeps the token and the cookie, throws the MaintenanceError, and says
+// nothing to the other tabs, as when the server cannot be reached.
+import { maintenanceFromResponse, NetworkError } from "../errors";
+import type { Maintenance } from "../maintenance";
 
 /** The client_id of the first-party web client (identity.DefaultWebClientID on the server). */
 export const webClientId = "my-web";
@@ -59,6 +64,8 @@ export type SessionOptions = {
   locks?: Locks | undefined;
   /** Opens the channel shared with the other tabs; a BroadcastChannel by default. */
   openChannel?: ((name: string) => Channel) | undefined;
+  /** Where the OAuth endpoints' maintenance problem is reported (lib/maintenance.ts). */
+  maintenance?: Pick<Maintenance, "report"> | undefined;
 };
 
 /** Why a sign-out did not reach the server: this tab is signed out, but the server may keep the session. */
@@ -75,9 +82,17 @@ function isTokenResponse(value: unknown): value is TokenResponse {
   return typeof access_token === "string" && access_token !== "" && token_type === "Bearer";
 }
 
-/** The access token of `response`, or null when the server refused the grant (a 4xx). Throws otherwise. */
-async function readTokenResponse(response: Response): Promise<string | null> {
+/**
+ * The access token of `response`, or null when the server refused the grant (a 4xx). Throws a MaintenanceError for the
+ * maintenance problem (after reporting it to `maintenance`) and a NetworkError for any other failure.
+ */
+async function readTokenResponse(response: Response, maintenance: Pick<Maintenance, "report"> | undefined): Promise<string | null> {
   if (response.status >= 400 && response.status < 500) return null;
+  const underMaintenance = await maintenanceFromResponse(response);
+  if (underMaintenance !== null) {
+    maintenance?.report(underMaintenance);
+    throw underMaintenance;
+  }
   if (!response.ok) throw new NetworkError(`${response.url}: ${response.status}`);
   const body: unknown = await response.json();
   if (!isTokenResponse(body)) throw new NetworkError(`${response.url}: not a token response`);
@@ -100,6 +115,7 @@ export class Session {
   readonly #apiOrigin: string;
   readonly #locks: Locks;
   readonly #channel: Channel | null;
+  readonly #maintenance: Pick<Maintenance, "report"> | undefined;
   #accessToken: string | null = null;
   #status: SessionStatus = "unknown";
   /** Whether resuming the session failed because the server could not be reached (see `unreachable`). */
@@ -109,8 +125,9 @@ export class Session {
   readonly #listeners = new Set<() => void>();
   readonly #userListeners = new Set<(status: SessionStatus) => void>();
 
-  constructor({ apiOrigin, locks, openChannel }: SessionOptions) {
+  constructor({ apiOrigin, locks, openChannel, maintenance }: SessionOptions) {
     this.#apiOrigin = apiOrigin;
+    this.#maintenance = maintenance;
     const navigatorLocks = typeof navigator === "undefined" ? undefined : (navigator.locks as LockManager | undefined);
     this.#locks = locks ?? navigatorLocks ?? localLocks();
     const open = openChannel ?? (typeof BroadcastChannel === "undefined" ? undefined : (name: string) => new BroadcastChannel(name));
@@ -160,7 +177,8 @@ export class Session {
     try {
       await this.refresh(null);
     } catch (error) {
-      // The server is unreachable; without a token this tab acts signed out until a later refresh.
+      // The server is unreachable or under maintenance; without a token this tab acts signed out until a later
+      // refresh, which the cookie still allows.
       console.error(error);
       // A tab may have shared a token meanwhile.
       if (this.#status === "unknown") {
@@ -173,7 +191,8 @@ export class Session {
   /**
    * Gets a new access token after `stale` stopped working (null: there was none), and returns it, or null
    * when the session has ended. Concurrent calls in this tab share one refresh, and tabs take turns
-   * under the Web Lock. Throws a NetworkError when the server cannot be reached.
+   * under the Web Lock. Throws a NetworkError when the server cannot be reached, and a MaintenanceError while it is
+   * under maintenance; neither ends the session.
    */
   refresh(stale: string | null): Promise<string | null> {
     this.#refreshing ??= this.#locks
@@ -201,7 +220,7 @@ export class Session {
     } catch (error) {
       throw new NetworkError("the token refresh failed", { cause: error });
     }
-    const token = await readTokenResponse(response);
+    const token = await readTokenResponse(response, this.#maintenance);
     if (token === null) {
       // The cookie is missing, expired or revoked. If this tab had a session, every tab has lost it. A tab
       // that could not reach the server may have shown the user's saved data meanwhile, which goes too.
@@ -241,7 +260,7 @@ export class Session {
     } catch (error) {
       throw new NetworkError("the authorization code exchange failed", { cause: error });
     }
-    const token = await readTokenResponse(response);
+    const token = await readTokenResponse(response, this.#maintenance);
     if (token === null) return false;
     this.#unreachable = false;
     this.#accessToken = token;
