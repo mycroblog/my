@@ -4,7 +4,7 @@
 
 DB の初期化は `my` のコマンドではなく、Atlas Community Edition でスキーマ `schema/<dialect>/`（モジュールごとのファイル）を適用して行います。
 サーバーの単一バイナリには Atlas を組み込まず（ADR-0023）、Atlas とスキーマは別のイメージ（`Dockerfile` の target `schema`）に入っています。
-`my serve` はスキーマを適用しません。未適用のまま起動すると readiness が 503 を返します（[起動する](running.md#起動する)）。
+`my serve` はスキーマを適用しません。未適用のまま起動すると readiness が 503 を返します（[起動する](running.md#start-the-server)）。
 
 ## 初期化する（スキーマを適用する）
 

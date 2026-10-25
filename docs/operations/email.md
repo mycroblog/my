@@ -167,7 +167,7 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 
 ## 送信の失敗を見る
 
-送信の失敗はジョブのダッシュボードで見ます（`/admin/jobs`、権限 `manage_jobs`、ADR-0064。詳しくは [ジョブのキューと失敗したジョブ](running.md#ジョブのキューと失敗したジョブdead-job)）。
+送信の失敗はジョブのダッシュボードで見ます（`/admin/jobs`、権限 `manage_jobs`、ADR-0064。詳しくは [ジョブのキューと失敗したジョブ](running.md#the-job-queue-and-failed-dead-jobs)）。
 ジョブの型で絞ると、メールのジョブだけを見られます（管理 API なら `GET /api/v1/admin/jobs?type=identity.verification_email`）。
 型は上の表のとおりです。
 
