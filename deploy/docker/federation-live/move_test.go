@@ -42,7 +42,7 @@ type peerMover interface {
 	move(ctx context.Context, handle, uri string) error
 }
 
-// TestMove moves accounts in both directions with every peer (FR-414, ADR-0089 相互運用の確かめ方):
+// TestMove moves accounts in both directions with every peer (FR-414; ADR-0089, how interoperability is verified):
 //
 //   - out: the peer user (bob, carol, grace) follows leave<peer>@my.test; arrive of the peer names
 //     it among its aliases; it moves to arrive of the peer (POST /accounts/move); the peer user
