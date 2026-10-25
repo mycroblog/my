@@ -80,11 +80,13 @@ export const Post: Story = {
     await expect(layer).toHaveAttribute("dir", "auto");
     await expect(textbox).toHaveAttribute("dir", "auto");
     // The layer copies the textarea's layout, and the line height is whole pixels (#1152).
+    // The layer copies after fonts load and on resize, so it may trail the textarea for a frame: wait for it to settle.
+    await document.fonts.ready;
     const textareaStyle = getComputedStyle(textbox);
     const layerStyle = getComputedStyle(layer);
-    await expect(Number.isInteger(Number.parseFloat(textareaStyle.lineHeight))).toBe(true);
+    await waitFor(() => expect(Number.isInteger(Number.parseFloat(textareaStyle.lineHeight))).toBe(true));
     for (const property of ["font-family", "font-size", "line-height", "letter-spacing", "padding-inline-start", "padding-inline-end", "padding-block-start"]) {
-      await expect(layerStyle.getPropertyValue(property)).toBe(textareaStyle.getPropertyValue(property));
+      await waitFor(() => expect(layerStyle.getPropertyValue(property)).toBe(textareaStyle.getPropertyValue(property)));
     }
     // The textarea draws the text; the layer's text is transparent and only its marks have a background.
     await expect(textareaStyle.backgroundColor).toBe("rgba(0, 0, 0, 0)");
