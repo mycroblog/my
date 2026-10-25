@@ -23,6 +23,16 @@ tasks:
     cmds:
       - bin/agentkit docs lint
 
+  pr-impact:
+    desc: 'Fail when a user or operator document that describes the paths changed since BASE is neither changed nor explained in the Documentation section of the pull request description in BODY: scripts/task.sh docs:pr-impact BODY=<file> [BASE=origin/main]'
+    deps: [":agentkit:build"]
+    requires:
+      vars: [BODY]
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+    cmds:
+      - bin/agentkit docs impact --base {{shellQuote .BASE}} --pr-body {{shellQuote .BODY}}
+
   adr-numbers:
     desc: Fail if two files in docs/adr share a number
     cmds:

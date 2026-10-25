@@ -109,10 +109,20 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
   GitHub issues and PRs (`ADR-0001`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
   Contributor documents may cite the ADR a rule comes from.
-- `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules and that relative links and
-  their `#anchors` resolve. [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet
-  converted; that list only shrinks — when you add or rewrite a section of a listed file, convert the whole file and
-  remove it from the list.
+- `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules, that relative links and
+  their `#anchors` resolve, and that `docs/README.md` links every file of `docs/operations/` and `docs/reference/`.
+  [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet converted; that list only
+  shrinks — when you add or rewrite a section of a listed file, convert the whole file and remove it from the list.
+- **User and operator documents stay true to the code.** The `userdocs` of each entry of
+  [tools/agentkit/context-map.yaml](tools/agentkit/context-map.yaml) name the documents that describe its paths; every
+  file of `docs/operations/` and `docs/reference/` is the `userdocs` of some entry (`agentkit map check`).
+  A change to those paths updates each document it makes wrong, in the same PR. `agentkit docs impact` (also printed by
+  `agentkit check`) lists the documents of the change; the PR's **Documentation** section lists each one as changed, or as
+  `- <path>: no change — <reason>` with a reason of three words or more. `agentkit pr open --doc-reason '<path>=<reason>'`
+  writes the section, and the PR's preflight (`docs:pr-impact`) fails while a document is neither.
+- **Every user-visible name is documented**: each command of `my`, metric, webhook event type, build tag, and listed task
+  appears in its document (`agentkit docs inventory`, part of `agentkit:check`), or under `inventory.exclude` of
+  `docs/lint.yaml` with the reason. `docs/reference/configuration.md` is generated (`scripts/task.sh go:config-docs`).
 
 ## Design rules
 

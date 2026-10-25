@@ -106,14 +106,21 @@ jobs:
 
   preflight:
     # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile and Playwright image versions, the design
-    # tokens, the CSS 100vh check, and the types of the email layout's compiler (tools/mail). A pull request's own
-    # files or lockfiles decide each of them, so stacking pull requests in the merge queue cannot break them and the
-    # queue does not run them again.
+    # tokens, the CSS 100vh check, the types of the email layout's compiler (tools/mail), and the Documentation section
+    # of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
+    # requests in the merge queue cannot break them and the queue does not run them again.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # docs:pr-impact reads the pull request's description.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
+      # docs:pr-impact compares the merge commit with its first parent, the base branch.
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Go
@@ -159,6 +166,16 @@ jobs:
             run: scripts/task.sh web:tokens
           - name: web:lint-css
             run: scripts/task.sh web:lint-css
+          # Each user or operator document that describes the changed paths (the userdocs of
+          # tools/agentkit/context-map.yaml) is changed or explained in the description. It reads the description now,
+          # not the event's copy, so rerunning the job after editing the description checks the new text.
+          - name: docs:pr-impact
+            env:
+              GH_TOKEN: ${{ github.token }}
+              PR: ${{ github.event.pull_request.number }}
+            run: |
+              gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/pr-body.md"
+              scripts/task.sh docs:pr-impact BASE=HEAD^1 BODY="$RUNNER_TEMP/pr-body.md"
 
   ui-test:
     # The @my/ui story tests (ADR-0027), on pull requests alone: a pull request that changes a screenshot fixes its
@@ -423,7 +440,7 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
-    # files), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # files) and inventories (the names each document must mention), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
@@ -458,6 +475,8 @@ jobs:
             run: scripts/task.sh agentkit:vet
           - name: agentkit:map-check
             run: scripts/task.sh agentkit:map-check
+          - name: agentkit:inventory
+            run: scripts/task.sh agentkit:inventory
           - name: agentkit:mod-check
             run: scripts/task.sh agentkit:mod-check
           - name: agentkit:deps-check

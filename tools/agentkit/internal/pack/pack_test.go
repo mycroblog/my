@@ -50,7 +50,8 @@ func TestBuild(t *testing.T) {
 	defer func() { _ = s.Close() }()
 	m := &ctxmap.Map{Entries: []ctxmap.Entry{{
 		Name: "schema", Paths: []string{"schema/**"}, Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
-		Checks: []string{"schema", "go"}, Shared: true, Notes: []string{"Edit every dialect together."},
+		Userdocs: []string{"docs/operations/database.md#upgrading"},
+		Checks:   []string{"schema", "go"}, Shared: true, Notes: []string{"Edit every dialect together."},
 	}}}
 	is := &gh.Issue{
 		Number: 916, Title: "[Task] create_custom_emojis", State: "OPEN",
@@ -69,6 +70,8 @@ func TestBuild(t *testing.T) {
 		"###### 申請", // headings of included text sit below the pack's own
 		"**schema** [shared",
 		"Edit every dialect together.",
+		"User and operator documents that describe these areas",
+		"- `docs/operations/database.md#upgrading`",
 		"table:custom_emoji_requests",
 		"`scripts/task.sh db:check-all` for both dialects",
 	} {

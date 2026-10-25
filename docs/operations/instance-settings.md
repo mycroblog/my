@@ -338,7 +338,8 @@ my admin emoji list -local                                                      
 my admin emoji update -category Animals -alias cat -alias neko <emoji id>         # change the category and aliases (aliases are replaced; -no-aliases removes them)
 my admin emoji update -hidden <emoji id>                                          # hide it from the picker (-hidden=false restores it)
 my admin emoji replace-image <emoji id> blobcat2.png                              # replace the image
-my admin emoji disable <emoji id>                                                 # disable it (enable restores it; remote emoji too)
+my admin emoji disable <emoji id>                                                 # disable it (remote emoji too)
+my admin emoji enable <emoji id>                                                  # enable it again
 my admin emoji list -remote -domain mastodon.example                              # list emoji of another server
 my admin emoji copy [-shortcode <name>] <emoji id>                                # copy a remote emoji to local
 my admin emoji delete <emoji id>                                                  # delete it

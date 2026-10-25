@@ -8,7 +8,15 @@ and its own public posts reach further. An instance that does not join a relay g
 ## Join a relay
 
 Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
-The CLI is `my admin relay` (`my admin relay -help`).
+The CLI is `my admin relay` (`my admin relay -help`):
+
+```sh
+my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
+my admin relay add [-protocol mastodon|litepub] [-send-only] <url>  # register a relay and send it the Follow
+my admin relay unfollow <relay id>                                # leave a pending or joined relay
+my admin relay follow <relay id>                                  # join again a relay that the instance left or that rejected it
+my admin relay remove <relay id>                                  # delete a relay that the instance left or that rejected it
+```
 
 1. Register the relay's URL. There are two protocols:
    - **Mastodon**: the relay's **inbox URL** (such as `https://relay.example/inbox`). Many relays, including pub-relay and Activity-Relay, accept this.

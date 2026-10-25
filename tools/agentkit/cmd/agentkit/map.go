@@ -36,7 +36,7 @@ func runMap(r *repo.Repo, args []string) error {
 			fmt.Printf("error: %s: %s\n", p.Path, p.Msg)
 		}
 		if len(problems) > 0 {
-			return exitError{1, fmt.Sprintf("%s: %d problems; add or fix entries (see the comment at its top)", ctxmap.File, len(problems))}
+			return exitError{1, fmt.Sprintf("%s: %d problems; add or fix entries or their userdocs (see the comment at its top)", ctxmap.File, len(problems))}
 		}
 		fmt.Printf("%s covers all %d files\n", ctxmap.File, len(paths))
 		return nil
@@ -57,6 +57,9 @@ func runMap(r *repo.Repo, args []string) error {
 				fmt.Println()
 				for _, d := range e.Docs {
 					fmt.Println("  doc  " + d)
+				}
+				for _, d := range e.Userdocs {
+					fmt.Println("  userdoc " + d)
 				}
 				for _, n := range e.Notes {
 					fmt.Println("  note " + n)

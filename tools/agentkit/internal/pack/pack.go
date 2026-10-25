@@ -302,7 +302,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	checks := map[string]bool{}
 	if len(names) > 0 {
 		w.add("## Areas and their rules (tools/agentkit/context-map.yaml)\n\n")
-		var docs []string
+		var docs, userdocs []string
 		for _, name := range names {
 			e := areas[name]
 			flag := ""
@@ -317,6 +317,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 				checks[c] = true
 			}
 			docs = append(docs, e.Docs...)
+			userdocs = append(userdocs, e.Userdocs...)
 		}
 		w.add("\nDocuments of these areas (read the ones the change needs):\n\n")
 		for _, d := range text.Uniq(docs) {
@@ -327,6 +328,14 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 				w.addf("- `agentkit show '%s'` (%s)\n", d, text.Ktok(tok))
 			} else {
 				w.addf("- `agentkit show '%s'`\n", d)
+			}
+		}
+		if us := text.Uniq(userdocs); len(us) > 0 {
+			w.add("\nUser and operator documents that describe these areas: keep them true. Update each one the change makes " +
+				"wrong in the same pull request, in English and without citing ADRs or issues; `agentkit pr open --doc-reason " +
+				"'<path>=<reason>'` explains one that needs no change (AGENTS.md#documentation):\n\n")
+			for _, d := range us {
+				w.addf("- `%s`\n", d)
 			}
 		}
 		w.add("\n")

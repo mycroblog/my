@@ -2,7 +2,7 @@
 #
 # The files each documentation rule of AGENTS.md ("Documentation") covers, checked by `agentkit docs lint`
 # (scripts/task.sh docs:rules). Every Markdown file not skipped is also checked for relative links and #anchors
-# that resolve.
+# that resolve. The inventories at the end are checked by `agentkit docs inventory` (scripts/task.sh agentkit:inventory).
 #
 # Patterns: `*` matches within one path segment, `**` any number of segments; a pattern that starts with `!`
 # takes the files it matches out of its list.
@@ -40,9 +40,29 @@ operator:
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
   - "!docs/reference/commands.md"
 
+# The index of the documents for users and operators: it links every file of the list.
+index:
+  file: docs/README.md
+  files:
+    - "docs/operations/*.md"
+    - "docs/reference/*.md"
+
 # Files that do not follow a rule yet. Never add a file: write a new file to the rules. When you add or rewrite a
 # section of a listed file, convert the whole file and remove it here; the check fails while a listed file already
 # follows the rule.
 pending:
   japanese: []
   design-links: []
+
+# The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
+# the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the
+# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), and the tasks that
+# `scripts/task.sh --list` lists (docs/reference/commands.md). Exclude a name here only with the reason in a comment;
+# the check fails when an excluded name is mentioned after all or no longer defined.
+inventory:
+  exclude:
+    cli: []
+    metrics: []
+    webhook-events: []
+    build-tags: []
+    tasks: []

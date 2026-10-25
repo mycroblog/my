@@ -3,8 +3,12 @@
 // Package docslint checks the repository's documents against the rules of AGENTS.md that a machine can check:
 // relative links and their #anchors resolve, the English-only documents contain no Japanese outside code, and the
 // documents for users and operators neither link to nor cite the design records (ADRs, requirements, architecture)
-// and GitHub issues or pull requests. docs/lint.yaml says which files each rule covers and lists the files that
-// do not follow a rule yet; an entry there must be removed once its file follows the rule, so the lists only shrink.
+// and GitHub issues or pull requests, and the index (docs/README.md) links every one of those documents.
+// docs/lint.yaml says which files each rule covers and lists the files that do not follow a rule yet; an entry
+// there must be removed once its file follows the rule, so the lists only shrink.
+//
+// Inventory checks the other direction, from the code to the documents: every name users and operators see (a
+// command of `my`, a metric, a webhook event type, a build tag, a task) is mentioned in the document they look it up in.
 package docslint
 
 import (
@@ -36,10 +40,19 @@ type Config struct {
 	Skip     []string `yaml:"skip"`     // files no rule reads (generated or vendored Markdown)
 	English  []string `yaml:"english"`  // files written in English only
 	Operator []string `yaml:"operator"` // files for users and operators: no design records, issues, or pull requests
-	Pending  struct {
+	// Index is the document that links every user and operator document, so that a reader finds each.
+	Index struct {
+		File  string   `yaml:"file"`  // the index
+		Files []string `yaml:"files"` // the documents it links
+	} `yaml:"index"`
+	Pending struct {
 		Japanese    []string `yaml:"japanese"`     // English-only files still in Japanese
 		DesignLinks []string `yaml:"design-links"` // operator files that still point at design records
 	} `yaml:"pending"`
+	// Inventory lists, by inventory, the names that Inventory does not require a document to mention.
+	Inventory struct {
+		Exclude map[string][]string `yaml:"exclude"`
+	} `yaml:"inventory"`
 }
 
 // Load reads the configuration of the repository at root.
@@ -78,6 +91,7 @@ const (
 	RuleJapanese   = "japanese"
 	RuleDesignLink = "design-link"
 	RulePending    = "pending"
+	RuleIndex      = "index"
 )
 
 // matchAny reports whether p matches one of patterns and none of the exclusions among them: a pattern that starts
@@ -152,6 +166,7 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 			}
 		}
 	}
+	out = append(out, l.index(sorted)...)
 	out = append(out, stale(c.Pending.Japanese, pendingJA, l.exists, c.English, "pending.japanese", "contains no Japanese")...)
 	out = append(out, stale(c.Pending.DesignLinks, pendingDL, l.exists, c.Operator, "pending.design-links", "points at no design record")...)
 	sort.SliceStable(out, func(i, j int) bool {
@@ -161,6 +176,33 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		return out[i].Line < out[j].Line
 	})
 	return out, nil
+}
+
+// index reports the documents of Index.Files that Index.File does not link to.
+func (l *linter) index(files []string) []Finding {
+	idx := l.c.Index.File
+	if idx == "" {
+		return nil
+	}
+	src, err := os.ReadFile(filepath.Join(l.root, idx))
+	if err != nil {
+		return []Finding{{File, 0, RuleIndex, fmt.Sprintf("index.file %s does not exist", idx)}}
+	}
+	linked := map[string]bool{}
+	for _, ln := range parse(idx, string(src), true).lines {
+		for _, dest := range ln.dests {
+			if file, _, ok := target(idx, dest); ok {
+				linked[file] = true
+			}
+		}
+	}
+	var out []Finding
+	for _, f := range files {
+		if f != idx && matchAny(l.c.Index.Files, f) && !matchAny(l.c.Skip, f) && !linked[f] {
+			out = append(out, Finding{f, 0, RuleIndex, fmt.Sprintf("%s does not link to it: add it to the index", idx)})
+		}
+	}
+	return out
 }
 
 // stale reports the entries of a pending list that no longer name a file that breaks the rule.

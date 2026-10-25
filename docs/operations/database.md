@@ -250,6 +250,23 @@ To cross more than one minor version, upgrade through the latest patch release o
 From `v0.1.3` to `v0.4.0`, for example: the latest `v0.1.x`, then the latest `v0.2.x`, then the latest `v0.3.x`, then `v0.4.0`.
 `my db upgrade -check` stops a skip that would lose data and names the release to go through; nothing has changed at that point.
 
+## Checking and rebuilding projections
+
+Some tables are projections: the server derives them from the events and resources of their module (an account's restrictions from its
+moderation actions, say). The worker checks every projection once a day and corrects any difference it finds. To check or correct one by hand:
+
+```sh
+my projection list              # each projection with its module and tables
+my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection rebuild [<name>]  # derive them the same way and write the difference
+```
+
+- `<name>` is a projection or one of its tables.
+- `verify` prints the rows the tables hold but the sources do not derive (`-`) and the rows the sources derive but the tables lack (`+`),
+  and exits with `1` when any differ.
+- `rebuild` writes at most 500 rows per transaction, so readers never see an emptied projection. Run it while the instance is quiet:
+  a row that changes during the rebuild keeps its new value, and a later `verify` reports any difference left.
+
 ## Recreating (erasing every row)
 
 Recreating means emptying the database and applying the schema again. **From `v0.1.0` on, recreating is for development and test instances only.

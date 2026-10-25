@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mycroblog/my/tools/agentkit/internal/ctxmap"
+	"github.com/mycroblog/my/tools/agentkit/internal/docsync"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
@@ -71,6 +73,7 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 			lines = append(lines, l)
 		}
 	}
+	lines = append(lines, docImpact(r, base)...)
 	rel, _ := filepath.Rel(r.Root, log)
 	ok := runErr == nil
 	if ok {
@@ -83,6 +86,26 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 	lines = append(lines, Failures(string(out), 80)...)
 	lines = append(lines, fmt.Sprintf("FAILED after %s (full log: %s)", time.Since(start).Round(time.Second), rel))
 	return false, lines, nil
+}
+
+// docImpact returns the summary lines of the user and operator documents that describe the changed paths and that
+// the change does not touch: each needs a change, or a reason in the pull request (`pr open --doc-reason`).
+func docImpact(r *repo.Repo, base string) []string {
+	ims, err := docsync.Of(r, base)
+	if err != nil {
+		return []string{"docs impact: " + err.Error()}
+	}
+	var open []ctxmap.Impact
+	for _, im := range ims {
+		if !im.Changed {
+			open = append(open, im)
+		}
+	}
+	if len(open) == 0 {
+		return nil
+	}
+	lines := []string{"documents that describe the changed paths and are not changed (update each, or give `pr open --doc-reason '<path>=<reason>'`):"}
+	return append(lines, docsync.Lines(open)...)
 }
 
 // generators maps the sources of generated code to the task that regenerates it (workflow.md §7).

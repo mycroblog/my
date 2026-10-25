@@ -31,8 +31,8 @@ prints the directory's `README.md`.
 | Step | Run |
 | --- | --- |
 | Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, or waits for an open issue |
-| Verify (§5) | `check`: `scripts/task.sh check:changed` with the contexts it checks and only the failing lines |
-| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--confirm] [--footer text] [--base <branch>]` |
+| Verify (§5) | `check`: `scripts/task.sh check:changed` with the contexts it checks, only the failing lines, and the documents of `docs impact` the change does not touch |
+| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm] [--footer text] [--base <branch>]`: refuses while a document of `docs impact` is neither changed nor given a reason |
 | Wait for CI (§6) | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them. Only the latest run of each check counts |
 | Resolve a conflict (§7) | `git merge origin/main`, `regen`, `check`, push |
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
@@ -40,12 +40,32 @@ prints the directory's `README.md`.
 
 ## The context map
 
-[context-map.yaml](context-map.yaml) maps paths to the document sections that govern them, their check contexts,
-whether parallel work treats them as shared files, and short notes. `ctx` uses it to pick the rules of the areas an
-issue touches. When you add a directory, module, adapter, or feature, add or extend its entry in the same change:
+[context-map.yaml](context-map.yaml) maps paths to the document sections that govern them (`docs`), the user and
+operator documents that describe them (`userdocs`), their check contexts, whether parallel work treats them as shared
+files, and short notes. `ctx` uses it to pick the rules and the user and operator documents of the areas an issue
+touches. When you add a directory, module, adapter, or feature, add or extend its entry in the same change:
 `scripts/task.sh agentkit:check` (and CI, on every change) fails when a file is not covered, when a directory under a `strict`
-pattern has no entry naming it, or when a document reference does not resolve ([ADR-0003](docs/adr/0003-context-map.md)).
+pattern has no entry naming it, when a `docs` or `userdocs` reference does not resolve, or when a file of
+`userdocs.cover` (`docs/operations/`, `docs/reference/`) is the `userdocs` of no entry ([ADR-0003](docs/adr/0003-context-map.md)).
 `map show <path>` prints the entries of a path.
+
+## Documentation that changes with the code
+
+`docs impact [--base origin/main]` lists the `userdocs` of the entries of the paths changed since the merge base,
+passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `ignore` (generated files), and says whether
+the change touches each. A pull request changes each such document or explains it in the **Documentation** section of
+its description, one line each:
+
+```markdown
+- docs/operations/email.md: changed
+- docs/operations/running.md: no change — only the wording of a log line changed, which it does not quote
+```
+
+A reason has three words or more after `no change` and a dash or a colon; text in HTML comments does not count.
+`pr open` writes the section (`--doc-reason '<path>=<reason>'`, repeatable) and refuses while a document has neither;
+`docs impact --pr-body <file>` (`scripts/task.sh docs:pr-impact`, the step `docs:pr-impact` of the pull request's
+preflight) fails on it. Give a document to the paths whose change can make it wrong: an entry for a few files is better
+than a document that every change of a wide area flags.
 
 ## Documentation rules
 
@@ -58,11 +78,27 @@ pattern has no entry naming it, or when a document reference does not resolve ([
 - the English-only files have no Japanese (kana, kanji, CJK punctuation, full-width forms) outside code spans, code
   blocks, and link destinations; a line with `docs-lint: allow-japanese` in a comment, or the line after one, may;
 - the files for users and operators neither link to `docs/adr/`, `docs/requirements/`, `docs/architecture/`, or the
-  repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code.
+  repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
+- the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`).
 
 [docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
 follow a rule yet. A pending entry fails the check once its file follows the rule (or is gone), so the lists only
 shrink.
+
+`docs inventory` (`scripts/task.sh agentkit:inventory`, part of `agentkit:check`) checks the other direction: every
+name that users and operators see and the code defines is mentioned in the document they look it up in.
+
+| Inventory | Defined by | Mentioned in |
+| --- | --- | --- |
+| `cli` | the commands of `cmd/my`: the words its `run*` functions switch on (`switch sub`, `args[0] == "x"`) and the lists of `dispatch("admin relay", args, []string{...})` | a command line (`my admin relay add`, `my job list\|retry`) in `README.md`, `docs/operations/`, or `docs/reference/`, or a code span that starts with the last word in a document with a command line of the parent |
+| `metrics` | the `Name` of each `kernel.Instrument` literal in `internal/` and `cmd/` | `docs/operations/running.md`, as a whole name |
+| `webhook-events` | the constants of type `EventType` in `internal/domain/webhook` | a code span of `docs/reference/webhooks.md` |
+| `build-tags` | the `no_*` tags of the `//go:build` lines of the server module | a code span of `docs/reference/build-tags.md` |
+| `tasks` | the tasks with a `desc` (what `scripts/task.sh --list` lists) of `Taskfile.yml` and its includes | a code span of `docs/reference/commands.md` that starts with the name |
+
+`inventory.exclude.<inventory>` of `docs/lint.yaml` leaves a name out, with the reason in a comment; an exclusion
+fails once the name is mentioned or no longer defined. `docs/reference/configuration.md` needs no inventory: it is
+generated from the config schema, and `go:test` fails when it is stale.
 
 ## Claude Code hooks
 

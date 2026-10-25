@@ -8,6 +8,7 @@ A guide for operators. The [configuration reference](../reference/configuration.
 my config check   # report every configuration problem at once
 my config check -instance   # also warn about instance settings that are not set (opens the database)
 my serve          # start according to the configured role (-config <file> reads a TOML file)
+my version        # print the version of the binary
 ```
 
 `my serve` validates the configuration, builds the database, job queue and key-management adapters, and accepts HTTP on `listen`.
