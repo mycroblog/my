@@ -1,0 +1,45 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://remote.example/schemas/litepub-0.1.jsonld",
+    {
+      "@language": "und"
+    }
+  ],
+  "attachment": [],
+  "endpoints": {
+    "oauthAuthorizationEndpoint": "https://remote.example/oauth/authorize",
+    "oauthRegistrationEndpoint": "https://remote.example/api/v1/apps",
+    "oauthTokenEndpoint": "https://remote.example/oauth/token",
+    "sharedInbox": "https://remote.example/inbox"
+  },
+  "followers": "https://remote.example/users/akko/followers",
+  "following": "https://remote.example/users/akko/following",
+  "icon": {
+    "type": "Image",
+    "url": "https://remote.example/media/4e914f5b84e4a259a3f6c2d2edc9ab642f2ab05f3e3d9c52c81fc2d984b3d51e.jpg"
+  },
+  "id": "https://remote.example/users/akko",
+  "image": {
+    "type": "Image",
+    "url": "https://remote.example/media/f739efddefeee49c6e67e947c4811fdc911785c16ae43da4c3684051fbf8da6a.jpg?name=f739efddefeee49c6e67e947c4811fdc911785c16ae43da4c3684051fbf8da6a.jpg"
+  },
+  "inbox": "https://remote.example/users/akko/inbox",
+  "manuallyApprovesFollowers": false,
+  "name": "akko",
+  "outbox": "https://remote.example/users/akko/outbox",
+  "preferredUsername": "akko",
+  "publicKey": {
+    "id": "https://remote.example/users/akko#main-key",
+    "owner": "https://remote.example/users/akko",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuA0aNwC+1ApDv/FNHeNl\n2l2VS1mWVFBjlq6lCvXhu+af/+KnZsrkDqOY1s1dqKhsXPzBKQX3rVZbsnr62HYn\nFF+6IGDJCtTF4q3cbtKfZ6dhli7FSEfLe0XulA2PJkcjN9xORcwq8YVQdqdWEsj5\nM9d0d8d4tBLKfxE0z3ebyCl7SN3a6iDaMjC0TSqsDKpXerBzK7SwAc9sGJiz48+c\nKBFcq5L2PGCMV0s31g9VOWDmOVMlsZ6KltKGIhLgwQZmPRl0/NAE8SOhHkt/7rsy\n9E1H/XkrU44T7FITu5Vin/bza/W2D8Yij6C5McWe6J7SUwP9DG7tOd0++l1tNb7Z\n/wIDAQAB\n-----END PUBLIC KEY-----\n"
+  },
+  "featured": "https://remote.example/users/akko/collections/featured",
+  "summary": "an example profile<br>with a second line",
+  "tag": [],
+  "type": "Person",
+  "url": "https://remote.example/users/akko",
+  "alsoKnownAs": [
+    "https://akkoma.example/users/akko"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "Activity": {
+    "Actor": "https://akkoma.example/users/akko",
+    "Audience": {
+      "To": [
+        "https://akkoma.example/users/akko/followers"
+      ]
+    },
+    "ID": "https://akkoma.example/activities/bdef2ae7-cdf1-4f6c-9a65-41df2c7bf37c",
+    "Objects": [
+      {
+        "ID": "https://akkoma.example/users/akko"
+      }
+    ],
+    "Published": "2025-06-01T12:00:00Z",
+    "RawType": "Move",
+    "Target": "https://remote.example/users/akko",
+    "Type": "Move"
+  }
+}
