@@ -603,6 +603,8 @@ type Notification struct {
 	ReactionCustomEmojiID   *string
 	AccountMoveID           *string
 	AccountMoveOutcome      *string
+	ServiceClosureEventID   *string
+	ServiceClosureChange    *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

@@ -91,6 +91,10 @@ description: |
     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
     server whose closure is not announced or whose `closes_at` has not come
     (`POST /admin/closure/close`).
+  - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+    stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+    registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+    (`POST /supporter/checkout`).
   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,

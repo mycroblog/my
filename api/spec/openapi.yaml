@@ -981,6 +981,8 @@ components:
       $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
     ServiceClosureState:
       $ref: ./components/schemas/ServiceClosureState.yaml
+    ServiceClosureNotice:
+      $ref: ./components/schemas/ServiceClosureNotice.yaml
     AdminWebhook:
       $ref: ./components/schemas/AdminWebhook.yaml
     AdminWebhookAttempt:

@@ -19,8 +19,9 @@ import (
 // setUpModeratorNotifications registers the moderator notifications (FR-712): the projectors
 // that create them from new reports and pending registrations, and, unless mail = none, the
 // job that sends them by email to the moderators who want that. push enqueues their Web Push
-// messages; nil pushes none. It needs the identity and notification modules.
-func (a *App) setUpModeratorNotifications(cfg *config.Config, repo notification.Repository, staff notification.Staff, push *notification.Pusher) {
+// messages; nil pushes none. It needs the identity and notification modules, and returns the
+// ports of the moderator notifications for the others that go to the staff.
+func (a *App) setUpModeratorNotifications(cfg *config.Config, repo notification.Repository, staff notification.Staff, push *notification.Pusher) notification.ModeratorDeps {
 	deps := notification.ModeratorDeps{Repository: repo, Staff: staff, IDs: a.IDs, Push: push}
 	if sendsEmail(cfg) {
 		deps.Outbox = a.Outbox
@@ -34,6 +35,7 @@ func (a *App) setUpModeratorNotifications(cfg *config.Config, repo notification.
 		})
 	}
 	notification.RegisterModeratorProjectors(a.Projectors, deps)
+	return deps
 }
 
 // sendsEmail tells whether the instance sends email: mail is set and is not none.

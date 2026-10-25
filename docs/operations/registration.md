@@ -10,7 +10,7 @@
 画面は JavaScript なしで動き、ログイン画面と同じく CSRF トークンとクロスオリジン要求の拒否で守られます（ADR-0030）。
 ボット対策に CAPTCHA を選んだときは、登録とログインの画面にそのウィジェットを出し、JavaScript が要ります（[CAPTCHA](captcha.md)）。
 
-登録モードはインスタンス設定 `registration_mode` で、CLI か Web クライアントの「サーバーの設定」（`/admin/settings`）で選びます（[インスタンス設定](instance-settings.md)）。変更は次の登録から効きます。
+登録モードはインスタンス設定 `registration_mode` で、CLI か Web クライアントの「サーバーの設定」（`/admin/settings`）で選びます（[インスタンス設定](instance-settings.md)）。変更は次の登録から効きます。サービスの終了を予告している間とクローズの後は、設定の値にかかわらず `closed` として扱います（[管理 CLI](admin-cli.md#サービスの終了の予告)）。
 
 ```sh
 my instance set registration_mode invite

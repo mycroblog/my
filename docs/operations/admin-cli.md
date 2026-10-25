@@ -68,6 +68,11 @@ my admin closure withdraw                                                 # 予�
 - 日付の変更は新しい予告として記録し、取り消しの後の予告は新しい予告です。サーバーを閉じた後は、予告も取り消しもできません（終了コード 1）。
 - 予告・日付の変更・取り消しは監査ログに `service_closure_announced`・`service_closure_withdrawn`（対象の種類 `instance`）で残ります（`my admin audit list -target-kind instance`）。
 - 管理 API は `GET /api/v1/admin/closure`、`PUT` / `DELETE /api/v1/admin/closure/announcement`、`GET /api/v1/admin/closure/check`、`POST /api/v1/admin/closure/close` で、権限 `manage_service_closure`（組み込みのロールでは `admin` だけ）を要します。
+- 予告の間は、新しい利用者と新しい支払いを受け付けません（ADR-0088 §2）。
+  - 登録モードの実効値は `closed` です（`registration_mode` の値は変わらず、取り消すと元に戻ります）。登録も招待を使った登録もできず、審査待ちの申請は承認できません（`409`）。
+  - 予告の開始で、審査待ちの申請をすべて却下し（決めた者は `service_closure`）、続いているサポーターの加入すべてを期間の終わりで解約して、加入者に通知（`supporter_service_closure`）とメールで知らせます。新しい加入は `409` です。取り消しても、却下と解約は戻りません。
+  - 予告・日付の変更・取り消しのたびに、ローカルの全利用者に通知 `service_closure` が届きます。どれもジョブで行うので、ワーカーを止めないでください。
+  - 閉鎖日を過ぎると、`manage_service_closure` を持つ人に通知 `admin_service_closure_due` が届きます。サーバーは自動ではクローズしません。
 
 閉鎖日を過ぎたら、サーバーをクローズします（FR-809）。クローズは取り消せません。
 

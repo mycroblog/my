@@ -49,6 +49,8 @@ properties:
     $ref: ./RelationshipSeverance.yaml
   account_move:
     $ref: ./AccountMove.yaml
+  service_closure:
+    $ref: ./ServiceClosureNotice.yaml
   reaction:
     description: The emoji of a `reaction`; omitted for the other types.
     $ref: ./ReactionEmoji.yaml

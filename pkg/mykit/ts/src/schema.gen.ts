@@ -2745,7 +2745,8 @@ export interface paths {
          *     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
          *     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
          *     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
-         *     for an unknown plan and while the program is disabled.
+         *     for an unknown plan and while the program is disabled. From the announcement of the closure
+         *     of the service on, nobody subscribes: a 409 `/api/v1/problems/service-closing`.
          */
         post: operations["startSupporterCheckout"];
         delete?: never;
@@ -4610,8 +4611,10 @@ export interface paths {
          * Approve a registration
          * @description Approves a pending registration, so that its user can sign in, with an optional note
          *     for the moderators; the decision is audited. Deciding a decided registration changes
-         *     nothing and keeps its decision. A user without a registration is a 404. Needs the
-         *     `manage_accounts` permission.
+         *     nothing and keeps its decision. A user without a registration is a 404. From the
+         *     announcement of the closure of the service on, a pending registration is not approved: a
+         *     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
+         *     the `manage_accounts` permission.
          */
         post: operations["approveRegistration"];
         delete?: never;
@@ -7312,6 +7315,28 @@ export interface components {
          * @enum {string}
          */
         ServiceClosureState: "none" | "announced" | "closed" | "delivery_completed";
+        /**
+         * @description What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+         *     tells of the closure of the service (ADR-0088). `change` is what the event of a
+         *     `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+         *     changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+         *     for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+         *     notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+         */
+        ServiceClosureNotice: {
+            /** @enum {string} */
+            change?: "announced" | "rescheduled" | "withdrawn";
+            /**
+             * Format: date-time
+             * @description When the server closes.
+             */
+            closes_at?: string;
+            /**
+             * Format: date-time
+             * @description Until when the users may still sign in and export their data.
+             */
+            export_until?: string;
+        };
         /** @description A webhook endpoint (ADR-0060). Its secret is never shown again after it is made. */
         AdminWebhook: {
             id: components["schemas"]["Id"];
@@ -8745,7 +8770,9 @@ export interface components {
         InstanceRegistrations: {
             /**
              * @description Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-             *     approval), `invite` (only with an invite), or `closed` (nobody).
+             *     approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+             *     sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+             *     the instance setting says.
              * @enum {string}
              */
             mode: "open" | "approval" | "invite" | "closed";
@@ -9253,6 +9280,7 @@ export interface components {
             supporter_subscription?: components["schemas"]["SupporterSubscription"];
             relationship_severance?: components["schemas"]["RelationshipSeverance"];
             account_move?: components["schemas"]["AccountMove"];
+            service_closure?: components["schemas"]["ServiceClosureNotice"];
             /** @description The emoji of a `reaction`; omitted for the other types. */
             reaction?: components["schemas"]["ReactionEmoji"];
         };
@@ -9316,10 +9344,16 @@ export interface components {
          *     one; its `account_move` carries the target and what became of the user's follow. It is
          *     sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
          *     account that the moderators limit moved, and the target does not get the limit; its
-         *     `account_move` carries the target, and it has no `account`.
+         *     `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+         *     local user when the closure of the service is announced, when its dates change, and when the
+         *     announcement is withdrawn; `admin_service_closure_due` goes to the users with
+         *     `manage_service_closure` once the closing date of the announcement in effect has passed, to
+         *     close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+         *     their supporter subscription at the end of its period, with its `supporter_subscription`.
+         *     Their `service_closure` says what they tell of, and they have no `account`.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -9884,6 +9918,10 @@ export interface components {
          *       closure of a server that is closed already (`/admin/closure/announcement`), or closing a
          *       server whose closure is not announced or whose `closes_at` has not come
          *       (`POST /admin/closure/close`).
+         *     - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+         *       stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+         *       registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+         *       (`POST /supporter/checkout`).
          *     - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
          *       server serves only the operations with which the users take their data away: their own
          *       account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,

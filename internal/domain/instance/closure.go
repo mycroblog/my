@@ -157,6 +157,8 @@ func (h ClosureHead) Apply(e ClosureEvent) ClosureHead {
 // points read it. The zero value is a server with no closure (ClosureNone after Normalize).
 type Closure struct {
 	State ClosureState
+	// AnnouncementID is the announcement whose schedule is in effect, "" for ClosureNone.
+	AnnouncementID string
 	// Schedule is the schedule of the announcement in effect, the zero value for ClosureNone.
 	Schedule ClosureSchedule
 	// AnnouncedAt is when the announcement in effect was made (the latest change of the date),
@@ -279,4 +281,15 @@ func ClosureAllows(state ClosureState, op ClosureOperation) bool {
 		}
 	}
 	return false
+}
+
+// EffectiveRegistrationMode is the registration mode that sign-ups follow (FR-001, ADR-0088 §2):
+// the setting's value while the service closure lets users register (ClosureRegister), and
+// RegistrationClosed otherwise. The setting keeps its value, which applies again once the
+// announcement is withdrawn.
+func EffectiveRegistrationMode(mode RegistrationMode, state ClosureState) RegistrationMode {
+	if !ClosureAllows(state, ClosureRegister) {
+		return RegistrationClosed
+	}
+	return mode
 }
