@@ -358,29 +358,14 @@ type proxyEntry struct {
 // carries on.
 func (e *env) logPeerLookups(t *testing.T, p *peerClient, since time.Time) {
 	t.Helper()
-	// The proxy writes the entry after the response; give the last one a moment.
-	time.Sleep(2 * time.Second)
-	out, err := exec.CommandContext(t.Context(), "docker", "compose", "-p", "my-federation-live",
-		"logs", "--no-log-prefix", "--no-color", "proxy").Output()
+	entries, err := peerRequests(t.Context(), p, http.MethodGet, since)
 	if err != nil {
 		t.Logf("cannot read the access log of the proxy: %v", err)
 		return
 	}
 	webFinger := 0
-	sc := bufio.NewScanner(bytes.NewReader(out))
-	sc.Buffer(make([]byte, 1<<20), 1<<20)
-	for sc.Scan() {
-		var en proxyEntry
-		if json.Unmarshal(sc.Bytes(), &en) != nil || en.Request.Host != localHost || en.Request.Method != http.MethodGet {
-			continue
-		}
-		if time.Unix(0, int64(en.TS*float64(time.Second))).Before(since) {
-			continue
-		}
+	for _, en := range entries {
 		ua := strings.Join(en.Request.Headers["User-Agent"], " ")
-		if !strings.Contains(strings.ToLower(ua), p.host) {
-			continue
-		}
 		path, _, _ := strings.Cut(en.Request.URI, "?")
 		if path == "/.well-known/webfinger" {
 			webFinger++
@@ -388,6 +373,41 @@ func (e *env) logPeerLookups(t *testing.T, p *peerClient, since time.Time) {
 		t.Logf("%s GET %s = %d (%s)", p.host, en.Request.URI, en.Status, ua)
 	}
 	t.Logf("%s made %d WebFinger lookups to %s", p.host, webFinger, localHost)
+}
+
+// time is when the proxy wrote the entry.
+func (en proxyEntry) time() time.Time {
+	return time.Unix(0, int64(en.TS*float64(time.Second)))
+}
+
+// peerRequests returns the requests with the method that the peer made to this server since a
+// time, oldest first, from the access log of the proxy (docker compose logs). A request is the
+// peer's when its User-Agent names the peer's host.
+func peerRequests(ctx context.Context, p *peerClient, method string, since time.Time) ([]proxyEntry, error) {
+	// The proxy writes the entry after the response; give the last one a moment.
+	time.Sleep(2 * time.Second)
+	out, err := exec.CommandContext(ctx, "docker", "compose", "-p", "my-federation-live",
+		"logs", "--no-log-prefix", "--no-color", "proxy").Output()
+	if err != nil {
+		return nil, err
+	}
+	var entries []proxyEntry
+	sc := bufio.NewScanner(bytes.NewReader(out))
+	sc.Buffer(make([]byte, 1<<20), 1<<20)
+	for sc.Scan() {
+		var en proxyEntry
+		if json.Unmarshal(sc.Bytes(), &en) != nil || en.Request.Host != localHost || en.Request.Method != method {
+			continue
+		}
+		if en.time().Before(since) {
+			continue
+		}
+		if !strings.Contains(strings.ToLower(strings.Join(en.Request.Headers["User-Agent"], " ")), p.host) {
+			continue
+		}
+		entries = append(entries, en)
+	}
+	return entries, sc.Err()
 }
 
 // --- What TestFederationMode asks of the peers ------------------------------------------------
