@@ -906,6 +906,7 @@ type accountProjections struct {
 	handles []account.Handle
 	heads   []account.ProfileHead
 	states  []account.LifecycleState
+	moves   []account.MoveState
 }
 
 func snapshotAccountProjections(t *testing.T, repo appaccount.Repository) accountProjections {
@@ -922,6 +923,9 @@ func snapshotAccountProjections(t *testing.T, repo appaccount.Repository) accoun
 	}
 	if p.states, err = repo.ListLifecycleStates(t.Context()); err != nil {
 		t.Fatalf("ListLifecycleStates = %v", err)
+	}
+	if p.moves, err = repo.ListMoveStates(t.Context()); err != nil {
+		t.Fatalf("ListMoveStates = %v", err)
 	}
 	return p
 }

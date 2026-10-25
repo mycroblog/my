@@ -127,6 +127,8 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_payment_failed: "client:notifications.type.supporter_payment_failed",
   supporter_subscription_ended: "client:notifications.type.supporter_subscription_ended",
   supporter_plan_retired: "client:notifications.type.supporter_plan_retired",
+  account_moved: "client:notifications.type.account_moved",
+  admin_account_moved: "client:notifications.type.admin_account_moved",
 };
 
 /**

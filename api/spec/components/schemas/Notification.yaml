@@ -47,6 +47,8 @@ properties:
     $ref: ./SupporterSubscription.yaml
   relationship_severance:
     $ref: ./RelationshipSeverance.yaml
+  account_move:
+    $ref: ./AccountMove.yaml
   reaction:
     description: The emoji of a `reaction`; omitted for the other types.
     $ref: ./ReactionEmoji.yaml

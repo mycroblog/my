@@ -226,7 +226,55 @@ func (s *Server) newProfile(ctx context.Context, a appaccount.Actor) (Account, e
 			return Account{}, err
 		}
 	}
+	if out.Moved, err = s.movedTo(ctx, a.Account.ID); err != nil {
+		return Account{}, err
+	}
 	return out, nil
+}
+
+// AccountMoves reads the moves of accounts (ADR-0089). *appaccount.Service implements it.
+type AccountMoves interface {
+	// MoveState returns the move in force of an account, failing with appaccount.ErrNotFound
+	// when it has not moved.
+	MoveState(ctx context.Context, accountID string) (appaccount.MoveState, error)
+	// FindMove returns a move by ID, failing with appaccount.ErrNotFound when there is none.
+	FindMove(ctx context.Context, id string) (appaccount.Move, error)
+}
+
+// movedTo presents the account that accountID moved to, nil when it has not moved, its target
+// is gone or not active, or the server has no Options.Moves.
+func (s *Server) movedTo(ctx context.Context, accountID string) (*Account, error) {
+	if s.o.Moves == nil {
+		return nil, nil
+	}
+	st, err := s.o.Moves.MoveState(ctx, accountID)
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the move of %s: %w", accountID, err)
+	}
+	return s.presentedTarget(ctx, st.TargetAccountID)
+}
+
+// presentedTarget presents the target of a move, nil when it is gone or not active.
+func (s *Server) presentedTarget(ctx context.Context, targetID string) (*Account, error) {
+	t, err := s.o.Accounts.FindByID(ctx, targetID)
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the move target %s: %w", targetID, err)
+	}
+	if !t.Lifecycle.Active() {
+		return nil, nil
+	}
+	parts, err := s.accountParts(ctx, t)
+	if err != nil {
+		return nil, err
+	}
+	out := s.newAccount(t, parts)
+	return &out, nil
 }
 
 // ProfileRestrictions reads whether moderation hides an account's profile from everyone but

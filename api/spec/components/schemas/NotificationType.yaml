@@ -37,6 +37,11 @@ description: |
   (the administrators retired the plan; the subscription ends with its period). Each is
   sent once per change of the subscription. A client must not lead from them to
   subscribing or paying where it offers no way to subscribe.
+  `account_moved` tells that an account that the user followed (`account`) moved to another
+  one; its `account_move` carries the target and what became of the user's follow. It is
+  sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+  account that the moderators limit moved, and the target does not get the limit; its
+  `account_move` carries the target, and it has no `account`.
 type: string
 enum:
   - follow
@@ -61,3 +66,5 @@ enum:
   - supporter_payment_failed
   - supporter_subscription_ended
   - supporter_plan_retired
+  - account_moved
+  - admin_account_moved

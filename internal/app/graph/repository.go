@@ -143,6 +143,13 @@ type Repository interface {
 	// ListBlocking returns the block edges out of blockerAccountID, newest block first, starting
 	// after the block ID before ("" for the newest) and returning at most limit edges.
 	ListBlocking(ctx context.Context, blockerAccountID, before string, limit int) ([]graph.BlockEdge, error)
+	// ListBlockers returns the block edges into blockedAccountID in block ID order, starting
+	// after the block ID after ("" for the first) and returning at most limit edges.
+	ListBlockers(ctx context.Context, blockedAccountID, after string, limit int) ([]graph.BlockEdge, error)
+	// ListMuters returns the mutes of targetAccountID that have not expired at now, in the order
+	// of the muting accounts, starting after the account ID after ("" for the first) and
+	// returning at most limit mutes.
+	ListMuters(ctx context.Context, targetAccountID string, now time.Time, after string, limit int) ([]graph.Mute, error)
 	// FindMute returns accountID's mute of targetAccountID; ErrNotFound means none, or one that
 	// has expired at now.
 	FindMute(ctx context.Context, accountID, targetAccountID string, now time.Time) (graph.Mute, error)

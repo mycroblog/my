@@ -238,6 +238,10 @@ type Options struct {
 	// Severances reads the follows that the viewer's relationships_severed notifications tell
 	// of; nil leaves them out of the notifications.
 	Severances Severances
+	// Moves reads the moves of accounts (ADR-0089): the target that an account's own endpoints
+	// show as moved, and the moves that account_moved and admin_account_moved tell of; nil shows
+	// none.
+	Moves AccountMoves
 	// ReportCounts and RegistrationCounts count what awaits the moderators (admin_counts.go);
 	// nil leaves the count out.
 	ReportCounts       ReportCounts

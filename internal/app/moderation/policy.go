@@ -56,6 +56,13 @@ func (p *FederationPolicy) AccountFederationSuspended(ctx context.Context, accou
 	return slices.Contains(rs, moderation.RestrictFederation), err
 }
 
+// AccountLimited reports whether an account has the restrictions of a limit (the visibility
+// ceiling that only a limit imposes), which the target of its move does not inherit (ADR-0089).
+func (p *FederationPolicy) AccountLimited(ctx context.Context, accountID string) (bool, error) {
+	rs, err := p.repo.AccountRestrictionsInEffect(ctx, accountID, p.clock.Now())
+	return slices.Contains(rs, moderation.RestrictVisibilityCeilingPrivate), err
+}
+
 // RejectsMedia reports whether the media of a domain, or of a parent domain, are not fetched
 // (reject_media).
 func (p *FederationPolicy) RejectsMedia(ctx context.Context, domain string) (bool, error) {

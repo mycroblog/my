@@ -7,7 +7,7 @@
 | `follows` | リソース | `id`, `uri`（`Follow` の IRI。ローカルのフォローは `https://{host}/ap/activities/{id}`、ADR-0018）, `follower_account_id`, `followee_account_id`, `requested_at` | 一意 `(uri)`。フォローし直すと新しい行になる（過去のフォロー関係が残る） |
 | `follow_acceptances` | イベント | `follow_id`（PK）, `accepted_by`（`enum(auto, followee, remote)`）, `activity_uri`（NULL 可。受信した `Accept`）, `accepted_at` | |
 | `follow_rejections` | イベント | `follow_id`（PK）, `rejected_by`（`enum(followee, remote, system)`）, `activity_uri`（NULL 可）, `rejected_at` | |
-| `follow_terminations` | イベント | `follow_id`（PK）, `reason`（`enum(unfollowed, removed_by_followee, blocked, account_deleted, moderation)`）, `terminated_at` | 承認前の取り下げ（`Undo Follow`）も `unfollowed` |
+| `follow_terminations` | イベント | `follow_id`（PK）, `reason`（`enum(unfollowed, removed_by_followee, blocked, account_deleted, moderation, moved)`）, `terminated_at` | 承認前の取り下げ（`Undo Follow`）も `unfollowed`。`moved` はフォローしていた相手の移転で、移転先へのフォローに置き換えたもの（ADR-0089） |
 | `follow_resends` | イベント | `uri`（PK。もう一度届いた `Follow` の `id`）, `follow_id`, `received_at` | 承認済みのフォローに、別の `id` の `Follow` がもう一度届いたこと。`follows` の行は増やさない |
 | `follow_edges` | 投影 | `follower_account_id`, `followee_account_id`, `follow_id`, `state`（`enum(pending, active)`）, `since`（`pending` は申請、`active` は承認の日時） | PK `(follower_account_id, followee_account_id)`。インデックス `(followee_account_id, state, follow_id)`（フォロワー・フォローリクエストの一覧・配送先の展開）、`(follower_account_id, state, follow_id)`（フォロー中の一覧）。一覧は `follow_id` のキーセットで新しい順に引く。拒否・終了で行を消す |
 | `follow_preferences` | 現在値 | `follow_id`（PK）, `show_boosts`, `notify`（`bool`） | フォローの作成時に既定値（`show_boosts = true`, `notify = false`）で作る |
@@ -23,6 +23,10 @@
   承認済みのフォローがあるペアから別の `id` の `Follow` が届いたら、相手のサーバーはフォローが成立していないとみなしています（Mastodon は `Accept` が届くまで `Follow` を送り直す）。
   `follow_resends` にその `id` を記録して `graph.follow_resent` を発行し、その `Follow` への `Accept` を送り直します。承認待ちのペアへの `Follow` は何もしません。
   どちらかがブロックしていれば、`follows` を作って同じトランザクションで `follow_rejections`（`rejected_by = system`）を記録し、相手に `Reject` を送ります。
+- アカウントの移転（`account.moved`、ADR-0089）は、ジョブ `graph.migrate_follows`（冪等キーは移転元と移転先の組、100 件ずつのページ）がローカルの関係を移します（`graph.Service.MigrateFollows`）。
+  移転元を承認済みでフォローしている利用者は、移転先をブロックも、移転先からブロックもされておらず、移転先のドメインをミュートしていなければ、移転元へのフォローの `follow_preferences` を写した移転先へのフォロー（リモートか鍵アカウントなら承認待ち）を作り、移転元へのフォローを `moved` で終えます。そうでなければ移転元へのフォローを残します。
+  どちらでも `graph.follow_migrated` を発行します。移転元をブロックしている利用者は移転先もブロックし、ミュートしている利用者は、移転先をまだミュートしていなければ同じ `hide_notifications`・`expires_at` で移転先をミュートします。
+  利用者ごとに短いトランザクションで、移ったフォローは移転元に残らず、既にあるブロック・ミュートは変えないので、再実行しても何も増えません。
 - 受け取った `Accept` / `Reject` / `Undo` が指すフォローは、`follows (uri)`（無ければ `follow_resends (uri)`）で引き、送り主の側が合わなければ、活動が埋め込む `Follow` の 2 人の組の承認待ち・承認済みのフォローで引きます。終了済みのフォローへの `Accept` / `Reject` / `Undo` は何もしません。
 
 フォロー・ブロック・ミュートのコマンドは、記録したイベントや現在値に応じて次のドメインイベントを発行します（`tx.Emit`、§2.1）。
@@ -38,6 +42,7 @@
 | `graph.follow_terminated` | フォロー解除・申請の取り下げ・フォロワーの削除など（終了前の状態を載せる） | `follow_edges` から削除、`active` だったら `follow_counters` 減算 | `feed_follow_edges` |
 | `graph.follow_resent` | 承認済みのフォローへの、別の `id` の `Follow` の受信 | — | `Accept` の配送 |
 | `graph.follow_preferences_changed` | フォローごとの設定の変更 | — | `feed_follow_edges`（`show_boosts`） |
+| `graph.follow_migrated` | 移転したアカウントのローカルのフォロワーごとに、フォローを移転先へ移したか、残したとき（`outcome` が `followed` / `requested` / `blocking` / `blocked_by` / `domain_muted`） | — | 通知 `account_moved` |
 | `graph.blocked` | ブロック（終了したフォローごとの `graph.follow_terminated`（`reason = blocked`）の後に発行する） | `block_edges` に追加 | `feed_exclusions`・`notification_exclusions`（両方向）、`Block` の配送 |
 | `graph.unblocked` | ブロックの解除 | `block_edges` から削除 | `feed_exclusions`・`notification_exclusions`、`Undo Block` の配送 |
 | `graph.muted` | ミュート（設定・期限の置き換えを含む。置き換えた後のミュートを載せる） | — | `feed_exclusions`（期限つき）、`notification_exclusions`（`hide_notifications` 付きのときだけ） |
