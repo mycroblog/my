@@ -32,6 +32,8 @@ tasks:
       - api/redocly.yaml
       - scripts/generate.sh
       - internal/interface/clientapi/oapi-codegen.yaml
+      - pkg/mykit/oapi-codegen.yaml
+      - pkg/mykit/oapi-codegen-overlay.yaml
       - "internal/interface/clientapi/internal/securitygen/**/*.go"
       - tools/go.mod
       - app/bun.lock
@@ -39,6 +41,7 @@ tasks:
     generates:
       - api/openapi.yaml
       - internal/interface/clientapi/api.gen.go
+      - pkg/mykit/api.gen.go
       - internal/interface/clientapi/security.gen.go
       - app/web/src/lib/api/schema.gen.ts
     env:
@@ -64,7 +67,7 @@ tasks:
       - scripts/generate.sh --ts
 
   generate-check:
-    desc: Fail if the committed bundle or Go client API code is stale
+    desc: Fail if the committed bundle or Go client API code (the server's and pkg/mykit's) is stale
     deps: [warm]
     env:
       REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"

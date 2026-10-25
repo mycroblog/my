@@ -3,8 +3,8 @@
 #
 # Generate the client API code from the split spec in api/spec/ (ADR-0029, ADR-0066): first the bundle
 # api/openapi.yaml with the Redocly CLI version that REDOCLY_VERSION names (set by tasks/api.yml), then,
-# from the bundle, the Go server interface with the oapi-codegen version pinned in tools/go.mod, the
-# per-operation security metadata that the client API enforces
+# from the bundle, the Go server interface and the client of pkg/mykit (ADR-0093) with the oapi-codegen version
+# pinned in tools/go.mod, the per-operation security metadata that the client API enforces
 # (internal/interface/clientapi/internal/securitygen), and the TypeScript types of the web client with
 # the openapi-typescript version pinned in app/web/package.json (needs `scripts/task.sh web:install`).
 # The bundle and the Go code are committed; the TypeScript types are not (ADR-0081).
@@ -13,7 +13,8 @@
 #   scripts/generate.sh --ts     regenerate only the TypeScript types, from the committed bundle
 #   scripts/generate.sh --check  generate the committed targets into a scratch directory and fail if they differ
 #
-# Generated files get the SPDX header that the generators omit.
+# Generated files get the SPDX header that the generators omit: MIT for pkg/mykit (ADR-0093 §2), AGPL-3.0-only for
+# the rest.
 set -euo pipefail
 
 : "${REDOCLY_VERSION:?REDOCLY_VERSION is not set; run scripts/task.sh api:generate}"
@@ -45,9 +46,10 @@ bundle() {
   rm "$out.tmp.yaml"
 }
 
-# Targets as "<oapi-codegen config> <output file>", relative to the repository root.
+# Targets as "<oapi-codegen config> <output file> <license>", relative to the repository root.
 targets=(
-  "internal/interface/clientapi/oapi-codegen.yaml internal/interface/clientapi/api.gen.go"
+  "internal/interface/clientapi/oapi-codegen.yaml internal/interface/clientapi/api.gen.go AGPL-3.0-only"
+  "pkg/mykit/oapi-codegen.yaml pkg/mykit/api.gen.go MIT"
 )
 
 # The security metadata, relative to the repository root.
@@ -56,12 +58,13 @@ security_out="internal/interface/clientapi/security.gen.go"
 # The web client's types, relative to the repository root (web-client/README.md S9).
 ts_out="app/web/src/lib/api/schema.gen.ts"
 
-# generate CONFIG OUT writes the code that CONFIG generates from the spec to OUT.
+# generate CONFIG OUT LICENSE writes the code that CONFIG generates from the spec to OUT, with the SPDX header of
+# LICENSE.
 generate() {
-  local config="$1" out="$2"
+  local config="$1" out="$2" license="$3"
   mkdir -p "$(dirname "$out")"
   (cd "$root" && go tool -modfile=tools/go.mod oapi-codegen -config "$config" -o "$out.tmp" "$spec")
-  printf '%s\n\n' "$header" | cat - "$out.tmp" > "$out"
+  printf '// SPDX-License-Identifier: %s\n\n' "$license" | cat - "$out.tmp" > "$out"
   rm "$out.tmp"
 }
 
@@ -93,8 +96,8 @@ if [ "${1:-}" != "--check" ]; then
   bundle "$root/$bundle_out"
   spec="$root/$bundle_out"
   for target in "${targets[@]}"; do
-    read -r config out <<< "$target"
-    generate "$config" "$root/$out"
+    read -r config out license <<< "$target"
+    generate "$config" "$root/$out" "$license"
   done
   generate_security "$root/$security_out"
   generate_ts "$root/$ts_out"
@@ -110,8 +113,8 @@ if ! diff -u "$root/$bundle_out" "$spec"; then
   stale=1
 fi
 for target in "${targets[@]}"; do
-  read -r config out <<< "$target"
-  generate "$config" "$scratch/$out"
+  read -r config out license <<< "$target"
+  generate "$config" "$scratch/$out" "$license"
   if ! diff -u "$root/$out" "$scratch/$out"; then
     stale=1
   fi
