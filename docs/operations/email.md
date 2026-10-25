@@ -1,80 +1,96 @@
-# メールの送信
+# Sending email
 
-運営者向けの手順です。メールの設計は [ADR-0086](../adr/0086-email-delivery.md)、設定項目は [設定リファレンス](../reference/configuration.md#mail) を参照してください。
-メール確認とパスワードのリセットの利用者側の流れは [登録とメール確認](registration.md) にあります。
+This page is for operators. The settings are listed in the [configuration reference](../reference/configuration.md#mail).
+The user-facing flows of email confirmation and password reset are in [registration and email confirmation](registration.md).
 
-## 送るメールと設定
+## What is sent, and how to configure it
 
-サーバーはメールを、リクエストの中では送りません。送る事実と同じトランザクションで用途ごとのジョブを積み、ジョブのワーカーが送ります（ADR-0086 §1）。
-送信の失敗は登録やリセットの応答に出ません。利用者には「確認のメールを送りました」と表示し、届かなければ利用者が再送を求めます。
+The server never sends email inside a request. It enqueues a job for each purpose in the same transaction as the fact that
+triggers the email, and a job worker sends it. A failure to send does not show in the response to a registration or a reset:
+the user is told "we sent a confirmation email", and asks for it again if it does not arrive.
 
-| 分類 | メール | ジョブの型 | 配信停止 |
+| Class | Email | Job type | Can the user unsubscribe? |
 | --- | --- | --- | --- |
-| 取引（`transactional`） | メールアドレスの確認 | `identity.verification_email` | できない |
-| 取引 | パスワードのリセット | `identity.password_reset_email` | できない |
-| 取引 | パスワードの変更・削除の通知 | `identity.password_notice_email` | できない |
-| 取引 | サービスの終了（予告・日付の変更・取り消し・閉鎖日の 7 日前と前日・クローズ・持ち出しの期限の 7 日前） | `identity.closure_email` | できない |
-| 通知（`notification`） | モデレーターへの通知（利用者設定 `email_moderator_notifications`） | `notification.moderator_email` | できる |
+| Transactional (`transactional`) | Email address confirmation | `identity.verification_email` | No |
+| Transactional | Password reset | `identity.password_reset_email` | No |
+| Transactional | Notice of a password change or deletion | `identity.password_notice_email` | No |
+| Transactional | Service shutdown (the announcement, a change of date, a cancellation, 7 days and 1 day before the closing date, the closing, and 7 days before the export deadline) | `identity.closure_email` | No |
+| Notification (`notification`) | Notice to moderators (the user setting `email_moderator_notifications`) | `notification.moderator_email` | Yes |
 
-サポーターの通知のメール（`notification.supporter_email`）も同じジョブのキューで送ります。
+Notification emails for supporters (`notification.supporter_email`) go through the same job queue.
 
-サービスの終了のメール（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）は、主たるアドレスの確認が済んだ全利用者へ送ります。
-見落とすとデータを失うので取引のメールとして送り、配信停止のリンクを付けず、苦情でも止めません（ハードバウンスでは止まります）。
-予告・日付の変更・取り消し・クローズは、その記録と同じトランザクションで `identity.closure_email_fanout` を積みます。
-閉鎖日の 7 日前と前日、持ち出しの期限の 7 日前は、1 時間ごとの `identity.closure_email_reminders` が送る時点を決めます。予告の時点で過ぎていた時点の分は送りません（予告のメールが日付を伝えるため）。
-展開のジョブは利用者ごとに `service_closure_emails` の行を記録し、記録できた利用者にだけ `identity.closure_email` を積むので、ジョブが何度動いても同じメールは 1 人に 1 回です。
-送る前に、そのメールがまだ有効か（取り消された予告や、変更前の日付のメールではないか）を確かめます。
+Service shutdown emails go to every user whose primary address is confirmed. Missing one can mean losing data, so they are sent
+as transactional email, carry no unsubscribe link, and are not stopped by a complaint (a hard bounce does stop them).
+The announcement, a change of date, a cancellation, and the closing each enqueue `identity.closure_email_fanout` in the same
+transaction as their record. The hourly `identity.closure_email_reminders` decides when to send the reminders for 7 days and
+1 day before the closing date and 7 days before the export deadline. A reminder whose time had already passed when the shutdown
+was announced is not sent, because the announcement email states the dates.
+The fan-out job records a row of `service_closure_emails` per user and enqueues `identity.closure_email` only for the users it
+could record, so however often the job runs, each user gets each email once. Before sending, the job checks that the email is
+still valid (that it is not for a cancelled announcement or for a date that has since changed).
 
-メールの送り方は設定 `mail` で選びます。
+The setting `mail` chooses how email is sent.
 
-| `mail` | 動き |
+| `mail` | Behavior |
 | --- | --- |
-| `none`（既定） | 送らず、本文（リンクを含む）をサーバーのログに `mail not sent (mail = none)` として出す。メールを使わない構成と開発用 |
-| `smtp` | SMTP の提出（submission）で送る。STARTTLS を必須とし、証明書を検証してから認証・送信する |
-| `ses` | Amazon SES v2 の API（`SendEmail` の Raw content）で送る。認証は AWS SDK の既定の資格情報の連鎖（IAM ロールなど）で、SMTP のパスワードを持たない |
+| `none` (default) | Sends nothing and writes the body, links included, to the server log as `mail not sent (mail = none)`. For setups that do not use email, and for development |
+| `smtp` | Sends by SMTP submission. It requires STARTTLS and verifies the certificate before authenticating and sending |
+| `ses` | Sends with the Amazon SES v2 API (`SendEmail` with raw content). It authenticates through the AWS SDK's default credential chain (an IAM role, for example) and holds no SMTP password |
 
-`smtp` の設定は `mail_from`・`smtp_host`・`smtp_port`（既定 587）・`smtp_username`・`smtp_password`、`ses` の設定は `mail_from`・`ses_region`・`ses_configuration_set` です。
-`mail_from` は `noreply@social.example` のような裸のアドレスで、`From` は `"<サーバー名>" <mail_from>` になり、`Message-ID` のドメインと SPF・DKIM・DMARC の対象（下記）もこのドメインです。
-`Reply-To` には、インスタンス設定の `contact_email` があればそれを付けます（[インスタンス設定](instance-settings.md)）。
-すべてのメールに `Auto-Submitted: auto-generated` が付きます。
-`smtp` と `ses` は同じ形のメールを組み立てます。SMTPUTF8 を使わないので、アドレスは ASCII で送り、国際化ドメインは Punycode に直します。ローカル部（`@` の前）が ASCII でないアドレスには送れず、そのジョブは失敗します。
+The settings of `smtp` are `mail_from`, `smtp_host`, `smtp_port` (default 587), `smtp_username`, and `smtp_password`. The
+settings of `ses` are `mail_from`, `ses_region`, and `ses_configuration_set`.
+`mail_from` is a bare address such as `noreply@social.example`. `From` becomes `"<server name>" <mail_from>`, and the domain
+of `mail_from` is also the domain of `Message-ID` and the one SPF, DKIM, and DMARC apply to (see below).
+`Reply-To` is the instance setting `contact_email` when it is set ([instance settings](instance-settings.md)).
+Every email carries `Auto-Submitted: auto-generated`.
+`smtp` and `ses` build the same message. SMTPUTF8 is not used, so addresses are sent in ASCII and internationalized domains are
+converted to Punycode. An address whose local part (before the `@`) is not ASCII cannot be sent to, and its job fails.
 
-## 事業者ごとの設定例
+## Examples by provider
 
-秘密は環境変数かファイルで渡します（`MY_SMTP_PASSWORD` または `MY_SMTP_PASSWORD_FILE`）。設定ファイルには書かないでください。
+Pass secrets by environment variable or file (`MY_SMTP_PASSWORD` or `MY_SMTP_PASSWORD_FILE`). Do not put them in the
+configuration file.
 
-### Amazon SES（API）
+### Amazon SES (API)
 
-AWS で動かすときは `mail = ses` で SES v2 の API を使います。資格情報は AWS SDK の既定の連鎖（Lambda・ECS の実行ロール、環境変数、共有の設定ファイル）から取るので、秘密の設定はありません。
+When you run on AWS, `mail = ses` uses the SES v2 API. Credentials come from the AWS SDK's default chain (the execution role of
+Lambda or ECS, environment variables, the shared configuration file), so there is no secret to configure.
 
-1. SES で `mail_from` のドメインをアイデンティティとして検証し、Easy DKIM を有効にする（下記）。
-2. 本番のアクセスを申請して、サンドボックスを出る。サンドボックスでは検証済みのアドレスにしか送れない。
-3. 実行ロールに、`mail_from` のアイデンティティ（構成セットを使うならその構成セットにも）への `ses:SendEmail` を許可する。
+1. In SES, verify the domain of `mail_from` as an identity and enable Easy DKIM (see below).
+2. Request production access to leave the sandbox. In the sandbox you can only send to verified addresses.
+3. Allow `ses:SendEmail` for the execution role on the identity of `mail_from` (and on the configuration set, if you use one).
 
 ```sh
 MY_MAIL=ses
 MY_MAIL_FROM=noreply@social.example
-MY_SES_REGION=ap-northeast-1          # アイデンティティを検証したリージョン。空なら AWS_REGION
-MY_SES_CONFIGURATION_SET=my-events    # 任意。イベントの送り先を持つ構成セット
+MY_SES_REGION=ap-northeast-1          # the region where you verified the identity; AWS_REGION when empty
+MY_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-`ses_configuration_set` を設定すると、すべてのメールにその構成セットを適用します。SES はメールの `Message-ID` と `Date` を自分の値で上書きします。
-送信時に SES が同期で宛先を拒むことはありません。アカウントの抑止リストに載ったアドレスへの送信も受け付けたうえで送られず、あとから通知（SNS）でバウンスとして届きます。
-バウンスと苦情を記録するには、次の SES の通知を SNS で受ける設定をします。
+When `ses_configuration_set` is set, every email uses that configuration set. SES overwrites the `Message-ID` and `Date` of the
+email with its own values.
+SES never rejects a recipient synchronously at send time. It accepts a send to an address on the account suppression list and
+then does not deliver it, and the bounce arrives later as a notification (SNS).
+To record bounces and complaints, set up the SES notifications below to arrive through SNS.
 
-### SES の通知（SNS）を受ける
+### Receive SES notifications (SNS)
 
-SES のバウンスと苦情を SNS のトピックに出し、そのトピックの HTTPS の購読でサーバーの `POST /mail/events/ses` に届けます（ADR-0086 §5）。
-受け口は `ses_sns_topic_arn` を設定したときだけ開き、設定しなければ `404` を返します。
+SES bounces and complaints go to an SNS topic, and an HTTPS subscription on that topic delivers them to the server's
+`POST /mail/events/ses`.
+The endpoint opens only when `ses_sns_topic_arn` is set; otherwise it answers `404`.
 
-1. SES のアイデンティティと同じリージョンに、SNS の標準トピックを作る。
-2. トピックの属性 `SignatureVersion` を `2`（SHA256withRSA）にする。既定の `1` の署名は受け付けず、`400` を返す。
-3. トピックのアクセスポリシーで、`ses.amazonaws.com` に自分のアカウントからの `SNS:Publish` を許可する（SES のコンソールでトピックを作ると付く）。
-4. SES の通知の送り先にトピックを指定する。次のどちらでもよい（サーバーは本文の `notificationType` と `eventType` の両方を読む）。
-   - アイデンティティの通知: `mail_from` のアイデンティティの「Bounce」と「Complaint」のフィードバックの通知を、このトピックにする。
-   - 構成セットのイベントの送り先: `ses_configuration_set` の構成セットに、イベントの種類 `BOUNCE` と `COMPLAINT` で、このトピックを送り先にする。
-5. `MY_SES_SNS_TOPIC_ARN` にトピックの ARN を設定し、`my config check` で確かめてから起動し直す。
-6. トピックに、プロトコル `https`、エンドポイント `https://<サーバーのホスト>/mail/events/ses` の購読を作る。**raw message delivery は有効にしない**（署名のない本文は拒否する）。
+1. Create a standard SNS topic in the same region as the SES identity.
+2. Set the topic attribute `SignatureVersion` to `2` (SHA256withRSA). A signature with the default `1` is not accepted and the
+   server answers `400`.
+3. In the topic's access policy, allow `ses.amazonaws.com` to `SNS:Publish` from your own account (the SES console adds this
+   when it creates the topic).
+4. Point SES notifications at the topic, in either way (the server reads both `notificationType` and `eventType` in the body).
+   - Identity notifications: use this topic for the "Bounce" and "Complaint" feedback notifications of the `mail_from` identity.
+   - Configuration set event destination: add this topic as a destination of the configuration set in `ses_configuration_set`,
+     for the event types `BOUNCE` and `COMPLAINT`.
+5. Set `MY_SES_SNS_TOPIC_ARN` to the ARN of the topic, check with `my config check`, and restart.
+6. Create a subscription on the topic with the protocol `https` and the endpoint `https://<server host>/mail/events/ses`.
+   **Do not enable raw message delivery** (a body without a signature is rejected).
 
 ```sh
 aws sns create-topic --region ap-northeast-1 --name my-ses-feedback
@@ -86,151 +102,202 @@ aws ses set-identity-notification-topic --region ap-northeast-1 --identity socia
 aws ses set-identity-notification-topic --region ap-northeast-1 --identity social.example \
   --notification-type Complaint --sns-topic arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback
 
-MY_SES_SNS_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback   # 起動し直してから次の購読を作る
+MY_SES_SNS_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback   # restart, then create the subscription below
 
 aws sns subscribe --region ap-northeast-1 \
   --topic-arn arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback \
   --protocol https --notification-endpoint https://social.example/mail/events/ses
 ```
 
-サーバーは購読の確認（`SubscriptionConfirmation`）を受けると、その `SubscribeURL` を `GET` して購読を確認し、ログに `SNS subscription of the SES notifications confirmed` を出します。
-`aws sns list-subscriptions-by-topic` で購読が `PendingConfirmation` でなくなったことを確かめます。
+When the server receives the subscription confirmation (`SubscriptionConfirmation`), it sends a `GET` to its `SubscribeURL` to
+confirm the subscription and logs `SNS subscription of the SES notifications confirmed`.
+Check with `aws sns list-subscriptions-by-topic` that the subscription is no longer `PendingConfirmation`.
 
-受け口は、メッセージを使う前に次をすべて確かめ、どれかが違えば `400` を返して何も記録しません。
+Before it uses a message, the endpoint checks all of the following. If any fails, it answers `400` and records nothing.
 
-- `TopicArn` が `ses_sns_topic_arn` と一致する。
-- `SignatureVersion` が `2` で、署名が正しい。
-- 署名の証明書の URL（`SigningCertURL`）が `https` で、ホストがトピックのリージョンの `sns.<region>.amazonaws.com`。購読の確認の `SubscribeURL` も同じホストに限る。
+- `TopicArn` equals `ses_sns_topic_arn`.
+- `SignatureVersion` is `2` and the signature is valid.
+- The certificate URL of the signature (`SigningCertURL`) is `https` and its host is `sns.<region>.amazonaws.com` for the region
+  of the topic. The `SubscribeURL` of a subscription confirmation must have the same host.
 
-証明書は SSRF を防ぐ外向きの HTTP クライアントで取得し、KV に 24 時間キャッシュします。本文は 1 MiB まで読み、超えると `413` です。
-証明書が取得できない、購読の確認に失敗した、記録できなかったときは `503` を返し、SNS の再送に任せます。メンテナンスモードの間も `503` です。
+The certificate is fetched with the outbound HTTP client that guards against SSRF and cached in the KV store for 24 hours. The
+body is read up to 1 MiB, and a larger one gets `413`.
+When the certificate cannot be fetched, the subscription confirmation fails, or the record cannot be written, the endpoint
+answers `503` and leaves it to SNS to retry. It also answers `503` during maintenance mode.
 
-記録するのは次の通知です。宛先のアドレスを主アドレスと照合し（大文字と小文字は区別せず、Punycode のドメインは Unicode の形でも照合する）、一致しなければ何もしません。
+These are the notifications it records. It matches the recipient address against the primary address (case-insensitively, and a
+Punycode domain also matches in its Unicode form); if none matches, it does nothing.
 
-| 通知 | 記録 |
+| Notification | Recorded as |
 | --- | --- |
-| バウンスで `bounceType` が `Permanent`（`General`・`NoEmail`・`Suppressed`・`OnAccountSuppressionList` などの副種別） | `hard_bounce` |
-| 苦情（`complaintFeedbackType` が `not-spam` のものを除く） | `complaint` |
-| バウンスで `Transient`・`Undetermined`、配達・送信などのほかの通知 | 記録しない（`200` を返す） |
+| A bounce whose `bounceType` is `Permanent` (any subtype such as `General`, `NoEmail`, `Suppressed`, or `OnAccountSuppressionList`) | `hard_bounce` |
+| A complaint (except those whose `complaintFeedbackType` is `not-spam`) | `complaint` |
+| A bounce that is `Transient` or `Undetermined`, and other notifications such as delivery or send | Not recorded (answers `200`) |
 
-SES の `feedbackId` を記録の一意のキーにするので、SNS が同じ通知を何度送っても記録は 1 つです。
+The SES `feedbackId` is the unique key of a record, so however many times SNS sends the same notification, there is one record.
 
-### Amazon SES（SMTP インタフェース）
+### Amazon SES (SMTP interface)
 
-AWS の外で動かすときなど、IAM の資格情報を渡せない構成では、SES の SMTP インタフェースを `mail = smtp` で使います。この構成では送信時の宛先の拒否だけを抑止として記録します（[メールが届かないアドレスの抑止](#メールが届かないアドレスの抑止)）。
+When you cannot give IAM credentials, such as when you run outside AWS, use the SES SMTP interface with `mail = smtp`. In this
+setup only a rejection of the recipient at send time is recorded as a suppression
+([suppression of addresses that cannot receive email](#suppression-of-addresses-that-cannot-receive-email)).
 
-1. SES で `mail_from` のドメインをアイデンティティとして検証し、Easy DKIM を有効にする（下記）。
-2. 本番のアクセスを申請して、サンドボックスを出る。サンドボックスでは検証済みのアドレスにしか送れない。
-3. SES の「SMTP settings」で SMTP 認証情報を作る（IAM のアクセスキーとは別の値）。
+1. In SES, verify the domain of `mail_from` as an identity and enable Easy DKIM (see below).
+2. Request production access to leave the sandbox. In the sandbox you can only send to verified addresses.
+3. Create SMTP credentials in the SES "SMTP settings" (these differ from IAM access keys).
 
 ```sh
 MY_MAIL=smtp
 MY_MAIL_FROM=noreply@social.example
-MY_SMTP_HOST=email-smtp.ap-northeast-1.amazonaws.com   # SES のリージョンのエンドポイント
+MY_SMTP_HOST=email-smtp.ap-northeast-1.amazonaws.com   # the endpoint of your SES region
 MY_SMTP_PORT=587                                       # STARTTLS
-MY_SMTP_USERNAME=<SMTP 認証情報のユーザー名>
+MY_SMTP_USERNAME=<user name of the SMTP credentials>
 MY_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
 ```
 
-SES は `Message-ID` と `Date` を自分の値で上書きします。
+SES overwrites `Message-ID` and `Date` with its own values.
 
-### 一般的な SMTP の提出
+### A general SMTP submission server
 
-Postfix などの自前の SMTP サーバーや、メール配信の事業者が提出用に出しているサーバーを使うときです。
+Use this for your own SMTP server such as Postfix, or for the submission server of an email delivery provider.
 
 ```sh
 MY_MAIL=smtp
 MY_MAIL_FROM=noreply@social.example
-MY_SMTP_HOST=smtp.provider.example     # 証明書がこの名前で有効な STARTTLS 対応のサーバー
+MY_SMTP_HOST=smtp.provider.example     # a STARTTLS server whose certificate is valid for this name
 MY_SMTP_PORT=587
-MY_SMTP_USERNAME=<ユーザー名>          # 認証のないサーバーでは空
+MY_SMTP_USERNAME=<user name>           # empty for a server without authentication
 MY_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
 ```
 
-STARTTLS を提供しないサーバーと、証明書が `smtp_host` の名前で検証できないサーバーには送りません。認証は STARTTLS のあとにだけ送ります。
-設定を変えたら `my config check` で確かめてから起動し直します。
+The server does not send to a server that offers no STARTTLS, or whose certificate cannot be verified for the name in
+`smtp_host`. Credentials are sent only after STARTTLS.
+After you change the settings, check with `my config check` and restart.
 
-## SPF・DKIM・DMARC
+## SPF, DKIM, and DMARC
 
-Gmail と Yahoo は、1 日に多くのメールを送る送信者に SPF・DKIM・DMARC と、1 クリックの配信停止を求めます（ADR-0086 Decision Drivers 3）。少量でも、設定していないと迷惑メールに分類されやすくなります。
-いずれも `mail_from` のドメイン（例: `social.example`）の DNS に設定します。値は事業者の案内に従ってください。
+Gmail and Yahoo require SPF, DKIM, DMARC, and one-click unsubscribe from senders that send many emails a day. Even for a small
+volume, email without them is more likely to be classified as spam.
+Set all of them in the DNS of the domain of `mail_from` (for example `social.example`), with the values your provider gives you.
 
-- **SPF**: 送信に使う事業者を許可する TXT レコードを、ドメインに 1 つだけ置く（例: SES の独自 MAIL FROM ドメインを使うなら、そのドメインに事業者の指定する `include:`）。
-- **DKIM**: 事業者が出す公開鍵を DNS に置き、送信側の署名を有効にする。SES では Easy DKIM の CNAME レコード 3 つ。サーバー自身は署名しないので、署名は事業者が行う。
-- **DMARC**: `_dmarc.social.example` の TXT レコード。**`p=none` から始め**、集計レポート（`rua=`）で SPF と DKIM の整合（From のドメインと一致すること）を確かめてから、`quarantine`、`reject` と強める。
+- **SPF**: put one TXT record on the domain that authorizes the provider you send through (for example, if you use a custom SES
+  MAIL FROM domain, the `include:` that the provider specifies, on that domain).
+- **DKIM**: put the public key the provider issues in DNS and enable signing on the sending side. For SES this is the three
+  Easy DKIM CNAME records. The server itself does not sign, so the provider signs.
+- **DMARC**: a TXT record at `_dmarc.social.example`. **Start with `p=none`**, check with the aggregate reports (`rua=`) that SPF
+  and DKIM align (match the From domain), and then tighten to `quarantine` and `reject`.
 
 ```text
 _dmarc.social.example.  TXT  "v=DMARC1; p=none; rua=mailto:dmarc@social.example"
 ```
 
-SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定します（既定の MAIL FROM は `amazonses.com` で、From のドメインと一致しません）。DKIM が整合していれば DMARC は通ります。
+To align SPF on SES, set a custom MAIL FROM domain (the default MAIL FROM is `amazonses.com`, which does not match the From
+domain). If DKIM aligns, DMARC passes.
 
-## 送信の失敗を見る
+## Look at send failures
 
-送信の失敗はジョブのダッシュボードで見ます（`/admin/jobs`、権限 `manage_jobs`、ADR-0064。詳しくは [ジョブのキューと失敗したジョブ](running.md#ジョブのキューと失敗したジョブdead-job)）。
-ジョブの型で絞ると、メールのジョブだけを見られます（管理 API なら `GET /api/v1/admin/jobs?type=identity.verification_email`）。
-型は上の表のとおりです。
+Look at send failures on the jobs dashboard (`/admin/jobs`, permission `manage_jobs`; see
+[the job queue and failed jobs](running.md#ジョブのキューと失敗したジョブdead-job)).
+Filter by job type to see only email jobs (in the admin API, `GET /api/v1/admin/jobs?type=identity.verification_email`).
+The types are in the table above.
 
-- **一時的な失敗**（接続・タイムアウト・4xx の応答）は再試行されます。取引のメールは 6 回（30 秒からの指数で、合計およそ 15 分）、通知のメールは既定の方針（10 回、およそ 4 時間）です。
-  使い切ると失敗したジョブ（dead job）になります。`smtp_host` の誤り、認証の失敗、ネットワークの遮断はここに出ます。直したら `my job retry <id>` かジョブの画面で再実行します。
-- **恒久的な拒否**（宛先や内容への 5xx）は再試行せず、すぐ失敗にします。
-- `mail = ses` では、SES の `MessageRejected`（内容の拒否）が恒久的な拒否です。`TooManyRequestsException`（送信の速度の上限）・`SendingPausedException`・`MailFromDomainNotVerifiedException`・`AccountSuspendedException`、SES に届かない要求などは一時的な失敗で、アカウントや権限を直せば再試行で通ります。
-  エラーの文には SES のエラーコードだけが残ります。
-- 取引のメールは、要求から一定時間（リセット 15 分、確認 1 時間）を過ぎると、送らずに完了します。古いリンクが遅れて届かないようにするためで、失敗ではありません。
-- ジョブの実行時に、アドレスが抑止されている、確認済みになった、通知の権限や設定を失った、などで送る理由がなければ、送らずに完了します。
+- **Temporary failures** (connection errors, timeouts, 4xx answers) are retried. Transactional email is tried 6 times (an
+  exponential backoff from 30 seconds, about 15 minutes in total); notification email uses the default policy (10 times, about
+  4 hours). When the attempts are used up, the job becomes a failed job (dead job). A wrong `smtp_host`, a failed
+  authentication, and a blocked network show up here. After you fix the cause, run it again with `my job retry <id>` or on the
+  jobs screen.
+- **Permanent rejections** (a 5xx for the recipient or the content) are not retried and fail at once.
+- With `mail = ses`, SES's `MessageRejected` (the content was rejected) is a permanent rejection. `TooManyRequestsException`
+  (the sending rate limit), `SendingPausedException`, `MailFromDomainNotVerifiedException`, `AccountSuspendedException`, and
+  requests that do not reach SES are temporary failures, and a retry succeeds once you fix the account or the permissions.
+  Only the SES error code is kept in the error text.
+- A transactional email that is older than a time limit from its request (15 minutes for a reset, 1 hour for a confirmation) is
+  completed without being sent. This keeps old links from arriving late; it is not a failure.
+- When the job runs and there is no reason to send (the address is suppressed, it has been confirmed in the meantime, or the user
+  lost the permission or the setting for the notification), it completes without sending.
 
-ジョブのペイロードにはメールアドレス・本文・トークンを積まず、エラーの文にもそれらを入れません。ID、ジョブの型、SMTP の応答コードだけが残ります。
-成功した送信は、1 回ごとの構造化ログ `job` の行（`my.job.type`）で辿れます。
+A job payload holds no email address, body, or token, and neither does an error text. Only IDs, the job type, and the SMTP
+response code remain.
+A successful send can be followed in the structured `job` log line of each run (`my.job.type`).
 
-## メールが届かないアドレスの抑止
+## Suppression of addresses that cannot receive email
 
-宛先のアドレスが存在しないと SMTP サーバーが答えたとき（`RCPT TO` への 5xx で拡張ステータスが `5.1.x`）、サーバーはそのアドレスをハードバウンスとして記録し、以後の送信を止めます（ADR-0086 §5）。
-`mail = smtp` で記録するのは、この送信時の拒否だけです。送信を受け付けたあとに返る非同期のバウンスや、苦情のフィードバックループは受けません。
-`mail = ses` の送信では SES が同期で宛先を拒まないので、送信時の記録はなく、恒久的なバウンスと苦情を SES の通知から記録します（[SES の通知（SNS）を受ける](#ses-の通知snsを受ける)）。
+When the SMTP server says the recipient address does not exist (a 5xx to `RCPT TO` with an extended status of `5.1.x`), the
+server records the address as a hard bounce and stops sending to it.
+With `mail = smtp`, only this rejection at send time is recorded. Asynchronous bounces that come back after the SMTP server
+accepted the email, and complaint feedback loops, are not received.
+With `mail = ses`, SES never rejects a recipient synchronously, so nothing is recorded at send time; permanent bounces and
+complaints are recorded from the SES notifications
+([Receive SES notifications (SNS)](#receive-ses-notifications-sns)).
 
-| 種類 | 止めるメール |
+| Kind | Email that is stopped |
 | --- | --- |
-| `hard_bounce` | 確認のメールを除くすべて。パスワードのリセットのメールも止まる |
-| `complaint`（迷惑メールとしての報告） | 通知と告知のメール。取引のメールは送る |
+| `hard_bounce` | Everything except the confirmation email. The password reset email is stopped too |
+| `complaint` (reported as spam) | Notification and announcement emails. Transactional emails are still sent |
 
-- モデレーターは管理画面のアカウントのページ（`GET /api/v1/admin/accounts/{id}` の `email_suppression`）で、抑止の種類と起点を見ます。
-- **解除**は 2 通りです。利用者が確認のメールを求めて、そのアドレスを確認し直すと、ハードバウンスの抑止は解けます（確認のメールは抑止中も送ります）。
-  メールボックスを直したなど送ってよいと確かめたときは、モデレーターが `POST /api/v1/admin/accounts/{id}/email_suppression/lift`（権限 `manage_accounts`）で解除します。監査ログに `email_suppression_lifted` を記録します（[モデレーション](moderation.md)）。
-- パスワードのリセットのメールが止まっている利用者には、管理者がリセットのリンクを発行して渡します（`my admin account password-reset-link @alice`）。
-- 利用者は設定画面で、主アドレスにメールが届いていないことと、その時期を見ます。
+- Moderators see the kind and origin of a suppression on the account page of the admin screen (`email_suppression` in
+  `GET /api/v1/admin/accounts/{id}`).
+- There are two ways to **lift** it. When the user asks for a confirmation email and confirms the address again, the hard-bounce
+  suppression is lifted (the confirmation email is sent even while the address is suppressed). When you have verified that it is
+  fine to send, for example because the mailbox was fixed, a moderator lifts it with
+  `POST /api/v1/admin/accounts/{id}/email_suppression/lift` (permission `manage_accounts`). It records
+  `email_suppression_lifted` in the audit log ([moderation](moderation.md)).
+- For a user whose password reset email is stopped, an administrator issues a reset link and hands it over
+  (`my admin account password-reset-link @alice`).
+- On the settings screen, users see that email is not reaching their primary address, and since when.
 
-## 配信停止
+## Unsubscribing
 
-通知のメールには、配信停止のリンクと `List-Unsubscribe` ・`List-Unsubscribe-Post: List-Unsubscribe=One-Click` のヘッダ（RFC 8058）を付けます。メールクライアントの「配信を停止」ボタンがこれを使います。
+Notification emails carry an unsubscribe link and the headers `List-Unsubscribe` and `List-Unsubscribe-Post:
+List-Unsubscribe=One-Click` (RFC 8058). The "unsubscribe" button of email clients uses them.
 
-- 配信停止の区分は、利用者設定のメールの項目と 1 対 1 です。今ある区分は `email_moderator_notifications`（モデレーターへの通知）です。
-- リンクは `https://{host}/mail/unsubscribe?token=...` で、ログインは要りません。トークンはメールごとに発行し、DB にはハッシュだけを残し、90 日で失効します。
-  - `GET` は確認の画面を出すだけで、設定は変えません（リンクを先読みするスキャナーで止まらないように）。ボタンで同じ `POST` を送ります。
-  - `POST`（ワンクリック）は区分の設定を off にします。期限までは何度送っても結果は同じです。
-- **取引のメールは配信停止にできません**。確認・リセット・パスワードの変更の通知は、止めると安全に関わる知らせが届かなくなるためです。ヘッダも付きません。
-- 利用者は設定画面からも同じ設定を切り替えられます。
+- The unsubscribe classes map one to one to the email items of the user settings. The only class today is
+  `email_moderator_notifications` (notices to moderators).
+- The link is `https://{host}/mail/unsubscribe?token=...` and needs no sign-in. A token is issued per email, only its hash is
+  kept in the database, and it expires after 90 days.
+  - `GET` only shows a confirmation screen and changes nothing (so that scanners that prefetch links do not stop the email).
+    The button sends the same `POST`.
+  - `POST` (one click) turns the setting of the class off. Until the token expires, sending it again gives the same result.
+- **Transactional email cannot be unsubscribed from.** Confirmation, reset, and the notice of a password change would stop
+  security-relevant notices from arriving. These emails carry no such headers either.
+- Users can switch the same setting on the settings screen.
 
-## HTML の版
+## The HTML version
 
-すべてのメールは `multipart/alternative` で、同じ内容の `text/plain` と `text/html`（どちらも UTF-8）を持ちます（ADR-0086 §2）。`mail = none` のログに出るのはテキストの版だけです。
+Every email is `multipart/alternative` with the same content as `text/plain` and `text/html` (both UTF-8). With `mail = none`,
+only the text version is written to the log.
 
-- 外枠のレイアウトは 1 つで、段落・ボタン・署名（サーバー名・URL・連絡先・理由・配信停止のリンク）を持ちます。`<html lang dir>` は受信者のロケールから付き、`ar` などでは右から左に組みます。
-- 外部のフォント・画像・スタイルシートを読みません。色はデザイントークンの既定値で、明暗は `color-scheme` と `prefers-color-scheme` で切り替わります。管理者のテーマの上書きはメールに効きません。
-- リンクにするのは `https` の URL だけです。`web_origin` が `http://{host}` の開発環境のように URL が `http` のときは、ボタンや配信停止のリンクの代わりに URL を文字で出し、署名のサーバーの URL は省きます。
-- 外枠のソースは `tools/mail/frame.mjml` です。`scripts/task.sh mail:gen` が MJML（Bun）でコンパイルして Go の `html/template` の `internal/app/kernel/mail_frame.gen.html` を作り、これをコミットしてバイナリに埋め込みます。サーバーの実行時に JavaScript は動きません。
-  コミットした生成物が古いと、`scripts/task.sh mail:gen-check`（Merge Queue の `server-static`）が失敗します。
+- There is one outer layout, with paragraphs, buttons, and a signature (server name, URL, contact, the reason for the email,
+  and the unsubscribe link). `<html lang dir>` comes from the recipient's locale, and languages such as `ar` are laid out right to
+  left.
+- It loads no external fonts, images, or stylesheets. Colors are the default design tokens, and light and dark follow
+  `color-scheme` and `prefers-color-scheme`. The administrator's theme overrides do not affect email.
+- Only `https` URLs become links. When a URL is `http`, as in a development setup where `web_origin` is `http://{host}`, the URL
+  is written as text instead of a button or an unsubscribe link, and the server URL in the signature is left out.
+- The source of the layout is `tools/mail/frame.mjml`. `scripts/task.sh mail:gen` compiles it with MJML (Bun) into the Go
+  `html/template` `internal/app/kernel/mail_frame.gen.html`, which is committed and embedded in the binary. No JavaScript runs in
+  the server at run time. If the committed output is stale, `scripts/task.sh mail:gen-check` (`server-static` of the merge queue)
+  fails.
 
-## 開発環境
+## Development
 
-`mail = none`（既定）では送らずにログへ出すので、確認のリンクはログから取れます。
-実際に送られるメール（ヘッダ・HTML の版・リンク）を見るときは、開発用の SMTP サーバー [Mailpit](https://mailpit.axllent.org/)（MIT）に `mail = smtp` で送ります。
-Mailpit は受けたメールを誰にも届けずに保持し、Web UI（`http://127.0.0.1:8025`）と REST API で見せます。
+With `mail = none` (the default), nothing is sent and the email goes to the log, so you can take the confirmation link from the
+log.
+To see the email that would really be sent (headers, the HTML version, links), send it with `mail = smtp` to the development SMTP
+server [Mailpit](https://mailpit.axllent.org/) (MIT). Mailpit keeps the email it receives without delivering it to anyone and
+shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.
 
-- `mail = smtp` は STARTTLS と証明書の検証を省かないので、Mailpit は `scripts/mailpit-cert.sh` が作る開発用の CA の証明書（`mailpit`・`localhost`・`127.0.0.1` 向け、`.tmp/mailpit`）で STARTTLS を求め、`my serve` はその CA を `SSL_CERT_FILE` で信頼します。
-  `SSL_CERT_FILE` はシステムのルート証明書を置き換えるので、その `my serve` から外のサーバーへの HTTPS（連合など）は通りません。開発の確認だけに使います。
-- イメージ（`axllent/mailpit`）は、結合テストと同じものをタグとダイジェストで固定しています（`deploy/docker/mailpit/compose.yaml`）。
+- `mail = smtp` never skips STARTTLS or certificate verification, so Mailpit requires STARTTLS with a certificate of a development
+  CA (for `mailpit`, `localhost`, and `127.0.0.1`, in `.tmp/mailpit`) that `scripts/mailpit-cert.sh` creates, and `my serve` trusts
+  that CA through `SSL_CERT_FILE`.
+  `SSL_CERT_FILE` replaces the system root certificates, so that `my serve` cannot make HTTPS requests to outside servers
+  (federation and the like). Use it only for development checks.
+- The image (`axllent/mailpit`) is pinned by tag and digest, the same as in the integration tests
+  (`deploy/docker/mailpit/compose.yaml`).
 
-Docker Compose の構成（[`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)）に足すときは、上書きの [`compose.mailpit.yaml`](../../deploy/docker/compose.mailpit.yaml) を重ねます。`my` の `mail` を `smtp` にし、宛先を Mailpit にします。
+To add it to the Docker Compose setup ([`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)), layer the override
+[`compose.mailpit.yaml`](../../deploy/docker/compose.mailpit.yaml) on top. It sets `mail` of `my` to `smtp` and points it at
+Mailpit.
 
 ```sh
 scripts/mailpit-cert.sh
@@ -238,15 +305,20 @@ cd deploy/docker
 docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
 ```
 
-手元で動かす `my serve` から送るときは、Mailpit だけを起動して（`scripts/task.sh docker:mailpit`、止めるのは `docker compose -f deploy/docker/mailpit/compose.yaml down`）、次の設定で起動します。
+To send from a `my serve` running on your machine, start only Mailpit (`scripts/task.sh docker:mailpit`; stop it with
+`docker compose -f deploy/docker/mailpit/compose.yaml down`) and start with these settings.
 
 ```sh
 MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_SMTP_HOST=localhost MY_SMTP_PORT=1025 \
   SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
 ```
 
-どちらも、パスワードのリセットを求める（`/auth/forgot_password`）か、`open` モードで登録すると、メールが Mailpit の UI に届きます。UI で開いたメールのリンクを、ブラウザで開きます。
+In both setups, ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
+Mailpit UI. Open the link of the email you opened in the UI in your browser.
 
-`mail = smtp` の結合テストも Mailpit を相手にします（`scripts/task.sh go:test-mail`、Docker が要る）。`pkg/testkit/mailpittest` がテストごとにコンテナを起動し、
-アダプタが送ったメールのヘッダ・エンコード・本文と STARTTLS・認証の組み合わせを確かめ、登録の確認とパスワードのリセットを、Mailpit が受けたメールのリンクで通します。
-CI では遅い検査の組（`slow-suite.yml` の `mail-integration`、リリース前と夜間）で回り、PR と Merge Queue では SMTP サーバーのテスト内のスタンドインで同じアダプタを確かめます。
+The integration tests of `mail = smtp` also run against Mailpit (`scripts/task.sh go:test-mail`, which needs Docker).
+`pkg/testkit/mailpittest` starts a container per test, checks the headers, encoding, and body of the email the adapter sent
+and the combinations of STARTTLS and authentication, and runs registration confirmation and password reset through the links
+of the email Mailpit received.
+In CI they run in the set of slow checks (`mail-integration` in `slow-suite.yml`, before a release and nightly); pull requests
+and the merge queue check the same adapter against a stand-in SMTP server inside the tests.

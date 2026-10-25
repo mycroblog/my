@@ -43,7 +43,7 @@ ADR-0095 の本文と実装が食い違うので、読み込む場所を決め�
 - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。
 - トークンとフォントの並びは `theme.css` 1 か所のままで、サーバー単位のテーマの規則も 1 つで済む。
 - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/ui/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
-- サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[app/ui/README.md](../../app/ui/README.md#server-themes)・[運用の手引き](../operations/instance-settings.md#テーマ)）。
+- サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[app/ui/README.md](../../app/ui/README.md#server-themes)・[運用の手引き](../operations/instance-settings.md#theme)）。
 - 後続の作業は無い。実装は PR #1182 で済んでいる。
 
 ## Open Questions / 要検証

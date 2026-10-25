@@ -48,10 +48,7 @@ pending:
     - docs/operations/cdn.md
     - docs/operations/crawlers.md
     - docs/operations/database.md
-    - docs/operations/email.md
-    - docs/operations/instance-settings.md
     - docs/operations/key-management.md
-    - docs/operations/link-previews.md
     - docs/operations/moderation.md
     - docs/operations/payments-payjp.md
     - docs/operations/payments-stripe.md
@@ -61,7 +58,6 @@ pending:
     - docs/operations/running.md
     - docs/operations/service-closure.md
     - docs/operations/supporters.md
-    - docs/operations/webhooks.md
   design-links:
     - docs/operations/admin-cli.md
     - docs/operations/billing-import.md
@@ -69,10 +65,7 @@ pending:
     - docs/operations/cdn.md
     - docs/operations/crawlers.md
     - docs/operations/database.md
-    - docs/operations/email.md
-    - docs/operations/instance-settings.md
     - docs/operations/key-management.md
-    - docs/operations/link-previews.md
     - docs/operations/maintenance.md
     - docs/operations/moderation.md
     - docs/operations/monitoring.md
@@ -84,7 +77,6 @@ pending:
     - docs/operations/running.md
     - docs/operations/service-closure.md
     - docs/operations/supporters.md
-    - docs/operations/webhooks.md
     - docs/reference/build-tags.md
     - docs/reference/commands.md
     - docs/reference/configuration.md
