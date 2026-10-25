@@ -294,5 +294,29 @@
   "notifications.unread_count": {
     "defaultMessage": "{count, plural, one {# unread} other {# unread}}",
     "description": "The number of unread notifications on the badge of the navigation item, for example '3 unread'."
+  },
+  "notifications.account_moved.followed": {
+    "defaultMessage": "You follow {target} now.",
+    "description": "Under the notification that an account the user followed moved: the user follows the new account instead. {target} is the new account's handle."
+  },
+  "notifications.account_moved.requested": {
+    "defaultMessage": "Your request to follow {target} awaits its approval.",
+    "description": "Under the notification that an account the user followed moved: the new account is locked, so the user's follow awaits its approval. {target} is the new account's handle."
+  },
+  "notifications.account_moved.blocking": {
+    "defaultMessage": "You did not follow {target}, because you block it.",
+    "description": "Under the notification that an account the user followed moved: the user blocks the new account, so did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.blocked_by": {
+    "defaultMessage": "You did not follow {target}, because it blocks you.",
+    "description": "Under the notification that an account the user followed moved: the new account blocks the user, so the user did not follow it. {target} is its handle."
+  },
+  "notifications.account_moved.domain_muted": {
+    "defaultMessage": "You did not follow {target}, because you muted its server.",
+    "description": "Under the notification that an account the user followed moved: the user mutes the new account's server, so did not follow it. {target} is the handle."
+  },
+  "notifications.account_moved.target": {
+    "defaultMessage": "Open {target}",
+    "description": "Link from the notification that an account moved to the new account's profile. {target} is its handle."
   }
 }

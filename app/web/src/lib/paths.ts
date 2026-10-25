@@ -47,3 +47,9 @@ export function isServerPath(pathname: string): boolean {
 
 /** The page of the user's data archives, where the closure notice sends people to take their data away (FR-808). */
 export const dataExportPath = "/settings/account";
+
+/** The page that moves the user's own account to another account, and cancels the move (FR-009, ADR-0089). */
+export const accountMovePath = "/settings/move";
+
+/** The page that exports the user's follows, blocks, mutes, and bookmarks as CSV files (FR-008). */
+export const importExportPath = "/settings/import-export";

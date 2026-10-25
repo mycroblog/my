@@ -89,6 +89,33 @@ describe("a profile", () => {
     expect(within(main()).getByText(/I bake/)).toHaveTextContent("I bake bread.");
   });
 
+  test("tells that the account moved, with a link to the new account", async () => {
+    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example" };
+    bobServer({}, { moved: carol });
+    await renderApp({ path: "/@bob" });
+
+    await screen.findByRole("heading", { level: 1, name: "Bob" });
+    const note = within(main()).getByText(/moved to/);
+    expect(within(note).getByRole("link", { name: "@carol@new.example" })).toHaveAttribute("href", "/@carol@new.example");
+    // The link to manage the move is for the moved account itself.
+    expect(within(main()).queryByRole("link", { name: "Manage the move" })).not.toBeInTheDocument();
+  });
+
+  test("shows the viewer's own moved profile with the way to manage the move", async () => {
+    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example" };
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/accounts/verify_credentials`, () => HttpResponse.json({ ...viewerFixture, moved: carol })),
+      http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json({ ...viewerFixture, moved: carol, followers_count: 0, following_count: 0 })),
+    );
+    await renderApp({ path: "/@alice" });
+
+    await screen.findByRole("heading", { level: 1, name: "Alice" });
+    expect(await within(main()).findByText(/You moved to/)).toBeInTheDocument();
+    expect(within(main()).getByRole("link", { name: "Manage the move" })).toHaveAttribute("href", "/settings/move");
+    expect(within(main()).queryByRole("button", { name: /Follow/ })).not.toBeInTheDocument();
+  });
+
   test("shows the account's header image and avatar, decorative, with the band in place of an image that fails", async () => {
     const header = "https://my.example/media/header/full.png";
     const avatar = "https://my.example/media/avatar/full.png";

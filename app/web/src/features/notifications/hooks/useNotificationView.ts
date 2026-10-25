@@ -4,6 +4,7 @@
 import { type CustomEmojiImage, type ImageSources, sanitizedHtmlText, serverSanitizedHtml } from "@my/ui";
 import { useIntl } from "react-intl";
 import type { ClientMessageKey } from "../../../lib/i18n";
+import { handleOf } from "../../../lib/handle";
 import { accountStatusPath, moderationAppealPath, moderationReportPath, followListPath, profilePath } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useViewer } from "../../session";
@@ -46,6 +47,24 @@ export type SupporterNoticeView = {
     | { kind: "ended"; reason: SupporterEndReason }
     | { kind: "retired" }
     | null;
+};
+
+/** The sentences of what became of the user's follow when an account they followed moved; each takes `{target}`. */
+export type MoveOutcomeKey =
+  | "client:notifications.account_moved.followed"
+  | "client:notifications.account_moved.requested"
+  | "client:notifications.account_moved.blocking"
+  | "client:notifications.account_moved.blocked_by"
+  | "client:notifications.account_moved.domain_muted";
+
+/** What an `account_moved` tells of the account that the one the user followed moved to, formatted for the row. */
+type MoveNoticeView = {
+  /** The new account's handle (`@name@domain`), for `{target}` in the sentences of the row. */
+  handle: string;
+  /** The new account's profile page. */
+  href: string;
+  /** What became of the user's follow, as a sentence of `{target}`; null when the server did not say. */
+  outcome: MoveOutcomeKey | null;
 };
 
 export type NotificationView = {
@@ -97,6 +116,8 @@ export type NotificationView = {
   emojiRequest: { emoji: string; reason: string | null } | null;
   /** The subscription that a supporter notification tells of; null for the other types and when it is gone. */
   supporter: SupporterNoticeView | null;
+  /** The account that an `account_moved` tells of the move to; null for the other types and when it is gone. */
+  move: MoveNoticeView | null;
   /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
@@ -152,6 +173,26 @@ function supporterOf(notification: Notification, formatDate: (value: string) => 
     default:
       return null;
   }
+}
+
+/** The sentences of what became of the user's follow when an account they followed moved. */
+const moveOutcomeSentences: Readonly<Record<NonNullable<NonNullable<Notification["account_move"]>["outcome"]>, MoveOutcomeKey>> = {
+  followed: "client:notifications.account_moved.followed",
+  requested: "client:notifications.account_moved.requested",
+  blocking: "client:notifications.account_moved.blocking",
+  blocked_by: "client:notifications.account_moved.blocked_by",
+  domain_muted: "client:notifications.account_moved.domain_muted",
+};
+
+/** The new account of an `account_moved` and what became of the user's follow; null without the account. */
+function moveOf(notification: Notification): MoveNoticeView | null {
+  const move = notification.account_move;
+  if (notification.type !== "account_moved" || move?.target === undefined) return null;
+  return {
+    handle: handleOf(move.target.acct),
+    href: profilePath(move.target.acct),
+    outcome: move.outcome === undefined ? null : moveOutcomeSentences[move.outcome],
+  };
 }
 
 /** The sentences of the custom emoji requests, by what happened to the request and its kind. */
@@ -319,6 +360,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     reaction: reactionOf(notification),
     emojiRequest: requested.emojiRequest,
     supporter: supporterOf(notification, formatDate),
+    move: moveOf(notification),
     links: linksOf(notification, viewer.status === "signed-in" ? viewer.account.acct : null),
   };
 }
