@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+  `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
+type: object
+required: [uri, created_at]
+properties:
+  uri:
+    description: The ActivityPub id of the alias's actor.
+    type: string
+  acct:
+    description: |
+      The handle of the alias, `username` for a local account and `username@domain` for a
+      remote one; omitted when the instance does not know the account or its handle.
+    type: string
+  created_at:
+    description: When the user added the alias.
+    type: string
+    format: date-time
