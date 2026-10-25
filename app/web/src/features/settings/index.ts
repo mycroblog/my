@@ -14,8 +14,8 @@ export { BlockedAccounts, FollowRequests, MutedAccounts } from "./components/Acc
 // The domains the user mutes (FR-304).
 export { domainMutesQueryOptions } from "./api/domainMutes";
 export { DomainMutes } from "./components/DomainMutes";
-export { ImportExport } from "./components/ImportExport";
-export { OwnAccount } from "./components/OwnAccount";
+export { CsvExportsSection, ImportExport } from "./components/ImportExport";
+export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
 export { ProfileForm } from "./components/ProfileForm";
 export { SettingsMenu } from "./components/SettingsMenu";
