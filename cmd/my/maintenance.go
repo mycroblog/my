@@ -68,19 +68,9 @@ func runMaintenance(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return 1
 	}
-	var locales []string
-	for l := range strings.SplitSeq(*langs, ",") {
-		if l = strings.TrimSpace(l); l == "" {
-			continue
-		}
-		c := i18n.Canonicalize(l)
-		if !slices.Contains(bundle.Locales(), c) {
-			_, _ = fmt.Fprintf(stderr, "%s: unknown locale %q; want one of %s\n", name, l, strings.Join(bundle.Locales(), ", "))
-			return 2
-		}
-		if !slices.Contains(locales, c) {
-			locales = append(locales, c)
-		}
+	locales, code := parseLocales(name, *langs, bundle, stderr)
+	if code >= 0 {
+		return code
 	}
 
 	src := config.Source{File: *file}
@@ -141,6 +131,11 @@ func readExportInstance(src config.Source) (exportInstance, error) {
 	if err := app.Ready(ctx); err != nil {
 		return exportInstance{}, err
 	}
+	return readInstanceForExport(ctx, app)
+}
+
+// readInstanceForExport reads the instance's name, default locale, and theme from app.
+func readInstanceForExport(ctx context.Context, app *platform.App) (exportInstance, error) {
 	var info exportInstance
 	text, ok, err := app.Instance.Text(ctx, instance.TextName)
 	if err != nil {
@@ -163,13 +158,22 @@ func readExportInstance(src config.Source) (exportInstance, error) {
 // writeMaintenancePages writes <dir>/<locale>.html for each locale and <dir>/index.html with every
 // locale in order, each with its Content-Security-Policy in a <meta> element.
 func writeMaintenancePages(dir string, page maintenance.Page, bundle *i18n.Bundle, locales []string) error {
+	return writeStaticPages(dir, bundle, locales, func(ls []*i18n.Localizer) ([]byte, error) {
+		html, _, err := maintenance.Render(page, ls, maintenance.RenderOptions{MetaCSP: true})
+		return html, err
+	})
+}
+
+// writeStaticPages writes <dir>/<locale>.html for each locale and <dir>/index.html with every
+// locale in order, each rendered by render with the localizers of its locales.
+func writeStaticPages(dir string, bundle *i18n.Bundle, locales []string, render func([]*i18n.Localizer) ([]byte, error)) error {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return err
 	}
 	all := make([]*i18n.Localizer, len(locales))
 	for i, l := range locales {
 		all[i] = bundle.Localizer(l)
-		html, _, err := maintenance.Render(page, all[i:i+1], maintenance.RenderOptions{MetaCSP: true})
+		html, err := render(all[i : i+1])
 		if err != nil {
 			return err
 		}
@@ -177,11 +181,31 @@ func writeMaintenancePages(dir string, page maintenance.Page, bundle *i18n.Bundl
 			return err
 		}
 	}
-	html, _, err := maintenance.Render(page, all, maintenance.RenderOptions{MetaCSP: true})
+	html, err := render(all)
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(filepath.Join(dir, "index.html"), html, 0o644) //nolint:gosec // G306: public pages
+}
+
+// parseLocales reads -lang: comma-separated locales, canonicalized, without repeats, each with a
+// catalog in bundle. It returns the exit code to stop with, or -1 to go on.
+func parseLocales(name, langs string, bundle *i18n.Bundle, stderr io.Writer) ([]string, int) {
+	var locales []string
+	for l := range strings.SplitSeq(langs, ",") {
+		if l = strings.TrimSpace(l); l == "" {
+			continue
+		}
+		c := i18n.Canonicalize(l)
+		if !slices.Contains(bundle.Locales(), c) {
+			_, _ = fmt.Fprintf(stderr, "%s: unknown locale %q; want one of %s\n", name, l, strings.Join(bundle.Locales(), ", "))
+			return nil, 2
+		}
+		if !slices.Contains(locales, c) {
+			locales = append(locales, c)
+		}
+	}
+	return locales, -1
 }
 
 func maintenanceUsage(w io.Writer) {

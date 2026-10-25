@@ -231,11 +231,12 @@ entries:
     paths: ["internal/interface/activitypub/**"]
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
   - name: maintenance
-    paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go"]
-    docs: ["docs/adr/0084-maintenance-mode.md#decision決定", "docs/adr/0085-uptime-monitoring-status-page.md#4-メンテナンスモードとの関係"]
+    paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go", "cmd/my/maintenance*.go", "cmd/my/closure_export*.go"]
+    docs: ["docs/adr/0084-maintenance-mode.md#decision決定", "docs/adr/0085-uptime-monitoring-status-page.md#4-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
     notes:
       - "internal/interface/maintenance depends only on the standard library and internal/i18n; the maintenance mode opens no adapter (platform.NewMaintenanceApp never calls NewApp)."
-      - "The maintenance responses (ADR-0084 §3) and `my maintenance export` render the same template (maintenance.Render)."
+      - "The maintenance responses (ADR-0084 §3), `my maintenance export`, and the static closure page of `my admin closure export-html` (ADR-0088 §6, maintenance.RenderClosure) render the same template (templates/page.html)."
+      - "The front ends' configuration examples of the closure (templates/closure/*.tmpl) answer maintenance.ClosureGonePaths and ClosureGonePrefixes with 410; keep them in step with the federation routes."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
