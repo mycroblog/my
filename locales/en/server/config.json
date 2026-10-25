@@ -10,5 +10,13 @@
   "config.missing": {
     "defaultMessage": "The required setting {name} is not set.",
     "description": "A required configuration value is absent at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE_URL."
+  },
+  "config.readiness.errors": {
+    "defaultMessage": "{count, plural, one {Found # setting that is not ready for production.} other {Found # settings that are not ready for production.}}",
+    "description": "Summary printed by `my config check` before the list of settings that are valid but break or weaken a production instance, such as a key-encryption key that is not random. The command fails on them."
+  },
+  "config.readiness.warnings": {
+    "defaultMessage": "{count, plural, one {Found # warning about running in production.} other {Found # warnings about running in production.}}",
+    "description": "Summary printed by `my config check` before the list of settings and instance settings that are usual in development and may be deliberate in production, such as mail = none. The command still succeeds."
   }
 }

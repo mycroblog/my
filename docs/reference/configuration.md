@@ -25,6 +25,10 @@ An unknown key in the config file is an error too. An environment variable that 
 is ignored with a warning, in the log of `my serve` and in the output of `my config check`, because the platform may add such variables:
 Kubernetes adds `MY_SERVICE_HOST`, `MY_PORT` and the like for a Service named `my`, and those are ignored without a warning.
 
+In the `production` profile, `my config check` then checks that the valid settings suit a production instance:
+errors, such as a `host` that other servers cannot reach or a `kek` that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
+`my serve` logs both at start without refusing to start. The list of checks is in the [production checklist](../operations/production-checklist.md).
+
 ## Configuration and instance settings
 
 The settings on this page configure the deployment: what a process runs, which adapters it uses, where they are, and its secrets.

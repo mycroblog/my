@@ -66,6 +66,7 @@ func runServe(args []string, stderr io.Writer) int {
 	v := resolveVersion(version, debug.ReadBuildInfo)
 	logger.InfoContext(ctx, "starting", slog.String("version", v), slog.Any("config", cfg))
 	warnUnknownEnv(ctx, logger, src)
+	warnReadiness(ctx, logger, cfg)
 	app, err := newApp(ctx, cfg, platform.AppOptions{
 		Logger: logger, Version: v, DevViteOrigin: *devVite, PseudoLocales: *pseudo,
 	})

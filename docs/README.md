@@ -38,6 +38,7 @@
 - [サーバーの起動・停止とヘルスチェック](operations/running.md)
 - [メディア配信に CDN を置く（media_origin・オリジンプル・キャッシュと削除）](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
+- [Production checklist (what to verify before going live, and what `my config check` checks)](operations/production-checklist.md)
 - [サービスの終了（予告・クローズ・静的な閉鎖のページ・データの破棄）](operations/service-closure.md)
 - [外形監視とステータスページ（UptimeRobot・Better Stack・Gatus・Uptime Kuma・Upptime）](operations/monitoring.md)
 - [リンクプレビュー（OGP / X Card / fediverse:creator）](operations/link-previews.md)
