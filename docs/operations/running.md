@@ -213,6 +213,8 @@ SIGTERM または SIGINT で graceful shutdown する。
 3. 25 秒を過ぎたら、残ったリクエストとジョブのコンテキストを取り消して接続を閉じ、終了コード 1 で終わる。
    取り消されたジョブは再試行され、途中で強制終了されたジョブもリースが切れると別のワーカーが拾い直す（[ADR-0004](../adr/0004-job-queue-abstraction.md)）。
 
+DB・KV・キューの作業で止めるときは、止める代わりにメンテナンスモード（`MY_MAINTENANCE=true`）で起動し直す。手順は [Maintenance](maintenance.md)。
+
 ## ジョブのキューと失敗したジョブ（dead job）
 
 管理画面のジョブの画面（`/admin/jobs`、権限 `manage_jobs`、[ADR-0064](../adr/0064-queue-job-dashboard.md)）で、キューのジョブを状態ごと（待ち・実行中・リトライ待ち・失敗）に一覧し、
