@@ -28,5 +28,7 @@ func (a *App) setUpAuthPages(cfg *config.Config) {
 		Passkeys: a.Identity, PasskeyScript: a.webPasskeyScript,
 		// A forgotten password is reset with a link, by email or from an administrator (FR-002).
 		PasswordReset: a.Identity,
+		// Notification emails stop from their own link, without signing in (ADR-0086 §4).
+		MailUnsubscribe: a.Identity,
 	}).Register(surfaceRouter{a, surfaceOAuth})
 }

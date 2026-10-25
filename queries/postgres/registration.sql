@@ -78,11 +78,11 @@ ORDER BY i.id DESC
 LIMIT sqlc.arg(page_limit);
 
 -- name: InsertUserToken :exec
-INSERT INTO user_tokens (id, user_id, purpose, email_address_id, token_hash, expires_at, issued_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO user_tokens (id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: GetUserTokenByHash :one
-SELECT id, user_id, purpose, email_address_id, token_hash, expires_at, issued_at FROM user_tokens WHERE token_hash = $1;
+SELECT id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at FROM user_tokens WHERE token_hash = $1;
 
 -- UserTokenRedeemed reports whether a user token was used.
 -- name: UserTokenRedeemed :one

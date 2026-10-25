@@ -1,6 +1,6 @@
 ## 8. サーバーが描画する画面
 
-ログイン（二要素認証を使う利用者に認証コードを求める 2 段目の画面 `/auth/sign_in/two_factor` を含む）・登録・メール確認・パスワードリセット（リンクの要求 `/auth/forgot_password` と、リンクが開く新しいパスワードの設定 `/auth/reset_password`）・アカウントの状態・OAuth の認可同意の画面は、Go の `html/template`（`internal/interface/authpages`）が描画し、JavaScript なしで動く（ADR-0030）。CAPTCHA を有効にしたときだけ、ログイン・登録・パスワードリセットのリンクの要求の画面はサービスのウィジェットのスクリプトを読み、そのページの CSP にサービスのオリジンを足す（ADR-0042）。ログインの画面は、Web クライアントのビルドが作るスクリプト（`src/server-pages/passkey-sign-in.ts`、CSP は `script-src 'self'`）を読み、パスキーに対応したブラウザでだけ「パスキーでログイン」のボタンを出す（FR-004）。ボタンのフォームは JavaScript がないと隠れたままで、メールアドレスとパスワードのフォームはスクリプトなしで動く。
+ログイン（二要素認証を使う利用者に認証コードを求める 2 段目の画面 `/auth/sign_in/two_factor` を含む）・登録・メール確認・パスワードリセット（リンクの要求 `/auth/forgot_password` と、リンクが開く新しいパスワードの設定 `/auth/reset_password`）・通知のメールの配信停止（`/mail/unsubscribe`。`GET` は確認だけ、`POST` は RFC 8058 のワンクリックで、ログインも CSRF のトークンも要らない、ADR-0086 §4）・アカウントの状態・OAuth の認可同意の画面は、Go の `html/template`（`internal/interface/authpages`）が描画し、JavaScript なしで動く（ADR-0030）。CAPTCHA を有効にしたときだけ、ログイン・登録・パスワードリセットのリンクの要求の画面はサービスのウィジェットのスクリプトを読み、そのページの CSP にサービスのオリジンを足す（ADR-0042）。ログインの画面は、Web クライアントのビルドが作るスクリプト（`src/server-pages/passkey-sign-in.ts`、CSP は `script-src 'self'`）を読み、パスキーに対応したブラウザでだけ「パスキーでログイン」のボタンを出す（FR-004）。ボタンのフォームは JavaScript がないと隠れたままで、メールアドレスとパスワードのフォームはスクリプトなしで動く。
 
 - スタイルは Vite のビルドの別のエントリ `app/web/src/server-pages.css` にある。Tailwind と `@my/ui/theme.css` を読み込み、テンプレートが使う少数のクラス（`page`・`card`・`field`・`hint`・`field-error`・`alert`・`notice`・`button` など）を
   トークンのユーティリティの `@apply` で定義する。テンプレートからクラスを集めないので、Tailwind はソースを走査しない（`source(none)`）。

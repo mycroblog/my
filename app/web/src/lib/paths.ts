@@ -35,10 +35,10 @@ export function moderationReportPath(id: string): string {
 /**
  * The prefixes of the server's own paths (internal/interface/web/handler.go, reservedPrefixes): the client API,
  * the server-rendered pages (sign-in, sign-up, the terms of service and the privacy policy under /auth, OAuth
- * consent under /oauth), ActivityPub, media, the instance theme's stylesheets (/theme), and the license notices of the
+ * consent under /oauth, the email unsubscribe links under /mail), ActivityPub, media, the instance theme's stylesheets (/theme), and the license notices of the
  * build (/licenses). The app has no route under them.
  */
-const serverPathPrefixes = ["/api", "/oauth", "/auth", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/licenses"] as const;
+const serverPathPrefixes = ["/api", "/oauth", "/auth", "/mail", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/licenses"] as const;
 
 /** Whether `pathname` is one of the server's own paths, which a link loads in place of the app, never through the router. */
 export function isServerPath(pathname: string): boolean {
