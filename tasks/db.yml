@@ -16,6 +16,9 @@ vars:
     {{if .DB_URL}}{{.DB_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my?sslmode=disable&search_path=public{{else}}sqlite://my.db{{end}}
   DB_DEV_URL: >-
     {{if .DB_DEV_URL}}{{.DB_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_dev?sslmode=disable&search_path=public{{else}}sqlite://dev?mode=memory{{end}}
+  # db:lint's dev database, apart from DB_DEV_URL so that db:lint and db:check can run at once.
+  DB_LINT_DEV_URL: >-
+    {{if .DB_LINT_DEV_URL}}{{.DB_LINT_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_lint?sslmode=disable&search_path=public{{else}}sqlite://lint?mode=memory{{end}}
   # Runs schema/postgres.bootstrap.sql (from stdin) against the target database before each apply.
   # For a database outside the db:up container: PG_BOOTSTRAP='psql -v ON_ERROR_STOP=1 -q "postgres://..."'
   PG_BOOTSTRAP: >-
@@ -54,7 +57,7 @@ tasks:
       - scripts/install-atlas.sh {{.ATLAS}}
 
   up:
-    desc: Start the dev PostgreSQL container (databases `my` and `my_dev`, both bootstrapped)
+    desc: Start the dev PostgreSQL container (databases `my`, `my_dev`, and `my_lint`, all bootstrapped)
     silent: true
     cmds:
       - >-
@@ -62,11 +65,13 @@ tasks:
         -e POSTGRES_USER=my -e POSTGRES_PASSWORD=my -e POSTGRES_DB=my -p {{.PG_PORT}}:5432 {{.PG_IMAGE}} >/dev/null
       - docker start {{.PG_CONTAINER}} >/dev/null
       - for _ in $(seq 60); do docker exec {{.PG_CONTAINER}} pg_isready -q -U my -d my -h 127.0.0.1 && break; sleep 1; done
-      - >-
-        docker exec {{.PG_CONTAINER}} psql -q -U my -d my -tAc "SELECT 1 FROM pg_database WHERE datname = 'my_dev'" | grep -q 1
-        || docker exec {{.PG_CONTAINER}} createdb -U my my_dev
       - |
-        for db in my my_dev; do
+        for db in my_dev my_lint; do
+          docker exec {{.PG_CONTAINER}} psql -q -U my -d my -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 ||
+            docker exec {{.PG_CONTAINER}} createdb -U my $db || exit 1
+        done
+      - |
+        for db in my my_dev my_lint; do
           docker exec -i -e PGOPTIONS=--client-min-messages=warning {{.PG_CONTAINER}} psql -v ON_ERROR_STOP=1 -q -U my -d $db < schema/postgres.bootstrap.sql || exit 1
         done
       - echo "PostgreSQL is up in container {{.PG_CONTAINER}} on localhost:{{.PG_PORT}}"
@@ -107,3 +112,24 @@ tasks:
     cmds:
       - "{{.ATLAS}} schema clean --url '{{.DB_URL}}' --auto-approve"
       - task: apply
+
+  lint:
+    desc: Fail on a change of schema/<DB_DIALECT>/ since BASE (default origin/main) that can lose or rewrite data
+    # scripts/db-lint.sh. PostgreSQL needs the db:up container (its my_lint database) or DB_LINT_DEV_URL.
+    # ALLOW_DESTRUCTIVE=true reports destructive changes without failing on them; the change must still apply. CI sets
+    # it from the db:destructive label on pull requests, and always in the merge queue.
+    deps: [atlas]
+    preconditions: *dialect
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+    cmds:
+      - >-
+        scripts/db-lint.sh --dialect '{{.DB_DIALECT}}' --dev-url '{{.DB_LINT_DEV_URL}}' --base {{shellQuote .BASE}}
+        --atlas '{{.ATLAS}}'{{if eq (.ALLOW_DESTRUCTIVE | default "") "true"}} --allow-destructive{{end}}
+
+  lint-test:
+    desc: Test db:lint on the fixtures of schema/testdata/lint/<DB_DIALECT>/ (PostgreSQL needs the db:up container)
+    deps: [atlas]
+    preconditions: *dialect
+    cmds:
+      - scripts/db-lint-test.sh --dialect '{{.DB_DIALECT}}' --dev-url '{{.DB_LINT_DEV_URL}}' --atlas '{{.ATLAS}}'

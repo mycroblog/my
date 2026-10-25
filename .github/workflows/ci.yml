@@ -5,7 +5,8 @@ name: CI
 #
 # - pull_request: `preflight`, the checks a pull request's own files decide; the @my/ui story tests (ui-test.yml) when
 #   the ui context changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
-#   the docker context changes.
+#   the docker context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
+#   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
 #   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs.
 # - pull_request labelled `ci:full`: both.
@@ -51,6 +52,7 @@ jobs:
       lint-go: ${{ steps.select.outputs.lint-go }}
       lint-agentkit: ${{ steps.select.outputs.lint-agentkit }}
       mykit: ${{ steps.select.outputs.mykit }}
+      schema: ${{ steps.select.outputs.schema }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
       # its head commit and compares it with its base, the main commit the group is built on; that base is fetched by
@@ -98,6 +100,7 @@ jobs:
           fi >> "$GITHUB_OUTPUT"
           touches docker docker
           touches mykit mykit
+          touches schema schema
 
   # --- Pull requests --------------------------------------------------------------------------------------------
 
@@ -244,6 +247,36 @@ jobs:
       - name: docker:smoke
         run: scripts/task.sh docker:smoke
 
+  db-lint:
+    # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0087 §3): it
+    # fails on a change that can lose or rewrite data of an existing database, unless the decider approved it with the
+    # db:destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
+    # change applies on top of its base (server-static). db:lint-test runs the lint on its fixtures.
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.schema == 'true'
+    runs-on: ubuntu-latest
+    env:
+      APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'db:destructive') }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Install Atlas and start PostgreSQL
+        run: scripts/task.sh db:atlas db:up
+      # db:lint (postgres) and db:lint-test (postgres) share the dev database my_lint, so they run one after the other.
+      - parallel:
+          - name: db:lint (sqlite)
+            run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
+          - name: db:lint (postgres)
+            run: scripts/task.sh db:lint DB_DIALECT=postgres BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
+          - name: db:lint-test (sqlite)
+            run: scripts/task.sh db:lint-test DB_DIALECT=sqlite
+      - name: db:lint-test (postgres)
+        run: scripts/task.sh db:lint-test DB_DIALECT=postgres
+
   # --- The full check: merge groups, and pull requests labelled ci:full -------------------------------------------
   # A job whose `if` is false is skipped, and `check` counts a skipped job as passed.
 
@@ -251,6 +284,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
+    env:
+      MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -263,8 +298,8 @@ jobs:
       # also selects.
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
-      # Both db:check steps use Atlas, and the PostgreSQL one the container of db:up. Mostly waiting on the container,
-      # so it runs in the background while go:warm builds.
+      # The db:check and db:lint steps use Atlas, and the PostgreSQL ones the container of db:up. Mostly waiting on the
+      # container, so it runs in the background while go:warm builds.
       - name: Install Atlas and start PostgreSQL
         id: db
         run: scripts/task.sh db:atlas db:up
@@ -283,6 +318,11 @@ jobs:
         run: scripts/task.sh mail:install
       - name: Wait for Atlas and PostgreSQL
         wait: db
+      # db:lint compares the schema with the main commit the group is built on, which a group queued behind others is
+      # several commits ahead of.
+      - name: Fetch the base of the merge group
+        if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
+        run: git fetch --no-tags --depth=1 origin "$MERGE_GROUP_BASE_SHA"
       # golangci-lint runs on pull requests and the build tags in the slow suite (ADR-0079).
       - parallel:
           - name: go:vet
@@ -293,6 +333,14 @@ jobs:
             run: scripts/task.sh db:check DB_DIALECT=postgres
           - name: db:check (sqlite)
             run: scripts/task.sh db:check DB_DIALECT=sqlite
+          # The merge queue does not check the approval again (the pull request's db-lint did, and a merge group has no
+          # labels): it reports destructive changes and fails only when the schema does not apply on top of the base.
+          - name: db:lint (postgres)
+            if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
+            run: scripts/task.sh db:lint DB_DIALECT=postgres BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
+          - name: db:lint (sqlite)
+            if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
+            run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
           - name: go:sqlc-check
             run: scripts/task.sh go:sqlc-check
           - name: api:generate-check
@@ -542,7 +590,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, lint, docker-smoke, server-static, server-test, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, lint, docker-smoke, db-lint, server-static, server-test, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

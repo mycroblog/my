@@ -134,7 +134,7 @@ scripts/task.sh db:reset                      # delete everything in the databas
 scripts/task.sh db:check                      # db:reset, then check that no difference is left (as CI does)
 scripts/task.sh db:check-all                  # db:check on SQLite and on the PostgreSQL container of db:up
 
-scripts/task.sh db:up DB_DIALECT=postgres     # start a PostgreSQL container (database `my` and dev database `my_dev`)
+scripts/task.sh db:up DB_DIALECT=postgres     # start a PostgreSQL container (database `my`, dev databases `my_dev` and `my_lint`)
 scripts/task.sh db:apply DB_DIALECT=postgres  # likewise db:diff / db:reset / db:check
 scripts/task.sh db:down                       # delete the container and its data
 ```
@@ -145,9 +145,12 @@ scripts/task.sh db:down                       # delete the container and its dat
   (for example `PG_BOOTSTRAP='psql -v ON_ERROR_STOP=1 -q "postgres://..."'`), and run the bootstrap script on the dev
   database first.
 - If a change fails to apply as a difference, recreate a development database with `scripts/task.sh db:reset`. From
-  `v0.1.0` on, a pull request's schema change must upgrade the previous `main` without losing data.
+  `v0.1.0` on, a pull request's schema change must upgrade the previous `main` without losing data:
+  `scripts/task.sh db:lint DB_DIALECT=sqlite|postgres` finds destructive changes, and
+  [schema/README.md](schema/README.md#changing-the-schema) describes the classes of change and the approval label.
 - CI checks, for both dialects, that the schema applies to an empty database and leaves no difference afterwards
-  (`scripts/task.sh db:check-all`).
+  (`scripts/task.sh db:check-all`), and, on a pull request that changes the schema, that the change is not destructive
+  against its base (`db:lint`).
 
 ## Client API
 

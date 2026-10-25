@@ -62,7 +62,7 @@ tasks:
       - "echo 'contexts changed since {{.BASE}}: {{.CONTEXTS}}'"
       - cmd: echo 'also run `scripts/task.sh shell:check` (shellcheck; CI runs it)'
         if: case " {{.CONTEXTS}} " in *" shell "*) true;; *) false;; esac
-      - cmd: echo 'also run `scripts/task.sh db:check-all` for both dialects (needs Docker; CI runs it)'
+      - cmd: echo 'also run `scripts/task.sh db:check-all` and `scripts/task.sh db:lint` for both dialects (PostgreSQL needs Docker; CI runs them)'
         if: case " {{.CONTEXTS}} " in *" schema "*) true;; *) false;; esac
       - cmd: echo 'no check covers these changes'
         if: '[ -z "{{trim .SELECTED}}" ]'
