@@ -102,6 +102,7 @@ const everyUserType = [
   "favourite",
   "reaction",
   "quote",
+  "service_closure",
   "account_moved",
   "moderation_notice",
   "appeal_decided",
@@ -111,6 +112,7 @@ const everyUserType = [
   "supporter_payment_failed",
   "supporter_subscription_ended",
   "supporter_plan_retired",
+  "supporter_service_closure",
 ];
 
 beforeEach(() => {
@@ -180,7 +182,7 @@ describe("push notifications", () => {
       expect(toggle).toBeChecked();
     });
     const kinds = within(section).getByRole("group", { name: "Notify me of" });
-    expect(within(kinds).getAllByRole("checkbox")).toHaveLength(11);
+    expect(within(kinds).getAllByRole("checkbox")).toHaveLength(12);
     expect(within(kinds).getByRole("checkbox", { name: "Boosts" })).toBeChecked();
   });
 

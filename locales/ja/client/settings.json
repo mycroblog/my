@@ -1786,5 +1786,9 @@
   "settings.push.type.account_moved": {
     "defaultMessage": "フォロー中のアカウントの移転",
     "description": "Checkbox of the push notification kinds: an account the user followed moved to another account."
+  },
+  "settings.push.type.service_closure": {
+    "defaultMessage": "このサーバーの終了",
+    "description": "Checkbox of the push notification kinds: the closure of the service was announced, rescheduled or withdrawn."
   }
 }
