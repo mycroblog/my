@@ -1782,5 +1782,9 @@
   "settings.email_suppression.hard_bounce.action": {
     "defaultMessage": "メールボックスが使えるようになったら、確認のメールをもう一度求めてください。アドレスを確認すると、サーバーがまたメールを送るようになり、この表示は消えます。",
     "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
+  },
+  "settings.push.type.account_moved": {
+    "defaultMessage": "フォロー中のアカウントの移転",
+    "description": "Checkbox of the push notification kinds: an account the user followed moved to another account."
   }
 }
