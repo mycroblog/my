@@ -30,12 +30,19 @@ func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnder
 	}
 	p.Fail(s.Failure)
 	return testkit.PaymentUnderTest{
-		Provider: p, Deliver: p.Deliver, CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost},
+		Provider: p, Deliver: p.Deliver, CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost}, TimedSignature: true,
 	}
 }
 
 func TestPaymentProviderContract(t *testing.T) {
 	testkit.PaymentProviderContract(t, newOnScenario)
+	t.Run("WithoutTimedSignature", func(t *testing.T) {
+		testkit.PaymentProviderContract(t, func(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTest {
+			u := newOnScenario(t, s)
+			u.TimedSignature = false
+			return u
+		})
+	})
 }
 
 // A pending movement that becomes final is listed after the cursor that passed its time.

@@ -80,6 +80,20 @@ type PaymentProvider interface {
 	GetMoney(ctx context.Context, id string) (MoneyMovement, error)
 }
 
+// PageServer is implemented by a provider without hosted checkout and portal pages: our server
+// serves the adapter's own pages instead, under PagesPath of its Name, and StartCheckout and
+// PortalURL return URLs of them (ADR-0099 §1, §3).
+type PageServer interface {
+	// Pages handles the GET and POST requests under PagesPath(Name()), with their whole path.
+	Pages() http.Handler
+}
+
+// PagesPathPrefix is the path of the pages of a PageServer, followed by the provider's name.
+const PagesPathPrefix = "/payments/pages/"
+
+// PagesPath returns the path under which the pages of provider are served.
+func PagesPath(provider string) string { return PagesPathPrefix + provider + "/" }
+
 // PageSize is the most items a page of the provider's lists holds (ADR-0074 §4).
 const PageSize = 100
 

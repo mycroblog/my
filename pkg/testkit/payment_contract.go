@@ -85,6 +85,7 @@ func PaymentRepositoryContract(t *testing.T, newHarness PaymentFactory) {
 		{"ReconcilesWithinTheRequestCap", paymentReconcileCap},
 		{"RecordsFailedReconciliations", paymentReconcileFailure},
 		{"SkipsChangesOutsideTheWindow", paymentReconcileWindow},
+		{"ServesThePagesOfAPageServer", paymentPageServer},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newHarness) })
@@ -97,7 +98,18 @@ type paymentEnvOptions struct {
 	maxRequests int
 	limiter     bool
 	limit       kernel.Limit
+	// pages, when not nil, makes the provider a supporters.PageServer of it, under pageLimit.
+	pages     http.Handler
+	pageLimit kernel.Limit
 }
+
+// pageWorld is a PaymentWorld that serves pages (supporters.PageServer).
+type pageWorld struct {
+	PaymentWorld
+	pages http.Handler
+}
+
+func (w pageWorld) Pages() http.Handler { return w.pages }
 
 type paymentEnv struct {
 	h        PaymentHarness
@@ -122,7 +134,10 @@ func newPaymentEnv(t *testing.T, newHarness PaymentFactory, o paymentEnvOptions)
 	d := supporters.PaymentsDeps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Payments, Provider: e.world, Syncer: e.syncer,
 		Outbox: queue.AfterCommit(projectors, e.jobs, nil), Clock: clock, IDs: NewIDGenerator(clock),
-		ReconcileMaxRequests: o.maxRequests, WebhookLimit: o.limit, Logger: discardLogger(),
+		ReconcileMaxRequests: o.maxRequests, WebhookLimit: o.limit, PageLimit: o.pageLimit, Logger: discardLogger(),
+	}
+	if o.pages != nil {
+		d.Provider = pageWorld{PaymentWorld: e.world, pages: o.pages}
 	}
 	if o.limiter {
 		d.RateLimiter = kernel.NewRateLimiter(NewKeyValueStore(clock), clock)
@@ -731,5 +746,31 @@ func paymentReconcileWindow(t *testing.T, newHarness PaymentFactory) {
 	}
 	if _, n := e.syncer.snapshot(NamedID("local-1")); n != 2 {
 		t.Errorf("local-1 synced %d times, want once per sweep", n)
+	}
+}
+
+func paymentPageServer(t *testing.T, newHarness PaymentFactory) {
+	ctx := t.Context()
+	e := newPaymentEnv(t, newHarness, paymentEnvOptions{})
+	if res, err := e.svc.Pages(ctx, paymentProvider, "198.51.100.7"); err != nil || res.Handler != nil {
+		t.Errorf("Pages of a provider without pages = %+v, %v, want no handler", res, err)
+	}
+	page := http.NotFoundHandler()
+	e = newPaymentEnv(t, newHarness, paymentEnvOptions{
+		pages: page, limiter: true, pageLimit: kernel.Limit{Name: "test.pages", Max: 2, Window: time.Hour},
+	})
+	if res, err := e.svc.Pages(ctx, "other", "198.51.100.7"); err != nil || res.Handler != nil || res.RateLimited {
+		t.Errorf("Pages of another provider = %+v, %v, want no handler", res, err)
+	}
+	for i := range 2 {
+		if res, err := e.svc.Pages(ctx, paymentProvider, "198.51.100.7"); err != nil || res.Handler == nil {
+			t.Errorf("Pages #%d = %+v, %v, want the provider's handler", i+1, res, err)
+		}
+	}
+	if res, err := e.svc.Pages(ctx, paymentProvider, "198.51.100.7"); err != nil || res.Handler != nil || !res.RateLimited || res.RetryAfter <= 0 {
+		t.Errorf("Pages beyond the limit = %+v, %v, want rate limited", res, err)
+	}
+	if res, err := e.svc.Pages(ctx, paymentProvider, "198.51.100.8"); err != nil || res.Handler == nil {
+		t.Errorf("Pages of another client IP = %+v, %v, want the provider's handler", res, err)
 	}
 }

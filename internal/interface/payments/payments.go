@@ -4,6 +4,11 @@
 // POST /payments/webhooks/{provider}. It is not part of the client API: no user calls it. The
 // body is read up to supporters.WebhookMaxBodyBytes before anything else, and the supporters
 // module verifies, records, and queues the delivery.
+//
+// It also hands GET and POST /payments/pages/{provider}/... to the checkout and portal pages of
+// a provider that has no hosted ones (supporters.PageServer, ADR-0099 §1). Those are not part of
+// the client API either: the browser reaches them through the URLs of StartCheckout and
+// PortalURL.
 package payments
 
 import (
@@ -28,6 +33,11 @@ type Webhooks interface {
 	ReceiveWebhook(ctx context.Context, req supporters.WebhookRequest) (supporters.WebhookResult, error)
 }
 
+// Pages is what the pages need from the supporters module; *supporters.Payments implements it.
+type Pages interface {
+	Pages(ctx context.Context, provider, clientIP string) (supporters.PagesResult, error)
+}
+
 // ProblemWriter writes the error response of an HTTP status, the same one the rest of the
 // server uses for that status.
 type ProblemWriter func(w http.ResponseWriter, r *http.Request, status int)
@@ -35,6 +45,8 @@ type ProblemWriter func(w http.ResponseWriter, r *http.Request, status int)
 // Options configure a Handler.
 type Options struct {
 	Webhooks Webhooks
+	// Pages serves the pages of a provider; nil answers 404 to them.
+	Pages Pages
 	// Problem writes error responses; nil writes a plain-text body.
 	Problem ProblemWriter
 	// Logger logs unexpected errors; nil means slog.Default().
@@ -64,9 +76,34 @@ type Router interface {
 	Handle(pattern string, h http.Handler)
 }
 
-// Register registers the endpoint on r.
+// Register registers the endpoints on r.
 func (h *Handler) Register(r Router) {
 	r.Handle("POST "+PathPrefix+"{provider}", h)
+	pages := http.HandlerFunc(h.servePages)
+	r.Handle("GET "+supporters.PagesPathPrefix+"{provider}/{path...}", pages)
+	r.Handle("POST "+supporters.PagesPathPrefix+"{provider}/{path...}", pages)
+}
+
+// servePages hands a request to the pages of the configured provider: 404 for another provider
+// or one without pages, 429 beyond the rate limit, and 503 when the limit could not be checked.
+func (h *Handler) servePages(w http.ResponseWriter, r *http.Request) {
+	if h.o.Pages == nil {
+		h.o.Problem(w, r, http.StatusNotFound)
+		return
+	}
+	res, err := h.o.Pages.Pages(r.Context(), r.PathValue("provider"), kernel.RequestClientIP(r))
+	switch {
+	case err != nil:
+		h.o.Logger.ErrorContext(r.Context(), "payment page not served", slog.Any("error", err))
+		h.o.Problem(w, r, http.StatusServiceUnavailable)
+	case res.RateLimited:
+		w.Header().Set("Retry-After", strconv.Itoa(int((res.RetryAfter+time.Second-1)/time.Second)))
+		h.o.Problem(w, r, http.StatusTooManyRequests)
+	case res.Handler == nil:
+		h.o.Problem(w, r, http.StatusNotFound)
+	default:
+		res.Handler.ServeHTTP(w, r)
+	}
 }
 
 // ServeHTTP implements http.Handler: 200 for a delivery that is recorded, a duplicate, or of a

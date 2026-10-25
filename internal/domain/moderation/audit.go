@@ -87,7 +87,7 @@ const (
 	// §8); its label is the :shortcode: of the requested emoji.
 	AuditTargetCustomEmojiRequest AuditTargetKind = "custom_emoji_request"
 	// AuditTargetPaymentProvider is the payment provider of the supporter program (ADR-0074);
-	// its ID and its label are the provider's name (stripe).
+	// its ID and its label are the provider's name (stripe, payjp).
 	AuditTargetPaymentProvider AuditTargetKind = "payment_provider"
 	// AuditTargetOAuthClient is an OAuth client (ADR-0090 §1); its ID is oauth_clients.id and
 	// its label the client's name and client_id.

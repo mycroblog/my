@@ -73,7 +73,7 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 		Logger: a.Logger,
 	})
 	a.Payments.RegisterJobs(a.Handlers, a.Scheduler)
-	paymentshttp.New(paymentshttp.Options{Webhooks: a.Payments, Problem: a.writeStatusProblem, Logger: a.Logger}).
+	paymentshttp.New(paymentshttp.Options{Webhooks: a.Payments, Pages: a.Payments, Problem: a.writeStatusProblem, Logger: a.Logger}).
 		Register(surfaceRouter{a, surfacePayments})
 	return nil
 }

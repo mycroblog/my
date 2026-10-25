@@ -135,11 +135,11 @@
   | `domain_statuses_refetch_queued` | `domain` | ドメイン | ドメイン | なし（元の記録を持たない操作） |
   | `billing_import_queued` | `billing_source` | 取り込み元（`aws`・`gcp`） | 事業者の名前（`AWS`） | なし（元の記録を持たない操作） |
   | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_canceled` | `cost_item` | `cost_items.id` | 項目の名前（変更は変更後の名前） | `cost_items.id` / `cost_item_label_revisions.id` / `cost_item_price_revisions.id` / `cost_item_end_changes.id` / `cost_item_cancellations.id` |
-  | `supporter_program_enabled`, `supporter_program_disabled` | `supporter_program` | `supporter_program_changes.id` | 決済の事業者の名前（`stripe`） | `supporter_program_changes.id` |
+  | `supporter_program_enabled`, `supporter_program_disabled` | `supporter_program` | `supporter_program_changes.id` | 決済の事業者の名前（`stripe`・`payjp`） | `supporter_program_changes.id` |
   | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` | `supporter_plan` | `supporter_plans.id` | プランの名前（変更は変更後の名前） | `supporter_plan_revisions.id` / `supporter_plan_retirements.plan_id` |
   | `supporter_subscription_canceled` | `supporter_subscription` | `supporter_subscriptions.id` | プランの名前と利用者のハンドル（`Supporter @alice`） | `supporter_subscriptions.id` |
   | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` | `custom_emoji_request` | `custom_emoji_requests.id` | `:shortcode:` | 申請はなし、ほかは `custom_emoji_request_outcomes.id` |
-  | `payment_reconcile_queued` | `payment_provider` | 決済の事業者の名前（`stripe`） | 決済の事業者の名前 | なし（元の記録を持たない操作） |
+  | `payment_reconcile_queued` | `payment_provider` | 決済の事業者の名前（`stripe`・`payjp`） | 決済の事業者の名前 | なし（元の記録を持たない操作） |
 
   申請と取り下げは申請者（`create_custom_emojis` を持つ利用者）を操作者とし、承認は申請への `custom_emoji_request_approved` と、作った絵文字への `custom_emoji_created`（画像の申請は `custom_emoji_image_replaced`）の 2 行を承認した人を操作者として残します（ADR-0070 §8）。作成者による変更と削除は `custom_emoji_updated`・`custom_emoji_deleted` を作成者を操作者として残します。
   サーバーが 410 Gone や失敗の継続で宛先を無効にした `webhook_disabled` は `actor_kind = system` です（ADR-0060）。リレーが送った `Accept` / `Reject` の `relay_accepted` / `relay_rejected` は `actor_kind = remote` です（ADR-0061）。

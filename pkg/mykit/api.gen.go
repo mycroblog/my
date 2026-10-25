@@ -3910,7 +3910,7 @@ type AdminAppealPage struct {
 // `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
 // `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
 // reconciliation with the payment provider started by hand; the ID and the label are the
-// provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+// provider's name (`stripe`, `payjp`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
 // every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 // `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 // tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
@@ -3979,7 +3979,7 @@ type AdminAuditEntry struct {
 	// `custom_emoji_image_replaced`) and `custom_emoji_request_rejected`; the label is the
 	// `:shortcode:` of the request. On a `payment_provider`: `payment_reconcile_queued`, a
 	// reconciliation with the payment provider started by hand; the ID and the label are the
-	// provider's name (`stripe`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
+	// provider's name (`stripe`, `payjp`). On an `oauth_client`: `oauth_client_disabled`, which also revokes
 	// every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 	// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 	// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
@@ -8425,7 +8425,7 @@ type PaymentStatus struct {
 	// credentials.
 	Mode PaymentStatusMode `json:"mode"`
 
-	// Provider The provider of `payments_provider` (`stripe`).
+	// Provider The provider of `payments_provider` (`stripe`, `payjp`).
 	Provider string `json:"provider"`
 
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.
