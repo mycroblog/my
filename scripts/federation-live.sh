@@ -243,4 +243,6 @@ export FEDERATION_LIVE_MISSKEY_TOKEN_LEAVE="$misskey_token_leave"
 export FEDERATION_LIVE_MISSKEY_ADMIN_TOKEN="$misskey_token_admin"
 env | grep '^FEDERATION_LIVE_' >"$work/scenarios.env"
 cd "$root"
-go test -tags federationlive -count=1 -timeout 30m -v "$@" ./deploy/docker/federation-live 2>&1 | tee "$out/scenarios.log"
+# The scenarios take longer than go test's default 10 minutes: TestClosure alone waits up to 15 for
+# delivery_completed.
+go test -tags federationlive -count=1 -timeout 45m -v "$@" ./deploy/docker/federation-live 2>&1 | tee "$out/scenarios.log"
