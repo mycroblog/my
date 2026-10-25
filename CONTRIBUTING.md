@@ -248,8 +248,8 @@ mark an ADR `Accepted`.
   `CONTRIBUTING.md`, `docs/README.md`, `docs/operations/`, `docs/reference/`, `docs/agents/`, `schema/README.md`, the
   comments of `deploy/`, and the issue and pull request templates.
 - Design documents (`docs/adr/`, `docs/requirements/`, `docs/architecture/`) are written in Japanese during v0.
-- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/`) explain the behaviour
-  themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
+- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/` except `commands.md`, the
+  development tasks for contributors) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
   requests; link only the other user and operator documents a reader needs.
 - Every document describes the present state. Write why something changed in the commit message and the pull request.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`

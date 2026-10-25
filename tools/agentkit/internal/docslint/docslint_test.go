@@ -131,6 +131,18 @@ func TestDesignLinks(t *testing.T) {
 	}
 }
 
+func TestExclude(t *testing.T) {
+	c := &Config{Operator: []string{"docs/reference/**", "!docs/reference/commands.md"}}
+	got := lint(t, c, map[string]string{
+		"docs/reference/commands.md": "Tasks run with go-task (ADR-0080).\n",
+		"docs/reference/config.md":   "Decided in ADR-0010.\n",
+	})
+	want := []string{"docs/reference/config.md:1:design-link"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("findings = %v, want %v", got, want)
+	}
+}
+
 func TestPending(t *testing.T) {
 	c := &Config{English: []string{"docs/operations/**"}, Operator: []string{"docs/operations/**"}}
 	c.Pending.Japanese = []string{"docs/operations/ja.md", "docs/operations/en.md", "docs/operations/gone.md", "README.md"}

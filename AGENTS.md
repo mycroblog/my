@@ -105,8 +105,8 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   and the issue and PR templates. Write English prose, not a translation; UI terms match `locales/en`.
   Japanese is fine inside code (an example of a `ja` string).
 - **Japanese during v0**: design documents — `docs/adr/`, `docs/requirements/`, `docs/architecture/`.
-- **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`, and
-  user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
+- **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`
+  except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
   GitHub issues and PRs (`ADR-0001`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
   Contributor documents may cite the ADR a rule comes from.
 - `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules and that relative links and

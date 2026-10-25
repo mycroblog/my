@@ -80,13 +80,20 @@ const (
 	RulePending    = "pending"
 )
 
+// matchAny reports whether p matches one of patterns and none of the exclusions among them: a pattern that starts
+// with "!" takes the paths it matches out of the list.
 func matchAny(patterns []string, p string) bool {
+	in := false
 	for _, pat := range patterns {
-		if ctxmap.Match(pat, p) {
-			return true
+		if ex, ok := strings.CutPrefix(pat, "!"); ok {
+			if ctxmap.Match(ex, p) {
+				return false
+			}
+		} else if ctxmap.Match(pat, p) {
+			in = true
 		}
 	}
-	return false
+	return in
 }
 
 // Lint checks files (slash-separated paths from root: the tracked and untracked, not ignored, files) and returns
