@@ -88,3 +88,15 @@ CREATE TABLE kv_entries (
   PRIMARY KEY (namespace, key)
 ) STRICT;
 CREATE INDEX kv_entries_expires_at ON kv_entries (expires_at);
+
+-- ---------------------------------------------------------------------------------------------
+-- 基盤: record of the data upgrades (data-model/04-tables/10-infrastructure.md §4.10). Owned by
+-- internal/adapter/db; written by `my db upgrade` (internal/app/dbupgrade).
+-- ---------------------------------------------------------------------------------------------
+
+-- Event: a data upgrade step that completed. step_key names the step that the binary registers;
+-- a step is recorded once, after its last transaction.
+CREATE TABLE data_upgrade_runs (
+  step_key TEXT NOT NULL PRIMARY KEY,
+  completed_at INTEGER NOT NULL
+) STRICT;
