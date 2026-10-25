@@ -455,6 +455,35 @@ describe("moderator notifications by email", () => {
   });
 });
 
+describe("email suppression", () => {
+  test("says that emails do not reach the address after a hard bounce, and what to do", async () => {
+    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    await renderApp({ path: "/settings/preferences" });
+
+    const section = await screen.findByRole("region", { name: "Email delivery" });
+    expect(within(section).getByText(/Emails do not reach your address/)).toBeInTheDocument();
+    expect(within(section).getByText(/^Since /)).toBeInTheDocument();
+    expect(within(section).getByText(/ask for the verification email again/)).toBeInTheDocument();
+  });
+
+  test("says that notification emails stop after a complaint, without the hard bounce's advice", async () => {
+    preferencesServer({ email_suppression: { kind: "complaint", since: "2026-10-10T09:30:00Z" } });
+    await renderApp({ path: "/settings/preferences" });
+
+    const section = await screen.findByRole("region", { name: "Email delivery" });
+    expect(within(section).getByText(/marked as spam/)).toBeInTheDocument();
+    expect(within(section).queryByText(/ask for the verification email again/)).not.toBeInTheDocument();
+  });
+
+  test("shows nothing while emails reach the address", async () => {
+    preferencesServer();
+    await renderApp({ path: "/settings/preferences" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Preferences" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Email delivery" })).not.toBeInTheDocument();
+  });
+});
+
 describe("profile", () => {
   /** The server's update_credentials operation, with the changes it received. */
   function profileServer() {
