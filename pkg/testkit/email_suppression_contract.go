@@ -191,6 +191,39 @@ func emailComplaintStopsNotifications(t *testing.T, e *accountEnv) {
 	}
 }
 
+// emailAddressFailureRecordsOnce records an SES notification by the address it names: the
+// primary address matches in another case and after the forms that match nothing, the same
+// feedback key again is the same failure, and an unknown address records nothing.
+func emailAddressFailureRecordsOnce(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	reg := e.sessionUser(t)
+	addressID := e.primaryEmailID(t, reg.User.ID)
+	in := appidentity.AddressFailure{
+		Addresses: []string{"nobody@example.com", "ALICE@Example.com"}, Kind: identity.EmailHardBounce,
+		Source: identity.EmailFailureSES, FeedbackKey: "0100017f8ab5f2f6-feedback", EnhancedStatus: "5.1.1", OccurredAt: e.clock.Now(),
+	}
+	if ok, err := e.identity.RecordAddressFailure(ctx, in); err != nil || !ok {
+		t.Fatalf("RecordAddressFailure = %v, %v; want a match", ok, err)
+	}
+	sup, ok := e.suppression(t, addressID)
+	if !ok || sup.Kind != identity.EmailHardBounce || !sup.Since.Equal(e.clock.Now()) {
+		t.Fatalf("suppression = %+v, %v; want a hard bounce now", sup, ok)
+	}
+	// SNS delivers the notification again: an earlier time does not replace the failure.
+	in.OccurredAt = e.clock.Now().Add(-time.Hour)
+	if ok, err := e.identity.RecordAddressFailure(ctx, in); err != nil || !ok {
+		t.Fatalf("RecordAddressFailure again = %v, %v; want a match", ok, err)
+	}
+	if got, _ := e.suppression(t, addressID); got != sup {
+		t.Errorf("suppression after the same notification again = %+v, want %+v", got, sup)
+	}
+	unknown := in
+	unknown.Addresses, unknown.FeedbackKey = []string{"nobody@example.com"}, "other-feedback"
+	if ok, err := e.identity.RecordAddressFailure(ctx, unknown); err != nil || ok {
+		t.Errorf("RecordAddressFailure of an unknown address = %v, %v; want no match", ok, err)
+	}
+}
+
 // emailSuppressionEqualsRebuild records random failures and lifts on a few addresses and checks
 // that the suppressions equal a rebuild of the projection.
 func emailSuppressionEqualsRebuild(t *testing.T, e *accountEnv) {

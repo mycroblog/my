@@ -433,6 +433,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	a.setUpActivityPub(cfg, opts.Version)
 	a.setUpAuthPages(cfg)
+	if err := a.setUpMailEvents(cfg); err != nil {
+		return nil, err
+	}
 	if err := a.setUpOAuth(cfg); err != nil {
 		return nil, err
 	}

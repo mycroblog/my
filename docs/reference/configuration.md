@@ -87,6 +87,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`smtp_password`](#smtp_password) | `MY_SMTP_PASSWORD` | none | no | yes |
 | [`ses_region`](#ses_region) | `MY_SES_REGION` | none | no | no |
 | [`ses_configuration_set`](#ses_configuration_set) | `MY_SES_CONFIGURATION_SET` | none | no | no |
+| [`ses_sns_topic_arn`](#ses_sns_topic_arn) | `MY_SES_SNS_TOPIC_ARN` | none | no | no |
 | [`captcha`](#captcha) | `MY_CAPTCHA` | `none` | no | no |
 | [`captcha_site_key`](#captcha_site_key) | `MY_CAPTCHA_SITE_KEY` | none | when `captcha` is not `none` | no |
 | [`captcha_secret_key`](#captcha_secret_key) | `MY_CAPTCHA_SECRET_KEY` | none | when `captcha` is not `none` | yes |
@@ -605,6 +606,14 @@ AWS region of the SES endpoint of `mail = ses`, such as `eu-west-1`: the region 
 Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.
 
 - Environment variable: `MY_SES_CONFIGURATION_SET`
+- Default: none
+- Required: no
+
+### `ses_sns_topic_arn`
+
+ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions (ADR-0086 §5); empty answers `404` there.
+
+- Environment variable: `MY_SES_SNS_TOPIC_ARN`
 - Default: none
 - Required: no
 

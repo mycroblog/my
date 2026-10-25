@@ -22,6 +22,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/app/supporters"
+	"github.com/mycroblog/my/internal/interface/mailevents"
 )
 
 // EnvPrefix is prepended to the upper-cased key to form a setting's environment variable.
@@ -498,6 +499,13 @@ var schema = []field{
 		doc:   "Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.",
 		check: checkSESConfigurationSet,
 		set:   func(c *Config, v string) { c.SESConfigurationSet = v },
+	},
+	{
+		key: "ses_sns_topic_arn",
+		doc: "ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). " +
+			"Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions (ADR-0086 §5); empty answers `404` there.",
+		check: checkSESSNSTopicARN,
+		set:   func(c *Config, v string) { c.SESSNSTopicARN = v },
 	},
 	{
 		key: "captcha",
@@ -1273,6 +1281,12 @@ func checkSESConfigurationSet(v string) error {
 		return errors.New("must be at most 64 letters, digits, hyphens, and underscores")
 	}
 	return nil
+}
+
+// checkSESSNSTopicARN accepts the ARN of an SNS topic.
+func checkSESSNSTopicARN(v string) error {
+	_, err := mailevents.ParseTopicARN(v)
+	return err
 }
 
 // checkBareAddress accepts an email address without a display name or angle brackets.
