@@ -160,6 +160,7 @@ v0 のリリース（M5）で運営者に渡す以上、始め方と同じく終
 
 - 自分自身の `Delete`（Actor）は、4 実装ともキャッシュの Actor と鍵で処理し、Actor を取り直さない（Akkoma は [`DeleteValidator`](https://akkoma.dev/AkkomaGang/akkoma/src/commit/a69f0b9e328dd6c12bf4a308892041035408d03a/lib/pleroma/web/activity_pub/object_validators/delete_validator.ex) がキャッシュの利用者を引く）。
 - 取り直しの `410`: Mastodon は WebFinger の `410` で [`GoneError`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/lib/webfinger.rb) にし、Actor の取得の `410` で [アカウントの削除を積む](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/services/activitypub/fetch_remote_actor_service.rb)。Misskey は WebFinger の失敗をエラーにするだけで消さない（[`RemoteUserResolveService`](https://github.com/misskey-dev/misskey/blob/2dd2e114b72dc256bdfa0ce88a8387f5cf6bd348/packages/backend/src/core/RemoteUserResolveService.ts)）。GoToSocial は WebFinger の `410` をエラーにし（[`finger.go`](https://codeberg.org/superseriousbusiness/gotosocial/src/commit/311cecaeb6e302509c847d20e21185a7ec41d28d/internal/transport/finger.go)）、Actor の取り直しの `410` でアカウントを消す処理を持たない（[`dereferencing/account.go`](https://codeberg.org/superseriousbusiness/gotosocial/src/commit/311cecaeb6e302509c847d20e21185a7ec41d28d/internal/federation/dereferencing/account.go)）。Akkoma は取り直しが `404` / `410` でもキャッシュの利用者を返し続ける（[`User.get_or_fetch_by_ap_id`](https://akkoma.dev/AkkomaGang/akkoma/src/commit/a69f0b9e328dd6c12bf4a308892041035408d03a/lib/pleroma/user.ex)）。
+- 実際の相互運用（federation-live の `TestClosure`、2026-10-25、Mastodon 4.7・GoToSocial 0.22・Misskey 2026.10）: 配送中の最小の Actor の文書（`suspended: true`、鍵あり）の下で、3 実装ともクローズの `Delete`（Actor）を受け付け、アカウントと取り込んだ投稿を消した。クローズの直後に相手が送った配送は inbox の `410` を受けて再試行されず、`Delete` の処理の後はこちらへの配送が無い。Misskey は `410` を受けてこのサーバーを `goneSuspended` にした。配送はすべて成功し、`delivery_completed` が記録された後、Actor の GET は `410`（`Tombstone`）を返す。上の「この決定を見直す条件」に当たる食い違いは無い。
 - Misskey・GoToSocial・Akkoma のソースには、サーバー全体の閉鎖の仕組み（Mastodon の self-destruct に当たるもの）が無い（`self-destruct` などで検索して見つからない）。
 
 ### C. ローカルのデータ: C1 消さない（採用）/ C2 消去ジョブで消す
@@ -175,5 +176,5 @@ v0 のリリース（M5）で運営者に渡す以上、始め方と同じく終
 
 ## Open Questions / 要検証
 
-- 上の受信側の振る舞いが、配送中の最小の Actor の文書（`suspended: true`、鍵あり）の下で実際にそのとおりになるか。federation-live で確かめる（ソースの読みと実際の相互運用は別のため）。
+- Akkoma が、配送中の最小の Actor の文書の下でクローズの `Delete`（Actor）を受け付けてアカウントと投稿を消し、inbox の `410` を再試行しないか。federation-live に Akkoma が無いため、実際の相互運用では確かめていない（ソースの読みは上のとおり。[#786](https://github.com/mycroblog/my/issues/786) で Akkoma を用意したあとに `TestClosure` を広げる）。
 - 配送の速度の値（未処理の配送のジョブの上限 10,000 件、キューの同時実行数）と、短い告知の期間を警告する 30 日を、実装の後に調整する。

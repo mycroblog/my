@@ -29,7 +29,7 @@ between this server and Mastodon, for the live test of
 
   | User | Role |
   | --- | --- |
-  | `alice@my.test` | The local user of every scenario, and the moderator of `TestSuspension` |
+  | `alice@my.test` | The local user of every scenario, the moderator of `TestSuspension`, and the administrator who closes the server in `TestClosure` |
   | `frank@my.test` | `TestSuspension`: alice suspends him and lifts it |
   | `bob@mastodon.test`, `carol@gts.test`, `grace@misskey.test` | The peer users that alice follows and that follow her |
   | `dave@mastodon.test`, `erin@gts.test`, `heidi@misskey.test` | Never follow alice: the mentioned non-followers of `TestVisibilityAudiences` |
@@ -59,7 +59,8 @@ between this server and Mastodon, for the live test of
   that its text mentions), a renote is a boost, and a reaction (👍) is a favourite.
 - The scenarios reach the servers through the proxy's published port and read what this server recorded
   (`received_activities`) from the published PostgreSQL port. `TestFederationMode` also reads the proxy's access log
-  with `docker compose logs`, to log which requests a peer made to this server, and `TestMove` sets the aliases and moves of Mastodon users with
+  with `docker compose logs`, to log which requests a peer made to this server (`TestClosure` reads it too, for the
+  deliveries that a peer made after the closure), and `TestMove` sets the aliases and moves of Mastodon users with
   `docker compose exec mastodon-web bin/rails runner`.
 
 ## Running it
@@ -115,6 +116,7 @@ leave (a scenario that runs alone makes the follows it needs).
 | `TestReportForwarding` | A report of the peer user that alice forwards reaches the moderators' reports of Mastodon and Misskey (a `Flag` of this server's instance actor with the comment); one that she does not forward does not. GoToSocial is skipped: the scenarios have no administrator of it |
 | `TestSignatureProfile` | The rows of [ADR-0032](../../../docs/adr/0032-http-signature-profile.md) that need a real server: draft-cavage from every peer, RFC 9421 from Mastodon after a 401, this server's RFC 9421 resend after a 401 (double-knocking), and `Accept-Signature` on an unsigned POST. It runs after the other scenarios of `scenarios_test.go`: afterwards this server signs for `mastodon.test` with RFC 9421 first |
 | `TestSuspension` | Mastodon only: Mastodon shows a local user that a moderator suspends as suspended (the actor's `Update` with `suspended: true`, through Mastodon's shared inbox), and shows him again once the suspension is lifted ([ADR-0036](../../../docs/adr/0036-moderation-federation-propagation.md)) |
+| `TestClosure` | The closure of the service ([ADR-0088](../../../docs/adr/0088-service-shutdown-modes.md), FR-809). alice and the peer user follow each other and the peer stores a post of alice; alice announces a closure whose date has passed and closes the server through the admin API, and the peer user posts at once, so that the peer delivers to an inbox that answers 410. While the Deletes go out, the inbox answers 410 to an unsigned POST, WebFinger 410, and alice's actor the suspended document with its key. Each peer takes the `Delete` (Actor): alice and her post are gone there; its user posts again, and the peer sends this server nothing more (no retry of a 410, no delivery to the deleted followers); every POST it made after the closure got 410, and Misskey marks the server `goneSuspended` once one of them did. Then `delivery_completed` is recorded and the actor answers 410 with a `Tombstone`. The closure cannot be undone and ends the federation of the whole server, so the scenario runs last (its file, `zz_closure_test.go`, sorts last) and a stack kept with `FEDERATION_LIVE_KEEP=1` after it runs serves no other scenario. Akkoma, which is not in the stack, is not checked |
 
 ## Compatibility notes
 
@@ -142,6 +144,7 @@ What the scenarios show about the pinned peers, and how this server and the scen
 | GoToSocial 0.22 | Keeps the minimal actor document of `inbound` (no `followers`) after the mode widens, and leaves otto's posts out of carol's home timeline, from its database too, though it stores them and lists them on his profile | `TestFederationMode` reads the author's statuses instead of the home timeline |
 | Misskey 2026.10 | Fails the `Move` of a remote account to one of its own accounts: `ApPersonService.processRemoteMove` looks the local target up by `uri`, which a local user does not have (`EntityNotFoundError`, logged as `Processing Move Failed`), so its followers stay with the source, whoever sends the `Move`. A `Move` to an account of another server works | `TestMove` moves `leavemisskey@my.test` to `arrive@my.test`, an account of another server to Misskey |
 | Mastodon 4.7, GoToSocial 0.22 | Take this server's `Move` to one of their own accounts, follow the target with the follower, and end the follow of the source | Nothing to do |
+| Mastodon 4.7, GoToSocial 0.22, Misskey 2026.10 | Take the closure's `Delete` (Actor) from the suspended actor document and delete the account and its posts; do not retry a delivery that the closed inbox answered with 410. Misskey also marks the closed server `goneSuspended` (`isSuspended`, `isNotResponding`) | Nothing to do: `TestClosure` ([ADR-0088](../../../docs/adr/0088-service-shutdown-modes.md)) |
 | Every peer | None learns that alice locked her account while she has no follower there (the actor `Update` goes to followers only) | Expected: the follow request still waits for her approval on this server |
 
 ## Adding a captured activity as a fixture

@@ -26,6 +26,7 @@ import { type AccountTimelineFilter, accountTimelineFilters, TimelineFeed, useRe
 import { usePinnedStatuses } from "../hooks/usePinnedStatuses";
 import { isolate, type ProfileView as ProfileViewData, useProfile } from "../hooks/useProfile";
 import { useRelationship } from "../hooks/useRelationship";
+import { MovedNote } from "./MovedNote";
 import { RelationshipActions } from "./RelationshipActions";
 import { imageSources } from "../../../lib/images";
 
@@ -117,6 +118,11 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
               ]),
         ]}
       />
+      {account.moved !== undefined && (
+        <Box paddingX="4">
+          <MovedNote name={profile.name} target={account.moved} isSelf={relationship.kind === "self"} />
+        </Box>
+      )}
       <ProfileTabs accountId={account.id} name={profile.name} original={profile.original} tab={tab} onTabChange={onTabChange} />
     </Stack>
   );

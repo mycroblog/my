@@ -10,6 +10,7 @@
 | リモート投稿の保持期間（FR-803） | `status_deletions`（`origin = retention`） | `statuses`・版と子テーブル・投票・投影の行・リモートのアカウントのブースト（§4.4 リモート投稿の保持期間） | `status_deletions`（取得し直しは拒まない）、ローカルのアカウントのブースト・お気に入り・ブックマーク・ピン留め・通知 |
 
 - `Delete`（Actor）は、`active` なフォロワーの inbox と、既知の shared inbox（削除されていないリモートの Actor の `remote_account_heads.shared_inbox_url`）に送ります。
+- サービスのクローズ（[ADR-0088](../../adr/0088-service-shutdown-modes.md) §3）は、削除されていないローカルのアカウントすべて（凍結中を含み、移転済みは最後）に同じ宛先へ `Delete`（Actor）を送ります。アカウントごとに `closure_deletes` を 1 行記録し、ライフサイクルは変えず、消去ジョブも動かしません（[federation.md §15](../federation.md#15-サービスの終了)）。データはサーバーが自分では消さず、運営者が停止の後に DB・Blob・バックアップを破棄します。
 - 消去は「イベントを記録 → 投影から即時に除外 → 消去ジョブが一定件数ずつ物理削除」の順です。表示から消えるのは即時、物理削除は非同期です。
 - アカウント削除の消去は、1 時間ごとのジョブ `account.erase_deleted` が、`deleted` から 7 日を過ぎた、保全（§4.3）の無いローカルのアカウントに行います。
   - モジュールごとの消去（`content` の投稿と操作 → `graph` → `timeline` → `notification` → `instance` のお知らせの既読 → `content` のメディア → `identity` → `account`）を、1 文あたり 100 行（投稿は 100 件）・1 回のジョブで 50 トランザクションまで行い、使い切ったらカーソル（アカウントの ID）を持った次のジョブが続けます。どれも再実行してよい。

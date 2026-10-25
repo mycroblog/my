@@ -1782,5 +1782,13 @@
   "settings.email_suppression.hard_bounce.action": {
     "defaultMessage": "Once your mailbox works, ask for the verification email again. Verifying the address lets the server send email to it again and removes this notice.",
     "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
+  },
+  "settings.push.type.account_moved": {
+    "defaultMessage": "Accounts you follow moving",
+    "description": "Checkbox of the push notification kinds: an account the user followed moved to another account."
+  },
+  "settings.push.type.service_closure": {
+    "defaultMessage": "Closure of this server",
+    "description": "Checkbox of the push notification kinds: the closure of the service was announced, rescheduled or withdrawn."
   }
 }

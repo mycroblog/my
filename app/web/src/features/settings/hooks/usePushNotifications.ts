@@ -21,9 +21,10 @@ type PushAlertGroup = { id: string; label: ClientMessageKey; types: readonly Not
 
 /**
  * The permissions whose holders get moderator notifications (admin_report, admin_sign_up, admin_appeal,
- * admin_webhook_disabled for manage_webhooks, and admin_custom_emoji_request for manage_custom_emojis).
+ * admin_webhook_disabled for manage_webhooks, admin_custom_emoji_request for manage_custom_emojis, and
+ * admin_service_closure_due for manage_service_closure).
  */
-const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis"];
+const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis", "manage_service_closure"];
 
 /** The kinds that every user chooses from, in the order of the notifications' filter. */
 const userGroups: readonly PushAlertGroup[] = [
@@ -35,6 +36,8 @@ const userGroups: readonly PushAlertGroup[] = [
   { id: "favourite", label: "client:settings.push.type.favourite", types: ["favourite"] },
   { id: "reaction", label: "client:settings.push.type.reaction", types: ["reaction"] },
   { id: "quote", label: "client:settings.push.type.quote", types: ["quote"] },
+  { id: "service_closure", label: "client:settings.push.type.service_closure", types: ["service_closure"] },
+  { id: "account_moved", label: "client:settings.push.type.account_moved", types: ["account_moved"] },
   {
     id: "moderation",
     label: "client:settings.push.type.moderation",
@@ -49,14 +52,14 @@ const userGroups: readonly PushAlertGroup[] = [
 const supporterGroup: PushAlertGroup = {
   id: "supporter",
   label: "client:settings.push.type.supporter",
-  types: ["supporter_payment_failed", "supporter_subscription_ended", "supporter_plan_retired"],
+  types: ["supporter_payment_failed", "supporter_subscription_ended", "supporter_plan_retired", "supporter_service_closure"],
 };
 
 /** The moderator notifications, offered to a viewer whose roles get them. */
 const moderatorGroup: PushAlertGroup = {
   id: "admin",
   label: "client:settings.push.type.admin",
-  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request"],
+  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request", "admin_account_moved", "admin_service_closure_due"],
 };
 
 /** What the preferences show of Web Push on this device. */

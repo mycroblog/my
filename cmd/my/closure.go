@@ -84,6 +84,16 @@ func runAdminClosure(args []string, stdin io.Reader, stdout, stderr io.Writer) i
 		return code
 	}
 	printClosure(stdout, closure)
+	if sub == "status" {
+		progress, ok, err := app.Instance.ClosureProgress(ctx)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
+			return 1
+		}
+		if ok {
+			printClosureProgress(stdout, progress)
+		}
+	}
 	if closure.ShortNotice() && closure.CurrentState() == instance.ClosureAnnounced {
 		_, _ = fmt.Fprintf(stderr, "warning: the announcement gives the users less than %d days before the closing date to export their data and move their accounts\n",
 			int(instance.ClosureNoticeWarning/(24*time.Hour)))
@@ -183,6 +193,15 @@ func printClosure(w io.Writer, c instance.Closure) {
 	}
 }
 
+// printClosureProgress prints how far the closure's Deletes have gone (ADR-0088 §3): the
+// accounts whose Delete is recorded, the fan-outs left, and the deliveries by state.
+func printClosureProgress(w io.Writer, p appinstance.ClosureProgress) {
+	_, _ = fmt.Fprintf(w, "accounts with a Delete: %d\nfan-outs pending: %d\n", p.Accounts, p.FanOuts)
+	for _, st := range []string{"pending", "succeeded", "permanent_failure", "skipped", "dead"} {
+		_, _ = fmt.Fprintf(w, "deliveries %s: %d\n", st, p.Deliveries[st])
+	}
+}
+
 // printClosureCheck prints the checks before the closure, and on stderr the warnings about the
 // account migrations that have not ended (ADR-0089) and the retention holds (ADR-0038).
 func printClosureCheck(w, stderr io.Writer, c appinstance.ClosureCheck) {
@@ -212,7 +231,11 @@ the announcement in effect. The users may export their data until -export-until
 (2027-01-31T15:00:00Z) or dates (2027-01-31, midnight UTC). The closing date has
 no lower bound, but an announcement that gives the users less than 30 days is
 warned about on standard error. withdraw withdraws the announcement: the server
-runs on as before. status prints the state and the schedule in effect.
+runs on as before. status prints the state and the schedule in effect, and once
+the server is closed, the progress of the closure's Deletes: the accounts whose
+Delete is recorded, the fan-outs left, and the deliveries by state. The
+deliveries need the workers running; delivery_completed is recorded when they
+have all ended.
 
 check prints what the closure would end: the local accounts and the inboxes
 that their Delete goes to, the supporter subscriptions that it cancels, the
