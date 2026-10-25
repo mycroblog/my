@@ -44,9 +44,9 @@ security fixes.
 
 ## What happens after you report
 
-- We acknowledge the report within 3 business days.
+- We acknowledge the report within 5 business days.
 - We confirm or reject it, with our assessment of its severity, within 10 business days.
-- We aim to release a fix within 90 days of the report, sooner for severe issues. We keep you informed of progress
+- We aim to release a fix within 30 days of the report, sooner for severe issues. We keep you informed of progress
   and agree a disclosure date with you.
 - When the fix is released, we publish a GitHub Security Advisory, request a CVE for it, and credit you by the name
   you choose (or not at all, if you prefer).
