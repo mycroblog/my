@@ -1131,6 +1131,20 @@ func (l *Localizer) ServerErrorsAccountUnavailable() string {
 	return l.format("server:errors.account_unavailable", nil)
 }
 
+// ServerErrorsAliasesInvalid formats "server:errors.aliases.invalid". API error title for HTTP 422 when the handle or URL given as an alias (an account the user moves from) leads to no account, to something that is not an account, or to the user's own account.
+//
+//	en: That handle or URL cannot be an alias. Enter the handle or URL of another account.
+func (l *Localizer) ServerErrorsAliasesInvalid() string {
+	return l.format("server:errors.aliases.invalid", nil)
+}
+
+// ServerErrorsAliasesTooMany formats "server:errors.aliases.too_many". API error title for HTTP 422 when the user adds another alias beyond the limit of aliases.
+//
+//	en: You already have the most aliases allowed. Remove one first.
+func (l *Localizer) ServerErrorsAliasesTooMany() string {
+	return l.format("server:errors.aliases.too_many", nil)
+}
+
 // ServerErrorsAppealAlreadyAppealed formats "server:errors.appeal.already_appealed". API error title for HTTP 422 when the user appeals a moderation action on their account a second time; an action is appealed once.
 //
 //	en: You have already appealed this action.

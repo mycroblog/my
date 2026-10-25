@@ -114,6 +114,9 @@
     "type": "Image",
     "mediaType": "image/jpeg",
     "url": "https://files.social.example.org/media/h/large.jpg"
-  }
+  },
+  "alsoKnownAs": [
+    "https://old.example/users/alice"
+  ]
 }
 

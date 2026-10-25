@@ -24,6 +24,7 @@ type (
 	RemoteHead = account.RemoteHead
 	Move       = account.Move
 	MoveState  = account.MoveState
+	Alias      = account.Alias
 )
 
 // ErrMoveTooSoon reports a move of an account to another target too soon after its newest

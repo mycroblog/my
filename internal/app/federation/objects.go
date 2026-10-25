@@ -100,6 +100,8 @@ type ObjectsDeps struct {
 	Reader   StatusReader
 	// Images reads the avatars and headers of the actors that archives export; nil exports none.
 	Images ProfileImages
+	// Aliases reads the aliases of the actors that archives export; nil exports none.
+	Aliases AliasReader
 	// Signatures verifies the signatures of GET requests; nil treats every request as unsigned.
 	Signatures *SignatureVerifier
 	// Domains are the domain blocks; nil means NoDomainRestrictions.

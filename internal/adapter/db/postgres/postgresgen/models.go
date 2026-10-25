@@ -20,6 +20,12 @@ type Account struct {
 	CreatedAt time.Time
 }
 
+type AccountAlias struct {
+	AccountID string
+	AliasUri  string
+	AddedAt   time.Time
+}
+
 type AccountDomainMute struct {
 	AccountID string
 	Domain    string

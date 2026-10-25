@@ -3,6 +3,14 @@
     "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ŭŭşḗḗ ŧħḗḗ ȧȧƥƥ řīɠħŧ ƞǿǿẇ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.aliases.invalid": {
+    "defaultMessage": "[Ŧħȧȧŧ ħȧȧƞḓŀḗḗ ǿǿř ŬŘĿ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧƞ ȧȧŀīȧȧş. Ḗƞŧḗḗř ŧħḗḗ ħȧȧƞḓŀḗḗ ǿǿř ŬŘĿ ǿǿƒ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.aliases.too_many": {
+    "defaultMessage": "[Ẏǿǿŭŭ ȧȧŀřḗḗȧȧḓẏ ħȧȧṽḗḗ ŧħḗḗ ḿǿǿşŧ ȧȧŀīȧȧşḗḗş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗḿǿǿṽḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.appeal.already_appealed": {
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ ȧȧƥƥḗḗȧȧŀḗḗḓ ŧħīş ȧȧƈŧīǿǿƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."

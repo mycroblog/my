@@ -141,6 +141,7 @@ type Repository interface {
 
 	RemoteRepository
 	MoveRepository
+	AliasRepository
 	SearchRepository
 	SearchTermRepository
 }

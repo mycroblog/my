@@ -3297,6 +3297,25 @@ type Account struct {
 	Username string `json:"username"`
 }
 
+// AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+// `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
+type AccountAlias struct {
+	// Acct The handle of the alias, `username` for a local account and `username@domain` for a
+	// remote one; omitted when the instance does not know the account or its handle.
+	Acct *string `json:"acct,omitempty"`
+
+	// CreatedAt When the user added the alias.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Uri The ActivityPub id of the alias's actor.
+	Uri string `json:"uri"`
+}
+
+// AccountAliasList The aliases of the user, oldest first; at most 5.
+type AccountAliasList struct {
+	Aliases []AccountAlias `json:"aliases"`
+}
+
 // AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
 // account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
 // never translated.
@@ -3383,6 +3402,13 @@ type AccountStatusPage struct {
 	// first page again a few seconds later to see what it stored. Absent otherwise,
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
+}
+
+// AddAccountAliasRequest The account to add as an alias.
+type AddAccountAliasRequest struct {
+	// Acct The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
+	// URL of the account's actor or profile page.
+	Acct string `json:"acct"`
 }
 
 // AdminAccount An account as the moderators see it (FR-714). It never includes an email or IP address.
@@ -8367,6 +8393,10 @@ type PreviewDomainBlockImportRequest struct {
 //     reason in `theme_errors` (`PUT /admin/theme`).
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
+//   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
+//     account's actor, or to the user itself.
+//   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
+//     allowed (5). Remove one first.
 //   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
 //     only its subscriptions grant and revoke it, and its permissions and position change from
 //     the plan (`PATCH /admin/supporter_plans/{id}`). Its badge changes as any role's.
@@ -8650,6 +8680,12 @@ type RelayProtocol string
 // `rejected`: the relay rejected the `Follow` or ended the membership. `left`: the
 // instance sent the `Undo` of its `Follow`.
 type RelayState string
+
+// RemoveAccountAliasRequest The alias to remove.
+type RemoveAccountAliasRequest struct {
+	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
+	Uri string `json:"uri"`
+}
 
 // RemovePasswordRequest The passkey that confirms the removal of the user's password.
 type RemovePasswordRequest struct {
@@ -10643,6 +10679,12 @@ type GetHashtagTimelineParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
+type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
+
+// RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
+type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
+
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
@@ -12055,6 +12097,76 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+
+	// ListAccountAliases List the authenticated user's aliases
+	//
+	// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+	// `alsoKnownAs`, oldest first.
+	//
+	// Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
+	ListAccountAliases(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAccountAliasWithBody Add an alias to the authenticated user
+	//
+	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+	// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+	// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+	//
+	// A handle or URL that leads to no account, the URL of something that is not an actor, the
+	// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+	// account that the instance does not know while it takes nothing in from other servers
+	// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+	// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+	// changes nothing.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+	AddAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAccountAlias Add an alias to the authenticated user
+	//
+	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+	// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+	// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+	//
+	// A handle or URL that leads to no account, the URL of something that is not an actor, the
+	// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+	// account that the instance does not know while it takes nothing in from other servers
+	// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+	// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+	// changes nothing.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+	AddAccountAlias(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveAccountAliasWithBody Remove an alias of the authenticated user
+	//
+	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+	RemoveAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	//
+	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+	RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteOwnAccountWithBody Delete the authenticated user's account
 	//
@@ -16059,6 +16171,126 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+// ListAccountAliases List the authenticated user's aliases
+//
+// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+// `alsoKnownAs`, oldest first.
+//
+// Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
+func (c *Client) ListAccountAliases(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAccountAliasesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAccountAliasWithBody Add an alias to the authenticated user
+//
+// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+//
+// A handle or URL that leads to no account, the URL of something that is not an actor, the
+// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+// account that the instance does not know while it takes nothing in from other servers
+// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+// changes nothing.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+func (c *Client) AddAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAccountAliasRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAccountAlias Add an alias to the authenticated user
+//
+// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+//
+// A handle or URL that leads to no account, the URL of something that is not an actor, the
+// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+// account that the instance does not know while it takes nothing in from other servers
+// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+// changes nothing.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+func (c *Client) AddAccountAlias(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAccountAliasRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveAccountAliasWithBody Remove an alias of the authenticated user
+//
+// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+func (c *Client) RemoveAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveAccountAliasRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveAccountAlias Remove an alias of the authenticated user
+//
+// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveAccountAliasRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 // DeleteOwnAccountWithBody Delete the authenticated user's account
@@ -23423,6 +23655,113 @@ func (c *Client) SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewListAccountAliasesRequest constructs an http.Request for the ListAccountAliases method
+func NewListAccountAliasesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/aliases")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddAccountAliasRequest calls the generic AddAccountAlias builder with application/json body
+func NewAddAccountAliasRequest(server string, body AddAccountAliasJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddAccountAliasRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAddAccountAliasRequestWithBody constructs an http.Request for the AddAccountAlias method, with any body, and a specified content type
+func NewAddAccountAliasRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/aliases")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveAccountAliasRequest calls the generic RemoveAccountAlias builder with application/json body
+func NewRemoveAccountAliasRequest(server string, body RemoveAccountAliasJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRemoveAccountAliasRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewRemoveAccountAliasRequestWithBody constructs an http.Request for the RemoveAccountAlias method, with any body, and a specified content type
+func NewRemoveAccountAliasRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/aliases/remove")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewDeleteOwnAccountRequest calls the generic DeleteOwnAccount builder with application/json body
@@ -35019,6 +35358,78 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 
+	// ListAccountAliasesWithResponse List the authenticated user's aliases
+	//
+	// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+	// `alsoKnownAs`, oldest first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
+	ListAccountAliasesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAccountAliasesResponse, error)
+
+	// AddAccountAliasWithBodyWithResponse Add an alias to the authenticated user
+	//
+	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+	// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+	// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+	//
+	// A handle or URL that leads to no account, the URL of something that is not an actor, the
+	// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+	// account that the instance does not know while it takes nothing in from other servers
+	// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+	// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+	// changes nothing.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+	AddAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAccountAliasResponse, error)
+
+	// AddAccountAliasWithResponse Add an alias to the authenticated user
+	//
+	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+	// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+	// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+	//
+	// A handle or URL that leads to no account, the URL of something that is not an actor, the
+	// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+	// account that the instance does not know while it takes nothing in from other servers
+	// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+	// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+	// changes nothing.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+	AddAccountAliasWithResponse(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAccountAliasResponse, error)
+
+	// RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
+	//
+	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+	RemoveAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
+
+	// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
+	//
+	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+	RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
+
 	// DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
@@ -39392,6 +39803,201 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SetUpTotpResponse, error)
+}
+
+// ListAccountAliasesResponse200Headers the declared response headers of an HTTP 200 response for ListAccountAliases
+type ListAccountAliasesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAccountAliasesResponseDefaultHeaders the declared response headers of an HTTP default response for ListAccountAliases
+type ListAccountAliasesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAccountAliasesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountAliasList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAccountAliasesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAccountAliasesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAccountAliasesResponse) GetJSON200() *AccountAliasList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAccountAliasesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAccountAliasesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAccountAliasesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAccountAliasesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAccountAliasesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AddAccountAliasResponse200Headers the declared response headers of an HTTP 200 response for AddAccountAlias
+type AddAccountAliasResponse200Headers struct {
+	CacheControl *string
+}
+
+// AddAccountAliasResponseDefaultHeaders the declared response headers of an HTTP default response for AddAccountAlias
+type AddAccountAliasResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AddAccountAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountAliasList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AddAccountAliasResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AddAccountAliasResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AddAccountAliasResponse) GetJSON200() *AccountAliasList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AddAccountAliasResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AddAccountAliasResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddAccountAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddAccountAliasResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddAccountAliasResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RemoveAccountAliasResponse200Headers the declared response headers of an HTTP 200 response for RemoveAccountAlias
+type RemoveAccountAliasResponse200Headers struct {
+	CacheControl *string
+}
+
+// RemoveAccountAliasResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveAccountAlias
+type RemoveAccountAliasResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveAccountAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountAliasList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RemoveAccountAliasResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveAccountAliasResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveAccountAliasResponse) GetJSON200() *AccountAliasList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveAccountAliasResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveAccountAliasResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveAccountAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveAccountAliasResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveAccountAliasResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
 }
 
 // DeleteOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteOwnAccount
@@ -56318,6 +56924,108 @@ func (r SetUpTotpResponse) ContentType() string {
 	return ""
 }
 
+// ListAccountAliasesWithResponse List the authenticated user's aliases
+//
+// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+// `alsoKnownAs`, oldest first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
+func (c *ClientWithResponses) ListAccountAliasesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAccountAliasesResponse, error) {
+	rsp, err := c.ListAccountAliases(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAccountAliasesResponse(rsp)
+}
+
+// AddAccountAliasWithBodyWithResponse Add an alias to the authenticated user
+//
+// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+//
+// A handle or URL that leads to no account, the URL of something that is not an actor, the
+// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+// account that the instance does not know while it takes nothing in from other servers
+// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+// changes nothing.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+func (c *ClientWithResponses) AddAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAccountAliasResponse, error) {
+	rsp, err := c.AddAccountAliasWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAccountAliasResponse(rsp)
+}
+
+// AddAccountAliasWithResponse Add an alias to the authenticated user
+//
+// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+// actor's `Update` goes to the user's followers as a profile change does. An alias alone
+// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+// `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+// limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+//
+// A handle or URL that leads to no account, the URL of something that is not an actor, the
+// instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+// account that the instance does not know while it takes nothing in from other servers
+// (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+// is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+// changes nothing.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
+func (c *ClientWithResponses) AddAccountAliasWithResponse(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAccountAliasResponse, error) {
+	rsp, err := c.AddAccountAlias(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAccountAliasResponse(rsp)
+}
+
+// RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
+//
+// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+func (c *ClientWithResponses) RemoveAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error) {
+	rsp, err := c.RemoveAccountAliasWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveAccountAliasResponse(rsp)
+}
+
+// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
+//
+// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
+func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error) {
+	rsp, err := c.RemoveAccountAlias(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveAccountAliasResponse(rsp)
+}
+
 // DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
@@ -62706,6 +63414,237 @@ func (c *ClientWithResponses) SetUpTotpWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseSetUpTotpResponse(rsp)
+}
+
+// ParseListAccountAliasesResponse parses an HTTP response from a ListAccountAliasesWithResponse call
+func ParseListAccountAliasesResponse(rsp *http.Response) (*ListAccountAliasesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAccountAliasesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountAliasList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAccountAliasesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAccountAliasesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAddAccountAliasResponse parses an HTTP response from a AddAccountAliasWithResponse call
+func ParseAddAccountAliasResponse(rsp *http.Response) (*AddAccountAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddAccountAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountAliasList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AddAccountAliasResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AddAccountAliasResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRemoveAccountAliasResponse parses an HTTP response from a RemoveAccountAliasWithResponse call
+func ParseRemoveAccountAliasResponse(rsp *http.Response) (*RemoveAccountAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveAccountAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountAliasList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RemoveAccountAliasResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RemoveAccountAliasResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
 }
 
 // ParseDeleteOwnAccountResponse parses an HTTP response from a DeleteOwnAccountWithResponse call

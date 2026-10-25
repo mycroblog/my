@@ -98,6 +98,15 @@ func (q *Queries) EraseAccessTokens(ctx context.Context, userID string) error {
 	return err
 }
 
+const eraseAliases = `-- name: EraseAliases :exec
+DELETE FROM account_aliases WHERE account_id = ?1
+`
+
+func (q *Queries) EraseAliases(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseAliases, accountID)
+	return err
+}
+
 const eraseAuthorizationCodeRedemptions = `-- name: EraseAuthorizationCodeRedemptions :exec
 DELETE FROM oauth_authorization_code_redemptions WHERE code_hash IN (
   SELECT c.code_hash FROM oauth_authorization_codes c WHERE c.user_id = ?1)

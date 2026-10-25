@@ -18,6 +18,12 @@ type Account struct {
 	CreatedAt int64
 }
 
+type AccountAlias struct {
+	AccountID string
+	AliasUri  string
+	AddedAt   int64
+}
+
 type AccountDomainMute struct {
 	AccountID string
 	Domain    string

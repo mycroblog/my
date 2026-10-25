@@ -50,6 +50,9 @@ type FanOutDeps struct {
 	// EmojiTags reads the custom emoji of the profiles of the actors that Updates carry; nil
 	// sends none.
 	EmojiTags EmojiTagReader
+	// Aliases reads the aliases of the actors that Updates carry (alsoKnownAs); nil sends
+	// none.
+	Aliases AliasReader
 	// Blocks reads the local blocks that Block and Undo Block are about.
 	Blocks BlockFinder
 	// Follows reads the follows that Follow, Accept, Reject, and Undo Follow are about; nil

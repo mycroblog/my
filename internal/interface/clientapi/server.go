@@ -71,6 +71,9 @@ type Options struct {
 	Resolver AccountResolver
 	// Profiles changes the viewer's profile.
 	Profiles Profiles
+	// Aliases reads and changes the viewer's aliases (ADR-0089); nil answers their operations
+	// 404.
+	Aliases AccountAliases
 	// Posting reads what the viewer's restrictions let them post, for CredentialAccount; nil
 	// presents every account as unrestricted.
 	Posting PostingPolicy

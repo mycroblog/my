@@ -77,6 +77,18 @@ type remoteFollowEnv struct {
 	handlers  *queue.JobHandlerRegistry
 	// remotes stores remote actors; it has the HTML sanitizer that their profiles go through.
 	remotes *appaccount.Service
+	// mode is the federation mode that the outbound projectors read; "" is the default.
+	mode contractMode
+}
+
+// contractMode is a federation mode that a contract changes as it goes.
+type contractMode struct{ mode federation.Mode }
+
+func (m *contractMode) FederationMode(context.Context) (federation.Mode, error) {
+	if m.mode == "" {
+		return federation.DefaultMode, nil
+	}
+	return m.mode, nil
 }
 
 func newRemoteFollowEnv(t *testing.T, newHarness RemoteFollowFactory) *remoteFollowEnv {
@@ -106,7 +118,7 @@ func newRemoteFollowEnv(t *testing.T, newHarness RemoteFollowFactory) *remoteFol
 	e.notifs = appnotification.NewService(appnotification.Deps{UnitOfWork: h.UnitOfWork, Repository: h.Notifications, Clock: ae.clock})
 	outbox := queue.AfterCommit(projectors, e.jobs, nil)
 	appfederation.RegisterOutboundProjectors(projectors, appfederation.RecorderDeps{
-		Repository: h.Federation, Outbox: outbox, IDs: ae.ids, Host: contractHost, Accounts: ae.accounts,
+		Repository: h.Federation, Outbox: outbox, IDs: ae.ids, Host: contractHost, Accounts: ae.accounts, Modes: &e.mode,
 	})
 	appfederation.NewFanOut(appfederation.FanOutDeps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Federation, Outbox: outbox,

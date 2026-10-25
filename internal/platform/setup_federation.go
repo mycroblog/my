@@ -23,6 +23,7 @@ func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) qu
 	}
 	federation.RegisterOutboundProjectors(a.Projectors, federation.RecorderDeps{
 		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts,
+		Modes: federationModes{a},
 	})
 	federation.RegisterBlockProjectors(a.Projectors, federation.RecorderDeps{
 		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts,
@@ -76,7 +77,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 		UnitOfWork: a.UnitOfWork, Repository: repo, Outbox: outbox,
 		Statuses: federation.ContentStatuses{Service: a.Content, Interactions: a.Interactions},
 		Accounts: a.Accounts, Graph: a.Graph, Parts: a.Statuses, Follows: a.Graph, Images: a.Media.Images,
-		EmojiTags: a.Media.EmojiTags, Quotes: a.Content,
+		EmojiTags: a.Media.EmojiTags, Quotes: a.Content, Aliases: a.Accounts,
 		Blocks:  a.Graph,
 		Reports: a.Moderation,
 		Relays:  a.Relays,
@@ -95,6 +96,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{
 		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
+		Aliases:    a.Accounts,
 		Quotes:     federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
 		Signatures: federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
 		Domains:    a.ModerationPolicy,

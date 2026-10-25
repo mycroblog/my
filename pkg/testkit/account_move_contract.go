@@ -32,7 +32,9 @@ import (
 // followers to the target (a Follow to the target and an Undo Follow to the source), keeps the
 // follow of a follower that blocks the target, copies the blocks and mutes of the source to the
 // target, notifies each follower once with account_moved, and changes nothing when it runs
-// again. The target is fetched from a fake origin; nothing goes over the network.
+// again. It also verifies the aliases of local accounts (account_aliases, aliasesAddAndRemove)
+// and that a Move to a local account is recorded only when that account names the source among
+// its aliases. The target is fetched from a fake origin; nothing goes over the network.
 func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 	t.Helper()
 	cases := []struct {
@@ -42,6 +44,8 @@ func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 		{"RecordsAVerifiedMoveOnce", movesRecordOnce},
 		{"DropsUnverifiedMoves", movesDropUnverified},
 		{"MigratesTheLocalRelationships", movesMigrate},
+		{"KeepsTheAliasesOfLocalAccounts", aliasesAddAndRemove},
+		{"AcceptsAMoveToALocalAccountWithTheAlias", movesToLocalAlias},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newMoveEnv(t, newHarness)) })
@@ -73,7 +77,7 @@ func newMoveEnv(t *testing.T, newHarness RemoteFollowFactory) *moveEnv {
 	e.moves.RegisterJobs(e.handlers, &queue.Scheduler{})
 	e.targets = &moveTargets{e: e, docs: map[federation.IRI]*federation.Actor{}}
 	appfederation.RegisterMoveHandler(e.processor, appfederation.MoveHandlerDeps{
-		Targets: e.targets, Accounts: e.accounts, Suspensions: moveSuspensions(e.suspended),
+		Targets: e.targets, Accounts: e.accounts, Suspensions: moveSuspensions(e.suspended), Aliases: e.accounts,
 		Host: contractHost, Meter: e.meter,
 	})
 	return e
