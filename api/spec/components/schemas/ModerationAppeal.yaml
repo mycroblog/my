@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The authenticated user's appeal of an action on their account. It never names the
   moderator who decided it.

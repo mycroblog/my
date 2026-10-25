@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What the holders of `view_finance` read of the instance's finances beyond the totals and
   their breakdown (the instance settings of ADR-0070 §5): `item_names`

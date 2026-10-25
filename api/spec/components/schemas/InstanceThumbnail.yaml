@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The image that represents the instance (the instance setting `thumbnail`): the large still
   variant of the media file. Omitted when there is none, or while the file is processing.

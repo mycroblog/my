@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A message to a webhook and its attempts.
 type: object
 required: [id, message_id, event_type, status, attempts, created_at]

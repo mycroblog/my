@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
   the user.

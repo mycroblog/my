@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A page of the custom emoji that the user made, with what the user used of their limit
   (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create

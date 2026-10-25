@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A domain that the viewer mutes, with its subdomains.
 type: object
 required: [domain, created_at]

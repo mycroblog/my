@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A billing month of a source: an `estimate` while the provider has not closed it, `final`
   once it has, `correction` once a value changed after that; with its totals by currency.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
   `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training

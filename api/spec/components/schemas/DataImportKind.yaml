@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
   accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the

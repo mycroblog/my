@@ -115,6 +115,8 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"RemovesThePasswordOfPasskeyUsers", passwordlessRemovesThePassword},
 		{"ResetsPasswordsWithOneTimeLinks", passwordResetWorksOnce},
 		{"LimitsPasswordResetRequests", passwordResetLimitsRequests},
+		{"SendsPasswordResetEmailsFromJobs", passwordResetEmailJobs},
+		{"SendsVerificationEmailsFromJobs", verificationEmailJobs},
 		{"ChangesPasswordsKeepingTheCurrentGrant", passwordChangeKeepsTheCurrentGrant},
 		{"RegistersTheWebClient", oauthRegistersTheWebClient},
 		{"ValidatesAuthorizationRequests", oauthValidatesAuthorizationRequests},
@@ -154,6 +156,8 @@ type accountEnv struct {
 	kv         *KeyValueStore
 	limiter    *kernel.RateLimiter
 	sealer     *kernel.Sealer
+	// mailJobs runs the email jobs of the identity service that newIdentityWith made last.
+	mailJobs *InlineJobs
 }
 
 const contractHost = "social.example"
@@ -219,7 +223,7 @@ func (e *accountEnv) newIdentity(hasher *appidentity.PasswordHasher) *appidentit
 }
 
 // newIdentityWith returns an identity service on the env's harness with the deps that change
-// sets.
+// sets. The jobs of its emails run right after the commits that enqueue them.
 func (e *accountEnv) newIdentityWith(change func(*appidentity.Deps)) *appidentity.Service {
 	d := appidentity.Deps{
 		UnitOfWork:  e.h.UnitOfWork,
@@ -235,8 +239,13 @@ func (e *accountEnv) newIdentityWith(change func(*appidentity.Deps)) *appidentit
 		WebClient:   contractWebClient,
 		BaseURL:     "https://" + contractHost,
 	}
+	outbox, jobs := inlineOutbox(e.projectors)
+	d.Outbox, e.mailJobs = outbox, jobs
 	change(&d)
-	return appidentity.NewService(d)
+	s := appidentity.NewService(d)
+	// The emails of the use cases are sent right after their commit.
+	s.RegisterMailJobs(jobs.Registry)
+	return s
 }
 
 // cachedKey generates one key per algorithm per process: RSA generation is slow, and the

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
   or `image` a new image of a local emoji that the requester made.

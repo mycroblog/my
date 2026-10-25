@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The authenticated user's preferences.
 type: object
 required: [locale, time_zone, time_zone_chosen, default_visibility, default_quote_policy, default_post_language, require_media_description, email_moderator_notifications, timeline_auto_insert, timeline_languages]

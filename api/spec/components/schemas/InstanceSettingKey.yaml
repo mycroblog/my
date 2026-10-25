@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The key of an instance setting (docs/operations/instance-settings.md). New keys may be
   added; clients show the ones they know.

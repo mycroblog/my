@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A capability that an action takes away (data-model §5.2). `login`: logging in and the
   API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,

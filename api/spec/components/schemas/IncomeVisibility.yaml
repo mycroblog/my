@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How much of the instance's income everyone may read (the instance setting
   `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:

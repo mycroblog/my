@@ -74,3 +74,12 @@ curl -H 'Accept: application/activity+json' http://localhost:8080/ap/actors/<Web
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE)（[ADR-0011](docs/adr/0011-license.md)）。
+
+例外として、次の範囲は MIT ライセンスです（[ADR-0093](docs/adr/0093-api-client-library-mykit.md) §2）。
+クライアント API の仕様とそこから生成するクライアントライブラリを、利用者がライセンスの制約なしに使えるようにするためです。
+
+- `api/spec/` と、そのバンドルの `api/openapi.yaml`
+- `pkg/mykit/`（API クライアントライブラリ）
+- `pkg/mybot/`（ボット制作ライブラリ）
+
+それ以外（サーバーの実装、Web クライアントなど。サーバーと Web クライアントが `api/spec/` から生成するコードを含む）は AGPL-3.0-only のままです。

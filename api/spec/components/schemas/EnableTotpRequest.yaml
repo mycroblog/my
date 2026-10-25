@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The setup to enroll and a code of the app that shows it has the secret.
 type: object
 required: [setup_token, code]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The attempts that failed since the last success; omitted when the last attempt
   succeeded. The server disables the webhook once they span 72 hours and number 20.

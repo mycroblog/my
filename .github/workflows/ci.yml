@@ -262,6 +262,8 @@ jobs:
             run: scripts/task.sh go:mod-check
           - name: api:spec-check
             run: scripts/task.sh api:spec-check
+          - name: api:license-scope
+            run: scripts/task.sh api:license-scope
 
   server-test:
     # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0041); the slow suite runs them

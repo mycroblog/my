@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A post that a report points at, as a moderator reviews it. `status` is the post as it
   was last, without the moderator's own relation to it (`favourited`, `boosted`,

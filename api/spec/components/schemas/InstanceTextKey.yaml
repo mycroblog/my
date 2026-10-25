@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The key of an instance text: the name (one line), the short and full descriptions,
   the terms of service and the privacy policy (Markdown), the alternative texts of the

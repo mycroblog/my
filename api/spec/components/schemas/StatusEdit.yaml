@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: One revision of a status.
 type: object
 required: [content, spoiler_text, sensitive, created_at, media_attachments, emojis]

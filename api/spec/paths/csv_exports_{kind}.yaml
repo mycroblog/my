@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 get:
   operationId: exportCsv
   summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV

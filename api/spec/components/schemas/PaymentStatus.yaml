@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The state of the payment provider (ADR-0074 §4).
 type: object
 required: [provider, mode, time_zone, warnings]

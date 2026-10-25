@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The authenticated user's automatic deletion of their own old posts (FR-118). A post is
   deleted once it was published more than `min_age_days` days ago, unless one of the

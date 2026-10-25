@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A passkey that signs the authenticated user in instead of the password.
 type: object
 required: [id, name, created_at]

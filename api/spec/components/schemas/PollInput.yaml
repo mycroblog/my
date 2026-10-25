@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
   posted; the author and the users who voted are notified then.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The roles with a badge that the authenticated user holds, highest position first; empty when there are none.
 type: object
 required: [items]

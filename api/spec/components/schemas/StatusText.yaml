@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The plain text; the server links mentions, hashtags, and URLs.
 type: string
 minLength: 1

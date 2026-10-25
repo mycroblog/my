@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a webhook is refused. `url`: not an absolute http or https URL of at most 2048
   bytes without user info or a fragment. `description`: longer than 200 characters or with

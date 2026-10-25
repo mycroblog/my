@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Whether a supporter plan takes new subscriptions. `public`: offered. `hidden`: not offered;
   its subscriptions go on.

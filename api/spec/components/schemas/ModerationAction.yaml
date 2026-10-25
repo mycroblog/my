@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
   user sees it. It never carries the moderators' private note, the report the action

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An account, as clients show it (FR-006).
 type: object
 required: [id, username, acct, domain, uri, display_name, note, fields, emojis, badges, url, locked, bot, created_at]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A moderator's internal note on a report; never shown to the target or the reporter.
 type: object
 required: [id, body, created_at]

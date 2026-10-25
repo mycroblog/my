@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A notification of something that happened to the authenticated user.
 type: object
 required: [id, type, created_at]

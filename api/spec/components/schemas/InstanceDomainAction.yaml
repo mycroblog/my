@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718).
 type: object
 required: [domain, digest, kind]

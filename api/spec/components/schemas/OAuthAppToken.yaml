@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An access token and a refresh token of the app for the authenticated user, as the token
   endpoint returns them (RFC 6749 §5.1). The access token lasts an hour and the refresh token

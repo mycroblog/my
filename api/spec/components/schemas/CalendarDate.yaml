@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
   of a payment on a card statement or an invoice.

@@ -26,6 +26,14 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
+// The recipients that the server refuses: as unknown at RCPT TO, as spam after DATA, and for
+// now at RCPT TO.
+const (
+	unknownRecipient  = "nobody@example.com"
+	rejectedRecipient = "spammer@example.com"
+	deferredRecipient = "greylisted@example.com"
+)
+
 // server is a minimal SMTP submission server: EHLO, STARTTLS, AUTH PLAIN, MAIL, RCPT, DATA, QUIT.
 type server struct {
 	t        *testing.T
@@ -75,6 +83,7 @@ func (s *server) handle(conn net.Conn) {
 	defer func() { _ = conn.Close() }()
 	tp := textproto.NewConn(conn)
 	secure := false
+	rcpt := ""
 	_ = tp.PrintfLine("220 test ESMTP")
 	for {
 		line, err := tp.ReadLine()
@@ -113,12 +122,24 @@ func (s *server) handle(conn net.Conn) {
 			s.mu.Lock()
 			s.envelope = append(s.envelope, arg)
 			s.mu.Unlock()
-			_ = tp.PrintfLine("250 ok")
+			rcpt = strings.TrimSuffix(strings.TrimPrefix(arg, "TO:<"), ">")
+			switch rcpt {
+			case unknownRecipient:
+				_ = tp.PrintfLine("550 5.1.1 <%s>: Recipient address rejected: User unknown", rcpt)
+			case deferredRecipient:
+				_ = tp.PrintfLine("451 4.3.0 <%s>: Temporary lookup failure", rcpt)
+			default:
+				_ = tp.PrintfLine("250 ok")
+			}
 		case "DATA":
 			_ = tp.PrintfLine("354 go ahead")
 			data, err := tp.ReadDotBytes()
 			if err != nil {
 				return
+			}
+			if rcpt == rejectedRecipient {
+				_ = tp.PrintfLine("554 5.7.1 <%s>: Message rejected as spam", rcpt)
+				continue
 			}
 			s.record(data)
 			_ = tp.PrintfLine("250 queued")
@@ -181,7 +202,10 @@ func newMailer(t *testing.T, s *server, tc *tls.Config) *smtp.Mailer {
 func TestMailerContract(t *testing.T) {
 	testkit.MailerContract(t, func(t *testing.T) testkit.MailerHarness {
 		s, tc := newServer(t, true)
-		return testkit.MailerHarness{Mailer: newMailer(t, s, tc), Delivered: s.messages}
+		return testkit.MailerHarness{
+			Mailer: newMailer(t, s, tc), Delivered: s.messages,
+			UnknownRecipient: unknownRecipient, RejectedRecipient: rejectedRecipient, DeferredRecipient: deferredRecipient,
+		}
 	})
 }
 
