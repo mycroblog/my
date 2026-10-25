@@ -52,7 +52,7 @@ func (r *AccountRepository) EraseProfilesAndKeys(ctx context.Context, tx uow.Tx,
 	}
 	return runSteps(ctx, accountID, "erase profiles and keys",
 		q.EraseProfileFieldSources, q.EraseProfileFields, q.EraseProfileRevisionEmojis, q.EraseProfileRevisionSources, q.EraseProfileHead,
-		q.EraseProfileRevisions, q.ErasePrivateKeys, q.EraseKeyRevocations, q.EraseKeys)
+		q.EraseProfileRevisions, q.ErasePrivateKeys, q.EraseKeyRevocations, q.EraseKeys, q.EraseAliases)
 }
 
 // InsertErasure implements account.ErasureRepository.

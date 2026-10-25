@@ -11,6 +11,14 @@
     "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɔɐuuoʇ nsǝ ʇɥǝ ɐdd ɹıƃɥʇ uoʍ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.aliases.invalid": {
+    "defaultMessage": "‮⊥ɥɐʇ ɥɐupʅǝ oɹ ∩ᴚ⅂ ɔɐuuoʇ qǝ ɐu ɐʅıɐs. Ǝuʇǝɹ ʇɥǝ ɥɐupʅǝ oɹ ∩ᴚ⅂ oɟ ɐuoʇɥǝɹ ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.aliases.too_many": {
+    "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɥɐʌǝ ʇɥǝ ɯosʇ ɐʅıɐsǝs ɐʅʅoʍǝp. ᴚǝɯoʌǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.appeal.already_appealed": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐʅɹǝɐpʎ ɐddǝɐʅǝp ʇɥıs ɐɔʇıou.‬",
     "description": "Generated from en by tools/i18n; do not edit."
