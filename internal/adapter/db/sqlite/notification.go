@@ -34,7 +34,8 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		ModerationActionID: toNullString(n.ModerationActionID), ReportID: toNullString(n.ReportID),
 		SubjectUserID: toNullString(n.SubjectUserID), SeveranceID: toNullString(n.SeveranceID), AppealID: toNullString(n.AppealID),
 		CustomEmojiRequestID: toNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: toNullString(n.SupporterSubscriptionID),
-		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
+		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -187,7 +188,8 @@ func notificationFrom(row sqlitegen.Notification) notification.Notification {
 		ModerationActionID: row.ModerationActionID.String, ReportID: row.ReportID.String,
 		SubjectUserID: row.SubjectUserID.String, SeveranceID: row.SeveranceID.String, AppealID: row.AppealID.String,
 		CustomEmojiRequestID: row.CustomEmojiRequestID.String, SupporterSubscriptionID: row.SupporterSubscriptionID.String,
-		ReactionEmoji: row.ReactionEmoji.String, ReactionCustomEmojiID: row.ReactionCustomEmojiID.String, DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
+		ReactionEmoji: row.ReactionEmoji.String, ReactionCustomEmojiID: row.ReactionCustomEmojiID.String,
+		AccountMoveID: row.AccountMoveID.String, AccountMoveOutcome: notification.MoveOutcome(row.AccountMoveOutcome.String), DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 

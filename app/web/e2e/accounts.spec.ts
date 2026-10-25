@@ -8,9 +8,18 @@
 // what the server sends (names, handles, addresses).
 import type { Page, Route } from "@playwright/test";
 import type { components } from "../src/lib/api/schema.gen.ts";
+import { readCatalog } from "./catalog.ts";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Schemas = components["schemas"];
+
+/** The client message `key` in the project's locale. */
+function message(key: string): string {
+  const locale = test.info().project.use.locale ?? "en";
+  const text = readCatalog(locale)[key]?.defaultMessage;
+  if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
+  return text;
+}
 
 /** The signed-in moderator's account, as GET /accounts/verify_credentials answers, with the permissions of the role. */
 const moderator = {
@@ -113,11 +122,12 @@ const resetLink = "https://my.example/auth/reset_password?token=rst_3q2Ybq7mJXkQ
  * Plays the API of a signed-in moderator with `permissions`; returns the requests to the account operations. With
  * manage_login_recovery, the local account's user shows without two-factor authentication.
  */
-async function moderatorServer(page: Page, permissions: readonly string[] = moderator.permissions) {
+async function moderatorServer(page: Page, permissions: readonly string[] = moderator.permissions, { suppressed = false }: { suppressed?: boolean } = {}) {
   const viewer = { ...moderator, permissions };
   const recovers = permissions.includes("manage_login_recovery");
   const locale = test.info().project.use.locale ?? "en";
   let actions = [limit];
+  let suppression: Schemas["EmailSuppression"] | undefined = suppressed ? { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } : undefined;
   let blocks: Schemas["AdminSignupBlock"][] = [];
   let slowSearch = false;
   const requests: string[] = [];
@@ -130,6 +140,7 @@ async function moderatorServer(page: Page, permissions: readonly string[] = mode
   const detail = (account: Schemas["AdminAccount"]): Schemas["AdminAccountDetail"] => ({
     ...current(account),
     ...(account.local ? { registration: { submitted_at: "2026-10-01T00:00:00Z", state_changed_at: "2026-10-01T01:00:00Z" }, email_verified: true } : {}),
+    ...(account.local && suppression !== undefined ? { email_suppression: suppression } : {}),
     ...(account.local && recovers ? { two_factor_enabled: false } : {}),
     roles: [],
     actions: [],
@@ -160,6 +171,10 @@ async function moderatorServer(page: Page, permissions: readonly string[] = mode
     if (key === `GET /admin/accounts/${local.id}/actions`) return json(route, { items: actions });
     if (key === `GET /admin/accounts/${remote.id}/actions`) return json(route, { items: [] });
     if (key === `POST /admin/accounts/${local.id}/reveal`) return json(route, privateData);
+    if (key === `POST /admin/accounts/${local.id}/email_suppression/lift`) {
+      suppression = undefined;
+      return route.fulfill({ status: 204 });
+    }
     if (key === `POST /admin/accounts/${local.id}/password_reset_link`) return json(route, { url: resetLink, expires_at: "2026-10-17T01:00:00Z" }, 201);
     if (key === `POST /admin/accounts/${local.id}/actions`) {
       const body = request.postDataJSON() as Schemas["CreateAccountActionRequest"];
@@ -335,6 +350,36 @@ test.describe("accounts", () => {
     await expect(page.getByRole("main").getByRole("table").getByRole("rowheader", { name: emailHash })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+  });
+
+  test("shows the email suppression of a local account and lifts it after its confirmation", async ({ page, makeAxeBuilder }) => {
+    const requests = await moderatorServer(page, moderator.permissions, { suppressed: true });
+    await page.goto(`/moderation/accounts/${local.id}`);
+    const main = page.getByRole("main");
+    const region = main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true });
+    await expect(region).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    await region.getByRole("button", { name: message("admin.account.email_suppression.lift"), exact: true }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await expect(page.locator("[data-entering]")).toHaveCount(0);
+    await expectNoAxeViolations(makeAxeBuilder);
+    expect(requests.filter((request) => request.endsWith("/email_suppression/lift"))).toEqual([]);
+
+    await dialog.locator('button[type="submit"]').click();
+    await expect(dialog).toBeHidden();
+    await expect(region.getByRole("button")).toHaveCount(0);
+    await expect(region.getByRole("heading", { level: 2 })).toBeFocused();
+    expect(requests.filter((request) => request.endsWith("/email_suppression/lift"))).toEqual([`POST /admin/accounts/${local.id}/email_suppression/lift`]);
+    await expect(page.locator("[data-exiting]")).toHaveCount(0);
+    await expectNoAxeViolations(makeAxeBuilder);
+
+    // Lifted: the page opened again shows no such region.
+    await page.reload();
+    await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
+    await expect(main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true })).toHaveCount(0);
   });
 
   test("an administrator issues a password reset link for a local account after its confirmation, shown once", async ({ page, makeAxeBuilder }) => {

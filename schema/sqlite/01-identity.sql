@@ -116,7 +116,7 @@ CREATE TABLE role_permissions (
     'manage_settings', 'manage_roles', 'manage_invites', 'view_audit', 'manage_jobs',
     'manage_login_recovery', 'manage_custom_emojis', 'manage_webhooks', 'manage_announcements',
     'manage_finance', 'view_finance', 'manage_supporters', 'create_custom_emojis',
-    'manage_oauth_apps'
+    'manage_oauth_apps', 'manage_service_closure'
   )),
   PRIMARY KEY (role_id, permission)
 ) STRICT;
@@ -415,6 +415,43 @@ CREATE TABLE oauth_token_family_last_used (
 CREATE TABLE user_email_verifications (
   email_address_id TEXT NOT NULL PRIMARY KEY,
   verified_at INTEGER NOT NULL
+) STRICT;
+
+-- Event: an email to an address could not be delivered for good (hard_bounce) or its recipient
+-- marked it as spam (complaint) (ADR-0086 §5). source is where the fact came from: the mail
+-- server's rejection at sending (rejection) or an SES notification (ses). feedback_key is unique
+-- (the job ID and the attempt of a rejection, the feedbackId of an SES notification), so the
+-- same fact recorded again is one row. enhanced_status is the RFC 3463 code, such as 5.1.1,
+-- when the source names one. The address itself is user_email_addresses'.
+CREATE TABLE email_delivery_failures (
+  id TEXT NOT NULL PRIMARY KEY,
+  email_address_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('hard_bounce', 'complaint')),
+  source TEXT NOT NULL CHECK (source IN ('rejection', 'ses')),
+  feedback_key TEXT NOT NULL,
+  enhanced_status TEXT,
+  occurred_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX email_delivery_failures_feedback_key ON email_delivery_failures (feedback_key);
+CREATE INDEX email_delivery_failures_email_address_id ON email_delivery_failures (email_address_id, occurred_at);
+
+-- Event: the suppression of an address was lifted, by the user verifying it again (reverified)
+-- or by a moderator (moderator). Failures up to lifted_at no longer suppress it.
+CREATE TABLE email_suppression_lifts (
+  id TEXT NOT NULL PRIMARY KEY,
+  email_address_id TEXT NOT NULL,
+  reason TEXT NOT NULL CHECK (reason IN ('reverified', 'moderator')),
+  lifted_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX email_suppression_lifts_email_address_id ON email_suppression_lifts (email_address_id, lifted_at);
+
+-- Projection: the addresses that emails are not sent to, from the failures after the last lift
+-- of each address: kind is hard_bounce when one of them is, complaint otherwise, and failure_id
+-- is the earliest failure of that kind (my projection rebuild identity).
+CREATE TABLE email_suppressions (
+  email_address_id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('hard_bounce', 'complaint')),
+  failure_id TEXT NOT NULL
 ) STRICT;
 
 -- Resource: a sign-up from the registration page, one per user. reason is the applicant's

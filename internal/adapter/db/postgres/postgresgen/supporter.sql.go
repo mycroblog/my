@@ -927,6 +927,30 @@ func (q *Queries) ListKnownSupporterReversals(ctx context.Context, arg ListKnown
 	return items, nil
 }
 
+const listLiveSupporterSubscriptionIDs = `-- name: ListLiveSupporterSubscriptionIDs :many
+SELECT subscription_id FROM supporter_live_subscriptions ORDER BY subscription_id
+`
+
+func (q *Queries) ListLiveSupporterSubscriptionIDs(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listLiveSupporterSubscriptionIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var subscription_id string
+		if err := rows.Scan(&subscription_id); err != nil {
+			return nil, err
+		}
+		items = append(items, subscription_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLiveSupporterSubscriptionIDsOfPlan = `-- name: ListLiveSupporterSubscriptionIDsOfPlan :many
 SELECT l.subscription_id FROM supporter_live_subscriptions l
 JOIN supporter_subscription_heads h ON h.subscription_id = l.subscription_id

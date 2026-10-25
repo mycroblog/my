@@ -34,7 +34,8 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		ModerationActionID: toNullString(n.ModerationActionID), ReportID: toNullString(n.ReportID),
 		SubjectUserID: toNullString(n.SubjectUserID), SeveranceID: toNullString(n.SeveranceID), AppealID: toNullString(n.AppealID),
 		CustomEmojiRequestID: toNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: toNullString(n.SupporterSubscriptionID),
-		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -191,7 +192,8 @@ func notificationFrom(row postgresgen.Notification) notification.Notification {
 		ModerationActionID: fromNullString(row.ModerationActionID), ReportID: fromNullString(row.ReportID),
 		SubjectUserID: fromNullString(row.SubjectUserID), SeveranceID: fromNullString(row.SeveranceID), AppealID: fromNullString(row.AppealID),
 		CustomEmojiRequestID: fromNullString(row.CustomEmojiRequestID), SupporterSubscriptionID: fromNullString(row.SupporterSubscriptionID),
-		ReactionEmoji: fromNullString(row.ReactionEmoji), ReactionCustomEmojiID: fromNullString(row.ReactionCustomEmojiID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
+		ReactionEmoji: fromNullString(row.ReactionEmoji), ReactionCustomEmojiID: fromNullString(row.ReactionCustomEmojiID),
+		AccountMoveID: fromNullString(row.AccountMoveID), AccountMoveOutcome: notification.MoveOutcome(fromNullString(row.AccountMoveOutcome)), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
 	}
 }
 

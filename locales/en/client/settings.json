@@ -1762,5 +1762,25 @@
   "settings.authorized_apps.revoked": {
     "defaultMessage": "“{name}” was revoked.",
     "description": "Announcement after an authorized app was revoked. {name} is its name."
+  },
+  "settings.email_suppression.title": {
+    "defaultMessage": "Email delivery",
+    "description": "Heading of the section of the preferences that says emails do not reach the user's address; shown only while the address is suppressed."
+  },
+  "settings.email_suppression.hard_bounce": {
+    "defaultMessage": "Emails do not reach your address: an email to it bounced, so the server sends you nothing, not even notifications or a password reset email.",
+    "description": "Text of that section after a hard bounce: nothing reaches the address."
+  },
+  "settings.email_suppression.complaint": {
+    "defaultMessage": "An email from this server was marked as spam, so notification emails are no longer sent to your address. The emails needed to sign in are still sent.",
+    "description": "Text of that section after a spam complaint: notification emails are not sent."
+  },
+  "settings.email_suppression.since": {
+    "defaultMessage": "Since {since}",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "settings.email_suppression.hard_bounce.action": {
+    "defaultMessage": "Once your mailbox works, ask for the verification email again. Verifying the address lets the server send email to it again and removes this notice.",
+    "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
   }
 }

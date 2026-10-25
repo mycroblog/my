@@ -426,5 +426,45 @@
   "admin.account.password_reset.copy_failed": {
     "defaultMessage": "Could not copy the link.",
     "description": "Toast when copying the password reset link failed."
+  },
+  "admin.account.email_suppression.title": {
+    "defaultMessage": "Email delivery",
+    "description": "Heading of the region of a local account's admin page about the suppression of its email address (emails no longer reach it)."
+  },
+  "admin.account.email_suppression.hard_bounce": {
+    "defaultMessage": "Emails do not reach this address: an email to it bounced. The server sends it nothing except a verification email that the user asks for.",
+    "description": "Text while the account's primary address is suppressed after a hard bounce."
+  },
+  "admin.account.email_suppression.complaint": {
+    "defaultMessage": "The recipient marked an email as spam. The server sends no more notification emails, but still sends the ones needed to sign in and keep the account safe.",
+    "description": "Text while the account's primary address is suppressed after a spam complaint."
+  },
+  "admin.account.email_suppression.since": {
+    "defaultMessage": "Since {since}",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "admin.account.email_suppression.lift": {
+    "defaultMessage": "Lift the suppression",
+    "description": "Button (and the confirmation's button) that lifts the email suppression of the account."
+  },
+  "admin.account.email_suppression.lift.description": {
+    "defaultMessage": "Use it after the user fixed their mailbox. If the address fails again, it is suppressed again. The lift is recorded in the audit log.",
+    "description": "Explanation above the button that lifts the email suppression. The lift is recorded in the audit log."
+  },
+  "admin.account.email_suppression.confirm.title": {
+    "defaultMessage": "Lift the email suppression of {handle}?",
+    "description": "Title of the confirmation of lifting the email suppression. {handle} is the account's handle."
+  },
+  "admin.account.email_suppression.confirm.description": {
+    "defaultMessage": "The server will send email to this address again.",
+    "description": "Body of the confirmation of lifting the email suppression."
+  },
+  "admin.account.email_suppression.lifted": {
+    "defaultMessage": "Lifted the email suppression of {handle}.",
+    "description": "Status message after lifting the email suppression of the account {handle}."
+  },
+  "admin.account.email_suppression.failed": {
+    "defaultMessage": "Could not lift the suppression: {reason}",
+    "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
   }
 }

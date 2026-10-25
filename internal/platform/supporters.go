@@ -68,8 +68,8 @@ func (a *App) setUpSupporterNotifications(cfg *config.Config, repo notification.
 			deps.Outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 		}
 		notification.RegisterSupporterJobs(a.Handlers, notification.SupporterMailDeps{
-			Mailboxes: supporterUsers{a}, Mailer: a.Mailer, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
-			InstanceName: a.instanceName,
+			Mailboxes: supporterUsers{a}, Mailer: a.Mailer, Rejections: a.Identity, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
+			MailSite: a.mailSite,
 		})
 	}
 	notification.RegisterSupporterProjectors(a.Projectors, deps)
@@ -80,7 +80,8 @@ func (a *App) setUpSupporterNotifications(cfg *config.Config, repo notification.
 type supporterUsers struct{ a *App }
 
 // SupporterMailbox implements notification.SupporterMailboxes: the primary address and the
-// locale of the user of a local account.
+// locale of the user of a local account, unless the suppression of the address stops
+// notifications (ADR-0086 §5).
 func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) (notification.Mailbox, bool, error) {
 	userID, err := moderatorStaff(u).userOf(ctx, accountID)
 	if err != nil || userID == "" {
@@ -93,7 +94,11 @@ func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) 
 	if err != nil || !user.EmailVerified {
 		return notification.Mailbox{}, false, err
 	}
-	return notification.Mailbox{Address: user.Email, Locale: user.Locale}, true, nil
+	addressID, ok, err := u.a.Identity.NotificationAddress(ctx, userID)
+	if err != nil || !ok {
+		return notification.Mailbox{}, false, err
+	}
+	return notification.Mailbox{EmailAddressID: addressID, Address: user.Email, Locale: user.Locale}, true, nil
 }
 
 // AccountIDs implements supporters.Users.

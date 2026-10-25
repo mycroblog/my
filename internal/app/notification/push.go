@@ -187,6 +187,9 @@ type PushDeps struct {
 	// InstanceName returns the instance's display name; nil or "" names
 	// it by Host.
 	InstanceName func(ctx context.Context) string
+	// Stopped reports whether the closure of the service stops Web Push (ADR-0088 §2), read
+	// per message; nil never stops it.
+	Stopped func(ctx context.Context) (bool, error)
 }
 
 // PushService runs the Web Push use cases of the client API (FR-206): reading, registering, and
@@ -297,6 +300,15 @@ func (s *PushService) RegisterPushJobs(reg *queue.JobHandlerRegistry) {
 func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 	if s.d.Sender == nil {
 		return queue.Done()
+	}
+	if s.d.Stopped != nil {
+		stopped, err := s.d.Stopped(ctx)
+		if err != nil {
+			return queue.Retry(0, err)
+		}
+		if stopped {
+			return queue.Done() // the server is closed: the message is dropped
+		}
 	}
 	sub, err := s.d.Repository.FindPushSubscription(ctx, job.SubscriptionID)
 	if errors.Is(err, ErrNotFound) {
@@ -457,6 +469,10 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		p.Title = l.ServerPushReportResolved(instance)
 	case notification.TypeRelationshipsSevered:
 		p.Title = l.ServerPushRelationshipsSevered(instance)
+	case notification.TypeAccountMoved:
+		p.Title, p.Path = l.ServerPushAccountMoved(name), "/@"+source.Acct
+	case notification.TypeAdminAccountMoved:
+		p.Title = l.ServerPushAdminAccountMoved(instance)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

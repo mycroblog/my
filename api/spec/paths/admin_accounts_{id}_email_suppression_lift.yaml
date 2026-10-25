@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: liftAdminAccountEmailSuppression
+  summary: Lift the suppression of the email address of a local account
+  description: |
+    Lets the server send email again to the primary address of a local account's user, which
+    a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+    mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+    the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+    `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+    `manage_accounts` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/AdminAccountId.yaml
+  responses:
+    "204":
+      description: The suppression is lifted.
+    default:
+      $ref: ../components/responses/Problem.yaml

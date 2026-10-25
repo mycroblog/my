@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
@@ -229,4 +230,31 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	e.checkUnread(t, helper, 0)
 	e.staff.set(helper, notification.PermissionManageReports)
 	check(helper, report)
+}
+
+// notificationLimitedMoves checks admin_account_moved (ADR-0089): the move of an account that
+// moderation limits goes once to the holders of manage_accounts, naming the move, and the move of
+// an account without a limit to nobody.
+func notificationLimitedMoves(t *testing.T, e *notificationEnv) {
+	mod, helper := e.user(t, "mod"), e.user(t, "helper")
+	e.staff.set(mod, notification.PermissionManageAccounts)
+	e.staff.set(helper, notification.PermissionManageReports)
+	moved := func(limited bool) appaccount.Moved {
+		e.clock.Advance(time.Second)
+		return appaccount.Moved{SourceLimited: limited, Move: appaccount.Move{
+			ID: e.ids.NewID(), AccountID: e.ids.NewID(), TargetAccountID: e.ids.NewID(), InitiatedBy: "remote", OccurredAt: e.clock.Now(),
+		}}
+	}
+	plain := moved(false)
+	e.project(t, plain)
+	limited := moved(true)
+	e.project(t, limited)
+	e.project(t, limited)
+	ns := e.list(t, mod)
+	if len(ns) != 1 || ns[0].Type != notification.TypeAdminAccountMoved || ns[0].AccountMoveID != limited.Move.ID || ns[0].SourceAccountID != "" {
+		t.Errorf("notifications of the moderator = %+v, want one admin_account_moved of %s", ns, limited.Move.ID)
+	}
+	if ns := e.list(t, helper); len(ns) != 0 {
+		t.Errorf("notifications without manage_accounts = %+v, want none", ns)
+	}
 }

@@ -1,95 +1,171 @@
 {
+  "mail.action.open_notifications": {
+    "defaultMessage": "通知を開く",
+    "description": "Label of the link in an email that opens the notifications of the web client."
+  },
+  "mail.action.set_new_password": {
+    "defaultMessage": "新しいパスワードを設定する",
+    "description": "Label of the link in an email that sets a new password."
+  },
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "{instance} のモデレーターが制限しているアカウントが別のアカウントに移転しました。移転先のアカウントには制限が引き継がれません。",
+    "description": "Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "{instance} で制限中のアカウントが別のアカウントに移転しました",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_appeal.body": {
-    "defaultMessage": "{instance} の利用者が処分に異議を申し立て、モデレーターの審査を待っています。\n\n次のリンクから通知を開いて、確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
-    "description": "Plain-text body of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} の利用者が処分に異議を申し立て、モデレーターの審査を待っています。",
+    "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.subject": {
     "defaultMessage": "{instance} のモデレーターに新しい異議申し立てが届きました",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_custom_emoji_request.body": {
-    "defaultMessage": "{instance} の利用者が、カスタム絵文字の作成か画像の差し替えを申請し、審査を待っています。\n\n通知から確認できます：\n\n{url}\n\nこのメールは、モデレーターへの通知をメールでも受け取る設定にしているため送られています。設定から止められます。",
-    "description": "Plain-text body of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} の利用者が、カスタム絵文字の作成か画像の差し替えを申請し、審査を待っています。",
+    "description": "Paragraph of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_custom_emoji_request.subject": {
     "defaultMessage": "{instance} のカスタム絵文字の申請が審査を待っています",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_report.body": {
-    "defaultMessage": "{instance} のモデレーターに新しい通報が届きました。\n\n次のリンクから通知を開いて、確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
-    "description": "Plain-text body of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} のモデレーターに新しい通報が届きました。",
+    "description": "Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_report.subject": {
     "defaultMessage": "{instance} のモデレーターに新しい通報が届きました",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_sign_up.body": {
-    "defaultMessage": "{instance} に新しい利用者が登録し、承認を待っています。\n\n次のリンクから通知を開いて、登録を確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
-    "description": "Plain-text body of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} に新しい利用者が登録し、承認を待っています。",
+    "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_sign_up.subject": {
     "defaultMessage": "{instance} に承認待ちの登録があります",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_webhook_disabled.body": {
-    "defaultMessage": "{instance} の webhook のひとつを、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先がなくなったと答えました。\n\nどの webhook かは通知で確認できます。宛先が直ったら、もう一度有効にしてください：\n\n{url}\n\nこのメールは、モデレーターへの通知をメールでも受け取る設定にしているため送られています。設定から止められます。",
-    "description": "Plain-text body of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} の webhook のひとつを、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先がなくなったと答えました。",
+    "description": "First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.detail": {
+    "defaultMessage": "どの webhook かは通知で確認できます。宛先が直ったら、もう一度有効にしてください。",
+    "description": "Second paragraph of the email to an administrator about a webhook endpoint that the server turned off, before the link to the notifications."
   },
   "mail.admin_webhook_disabled.subject": {
     "defaultMessage": "{instance} の webhook が無効になりました",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "{instance} のアカウントのパスワードが変更され、ほかのセッションとアプリはログアウトしました。\n\n変更した覚えがない場合は、ほかの誰かがパスワードを知っているかもしれません。すぐに新しいパスワードを設定してください。\n\n{url}\n\nこのメールは {host} から送られました。",
-    "description": "Plain-text body of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link (keep it on its own line)."
+    "defaultMessage": "{instance} のアカウントのパスワードが変更され、ほかのセッションとアプリはログアウトしました。",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.detail": {
+    "defaultMessage": "変更した覚えがない場合は、ほかの誰かがパスワードを知っているかもしれません。すぐに新しいパスワードを設定してください。",
+    "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
   },
   "mail.password_changed.subject": {
     "defaultMessage": "{instance} のパスワードが変更されました",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "{instance} のアカウントのパスワードが削除され、ほかのセッションとアプリはログアウトしました。これからはパスキーでログインします。\n\n削除した覚えがない場合は、ほかの誰かがアカウントにログインしているかもしれません。すぐに新しいパスワードを設定してください。\n\n{url}\n\nこのメールは {host} から送られました。",
-    "description": "Plain-text body of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link, which sets a new password (keep it on its own line)."
+    "defaultMessage": "{instance} のアカウントのパスワードが削除され、ほかのセッションとアプリはログアウトしました。これからはパスキーでログインします。",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.detail": {
+    "defaultMessage": "削除した覚えがない場合は、ほかの誰かがアカウントにログインしているかもしれません。すぐに新しいパスワードを設定してください。",
+    "description": "Second paragraph of the email that tells a user their password was removed, before the link that asks for a password reset link, which sets a new password."
   },
   "mail.password_removed.subject": {
     "defaultMessage": "{instance} のパスワードが削除されました",
     "description": "Subject of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_reset.body": {
-    "defaultMessage": "{instance} のアカウントのパスワードの再設定が求められました。\n\n次のリンクを開いて、新しいパスワードを設定してください。\n\n{url}\n\n{minutes, plural, other {リンクは # 分間、1 回だけ使えます。}}{host} で求めた覚えがない場合は、このメールを無視してください。パスワードは変わりません。",
-    "description": "Plain-text body of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the reset link (keep it on its own line), {minutes} how long the link works."
+    "defaultMessage": "{instance} のアカウントのパスワードの再設定が求められました。",
+    "description": "First paragraph of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.detail": {
+    "defaultMessage": "{minutes, plural, other {リンクは # 分間、1 回だけ使えます。}}",
+    "description": "Second paragraph of the email with a password reset link: how long the link works. {minutes} is the number of minutes."
+  },
+  "mail.password_reset.reason": {
+    "defaultMessage": "{host} でパスワードの再設定が求められたため、このメールを送りました。求めた覚えがない場合は、このメールを無視してください。パスワードは変わりません。",
+    "description": "Sentence of the signature of the email with a password reset link: why it comes. {host} is the server's domain name."
   },
   "mail.password_reset.subject": {
     "defaultMessage": "{instance} のパスワードの再設定",
     "description": "Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.reason.account": {
+    "defaultMessage": "{instance} のアカウントのメールアドレスに送っています。",
+    "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.moderator_notifications": {
+    "defaultMessage": "モデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
+    "description": "Why a moderator who chose to get moderator notifications by email gets an email about a new item."
+  },
+  "mail.reason.supporter": {
+    "defaultMessage": "{instance} のサポーターのプランに加入している、または加入していたため、このメールが届いています。",
+    "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.signature.contact": {
+    "defaultMessage": "連絡先：{email}",
+    "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
+  },
+  "mail.supporter_payment_failed.action": {
+    "defaultMessage": "支払い方法を直す",
+    "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."
+  },
   "mail.supporter_payment_failed.body": {
-    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の支払いに失敗しました。\n\nプランの特典は {endsAt}（UTC）まで続きます。それまでに支払いが成功しなければ、特典はなくなります。支払い方法はこちらで直せます：\n\n{url}\n\n{instance} のサポーターのプランに加入しているため、このメールが届いています。",
-    "description": "Plain-text body of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {endsAt} the end of the grace period as YYYY-MM-DD HH:MM in UTC; {url} the link to the supporter page of the web client (keep it on its own line)."
+    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の支払いに失敗しました。",
+    "description": "First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_payment_failed.detail": {
+    "defaultMessage": "プランの特典は {endsAt}（UTC）まで続きます。それまでに支払いが成功しなければ、特典はなくなります。",
+    "description": "Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC."
   },
   "mail.supporter_payment_failed.subject": {
     "defaultMessage": "{instance} のサポーターのプランの支払いに失敗しました",
     "description": "Subject of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_plan_retired.body": {
-    "defaultMessage": "{instance} の管理者が、加入しているサポーターのプラン「{plan}」を廃止しました。\n\n加入は解約され、更新されません。支払いが遅れていなければ、支払い済みの期間の終わりまでプランの特典が続きます。\n\n通知を開く：\n\n{url}\n\n{instance} のサポーターのプランに加入しているため、このメールが届いています。",
-    "description": "Plain-text body of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} の管理者が、加入しているサポーターのプラン「{plan}」を廃止しました。",
+    "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "加入は解約され、更新されません。支払いが遅れていなければ、支払い済みの期間の終わりまでプランの特典が続きます。",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
   },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "{instance} のサポーターのプランが廃止されました",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の加入が終わり、特典もなくなりました。{reason, select, lapsed {支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。} reversed {支払いが全額返金されたか、チャージバックされました。} plan_retired {管理者がプランを廃止しました。} account_suspended {アカウントが凍結されました。} staff {管理者が加入を解約しました。} other {加入が解約されました。}}\n\n通知を開く：\n\n{url}\n\n{instance} のサポーターのプランに加入していたため、このメールが届いています。",
-    "description": "Plain-text body of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の加入が終わり、特典もなくなりました。{reason, select, lapsed {支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。} reversed {支払いが全額返金されたか、チャージバックされました。} plan_retired {管理者がプランを廃止しました。} account_suspended {アカウントが凍結されました。} staff {管理者が加入を解約しました。} other {加入が解約されました。}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "{instance} のサポーターのプランの加入が終わりました",
     "description": "Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.verify_email.action": {
+    "defaultMessage": "メールアドレスを確認する",
+    "description": "Label of the link in the email that confirms a new account's email address."
+  },
   "mail.verify_email.body": {
-    "defaultMessage": "{instance} へようこそ。\n\n次のリンクを開いて、メールアドレスを確認してください。\n\n{url}\n\n{hours, plural, other {リンクの有効期限は # 時間です。}}{host} に登録した覚えがない場合は、このメールを無視してください。",
-    "description": "Plain-text body of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the confirmation link (keep it on its own line), {hours} how long the link works."
+    "defaultMessage": "{instance} へようこそ。",
+    "description": "First paragraph of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.detail": {
+    "defaultMessage": "{hours, plural, other {リンクの有効期限は # 時間です。}}",
+    "description": "Second paragraph of the email that confirms a new account's email address: how long the link works. {hours} is the number of hours."
+  },
+  "mail.verify_email.reason": {
+    "defaultMessage": "{host} の登録にこのメールアドレスが使われたため、このメールを送りました。登録した覚えがない場合は、このメールを無視してください。",
+    "description": "Sentence of the signature of the email that confirms a new account's email address: why it comes. {host} is the server's domain name."
   },
   "mail.verify_email.subject": {
     "defaultMessage": "{instance} のメールアドレスの確認",

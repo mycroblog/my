@@ -22,8 +22,9 @@ import (
 // the verification and the reset emails issue a new token on every run, commit it, and only
 // then send it, so that the secret appears in the email's body only; a retried or repeated run
 // may send a second email with another link that works too, which is harmless, since both work
-// once and expire. Before it sends, a handler checks that there is still a reason to, and
-// finishes without sending when there is none. The errors of the handlers name the job's type,
+// once and expire. Before it sends, a handler checks that there is still a reason to and that
+// the suppression of the address does not stop the email (ADR-0086 §5), and finishes without
+// sending otherwise; a rejected recipient is recorded as a hard bounce. The errors of the handlers name the job's type,
 // the user's ID, and what the Mailer reported, never the address, the token, or the body.
 
 // The job types of the identity module's emails.
@@ -88,13 +89,13 @@ func (s *Service) RegisterMailJobs(reg *queue.JobHandlerRegistry) {
 
 // mailHandler returns the handler of a job whose payload is a T and that send runs: a payload
 // that does not decode fails the job, and send's error decides as queue.MailResult does.
-func mailHandler[T any](send func(ctx context.Context, job T) error) queue.Handler {
+func mailHandler[T any](send func(ctx context.Context, run queue.Job, job T) error) queue.Handler {
 	return func(ctx context.Context, j queue.Job) queue.Result {
 		var job T
 		if err := json.Unmarshal(j.Payload, &job); err != nil {
 			return queue.Fail(fmt.Errorf("identity: the payload of %s %s: %w", j.Type, j.ID, err))
 		}
-		return queue.MailResult(send(ctx, job))
+		return queue.MailResult(send(ctx, j, job))
 	}
 }
 
@@ -134,9 +135,9 @@ func (s *Service) enqueuePasswordNotice(ctx context.Context, tx uow.Tx, userID s
 }
 
 // sendVerificationEmail runs JobVerificationEmail: while the address is still the user's
-// primary address, unverified, and the request is not older than VerificationEmailDeadline, it
-// issues a verification token and sends its link.
-func (s *Service) sendVerificationEmail(ctx context.Context, job verificationEmail) error {
+// primary address, unverified or suppressed by a hard bounce, and the request is not older than
+// VerificationEmailDeadline, it issues a verification token and sends its link.
+func (s *Service) sendVerificationEmail(ctx context.Context, run queue.Job, job verificationEmail) error {
 	now := s.d.Clock.Now()
 	if now.Sub(job.RequestedAt) > VerificationEmailDeadline {
 		return nil
@@ -148,8 +149,13 @@ func (s *Service) sendVerificationEmail(ctx context.Context, job verificationEma
 	if err != nil {
 		return err
 	}
-	if verified || email.ID != job.EmailAddressID {
+	if email.ID != job.EmailAddressID {
 		return nil
+	}
+	if verified {
+		if again, err := s.verifiesAgain(ctx, email.ID); err != nil || !again {
+			return err
+		}
 	}
 	prefs, err := s.d.Repository.FindPreferences(ctx, job.UserID)
 	if err != nil && !errors.Is(err, ErrNotFound) {
@@ -167,18 +173,24 @@ func (s *Service) sendVerificationEmail(ctx context.Context, job verificationEma
 	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertUserToken(ctx, tx, t) }); err != nil {
 		return err
 	}
-	return s.send(ctx, JobVerificationEmail, job.UserID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, run, JobVerificationEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailVerifyEmailSubject(m.name),
-		Text:    m.l.ServerMailVerifyEmailBody(m.host, int(EmailVerificationTTL/time.Hour), m.name, s.link(PathVerifyEmail, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailVerifyEmailBody(m.name),
+			m.l.ServerMailVerifyEmailDetail(int(EmailVerificationTTL / time.Hour)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailVerifyEmailAction(), URL: s.link(PathVerifyEmail, secret)},
+		Reason: m.l.ServerMailVerifyEmailReason(m.host),
 	})
 }
 
 // sendPasswordResetEmail runs JobPasswordResetEmail: while users can ask for a reset link by
 // email, the user's local account can sign in, the user has a primary address, and the request
 // is not older than PasswordResetEmailDeadline, it issues a reset token and sends its link to
-// that address.
-func (s *Service) sendPasswordResetEmail(ctx context.Context, job passwordResetEmail) error {
+// that address unless its suppression stops it. The answer to the request is the same either
+// way, so that it does not tell whether an address has an account.
+func (s *Service) sendPasswordResetEmail(ctx context.Context, run queue.Job, job passwordResetEmail) error {
 	if !s.PasswordResetByEmail() || s.d.Clock.Now().Sub(job.RequestedAt) > PasswordResetEmailDeadline {
 		return nil
 	}
@@ -195,6 +207,9 @@ func (s *Service) sendPasswordResetEmail(ctx context.Context, job passwordResetE
 	if err != nil {
 		return err
 	}
+	if stopped, err := s.mailStopped(ctx, email.ID, identity.MailTransactional); err != nil || stopped {
+		return err
+	}
 	prefs, err := s.d.Repository.FindPreferences(ctx, job.UserID)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
@@ -207,17 +222,23 @@ func (s *Service) sendPasswordResetEmail(ctx context.Context, job passwordResetE
 	if err != nil {
 		return err
 	}
-	return s.send(ctx, JobPasswordResetEmail, job.UserID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, run, JobPasswordResetEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailPasswordResetSubject(m.name),
-		Text:    m.l.ServerMailPasswordResetBody(m.host, m.name, int(PasswordResetTTL/time.Minute), s.link(PathResetPassword, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailPasswordResetBody(m.name),
+			m.l.ServerMailPasswordResetDetail(int(PasswordResetTTL / time.Minute)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathResetPassword, secret)},
+		Reason: m.l.ServerMailPasswordResetReason(m.host),
 	})
 }
 
 // sendPasswordNoticeEmail runs JobPasswordNoticeEmail: it tells the user that their password
 // changed or was removed, with the link that asks for a reset in case they did not do it. It
-// sends nothing without email delivery or a primary address.
-func (s *Service) sendPasswordNoticeEmail(ctx context.Context, job passwordNoticeEmail) error {
+// sends nothing without email delivery or a primary address, or when the suppression of the
+// address stops it.
+func (s *Service) sendPasswordNoticeEmail(ctx context.Context, run queue.Job, job passwordNoticeEmail) error {
 	if !s.PasswordResetByEmail() {
 		return nil
 	}
@@ -228,6 +249,9 @@ func (s *Service) sendPasswordNoticeEmail(ctx context.Context, job passwordNotic
 	if err != nil {
 		return err
 	}
+	if stopped, err := s.mailStopped(ctx, email.ID, identity.MailTransactional); err != nil || stopped {
+		return err
+	}
 	prefs, err := s.d.Repository.FindPreferences(ctx, job.UserID)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
@@ -236,28 +260,50 @@ func (s *Service) sendPasswordNoticeEmail(ctx context.Context, job passwordNotic
 	if err != nil {
 		return err
 	}
-	msg := kernel.MailMessage{To: email.Address}
+	d := kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathForgotPassword, "")},
+		Reason: m.l.ServerMailReasonAccount(m.name),
+	}
 	switch job.Notice {
 	case passwordChanged:
-		msg.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordChangedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordChangedBody(m.name), m.l.ServerMailPasswordChangedDetail()}
 	case passwordRemoved:
-		msg.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordRemovedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordRemovedBody(m.name), m.l.ServerMailPasswordRemovedDetail()}
 	default:
 		return nil
 	}
-	return s.send(ctx, JobPasswordNoticeEmail, job.UserID, msg)
+	return s.send(ctx, run, JobPasswordNoticeEmail, job.UserID, email.ID, m.composer, d)
 }
 
-// send sends m, the email of the job jobType to userID. Its error names the job's type and the
-// user's ID with the Mailer's error, which never contains the address or the body.
-func (s *Service) send(ctx context.Context, jobType, userID string, m kernel.MailMessage) error {
+// send composes d with c and sends it, the email of the run of the job jobType to the address
+// emailAddressID of userID, and records a rejected recipient as a hard bounce of the address.
+// Its error names the job's type and the user's ID with the composer's or the Mailer's error,
+// which never contains the address or the body; when the hard bounce cannot be recorded, it is
+// that error, which retries the job.
+func (s *Service) send(ctx context.Context, run queue.Job, jobType, userID, emailAddressID string, c kernel.MailComposer, d kernel.MailDraft) error {
 	if s.d.Mailer == nil {
 		return nil
 	}
-	if err := s.d.Mailer.Send(ctx, m); err != nil {
-		return fmt.Errorf("identity: send the %s email of user %s: %w", jobType, userID, err)
+	m, err := c.Compose(d)
+	if err != nil {
+		return fmt.Errorf("identity: compose the %s email of user %s: %w", jobType, userID, err)
 	}
-	return nil
+	err = s.d.Mailer.Send(ctx, m)
+	if err == nil {
+		return nil
+	}
+	if rerr := s.RecordRecipientRejection(ctx, run, emailAddressID, err); rerr != nil {
+		return fmt.Errorf("identity: record the rejected %s email of user %s: %w", jobType, userID, rerr)
+	}
+	return fmt.Errorf("identity: send the %s email of user %s: %w", jobType, userID, err)
+}
+
+// verifiesAgain reports whether a verified address takes a verification email: when a hard
+// bounce suppresses it, so that the user can show that it receives email again.
+func (s *Service) verifiesAgain(ctx context.Context, emailAddressID string) (bool, error) {
+	sup, ok, err := s.EmailSuppression(ctx, emailAddressID)
+	return ok && sup.Kind == identity.EmailHardBounce, err
 }

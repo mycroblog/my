@@ -22,7 +22,13 @@ type (
 	Account    = account.Account
 	Key        = account.Key
 	RemoteHead = account.RemoteHead
+	Move       = account.Move
+	MoveState  = account.MoveState
 )
+
+// ErrMoveTooSoon reports a move of an account to another target too soon after its newest
+// move; see account.ErrMoveTooSoon.
+var ErrMoveTooSoon = account.ErrMoveTooSoon
 
 // Handle check outcomes, for HandleCheck.Outcome.
 const (

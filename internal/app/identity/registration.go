@@ -382,10 +382,12 @@ func (s *Service) RegistrationMode(ctx context.Context) (identity.RegistrationMo
 }
 
 // mailContext is what an email to a user names: the localizer of the user's locale, the
-// instance's host, and its name for readers of that locale.
+// instance's host, and its name for readers of that locale, with the composer that adds the
+// common signature and envelope (ADR-0086 §2).
 type mailContext struct {
 	l          *i18n.Localizer
 	host, name string
+	composer   kernel.MailComposer
 }
 
 // mailContext returns the mailContext of an email to a user whose locale is locale.
@@ -402,12 +404,18 @@ func (s *Service) mailContext(ctx context.Context, locale string) (mailContext, 
 	if u, err := url.Parse(s.d.BaseURL); err == nil && u.Host != "" {
 		m.host = u.Host
 	}
-	m.name = m.host
-	if s.d.InstanceName != nil {
-		if n := s.d.InstanceName(ctx); n != "" {
-			m.name = n
-		}
+	var site kernel.MailSite
+	if s.d.MailSite != nil {
+		site = s.d.MailSite(ctx)
 	}
+	if site.Name == "" {
+		site.Name = m.host
+	}
+	if site.URL == "" {
+		site.URL = s.d.BaseURL
+	}
+	m.name = site.Name
+	m.composer = kernel.MailComposer{Site: site, Words: m.l}
 	return m, nil
 }
 
@@ -421,7 +429,9 @@ func (s *Service) link(path, token string) string {
 	return link
 }
 
-// VerifyEmail redeems an email verification token and marks its address verified. It fails
+// VerifyEmail redeems an email verification token and marks its address verified; when the
+// address is suppressed by a failure from before the token, it lifts the suppression
+// (reverified). It fails
 // with ErrInvalidToken when the token is unknown, expired, already used, or for another
 // purpose; a token works once.
 func (s *Service) VerifyEmail(ctx context.Context, token string) (userID string, err error) {
@@ -448,12 +458,16 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) (userID string,
 	if err != nil {
 		return "", err
 	}
+	// The address received the email of the token, so it receives email again (ADR-0086 §5).
+	if err := s.liftAfterVerification(ctx, t.EmailAddressID, t.IssuedAt, now); err != nil {
+		return "", err
+	}
 	return t.UserID, nil
 }
 
 // ResendVerificationEmail enqueues a new verification email for a user's primary address
 // (JobVerificationEmail). Earlier links keep working until they expire. It fails with ErrAlreadyVerified when the
-// address is verified, with ErrNotFound when the user has no primary address, and with a
+// address is verified and no hard bounce suppresses it, with ErrNotFound when the user has no primary address, and with a
 // *kernel.RateLimitedError after VerificationEmailLimit.
 func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) error {
 	if s.d.Mailer == nil {
@@ -464,7 +478,11 @@ func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) er
 		return err
 	}
 	if verified {
-		return ErrAlreadyVerified
+		if again, err := s.verifiesAgain(ctx, email.ID); err != nil {
+			return err
+		} else if !again {
+			return ErrAlreadyVerified
+		}
 	}
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: ResendVerificationEmail needs a RateLimiter")

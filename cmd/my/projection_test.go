@@ -20,7 +20,7 @@ func TestProjectionCommands(t *testing.T) {
 		t.Fatalf("admin create: %d %q", code, stderr)
 	}
 	code, stdout, stderr := runCmd(t, projectionCmd, "list")
-	if code != 0 || !regexp.MustCompile(`(?m)^account +account +account_handles, account_profile_heads, account_lifecycle_states, remote_account_heads$`).MatchString(stdout) ||
+	if code != 0 || !regexp.MustCompile(`(?m)^account +account +account_handles, account_profile_heads, account_lifecycle_states, remote_account_heads, account_move_states$`).MatchString(stdout) ||
 		!strings.Contains(stdout, "notification_deleted_statuses") {
 		t.Fatalf("projection list = %d %q %q", code, stdout, stderr)
 	}

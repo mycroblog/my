@@ -1208,6 +1208,13 @@ func (l *Localizer) ServerErrorsDomainMutesTooMany() string {
 	return l.format("server:errors.domain_mutes.too_many", nil)
 }
 
+// ServerErrorsEmailNotSuppressed formats "server:errors.email.not_suppressed". Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it).
+//
+//	en: The email address is not suppressed.
+func (l *Localizer) ServerErrorsEmailNotSuppressed() string {
+	return l.format("server:errors.email.not_suppressed", nil)
+}
+
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
 //
 //	en: An archive of your data is already being prepared. Wait until it is ready.
@@ -1584,6 +1591,27 @@ func (l *Localizer) ServerErrorsRoleManagedByPlanDetail() string {
 //	en: You cannot do this to your own account.
 func (l *Localizer) ServerErrorsSelfRelationship() string {
 	return l.format("server:errors.self_relationship", nil)
+}
+
+// ServerErrorsServiceClosed formats "server:errors.service_closed". API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports.
+//
+//	en: This server is closed.
+func (l *Localizer) ServerErrorsServiceClosed() string {
+	return l.format("server:errors.service_closed", nil)
+}
+
+// ServerErrorsServiceClosedDetail formats "server:errors.service_closed_detail". API error detail for HTTP 403 when the server is closed: what the users can still do.
+//
+//	en: The server has closed. You can still sign in and export your data.
+func (l *Localizer) ServerErrorsServiceClosedDetail() string {
+	return l.format("server:errors.service_closed_detail", nil)
+}
+
+// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes.
+//
+//	en: The service closure does not allow that in its current state.
+func (l *Localizer) ServerErrorsServiceClosureState() string {
+	return l.format("server:errors.service_closure.state", nil)
 }
 
 // ServerErrorsServiceUnavailable formats "server:errors.service_unavailable". Error title for HTTP 503 when the server cannot handle the request for now, e.g. another server it needs to reach is not responding.
@@ -2006,11 +2034,39 @@ func (l *Localizer) ServerHealthUnavailable() string {
 	return l.format("server:health.unavailable", nil)
 }
 
-// ServerMailAdminAppealBody formats "server:mail.admin_appeal.body". Plain-text body of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line).
+// ServerMailActionOpenNotifications formats "server:mail.action.open_notifications". Label of the link in an email that opens the notifications of the web client.
 //
-//	en: A user of {instance} appealed a moderation action, and the appeal awaits the moderators.  Open your notifications to review it:  {url}  You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailAdminAppealBody(instance string, url string) string {
-	return l.format("server:mail.admin_appeal.body", map[string]any{"instance": instance, "url": url})
+//	en: Open your notifications
+func (l *Localizer) ServerMailActionOpenNotifications() string {
+	return l.format("server:mail.action.open_notifications", nil)
+}
+
+// ServerMailActionSetNewPassword formats "server:mail.action.set_new_password". Label of the link in an email that sets a new password.
+//
+//	en: Set a new password
+func (l *Localizer) ServerMailActionSetNewPassword() string {
+	return l.format("server:mail.action.set_new_password", nil)
+}
+
+// ServerMailAdminAccountMovedBody formats "server:mail.admin_account_moved.body". Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account that the moderators of {instance} limit moved to another account. The account it moved to does not get the limit.
+func (l *Localizer) ServerMailAdminAccountMovedBody(instance string) string {
+	return l.format("server:mail.admin_account_moved.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminAccountMovedSubject formats "server:mail.admin_account_moved.subject". Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account limited on {instance} moved to another account
+func (l *Localizer) ServerMailAdminAccountMovedSubject(instance string) string {
+	return l.format("server:mail.admin_account_moved.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminAppealBody formats "server:mail.admin_appeal.body". Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A user of {instance} appealed a moderation action, and the appeal awaits the moderators.
+func (l *Localizer) ServerMailAdminAppealBody(instance string) string {
+	return l.format("server:mail.admin_appeal.body", map[string]any{"instance": instance})
 }
 
 // ServerMailAdminAppealSubject formats "server:mail.admin_appeal.subject". Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none.
@@ -2020,11 +2076,11 @@ func (l *Localizer) ServerMailAdminAppealSubject(instance string) string {
 	return l.format("server:mail.admin_appeal.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailAdminCustomEmojiRequestBody formats "server:mail.admin_custom_emoji_request.body". Plain-text body of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line).
+// ServerMailAdminCustomEmojiRequestBody formats "server:mail.admin_custom_emoji_request.body". Paragraph of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A user of {instance} requested a custom emoji, or a new image of one, and the request awaits review.  Open your notifications to review it:  {url}  You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailAdminCustomEmojiRequestBody(instance string, url string) string {
-	return l.format("server:mail.admin_custom_emoji_request.body", map[string]any{"instance": instance, "url": url})
+//	en: A user of {instance} requested a custom emoji, or a new image of one, and the request awaits review.
+func (l *Localizer) ServerMailAdminCustomEmojiRequestBody(instance string) string {
+	return l.format("server:mail.admin_custom_emoji_request.body", map[string]any{"instance": instance})
 }
 
 // ServerMailAdminCustomEmojiRequestSubject formats "server:mail.admin_custom_emoji_request.subject". Subject of the email to an administrator who chose to get moderator notifications by email: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none.
@@ -2034,11 +2090,11 @@ func (l *Localizer) ServerMailAdminCustomEmojiRequestSubject(instance string) st
 	return l.format("server:mail.admin_custom_emoji_request.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailAdminReportBody formats "server:mail.admin_report.body". Plain-text body of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line).
+// ServerMailAdminReportBody formats "server:mail.admin_report.body". Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A new report awaits the moderators of {instance}.  Open your notifications to review it:  {url}  You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailAdminReportBody(instance string, url string) string {
-	return l.format("server:mail.admin_report.body", map[string]any{"instance": instance, "url": url})
+//	en: A new report awaits the moderators of {instance}.
+func (l *Localizer) ServerMailAdminReportBody(instance string) string {
+	return l.format("server:mail.admin_report.body", map[string]any{"instance": instance})
 }
 
 // ServerMailAdminReportSubject formats "server:mail.admin_report.subject". Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none.
@@ -2048,11 +2104,11 @@ func (l *Localizer) ServerMailAdminReportSubject(instance string) string {
 	return l.format("server:mail.admin_report.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailAdminSignUpBody formats "server:mail.admin_sign_up.body". Plain-text body of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line).
+// ServerMailAdminSignUpBody formats "server:mail.admin_sign_up.body". Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A new user signed up on {instance} and awaits approval.  Open your notifications to review the registration:  {url}  You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailAdminSignUpBody(instance string, url string) string {
-	return l.format("server:mail.admin_sign_up.body", map[string]any{"instance": instance, "url": url})
+//	en: A new user signed up on {instance} and awaits approval.
+func (l *Localizer) ServerMailAdminSignUpBody(instance string) string {
+	return l.format("server:mail.admin_sign_up.body", map[string]any{"instance": instance})
 }
 
 // ServerMailAdminSignUpSubject formats "server:mail.admin_sign_up.subject". Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none.
@@ -2062,11 +2118,18 @@ func (l *Localizer) ServerMailAdminSignUpSubject(instance string) string {
 	return l.format("server:mail.admin_sign_up.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailAdminWebhookDisabledBody formats "server:mail.admin_webhook_disabled.body". Plain-text body of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line).
+// ServerMailAdminWebhookDisabledBody formats "server:mail.admin_webhook_disabled.body". First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The server {instance} turned off one of its webhooks: its endpoint kept failing, or answered that it is gone.  Open your notifications to see which one, and turn it on again once the endpoint works:  {url}  You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailAdminWebhookDisabledBody(instance string, url string) string {
-	return l.format("server:mail.admin_webhook_disabled.body", map[string]any{"instance": instance, "url": url})
+//	en: The server {instance} turned off one of its webhooks: its endpoint kept failing, or answered that it is gone.
+func (l *Localizer) ServerMailAdminWebhookDisabledBody(instance string) string {
+	return l.format("server:mail.admin_webhook_disabled.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminWebhookDisabledDetail formats "server:mail.admin_webhook_disabled.detail". Second paragraph of the email to an administrator about a webhook endpoint that the server turned off, before the link to the notifications.
+//
+//	en: Open your notifications to see which one, and turn it on again once the endpoint works.
+func (l *Localizer) ServerMailAdminWebhookDisabledDetail() string {
+	return l.format("server:mail.admin_webhook_disabled.detail", nil)
 }
 
 // ServerMailAdminWebhookDisabledSubject formats "server:mail.admin_webhook_disabled.subject". Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none.
@@ -2076,11 +2139,18 @@ func (l *Localizer) ServerMailAdminWebhookDisabledSubject(instance string) strin
 	return l.format("server:mail.admin_webhook_disabled.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailPasswordChangedBody formats "server:mail.password_changed.body". Plain-text body of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link (keep it on its own line).
+// ServerMailPasswordChangedBody formats "server:mail.password_changed.body". First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The password of your account on {instance} was changed, and your other sessions and apps were signed out.  If you did not change it, someone else may know your password. Set a new one at once:  {url}  This email was sent by {host}.
-func (l *Localizer) ServerMailPasswordChangedBody(host string, instance string, url string) string {
-	return l.format("server:mail.password_changed.body", map[string]any{"host": host, "instance": instance, "url": url})
+//	en: The password of your account on {instance} was changed, and your other sessions and apps were signed out.
+func (l *Localizer) ServerMailPasswordChangedBody(instance string) string {
+	return l.format("server:mail.password_changed.body", map[string]any{"instance": instance})
+}
+
+// ServerMailPasswordChangedDetail formats "server:mail.password_changed.detail". Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link.
+//
+//	en: If you did not change it, someone else may know your password. Set a new one at once.
+func (l *Localizer) ServerMailPasswordChangedDetail() string {
+	return l.format("server:mail.password_changed.detail", nil)
 }
 
 // ServerMailPasswordChangedSubject formats "server:mail.password_changed.subject". Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none.
@@ -2090,11 +2160,18 @@ func (l *Localizer) ServerMailPasswordChangedSubject(instance string) string {
 	return l.format("server:mail.password_changed.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailPasswordRemovedBody formats "server:mail.password_removed.body". Plain-text body of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link, which sets a new password (keep it on its own line).
+// ServerMailPasswordRemovedBody formats "server:mail.password_removed.body". First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.  If you did not remove it, someone else may be signed in to your account. Set a new password at once:  {url}  This email was sent by {host}.
-func (l *Localizer) ServerMailPasswordRemovedBody(host string, instance string, url string) string {
-	return l.format("server:mail.password_removed.body", map[string]any{"host": host, "instance": instance, "url": url})
+//	en: The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.
+func (l *Localizer) ServerMailPasswordRemovedBody(instance string) string {
+	return l.format("server:mail.password_removed.body", map[string]any{"instance": instance})
+}
+
+// ServerMailPasswordRemovedDetail formats "server:mail.password_removed.detail". Second paragraph of the email that tells a user their password was removed, before the link that asks for a password reset link, which sets a new password.
+//
+//	en: If you did not remove it, someone else may be signed in to your account. Set a new password at once.
+func (l *Localizer) ServerMailPasswordRemovedDetail() string {
+	return l.format("server:mail.password_removed.detail", nil)
 }
 
 // ServerMailPasswordRemovedSubject formats "server:mail.password_removed.subject". Subject of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none.
@@ -2104,11 +2181,25 @@ func (l *Localizer) ServerMailPasswordRemovedSubject(instance string) string {
 	return l.format("server:mail.password_removed.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailPasswordResetBody formats "server:mail.password_reset.body". Plain-text body of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the reset link (keep it on its own line), {minutes} how long the link works.
+// ServerMailPasswordResetBody formats "server:mail.password_reset.body". First paragraph of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: Someone asked to reset the password of your account on {instance}.  Open this link to set a new password:  {url}  {minutes, plural, one {The link works for # minute, once.} other {The link works for # minutes, once.}} If you did not ask for it at {host}, ignore this email; your password stays as it is.
-func (l *Localizer) ServerMailPasswordResetBody(host string, instance string, minutes int, url string) string {
-	return l.format("server:mail.password_reset.body", map[string]any{"host": host, "instance": instance, "minutes": minutes, "url": url})
+//	en: Someone asked to reset the password of your account on {instance}.
+func (l *Localizer) ServerMailPasswordResetBody(instance string) string {
+	return l.format("server:mail.password_reset.body", map[string]any{"instance": instance})
+}
+
+// ServerMailPasswordResetDetail formats "server:mail.password_reset.detail". Second paragraph of the email with a password reset link: how long the link works. {minutes} is the number of minutes.
+//
+//	en: {minutes, plural, one {The link works for # minute, once.} other {The link works for # minutes, once.}}
+func (l *Localizer) ServerMailPasswordResetDetail(minutes int) string {
+	return l.format("server:mail.password_reset.detail", map[string]any{"minutes": minutes})
+}
+
+// ServerMailPasswordResetReason formats "server:mail.password_reset.reason". Sentence of the signature of the email with a password reset link: why it comes. {host} is the server's domain name.
+//
+//	en: You get this email because someone asked to reset your password at {host}. If it was not you, ignore this email; your password stays as it is.
+func (l *Localizer) ServerMailPasswordResetReason(host string) string {
+	return l.format("server:mail.password_reset.reason", map[string]any{"host": host})
 }
 
 // ServerMailPasswordResetSubject formats "server:mail.password_reset.subject". Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none.
@@ -2118,11 +2209,53 @@ func (l *Localizer) ServerMailPasswordResetSubject(instance string) string {
 	return l.format("server:mail.password_reset.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailSupporterPaymentFailedBody formats "server:mail.supporter_payment_failed.body". Plain-text body of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {endsAt} the end of the grace period as YYYY-MM-DD HH:MM in UTC; {url} the link to the supporter page of the web client (keep it on its own line).
+// ServerMailReasonAccount formats "server:mail.reason.account". Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A payment for your supporter plan “{plan}” on {instance} failed.  You keep the plan's benefits until {endsAt} (UTC). If no payment succeeds by then, they end. Update your payment method here:  {url}  You get this email because you subscribe to a supporter plan on {instance}.
-func (l *Localizer) ServerMailSupporterPaymentFailedBody(endsAt string, instance string, plan string, url string) string {
-	return l.format("server:mail.supporter_payment_failed.body", map[string]any{"endsAt": endsAt, "instance": instance, "plan": plan, "url": url})
+//	en: You get this email because this address belongs to your account on {instance}.
+func (l *Localizer) ServerMailReasonAccount(instance string) string {
+	return l.format("server:mail.reason.account", map[string]any{"instance": instance})
+}
+
+// ServerMailReasonModeratorNotifications formats "server:mail.reason.moderator_notifications". Why a moderator who chose to get moderator notifications by email gets an email about a new item.
+//
+//	en: You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
+func (l *Localizer) ServerMailReasonModeratorNotifications() string {
+	return l.format("server:mail.reason.moderator_notifications", nil)
+}
+
+// ServerMailReasonSupporter formats "server:mail.reason.supporter". Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: You get this email because you subscribe, or subscribed, to a supporter plan on {instance}.
+func (l *Localizer) ServerMailReasonSupporter(instance string) string {
+	return l.format("server:mail.reason.supporter", map[string]any{"instance": instance})
+}
+
+// ServerMailSignatureContact formats "server:mail.signature.contact". Line of the signature at the end of every email with the instance's contact address. {email} is the address.
+//
+//	en: Contact: {email}
+func (l *Localizer) ServerMailSignatureContact(email string) string {
+	return l.format("server:mail.signature.contact", map[string]any{"email": email})
+}
+
+// ServerMailSupporterPaymentFailedAction formats "server:mail.supporter_payment_failed.action". Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed.
+//
+//	en: Update your payment method
+func (l *Localizer) ServerMailSupporterPaymentFailedAction() string {
+	return l.format("server:mail.supporter_payment_failed.action", nil)
+}
+
+// ServerMailSupporterPaymentFailedBody formats "server:mail.supporter_payment_failed.body". First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
+//
+//	en: A payment for your supporter plan “{plan}” on {instance} failed.
+func (l *Localizer) ServerMailSupporterPaymentFailedBody(instance string, plan string) string {
+	return l.format("server:mail.supporter_payment_failed.body", map[string]any{"instance": instance, "plan": plan})
+}
+
+// ServerMailSupporterPaymentFailedDetail formats "server:mail.supporter_payment_failed.detail". Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC.
+//
+//	en: You keep the plan's benefits until {endsAt} (UTC). If no payment succeeds by then, they end.
+func (l *Localizer) ServerMailSupporterPaymentFailedDetail(endsAt string) string {
+	return l.format("server:mail.supporter_payment_failed.detail", map[string]any{"endsAt": endsAt})
 }
 
 // ServerMailSupporterPaymentFailedSubject formats "server:mail.supporter_payment_failed.subject". Subject of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none.
@@ -2132,11 +2265,18 @@ func (l *Localizer) ServerMailSupporterPaymentFailedSubject(instance string) str
 	return l.format("server:mail.supporter_payment_failed.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailSupporterPlanRetiredBody formats "server:mail.supporter_plan_retired.body". Plain-text body of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {url} the link to the notifications (keep it on its own line).
+// ServerMailSupporterPlanRetiredBody formats "server:mail.supporter_plan_retired.body". First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
 //
-//	en: The administrators of {instance} retired the supporter plan “{plan}” that you subscribe to.  Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.  Open your notifications:  {url}  You get this email because you subscribe to a supporter plan on {instance}.
-func (l *Localizer) ServerMailSupporterPlanRetiredBody(instance string, plan string, url string) string {
-	return l.format("server:mail.supporter_plan_retired.body", map[string]any{"instance": instance, "plan": plan, "url": url})
+//	en: The administrators of {instance} retired the supporter plan “{plan}” that you subscribe to.
+func (l *Localizer) ServerMailSupporterPlanRetiredBody(instance string, plan string) string {
+	return l.format("server:mail.supporter_plan_retired.body", map[string]any{"instance": instance, "plan": plan})
+}
+
+// ServerMailSupporterPlanRetiredDetail formats "server:mail.supporter_plan_retired.detail". Second paragraph of the email to a subscriber whose supporter plan the administrators retired.
+//
+//	en: Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
+func (l *Localizer) ServerMailSupporterPlanRetiredDetail() string {
+	return l.format("server:mail.supporter_plan_retired.detail", nil)
 }
 
 // ServerMailSupporterPlanRetiredSubject formats "server:mail.supporter_plan_retired.subject". Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none.
@@ -2146,11 +2286,11 @@ func (l *Localizer) ServerMailSupporterPlanRetiredSubject(instance string) strin
 	return l.format("server:mail.supporter_plan_retired.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailSupporterSubscriptionEndedBody formats "server:mail.supporter_subscription_ended.body". Plain-text body of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why; {url} the link to the notifications (keep it on its own line).
+// ServerMailSupporterSubscriptionEndedBody formats "server:mail.supporter_subscription_ended.body". Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why.
 //
-//	en: Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}  Open your notifications:  {url}  You get this email because you subscribed to a supporter plan on {instance}.
-func (l *Localizer) ServerMailSupporterSubscriptionEndedBody(instance string, plan string, reason string, url string) string {
-	return l.format("server:mail.supporter_subscription_ended.body", map[string]any{"instance": instance, "plan": plan, "reason": reason, "url": url})
+//	en: Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}
+func (l *Localizer) ServerMailSupporterSubscriptionEndedBody(instance string, plan string, reason string) string {
+	return l.format("server:mail.supporter_subscription_ended.body", map[string]any{"instance": instance, "plan": plan, "reason": reason})
 }
 
 // ServerMailSupporterSubscriptionEndedSubject formats "server:mail.supporter_subscription_ended.subject". Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none.
@@ -2160,11 +2300,32 @@ func (l *Localizer) ServerMailSupporterSubscriptionEndedSubject(instance string)
 	return l.format("server:mail.supporter_subscription_ended.subject", map[string]any{"instance": instance})
 }
 
-// ServerMailVerifyEmailBody formats "server:mail.verify_email.body". Plain-text body of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the confirmation link (keep it on its own line), {hours} how long the link works.
+// ServerMailVerifyEmailAction formats "server:mail.verify_email.action". Label of the link in the email that confirms a new account's email address.
 //
-//	en: Welcome to {instance}.  Open this link to confirm your email address:  {url}  {hours, plural, one {The link works for # hour.} other {The link works for # hours.}} If you did not sign up at {host}, ignore this email.
-func (l *Localizer) ServerMailVerifyEmailBody(host string, hours int, instance string, url string) string {
-	return l.format("server:mail.verify_email.body", map[string]any{"host": host, "hours": hours, "instance": instance, "url": url})
+//	en: Confirm your email address
+func (l *Localizer) ServerMailVerifyEmailAction() string {
+	return l.format("server:mail.verify_email.action", nil)
+}
+
+// ServerMailVerifyEmailBody formats "server:mail.verify_email.body". First paragraph of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Welcome to {instance}.
+func (l *Localizer) ServerMailVerifyEmailBody(instance string) string {
+	return l.format("server:mail.verify_email.body", map[string]any{"instance": instance})
+}
+
+// ServerMailVerifyEmailDetail formats "server:mail.verify_email.detail". Second paragraph of the email that confirms a new account's email address: how long the link works. {hours} is the number of hours.
+//
+//	en: {hours, plural, one {The link works for # hour.} other {The link works for # hours.}}
+func (l *Localizer) ServerMailVerifyEmailDetail(hours int) string {
+	return l.format("server:mail.verify_email.detail", map[string]any{"hours": hours})
+}
+
+// ServerMailVerifyEmailReason formats "server:mail.verify_email.reason". Sentence of the signature of the email that confirms a new account's email address: why it comes. {host} is the server's domain name.
+//
+//	en: You get this email because this address was used to sign up at {host}. If you did not sign up, ignore this email.
+func (l *Localizer) ServerMailVerifyEmailReason(host string) string {
+	return l.format("server:mail.verify_email.reason", map[string]any{"host": host})
 }
 
 // ServerMailVerifyEmailSubject formats "server:mail.verify_email.subject". Subject of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none.
@@ -2298,6 +2459,20 @@ func (l *Localizer) ServerPreviewHeaderAlt(name string) string {
 //	en: {name} (@{handle})
 func (l *Localizer) ServerPreviewTitle(handle string, name string) string {
 	return l.format("server:preview.title", map[string]any{"handle": handle, "name": name})
+}
+
+// ServerPushAccountMoved formats "server:push.account_moved". Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account.
+//
+//	en: {name} moved to another account
+func (l *Localizer) ServerPushAccountMoved(name string) string {
+	return l.format("server:push.account_moved", map[string]any{"name": name})
+}
+
+// ServerPushAdminAccountMoved formats "server:push.admin_account_moved". Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An account that the moderators of {instance} limit moved to another account
+func (l *Localizer) ServerPushAdminAccountMoved(instance string) string {
+	return l.format("server:push.admin_account_moved", map[string]any{"instance": instance})
 }
 
 // ServerPushAdminAppeal formats "server:push.admin_appeal". Web Push notification to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none.

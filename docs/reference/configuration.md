@@ -552,7 +552,7 @@ Mailer adapter for verification emails (FR-002). With `none`, no email reaches u
 
 ### `mail_from`
 
-Sender address of emails, as a bare address such as `noreply@social.example`.
+Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: "<instance name>" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set (ADR-0086 §3).
 
 - Environment variable: `MY_MAIL_FROM`
 - Default: none

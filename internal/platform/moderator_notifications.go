@@ -28,8 +28,8 @@ func (a *App) setUpModeratorNotifications(cfg *config.Config, repo notification.
 			deps.Outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 		}
 		notification.RegisterModeratorJobs(a.Handlers, notification.MailDeps{
-			Staff: staff, Mailer: a.Mailer, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
-			InstanceName: a.instanceName,
+			Staff: staff, Mailer: a.Mailer, Rejections: a.Identity, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
+			MailSite: a.mailSite,
 		})
 	}
 	notification.RegisterModeratorProjectors(a.Projectors, deps)
@@ -78,8 +78,8 @@ func (s moderatorStaff) Mailbox(ctx context.Context, accountID string) (notifica
 	if err != nil || userID == "" {
 		return notification.Mailbox{}, false, err
 	}
-	address, locale, ok, err := s.a.Identity.ModeratorMailbox(ctx, userID)
-	return notification.Mailbox{Address: address, Locale: locale}, ok, err
+	box, ok, err := s.a.Identity.ModeratorMailbox(ctx, userID)
+	return notification.Mailbox{EmailAddressID: box.EmailAddressID, Address: box.Address, Locale: box.Locale}, ok, err
 }
 
 // userOf returns the user of a local account; "" for any other account.

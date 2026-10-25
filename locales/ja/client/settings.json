@@ -1762,5 +1762,25 @@
   "settings.authorized_apps.revoked": {
     "defaultMessage": "「{name}」を取り消しました。",
     "description": "Announcement after an authorized app was revoked. {name} is its name."
+  },
+  "settings.email_suppression.title": {
+    "defaultMessage": "メールの配信",
+    "description": "Heading of the section of the preferences that says emails do not reach the user's address; shown only while the address is suppressed."
+  },
+  "settings.email_suppression.hard_bounce": {
+    "defaultMessage": "あなたのアドレスにメールが届いていません。メールが返送されたため、サーバーは通知もパスワード再設定のメールも送っていません。",
+    "description": "Text of that section after a hard bounce: nothing reaches the address."
+  },
+  "settings.email_suppression.complaint": {
+    "defaultMessage": "このサーバーからのメールが迷惑メールとして報告されたため、あなたのアドレスには通知のメールを送っていません。ログインに必要なメールは送ります。",
+    "description": "Text of that section after a spam complaint: notification emails are not sent."
+  },
+  "settings.email_suppression.since": {
+    "defaultMessage": "{since}から",
+    "description": "When the suppression started. {since} is a formatted date and time."
+  },
+  "settings.email_suppression.hard_bounce.action": {
+    "defaultMessage": "メールボックスが使えるようになったら、確認のメールをもう一度求めてください。アドレスを確認すると、サーバーがまたメールを送るようになり、この表示は消えます。",
+    "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
   }
 }

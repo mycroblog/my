@@ -326,6 +326,10 @@ func (n normalizer) actor(o object, t ActorType) (*Actor, error) {
 			a.AttributionDomains = append(a.AttributionDomains, d)
 		}
 	}
+	if aka := n.recipients(list(o.get("alsoKnownAs"))); len(aka) > 0 {
+		a.AlsoKnownAs = aka[:min(len(aka), MaxItems)]
+	}
+	a.MovedTo = n.firstRef(o.get("movedTo"))
 	for _, v := range list(o.get("publicKey")) {
 		k, ok := v.(object)
 		if !ok {

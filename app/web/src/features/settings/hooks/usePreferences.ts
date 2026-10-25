@@ -38,6 +38,8 @@ export type PreferencesControls = {
   timelineLanguages: PreferenceControl<string[]>;
   timelineAutoInsert: PreferenceControl<boolean>;
   emailModeratorNotifications: PreferenceControl<boolean>;
+  /** Why emails do not reach the primary address (read-only); undefined when they do. */
+  emailSuppression: Preferences["email_suppression"];
 };
 
 /**
@@ -58,6 +60,7 @@ export function usePreferences(): PreferencesControls {
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
     timelineAutoInsert: usePreferenceControl("timeline_auto_insert", data.timeline_auto_insert),
     emailModeratorNotifications: usePreferenceControl("email_moderator_notifications", data.email_moderator_notifications),
+    emailSuppression: data.email_suppression,
   };
 }
 

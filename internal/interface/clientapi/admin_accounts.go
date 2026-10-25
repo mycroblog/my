@@ -28,6 +28,7 @@ type AccountAdmin interface {
 	Detail(ctx context.Context, accountID string) (appidentity.AdminAccountDetail, error)
 	Reveal(ctx context.Context, accountID, byUserID string) (appidentity.PrivateData, error)
 	DisableTwoFactor(ctx context.Context, accountID, byUserID string) error
+	LiftEmailSuppression(ctx context.Context, accountID, byUserID string) error
 }
 
 // PasswordResetLinks issues the password reset links that administrators hand to users
@@ -170,6 +171,9 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 		v := d.EmailVerified
 		out.EmailVerified = &v
 	}
+	if d.EmailSuppression != nil {
+		out.EmailSuppression = newEmailSuppression(*d.EmailSuppression, true)
+	}
 	if app := d.Application; app != nil {
 		reg := AdminAccountRegistration{SubmittedAt: app.SubmittedAt.UTC(), StateChangedAt: app.SubmittedAt.UTC()}
 		if d.Registration != nil {
@@ -227,6 +231,38 @@ func (s *Server) DisableAdminAccountTwoFactor(ctx context.Context, req DisableAd
 		return nil, fmt.Errorf("clientapi: remove the two-factor authentication of account %s: %w", req.Id, err)
 	}
 	return DisableAdminAccountTwoFactor204Response{}, nil
+}
+
+// ProblemTypeEmailNotSuppressed is the problem of a lift of an email address that is not
+// suppressed.
+const ProblemTypeEmailNotSuppressed = "/api/v1/problems/email-not-suppressed"
+
+// LiftAdminAccountEmailSuppression serves POST /api/v1/admin/accounts/{id}/email_suppression/lift.
+func (s *Server) LiftAdminAccountEmailSuppression(ctx context.Context, req LiftAdminAccountEmailSuppressionRequestObject) (LiftAdminAccountEmailSuppressionResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageAccounts); err != nil {
+		return nil, err
+	} else if p != nil {
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.o.AccountAdmin.LiftEmailSuppression(ctx, req.Id, v.UserID)
+	l := s.Localizer(ctx)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appidentity.ErrNotLocalAccount):
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(
+			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+	case errors.Is(err, appidentity.ErrNotSuppressed):
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(
+			s.problem(ctx, http.StatusConflict, ProblemTypeEmailNotSuppressed, l.ServerErrorsEmailNotSuppressed(), "")), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: lift the email suppression of account %s: %w", req.Id, err)
+	}
+	return LiftAdminAccountEmailSuppression204Response{}, nil
 }
 
 // IssueAdminAccountPasswordResetLink serves POST /api/v1/admin/accounts/{id}/password_reset_link.
