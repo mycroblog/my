@@ -465,13 +465,13 @@ CREATE TABLE registration_applications (
 );
 CREATE UNIQUE INDEX registration_applications_user_id ON registration_applications (user_id);
 
--- Event: an application was approved or rejected. decided_by_user_id is NULL for the system
--- and for a decision from the CLI.
+-- Event: an application was approved or rejected. decided_by_user_id is NULL for the system,
+-- for the rejections of the announcement of the service closure, and for a decision from the CLI.
 CREATE TABLE registration_decisions (
   id uuid NOT NULL PRIMARY KEY,
   application_id uuid NOT NULL,
   decision text NOT NULL CHECK (decision IN ('approved', 'rejected')),
-  decided_by text NOT NULL CHECK (decided_by IN ('moderator', 'system')),
+  decided_by text NOT NULL CHECK (decided_by IN ('moderator', 'system', 'service_closure')),
   decided_by_user_id uuid,
   note text,
   decided_at timestamptz NOT NULL

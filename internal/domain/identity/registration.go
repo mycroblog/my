@@ -89,6 +89,9 @@ const (
 	DecidedByModerator Decider = "moderator"
 	// DecidedBySystem: the server, which approves sign-ups at once in open and invite mode.
 	DecidedBySystem Decider = "system"
+	// DecidedByServiceClosure: the server, which rejects the pending applications when the
+	// closure of the service is announced (ADR-0088 §2).
+	DecidedByServiceClosure Decider = "service_closure"
 )
 
 // RegistrationDecision records that an application was approved or rejected (data-model §4.1,

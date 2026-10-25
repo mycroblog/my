@@ -155,6 +155,9 @@ func (s *Server) decideRegistration(ctx context.Context, userID string, d identi
 		}
 		p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
 		return AdminRegistrationJSONResponse{}, &p, nil
+	case errors.Is(err, appidentity.ErrServiceClosing):
+		p := s.serviceClosingProblem(ctx)
+		return AdminRegistrationJSONResponse{}, &p, nil
 	case err != nil && !errors.Is(err, appidentity.ErrNotPending):
 		return AdminRegistrationJSONResponse{}, nil, fmt.Errorf("clientapi: decide the registration of %s: %w", userID, err)
 	}

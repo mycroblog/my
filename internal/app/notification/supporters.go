@@ -19,8 +19,9 @@ import (
 
 // The supporter notifications (ADR-0072 §16) tell a subscriber of their supporter subscription:
 // supporter_payment_failed when it enters past_due, supporter_subscription_ended when it loses
-// the plan's role by entering lapsed, expired, or revoked, and supporter_plan_retired when its
-// plan is retired. Each also comes by email, which the program needs to be enabled: a job that
+// the plan's role by entering lapsed, expired, or revoked, supporter_plan_retired when its plan
+// is retired, and supporter_service_closure when the announcement of the service closure cancels
+// it (ADR-0088 §2). Each also comes by email, which the program needs to be enabled: a job that
 // the same transaction enqueues sends it once the notification is committed. Their text never
 // leads to the subscription screen: the Web Push messages and the notifications open the
 // notifications, and only the web client links them to /settings/supporter, which the Tauri app
@@ -69,6 +70,9 @@ type SupporterDeps struct {
 //     transition.
 //   - supporters.plan_retired: supporter_plan_retired, to each subscriber who had paid, once per
 //     subscription (notification.SupporterPlanRetiredKey).
+//   - supporters.closure_notice_cancellations: supporter_service_closure, to each subscriber who
+//     had paid and whose subscription the announcement of the service closure cancels, once per
+//     subscription and announcement (notification.SupporterServiceClosureKey).
 //
 // They come from the instance and have no source account; a subscriber without a local account
 // gets nothing. Each new notification enqueues its Web Push messages and, with d.Outbox,
@@ -98,6 +102,20 @@ func RegisterSupporterProjectors(r *uow.Projectors, d SupporterDeps) {
 				RecipientAccountID: sub.AccountID, Type: notification.TypeSupporterPlanRetired, SupporterSubscriptionID: sub.SubscriptionID,
 				DedupeKey: notification.SupporterPlanRetiredKey(ev.PlanID, sub.SubscriptionID), CreatedAt: ev.At,
 			}, supporterEmail{AccountID: sub.AccountID, Type: notification.TypeSupporterPlanRetired, PlanName: ev.PlanName})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	r.Register(appsupporters.EventClosureNoticeCancellations, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appsupporters.ClosureNoticeCancellations)
+		for _, sub := range ev.Subscriptions {
+			err := p.notify(ctx, tx, notification.Notification{
+				RecipientAccountID: sub.AccountID, Type: notification.TypeSupporterServiceClosure, SupporterSubscriptionID: sub.SubscriptionID,
+				ServiceClosureEventID: ev.ClosureEventID,
+				DedupeKey:             notification.SupporterServiceClosureKey(ev.ClosureEventID, sub.SubscriptionID), CreatedAt: ev.At,
+			}, supporterEmail{AccountID: sub.AccountID, Type: notification.TypeSupporterServiceClosure, PlanName: sub.PlanName})
 			if err != nil {
 				return err
 			}
@@ -203,6 +221,9 @@ func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, run queue.Job,
 	case notification.TypeSupporterPlanRetired:
 		m.Subject = l.ServerMailSupporterPlanRetiredSubject(name)
 		m.Text = l.ServerMailSupporterPlanRetiredBody(name, job.PlanName, origin+"/notifications")
+	case notification.TypeSupporterServiceClosure:
+		m.Subject = l.ServerMailSupporterServiceClosureSubject(name)
+		m.Text = l.ServerMailSupporterServiceClosureBody(name, job.PlanName, origin+"/notifications")
 	default:
 		return nil
 	}

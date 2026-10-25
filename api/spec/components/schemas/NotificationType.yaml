@@ -41,7 +41,13 @@ description: |
   one; its `account_move` carries the target and what became of the user's follow. It is
   sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
   account that the moderators limit moved, and the target does not get the limit; its
-  `account_move` carries the target, and it has no `account`.
+  `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+  local user when the closure of the service is announced, when its dates change, and when the
+  announcement is withdrawn; `admin_service_closure_due` goes to the users with
+  `manage_service_closure` once the closing date of the announcement in effect has passed, to
+  close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+  their supporter subscription at the end of its period, with its `supporter_subscription`.
+  Their `service_closure` says what they tell of, and they have no `account`.
 type: string
 enum:
   - follow
@@ -68,3 +74,6 @@ enum:
   - supporter_plan_retired
   - account_moved
   - admin_account_moved
+  - service_closure
+  - admin_service_closure_due
+  - supporter_service_closure

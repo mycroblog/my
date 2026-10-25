@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+  tells of the closure of the service (ADR-0088). `change` is what the event of a
+  `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+  changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+  for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+  notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+type: object
+properties:
+  change:
+    type: string
+    enum: [announced, rescheduled, withdrawn]
+  closes_at:
+    description: When the server closes.
+    type: string
+    format: date-time
+  export_until:
+    description: Until when the users may still sign in and export their data.
+    type: string
+    format: date-time

@@ -31,6 +31,14 @@
     "defaultMessage": "{instance} のモデレーターに新しい通報が届きました",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.admin_service_closure_due.body": {
+    "defaultMessage": "{instance} の閉鎖日を過ぎました。サーバーは自動ではクローズしません。管理画面か my admin closure close でクローズしてください。\n\n通知を開く：\n\n{url}\n\nモデレーターの通知をメールで受け取る設定のため、このメールが届いています。設定で止められます。",
+    "description": "Plain-text body of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line). Keep the command my admin closure close as it is."
+  },
+  "mail.admin_service_closure_due.subject": {
+    "defaultMessage": "{instance} の閉鎖日を過ぎました",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_sign_up.body": {
     "defaultMessage": "{instance} に新しい利用者が登録し、承認を待っています。\n\n次のリンクから通知を開いて、登録を確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
     "description": "Plain-text body of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
@@ -86,6 +94,14 @@
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "{instance} のサポーターのプランが廃止されました",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_service_closure.body": {
+    "defaultMessage": "{instance} の管理者が、サーバーの終了を予告しました。サポーターのプラン「{plan}」の加入は解約され、更新されません。支払いが遅れていなければ、支払い済みの期間の終わりまでプランの特典が続きます。\n\n通知を開く：\n\n{url}\n\n{instance} のサポーターのプランに加入しているため、このメールが届いています。",
+    "description": "Plain-text body of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {url} the link to the notifications (keep it on its own line)."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
     "defaultMessage": "{instance} のサポーターのプラン「{plan}」の加入が終わり、特典もなくなりました。{reason, select, lapsed {支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。} reversed {支払いが全額返金されたか、チャージバックされました。} plan_retired {管理者がプランを廃止しました。} account_suspended {アカウントが凍結されました。} staff {管理者が加入を解約しました。} other {加入が解約されました。}}\n\n通知を開く：\n\n{url}\n\n{instance} のサポーターのプランに加入していたため、このメールが届いています。",

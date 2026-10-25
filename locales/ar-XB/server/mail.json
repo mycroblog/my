@@ -31,6 +31,14 @@
     "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_service_closure_due.body": {
+    "defaultMessage": "‮⊥ɥǝ ɔʅosıuƃ pɐʇǝ oɟ {instance} ɥɐs dɐssǝp. ⊥ɥǝ sǝɹʌǝɹ poǝs uoʇ ɔʅosǝ qʎ ıʇsǝʅɟ: ɔʅosǝ ıʇ ıu ʇɥǝ ɐpɯıuısʇɹɐʇıou sɔɹǝǝus oɹ ʍıʇɥ ɯʎ ɐpɯıu ɔʅosnɹǝ ɔʅosǝ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_service_closure_due.subject": {
+    "defaultMessage": "‮⊥ɥǝ ɔʅosıuƃ pɐʇǝ oɟ {instance} ɥɐs dɐssǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_sign_up.body": {
     "defaultMessage": "‮∀ uǝʍ nsǝɹ sıƃuǝp nd ou {instance} ɐup ɐʍɐıʇs ɐddɹoʌɐʅ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ʇɥǝ ɹǝƃısʇɹɐʇıou:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -85,6 +93,14 @@
   },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu ou {instance} ʍɐs ɹǝʇıɹǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.supporter_service_closure.body": {
+    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɐuuonuɔǝp ʇɥɐʇ ʇɥǝ sǝɹʌǝɹ ɔʅosǝs. ⅄onɹ snqsɔɹıdʇıou ʇo ʇɥǝ snddoɹʇǝɹ dʅɐu “{plan}” ıs ɔɐuɔǝʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝ ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ snqsɔɹıdʇıou ou {instance} ǝups ʍıʇɥ ʇɥǝ ɔʅosnɹǝ oɟ ʇɥǝ sǝɹʌǝɹ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_subscription_ended.body": {

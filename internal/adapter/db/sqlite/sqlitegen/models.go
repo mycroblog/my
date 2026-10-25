@@ -595,6 +595,8 @@ type Notification struct {
 	ReactionCustomEmojiID   sql.NullString
 	AccountMoveID           sql.NullString
 	AccountMoveOutcome      sql.NullString
+	ServiceClosureEventID   sql.NullString
+	ServiceClosureChange    sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

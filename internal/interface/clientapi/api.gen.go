@@ -2141,6 +2141,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
+	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
 	NotificationTypeAdminWebhookDisabled       NotificationType = "admin_webhook_disabled"
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
@@ -2157,8 +2158,10 @@ const (
 	NotificationTypeReaction                   NotificationType = "reaction"
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
+	NotificationTypeServiceClosure             NotificationType = "service_closure"
 	NotificationTypeSupporterPaymentFailed     NotificationType = "supporter_payment_failed"
 	NotificationTypeSupporterPlanRetired       NotificationType = "supporter_plan_retired"
+	NotificationTypeSupporterServiceClosure    NotificationType = "supporter_service_closure"
 	NotificationTypeSupporterSubscriptionEnded NotificationType = "supporter_subscription_ended"
 )
 
@@ -2174,6 +2177,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminCustomEmojiRequest:
 		return true
 	case NotificationTypeAdminReport:
+		return true
+	case NotificationTypeAdminServiceClosureDue:
 		return true
 	case NotificationTypeAdminSignUp:
 		return true
@@ -2207,9 +2212,13 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeReportResolved:
 		return true
+	case NotificationTypeServiceClosure:
+		return true
 	case NotificationTypeSupporterPaymentFailed:
 		return true
 	case NotificationTypeSupporterPlanRetired:
+		return true
+	case NotificationTypeSupporterServiceClosure:
 		return true
 	case NotificationTypeSupporterSubscriptionEnded:
 		return true
@@ -2731,6 +2740,27 @@ func (e ServerHealthStatus) Valid() bool {
 	case ServerHealthStatusOk:
 		return true
 	case ServerHealthStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceClosureNoticeChange.
+const (
+	ServiceClosureNoticeChangeAnnounced   ServiceClosureNoticeChange = "announced"
+	ServiceClosureNoticeChangeRescheduled ServiceClosureNoticeChange = "rescheduled"
+	ServiceClosureNoticeChangeWithdrawn   ServiceClosureNoticeChange = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the ServiceClosureNoticeChange enum.
+func (e ServiceClosureNoticeChange) Valid() bool {
+	switch e {
+	case ServiceClosureNoticeChangeAnnounced:
+		return true
+	case ServiceClosureNoticeChangeRescheduled:
+		return true
+	case ServiceClosureNoticeChangeWithdrawn:
 		return true
 	default:
 		return false
@@ -7282,12 +7312,16 @@ type InstanceLimits struct {
 // InstanceRegistrations How people sign up on the instance.
 type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-	// approval), `invite` (only with an invite), or `closed` (nobody).
+	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+	// the instance setting says.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-// approval), `invite` (only with an invite), or `closed` (nobody).
+// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+// the instance setting says.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
@@ -7835,6 +7869,14 @@ type Notification struct {
 	// ReportId The report that an `admin_report` is about.
 	ReportId *Id `json:"report_id,omitempty"`
 
+	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+	// tells of the closure of the service (ADR-0088). `change` is what the event of a
+	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+	// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+	// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+	// notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
+
 	// Status The post that the notification is about, as the user sees it; omitted when the user
 	// may not see it.
 	Status *Status `json:"status,omitempty"`
@@ -7885,7 +7927,13 @@ type Notification struct {
 	// one; its `account_move` carries the target and what became of the user's follow. It is
 	// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
 	// account that the moderators limit moved, and the target does not get the limit; its
-	// `account_move` carries the target, and it has no `account`.
+	// `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+	// local user when the closure of the service is announced, when its dates change, and when the
+	// announcement is withdrawn; `admin_service_closure_due` goes to the users with
+	// `manage_service_closure` once the closing date of the announcement in effect has passed, to
+	// close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+	// their supporter subscription at the end of its period, with its `supporter_subscription`.
+	// Their `service_closure` says what they tell of, and they have no `account`.
 	Type NotificationType `json:"type"`
 }
 
@@ -7957,7 +8005,13 @@ type NotificationPage struct {
 // one; its `account_move` carries the target and what became of the user's follow. It is
 // sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
 // account that the moderators limit moved, and the target does not get the limit; its
-// `account_move` carries the target, and it has no `account`.
+// `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+// local user when the closure of the service is announced, when its dates change, and when the
+// announcement is withdrawn; `admin_service_closure_due` goes to the users with
+// `manage_service_closure` once the closing date of the announcement in effect has passed, to
+// close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+// their supporter subscription at the end of its period, with its `supporter_subscription`.
+// Their `service_closure` says what they tell of, and they have no `account`.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -8533,6 +8587,10 @@ type PreviewDomainBlockImportRequest struct {
 //     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
 //     server whose closure is not announced or whose `closes_at` has not come
 //     (`POST /admin/closure/close`).
+//   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+//     stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+//     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+//     (`POST /supporter/checkout`).
 //   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
@@ -8963,6 +9021,25 @@ type ServerHealth struct {
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
 // schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
 type ServerHealthStatus string
+
+// ServiceClosureNotice What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+// tells of the closure of the service (ADR-0088). `change` is what the event of a
+// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+// notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+type ServiceClosureNotice struct {
+	Change *ServiceClosureNoticeChange `json:"change,omitempty"`
+
+	// ClosesAt When the server closes.
+	ClosesAt *time.Time `json:"closes_at,omitempty"`
+
+	// ExportUntil Until when the users may still sign in and export their data.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+}
+
+// ServiceClosureNoticeChange defines model for ServiceClosureNotice.Change.
+type ServiceClosureNoticeChange string
 
 // ServiceClosureState Where the server is in its closure (ADR-0088 §1):
 //

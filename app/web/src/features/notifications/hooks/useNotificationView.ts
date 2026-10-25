@@ -129,7 +129,22 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_plan_retired: "client:notifications.type.supporter_plan_retired",
   account_moved: "client:notifications.type.account_moved",
   admin_account_moved: "client:notifications.type.admin_account_moved",
+  service_closure: "client:notifications.type.service_closure",
+  admin_service_closure_due: "client:notifications.type.admin_service_closure_due",
+  supporter_service_closure: "client:notifications.type.supporter_service_closure",
 };
+
+/** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */
+const closureSentences: Readonly<Record<string, ClientMessageKey>> = {
+  rescheduled: "client:notifications.type.service_closure_rescheduled",
+  withdrawn: "client:notifications.type.service_closure_withdrawn",
+};
+
+/** The sentence of a `service_closure` by what it tells of (ADR-0088 §2); null for the other types. */
+function closureSentenceOf(notification: Notification): ClientMessageKey | null {
+  const change = notification.type === "service_closure" ? notification.service_closure?.change : undefined;
+  return change === undefined ? null : (closureSentences[change] ?? null);
+}
 
 /**
  * What a row shows of the supporter subscription that a supporter notification tells of (ADR-0072 §16), as it is
@@ -149,6 +164,8 @@ function supporterOf(notification: Notification, formatDate: (value: string) => 
       return { plan, detail: subscription.end_reason === undefined ? null : { kind: "ended", reason: subscription.end_reason } };
     case "supporter_plan_retired":
       return { plan, detail: { kind: "retired" } };
+    case "supporter_service_closure":
+      return { plan, detail: null };
     default:
       return null;
   }
@@ -261,6 +278,7 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return isTauriApp() ? [] : [{ href: "/settings/supporter", label: "client:notifications.link.supporter_payment" }];
     case "supporter_subscription_ended":
     case "supporter_plan_retired":
+    case "supporter_service_closure":
       return isTauriApp() ? [] : [{ href: "/settings/supporter", label: "client:notifications.link.supporter" }];
     case "relationships_severed":
       return ownAcct === null
@@ -306,6 +324,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     sentence:
       severed?.sentence ??
       requested.sentence ??
+      closureSentenceOf(notification) ??
       (target === undefined ? null : "client:notifications.report_resolved.account") ??
       (others.length > 0 && groupSentence !== undefined ? groupSentence : sentences[notification.type]),
     actor: account === undefined ? null : actorOf(account),
