@@ -73,6 +73,7 @@ For every setting see the [configuration reference](docs/reference/configuration
 
 - [Documentation index](docs/README.md): operation guides and references
 - [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md): report vulnerabilities privately, never in a public issue
 
 ## License
 
