@@ -426,6 +426,8 @@ paths:
     $ref: ./paths/admin_accounts_{id}_two_factor_disable.yaml
   /admin/accounts/{id}/password_reset_link:
     $ref: ./paths/admin_accounts_{id}_password_reset_link.yaml
+  /admin/accounts/{id}/email_suppression/lift:
+    $ref: ./paths/admin_accounts_{id}_email_suppression_lift.yaml
   /admin/roles:
     $ref: ./paths/admin_roles.yaml
   /admin/roles/{role}:
@@ -767,6 +769,8 @@ components:
       $ref: ./components/schemas/AdminAccountPrivateData.yaml
     AdminAccountRegistration:
       $ref: ./components/schemas/AdminAccountRegistration.yaml
+    EmailSuppression:
+      $ref: ./components/schemas/EmailSuppression.yaml
     AdminAccountRegistrationState:
       $ref: ./components/schemas/AdminAccountRegistrationState.yaml
     AdminAccountRestriction:

@@ -5,7 +5,8 @@ description: |
   `revealed_private_data` (a moderator was shown the account's email address and IP
   addresses), `two_factor_disabled` (an administrator removed the account's two-factor
   authentication), `password_reset_link_issued` (an administrator issued a link that sets
-  a new password for the account's user). On a `domain`:
+  a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+  suppression of the primary email address of the account's user). On a `domain`:
   `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
   `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
   `user` (a registration):
@@ -86,6 +87,7 @@ enum:
   - signup_block_lifted
   - two_factor_disabled
   - password_reset_link_issued
+  - email_suppression_lifted
   - custom_emoji_created
   - custom_emoji_image_replaced
   - custom_emoji_copied

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+  after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+  email) stops every email but the verification email that the user asks for; verifying the
+  address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+  notification and announcement emails only.
+type: object
+required: [kind, since]
+properties:
+  kind:
+    type: string
+    enum: [hard_bounce, complaint]
+  since:
+    description: When the failure that started the suppression happened.
+    type: string
+    format: date-time

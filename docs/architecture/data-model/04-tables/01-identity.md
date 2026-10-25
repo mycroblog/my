@@ -18,8 +18,15 @@
 | `user_email_addresses` | リソース | `id`, `user_id`, `address`（`string(320)`）, `address_normalized`, `added_at` | インデックス `(user_id, id)` |
 | `user_email_verifications` | イベント | `email_address_id`（PK）, `verified_at` | 確認は 1 アドレスにつき 1 回 |
 | `user_primary_emails` | 投影 | `user_id`（PK）, `email_address_id`, `address_normalized` | **一意 `(address_normalized)`**。ログイン時の照合とアドレスの重複防止 |
+| `email_delivery_failures` | イベント | `id`, `email_address_id`, `kind`（`hard_bounce` / `complaint`）, `source`（`rejection` / `ses`）, `feedback_key`, `enhanced_status`（任意。`5.1.1` など）, `occurred_at` | **一意 `(feedback_key)`**、インデックス `(email_address_id, occurred_at)` |
+| `email_suppression_lifts` | イベント | `id`, `email_address_id`, `reason`（`reverified` / `moderator`）, `lifted_at` | インデックス `(email_address_id, lifted_at)` |
+| `email_suppressions` | 投影 | `email_address_id`（PK）, `kind`, `failure_id` | 送信を止めているアドレス |
 
 - メールアドレスの変更は、新しいアドレスの追加 → 確認 → 主アドレスの切り替え（投影の更新）で表します。古いアドレスは消去ジョブの対象です。
+- 届かないアドレスと苦情を受けたアドレスへの送信を止めます（ADR-0086 §5）。`email_delivery_failures` は、送信時の宛先の拒否（`kernel.ErrRecipientRejected`。`feedback_key` は `job:<ジョブの ID>:<試行>`）と SES の通知（`feedback_key` は `feedbackId`）を記録し、一意制約で同じ事実は 1 行にします。イベントはアドレスの文字列を持たず、`user_email_addresses` を参照します。
+  - `email_suppressions` は、各アドレスの最後の解除（`lifted_at`）より後の失敗から導きます。そのうちハードバウンスがあれば最も早いハードバウンス、なければ最も早い苦情を `failure_id` にします。失敗と解除を記録するトランザクションで、そのアドレスの行を同じ規則で導き直し、`my projection rebuild identity` が全体を再構築します。
+  - ハードバウンスは利用者が求めた確認のメールを除くすべてのメールを、苦情は通知と告知のメールだけを止めます（`identity.EmailSuppression.Stops`）。パスワードのリセットのメールも送らず、応答は変えません。確認済みのアドレスでもハードバウンスで止まっていれば確認のメールを再送でき、失敗より後に発行したトークンで確認すると `reverified` の解除を記録します。モデレーターの解除（`moderator`）は監査ログに `email_suppression_lifted` を残し、その `source_event_id` は解除の `id` です。
+  - 利用者のデータの消去は、アドレスの行と一緒に失敗・解除・投影の行を消します。
 
 #### 資格情報
 

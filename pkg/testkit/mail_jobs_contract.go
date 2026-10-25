@@ -47,8 +47,9 @@ func (e *accountEnv) onlyJob(t *testing.T, jobType string) InlineResult {
 
 // passwordResetEmailJobs sends a reset email from its job (ADR-0086 §1): the request enqueues a
 // payload without the address or a token, the handler's errors name neither, a temporary
-// failure is retried under the transactional policy, a rejected recipient fails the job, and a
-// run after PasswordResetEmailDeadline finishes without sending.
+// failure is retried under the transactional policy, a rejected message fails the job (a
+// rejected recipient also suppresses the address: emailHardBounceStopsMail), and a run after
+// PasswordResetEmailDeadline finishes without sending.
 func passwordResetEmailJobs(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	m := &Mailer{Err: errMailDeferred}
@@ -68,9 +69,9 @@ func passwordResetEmailJobs(t *testing.T, e *accountEnv) {
 		t.Errorf("retry policy = %+v, want the transactional one", policy)
 	}
 
-	m.Err = fmt.Errorf("smtp: RCPT TO: reply 550 5.1.1: %w", kernel.ErrRecipientRejected)
+	m.Err = fmt.Errorf("smtp: DATA: reply 554 5.7.1: %w", kernel.ErrMailRejected)
 	if r := handle(ctx, run.Job); !r.IsFail() {
-		t.Errorf("result of a rejected recipient = %+v, want Fail", r)
+		t.Errorf("result of a rejected message = %+v, want Fail", r)
 	} else {
 		wantNoSecrets(t, "error", r.Err().Error(), secrets...)
 	}

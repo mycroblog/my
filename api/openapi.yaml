@@ -5930,6 +5930,29 @@ paths:
                 $ref: '#/components/schemas/AdminPasswordResetLink'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/accounts/{id}/email_suppression/lift:
+    post:
+      operationId: liftAdminAccountEmailSuppression
+      summary: Lift the suppression of the email address of a local account
+      description: |
+        Lets the server send email again to the primary address of a local account's user, which
+        a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+        mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+        the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+        `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+        `manage_accounts` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/AdminAccountId'
+      responses:
+        '204':
+          description: The suppression is lifted.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/roles:
     get:
       operationId: listRoles
@@ -8590,6 +8613,13 @@ components:
                 Whether the primary email address of a local account is verified; omitted when
                 it has none.
               type: boolean
+            email_suppression:
+              description: |
+                The suppression of the primary email address of a local account; omitted when it
+                is not suppressed. A moderator lifts it with
+                `POST /admin/accounts/{id}/email_suppression/lift`.
+              allOf:
+                - $ref: '#/components/schemas/EmailSuppression'
             two_factor_enabled:
               description: |
                 Whether the user of a local account signs in with two-factor authentication;
@@ -8675,6 +8705,27 @@ components:
           $ref: '#/components/schemas/Id'
         state_changed_at:
           description: When the registration entered its `registration_state`.
+          type: string
+          format: date-time
+    EmailSuppression:
+      description: |
+        The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+        after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+        email) stops every email but the verification email that the user asks for; verifying the
+        address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+        notification and announcement emails only.
+      type: object
+      required:
+        - kind
+        - since
+      properties:
+        kind:
+          type: string
+          enum:
+            - hard_bounce
+            - complaint
+        since:
+          description: When the failure that started the suppression happened.
           type: string
           format: date-time
     AdminAccountRegistrationState:
@@ -8898,7 +8949,8 @@ components:
         `revealed_private_data` (a moderator was shown the account's email address and IP
         addresses), `two_factor_disabled` (an administrator removed the account's two-factor
         authentication), `password_reset_link_issued` (an administrator issued a link that sets
-        a new password for the account's user). On a `domain`:
+        a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+        suppression of the primary email address of the account's user). On a `domain`:
         `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
         `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
         `user` (a registration):
@@ -8979,6 +9031,7 @@ components:
         - signup_block_lifted
         - two_factor_disabled
         - password_reset_link_issued
+        - email_suppression_lifted
         - custom_emoji_created
         - custom_emoji_image_replaced
         - custom_emoji_copied
@@ -14734,6 +14787,14 @@ components:
             `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
             primary address. Off for a new user.
           type: boolean
+        email_suppression:
+          description: |
+            Whether emails no longer reach the primary address, read-only; omitted when they do.
+            After a `hard_bounce`, the user asks for the verification email again to show that the
+            address works.
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/EmailSuppression'
         timeline_auto_insert:
           description: |
             Whether the web client inserts new timeline posts without asking, instead of offering them

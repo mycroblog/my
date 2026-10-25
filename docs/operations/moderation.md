@@ -137,6 +137,10 @@ my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
   リンクは 1 時間・1 回だけ使え、その後にパスワードがほかの方法で変わると使えなくなります。どちらで発行しても監査ログに `password_reset_link_issued` を記録します。
   リンクを持つ人は誰でもパスワードを設定できるので、本人であることをメールなど別の経路で確かめてから、本人にだけ渡してください。
   新しいパスワードを設定すると、その利用者のすべてのセッションとアプリのトークンが失効します。パスキーと二要素認証はそのまま残ります。
+- `GET /api/v1/admin/accounts/{id}` の `email_suppression` は、ローカルのアカウントの主アドレスへの送信を止めていることを示します（ADR-0086 §5）。
+  `hard_bounce`（宛先が存在しない）は確認のメールを除くすべてのメールを、`complaint`（迷惑メールとしての報告）は通知と告知のメールだけを止めます。パスワードのリセットのメールも止まるので、必要なら上のリンクを発行して渡します。
+  利用者が確認のメールを求めてアドレスを確認し直すと、ハードバウンスの抑止は解けます。
+  利用者がメールボックスを直したなど、送ってよいと確かめたときは、`POST /api/v1/admin/accounts/{id}/email_suppression/lift`（権限 `manage_accounts`）で解除します。監査ログに `email_suppression_lifted` を記録します。
 - 検索は 1 ページを埋めるのに 400 アカウントまで読みます。条件に合うアカウントが少ないと、短いページや空のページにも `next_cursor` が付くので、続けて読みます。
 
 ## ドメイン単位の処分
@@ -296,7 +300,7 @@ my admin report reopen <report id>
 
 | 対象の種類 | 操作 |
 | --- | --- |
-| `account` | `account_action_issued`・`account_action_lifted`（アカウントへの処分の発行・解除）・`account_deletion_cancelled`（`ban` の異議申し立てを覆したことによる削除の取り消し）・`revealed_private_data`（IP アドレスとメールアドレスの表示）・`two_factor_disabled`（二要素認証の解除）・`password_reset_link_issued`（パスワードリセットのリンクの発行）・`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
+| `account` | `account_action_issued`・`account_action_lifted`（アカウントへの処分の発行・解除）・`account_deletion_cancelled`（`ban` の異議申し立てを覆したことによる削除の取り消し）・`revealed_private_data`（IP アドレスとメールアドレスの表示）・`two_factor_disabled`（二要素認証の解除）・`password_reset_link_issued`（パスワードリセットのリンクの発行）・`email_suppression_lifted`（メールの抑止の解除）・`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
 | `status` | `status_refetch_queued`（リモートの投稿の取り直し。対象の名前は投稿の URI） |
 | `domain` | `domain_action_issued`・`domain_action_lifted`（ドメイン単位の処分の発行・解除）・`domain_statuses_refetch_queued`（ドメインのアカウントの投稿の取り直し） |
 | `report` | `report_assigned`・`report_unassigned`・`report_resolved`・`report_reopened`・`report_note_added`（通報の担当・担当の解除・解決・再開・メモ） |

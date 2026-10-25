@@ -32,6 +32,14 @@ properties:
       `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
       primary address. Off for a new user.
     type: boolean
+  email_suppression:
+    description: |
+      Whether emails no longer reach the primary address, read-only; omitted when they do.
+      After a `hard_bounce`, the user asks for the verification email again to show that the
+      address works.
+    readOnly: true
+    allOf:
+      - $ref: ./EmailSuppression.yaml
   timeline_auto_insert:
     description: |
       Whether the web client inserts new timeline posts without asking, instead of offering them

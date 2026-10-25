@@ -1208,6 +1208,13 @@ func (l *Localizer) ServerErrorsDomainMutesTooMany() string {
 	return l.format("server:errors.domain_mutes.too_many", nil)
 }
 
+// ServerErrorsEmailNotSuppressed formats "server:errors.email.not_suppressed". Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it).
+//
+//	en: The email address is not suppressed.
+func (l *Localizer) ServerErrorsEmailNotSuppressed() string {
+	return l.format("server:errors.email.not_suppressed", nil)
+}
+
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
 //
 //	en: An archive of your data is already being prepared. Wait until it is ready.

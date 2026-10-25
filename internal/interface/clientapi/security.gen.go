@@ -160,6 +160,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/accounts/{id}/unmute":                                   {Operation: "unmuteAccount", Scopes: []string{"write:mutes"}},
 	"POST /api/v1/admin/account_actions/{id}/lift":                        {Operation: "liftAccountAction", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/accounts/{id}/actions":                            {Operation: "createAccountAction", Scopes: []string{"admin:write"}},
+	"POST /api/v1/admin/accounts/{id}/email_suppression/lift":             {Operation: "liftAdminAccountEmailSuppression", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/accounts/{id}/password_reset_link":                {Operation: "issueAdminAccountPasswordResetLink", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/accounts/{id}/refetch_statuses":                   {Operation: "refetchAccountStatuses", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/accounts/{id}/reveal":                             {Operation: "revealAdminAccount", Scopes: []string{"admin:read"}},
