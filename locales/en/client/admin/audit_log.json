@@ -167,6 +167,10 @@
     "defaultMessage": "Two-factor authentication removed",
     "description": "Heading of an audit log entry: an administrator removed the two-factor authentication of a local account."
   },
+  "admin.audit_log.action.account_moved": {
+    "defaultMessage": "Limited account moved",
+    "description": "Heading of an audit log entry: a local account that moderation limits moved to another local account, which does not inherit the limit; a moderator decides whether to limit the target."
+  },
   "admin.audit_log.action.password_reset_link_issued": {
     "defaultMessage": "Password reset link issued",
     "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."

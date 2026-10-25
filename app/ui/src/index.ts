@@ -65,6 +65,7 @@ export { RailItem, type RailItemBadge, type RailItemProps } from "./RailItem";
 export { RoleBadge, RoleBadgeList, type RoleBadgeListProps, type RoleBadgeProps } from "./RoleBadge";
 export { DescriptionItem, DescriptionList, type DescriptionItemProps, type DescriptionListProps } from "./DescriptionList";
 export { EmptyState, type EmptyStateProps, type HeadingLevel } from "./EmptyState";
+export { NoticeBanner, type NoticeBannerProps } from "./NoticeBanner";
 export { OfflineBanner, type OfflineBannerProps } from "./OfflineBanner";
 export { Blurhash, type BlurhashProps } from "./Blurhash";
 export { AutoplayContext, type ImageCandidate, type ImageSources, Picture, type PictureProps } from "./Picture";

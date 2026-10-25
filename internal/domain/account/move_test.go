@@ -69,3 +69,24 @@ func TestMoveStatesTakeTheNewestMoveUnlessCancelled(t *testing.T) {
 		}
 	}
 }
+
+func TestFollowsLocal(t *testing.T) {
+	at := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	latest := &Move{ID: "m1", AccountID: "a", TargetAccountID: "b", OccurredAt: at}
+	for _, tc := range []struct {
+		name   string
+		latest *Move
+		next   Move
+		err    error
+	}{
+		{"first", nil, Move{TargetAccountID: "b", OccurredAt: at}, nil},
+		{"too soon", latest, Move{TargetAccountID: "c", OccurredAt: at.Add(LocalMoveInterval - time.Second)}, ErrMoveTooSoon},
+		{"same target too soon", latest, Move{TargetAccountID: "b", OccurredAt: at.Add(time.Hour)}, ErrMoveTooSoon},
+		{"same target after the interval", latest, Move{TargetAccountID: "b", OccurredAt: at.Add(LocalMoveInterval)}, ErrMovedBefore},
+		{"another target after the interval", latest, Move{TargetAccountID: "c", OccurredAt: at.Add(LocalMoveInterval)}, nil},
+	} {
+		if err := tc.next.FollowsLocal(tc.latest); !errors.Is(err, tc.err) {
+			t.Errorf("%s: FollowsLocal = %v, want %v", tc.name, err, tc.err)
+		}
+	}
+}

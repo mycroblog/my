@@ -1166,6 +1166,20 @@ func (l *Localizer) ServerConfigMissing(name string) string {
 	return l.format("server:config.missing", map[string]any{"name": name})
 }
 
+// ServerErrorsAccountMoved formats "server:errors.account_moved". API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first.
+//
+//	en: Your account has moved.
+func (l *Localizer) ServerErrorsAccountMoved() string {
+	return l.format("server:errors.account_moved", nil)
+}
+
+// ServerErrorsAccountNotMoved formats "server:errors.account_not_moved". API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved.
+//
+//	en: Your account has not moved.
+func (l *Localizer) ServerErrorsAccountNotMoved() string {
+	return l.format("server:errors.account_not_moved", nil)
+}
+
 // ServerErrorsAccountUnavailable formats "server:errors.account_unavailable". API error title for HTTP 403 when the access token is valid but its user cannot use the app: the registration is pending or rejected, the email address is unconfirmed, or the account is deactivated or deleted.
 //
 //	en: Your account cannot use the app right now.
@@ -1465,6 +1479,34 @@ func (l *Localizer) ServerErrorsMethodNotAllowed(method string) string {
 //	en: Your roles need the permission {permission}.
 func (l *Localizer) ServerErrorsMissingPermissionDetail(permission string) string {
 	return l.format("server:errors.missing_permission_detail", map[string]any{"permission": permission})
+}
+
+// ServerErrorsMoveAliasMissing formats "server:errors.move_alias_missing". API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first.
+//
+//	en: The account to move to does not list your account as an alias.
+func (l *Localizer) ServerErrorsMoveAliasMissing() string {
+	return l.format("server:errors.move_alias_missing", nil)
+}
+
+// ServerErrorsMoveTargetMoved formats "server:errors.move_target_moved". API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account.
+//
+//	en: The account to move to has moved itself.
+func (l *Localizer) ServerErrorsMoveTargetMoved() string {
+	return l.format("server:errors.move_target_moved", nil)
+}
+
+// ServerErrorsMoveTargetUnavailable formats "server:errors.move_target_unavailable". API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server.
+//
+//	en: You cannot move to that account.
+func (l *Localizer) ServerErrorsMoveTargetUnavailable() string {
+	return l.format("server:errors.move_target_unavailable", nil)
+}
+
+// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before.
+//
+//	en: Your account moved too recently.
+func (l *Localizer) ServerErrorsMoveTooSoon() string {
+	return l.format("server:errors.move_too_soon", nil)
 }
 
 // ServerErrorsNotFound formats "server:errors.not_found". API error message for HTTP 404.

@@ -15,6 +15,10 @@
     "defaultMessage": "{page} – {instance}",
     "description": "The browser tab title: the heading of the current page, then the server's name."
   },
+  "shell.error.closed.heading": {
+    "defaultMessage": "This server has closed",
+    "description": "Heading of the error that replaces a page's content when the server refused the request because the service has closed (a 403 service-closed); the server's reason follows."
+  },
   "shell.error.forbidden.heading": {
     "defaultMessage": "You do not have permission to see this page",
     "description": "Heading of the error that replaces a page's content when the server refused the user (a 403); the server's reason follows."

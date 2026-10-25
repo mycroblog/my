@@ -122,3 +122,35 @@ func (r *AccountRepository) ListMoveStates(ctx context.Context) ([]account.MoveS
 	}
 	return out, nil
 }
+
+// FindMoveStateTx implements account.Repository.
+func (r *AccountRepository) FindMoveStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.MoveState, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return account.MoveState{}, err
+	}
+	row, err := q.GetAccountMoveState(ctx, accountID)
+	if err != nil {
+		return account.MoveState{}, notFound(err, appaccount.ErrNotFound, "move state of "+accountID)
+	}
+	return moveStateFrom(row), nil
+}
+
+// InsertMoveCancellation implements account.Repository.
+func (r *AccountRepository) InsertMoveCancellation(ctx context.Context, tx uow.Tx, c account.MoveCancellation) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertAccountMoveCancellation(ctx, sqlitegen.InsertAccountMoveCancellationParams{MoveID: c.MoveID, CancelledAt: toMillis(c.CancelledAt)})
+	return n > 0, wrap(err, "insert account move cancellation")
+}
+
+// DeleteMoveState implements account.Repository.
+func (r *AccountRepository) DeleteMoveState(ctx context.Context, tx uow.Tx, accountID string) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.DeleteAccountMoveState(ctx, accountID), "delete account move state")
+}

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: cancelOwnAccountMove
+  x-first-party-only: true
+  summary: Cancel the move of the authenticated user's account
+  description: |
+    Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+    can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+    its actor without `movedTo`. The followers that moved stay with the target, and the next
+    move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+    `/api/v1/problems/account-not-moved`.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  responses:
+    "204":
+      description: The move is cancelled.
+    default:
+      $ref: ../components/responses/Problem.yaml

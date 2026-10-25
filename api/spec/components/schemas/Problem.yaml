@@ -126,6 +126,18 @@ description: |
     allow the operation.
   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
     already.
+  - `/api/v1/problems/account-moved` (403): the user's account moved to another account
+    (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+    (`POST /accounts/move/cancel`).
+  - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
+    no move to cancel.
+  - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
+    user's account among its aliases (`alsoKnownAs`). Add the alias on that account first.
+  - `/api/v1/problems/move-target-moved` (422): the account to move to moved itself.
+  - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
+    own, is not found, cannot be fetched from its server, or is suspended here.
+  - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
+    or moved to that account before.
   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
