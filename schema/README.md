@@ -61,7 +61,7 @@ The two steps of C:
 ### db:lint
 
 `scripts/task.sh db:lint` (`scripts/db-lint.sh`) compares `schema/<dialect>/` of the working tree with the same directory
-at `BASE` (default `origin/main`). It writes the migrations empty → base and base → working tree into a temporary
+at the merge base of `BASE` (default `origin/main`) and `HEAD`. It writes the migrations empty → base and base → working tree into a temporary
 directory with `atlas migrate diff` and lints the second with `atlas migrate lint`, which also runs it on a dev database;
 no migration file stays in the repository. It fails when:
 

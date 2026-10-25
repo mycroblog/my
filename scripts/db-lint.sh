@@ -7,7 +7,7 @@
 #   scripts/db-lint.sh [options]
 #     --dialect sqlite|postgres  the dialect (required)
 #     --dev-url URL              an empty dev database that Atlas may write to (required)
-#     --base REF                 compare with schema/<dialect>/ at the commit REF (default: origin/main)
+#     --base REF                 compare with schema/<dialect>/ at the merge base of REF and HEAD (default: origin/main)
 #     --base-dir DIR             compare with the schema files in DIR instead (tests)
 #     --target-dir DIR           the schema to check (default: schema/<dialect>/ of the working tree)
 #     --allow-destructive        report destructive changes but do not fail on them; the target must still apply
@@ -53,17 +53,31 @@ case "$dialect" in sqlite | postgres) ;; *) usage ;; esac
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-mkdir -p "$work/base" "$work/target" "$work/migrations"
+mkdir -p "$work/base" "$work/target" "$work/migrations" "$work/tmp"
+
+# Atlas locks a SQLite dev database with a file in the temporary directory, named after the operation, so two runs at
+# once (the CI steps of db:lint and db:lint-test) would wait on each other's lock and fail: give each run its own
+# temporary directory and its own in-memory dev database.
+export TMPDIR="$work/tmp"
+if [ "$dialect" = sqlite ]; then
+  case "$dev_url" in
+    sqlite://*mode=memory*) dev_url="sqlite://dblint-$$?mode=memory" ;;
+  esac
+fi
 
 # The base: the files of DIR, or of schema/<dialect>/ at the commit BASE (none when the commit has no such directory).
 if [ -n "$base_dir" ]; then
   cp "$base_dir"/*.sql "$work/base/"
   label="$base_dir"
 else
+  # The merge base of BASE and HEAD, so that a change merged into BASE after the branch started is not read as this
+  # branch undoing it. A shallow clone without the history (the merge queue's) compares with BASE itself.
+  ref="$base"
+  base="$(git -C "$root" merge-base "$base" HEAD 2> /dev/null || echo "$base")"
   if git -C "$root" cat-file -e "$base:schema/$dialect" 2> /dev/null; then
     git -C "$root" archive --format=tar "$base" "schema/$dialect" | tar -x -C "$work/base" --strip-components=2
   fi
-  label="$base ($(git -C "$root" rev-parse --short "$base^{commit}"))"
+  label="$ref (merge base $(git -C "$root" rev-parse --short "$base^{commit}"))"
 fi
 cp "$target_dir"/*.sql "$work/target/"
 echo "db:lint ($dialect): $label -> $target_dir"
