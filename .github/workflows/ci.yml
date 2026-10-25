@@ -50,6 +50,7 @@ jobs:
       docker: ${{ steps.select.outputs.docker }}
       lint-go: ${{ steps.select.outputs.lint-go }}
       lint-agentkit: ${{ steps.select.outputs.lint-agentkit }}
+      mykit: ${{ steps.select.outputs.mykit }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
       # its head commit and compares it with its base, the main commit the group is built on; that base is fetched by
@@ -96,6 +97,7 @@ jobs:
             echo lint-agentkit=false
           fi >> "$GITHUB_OUTPUT"
           touches docker docker
+          touches mykit mykit
 
   # --- Pull requests --------------------------------------------------------------------------------------------
 
@@ -131,6 +133,8 @@ jobs:
             run: scripts/task.sh web:licenses
           - name: i18n:licenses
             run: scripts/task.sh i18n:licenses
+          - name: mykit:licenses
+            run: scripts/task.sh mykit:licenses
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           - name: web:playwright-image-check
@@ -154,7 +158,7 @@ jobs:
     needs: changes
     if: >-
       github.event_name == 'pull_request' &&
-      (needs.changes.outputs.lint-go == 'true' || needs.changes.outputs.lint-agentkit == 'true')
+      (needs.changes.outputs.lint-go == 'true' || needs.changes.outputs.lint-agentkit == 'true' || needs.changes.outputs.mykit == 'true')
     runs-on: ubuntu-latest
     # only-new-issues reads the pull request's diff.
     permissions:
@@ -183,6 +187,16 @@ jobs:
             with:
               version: v${{ steps.go.outputs.golangci-lint }}
               working-directory: tools/agentkit
+              only-new-issues: true
+              skip-cache: true
+              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
+              args: --allow-serial-runners
+          - name: mykit:lint
+            if: needs.changes.outputs.mykit == 'true'
+            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+            with:
+              version: v${{ steps.go.outputs.golangci-lint }}
+              working-directory: pkg/mykit
               only-new-issues: true
               skip-cache: true
               # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
@@ -351,7 +365,8 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
-    # `scripts/task.sh check` runs in a job: any change can break them.
+    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, when
+    # the mykit context changes (its licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -366,6 +381,9 @@ jobs:
       # As in server-static: build agentkit and its test binaries once before the parallel checks.
       - name: Build agentkit once
         run: scripts/task.sh agentkit:warm
+      - name: Build pkg/mykit once
+        if: needs.changes.outputs.mykit == 'true'
+        run: scripts/task.sh mykit:warm
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
           - name: agentkit:test
@@ -382,6 +400,24 @@ jobs:
             run: scripts/task.sh docs:adr-numbers
           - name: docs:ci-coverage
             run: scripts/task.sh docs:ci-coverage
+          - name: mykit:test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:test
+          - name: mykit:vet
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:vet
+          - name: mykit:build
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:build
+          - name: mykit:mod-check
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mod-check
+          - name: mykit:server-dep-check
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:server-dep-check
+          - name: api:license-scope (mykit)
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh api:license-scope
 
   check:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when

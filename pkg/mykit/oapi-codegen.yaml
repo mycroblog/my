@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+#
+# oapi-codegen (pinned in tools/go.mod) generates the models and the client of api/openapi.yaml into api.gen.go
+# (ADR-0093 §4). Run `scripts/task.sh api:generate` (scripts/generate.sh); never edit api.gen.go by hand.
+package: mykit
+generate:
+  models: true
+  client: true
+output-options:
+  skip-prune: true
+  # GET /streaming is a Server-Sent Events stream, which the generated client cannot read (ADR-0093 §6).
+  exclude-operation-ids:
+    - streamEvents
+  overlay:
+    path: pkg/mykit/oapi-codegen-overlay.yaml
+# Enum constants carry their type's name (VisibilityPublic, MediaAttachmentTypeImage), as in the server.
+compatibility:
+  always-prefix-enum-values: true

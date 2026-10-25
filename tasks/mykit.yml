@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# pkg/mykit, the MIT-licensed Go client library of the client API (ADR-0093; the mykit context of
+# scripts/changed-contexts.sh). It is a Go module of its own, so the root module's `./...`, depguard, and go:check
+# never see it: these tasks check it. api:generate writes its generated client (pkg/mykit/api.gen.go).
+version: "3"
+
+vars:
+  # Permissive licenses only (ADR-0093 §2): the library's dependencies reach its users, so no copyleft license,
+  # not even one compatible with AGPL-3.0 such as the GPL or MPL-2.0.
+  MYKIT_ALLOWED_LICENSES: 0BSD,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,Unlicense,Zlib
+
+tasks:
+  check:
+    desc: Check pkg/mykit (tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, and that it does not depend on the server module)
+    # The license scope check (MIT in pkg/mykit) belongs to the api context, which a change of pkg/mykit alone does not
+    # select.
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ":api:license-scope"]
+
+  warm:
+    desc: Download the modules and build the packages and test binaries of pkg/mykit once, so that its checks a CI job runs in parallel read the build cache
+    dir: pkg/mykit
+    cmds:
+      - go mod download
+      - go build ./...
+      - go test -run '^$' ./...
+
+  mod-check:
+    desc: Fail if pkg/mykit/go.mod and go.sum are not tidy
+    dir: pkg/mykit
+    cmds:
+      - go mod tidy -diff
+
+  server-dep-check:
+    desc: Fail if pkg/mykit/go.mod requires or replaces the server module (scripts/mykit-mod-check.sh)
+    cmds:
+      - scripts/mykit-mod-check.sh
+
+  vet:
+    desc: Run go vet on pkg/mykit
+    dir: pkg/mykit
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Run golangci-lint on pkg/mykit
+    dir: pkg/mykit
+    cmds:
+      # golangci-lint holds a lock while it runs: wait for it rather than fail beside go:lint or agentkit:lint.
+      - golangci-lint run --allow-serial-runners ./...
+
+  test:
+    desc: Run the pkg/mykit unit tests
+    dir: pkg/mykit
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build pkg/mykit statically (CGO_ENABLED=0)
+    dir: pkg/mykit
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - go build ./...
+
+  licenses:
+    desc: Fail on dependency licenses of pkg/mykit outside the permissive allowlist
+    dir: pkg/mykit
+    cmds:
+      - go tool -modfile=../../tools/go.mod go-licenses check --allowed_licenses={{.MYKIT_ALLOWED_LICENSES}} ./...

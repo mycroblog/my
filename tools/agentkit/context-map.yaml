@@ -45,7 +45,7 @@ entries:
   - name: build-and-ci
     paths: ["Taskfile.yml", "tasks/**", ".github/**", "scripts/**", ".claude/**"]
     docs: ["docs/agents/workflow.md#what-ci-runs-where", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0080-task-runner-go-task.md", "docs/adr/0083-ci-steps-not-tasks.md", "docs/operations/releasing.md"]
-    checks: [docs, go, i18n, api, ui, web, docker, agentkit]
+    checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
     notes:
       - "Taskfile.yml, tasks/, workflows and scripts/changed-contexts.sh select every check context: run `scripts/task.sh check`."
@@ -206,7 +206,7 @@ entries:
   - name: client-api
     paths: ["internal/interface/clientapi/**", "api/**"]
     docs: ["docs/architecture/client-api.md#3-エンドポイントを追加する手順", "docs/architecture/client-api.md#2-規約"]
-    checks: [api, go, web]
+    checks: [api, go, web, mykit]
     shared: true
     notes:
       - "Edit api/spec/ (one file per path and component; list new files in api/spec/openapi.yaml), never api/openapi.yaml; then `scripts/task.sh api:generate`."
@@ -242,6 +242,15 @@ entries:
   - name: testkit-backends
     paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/fixtures/**"]
     docs: ["docs/adr/0041-postgres-tests-on-pgmem.md"]
+
+  # --- Client libraries -----------------------------------------------------------------------------------
+  - name: mykit
+    paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh"]
+    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+    checks: [mykit]
+    notes:
+      - "pkg/mykit is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`): it never imports or requires the server module, and its dependencies are permissive only (`scripts/task.sh mykit:check`)."
+      - "api.gen.go is generated from api/openapi.yaml by `scripts/task.sh api:generate` (pkg/mykit/oapi-codegen.yaml); the hand-written files hold only the cross-cutting layer (auth, errors, paging, retries, uploads), never per-endpoint helpers."
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace
