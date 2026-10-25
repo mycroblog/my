@@ -110,9 +110,10 @@ type Deps struct {
 	Messages *i18n.Bundle
 	// BaseURL is the origin that links in emails point to, such as https://social.example.
 	BaseURL string
-	// InstanceName returns the instance's display name, which emails name
-	// the instance by; nil or "" names it by the host of BaseURL.
-	InstanceName func(ctx context.Context) string
+	// MailSite returns the instance as its emails name it: its display name, its URL, and its
+	// contact address (ADR-0086 §2, §3). Nil, or an empty name or URL, names the instance by the
+	// host of BaseURL and links to BaseURL.
+	MailSite func(ctx context.Context) kernel.MailSite
 }
 
 // Service runs the identity module's use cases.

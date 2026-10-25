@@ -92,6 +92,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   oauth_client_host_allowed: "client:admin.audit_log.action.oauth_client_host_allowed",
   service_closure_announced: "client:admin.audit_log.action.service_closure_announced",
   service_closure_withdrawn: "client:admin.audit_log.action.service_closure_withdrawn",
+  service_closure_closed: "client:admin.audit_log.action.service_closure_closed",
+  service_closure_delivery_completed: "client:admin.audit_log.action.service_closure_delivery_completed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {

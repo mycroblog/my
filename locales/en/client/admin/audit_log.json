@@ -531,6 +531,14 @@
     "defaultMessage": "Service closure withdrawn",
     "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
   },
+  "admin.audit_log.action.service_closure_closed": {
+    "defaultMessage": "Service closed",
+    "description": "Kind of an audited operation: an administrator closed the server for good (the closure of the service)."
+  },
+  "admin.audit_log.action.service_closure_delivery_completed": {
+    "defaultMessage": "Closure delivery completed",
+    "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
+  },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth app",
     "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."

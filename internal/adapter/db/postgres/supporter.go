@@ -634,6 +634,16 @@ func (r *SupporterRepository) LiveSubscriptionIDsOfPlan(ctx context.Context, tx 
 	return ids, wrap(err, "list live supporter subscriptions of a plan")
 }
 
+// LiveSubscriptionIDs implements supporters.Repository.
+func (r *SupporterRepository) LiveSubscriptionIDs(ctx context.Context, tx uow.Tx) ([]string, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListLiveSupporterSubscriptionIDs(ctx)
+	return ids, wrap(err, "list live supporter subscriptions")
+}
+
 // CountLiveSubscriptions implements supporters.Repository.
 func (r *SupporterRepository) CountLiveSubscriptions(ctx context.Context, tx uow.Tx) (int64, error) {
 	q, err := r.q(tx)

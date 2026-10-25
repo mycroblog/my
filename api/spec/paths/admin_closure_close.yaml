@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: closeService
+  summary: Close the server
+  description: |
+    Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+    closure whose `closes_at` has passed can close; before it, without an announcement, or once
+    closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+    server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+    in the audit log and cancels every supporter subscription that goes on, in the same
+    transaction. From then on, the client API serves only the users' own data and exports
+    (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CloseServiceRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminServiceClosure.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
