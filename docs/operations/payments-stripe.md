@@ -1,126 +1,126 @@
-# サポーターの決済（Stripe）
+# Supporter payments with Stripe
 
-運営者向けの手順です。決定は [ADR-0074](../adr/0074-payment-provider-port.md)（ポート・webhook・照合・Stripe の adapter）、[ADR-0072](../adr/0072-supporter-plans-and-roles.md)（プラン・加入・ロール）、[ADR-0073](../adr/0073-income-records-and-publication.md)（収入の記録）で、設定のキーは [設定リファレンス](../reference/configuration.md#payments_provider) です。
+A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments_provider). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 
-設定 `payments_provider = stripe` にすると、ローカルの利用者が Stripe のホスト型の決済画面（Checkout）で月払い・年払いのプランに加入し、支払いの状態に合わせてプランのロールが付け外しされます（FR-910・FR-911）。
-課金を有効にすることとプランの作成は、管理者が管理画面で行います。この設定は、サーバーが Stripe と話せるようにするだけです。
+With `payments_provider = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes.
+An administrator enables the program and creates plans in the administration. This setting only lets the server talk to Stripe.
 
-1 つのサーバーで有効にできる事業者は 1 つだけです。後でほかの事業者に切り替えるときは、既存の加入者に新しい事業者で再加入してもらいます。
+One server can use only one provider. To switch to another provider later, ask the existing subscribers to subscribe again with the new one.
 
-## サーバーが Stripe で行うこと
+## What the server does at Stripe
 
-- **プランと価格**: プランごとに Product（ID は `my_plan_<プランの ID>`、`metadata.my_plan_id`）と、間隔・通貨ごとの Price（`lookup_key` は `my_<プランの ID>_<month|year>_<通貨>`）を API で作ります。
-  Stripe の Price は金額を変えられないので、金額を変えると新しい Price を作って古い Price をアーカイブします。古い Price の加入はその金額のまま更新されます。年払いの割引は年の Price の金額で表し、クーポンは使いません。
-  ダッシュボードでこれらの Product と Price を編集・削除しないでください。
-- **加入**: Checkout を `mode=subscription` で作り、利用者のブラウザをその URL（`checkout.stripe.com`）へ移します。決済画面は 1 時間で期限が切れます。
-  こちらの加入の ID を `client_reference_id`・`metadata.my_subscription_id`・サブスクリプションの `metadata.my_subscription_id` に入れます。税（Stripe Tax）の自動計算は有効にしません。
-- **顧客ポータル**: 支払い方法の更新・請求書の履歴・期間の終わりでの解約だけを有効にした設定（`metadata.my=1`）を、最初に使うときに API で作ります。プランの変更はポータルではなく、このサーバーの画面で行います。
-- **プランの変更**: 上げる変更はすぐ切り替えて差額を日割りで請求し（`proration_behavior=always_invoice`）、下げる変更と年払いから月払いへの変更は Subscription Schedule で期間の終わりに切り替えます。
-- **状態の取り直し**: webhook は合図として受け、サーバーが Stripe の API からサブスクリプション・Checkout・お金の動きを取り直して状態を決めます。
-  加えて `payments_reconcile_interval`（既定 6 時間）ごとの照合が、イベントの一覧・未完了の Checkout・balance transaction・全サブスクリプションの見回しを読み、webhook の取りこぼしを直します。
-- **収入**: balance transaction の総額・手数料・net を記録します。Billing の 0.7% などの手数料は別の `stripe_fee` の取引として載り、収入から引かれます。
-  `stripe_fee` はアカウント全体の手数料なので、**このサーバー専用の Stripe アカウントを使ってください**。ほかの販売に使っているアカウントでは、その手数料も収入から引かれます。
-- **日付**: 収入の日付は Stripe のアカウントのタイムゾーン（ダッシュボードの「設定 → ビジネス → アカウントの詳細」のタイムゾーン、API の `settings.dashboard.timezone`）で数えます。読めないときは UTC で数え、1 時間ごとに読み直します。
+- **Plans and prices**: For each plan the server creates a Product through the API (ID `my_plan_<plan ID>`, with `metadata.my_plan_id`) and one Price per interval and currency (`lookup_key` is `my_<plan ID>_<month|year>_<currency>`).
+  A Stripe Price cannot change its amount, so changing the amount creates a new Price and archives the old one. Subscriptions on the old Price renew at its amount. The discount for yearly payment is expressed in the amount of the yearly Price; no coupons are used.
+  Do not edit or delete these Products and Prices in the dashboard.
+- **Subscribing**: The server creates a Checkout session with `mode=subscription` and sends the user's browser to its URL (`checkout.stripe.com`). The payment page expires after one hour.
+  The server's subscription ID goes into `client_reference_id`, `metadata.my_subscription_id`, and the `metadata.my_subscription_id` of the Stripe subscription. Automatic tax calculation (Stripe Tax) is not enabled.
+- **Customer portal**: On first use, the server creates through the API a portal configuration (`metadata.my=1`) that enables only updating payment methods, the invoice history, and cancellation at the end of the period. Plan changes are made on this server's screens, not in the portal.
+- **Plan changes**: An upgrade switches at once and bills the difference prorated (`proration_behavior=always_invoice`). A downgrade, and a change from yearly to monthly, switch at the end of the period through a Subscription Schedule.
+- **Reading state back**: The server treats a webhook as a signal and reads the subscription, the Checkout session, and the money movements back from the Stripe API to decide the state.
+  In addition, a reconciliation every `payments_reconcile_interval` (default 6 hours) reads the event list, the unfinished Checkout sessions, the balance transactions, and a sweep of all subscriptions, and repairs any webhook the server missed.
+- **Income**: The server records the gross amount, the fee, and the net of each balance transaction. Fees such as Billing's 0.7% appear as separate `stripe_fee` transactions and are subtracted from the income.
+  `stripe_fee` covers the fees of the whole account, so **use a Stripe account dedicated to this server**. On an account used for other sales, those fees are subtracted from the income too.
+- **Dates**: Income dates are counted in the time zone of the Stripe account (the time zone under "Settings > Business > Account details" in the dashboard, `settings.dashboard.timezone` in the API). When it cannot be read, the server counts in UTC and reads it again every hour.
 
-サーバーが送る要求は、1 秒に 20 件（テストのモードでは 10 件）までに抑えます。Stripe が `429` を返したら、`Retry-After` が 30 秒以内ならそれだけ待って 2 回まで送り直し、それを越えたらジョブの再試行に任せます。
+The server sends at most 20 requests per second (10 in test mode). When Stripe returns `429`, the server waits as long as `Retry-After` says if that is 30 seconds or less and retries up to 2 times; beyond that it leaves the retry to the job.
 
-## カード情報と PCI DSS
+## Card data and PCI DSS
 
-カード番号などの支払い方法の入力は Stripe の Checkout と顧客ポータルだけで行い、このサーバーの Web クライアントは Stripe のスクリプトも iframe も読み込みません。
-サーバーが保存するのは Stripe のオブジェクトの ID（`cus_`・`sub_`・`price_`・`prod_`・`cs_`・`txn_`）と金額・期間・状態だけで、カードの番号・下 4 桁・有効期限・請求先の住所は保存しません。webhook の本文と Stripe の応答はログにも DB にも残しません。
-このため運営者の PCI DSS の範囲は、ホスト型の決済画面を使う販売者の SAQ A 相当になる見込みです。適用される範囲と自己問診の種類は、運営者が Stripe のダッシュボードの案内（「設定 → コンプライアンス」）で確かめてください。
+Payment methods are entered only on Stripe's Checkout and customer portal, and this server's web client loads neither Stripe's script nor an iframe.
+The server stores only Stripe object IDs (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `txn_`), amounts, periods, and states. It does not store card numbers, last four digits, expiry dates, or billing addresses. Webhook bodies and Stripe responses are kept in neither the logs nor the database.
+For this reason, the operator's PCI DSS scope is expected to be that of a merchant using a hosted payment page (SAQ A). Check the scope that applies and the type of self-assessment questionnaire in Stripe's dashboard guidance ("Settings > Compliance").
 
-## 1. Stripe のアカウントを用意する
+## 1. Prepare the Stripe account
 
-1. Stripe のアカウントを作り、ダッシュボードでビジネスの情報を登録します。日本で販売するなら、特定商取引法の表記のページの URL を「設定 → ビジネス → 公開情報 → 特定商取引法に基づく表記」に登録すると、Checkout の下にリンクが出ます。
-2. 「設定 → ビジネス → アカウントの詳細」でタイムゾーンを確かめます。収入の日付はこのタイムゾーンで数えます。
-3. 「設定 → Billing → サブスクリプションとメール → 支払いの管理」で、支払いに失敗したときの再試行（Smart Retries）と、再試行が尽きたときの扱いを選びます。
-   ロールを外す猶予（最初の失敗から 7 日）はこのサーバーが数えるので、Stripe の再試行の設定には左右されません。再試行が尽きたら「サブスクリプションをキャンセル」を勧めます。
-4. 加入者に領収書を送るなら、「設定 → カスタマーへのメール」で支払いの成功の領収書を有効にします。
+1. Create a Stripe account and enter your business information in the dashboard. If you sell in Japan, register the URL of your commerce disclosure page under "Settings > Business > Public information > Notice based on the Act on Specified Commercial Transactions", and a link appears below Checkout.
+2. Check the time zone under "Settings > Business > Account details". Income dates are counted in it.
+3. Under "Settings > Billing > Subscriptions and emails > Manage failed payments", choose the retry behavior (Smart Retries) and what happens when retries run out.
+   The grace period before the role is removed (7 days from the first failure) is counted by this server, so Stripe's retry settings do not affect it. When retries run out, "Cancel the subscription" is recommended.
+4. To send receipts to subscribers, enable the successful-payment receipt under "Settings > Customer emails".
 
-## 2. API の鍵を作る
+## 2. Create an API key
 
-「開発者 → API キー」で**制限付きのキー**（`rk_test_…` / `rk_live_…`）を作ることを勧めます。シークレットキー（`sk_test_…` / `sk_live_…`）も使えます。
-鍵の接頭辞でモードが決まり、テストの鍵では実際の請求が起きません。公開可能キー（`pk_`）は使えません。
+Under "Developers > API keys", creating a **restricted key** (`rk_test_...` / `rk_live_...`) is recommended. A secret key (`sk_test_...` / `sk_live_...`) works too.
+The prefix of the key sets the mode, and a test key charges nothing. A publishable key (`pk_`) cannot be used.
 
-制限付きのキーに与える権限は次のとおりです（**要検証**: 正確な権限の名前と過不足は、#924 のテストモードでの確認で確かめます）。
+Give a restricted key these permissions (**not yet verified**: the exact names and any missing or excess permissions have to be checked in test mode).
 
-| リソース | 権限 | 使う API |
+| Resource | Permission | APIs used |
 | --- | --- | --- |
-| Products | 書き込み | `GET`・`POST /v1/products`, `POST /v1/products/{id}` |
-| Prices | 書き込み | `GET`・`POST /v1/prices`, `POST /v1/prices/{id}` |
-| Checkout Sessions | 書き込み | `POST /v1/checkout/sessions`, `GET /v1/checkout/sessions/{id}` |
-| Customer portal | 書き込み | `GET`・`POST /v1/billing_portal/configurations`, `POST /v1/billing_portal/sessions` |
-| Subscriptions | 書き込み | `GET /v1/subscriptions`, `POST`・`DELETE /v1/subscriptions/{id}` |
-| Subscription Schedules（Subscriptions に含まれる） | 書き込み | `POST /v1/subscription_schedules`, `POST /v1/subscription_schedules/{id}`, `POST /v1/subscription_schedules/{id}/release` |
-| Invoices | 読み取り | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments` |
-| Charges・Refunds・Disputes | 読み取り | `GET /v1/charges/{id}`, `GET /v1/refunds` |
-| Balance transactions（Balance） | 読み取り | `GET /v1/balance_transactions` |
-| Events | 読み取り | `GET /v1/events` |
-| Account（Connect の外のアカウントの情報） | 読み取り | `GET /v1/account`（タイムゾーン） |
+| Products | Write | `GET`, `POST /v1/products`, `POST /v1/products/{id}` |
+| Prices | Write | `GET`, `POST /v1/prices`, `POST /v1/prices/{id}` |
+| Checkout Sessions | Write | `POST /v1/checkout/sessions`, `GET /v1/checkout/sessions/{id}` |
+| Customer portal | Write | `GET`, `POST /v1/billing_portal/configurations`, `POST /v1/billing_portal/sessions` |
+| Subscriptions | Write | `GET /v1/subscriptions`, `POST`, `DELETE /v1/subscriptions/{id}` |
+| Subscription Schedules (part of Subscriptions) | Write | `POST /v1/subscription_schedules`, `POST /v1/subscription_schedules/{id}`, `POST /v1/subscription_schedules/{id}/release` |
+| Invoices | Read | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments` |
+| Charges, Refunds, Disputes | Read | `GET /v1/charges/{id}`, `GET /v1/refunds` |
+| Balance transactions (Balance) | Read | `GET /v1/balance_transactions` |
+| Events | Read | `GET /v1/events` |
+| Account (information of an account outside Connect) | Read | `GET /v1/account` (time zone) |
 
-鍵は環境変数 `MY_PAYMENTS_STRIPE_SECRET_KEY`（またはファイルの場所を `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`）で渡します。設定ファイルには書けません（[ADR-0010](../adr/0010-configuration-and-packaging.md)）。
-鍵が漏れたら、ダッシュボードで鍵をローテーションし、新しい鍵で再デプロイします。
+Pass the key in the environment variable `MY_PAYMENTS_STRIPE_SECRET_KEY` (or the path of a file in `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`). It cannot be written in the configuration file.
+If the key leaks, rotate it in the dashboard and redeploy with the new key.
 
-## 3. webhook のエンドポイントを登録する
+## 3. Register the webhook endpoint
 
-「開発者 → Webhook → エンドポイントを追加」で、次を登録します。サーバーはエンドポイントを API で作りません。
+Under "Developers > Webhooks > Add endpoint", register the following. The server does not create the endpoint through the API.
 
-- URL: `https://<サーバーのドメイン>/payments/webhooks/stripe`
-- イベントの送信元: 「お客様のアカウント」（Connect のアカウントではない）
-- ペイロードの形式: snapshot（スナップショット）。サーバーは本文の `id`・`type`・`livemode`・`created`・`data.object.id`・`data.object.object` だけを読むので、エンドポイントの API の版は問いません。
-- 送るイベント（16 種類）:
+- URL: `https://<server domain>/payments/webhooks/stripe`
+- Events from: "Your account" (not Connected accounts)
+- Payload style: snapshot. The server reads only `id`, `type`, `livemode`, `created`, `data.object.id`, and `data.object.object` of the body, so the endpoint's API version does not matter.
+- Events to send (16 types):
 
-  - `checkout.session.completed`・`checkout.session.expired`
-  - `customer.subscription.created`・`customer.subscription.updated`・`customer.subscription.deleted`・`customer.subscription.paused`・`customer.subscription.resumed`
-  - `invoice.paid`・`invoice.payment_failed`
-  - `charge.refunded`・`refund.created`・`refund.updated`
-  - `charge.dispute.created`・`charge.dispute.closed`・`charge.dispute.funds_withdrawn`・`charge.dispute.funds_reinstated`
+  - `checkout.session.completed`, `checkout.session.expired`
+  - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
+  - `invoice.paid`, `invoice.payment_failed`
+  - `charge.refunded`, `refund.created`, `refund.updated`
+  - `charge.dispute.created`, `charge.dispute.closed`, `charge.dispute.funds_withdrawn`, `charge.dispute.funds_reinstated`
 
-登録したエンドポイントの「署名シークレット」（`whsec_…`）を、環境変数 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`（または `_FILE`）で渡します。
+Pass the endpoint's signing secret (`whsec_...`) in the environment variable `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` (or `_FILE`).
 
-受け口は署名（`Stripe-Signature` の HMAC-SHA256）と時刻（前後 5 分）を確かめ、テストのイベントをライブの鍵で受けたとき（その逆も）は `400` で拒みます。
-受けたイベントは ID ごとに 1 回だけ記録してジョブに積み、`2xx` を返します。DB に書けなかったときは `503` を返し、Stripe が送り直します。本文は 1 MiB までです。
-署名シークレットをローテーションしている間は Stripe が新旧の両方で署名するので、設定には新しいシークレットを置けば足ります。
+The endpoint verifies the signature (HMAC-SHA256 in `Stripe-Signature`) and the timestamp (within 5 minutes either way), and rejects a test event received with a live key (and the reverse) with `400`.
+It records each event once by ID, enqueues a job, and returns `2xx`. When it cannot write to the database it returns `503`, and Stripe sends the event again. The body is limited to 1 MiB.
+While you rotate the signing secret, Stripe signs with both the old and the new one, so putting the new secret in the configuration is enough.
 
-事業者の状態（モード、最後に webhook を受けた時刻、最後の照合の結果と失敗の種類）は、管理画面の `/admin/supporters` の「決済の事業者」の区画と、管理 API の `GET /api/v1/admin/payment_status`（権限 `manage_supporters`）で見られます（ADR-0074 §4）。区画は照合の失敗の種類ごとに直し方を案内します。
-webhook の受信の記録が 1 件もない（`no_webhook`）、または最後の照合が加入を直した（`reconcile_corrected`）ときは `warnings` に出ます。webhook の設定の誤りを疑ってください。
-区画の「今すぐ照合する」（`POST /api/v1/admin/payment_reconciles`）は、定期の照合を待たずに今すぐ照合します。UTC の 1 時間に 1 回までで（同じ時間の 2 回目は `429`）、監査ログに `payment_reconcile_queued` が残ります。
+The state of the provider (the mode, when the last webhook arrived, and the result and failure kind of the last reconciliation) is shown in the "Payment provider" section of `/admin/supporters` in the administration, and by the admin API `GET /api/v1/admin/payment_status` (permission `manage_supporters`). The section explains how to fix each kind of reconciliation failure.
+`warnings` lists `no_webhook` (no webhook has ever been recorded) and `reconcile_corrected` (the last reconciliation repaired a subscription). Suspect a misconfigured webhook when either appears.
+"Reconcile now" in the section (`POST /api/v1/admin/payment_reconciles`) reconciles at once instead of waiting for the scheduled run. It is limited to once per UTC hour (a second call in the same hour returns `429`), and the audit log records `payment_reconcile_queued`.
 
-## 4. サーバーの設定
+## 4. Configure the server
 
 ```sh
 MY_PAYMENTS_PROVIDER=stripe
 MY_PAYMENTS_STRIPE_SECRET_KEY=rk_test_...
 MY_PAYMENTS_STRIPE_WEBHOOK_SECRET=whsec_...
-# 任意: 照合の周期（15m〜168h、既定 6h）と、1 回の照合が送る要求の上限（既定 1000）
+# Optional: the reconciliation interval (15m to 168h, default 6h) and the most requests one reconciliation sends (default 1000)
 MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` で設定を確かめられます。build tag `no_payments_stripe` で build したバイナリは `payments_provider = stripe` を拒みます（[ビルドタグ](../reference/build-tags.md)）。
+`my config check` verifies the configuration. A binary built with the build tag `no_payments_stripe` refuses `payments_provider = stripe` (see [build-tags.md](../reference/build-tags.md)).
 
-## 5. テストのモードで試す
+## 5. Try it in test mode
 
-まずテストの鍵（`rk_test_` / `sk_test_`、またはサンドボックスの鍵）で動かします。テストのモードでは実際の請求が起きません。
-テストの鍵とライブの鍵では、Product・Price・顧客・サブスクリプション・webhook のエンドポイントが別々です。ライブに移るときは、ライブのモードでエンドポイントを登録し直し、ライブの鍵と署名シークレットに差し替えて再デプロイします。プランの Price はライブのアカウントに改めて作られます。
+Start with a test key (`rk_test_` / `sk_test_`, or a sandbox key). Test mode charges nothing.
+Test keys and live keys have separate Products, Prices, customers, subscriptions, and webhook endpoints. To go live, register the endpoint again in live mode, replace the key and the signing secret with the live ones, and redeploy. The plans' Prices are created anew in the live account.
 
-テスト用のカード（[Stripe の文書](https://docs.stripe.com/testing)）:
+Test cards ([Stripe documentation](https://docs.stripe.com/testing)):
 
-| 番号 | 動き |
+| Number | Behavior |
 | --- | --- |
-| `4242 4242 4242 4242` | 成功 |
-| `4000 0000 0000 0341` | 登録はできるが、請求で失敗する（支払いの失敗と猶予の確認） |
-| `4000 0000 0000 9995` | 残高不足で失敗 |
-| `4000 0000 0000 0259` | 支払いの後に dispute が作られる |
+| `4242 4242 4242 4242` | Succeeds |
+| `4000 0000 0000 0341` | Can be attached but the charge fails (to check payment failure and the grace period) |
+| `4000 0000 0000 9995` | Fails for insufficient funds |
+| `4000 0000 0000 0259` | A dispute is created after the payment |
 
-有効期限は未来の日付、セキュリティコードは任意の 3 桁です。
+Use any future expiry date and any 3-digit security code.
 
-更新・支払いの失敗・猶予を試すには、テストの時計（test clock）を使います。テストの時計に結び付けた顧客で加入し、ダッシュボードの「Billing → テストクロック」で時間を進めると、更新の請求と失敗が起きます。
+To try renewal, payment failure, and the grace period, use a test clock. Subscribe with a customer attached to a test clock and advance time under "Billing > Test clocks" in the dashboard to trigger the renewal charge and the failure.
 
-## 6. ローカルで試す（Stripe CLI）
+## 6. Try it locally (Stripe CLI)
 
-[Stripe CLI](https://docs.stripe.com/stripe-cli)（Apache-2.0）で、Stripe のイベントを手元のサーバーへ転送できます。公開の URL は要りません。
+The [Stripe CLI](https://docs.stripe.com/stripe-cli) (Apache-2.0) forwards Stripe events to a server on your machine. No public URL is needed.
 
 ```sh
 stripe login
@@ -128,34 +128,34 @@ stripe listen --forward-to http://localhost:8080/payments/webhooks/stripe \
   --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed,invoice.paid,invoice.payment_failed,charge.refunded,refund.created,refund.updated,charge.dispute.created,charge.dispute.closed,charge.dispute.funds_withdrawn,charge.dispute.funds_reinstated
 ```
 
-`stripe listen` が表示する `whsec_…` を `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` に置いて、サーバーを起動します（ポートは `listen` の設定に合わせます）。
-ほかの端末で、単発のイベントを起こせます。
+Put the `whsec_...` that `stripe listen` prints in `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` and start the server (match the port to your `listen` setting).
+In another terminal, you can fire single events.
 
 ```sh
 stripe trigger checkout.session.completed
 stripe trigger invoice.payment_failed
 stripe trigger charge.refunded
 stripe trigger charge.dispute.created
-stripe events resend evt_...   # 受け取り損ねたイベントを送り直す（30 日まで）
+stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-`stripe trigger` が作るオブジェクトはこのサーバーの加入の ID を持たないので、加入の状態は変わりません（サーバーは取り直して、こちらの加入でないものは無視します）。加入の流れ全体は、Web クライアントから加入してテスト用のカードで払って確かめます。
+The objects that `stripe trigger` creates carry no subscription ID of this server, so no subscription changes state (the server reads them back and ignores what is not its own subscription). To check the whole subscription flow, subscribe from the web client and pay with a test card.
 
-## 7. 運用
+## 7. Operation
 
-- 照合の失敗の種類が `permission` なら、鍵の誤りか権限の不足です。
-- 照合が要求の上限に当たる回が多ければ、`payments_reconcile_max_requests` を上げるか `payments_reconcile_interval` を延ばします。
-- 照合が 30 日より長く止まると、Stripe のイベントの一覧（30 日まで遡れる）からは追いつけません。そのときは全サブスクリプションの見回しが直します。
-- 返金とチャージバックは Stripe のダッシュボードで行います。全額の返金とチャージバックはロールを外してサブスクリプションをすぐ解約し、一部の返金ではロールを外しません（ADR-0072）。dispute に勝ってもロールは自動では戻りません。
+- A reconciliation failure of kind `permission` means a wrong key or missing permissions.
+- When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
+- When reconciliation has been stopped for more than 30 days, the server cannot catch up from Stripe's event list (which reaches back 30 days). The sweep of all subscriptions repairs the state then.
+- Refunds and chargebacks are handled in Stripe's dashboard. A full refund and a chargeback remove the role and cancel the subscription at once, and a partial refund does not remove the role. Winning a dispute does not restore the role automatically.
 
-## 要検証の事項
+## Items to verify
 
-次の事項は Stripe の文書から決めた動きで、テストのモードで確かめます（#924）。
+The following behaviors come from Stripe's documentation and are to be confirmed in test mode.
 
-- Subscription Schedule による期間の終わりの価格の変更と、その取り下げ（release）。
-- アーカイブした Price の加入が、その Price のまま更新されること。
-- サブスクリプションの一覧で `latest_invoice` と `schedule` を展開できること、支払いの失敗の時刻を請求書の確定（`status_transitions.finalized_at`）の時刻とみなしてよいこと。
-- `GET /v1/account` の `settings.dashboard.timezone` を制限付きの鍵で読めること。
-- 制限付きの鍵に要る権限の一覧（§2 の表）。
-- 通貨ごとの最低の請求額の表と、Stripe が ISO 4217 と違う小数の桁で扱う通貨（ISK・HUF・TWD・UGX など）。
-- 読み取りのレート制限の正確な値。
+- Changing the price at the end of the period with a Subscription Schedule, and releasing that schedule.
+- That a subscription on an archived Price renews on that Price.
+- That `latest_invoice` and `schedule` can be expanded in the subscription list, and that the time a payment failed can be taken as the time the invoice was finalized (`status_transitions.finalized_at`).
+- That `settings.dashboard.timezone` of `GET /v1/account` can be read with a restricted key.
+- The list of permissions a restricted key needs (the table in section 2).
+- The table of minimum charge amounts per currency, and the currencies that Stripe treats with different decimal places from ISO 4217 (ISK, HUF, TWD, UGX, and others).
+- The exact values of the read rate limits.

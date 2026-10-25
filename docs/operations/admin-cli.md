@@ -1,112 +1,120 @@
-# 管理者とロール
+# Administrators and roles
 
-運営者向けの手順です。要件は FR-801 と FR-720（[機能要件](../requirements/01-functional.md)）、パスワードの扱いは [ADR-0019 §3](../adr/0019-security-baseline.md) です。
+A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, and export the maintenance page.
 
-## 前提
+## Prerequisites
 
-- 設定（`host`・`db`・`database_url`・`kek` など）が [設定リファレンス](../reference/configuration.md) どおりに与えられている。`my config check` で確かめられる。
-- DB にスキーマが適用済み（Atlas で `schema/<dialect>/` を適用する。[DB の初期化と作り直し](database.md)）。
+- The configuration (`host`, `db`, `database_url`, `kek`, and so on) is set as the [configuration reference](../reference/configuration.md) describes. `my config check` verifies it.
+- The schema is applied to the database (apply `schema/<dialect>/` with Atlas; see [database.md](database.md)).
 
-## 作る
+## Creating an administrator
 
 ```sh
 my admin create -username alice -email alice@example.com
 ```
 
-- 端末から実行すると、パスワードをエコーなしで 2 回尋ねる。
-- 標準入力が端末でなければ、標準入力の 1 行目をパスワードとして読む（例: `my admin create ... < password.txt`）。
-  コマンドライン引数や環境変数では渡せない（プロセス一覧や履歴に残るため）。
-- パスワードは 8〜128 文字。表示・ログ・エラーメッセージには出ない。
-- 1 回のトランザクションで、ユーザー・パスワード・主メールアドレス・ローカルアカウント（鍵を含む）・`admin` ロールの付与（付与者なし = CLI）を作る。
-  組み込みロールが無ければ先に作る。
-- 成功すると `created admin @alice@<account_domain> (user <id>, account <id>)` を表示して終了コード 0 で終わる。
+- From a terminal, the command asks for the password twice, without echoing it.
+- When standard input is not a terminal, the first line of standard input is the password (for example `my admin create ... < password.txt`).
+  The password cannot be given as a command-line argument or an environment variable, because those end up in process lists and shell history.
+- A password has 8 to 128 characters. It never appears in the output, the logs, or an error message.
+- One transaction creates the user, the password, the primary email address, the local account (with its keys), and the grant of the `admin` role (with no grantor, which means the CLI).
+  The built-in roles are created first if they are missing.
+- On success the command prints `created admin @alice@<account_domain> (user <id>, account <id>)` and exits with code 0.
 
-## 再実行したとき
+## Running it again
 
-- ユーザー名（大文字小文字を区別しない）かメールアドレス（大文字小文字を区別しない）が既に使われていれば、
-  何も変更せずに終了コード 1 で終わり、どちらが使われているかを表示する。既存のユーザーのパスワードやロールは変えない。
-- 失敗した実行は何も書き込まないので、原因を直してそのまま再実行してよい。
-- 終了コード 2 は引数の誤り。
+- When the username or the email address (both case-insensitive) is already taken, the command changes nothing, prints which one is taken, and exits with code 1.
+  It never changes the password or the roles of the existing user.
+- A failed run writes nothing, so you can fix the cause and run the same command again.
+- Exit code 2 means a usage error.
 
-## ロールの付与と剥奪
+## Granting and revoking roles
 
-権限はロールが持ちます（[data-model §4.1](../architecture/data-model/README.md)）。組み込みのロールは `admin`（`position` 1000、すべての権限）と
-`moderator`（`position` 100、`manage_reports`・`manage_accounts`・`view_audit`）です（FR-720）。
-`my serve` は起動のたびに（どの `role` のプロセスでも）、`my admin role` は実行のたびに組み込みロールを確かめ、無いものを作って `admin` にその版のすべての権限を持たせます。
-版を上げて権限が増えても手作業は要りません。`moderator` の権限と位置は管理者が変えたまま残ります。
+Roles hold permissions. The built-in roles are `admin` (`position` 1000, every permission) and
+`moderator` (`position` 100, with `manage_reports`, `manage_accounts`, and `view_audit`).
+`my serve` checks the built-in roles every time it starts (in a process of any `role`), and `my admin role` checks them every time it runs.
+Each creates what is missing and gives `admin` every permission of the running version.
+When an upgrade adds a permission, no manual step is needed. A `moderator` keeps the permissions and the position the administrator set.
 
 ```sh
-my admin role list                 # ロールごとの position・権限（モデレーション・サーバー管理・利用者の機能に分けて）・持っている利用者
-my admin role list -user alice     # alice のロール
+my admin role list                 # each role's position, permissions (grouped as moderation, server administration, and member features), and holders
+my admin role list -user alice     # the roles of alice
 my admin role grant alice moderator
 my admin role revoke alice moderator
 ```
 
-- 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`・`manage_service_closure`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
-  `list` は区分ごとの列（`MODERATION`・`SERVER`・`MEMBER`）に出します。Web クライアントは区分ごとに「モデレーション」と「管理」を出し、利用者の機能はどちらにも数えません（[ADR-0058](../adr/0058-moderation-admin-separation.md)、[ADR-0070](../adr/0070-permission-split-emoji-finance.md)、[モデレーション](moderation.md#web-クライアントのモデレーションとサーバー管理)）。
-- 変更は利用者の次の要求から効きます。モデレーター向けの通知は、通知を作るときに権限を持つ人に届きます。
-- 付与と剥奪は監査ログに `role_granted`・`role_revoked`（対象の種類 `role`）で残ります。CLI の操作者は `cli` です（`my admin audit list -target-kind role`）。
-- 持っているロールの付与と持っていないロールの剥奪は何も変えず、記録もしません。
-- `admin` を持つ最後の 1 人からは剥奪できません（終了コード 1）。先に別の利用者に `admin` を付与します。
-- 管理 API は `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`、`PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}` で、権限 `manage_roles` を要します。
-  API では、自分のロールの最も高い `position` より上のロールは付与・剥奪できません（403）。最後の `admin` の剥奪は 409 です。
+- Permissions belong to one of three groups.
+  - Moderation: `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
+  - Server administration: `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`.
+  - Member features: `view_finance`, `create_custom_emojis`.
 
-## サービスの終了の予告
+  `list` prints one column per group (`MODERATION`, `SERVER`, `MEMBER`). The web client shows "Moderation" and "Administration" for the first two groups and counts the member features toward neither (see [moderation.md](moderation.md)).
+- A change takes effect on the user's next request. Notifications for moderators go to the people who hold the permission when the notification is created.
+- Grants and revocations are written to the audit log as `role_granted` and `role_revoked` (target kind `role`). The actor of a CLI operation is `cli` (`my admin audit list -target-kind role`).
+- Granting a role the user already has, or revoking one they do not have, changes and records nothing.
+- The last holder of `admin` cannot lose it (exit code 1). Grant `admin` to another user first.
+- The admin API is `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles`, and `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, and it needs the permission `manage_roles`.
+  Through the API, you cannot grant or revoke a role above the highest `position` among your own roles (403). Revoking the last `admin` returns 409.
 
-サーバーを閉じるときは、まず終了を予告します（FR-808、[ADR-0088](../adr/0088-service-shutdown-modes.md)）。
-予告からデータの破棄までの手順の全体は [サービスの終了](service-closure.md) にあります。
-予告の間もサーバーはいつもどおり動き、`GET /api/v1/instance` の `closure` と NodeInfo の `metadata.serviceClosure` が状態と日付を示します。
+## Announcing the end of the service
 
-```sh
-my admin closure announce -closes-at 2027-01-31T15:00:00Z -message "ご利用ありがとうございました。"
-my admin closure announce -closes-at 2027-02-28 -export-until 2027-04-30   # 日付の変更（日付だけなら UTC の 0 時）
-my admin closure status                                                   # 状態と、効いている予定
-my admin closure withdraw                                                 # 予告の取り消し
-```
-
-- `-closes-at` に下限はありません。`-export-until`（データの持ち出しの期限）は `-closes-at` 以後で、省くと閉鎖日の 30 日後です。
-- 予告から閉鎖日までが 30 日より短いと、標準エラーに警告を出します（予告はそのまま記録します）。
-- 日付の変更は新しい予告として記録し、取り消しの後の予告は新しい予告です。サーバーを閉じた後は、予告も取り消しもできません（終了コード 1）。
-- 予告・日付の変更・取り消しは監査ログに `service_closure_announced`・`service_closure_withdrawn`（対象の種類 `instance`）で残ります（`my admin audit list -target-kind instance`）。
-- 管理 API は `GET /api/v1/admin/closure`、`PUT` / `DELETE /api/v1/admin/closure/announcement`、`GET /api/v1/admin/closure/check`、`POST /api/v1/admin/closure/close` で、権限 `manage_service_closure`（組み込みのロールでは `admin` だけ）を要します。
-- 予告の間は、新しい利用者と新しい支払いを受け付けません（ADR-0088 §2）。
-  - 登録モードの実効値は `closed` です（`registration_mode` の値は変わらず、取り消すと元に戻ります）。登録も招待を使った登録もできず、審査待ちの申請は承認できません（`409`）。
-  - 予告の開始で、審査待ちの申請をすべて却下し（決めた者は `service_closure`）、続いているサポーターの加入すべてを期間の終わりで解約して、加入者に通知（`supporter_service_closure`）とメールで知らせます。新しい加入は `409` です。取り消しても、却下と解約は戻りません。
-  - 予告・日付の変更・取り消しのたびに、ローカルの全利用者に通知 `service_closure` が届きます。どれもジョブで行うので、ワーカーを止めないでください。
-  - メールの確認が済んだ全利用者には、予告・日付の変更・取り消し・閉鎖日の 7 日前と前日・クローズ・持ち出しの期限の 7 日前にメールが届きます。利用者は止められません（[メールの送信](email.md#送るメールと設定)）。
-  - 閉鎖日を過ぎると、`manage_service_closure` を持つ人に通知 `admin_service_closure_due` が届きます。サーバーは自動ではクローズしません。
-
-閉鎖日を過ぎたら、サーバーをクローズします（FR-809）。クローズは取り消せません。
+To close the server, announce the closure first. [service-closure.md](service-closure.md) describes the whole procedure, from the announcement to discarding the data.
+The server keeps working as usual during the announcement. `closure` in `GET /api/v1/instance` and `metadata.serviceClosure` in NodeInfo show the state and the dates.
 
 ```sh
-my admin closure check                                      # クローズで終わるものの点検
-my admin closure close                                      # 点検を示し、y とドメイン名の入力で確かめてクローズ
-my admin closure close -confirm-domain social.example       # 自動化: 質問の代わりにドメイン名を渡す
+my admin closure announce -closes-at 2027-01-31T15:00:00Z -message "Thank you for using this server."
+my admin closure announce -closes-at 2027-02-28 -export-until 2027-04-30   # change the dates (a bare date means 00:00 UTC)
+my admin closure status                                                   # the state and the schedule in effect
+my admin closure withdraw                                                 # withdraw the announcement
 ```
 
-- `check` と `close` は、ローカルアカウント数・宛先の inbox（既知の shared inbox）の数・送る `Delete` の数の見積もり（その積）・続いているサポーターの加入の数・終わっていない移転（`Move`、[ADR-0089](../adr/0089-account-migration-move.md)）の数・保全（`retention_holds`）のあるアカウントの数を示します。
-  移転が残っているときと保全があるときは、標準エラーに警告を出します。保全のあるアカウントの記録は、データを破棄する前に `my admin account export-moderation` で書き出して保管してください。
-- `close` は、予告がないときと閉鎖日の前には何も聞かずに断ります（終了コード 1）。`y` 以外の答えと、サーバーのドメイン（設定の `host`、大文字と小文字は区別しない）と違う入力でも、何も変えずに終了コード 1 で終わります。
-- クローズは監査ログに `service_closure_closed` で残り、同じトランザクションで、続いているサポーターの加入をすべて終え（理由 `service_closed`）、決済事業者のサブスクリプションをすぐ解約するジョブ（`CancelNow`）を積みます。
-- クローズの後、client API は、自分のアカウントと設定の読み取り・エクスポート（`/exports`、`/csv_exports`）・セッション（`/authorized_apps`）・`GET /instance` と、クローズの状態とジョブのキューの管理の操作だけを通し、ほかは `403`（`/api/v1/problems/service-closed`）で断ります。ストリームは止まり、Web Push は送りません。サインインとパスワードの再設定はできます。
-- クローズの後、ワーカーが全ローカルアカウントの `Delete`（Actor）を 100 件ずつ連合先へ配送します（移転済みのアカウントは最後。[federation.md §15](../architecture/federation.md#15-サービスの終了)）。`federation_mode` が `off` / `inbound` でも送り、凍結したドメインには送りません。
-  `my admin closure status`（と `GET /api/v1/admin/closure` の `progress`）は、`Delete` を記録したアカウント数・展開の残り・配送の状態ごとの件数（`pending`・`succeeded`・`permanent_failure`・`skipped`・`dead`）を示します。配送の間はワーカーを止めないでください。
-  すべての配送が終わると、10 分ごとの確認が `delivery_completed` を記録し（監査ログの `service_closure_delivery_completed`）、ローカルの Actor も `410` になります。`dead` の配送は自動では再実行しません（`my job retry` で再実行できます）。
+- `-closes-at` has no lower bound. `-export-until` (the deadline for taking data out) must be on or after `-closes-at`, and defaults to 30 days after the closing date.
+- When the closing date is less than 30 days away, the command prints a warning to standard error (the announcement is still recorded).
+- Changing the dates is recorded as a new announcement, and an announcement made after a withdrawal is a new one. Once the server is closed, you can neither announce nor withdraw (exit code 1).
+- Announcing, changing the dates, and withdrawing are written to the audit log as `service_closure_announced` and `service_closure_withdrawn` (target kind `instance`; see `my admin audit list -target-kind instance`).
+- The admin API is `GET /api/v1/admin/closure`, `PUT` / `DELETE /api/v1/admin/closure/announcement`, `GET /api/v1/admin/closure/check`, and `POST /api/v1/admin/closure/close`. It needs the permission `manage_service_closure` (among the built-in roles, only `admin` has it).
+- During the announcement, the server accepts no new users and no new payments.
+  - The effective registration mode is `closed` (the value of `registration_mode` does not change, and returns to effect when the announcement is withdrawn). Neither sign-ups nor sign-ups with an invitation work, and pending applications cannot be approved (`409`).
+  - Announcing rejects every pending application (the decider is recorded as `service_closure`) and cancels all running supporter subscriptions at the end of their period.
+    The subscribers get a notification (`supporter_service_closure`) and an email. New subscriptions return `409`. Withdrawing the announcement does not undo the rejections or the cancellations.
+  - Every announcement, change of dates, and withdrawal sends the notification `service_closure` to all local users. All of this runs as jobs, so do not stop the worker.
+  - Every user with a confirmed email address gets an email for the announcement, a change of dates, a withdrawal, 7 days and 1 day before the closing date, the closure, and 7 days before the export deadline. Users cannot opt out (see [email.md](email.md)).
+  - After the closing date, the people who hold `manage_service_closure` get the notification `admin_service_closure_due`. The server does not close itself.
 
-持ち出しの期限を過ぎたら、サーバーを止めた後にドメインが返す静的な閉鎖のページを書き出します（ADR-0088 §6）。DB を読むので、DB を破棄する前に実行します。
+After the closing date, close the server. Closing cannot be undone.
 
 ```sh
-my admin closure export-html -out ./closure              # 全ロケール（インスタンスの既定のロケールが先頭）
-my admin closure export-html -out ./closure -lang ja,en  # ロケールと index.html の順を決める
+my admin closure check                                      # review what the closure ends
+my admin closure close                                      # show the review, then ask for y and the domain name
+my admin closure close -confirm-domain social.example       # for automation: pass the domain name instead of answering
 ```
 
-- 出力: ロケールごとの `<dir>/<locale>.html` と、全ロケールを順に並べた `<dir>/index.html`（`my maintenance export` と同じテンプレート。サーバー名・閉鎖日・予告の運営者のメッセージ・`status_page_url`）、
-  前段の設定例 `nginx.conf`・`Caddyfile`・`cloudfront-function.js`（`/ap/*`・`/inbox`・WebFinger・host-meta・NodeInfo・`/@*` は `410`、ほかは閉鎖のページ）。
-- サーバーがクローズしていないと断ります（終了コード 1）。`delivery_completed` の前は警告を出して書き出します。前段の切り替えは [サービスの終了 §6](service-closure.md#6-静的なページへの切り替え) です。
+- `check` and `close` show the number of local accounts, the number of destination inboxes (the known shared inboxes), an estimate of the `Delete` activities to send (their product), the number of running supporter subscriptions,
+  the number of unfinished migrations (`Move`), and the number of accounts under a retention hold (`retention_holds`).
+  When migrations remain or a hold exists, the command warns on standard error. Export the records of the accounts under a hold with `my admin account export-moderation` and keep them before discarding the data.
+- `close` refuses without asking when there is no announcement and before the closing date (exit code 1). Any answer other than `y`, or an input that differs from the server's domain (`host` in the configuration, case-insensitive), changes nothing and exits with code 1.
+- The closure is written to the audit log as `service_closure_closed`. In the same transaction it ends every running supporter subscription (reason `service_closed`) and enqueues the jobs that cancel the subscriptions at the payment provider immediately (`CancelNow`).
+- After the closure, the client API passes only these requests: reading your own account and settings, the exports (`/exports`, `/csv_exports`), sessions (`/authorized_apps`), `GET /instance`, and the administration of the closure and the job queue.
+  Everything else is refused with `403` (`/api/v1/problems/service-closed`). Streams stop and Web Push sends nothing. Signing in and resetting a password still work.
+- After the closure, the worker delivers a `Delete` of the actor of every local account to the federation peers, 100 at a time (migrated accounts last). It sends them even when `federation_mode` is `off` or `inbound`, and never to a suspended domain.
+  `my admin closure status` (and `progress` in `GET /api/v1/admin/closure`) shows how many accounts have a recorded `Delete`, how many deliveries remain to be expanded, and the number of deliveries in each state (`pending`, `succeeded`, `permanent_failure`, `skipped`, `dead`). Keep the worker running during delivery.
+  When every delivery has finished, a check that runs every 10 minutes records `delivery_completed` (`service_closure_delivery_completed` in the audit log), and the local actors then answer `410`.
+  The server does not rerun `dead` deliveries by itself; rerun them with `my job retry`.
+
+After the export deadline has passed, write the static closing page that your domain serves once the server is stopped. The command reads the database, so run it before discarding the database.
+
+```sh
+my admin closure export-html -out ./closure              # every locale (the instance's default locale first)
+my admin closure export-html -out ./closure -lang ja,en  # choose the locales and the order in index.html
+```
+
+- Output: `<dir>/<locale>.html` for each locale and `<dir>/index.html` with every locale one after another. The pages use the same template as `my maintenance export` and show the server name, the closing date, the operator's message of the announcement, and `status_page_url`.
+  The output also holds configuration examples for the front end: `nginx.conf`, `Caddyfile`, and `cloudfront-function.js`. They answer `410` for `/ap/*`, `/inbox`, WebFinger, host-meta, NodeInfo, and `/@*`, and serve the closing page for everything else.
+- The command refuses (exit code 1) unless the server is closed. Before `delivery_completed` it prints a warning and still writes the pages. [service-closure.md](service-closure.md) describes how to switch the front end to the static page.
 
 ## Exporting the maintenance page
 
-`my maintenance export` writes the page of the maintenance mode ([ADR-0084](../adr/0084-maintenance-mode.md)) as static HTML,
+`my maintenance export` writes the page of the maintenance mode as static HTML,
 for a load balancer, CDN, or reverse proxy to serve while `my serve` itself cannot run (an image being replaced, a revision that does not start).
 It uses the same template as the maintenance mode, so both show the same words and look.
 
