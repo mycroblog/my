@@ -69,38 +69,24 @@ jobs:
       # As in ci.yml: build the packages once before the parallel Go steps.
       - name: Build the packages and the Go tools once
         run: scripts/task.sh go:warm agentkit:warm mykit:warm
+      # One install of golangci-lint for every lint: four instances of the action each download it to the same path,
+      # and one overwriting the binary while another runs it fails with `Text file busy`.
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      # The lint tasks pass --allow-serial-runners, so the instances wait for each other's lock.
       - parallel:
           - name: go:lint
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
+            run: scripts/task.sh go:lint
           - name: agentkit:lint
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              working-directory: tools/agentkit
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
+            run: scripts/task.sh agentkit:lint
           - name: mykit:lint
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              working-directory: pkg/mykit
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
+            run: scripts/task.sh mykit:lint
           - name: mykit:mybot-lint
-            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-            with:
-              version: v${{ steps.go.outputs.golangci-lint }}
-              working-directory: pkg/mybot
-              skip-cache: true
-              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
-              args: --allow-serial-runners
+            run: scripts/task.sh mykit:mybot-lint
           - name: go:build-tags
             run: scripts/task.sh go:build-tags
 
