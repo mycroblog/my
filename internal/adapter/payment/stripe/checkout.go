@@ -48,7 +48,9 @@ func checkoutLocale(tag string) string {
 	return "auto"
 }
 
-// successURL appends the placeholder of the checkout's ID that Stripe fills in.
+// successURL appends the placeholder of the checkout's ID that Stripe fills in, as checkout_id:
+// the return URLs of the client API already carry checkout=success, and the web client reads a
+// repeated key as a list and so misses the return.
 func successURL(u string) (string, error) {
 	parsed, err := url.Parse(u)
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
@@ -59,7 +61,7 @@ func successURL(u string) (string, error) {
 		sep = "&"
 	}
 	// The placeholder must stay unescaped for Stripe to replace it.
-	return u + sep + "checkout={CHECKOUT_SESSION_ID}", nil
+	return u + sep + "checkout_id={CHECKOUT_SESSION_ID}", nil
 }
 
 // checkHostedURL refuses a URL of a hosted page that is not https on host (ADR-0074 §7): an

@@ -186,7 +186,7 @@ func TestCheckoutURLHost(t *testing.T) {
 		cs = c
 	}
 	f.mu.Unlock()
-	if cs["success_url"] != "https://my.example/ok?x=1&checkout={CHECKOUT_SESSION_ID}" || cs["locale"] != "auto" {
+	if cs["success_url"] != "https://my.example/ok?x=1&checkout_id={CHECKOUT_SESSION_ID}" || cs["locale"] != "auto" {
 		t.Errorf("checkout success_url %v, locale %v", cs["success_url"], cs["locale"])
 	}
 }
