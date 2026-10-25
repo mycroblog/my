@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The alias to remove.
+type: object
+required: [uri]
+properties:
+  uri:
+    description: The `uri` of the alias, as `GET /accounts/aliases` lists it.
+    type: string
+    minLength: 1
+    maxLength: 2048

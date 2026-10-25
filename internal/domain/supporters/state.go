@@ -86,7 +86,8 @@ const (
 	ReasonAccountSuspended Reason = "account_suspended"
 	// ReasonStaff: a staff member canceled the subscription.
 	ReasonStaff Reason = "staff"
-	// ReasonServiceClosed: the server was closed (ADR-0088 §2).
+	// ReasonServiceClosed: the service closure (ADR-0088 §2): its announcement cancels the
+	// subscriptions at the end of their periods, and the closure of the server ends them at once.
 	ReasonServiceClosed Reason = "service_closed"
 )
 

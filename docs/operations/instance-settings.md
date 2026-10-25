@@ -29,7 +29,7 @@
 
 | キー | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | 登録モード（FR-001、[利用者登録](registration.md)） |
+| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | 登録モード（FR-001、[利用者登録](registration.md)）。サービスの終了の予告中とクローズの後は、実効値が `closed` になる（設定の値は変わらず、予告を取り消すと元に戻る。`GET /instance` と NodeInfo は実効値を示す。[ADR-0088](../adr/0088-service-shutdown-modes.md) §2） |
 | `max_status_length` | 整数 1〜100000 | `500` | 投稿の文字数上限（FR-101） |
 | `default_locale` | BCP 47 言語タグ | `en` | 既定のロケール。新しい利用者の UI ロケールの初期値で、利用者の希望に合うカタログが無いときにも使う（ADR-0009） |
 | `local_timeline_access` | `off` / `logged_in` / `everyone` | `everyone` | ローカルタイムライン（`GET /api/v1/timelines/local`）を誰に見せるか: 誰にも / ログインした利用者に / 誰にでも（FR-202）。`off` は 404、`logged_in` はログインしていない訪問者に 401 を返し、ナビゲーションにも出さない。`everyone` でないとき、ランディングページは見本の投稿を出さない |

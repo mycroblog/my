@@ -19,6 +19,10 @@
     "defaultMessage": "[Ȧ ƞḗḗẇ řḗḗƥǿǿřŧ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.admin_service_closure_due": {
+    "defaultMessage": "[Ŧħḗḗ ƈŀǿǿşīƞɠ ḓȧȧŧḗḗ ǿǿƒ {instance} ħȧȧş ƥȧȧşşḗḗḓ: ƈŀǿǿşḗḗ ŧħḗḗ şḗḗřṽḗḗř]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_sign_up": {
     "defaultMessage": "[Ȧ ƞḗḗẇ şīɠƞ-ŭŭƥ ȧȧẇȧȧīŧş ȧȧƥƥřǿǿṽȧȧŀ ǿǿƞ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -87,12 +91,28 @@
     "defaultMessage": "[Ȧ řḗḗƥǿǿřŧ ẏǿǿŭŭ ƒīŀḗḗḓ ǿǿƞ {instance} ħȧȧş ƀḗḗḗḗƞ řḗḗşǿǿŀṽḗḗḓ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.service_closure_announced": {
+    "defaultMessage": "[{instance} ẇīŀŀ ƈŀǿǿşḗḗ: ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ ƀḗḗƒǿǿřḗḗ īŧ ḓǿǿḗḗş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.service_closure_rescheduled": {
+    "defaultMessage": "[Ŧħḗḗ ƈŀǿǿşīƞɠ ḓȧȧŧḗḗ ǿǿƒ {instance} ƈħȧȧƞɠḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.service_closure_withdrawn": {
+    "defaultMessage": "[{instance} ẇīŀŀ ƞǿǿŧ ƈŀǿǿşḗḗ: ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ẇȧȧş ẇīŧħḓřȧȧẇƞ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.supporter_payment_failed": {
     "defaultMessage": "[Ȧ ƥȧȧẏḿḗḗƞŧ ƒǿǿř ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř ƥŀȧȧƞ ǿǿƞ {instance} ƒȧȧīŀḗḗḓ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_plan_retired": {
     "defaultMessage": "[Ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř ƥŀȧȧƞ ǿǿƞ {instance} ẇȧȧş řḗḗŧīřḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.supporter_service_closure": {
+    "defaultMessage": "[Ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř şŭŭƀşƈřīƥŧīǿǿƞ ǿǿƞ {instance} ḗḗƞḓş ẇīŧħ ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ǿǿƒ ŧħḗḗ şḗḗřṽḗḗř]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_subscription_ended": {

@@ -29,7 +29,7 @@ Go のテストは偽サーバー（pstest・`httptest` など）を `127.0.0.1:
 mirrored では範囲を広げてはいけません。WSL が Linux に割り当てたこの範囲の外のポートを OS が選ぶと、外への接続（`git`・`gh` など）がタイムアウトします。
 変更したコンテキストとその依存先だけを回すには `scripts/task.sh check:changed`（比較の基準は `BASE=origin/main`）を使います。CI も同じ判定（`scripts/changed-contexts.sh`）で変更のないコンテキストのジョブを飛ばし、必須チェック `check` が各ジョブの結果を集めます（[CI](#ci)）。
 これらはネットワーク不要のチェック（Markdown lint、ADR 索引、Go の `go vet` / golangci-lint / テスト /
-`CGO_ENABLED=0` ビルド / 依存ライセンス検査 / sqlc 生成物の検査、i18n カタログ検査、クライアント API の spec の lint と生成物の検査、`Dockerfile` の Go イメージと `.tool-versions` の一致、Web クライアントの型検査・ビルド・依存ライセンス検査）をすべて実行します。初回のみ Go モジュールとツール、`tools/i18n` と `app/` の npm パッケージのダウンロードが必要です。
+`CGO_ENABLED=0` ビルド / 依存ライセンス検査 / sqlc 生成物の検査、i18n カタログ検査、クライアント API の spec の lint と生成物の検査、`Dockerfile` の Go イメージと `.tool-versions` の一致、Web クライアントの型検査・ビルド・依存ライセンス検査）をすべて実行します。初回のみ Go モジュールとツール、`tools/i18n`・`tools/mail`・`app/` の npm パッケージのダウンロードが必要です。
 
 - Go ツール（go-licenses, sqlc, oapi-codegen）は `tools/go.mod` の `tool` ディレクティブでバージョン固定しています。
 - 依存関係の既知の脆弱性は GitHub の Dependabot Alerts で検知し、版更新の PR は Dependabot が作ります（`.github/dependabot.yml`、ADR-0046）。
@@ -38,7 +38,7 @@ mirrored では範囲を広げてはいけません。WSL が Linux に割り当
 - ライセンスは AGPL-3.0-only ですが、`api/spec/`・`api/openapi.yaml`・`pkg/mykit/`・`pkg/mybot/` は MIT です（ADR-0093 §2）。
   これらのファイルの SPDX ヘッダは `SPDX-License-Identifier: MIT`、それ以外の新しいソースは `AGPL-3.0-only` で、`scripts/task.sh api:license-scope`（`api:check` に含む）が検査します。
   MIT の範囲の依存は MIT・Apache-2.0・BSD・ISC などの寛容なライセンスに限ります（GPL 系は入れません）。
-- 依存ライブラリのライセンスは AGPL-3.0 と両立するもの（`Taskfile.yml` の `GO_ALLOWED_LICENSES`。`tools/i18n` と `app/` の npm パッケージも同じ一覧で検査）に限ります。
+- 依存ライブラリのライセンスは AGPL-3.0 と両立するもの（`Taskfile.yml` の `GO_ALLOWED_LICENSES`。`tools/i18n`・`tools/mail`・`app/` の npm パッケージも同じ一覧で検査）に限ります。
   増やす場合は PR で理由を説明してください。
 
 ## 進め方

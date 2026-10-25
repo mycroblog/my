@@ -294,5 +294,25 @@
   "notifications.unread_count": {
     "defaultMessage": "{count, plural, one {# unread} other {# unread}}",
     "description": "The number of unread notifications on the badge of the navigation item, for example '3 unread'."
+  },
+  "notifications.type.service_closure": {
+    "defaultMessage": "The administrators announced that this server closes",
+    "description": "Notification sentence to every user: the administrators announced the closure of the server."
+  },
+  "notifications.type.service_closure_rescheduled": {
+    "defaultMessage": "The administrators changed the closing date of this server",
+    "description": "Notification sentence to every user: the administrators changed the dates of the announced closure of the server."
+  },
+  "notifications.type.service_closure_withdrawn": {
+    "defaultMessage": "The administrators withdrew the closure of this server",
+    "description": "Notification sentence to every user: the administrators withdrew the announced closure; the server goes on."
+  },
+  "notifications.type.admin_service_closure_due": {
+    "defaultMessage": "The closing date has passed: close the server",
+    "description": "Notification sentence to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it."
+  },
+  "notifications.type.supporter_service_closure": {
+    "defaultMessage": "Your supporter subscription is canceled because this server closes",
+    "description": "Notification sentence: the announced closure of the server cancels the user's supporter subscription at the end of its period."
   }
 }

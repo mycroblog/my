@@ -159,6 +159,17 @@ CREATE TABLE account_move_states (
 );
 CREATE INDEX account_move_states_target_account_id ON account_move_states (target_account_id);
 
+-- Current value: the aliases of a local account (ADR-0089, FR-009), the actor ids of the accounts
+-- it moves from, which its actor names in alsoKnownAs. At most 5 per account. Only local
+-- accounts have rows; the alsoKnownAs of remote actors is fetched when a move is checked and not
+-- stored.
+CREATE TABLE account_aliases (
+  account_id uuid NOT NULL,
+  alias_uri text NOT NULL,
+  added_at timestamptz NOT NULL,
+  PRIMARY KEY (account_id, alias_uri)
+);
+
 -- Projection: the words that the prefix search of accounts matches (ADR-0092 §1, FR-119, FR-306),
 -- from the handles, the profile heads, the lifecycle states, and the suspensions of the
 -- moderation module. A username row is the normalized username, and for a remote account also

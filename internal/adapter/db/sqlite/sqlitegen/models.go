@@ -18,6 +18,12 @@ type Account struct {
 	CreatedAt int64
 }
 
+type AccountAlias struct {
+	AccountID string
+	AliasUri  string
+	AddedAt   int64
+}
+
 type AccountDomainMute struct {
 	AccountID string
 	Domain    string
@@ -595,6 +601,8 @@ type Notification struct {
 	ReactionCustomEmojiID   sql.NullString
 	AccountMoveID           sql.NullString
 	AccountMoveOutcome      sql.NullString
+	ServiceClosureEventID   sql.NullString
+	ServiceClosureChange    sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

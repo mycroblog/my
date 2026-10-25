@@ -1187,6 +1187,20 @@ func (l *Localizer) ServerErrorsAccountUnavailable() string {
 	return l.format("server:errors.account_unavailable", nil)
 }
 
+// ServerErrorsAliasesInvalid formats "server:errors.aliases.invalid". API error title for HTTP 422 when the handle or URL given as an alias (an account the user moves from) leads to no account, to something that is not an account, or to the user's own account.
+//
+//	en: That handle or URL cannot be an alias. Enter the handle or URL of another account.
+func (l *Localizer) ServerErrorsAliasesInvalid() string {
+	return l.format("server:errors.aliases.invalid", nil)
+}
+
+// ServerErrorsAliasesTooMany formats "server:errors.aliases.too_many". API error title for HTTP 422 when the user adds another alias beyond the limit of aliases.
+//
+//	en: You already have the most aliases allowed. Remove one first.
+func (l *Localizer) ServerErrorsAliasesTooMany() string {
+	return l.format("server:errors.aliases.too_many", nil)
+}
+
 // ServerErrorsAppealAlreadyAppealed formats "server:errors.appeal.already_appealed". API error title for HTTP 422 when the user appeals a moderation action on their account a second time; an action is appealed once.
 //
 //	en: You have already appealed this action.
@@ -1691,6 +1705,20 @@ func (l *Localizer) ServerErrorsServiceClosedDetail() string {
 	return l.format("server:errors.service_closed_detail", nil)
 }
 
+// ServerErrorsServiceClosing formats "server:errors.service_closing". API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions.
+//
+//	en: The closure of this server is announced.
+func (l *Localizer) ServerErrorsServiceClosing() string {
+	return l.format("server:errors.service_closing", nil)
+}
+
+// ServerErrorsServiceClosingDetail formats "server:errors.service_closing_detail". API error detail for HTTP 409 when the closure of the server is announced: what stops.
+//
+//	en: New registrations and supporter subscriptions stop while the closure is announced.
+func (l *Localizer) ServerErrorsServiceClosingDetail() string {
+	return l.format("server:errors.service_closing_detail", nil)
+}
+
 // ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes.
 //
 //	en: The service closure does not allow that in its current state.
@@ -2188,6 +2216,20 @@ func (l *Localizer) ServerMailAdminReportSubject(instance string) string {
 	return l.format("server:mail.admin_report.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAdminServiceClosureDueBody formats "server:mail.admin_service_closure_due.body". Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is.
+//
+//	en: The closing date of {instance} has passed. The server does not close by itself: close it in the administration screens or with my admin closure close.
+func (l *Localizer) ServerMailAdminServiceClosureDueBody(instance string) string {
+	return l.format("server:mail.admin_service_closure_due.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminServiceClosureDueSubject formats "server:mail.admin_service_closure_due.subject". Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The closing date of {instance} has passed
+func (l *Localizer) ServerMailAdminServiceClosureDueSubject(instance string) string {
+	return l.format("server:mail.admin_service_closure_due.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminSignUpBody formats "server:mail.admin_sign_up.body". Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new user signed up on {instance} and awaits approval.
@@ -2375,6 +2417,27 @@ func (l *Localizer) ServerMailSupporterPlanRetiredDetail() string {
 //	en: Your supporter plan on {instance} was retired
 func (l *Localizer) ServerMailSupporterPlanRetiredSubject(instance string) string {
 	return l.format("server:mail.supporter_plan_retired.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailSupporterServiceClosureBody formats "server:mail.supporter_service_closure.body". First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
+//
+//	en: The administrators of {instance} announced that the server closes, which cancels your subscription to the supporter plan “{plan}”.
+func (l *Localizer) ServerMailSupporterServiceClosureBody(instance string, plan string) string {
+	return l.format("server:mail.supporter_service_closure.body", map[string]any{"instance": instance, "plan": plan})
+}
+
+// ServerMailSupporterServiceClosureDetail formats "server:mail.supporter_service_closure.detail". Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels.
+//
+//	en: Your subscription will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
+func (l *Localizer) ServerMailSupporterServiceClosureDetail() string {
+	return l.format("server:mail.supporter_service_closure.detail", nil)
+}
+
+// ServerMailSupporterServiceClosureSubject formats "server:mail.supporter_service_closure.subject". Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Your supporter subscription on {instance} ends with the closure of the server
+func (l *Localizer) ServerMailSupporterServiceClosureSubject(instance string) string {
+	return l.format("server:mail.supporter_service_closure.subject", map[string]any{"instance": instance})
 }
 
 // ServerMailSupporterSubscriptionEndedBody formats "server:mail.supporter_subscription_ended.body". Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why.
@@ -2587,6 +2650,13 @@ func (l *Localizer) ServerPushAdminReport(instance string) string {
 	return l.format("server:push.admin_report", map[string]any{"instance": instance})
 }
 
+// ServerPushAdminServiceClosureDue formats "server:push.admin_service_closure_due". Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The closing date of {instance} has passed: close the server
+func (l *Localizer) ServerPushAdminServiceClosureDue(instance string) string {
+	return l.format("server:push.admin_service_closure_due", map[string]any{"instance": instance})
+}
+
 // ServerPushAdminSignUp formats "server:push.admin_sign_up". Web Push notification to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new sign-up awaits approval on {instance}
@@ -2706,6 +2776,27 @@ func (l *Localizer) ServerPushReportResolved(instance string) string {
 	return l.format("server:push.report_resolved", map[string]any{"instance": instance})
 }
 
+// ServerPushServiceClosureAnnounced formats "server:push.service_closure_announced". Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance} will close: export your data before it does
+func (l *Localizer) ServerPushServiceClosureAnnounced(instance string) string {
+	return l.format("server:push.service_closure_announced", map[string]any{"instance": instance})
+}
+
+// ServerPushServiceClosureRescheduled formats "server:push.service_closure_rescheduled". Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The closing date of {instance} changed
+func (l *Localizer) ServerPushServiceClosureRescheduled(instance string) string {
+	return l.format("server:push.service_closure_rescheduled", map[string]any{"instance": instance})
+}
+
+// ServerPushServiceClosureWithdrawn formats "server:push.service_closure_withdrawn". Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance} will not close: the closure was withdrawn
+func (l *Localizer) ServerPushServiceClosureWithdrawn(instance string) string {
+	return l.format("server:push.service_closure_withdrawn", map[string]any{"instance": instance})
+}
+
 // ServerPushSupporterPaymentFailed formats "server:push.supporter_payment_failed". Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A payment for your supporter plan on {instance} failed
@@ -2718,6 +2809,13 @@ func (l *Localizer) ServerPushSupporterPaymentFailed(instance string) string {
 //	en: Your supporter plan on {instance} was retired
 func (l *Localizer) ServerPushSupporterPlanRetired(instance string) string {
 	return l.format("server:push.supporter_plan_retired", map[string]any{"instance": instance})
+}
+
+// ServerPushSupporterServiceClosure formats "server:push.supporter_service_closure". Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Your supporter subscription on {instance} ends with the closure of the server
+func (l *Localizer) ServerPushSupporterServiceClosure(instance string) string {
+	return l.format("server:push.supporter_service_closure", map[string]any{"instance": instance})
 }
 
 // ServerPushSupporterSubscriptionEnded formats "server:push.supporter_subscription_ended". Web Push notification: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none.

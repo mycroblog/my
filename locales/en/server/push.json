@@ -98,5 +98,25 @@
   "push.supporter_subscription_ended": {
     "defaultMessage": "Your supporter plan on {instance} ended",
     "description": "Web Push notification: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_announced": {
+    "defaultMessage": "{instance} will close: export your data before it does",
+    "description": "Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_rescheduled": {
+    "defaultMessage": "The closing date of {instance} changed",
+    "description": "Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.service_closure_withdrawn": {
+    "defaultMessage": "{instance} will not close: the closure was withdrawn",
+    "description": "Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_service_closure_due": {
+    "defaultMessage": "The closing date of {instance} has passed: close the server",
+    "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.supporter_service_closure": {
+    "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
+    "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
   }
 }

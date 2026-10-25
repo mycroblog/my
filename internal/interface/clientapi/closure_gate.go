@@ -3,6 +3,7 @@
 package clientapi
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -15,6 +16,16 @@ import (
 // ProblemTypeServiceClosed is the problem type of an operation that a closed server refuses
 // (403).
 const ProblemTypeServiceClosed = "/api/v1/problems/service-closed"
+
+// ProblemTypeServiceClosing is the problem type of a registration or a supporter subscription
+// that the announcement of the service closure stops (409).
+const ProblemTypeServiceClosing = "/api/v1/problems/service-closing"
+
+// serviceClosingProblem is the 409 service-closing.
+func (s *Server) serviceClosingProblem(ctx context.Context) problem {
+	l := s.Localizer(ctx)
+	return s.problem(ctx, http.StatusConflict, ProblemTypeServiceClosing, l.ServerErrorsServiceClosing(), l.ServerErrorsServiceClosingDetail())
+}
 
 // closureOperations are the operations, by operationId, that the users need to take their data
 // away from a closed server (instance.ClosureOwnData): their own account and its settings to

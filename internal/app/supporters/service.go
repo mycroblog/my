@@ -88,9 +88,12 @@ type Deps struct {
 	CommerceDisclosure func(ctx context.Context) (bool, error)
 	// Income records the money movements in the finance module; nil records none.
 	Income IncomeRecorder
-	Outbox queue.Outbox
-	Clock  kernel.Clock
-	IDs    kernel.IDGenerator
+	// Closure stops new subscriptions from the announcement of the service closure on
+	// (ADR-0088 §2); nil never stops them.
+	Closure ServiceClosure
+	Outbox  queue.Outbox
+	Clock   kernel.Clock
+	IDs     kernel.IDGenerator
 	// Logger defaults to slog.Default().
 	Logger *slog.Logger
 }

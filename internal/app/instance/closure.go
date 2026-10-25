@@ -31,6 +31,8 @@ type ClosureRepository interface {
 
 	// CurrentClosure returns the closure that the head points at.
 	CurrentClosure(ctx context.Context) (instance.Closure, error)
+	// FindClosureEvent returns an event with its schedule, ErrNotFound when there is none.
+	FindClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error)
 }
 
 // EventClosureRecorded is the event type of ClosureRecorded.
@@ -39,7 +41,26 @@ const EventClosureRecorded = "instance.closure_recorded"
 // ClosureRecorded is emitted when a service closure event is inserted.
 type ClosureRecorded struct {
 	Event instance.ClosureEvent
+	// Previous is the state before the event.
+	Previous instance.ClosureState
 }
+
+// Starts reports whether the event starts the notice period: an announcement with no closure
+// announced before it. The modules that the notice period stops (ADR-0088 §2) act on it.
+func (e ClosureRecorded) Starts() bool {
+	return e.Event.Kind == instance.ClosureEventAnnounced && e.Previous == instance.ClosureNone
+}
+
+// Reschedules reports whether the event changes the dates of an announcement in effect.
+func (e ClosureRecorded) Reschedules() bool {
+	return e.Event.Kind == instance.ClosureEventAnnounced && e.Previous == instance.ClosureAnnounced
+}
+
+// Withdraws reports whether the event withdraws the announcement.
+func (e ClosureRecorded) Withdraws() bool { return e.Event.Kind == instance.ClosureEventWithdrawn }
+
+// ClosesAt is the closing date of an announcement, the zero time for the other kinds.
+func (e ClosureRecorded) ClosesAt() time.Time { return e.Event.Schedule.ClosesAt }
 
 // EventType implements uow.Event.
 func (ClosureRecorded) EventType() string { return EventClosureRecorded }
@@ -148,7 +169,7 @@ func (s *Service) recordClosure(ctx context.Context, e instance.ClosureEvent) (i
 		if err := s.d.Repository.InsertClosureEvent(ctx, tx, ev); err != nil {
 			return err
 		}
-		if err := tx.Emit(ctx, ClosureRecorded{Event: ev}); err != nil {
+		if err := tx.Emit(ctx, ClosureRecorded{Event: ev, Previous: cur.CurrentState()}); err != nil {
 			return err
 		}
 		if err := tx.Emit(ctx, s.audit(action, appmoderation.AuditTargetInstance, AuditTargetServiceClosure,
@@ -256,4 +277,36 @@ func (s *Service) ClosureAllows(ctx context.Context, op instance.ClosureOperatio
 func (s *Service) PushStopped(ctx context.Context) (bool, error) {
 	ok, err := s.ClosureAllows(ctx, instance.ClosureStream)
 	return !ok, err
+}
+
+// RegistrationAllowed reports whether the service closure lets users sign up, use an invite, and
+// have a pending application approved (instance.ClosureRegister): not from the announcement on.
+func (s *Service) RegistrationAllowed(ctx context.Context) (bool, error) {
+	return s.ClosureAllows(ctx, instance.ClosureRegister)
+}
+
+// SubscribingAllowed reports whether the service closure lets users start a supporter
+// subscription (instance.ClosureSubscribe): not from the announcement on.
+func (s *Service) SubscribingAllowed(ctx context.Context) (bool, error) {
+	return s.ClosureAllows(ctx, instance.ClosureSubscribe)
+}
+
+// ClosureEvent returns a service closure event with its schedule, for the notifications that
+// tell of it. It fails with ErrNotFound when there is none.
+func (s *Service) ClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error) {
+	return s.d.Repository.FindClosureEvent(ctx, id)
+}
+
+// AnnouncementInEffect reports whether the announcement announcementID is the one in effect,
+// with the server not closed yet, and returns its closing date: what the reminder to close the
+// server, once the date has passed, checks before it is sent (ADR-0088 §1).
+func (s *Service) AnnouncementInEffect(ctx context.Context, announcementID string) (closesAt time.Time, ok bool, err error) {
+	c, err := s.Closure(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	if c.CurrentState() != instance.ClosureAnnounced || c.AnnouncementID != announcementID {
+		return time.Time{}, false, nil
+	}
+	return c.Schedule.ClosesAt, true, nil
 }

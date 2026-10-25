@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAccountAliases
+  summary: List the authenticated user's aliases
+  description: |
+    The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+    `alsoKnownAs`, oldest first.
+  tags: [accounts]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      $ref: ../components/responses/AccountAliasList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: addAccountAlias
+  summary: Add an alias to the authenticated user
+  description: |
+    Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+    names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+    actor's `Update` goes to the user's followers as a profile change does. An alias alone
+    changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+    `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+    limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+
+    A handle or URL that leads to no account, the URL of something that is not an actor, the
+    instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+    account that the instance does not know while it takes nothing in from other servers
+    (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+    is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+    changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AddAccountAliasRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AccountAliasList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -30,6 +30,9 @@ func (h *Handler) actorDocument(ctx context.Context, a appaccount.Actor) (federa
 	if images.Emojis, err = appfederation.LocalActorEmojis(ctx, h.o.EmojiTags, h.o.Host, a); err != nil {
 		return federation.ActorDocument{}, err
 	}
+	if images.AlsoKnownAs, err = appfederation.LocalActorAliases(ctx, h.o.Aliases, a); err != nil {
+		return federation.ActorDocument{}, err
+	}
 	if images.MovedTo, err = appfederation.LocalActorMovedTo(ctx, h.o.Moves, a); err != nil {
 		return federation.ActorDocument{}, err
 	}
