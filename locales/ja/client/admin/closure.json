@@ -1,0 +1,258 @@
+{
+  "admin.closure.announce": {
+    "defaultMessage": "終了を予告する",
+    "description": "Button that announces the closure of the service."
+  },
+  "admin.closure.announce.title": {
+    "defaultMessage": "終了を予告する",
+    "description": "Heading of the form that announces the closure of the service."
+  },
+  "admin.closure.announce_failed": {
+    "defaultMessage": "予告を保存できませんでした：{reason}",
+    "description": "Error after announcing or changing the closure failed. {reason} is why."
+  },
+  "admin.closure.announced": {
+    "defaultMessage": "終了を予告しました。利用者に知らせが出ています。",
+    "description": "Status after the closure was announced."
+  },
+  "admin.closure.announced_at": {
+    "defaultMessage": "予告した日時",
+    "description": "Label of when the closure was announced or its dates last changed."
+  },
+  "admin.closure.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that leaves a dialog of the closure screen without changing anything."
+  },
+  "admin.closure.change": {
+    "defaultMessage": "変更を保存する",
+    "description": "Button that changes the announcement of the closure."
+  },
+  "admin.closure.change.title": {
+    "defaultMessage": "予告を変更する",
+    "description": "Heading of the form that changes the dates and message of the announced closure."
+  },
+  "admin.closure.changed": {
+    "defaultMessage": "予告を変更しました。利用者に伝わります。",
+    "description": "Status after the announcement of the closure was changed."
+  },
+  "admin.closure.check.deletes": {
+    "defaultMessage": "送る Delete",
+    "description": "Label of the estimate of the deliveries of the closure."
+  },
+  "admin.closure.check.deletes.value": {
+    "defaultMessage": "約{deletes}件（アカウント{accounts}件、inbox {inboxes}件）",
+    "description": "Estimate of the closure's Delete deliveries. {deletes}, {accounts} and {inboxes} are numbers."
+  },
+  "admin.closure.check.federation": {
+    "defaultMessage": "Delete は連合のモードにかかわらず送ります。凍結したドメインには送りません。クローズのあと、連合のリクエストは拒否します。",
+    "description": "Note on how the closure treats the federation mode."
+  },
+  "admin.closure.check.holds": {
+    "defaultMessage": "保全の対象のアカウント",
+    "description": "Label of the number of accounts under a retention hold."
+  },
+  "admin.closure.check.holds.warning": {
+    "defaultMessage": "閉鎖したサーバーのデータを捨てる前に、CLI でこれらの記録を書き出してください。",
+    "description": "Warning when accounts are under a retention hold."
+  },
+  "admin.closure.check.migrations": {
+    "defaultMessage": "終わっていないアカウントの移転",
+    "description": "Label of the number of account migrations that have not ended."
+  },
+  "admin.closure.check.migrations.warning": {
+    "defaultMessage": "クローズの前に移転を終わらせてください。クローズの Delete は移転のあとに送ります。",
+    "description": "Warning when account migrations have not ended."
+  },
+  "admin.closure.check.subscriptions": {
+    "defaultMessage": "続いているサポーターの加入",
+    "description": "Label of the number of supporter subscriptions that closing cancels."
+  },
+  "admin.closure.check.subscriptions.warning": {
+    "defaultMessage": "クローズすると、これらの加入はすぐに解約され、返金はされません。",
+    "description": "Warning when supporter subscriptions go on."
+  },
+  "admin.closure.check.title": {
+    "defaultMessage": "クローズで終わること",
+    "description": "Heading of the check before the closing."
+  },
+  "admin.closure.close": {
+    "defaultMessage": "サーバーをクローズする",
+    "description": "Button that opens the dialog that closes the server."
+  },
+  "admin.closure.close.confirm": {
+    "defaultMessage": "クローズする",
+    "description": "Verb of the dialog that closes the server."
+  },
+  "admin.closure.close.confirm.description": {
+    "defaultMessage": "この操作は取り消せません。利用者はサインインとデータの持ち出ししかできなくなり、{domain}はすべてのローカルアカウントの削除を他のサーバーへ送ります。続けるには、サーバーのドメイン名を入力してください。",
+    "description": "What closing does, in the dialog. {domain} is the server's domain."
+  },
+  "admin.closure.close.confirm.title": {
+    "defaultMessage": "サーバーを完全にクローズしますか？",
+    "description": "Question of the dialog that closes the server."
+  },
+  "admin.closure.close.description": {
+    "defaultMessage": "クローズするとサービスが終わります。利用者はサインインとデータの持ち出しだけができ、サーバーはすべてのローカルアカウントの削除を他のサーバーへ伝えます。取り消せません。先に、何が終わるかを確かめてください。",
+    "description": "Explanation above the check in the section that closes the server."
+  },
+  "admin.closure.close.domain": {
+    "defaultMessage": "サーバーのドメイン名",
+    "description": "Label of the field where the administrator types the server's domain to confirm the closing."
+  },
+  "admin.closure.close.domain.description": {
+    "defaultMessage": "{domain}と入力してください。",
+    "description": "Hint of the domain field. {domain} is the server's domain."
+  },
+  "admin.closure.close.domain.mismatch": {
+    "defaultMessage": "サーバーのドメイン名と一致しません。",
+    "description": "Error when the typed text is not the server's domain."
+  },
+  "admin.closure.close.not_yet": {
+    "defaultMessage": "{date}からクローズできます。",
+    "description": "Note when the closing date has not come. {date} is the closing date and time."
+  },
+  "admin.closure.close.title": {
+    "defaultMessage": "サーバーをクローズする",
+    "description": "Heading of the section where the administrator checks and closes the server."
+  },
+  "admin.closure.close_failed": {
+    "defaultMessage": "サーバーをクローズできませんでした：{reason}",
+    "description": "Error in the dialog after closing failed. {reason} is why."
+  },
+  "admin.closure.closed": {
+    "defaultMessage": "サーバーをクローズしました。配送を始めます。",
+    "description": "Status after the server was closed."
+  },
+  "admin.closure.closed.title": {
+    "defaultMessage": "クローズしたサーバー",
+    "description": "Heading of the section that shows the schedule of the closed server."
+  },
+  "admin.closure.closes_at": {
+    "defaultMessage": "閉鎖日",
+    "description": "Label of the date and time when the server closes, in the form and in the list of facts. Shown in the administrator's time zone."
+  },
+  "admin.closure.closes_at.description": {
+    "defaultMessage": "お使いのタイムゾーンです。どの日でも指定できます。サーバーは自動では閉じず、日が過ぎたあとにここでクローズします。",
+    "description": "Hint of the closing date field."
+  },
+  "admin.closure.closes_at.required": {
+    "defaultMessage": "閉鎖日を入力してください。",
+    "description": "Error when the closing date is empty or not a date."
+  },
+  "admin.closure.current.title": {
+    "defaultMessage": "いまの予告",
+    "description": "Heading of the section that shows the announced closure of the service."
+  },
+  "admin.closure.description": {
+    "defaultMessage": "このサーバーを閉じる日を予告して、利用者がデータを持ち出し、アカウントを移せるようにします。予告の間、サーバーはいつもどおり動き、すべての利用者に知らせが出ます。クローズは取り消せません。",
+    "description": "Explanation at the top of the service closure screen."
+  },
+  "admin.closure.due": {
+    "defaultMessage": "閉鎖日を過ぎました。下の点検を確かめて、サーバーをクローズしてください。",
+    "description": "Note when the closing date of the announced closure has passed."
+  },
+  "admin.closure.export_until": {
+    "defaultMessage": "持ち出しの期限",
+    "description": "Label of the date and time until which the users may sign in and export their data after the closure."
+  },
+  "admin.closure.export_until.before": {
+    "defaultMessage": "持ち出しの期限は閉鎖日より前にできません。",
+    "description": "Error when the export deadline is before the closing date."
+  },
+  "admin.closure.export_until.description": {
+    "defaultMessage": "利用者がサインインしてデータを持ち出せる期限です。空にすると、閉鎖日の{days}日後になります。",
+    "description": "Hint of the export deadline field. {days} is a number of days."
+  },
+  "admin.closure.export_until.invalid": {
+    "defaultMessage": "日時を入力するか、空にしてください。",
+    "description": "Error when the export deadline is not a date."
+  },
+  "admin.closure.message": {
+    "defaultMessage": "利用者へのメッセージ",
+    "description": "Label of the operators' message in the form and in the list of facts."
+  },
+  "admin.closure.message.description": {
+    "defaultMessage": "プレーンテキストです。知らせと閉鎖後の画面に出ます。省略できます。",
+    "description": "Hint of the operators' message field."
+  },
+  "admin.closure.message.too_long": {
+    "defaultMessage": "メッセージが長すぎます。{max}文字までにしてください。",
+    "description": "Error when the operators' message is too long. {max} is the limit."
+  },
+  "admin.closure.progress.accounts": {
+    "defaultMessage": "Delete を記録したアカウント",
+    "description": "Label of the number of local accounts whose Delete is recorded."
+  },
+  "admin.closure.progress.completed": {
+    "defaultMessage": "すべての配送が終わりました。サーバーを止めて構いません。",
+    "description": "Note after the closure's deliveries have all ended."
+  },
+  "admin.closure.progress.dead": {
+    "defaultMessage": "再試行の上限に達した",
+    "description": "Label of the deliveries that used up their attempts."
+  },
+  "admin.closure.progress.fanouts_pending": {
+    "defaultMessage": "inbox への展開中の Delete",
+    "description": "Label of the number of recorded Deletes whose inboxes are still being computed."
+  },
+  "admin.closure.progress.none": {
+    "defaultMessage": "配送はまだ始まっていません。",
+    "description": "Note when the progress of the deliveries is not known yet."
+  },
+  "admin.closure.progress.pending": {
+    "defaultMessage": "待機中・再試行中",
+    "description": "Label of the deliveries not attempted yet or failed and attempted again later."
+  },
+  "admin.closure.progress.permanent_failure": {
+    "defaultMessage": "恒久的に失敗",
+    "description": "Label of the deliveries refused for good."
+  },
+  "admin.closure.progress.running": {
+    "defaultMessage": "配送が進んでいます。ワーカーは止めないでください。止めると配送も止まります。この画面は数秒ごとに読み直します。",
+    "description": "Note while the closure's deliveries go on."
+  },
+  "admin.closure.progress.skipped": {
+    "defaultMessage": "送らなかった",
+    "description": "Label of the deliveries not sent because the domain was suspended or the server unavailable."
+  },
+  "admin.closure.progress.succeeded": {
+    "defaultMessage": "配送済み",
+    "description": "Label of the deliveries accepted by the inbox."
+  },
+  "admin.closure.progress.title": {
+    "defaultMessage": "配送の進み具合",
+    "description": "Heading of the progress of the closure's Delete deliveries."
+  },
+  "admin.closure.short_notice": {
+    "defaultMessage": "利用者に残る期間が{days}日より短くなります。データの持ち出しやアカウントの移転が間に合わないかもしれません。",
+    "description": "Warning when the closing date is less than the days of a short notice away. {days} is a number of days."
+  },
+  "admin.closure.summary": {
+    "defaultMessage": "このサーバーの終了を予告し、終了で何が終わるかを確かめ、クローズして、配送の進み具合を見ます。",
+    "description": "Description of the service closure screen in the administration menu."
+  },
+  "admin.closure.title": {
+    "defaultMessage": "サービスの終了",
+    "description": "Title of the service closure screen in the administration and its menu entry."
+  },
+  "admin.closure.withdraw": {
+    "defaultMessage": "予告を取り消す",
+    "description": "Button, and the verb of its dialog, that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw.description": {
+    "defaultMessage": "知らせは消え、登録と招待が使えるようになり、利用者にはサーバーが続くことが伝わります。もう一度予告することもできます。",
+    "description": "What withdrawing the announcement of the closure does."
+  },
+  "admin.closure.withdraw.title": {
+    "defaultMessage": "予告を取り消しますか？",
+    "description": "Question of the dialog that withdraws the announcement of the closure."
+  },
+  "admin.closure.withdraw_failed": {
+    "defaultMessage": "予告を取り消せませんでした：{reason}",
+    "description": "Error in the dialog after withdrawing failed. {reason} is why."
+  },
+  "admin.closure.withdrawn": {
+    "defaultMessage": "予告を取り消しました。サーバーはこれまでどおり動きます。",
+    "description": "Status after the announcement of the closure was withdrawn."
+  }
+}
