@@ -4,7 +4,7 @@
 
 - **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[federation.md §7.3](../federation.md)）・監査ログ。
   `features/moderation` は、利用者が自分への処分を確かめる画面（§18）も受け持ち、サーバー管理の画面が使う共通の部品（下の「共通の部品」）と権限の型・一覧のページングも `index.ts` から出す。
-- **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・webhook・リレー・費用・ロール・ジョブのキュー。これから足すサーバー管理の画面（リレー）は、
+- **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・費用・ロール・ジョブのキュー。これから足すサーバー管理の画面（リレー）は、
   `routes/admin.<画面>.tsx` のルートと、`features/admin/components/AdminMenu.tsx` の一覧の 1 行を足してここに置く。
 
 API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) の管理の操作、タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
@@ -72,6 +72,12 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **一覧**: 新しい順。各お知らせは見出し（本文の最初の行を U+2068 / U+2069 で囲んだものと状態）・利用者が見る形の本文（`PostContent`）・状態・公開日時・掲載の開始と終了の説明リストにする。
     下書きは「公開する」、取り下げていないお知らせは「編集」（本文のダイアログ。期間は変えない）と「取り下げる」（元に戻せないので `ConfirmDialog` で確かめる）を持ち、ボタンのアクセシブルネームはお知らせの最初の行を含める。
     変更の後はフォーカスをそのお知らせの見出しに移し、結果を一覧の上の `StatusMessage` に、失敗を同じ場所（`role="alert"`）に出す。掲載の開始を後にするお知らせは API（`starts_at`）で書く。
+- **サービスの終了**（`/admin/closure`、`manage_service_closure`、FR-808・FR-809、[ADR-0088](../../adr/0088-service-shutdown-modes.md)）: 状態（`GET /admin/closure`）で出す区画（`h2` の `section`）が変わる。結果は先頭の `StatusMessage` に出し、失敗は操作したフォームかダイアログの中に出す（`role="alert"`）。
+  - **予告なし**: 「終了を予告する」フォーム。閉鎖日（`datetime-local`、閲覧者のタイムゾーン。必須）・持ち出しの期限（空なら閉鎖日の 30 日後）・利用者へのメッセージ（5,000 文字まで）。閉鎖日までが 30 日より短いと、送る前から警告（`Callout`）を出す。日付に下限は無い。
+  - **予告中**: 「いまの予告」（日時・メッセージの説明リストと、`short_notice` の警告。閉鎖日を過ぎたらクローズを促す一文。「予告を取り消す」は `ConfirmDialog`）、「予告を変更する」（同じフォーム）、「サーバーをクローズする」。
+    クローズの区画は、確認の前に点検（`GET /admin/closure/check`: `Delete` の見積もり、続いているサポーターの加入、終わっていない移転、保全の件数と、それぞれの注意。`federation_mode` にかかわらず `Delete` を送ることの説明）を出す。「クローズする」は閉鎖日を過ぎるまで押せず、押すと `ConfirmDialog`（`role="alertdialog"`）が開いて、サーバーのドメイン名（`GET /instance` の `domain`。大文字小文字は区別しない）の入力を求める。入力が合うまで実行できず（ネイティブの検証）、閉じるとき入力を捨てる。
+  - **クローズ後**: 日程と、配送の進み具合（`progress`: 処理したアカウント数、`Delete` の展開待ち、配送の状態ごとの件数）。10 秒ごとに読み直し、配送中は「ワーカーを止めない」注意を、`delivery_completed` になったら完了を `Callout` で出す。クローズ後も管理の画面は使える（利用者の画面は閉鎖の画面だけ）。
+  - 変更でボタンが画面から消えたとき、フォーカスはページの見出し（`h1`）へ移す。
 - **webhook**（`/admin/webhooks`・`/admin/webhooks/{id}`、`manage_webhooks`、FR-722、[ADR-0060](../../adr/0060-instance-webhooks.md)）: 「webhook を設定する」と「このサーバーの webhook」の 2 つの区画（`h2` の `section`）。
   - **設定**: URL（必須、2048 バイトまで）・説明（200 文字まで）・イベント（`role="group"` の中の `Checkbox`、イベントの種類ごとに 1 つ）のフォーム。`POST /admin/webhooks` で送り、サーバーの拒否（422 `invalid-webhook`）は `reason` の項目（URL・説明・イベント）にサーバーの `detail` を出し、`missing_permission` では足りない権限（`missing_permissions`）も並べて、入力を残す。
     成功したら入力を空にし、一覧と監査ログに無効化の印を付けてから、結果をフォームの `StatusMessage` に、秘密（`whsec_…`、`dir="ltr"`）を二度と表示しない旨とコピーのボタン（結果はトースト）と一緒にフォームの下に出す。秘密はキャッシュにも保存にも置かず、次の操作で消える。

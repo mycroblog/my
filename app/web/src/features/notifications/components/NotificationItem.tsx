@@ -42,11 +42,12 @@ import {
 } from "@my/ui";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
-import { RelationshipActions, useRelationship } from "../../profile";
+import { isolate, RelationshipActions, useRelationship } from "../../profile";
 import type { NotificationAccount } from "../api/notifications";
 import type { NotificationGroup } from "../hooks/groupNotifications";
 import {
   type ModerationNoticeView,
+  type MoveOutcomeKey,
   type NotificationActor,
   type NotificationView,
   type SupporterNoticeView,
@@ -127,9 +128,20 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
           <RejectionReason reason={view.emojiRequest.reason} />
         ) : view.supporter !== null ? (
           <SupporterNotice supporter={view.supporter} />
+        ) : view.move !== null && view.move.outcome !== null ? (
+          <MoveOutcome move={view.move} outcome={view.move.outcome} />
         ) : null
       }
       {...(view.followBack !== null && { actions: <FollowBack account={view.followBack} /> })}
+      {...(view.move !== null && {
+        actions: (
+          <NotificationLinks>
+            <Link href={view.move.href} variant="standalone">
+              {t("client:notifications.account_moved.target", { target: isolate(view.move.handle) })}
+            </Link>
+          </NotificationLinks>
+        ),
+      })}
       {...(view.links.length > 0 && {
         actions: (
           <NotificationLinks>
@@ -275,6 +287,19 @@ function SupporterNotice({ supporter }: { supporter: SupporterNoticeView }) {
       )}
       {detail?.kind === "ended" && <Hint as="p">{t("client:notifications.supporter.ended", { reason: detail.reason })}</Hint>}
       {detail?.kind === "retired" && <Hint as="p">{t("client:notifications.supporter.retired")}</Hint>}
+    </QuoteBlock>
+  );
+}
+
+/**
+ * What became of the user's follow when the account moved: they follow the new account instead, or why they do not
+ * (the new account's handle is isolated from the sentence around it; Y10).
+ */
+function MoveOutcome({ move, outcome }: { move: NonNullable<NotificationView["move"]>; outcome: MoveOutcomeKey }) {
+  const t = useT();
+  return (
+    <QuoteBlock>
+      <Text as="p">{t(outcome, { target: isolate(move.handle) })}</Text>
     </QuoteBlock>
   );
 }

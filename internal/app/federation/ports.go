@@ -69,6 +69,24 @@ type Repository interface {
 	// ListInstanceHealth returns at most limit servers with a health row in domain order, starting
 	// after the domain after ("" for the first): those in state, or every one when state is "".
 	ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error)
+
+	// InsertFanOutCompletion records that the fan-out of an outbound activity enqueued its last
+	// batch; a repeated one keeps the first.
+	InsertFanOutCompletion(ctx context.Context, tx uow.Tx, outboundActivityID string, completedAt time.Time) error
+	// InsertClosureDelete records the service closure's Delete of an account unless the account
+	// has one, and reports whether it did.
+	InsertClosureDelete(ctx context.Context, tx uow.Tx, d federation.ClosureDelete) (bool, error)
+	// ClosureDeleteAccounts returns, in ID order, the accounts among ids whose closure Delete is
+	// recorded.
+	ClosureDeleteAccounts(ctx context.Context, ids []string) ([]string, error)
+	// ClosureProgress counts the closure's Deletes, those whose fan-out has not ended, and their
+	// deliveries by state; a delivery whose latest attempt failed and that made maxAttempts
+	// attempts is dead.
+	ClosureProgress(ctx context.Context, maxAttempts int) (federation.ClosureProgress, error)
+	// CountPendingMoves counts the Moves recorded since since whose fan-out has not ended or
+	// that have a delivery with no attempt yet or with a retryable failure and fewer than
+	// maxAttempts attempts.
+	CountPendingMoves(ctx context.Context, since time.Time, maxAttempts int) (int, error)
 }
 
 // Statuses is the part of the content module's public API that delivery reads: the local

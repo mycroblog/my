@@ -32,6 +32,7 @@ describe("the notice of the closure", () => {
     expect(notice).toHaveTextContent("until January 15, 2027");
     expect(within(notice).getByText("Thank you for the good years.")).toHaveAttribute("dir", "auto");
     expect(within(notice).getByRole("link", { name: "Export your data" })).toHaveAttribute("href", "/settings/account");
+    expect(within(notice).getByRole("link", { name: "Move your account" })).toHaveAttribute("href", "/settings/move");
     // Not closable, and not a live region that interrupts.
     expect(within(notice).queryByRole("button")).not.toBeInTheDocument();
   });

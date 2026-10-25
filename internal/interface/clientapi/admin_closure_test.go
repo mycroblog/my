@@ -51,6 +51,13 @@ func (f *fakeClosures) CheckClosure(context.Context) (appinstance.ClosureCheck, 
 	return appinstance.ClosureCheck{LocalAccounts: 3, DeliveryInboxes: 4, EstimatedDeletes: 12, LiveSupporterSubscriptions: 1, PendingMigrations: 2, RetentionHolds: 1}, nil
 }
 
+func (f *fakeClosures) ClosureProgress(context.Context) (appinstance.ClosureProgress, bool, error) {
+	if st := f.current.CurrentState(); st != instance.ClosureClosed && st != instance.ClosureDeliveryCompleted {
+		return appinstance.ClosureProgress{}, false, nil
+	}
+	return appinstance.ClosureProgress{Accounts: 3, FanOuts: 1, Deliveries: map[string]int{"pending": 5, "succeeded": 4, "dead": 1}}, true, nil
+}
+
 func (f *fakeClosures) CloseService(_ context.Context, by string) (instance.Closure, error) {
 	if err := f.current.Check(instance.ClosureEventClosed, f.now); err != nil {
 		return instance.Closure{}, err
@@ -108,6 +115,13 @@ func TestCloseService(t *testing.T) {
 	got := decodeJSON[clientapi.AdminServiceClosure](t, e.send(t, http.MethodPost, "/admin/closure/close", "admin", `{"confirm_domain":"Social.Example"}`))
 	if got.State != clientapi.ServiceClosureStateClosed || len(f.calls) != 1 || f.calls[0] != "close by "+userOf(aliceAccountID) {
 		t.Errorf("close = %+v, calls %v", got, f.calls)
+	}
+
+	// Once closed, GET /admin/closure carries the progress of the closure's Deletes.
+	got = decodeJSON[clientapi.AdminServiceClosure](t, e.admin(t, http.MethodGet, "/admin/closure", "admin", nil))
+	want := clientapi.AdminServiceClosureProgress{Accounts: 3, FanoutsPending: 1, Deliveries: clientapi.AdminServiceClosureDeliveries{Pending: 5, Succeeded: 4, Dead: 1}}
+	if got.Progress == nil || *got.Progress != want {
+		t.Errorf("progress = %+v, want %+v", got.Progress, want)
 	}
 }
 
