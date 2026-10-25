@@ -10,7 +10,7 @@ The page works without JavaScript and, like the sign-in page, is protected by a 
 When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
 
 The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client under "Server settings" (`/admin/settings`) ([instance settings](instance-settings.md)). A change applies from the next registration.
-While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#サービスの終了の予告)).
+While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#announcing-the-end-of-the-service)).
 
 ```sh
 my instance set registration_mode invite

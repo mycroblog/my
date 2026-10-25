@@ -1,49 +1,49 @@
-# 連合リレー
+# Federation relays
 
-運営者向けの手順です。決定は [ADR-0061](../adr/0061-federation-relays.md)、設計は [連合の設計 §13](../architecture/federation.md#13-リレー) です。
+A guide for operators.
 
-リレーは、参加したサーバーの公開投稿を、ほかの参加サーバーへ中継するサーバーです。フォローの少ない小さなインスタンスでも、
-連合タイムラインとハッシュタグが埋まり、自分の公開投稿が外に届きやすくなります。リレーに参加しないインスタンスでは、行もジョブも増えません。
+A relay is a server that passes the public posts of the servers that join it on to the other joined servers. Even a small instance with few follows gets a filled federated timeline and hashtag timelines,
+and its own public posts reach further. An instance that does not join a relay gains no rows and no jobs.
 
-## 参加する
+## Join a relay
 
-管理画面の「リレー」（`/admin/relays`）で、権限 `manage_settings` を持つ人が操作します。組み込みの `admin` ロールが持ちます。
-CLI は `my admin relay`（`my admin relay -help`）です。
+Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
+The CLI is `my admin relay` (`my admin relay -help`).
 
-1. リレーの URL を入れて登録します。方式は 2 つです。
-   - **Mastodon 方式**: リレーの **inbox の URL**（`https://relay.example/inbox` など）。pub-relay・Activity-Relay など、多くのリレーがこの方式を受け付けます。
-   - **LitePub 方式**: リレーの **Actor の URL**（`https://relay.example/relay` など）。Pleroma・Akkoma のリレーの方式です。
-   方式を選ばなければ、URL が Actor の文書を返せば LitePub 方式、そうでなければ Mastodon 方式にします。
-2. 登録すると、インスタンス Actor がリレーに `Follow` を送り、状態は「承認待ち」（`pending`）になります。
-   リレーが承認すると「参加中」（`accepted`）、拒否すると「拒否」（`rejected`）になります。リレーによっては、運営者の手で承認されるまで時間がかかります。
-3. 「リレーから受け取る」を外して登録すると、送るだけの参加になります。変えるには、脱退して登録し直します。
+1. Register the relay's URL. There are two protocols:
+   - **Mastodon**: the relay's **inbox URL** (such as `https://relay.example/inbox`). Many relays, including pub-relay and Activity-Relay, accept this.
+   - **LitePub**: the relay's **actor URL** (such as `https://relay.example/relay`). This is the protocol of Pleroma and Akkoma relays.
+   If you do not choose a protocol ("Detect automatically"), the server uses LitePub when the URL serves an actor document, and Mastodon otherwise.
+2. After you register it, the instance actor sends the relay a `Follow`, and the state is "Awaiting the relay's answer" (`pending`).
+   When the relay accepts, the state becomes "Joined" (`accepted`); when it refuses, "Rejected by the relay" (`rejected`). Some relays take a while because an operator approves each request by hand.
+3. If you turn off "Receive posts from the relay" when registering, the server only sends. To change this, leave the relay and register it again.
 
-ドメイン単位の処分（`suspend`）のあるサーバーのリレーは登録できません。参加中のリレーのサーバーを後から停止すると、状態は変わりませんが、
-リレーとのあいだでは何も送受信しなくなり、管理画面に警告が出ます。
+You cannot register the relay of a server under a domain action (`suspend`). If the server of a joined relay is suspended later, the state does not change,
+but nothing is sent to or received from that relay, and the admin area shows a warning.
 
-## 送るもの
+## What the server sends
 
-- 送るのは、ローカルの **公開**（`public`）の投稿の作成・編集・削除だけです。`unlisted`・フォロワー限定・ダイレクト・ローカル限定（`local`）の投稿とブーストは送りません。
-  リレーに出したくない投稿は、`unlisted` か `local` で投稿してください。利用者ごとに送らない設定はありません。
-- 公開の投稿の文書には Linked Data Signatures（`RsaSignature2017`）を付けます。リレーが原本のまま中継した投稿を、Mastodon と Misskey が受け取れるようにするためです。
-- 配送の数は「参加中のリレーの数 × 公開投稿の数」だけ増えます（リレーへの配送は 1 件にまとまります）。
+- Only the creation, edit and deletion of local **public** (`public`) posts are sent. Posts that are `unlisted`, followers-only, direct or local-only (`local`), and boosts, are never sent.
+  To keep a post off relays, post it as `unlisted` or `local`. There is no per-user opt-out.
+- The documents of public posts carry a Linked Data Signature (`RsaSignature2017`), so that Mastodon and Misskey can accept posts that a relay passes on unchanged.
+- The number of deliveries grows by the number of joined relays times the number of public posts (deliveries to a relay are merged into one).
 
-## 受け取るもの
+## What the server receives
 
-- 参加中のリレーが運んだ公開投稿は、オリジンから取り直して確かめてから取り込み、連合タイムラインとハッシュタグのタイムラインに出します。ホームには出ず、通知も作りません。
-- 取り込むのは、リレーごとに 1 時間あたり設定 `relay_ingest_hourly_limit`（既定 1,000 件）までです。超えた分は取得せずに捨てます。
-  管理画面と `my admin relay list` は、直近 24 時間に取り込んだ件数と上限で捨てた件数を示します。捨てる件数が多ければ上限を上げるか、リレーを見直してください。
-- ドメインやアカウントに `suspend`（連合の制限）か `limit`（公開の場から外す制限）があれば、その投稿は取り込みません。
-- リレーだけが運んだ投稿は、公開から設定 `relay_status_retention`（既定 7 日）で消えます。ローカルの人が返信・ブースト・お気に入り・ブックマークした投稿と、
-  ローカルの人がフォローしている作者の投稿は、ほかのリモートの投稿と同じ保持期間（`remote_status_retention`）になります。
-- 取り込みの費用は、1 件ごとにオリジンへの取得（と、未知の作者の Actor の取得）です。上限の 1,000 件で、1 日に最大 24,000 回の取得になります。
+- A public post carried by a joined relay is fetched again from its origin and checked before it is ingested. It then shows in the federated timeline and hashtag timelines. It does not show in home timelines and creates no notification.
+- At most `relay_ingest_hourly_limit` posts per hour (default 1,000) are ingested per relay. Anything above the limit is dropped without being fetched.
+  The admin area and `my admin relay list` show how many were ingested in the last 24 hours and how many were dropped over the limit. If many are dropped, raise the limit or reconsider the relay.
+- A post is not ingested when its domain or account has a `suspend` (a federation restriction) or a `limit` (a restriction that removes it from public places).
+- A post that arrived only through a relay is removed from public view after `relay_status_retention` (default 7 days). A post that a local person replied to, boosted, favorited or bookmarked,
+  and the posts of authors that a local person follows, get the same retention as other remote posts (`remote_status_retention`).
+- Ingesting costs one fetch from the origin per post (plus a fetch of the actor for an unknown author). At the limit of 1,000 an hour, that is at most 24,000 fetches a day.
 
-設定は [設定リファレンス](../reference/configuration.md#relay_ingest_hourly_limit) にあります。取り込みの結果はメトリクス `my.relay.activities` にも出ます（[運用](running.md)）。
+The settings are in the [configuration reference](../reference/configuration.md#relay_ingest_hourly_limit). The result of ingesting is also exported as the metric `my.relay.activities` (see [Running the server](running.md)).
 
-## 脱退・参加し直し・削除
+## Leave, join again and delete
 
-- 「脱退」は `Follow` の取り消し（`Undo`）を送り、状態を「脱退」（`left`）にします。以後はリレーとのあいだで何も送受信しません。取り込んだ投稿は、保持期間で消えます。
-- 「参加し直す」は、拒否されたか脱退したリレーに新しい `Follow` を送ります。
-- 「削除」は、脱退したか拒否されたリレーの登録を消します。すでにリレーに送った投稿の編集と削除は、削除した後もリレーに届けます。
+- "Leave" sends an `Undo` of the `Follow` and sets the state to "Left" (`left`). Nothing is sent to or received from the relay afterwards. Posts already ingested are removed when their retention ends.
+- "Join again" sends a new `Follow` to a relay that rejected the server or that the server left.
+- "Delete" removes the registration of a relay that was left or rejected. Edits and deletions of posts already sent to the relay are still delivered to it after you delete it.
 
-登録・参加・脱退・削除と、リレーからの承認・拒否は、監査ログに対象の種類「リレー」で残ります（承認・拒否はリモートの操作として）。
+Registering, joining, leaving and deleting, and the relay's acceptance or refusal, are recorded in the audit log with the target type "Relay" (acceptance and refusal as remote actions).

@@ -1,85 +1,84 @@
-# 鍵暗号化鍵（KEK）の管理
+# Managing the key-encryption key (KEK)
 
-運営者向けの手順です。方式の根拠は [ADR-0019 §6](../adr/0019-security-baseline.md)、要件は NFR-SEC-7・NFR-REL-4（[非機能要件](../requirements/02-non-functional.md)）です。
-設定項目の一覧は [設定リファレンス](../reference/configuration.md) を参照してください。
+A guide for operators. The [configuration reference](../reference/configuration.md) lists every setting.
 
-## 仕組み
+## How it works
 
-- アクターの秘密鍵など DB に保存する秘密は、秘密ごとに生成したデータ暗号化鍵（DEK）で AES-256-GCM 暗号化し、
-  DEK を **鍵暗号化鍵（KEK）** で包んで（wrap して）暗号文と一緒に保存する（エンベロープ暗号化）。
-- KEK は DB に保存しない。DB のダンプだけが漏れても秘密は読めない。
-- 暗号文には、DEK を包んだ KEK の **鍵 ID** が付く。`key_manager = local` の鍵 ID は `local:` と KEK から導いた 16 桁の 16 進数で、
-  同じ KEK からは常に同じ ID になる。運営者が ID を付ける必要はない。
-- 暗号文は保存先の行 ID と列名に結び付けられており、別の行や列に写すと復号できない。
-- メディアプロキシの URL の署名鍵（HMAC-SHA256）も、KEK から HKDF-SHA256 で導く（[federation.md §9](../architecture/federation.md#9-リモートメディア)）。
-  署名は `kek` から導いた鍵で付け、`kek_previous` から導いた鍵でも検証するので、ローテーション中も前の URL が使える。
-- v0 の `key_manager` は `local`（設定の `kek` を使う）だけ。
+- Secrets stored in the database, such as actors' private keys, are encrypted with AES-256-GCM using a data-encryption key (DEK) generated for each secret.
+  The DEK is wrapped with a **key-encryption key (KEK)** and stored next to the ciphertext (envelope encryption).
+- The KEK is not stored in the database, so a leaked database dump alone does not expose the secrets.
+- Each ciphertext carries the **key ID** of the KEK that wrapped its DEK. With `key_manager = local`, the key ID is `local:` followed by 16 hexadecimal digits derived from the KEK,
+  so the same KEK always gives the same ID. You never assign IDs.
+- A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
+- The signing key (HMAC-SHA256) for media proxy URLs is also derived from the KEK with HKDF-SHA256.
+  Signatures are made with the key derived from `kek` and verified with the keys derived from `kek_previous` too, so URLs issued before a rotation keep working during it.
+- `key_manager` is `local` (it uses the `kek` setting) only.
 
-## KEK を失うと何が起きるか
+## What happens if you lose the KEK
 
-KEK がなければ、DB をリストアしてもアクターの秘密鍵を復号できない。秘密鍵を失うと、そのアクターの署名を他サーバーが検証できなくなり、
-**連合上の同一性が壊れる**（フォロワーとの関係を引き継げない）。KEK は DB と同じ重さで扱う。
+Without the KEK, restoring the database does not let you decrypt actors' private keys. Once a private key is lost, other servers can no longer verify that actor's signatures,
+and **the actor's identity in the fediverse is broken** (followers' relationships cannot be carried over). Treat the KEK with the same care as the database.
 
-## 生成する
+## Generate a KEK
 
-32 バイトの乱数を標準の base64 にする。
+Encode 32 random bytes with standard base64.
 
 ```sh
 openssl rand -base64 32
 ```
 
-`openssl` がない環境では `head -c 32 /dev/urandom | base64` でもよい。生成した値は端末の履歴やチケットに残さない。
+Where `openssl` is not available, `head -c 32 /dev/urandom | base64` works too. Do not leave the generated value in your terminal history or in tickets.
 
-## 保管して渡す
+## Store and deliver it
 
-KEK は秘密の設定なので、環境変数 `MY_KEK` か、値を書いたファイルのパス `MY_KEK_FILE` でだけ渡せる。設定ファイル（TOML）に書くと起動しない。
+The KEK is a secret setting, so it can be passed only through the environment variable `MY_KEK`, or through `MY_KEK_FILE`, the path of a file holding the value. Putting it in the configuration file (TOML) prevents startup.
 
-| ターゲット | 渡し方の例 |
+| Target | Example of how to deliver it |
 | --- | --- |
-| Self-hosted（バイナリ / systemd） | 所有者だけが読めるファイル（`chmod 600`）に置き、`MY_KEK_FILE` で指す |
-| Docker / Compose | Docker secret を `/run/secrets/my_kek` にマウントし、`MY_KEK_FILE=/run/secrets/my_kek` |
-| Kubernetes / microk8s | Secret をファイルとしてマウントし、`MY_KEK_FILE` で指す |
-| Cloud Run | Secret Manager のシークレットをファイルか環境変数として公開する |
-| AWS Lambda / ECS | Secrets Manager か SSM Parameter Store（SecureString）から渡す |
+| Self-hosted (binary / systemd) | Put it in a file only the owner can read (`chmod 600`) and point `MY_KEK_FILE` at it |
+| Docker / Compose | Mount a Docker secret at `/run/secrets/my_kek` and set `MY_KEK_FILE=/run/secrets/my_kek` |
+| Kubernetes / microk8s | Mount a Secret as a file and point `MY_KEK_FILE` at it |
+| Cloud Run | Expose a Secret Manager secret as a file or an environment variable |
+| AWS Lambda / ECS | Pass it from Secrets Manager or SSM Parameter Store (SecureString) |
 
-- web と worker など全プロセスに同じ KEK を渡す。
-- KEK はログとエラーメッセージに現れない（出るのは鍵 ID だけ）。
-- `my config check` は KEK の形式（base64 で 32 バイト）を検査し、値は `(redacted)` と表示する。
+- Give every process, such as web and worker, the same KEK.
+- The KEK never appears in logs or error messages (only the key ID does).
+- `my config check` validates the KEK's format (base64 of 32 bytes) and prints the value as `(redacted)`.
 
-## バックアップする
+## Back it up
 
-**DB と KEK を別々に、両方バックアップする。**
+**Back up the database and the KEK, separately.**
 
-- KEK は DB のバックアップとは別の場所に保管する（パスワードマネージャ、オフラインの媒体、別アカウントのシークレットストアなど）。
-  同じ場所に置くと、そこが漏れたときに DB の暗号化が意味を失う。
-- ローテーション中は `kek_previous` の鍵も、それで包まれた暗号文が DB に残っている限りバックアップに含める。
-- リストアの手順に KEK を含め、定期的にリストアを試す。DB をリストアしたら、バックアップ時点で使っていた KEK（と `kek_previous`）を同じ値で設定する。
-  KEK が違うと、秘密を読む処理が鍵 ID を名指しした `unknown key-encryption key` エラーで失敗する。
+- Keep the KEK somewhere other than where the database backups live (a password manager, offline media, a secret store in another account, and so on).
+  If both are in one place, a leak of that place makes the database encryption pointless.
+- During a rotation, include the `kek_previous` keys in the backup for as long as ciphertext wrapped with them remains in the database.
+- Include the KEK in your restore procedure, and test restores regularly. After restoring a database, set the KEK (and `kek_previous`) that was in use at backup time to the same values.
+  With a different KEK, anything that reads a secret fails with an `unknown key-encryption key` error that names the key ID.
 
-## ローテーションする
+## Rotate the KEK
 
-`kek_previous` に置いた KEK は復号だけに使い、新しい秘密は常に `kek` で暗号化する。
-ローリングデプロイ中に新旧のプロセスが混在しても読めない暗号文が出ないよう、2 段階で切り替える。
+A KEK in `kek_previous` is used only for decryption, and new secrets are always encrypted with `kek`.
+So that a rolling deploy, where old and new processes run side by side, never produces ciphertext that some process cannot read, switch in two steps.
 
-1. 新しい KEK を生成し、バックアップする。
-2. 全プロセスを `MY_KEK=<旧 KEK>`、`MY_KEK_PREVIOUS=<新 KEK>` で再起動する。全プロセスが新 KEK で復号できる状態になる。
-3. 全プロセスを `MY_KEK=<新 KEK>`、`MY_KEK_PREVIOUS=<旧 KEK>` で再起動する。以降の秘密は新 KEK で包まれ、旧 KEK の暗号文も読める。
-4. 旧 KEK は `kek_previous` に残し、バックアップも保持する。旧 KEK を外せるのは、DB の全暗号文が新 KEK で包み直された後だけである。
-   既存の暗号文をまとめて包み直すコマンドはまだないため、旧 KEK は `kek_previous` に残し続ける。
+1. Generate a new KEK and back it up.
+2. Restart every process with `MY_KEK=<old KEK>` and `MY_KEK_PREVIOUS=<new KEK>`. Now every process can decrypt with the new KEK.
+3. Restart every process with `MY_KEK=<new KEK>` and `MY_KEK_PREVIOUS=<old KEK>`. From now on secrets are wrapped with the new KEK, and ciphertext of the old KEK is still readable.
+4. Keep the old KEK in `kek_previous`, and keep its backup. You can remove the old KEK only after every ciphertext in the database has been re-wrapped with the new KEK.
+   There is no command yet to re-wrap existing ciphertext in bulk, so keep the old KEK in `kek_previous`.
 
-`kek_previous` にはカンマ区切りで複数の鍵を書ける。同じ鍵を 2 回書いたり、`kek` と同じ鍵を書いたりすると起動しない。
+`kek_previous` accepts several comma-separated keys. Listing the same key twice, or listing the same key as `kek`, prevents startup.
 
-## KEK が漏れたとき
+## If the KEK leaks
 
-KEK だけが漏れた場合は、上の手順でローテーションする。KEK と DB の両方が漏れた可能性がある場合、ローテーションでは守れない。
-DB に入っていたアクターの秘密鍵はすでに読めるので、アクター鍵そのものの再生成が必要になる。
+If only the KEK leaked, rotate it as above. If both the KEK and the database may have leaked, rotation does not protect you:
+the actors' private keys in the database are already readable, so the actor keys themselves must be regenerated.
 
-## Web Push の VAPID 鍵
+## Web Push VAPID key
 
-Web Push（FR-206）の送信は、サーバーの VAPID 鍵（P-256、RFC 8292）で署名する。KEK とは別の秘密で、DB には保存しない（ADR-0019 §6）。
+Web Push is signed with the server's VAPID key (P-256, RFC 8292). It is a secret separate from the KEK and is not stored in the database.
 
-- `my config vapid-key` で鍵の組を作り、秘密鍵（`vapid_private_key = ...` の値）を `MY_VAPID_PRIVATE_KEY` か `MY_VAPID_PRIVATE_KEY_FILE` で全プロセスに渡す。
-  公開鍵はサーバーが秘密鍵から求めてクライアントに渡すので、設定しない。
-- 設定しなければ Web Push は無効で、クライアントは Web Push を出さない。
-- ブラウザは公開鍵に結び付けて購読するので、鍵を変えると既存の購読には届かなくなる。利用者が設定画面でプッシュ通知を有効にし直すと、新しい鍵で購読し直す。
-  漏れたとき以外は変えない。漏れたら新しい鍵に替え、利用者に有効にし直してもらう。
+- Create a key pair with `my config vapid-key`, and give every process the private key (the value of `vapid_private_key = ...`) through `MY_VAPID_PRIVATE_KEY` or `MY_VAPID_PRIVATE_KEY_FILE`.
+  The server derives the public key from the private key and hands it to clients, so you do not configure it.
+- If you do not set it, Web Push is disabled and clients do not offer it.
+- Browsers bind a subscription to the public key, so changing the key stops delivery to existing subscriptions. When a user turns push notifications on again in settings, the client subscribes again with the new key.
+  Do not change the key unless it leaked; if it leaks, switch to a new key and ask users to turn notifications on again.

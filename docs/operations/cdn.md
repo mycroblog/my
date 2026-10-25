@@ -1,49 +1,48 @@
-# メディア配信に CDN を置く
+# Put a CDN in front of media delivery
 
-運営者向けの手順です。設定項目は [設定リファレンス](../reference/configuration.md#media_origin)、
-方針は [ADR-0005](../adr/0005-blob-storage-and-media.md) と [NFR-COST-4](../requirements/02-non-functional.md) を参照してください。
+A guide for operators. The setting is described in the [configuration reference](../reference/configuration.md#media_origin).
 
-メディアの配信（`/media/` と `/media/proxy/`）は、サーバーの前に置いた CDN（Cloudflare、Google Cloud CDN、CloudFront など）に任せられる。
-CDN のキャッシュに当たった分は、サーバーの CPU と転送量を使わない。
-ここで扱うのはサーバーを CDN のオリジンにする形（オリジンプル）で、`blob/s3` アダプタの公開 URL は含まない。
+A CDN in front of the server (Cloudflare, Google Cloud CDN, CloudFront and so on) can deliver media (`/media/` and `/media/proxy/`).
+Requests answered from the CDN cache use none of the server's CPU or transfer.
+This guide covers the setup where the server is the CDN's origin (origin pull). It does not cover the public URL of the `blob/s3` adapter.
 
-## 設定
+## Configure it
 
-CDN のホスト名（たとえば `media.example.org`）を `media_origin`（`MY_MEDIA_ORIGIN`）に設定する。
+Set `media_origin` (`MY_MEDIA_ORIGIN`) to the CDN's host name (for example `media.example.org`).
 
 ```sh
 MY_MEDIA_ORIGIN=https://media.example.org
 ```
 
-- 値はオリジン（`scheme://host[:port]`）だけで、パス・クエリ・末尾のスラッシュは付けない。`https` が必須で、`http` は `localhost` などのループバックだけ使える。不正な値だと起動に失敗する。
-- 未設定なら、メディアはサーバー自身のオリジン（`https://{host}`）から配る。
-- 次の URL がこのオリジンになる。ローカルのメディアは `{media_origin}/media/...`、リモートのメディアのプロキシは `{media_origin}/media/proxy/...`。
-  クライアント API、ActivityPub（`attachment`、`icon`、`image`、カスタム絵文字の `icon`）、リンクプレビュー（OGP）が出す URL のすべてが対象。
-- Web クライアントの Content-Security-Policy は、`img-src` と `media-src` にこのオリジンを足す。
-- ActivityPub のオブジェクトの `id` などの連合 URI は、`media_origin` に関係なく `https://{host}/` の下に残る（[ADR-0018](../adr/0018-federated-uris.md)）。メディアの URL ではなく、ファイルの置き場所だけが変わる。
-- URL は読み出すたびに組み立てる。DB には保存していないので、`media_origin` を変えると、すでにあるメディアの URL も変わる。
-  連合先が保存した古い URL は、オリジンの `/media/` が配信を続ける限り読める。
+- The value is an origin only (`scheme://host[:port]`), with no path, query or trailing slash. `https` is required, and `http` is allowed only for loopback hosts such as `localhost`. An invalid value makes startup fail.
+- If it is not set, media is served from the server's own origin (`https://{host}`).
+- These URLs use this origin: `{media_origin}/media/...` for local media and `{media_origin}/media/proxy/...` for the proxy of remote media.
+  Every URL that the client API, ActivityPub (`attachment`, `icon`, `image`, and the `icon` of custom emoji) and link previews (OGP) emit is covered.
+- The web client's Content-Security-Policy adds this origin to `img-src` and `media-src`.
+- Federated URIs, such as the `id` of an ActivityPub object, stay under `https://{host}/` whatever `media_origin` is. Only the place where files are served changes, not identifiers.
+- URLs are built each time they are read and are not stored in the database, so changing `media_origin` changes the URLs of existing media too.
+  Old URLs that remote servers stored keep working as long as `/media/` on the old origin keeps serving.
 
-## CDN の向き先
+## Point the CDN at the server
 
-- オリジン（バックエンド）は、サーバーの公開ホスト名（`https://{host}`）にする。CDN は `/media/` 以下だけをサーバーに取りに来ればよい。
-- サーバーは `/media/` と `/media/proxy/` をホスト名で制限しない。CDN の `Host` がどれでも配信する。
-- `/media/` は認証も [Authorized Fetch](../requirements/01-functional.md)（FR-408）も掛からない。署名のない CDN からのリクエストにもそのまま答える。
-- リモートのメディア（`/media/proxy/{id}/{variant}?sig=...`）は、`sig` が URL の一部である。**キャッシュキーにクエリ文字列を含める**。含めないと、署名の違う URL が同じエントリを共有する。
-- キャッシュの期間は、オリジンの `Cache-Control` に従わせる（CDN 側で上書きしない）。
+- Make the origin (backend) the server's public host name (`https://{host}`). The CDN needs to fetch only paths under `/media/` from the server.
+- The server does not restrict `/media/` and `/media/proxy/` by host name. It serves whatever `Host` the CDN sends.
+- `/media/` needs no authentication, and Authorized Fetch does not apply to it. The server answers unsigned requests from the CDN as they are.
+- For remote media (`/media/proxy/{id}/{variant}?sig=...`), `sig` is part of the URL. **Include the query string in the cache key.** Otherwise URLs with different signatures share one entry.
+- Let the origin's `Cache-Control` decide how long things are cached (do not override it at the CDN).
 
-| パス | `Cache-Control` |
+| Path | `Cache-Control` |
 | --- | --- |
-| `/media/{...}`（ローカルのメディア） | `public, max-age=31536000, immutable`（1 年） |
-| `/media/proxy/{...}`（リモートのメディア） | `public, max-age=` インスタンス設定 `remote_media_cache_ttl` の秒数 |
+| `/media/{...}` (local media) | `public, max-age=31536000, immutable` (one year) |
+| `/media/proxy/{...}` (remote media) | `public, max-age=` the number of seconds of the instance setting `remote_media_cache_ttl` |
 
-どちらも `Cross-Origin-Resource-Policy: cross-origin` を付けて返すので、別オリジンのページが読める。
+Both are returned with `Cross-Origin-Resource-Policy: cross-origin`, so pages from other origins can read them.
 
-## 削除とキャッシュ
+## Deletion and the cache
 
-メディアを消しても、CDN のキャッシュは `max-age` の間残る。ローカルのメディアは最長 1 年、プロキシは `remote_media_cache_ttl` まで、削除したファイルが見え続けうる。
-サーバーは CDN のキャッシュをパージしない。削除やモデレーションの直後に消したいときは、運営者が CDN の管理画面や API で手作業でパージする。
+After you delete media, the CDN's cache keeps it for `max-age`. A deleted file can stay visible for up to a year for local media, and up to `remote_media_cache_ttl` for the proxy.
+The server does not purge the CDN's cache. If something must disappear right after a deletion or a moderation action, purge it by hand in the CDN's console or API.
 
 ## Service Worker
 
-Web クライアントの Service Worker は、別オリジンのメディアをキャッシュせず、ブラウザのネットワークに任せる。CDN のキャッシュだけが効く。
+The web client's Service Worker does not cache media from another origin and leaves it to the browser's network handling, so only the CDN's cache applies.

@@ -2,7 +2,7 @@
 
 This guide is for operators. It covers, in order, what to do when you stop running the server: let users take their data out, delete the accounts that remain on other servers,
 then stop the server and switch to a static closure page.
-Each command is described in more detail in [administrators and roles](admin-cli.md#サービスの終了の予告).
+Each command is described in more detail in [administrators and roles](admin-cli.md#announcing-the-end-of-the-service).
 
 ## The sequence
 

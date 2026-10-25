@@ -18,7 +18,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 
 - The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
 - The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
-  so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#ロールの付与と剥奪)).
+  so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
 - The admin API paths stay `/api/v1/admin/...` whatever the group, and the scopes are the same pair `admin:read` / `admin:write`. The groups are separated by tags in the API reference (`admin-moderation`, `admin-server`).
 - There is a third group of permissions, "user features" (`view_finance`), which lives outside the staff screens. Someone who has only this permission sees neither "Moderation" nor "Administration",
   and for someone with `view_finance` the navigation shows "Finances" (`/finance`) after Settings.
