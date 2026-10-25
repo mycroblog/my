@@ -393,8 +393,8 @@ jobs:
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
     # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
-    # own, the integration tests of pkg/mykit, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts
-    # and pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
+    # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
+    # pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -473,6 +473,14 @@ jobs:
           - name: mykit:mybot-server-dep-check
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:mybot-server-dep-check
+          # An echo bot against a server in the test process, and the fake of mybottest against the spec
+          # (pkg/mybot/integration, ADR-0094 §10), as mykit's integration tests.
+          - name: mykit:mybot-integration-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-integration-test
+          - name: mykit:mybot-integration-vet
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-integration-vet
           - name: api:license-scope (mykit)
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh api:license-scope

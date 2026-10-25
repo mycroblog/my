@@ -29,7 +29,7 @@ jobs:
     # key) and for each new Go or go.sum, so it holds one build's worth of entries instead of growing with every push.
     # It holds exactly what the jobs that restore it read, built one after another with their settings (setup-go sets
     # CGO_ENABLED=0 in both): the modules, the builds of the packages and the Go tools (go:warm), the test binaries
-    # (server-test), go vet's results (server-static), agentkit's and pkg/mykit's builds with its integration tests (repo), and golangci-lint's analysis (the lint
+    # (server-test), go vet's results (server-static), agentkit's, pkg/mykit's, and pkg/mybot's builds with their integration tests (repo), and golangci-lint's analysis (the lint
     # job of pull requests). It checks nothing: golangci-lint does not fail on issues here. Of the modules it holds the
     # downloaded zips alone, which restore in a tenth of the time of the extracted tree: go extracts the ones a build
     # needs from them, offline.

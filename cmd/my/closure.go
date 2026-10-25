@@ -19,13 +19,14 @@ import (
 
 // runAdminClosure implements `my admin closure <subcommand>`: the announcement of the closure of
 // the service, its withdrawal, its state, the checks before the closure, and the closure (FR-808,
-// FR-809, ADR-0088 §1). stdin answers the confirmations of close.
+// FR-809, ADR-0088 §1), and the static closure page that the domain serves after the server
+// stops (ADR-0088 §6). stdin answers the confirmations of close.
 func runAdminClosure(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	sub, code := dispatch("admin closure", args, []string{"announce", "withdraw", "status", "check", "close"}, stderr, adminClosureUsage)
+	sub, code := dispatch("admin closure", args, []string{"announce", "withdraw", "status", "check", "close", "export-html"}, stderr, adminClosureUsage)
 	if code >= 0 || len(args) == 0 {
 		return max(code, 0)
 	}
-	var closesAt, exportUntil, message, confirmDomain string
+	var closesAt, exportUntil, message, confirmDomain, out, langs string
 	c, code := parseSubcommand("my admin closure "+sub, args[1:], 0, stderr, adminClosureUsage, func(fs *flag.FlagSet) {
 		switch sub {
 		case "announce":
@@ -34,10 +35,16 @@ func runAdminClosure(args []string, stdin io.Reader, stdout, stderr io.Writer) i
 			fs.StringVar(&message, "message", "", "the operator's message to the users, in plain text")
 		case "close":
 			fs.StringVar(&confirmDomain, "confirm-domain", "", "the domain of the server, which confirms the closure without the questions (for automation)")
+		case "export-html":
+			fs.StringVar(&out, "out", "", "directory to write the pages and the configuration examples to (required)")
+			fs.StringVar(&langs, "lang", "", "comma-separated locales, in the order of index.html (default: every locale, the instance's default locale first)")
 		}
 	})
 	if code >= 0 {
 		return code
+	}
+	if sub == "export-html" {
+		return exportClosureHTML(c, out, langs, stdout, stderr)
 	}
 	var in appinstance.AnnounceClosureInput
 	if sub == "announce" {
@@ -222,8 +229,9 @@ func adminClosureUsage(w io.Writer) {
   my admin closure status [-config <file>]
   my admin closure check [-config <file>]
   my admin closure close [-confirm-domain <domain>] [-config <file>]
+  my admin closure export-html -out <dir> [-lang en,ja] [-config <file>]
 
-The closure of the service (FR-808, FR-809, ADR-0088, docs/operations/admin-cli.md).
+The closure of the service (FR-808, FR-809, ADR-0088, docs/operations/service-closure.md).
 
 announce announces that the server closes at -closes-at, or changes the dates of
 the announcement in effect. The users may export their data until -export-until
@@ -245,6 +253,18 @@ close closes the server for good once the closing date has passed: it cannot be
 undone. It prints the checks, then asks "y" and the domain of the server on
 standard input; -confirm-domain gives the domain instead, without the questions.
 From then on, the users can only sign in and export their data.
+
+export-html writes the static closure page, for the domain to serve once the
+server is stopped after the export deadline: <dir>/<locale>.html for each locale
+of -lang (every locale by default, the instance's default locale first) and
+<dir>/index.html with every locale one after another, in the template of the
+maintenance page (my maintenance export), with the server's name, the closing
+date, and the operator's message. It also writes examples of the front end's
+configuration (nginx.conf, Caddyfile, cloudfront-function.js) that answer 410
+Gone to /ap/*, /inbox, /.well-known/webfinger, host-meta, NodeInfo, and /@*,
+and the closure page to every other path. It needs the database, and the server
+closed; before delivery_completed it warns that the Deletes are still being
+delivered.
 
 Every change is in the audit log as the CLI's. The server keeps running after
 the closing date until it is closed.

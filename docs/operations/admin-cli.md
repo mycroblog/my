@@ -54,6 +54,7 @@ my admin role revoke alice moderator
 ## サービスの終了の予告
 
 サーバーを閉じるときは、まず終了を予告します（FR-808、[ADR-0088](../adr/0088-service-shutdown-modes.md)）。
+予告からデータの破棄までの手順の全体は [サービスの終了](service-closure.md) にあります。
 予告の間もサーバーはいつもどおり動き、`GET /api/v1/instance` の `closure` と NodeInfo の `metadata.serviceClosure` が状態と日付を示します。
 
 ```sh
@@ -90,6 +91,17 @@ my admin closure close -confirm-domain social.example       # 自動化: 質問�
 - クローズの後、ワーカーが全ローカルアカウントの `Delete`（Actor）を 100 件ずつ連合先へ配送します（移転済みのアカウントは最後。[federation.md §15](../architecture/federation.md#15-サービスの終了)）。`federation_mode` が `off` / `inbound` でも送り、凍結したドメインには送りません。
   `my admin closure status`（と `GET /api/v1/admin/closure` の `progress`）は、`Delete` を記録したアカウント数・展開の残り・配送の状態ごとの件数（`pending`・`succeeded`・`permanent_failure`・`skipped`・`dead`）を示します。配送の間はワーカーを止めないでください。
   すべての配送が終わると、10 分ごとの確認が `delivery_completed` を記録し（監査ログの `service_closure_delivery_completed`）、ローカルの Actor も `410` になります。`dead` の配送は自動では再実行しません（`my job retry` で再実行できます）。
+
+持ち出しの期限を過ぎたら、サーバーを止めた後にドメインが返す静的な閉鎖のページを書き出します（ADR-0088 §6）。DB を読むので、DB を破棄する前に実行します。
+
+```sh
+my admin closure export-html -out ./closure              # 全ロケール（インスタンスの既定のロケールが先頭）
+my admin closure export-html -out ./closure -lang ja,en  # ロケールと index.html の順を決める
+```
+
+- 出力: ロケールごとの `<dir>/<locale>.html` と、全ロケールを順に並べた `<dir>/index.html`（`my maintenance export` と同じテンプレート。サーバー名・閉鎖日・予告の運営者のメッセージ・`status_page_url`）、
+  前段の設定例 `nginx.conf`・`Caddyfile`・`cloudfront-function.js`（`/ap/*`・`/inbox`・WebFinger・host-meta・NodeInfo・`/@*` は `410`、ほかは閉鎖のページ）。
+- サーバーがクローズしていないと断ります（終了コード 1）。`delivery_completed` の前は警告を出して書き出します。前段の切り替えは [サービスの終了 §6](service-closure.md#6-静的なページへの切り替え) です。
 
 ## Exporting the maintenance page
 

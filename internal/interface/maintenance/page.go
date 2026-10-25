@@ -43,29 +43,46 @@ var TokenNames = []string{
 	"color-surface", "color-surface-raised", "color-fg", "color-fg-muted", "color-accent", "color-border", "font-sans",
 }
 
-//go:embed templates/page.html
+//go:embed templates/page.html templates/closure
 var templateFS embed.FS
 
 var page = template.Must(template.ParseFS(templateFS, "templates/page.html"))
 
 // document is the data of templates/page.html: one section per locale.
+// The maintenance page and the closure page (ClosurePage) fill the same template, so that they
+// share their markup and CSS.
 type document struct {
-	Lang, Dir, Title string
+	// Kind prefixes the ids of the headings: "maintenance" or "closure".
+	Kind, Lang, Dir, Title string
 	// MetaCSP is the Content-Security-Policy of the exported pages, which have no headers.
 	MetaCSP  string
 	CSS      template.CSS
 	Sections []section
 }
 
+// section is one locale's part of the page, its words already formatted.
 type section struct {
-	L          *i18n.Localizer
-	Lang, Dir  string
-	ServerName string
-	Message    string
-	// Until is the end in RFC 3339 and UntilText the same time as ISO 8601 in UTC: messages
-	// formatted in Go take no date arguments (ADR-0009), so the time is not localized.
-	Until, UntilText string
-	StatusPageURL    string
+	Lang, Dir   string
+	ServerName  string
+	Heading     string
+	Description string
+	// NoticeHeading heads Message, the administrators' plain text; Message "" leaves both out.
+	NoticeHeading, Message string
+	// DateLabel names the page's one time; Date is the time in RFC 3339 and DateText the same
+	// time as ISO 8601 in UTC: messages formatted in Go take no date arguments (ADR-0009), so the
+	// time is not localized. Date "" leaves it out.
+	DateLabel, Date, DateText string
+	// StatusPageURL links to the instance's status page with StatusPageText; "" for none.
+	StatusPageURL, StatusPageText string
+}
+
+// withDate sets the section's time, unless t is zero.
+func (s section) withDate(label string, t time.Time) section {
+	if !t.IsZero() {
+		u := t.UTC()
+		s.DateLabel, s.Date, s.DateText = label, u.Format(time.RFC3339), u.Format("2006-01-02 15:04 UTC")
+	}
+	return s
 }
 
 // RenderOptions configure Render.
@@ -82,26 +99,31 @@ func Render(p Page, ls []*i18n.Localizer, o RenderOptions) (html []byte, csp str
 	if len(ls) == 0 {
 		return nil, "", fmt.Errorf("maintenance: no locale")
 	}
-	css, err := stylesheet(p.Theme)
+	sections := make([]section, 0, len(ls))
+	for _, l := range ls {
+		s := section{
+			Lang: l.Locale(), Dir: l.Direction(), ServerName: p.ServerName,
+			Heading: l.ServerMaintenanceTitle(), Description: l.ServerMaintenanceDescription(p.ServerName),
+			NoticeHeading: l.ServerMaintenanceNotice(), Message: p.Message,
+			StatusPageURL: p.StatusPageURL, StatusPageText: l.ServerMaintenanceStatusPage(),
+		}
+		sections = append(sections, s.withDate(l.ServerMaintenanceUntil(), p.Until))
+	}
+	return render(document{Kind: "maintenance", Title: ls[0].ServerMaintenanceDocumentTitle(p.ServerName), Sections: sections}, p.Theme, o)
+}
+
+// render fills d's language, CSS, and CSP from its first section and t, and executes the template.
+func render(d document, t Theme, o RenderOptions) (html []byte, csp string, err error) {
+	css, err := stylesheet(t)
 	if err != nil {
 		return nil, "", err
 	}
 	sum := sha256.Sum256([]byte(css))
 	policy := "default-src 'none'; style-src 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'; img-src data:; base-uri 'none'; form-action 'none'"
-	d := document{
-		Lang: ls[0].Locale(), Dir: ls[0].Direction(), Title: ls[0].ServerMaintenanceDocumentTitle(p.ServerName),
-		CSS: template.CSS(css), //nolint:gosec // G203: built by stylesheet from checked token values
-	}
+	d.Lang, d.Dir = d.Sections[0].Lang, d.Sections[0].Dir
+	d.CSS = template.CSS(css) //nolint:gosec // G203: built by stylesheet from checked token values
 	if o.MetaCSP {
 		d.MetaCSP = policy
-	}
-	for _, l := range ls {
-		s := section{L: l, Lang: l.Locale(), Dir: l.Direction(), ServerName: p.ServerName, Message: p.Message, StatusPageURL: p.StatusPageURL}
-		if !p.Until.IsZero() {
-			u := p.Until.UTC()
-			s.Until, s.UntilText = u.Format(time.RFC3339), u.Format("2006-01-02 15:04 UTC")
-		}
-		d.Sections = append(d.Sections, s)
 	}
 	var buf bytes.Buffer
 	if err := page.Execute(&buf, d); err != nil {
