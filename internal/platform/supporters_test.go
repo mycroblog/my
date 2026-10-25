@@ -4,6 +4,7 @@ package platform_test
 
 import (
 	"log/slog"
+	"net"
 	"net/http"
 	"slices"
 	"strconv"
@@ -19,8 +20,8 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// newSupportersEnv is an App on SQLite with the inline queue, email (to a server that nobody
-// answers), and the fake payment provider.
+// newSupportersEnv is an App on SQLite with the inline queue, email (to a server that closes
+// every connection at once), and the fake payment provider.
 func newSupportersEnv(t *testing.T) (*accountsEnv, *fake.Provider) {
 	t.Helper()
 	return newSupportersEnvOn(t, "sqlite")
@@ -34,9 +35,10 @@ func newSupportersEnvOn(t *testing.T, dialect string) (*accountsEnv, *fake.Provi
 	if dialect == "postgres" {
 		dbURL = newPostgresDatabase(t)
 	}
+	smtpPort := closingSMTPServer(t)
 	cfg := loadConfig(t, map[string]string{
 		"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
-		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1", "MY_SMTP_PORT": "1",
+		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1", "MY_SMTP_PORT": smtpPort,
 	})
 	prov := fake.New(fake.Options{Name: "stripe"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), PaymentProvider: prov})
@@ -45,6 +47,28 @@ func newSupportersEnvOn(t *testing.T, dialect string) (*accountsEnv, *fake.Provi
 	}
 	t.Cleanup(func() { _ = app.Close() })
 	return &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}, prov
+}
+
+// closingSMTPServer listens on a local port and closes every connection at once, so that each
+// email fails at once as a temporary error; a port that nobody listens on may instead drop the
+// connection attempt until the send times out. It returns the port.
+func closingSMTPServer(t *testing.T) string {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = ln.Close() })
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			_ = c.Close()
+		}
+	}()
+	return strconv.Itoa(ln.Addr().(*net.TCPAddr).Port)
 }
 
 // TestSupporterProgram drives the supporter program on SQLite (ADR-0072): nothing shows while it

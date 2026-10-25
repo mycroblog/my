@@ -28,6 +28,12 @@
   - ハードバウンスは利用者が求めた確認のメールを除くすべてのメールを、苦情は通知と告知のメールだけを止めます（`identity.EmailSuppression.Stops`）。パスワードのリセットのメールも送らず、応答は変えません。確認済みのアドレスでもハードバウンスで止まっていれば確認のメールを再送でき、失敗より後に発行したトークンで確認すると `reverified` の解除を記録します。モデレーターの解除（`moderator`）は監査ログに `email_suppression_lifted` を残し、その `source_event_id` は解除の `id` です。
   - 利用者のデータの消去は、アドレスの行と一緒に失敗・解除・投影の行を消します。
 
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `service_closure_emails` | イベント | `id`, `closure_event_id`, `email`（`announced` / `rescheduled` / `withdrawn` / `week_before` / `day_before` / `closed` / `export_week_before`）, `user_id`, `queued_at` | **一意 `(closure_event_id, email, user_id)`**、インデックス `(user_id)` |
+
+- サービスの終了のメール（ADR-0088 §2）を利用者ごとに積んだ記録です。`closure_event_id` は、予告・日付の変更・取り消し・クローズのメールではその `service_closure_events` の行、リマインダーでは効いている予告です。展開のジョブは行を挿入できた利用者にだけメールのジョブを積むので、一意制約が「同じメールを 2 度送らない」冪等キーになります（ADR-0086 §1）。利用者のデータの消去で消します。
+
 #### 資格情報
 
 | テーブル | 分類 | カラム | 制約 |

@@ -117,6 +117,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"LimitsPasswordResetRequests", passwordResetLimitsRequests},
 		{"SendsPasswordResetEmailsFromJobs", passwordResetEmailJobs},
 		{"SendsVerificationEmailsFromJobs", verificationEmailJobs},
+		{"SendsServiceClosureEmailsToVerifiedUsersOnce", closureEmailsReachVerifiedUsersOnce},
 		{"StopsEmailsAfterAHardBounce", emailHardBounceStopsMail},
 		{"StopsNotificationEmailsAfterAComplaint", emailComplaintStopsNotifications},
 		{"EmailSuppressionsEqualARebuild", emailSuppressionEqualsRebuild},
