@@ -49,8 +49,11 @@ type Config struct {
 	MaintenanceRetryAfter time.Duration
 	// WebOrigin is the origin of the web client that the client API allows by CORS.
 	WebOrigin string
-	Role      Role
-	Listen    string
+	// MediaOrigin is the origin of the media files' URLs, for a CDN in front of /media/; empty
+	// serves them from ServerOrigin(). Use MediaBaseURL.
+	MediaOrigin string
+	Role        Role
+	Listen      string
 	// TrustedProxies are the peers whose TrustedProxyHeader tells the client IP (ADR-0019 §5);
 	// TrustedProxyHeader is "x-forwarded-for" or "forwarded".
 	TrustedProxies     []netip.Prefix
@@ -199,6 +202,15 @@ func (c *Config) ServerOrigin() string {
 	return "https://" + c.Host
 }
 
+// MediaBaseURL returns the origin of the URLs of the local media and the media proxy: media_origin,
+// or ServerOrigin() when it is unset. ActivityPub ids are not media URLs and never use it (ADR-0018).
+func (c *Config) MediaBaseURL() string {
+	if c.MediaOrigin != "" {
+		return c.MediaOrigin
+	}
+	return c.ServerOrigin()
+}
+
 // LogValue logs the configuration with its secrets redacted (ADR-0019 §6).
 func (c *Config) LogValue() slog.Value {
 	redact := func(set bool) string {
@@ -228,6 +240,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
 		slog.String("blob_fs_dir", c.BlobFSDir),
+		slog.String("media_origin", c.MediaOrigin),
 		slog.Int64("media_max_image_bytes", c.MediaMaxImageBytes),
 		slog.Int("media_max_image_side", c.MediaMaxImageSide),
 		slog.Int64("media_max_image_pixels", c.MediaMaxImagePixels),

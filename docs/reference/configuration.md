@@ -56,6 +56,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`blob`](#blob) | `MY_BLOB` | `fs` | no | no |
 | [`media`](#media) | `MY_MEDIA` | `native` | no | no |
 | [`blob_fs_dir`](#blob_fs_dir) | `MY_BLOB_FS_DIR` | `blobs` | no | no |
+| [`media_origin`](#media_origin) | `MY_MEDIA_ORIGIN` | the server's own origin (`https://{host}`) | no | no |
 | [`media_max_image_bytes`](#media_max_image_bytes) | `MY_MEDIA_MAX_IMAGE_BYTES` | `16777216` | no | no |
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
 | [`media_max_image_pixels`](#media_max_image_pixels) | `MY_MEDIA_MAX_IMAGE_PIXELS` | `33177600` | no | no |
@@ -333,6 +334,14 @@ Directory of the `fs` blob store, relative to the working directory or absolute.
 
 - Environment variable: `MY_BLOB_FS_DIR`
 - Default: `blobs`
+- Required: no
+
+### `media_origin`
+
+Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/` (ADR-0005). It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).
+
+- Environment variable: `MY_MEDIA_ORIGIN`
+- Default: the server's own origin (`https://{host}`)
 - Required: no
 
 ### `media_max_image_bytes`

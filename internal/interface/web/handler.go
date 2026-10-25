@@ -39,6 +39,10 @@ type Options struct {
 	// server serves the client there, so the shell's client calls the API at it too: plain
 	// http://localhost:8080 in a local run. Otherwise, and when empty, the API is at https://Host.
 	WebOrigin string
+	// MediaOrigin is the origin of the media files' URLs (media_origin) when they are served from a
+	// CDN; empty when they are on the server's own origin. The Content-Security-Policy then lets
+	// images and media load from it.
+	MediaOrigin string
 	// AccountDomain is the domain of handles; empty means Host.
 	AccountDomain string
 	// InstanceName returns the instance's display name, the same in every locale, which the
@@ -215,6 +219,17 @@ func New(o Options) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	mediaOrigin := ""
+	if o.MediaOrigin != "" {
+		u, err := url.Parse(o.MediaOrigin)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			return nil, fmt.Errorf("web: media origin %q is not an http(s) origin", o.MediaOrigin)
+		}
+		// On the server's own origin, 'self' already allows it.
+		if origin := u.Scheme + "://" + u.Host; origin != apiOrigin {
+			mediaOrigin = origin
+		}
+	}
 	if o.DevViteOrigin != "" {
 		dev, err := devOrigin(o.DevViteOrigin)
 		if err != nil {
@@ -222,7 +237,7 @@ func New(o Options) (*Handler, error) {
 		}
 		h.o.DevViteOrigin = dev.String()
 		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx"}
-		h.csp = devContentSecurityPolicy(dev)
+		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
 		// The dev server setup is plain HTTP on localhost.
 		apiOrigin = "http://" + o.Host
 	} else {
@@ -232,7 +247,7 @@ func New(o Options) (*Handler, error) {
 		} else if err != nil {
 			return nil, err
 		}
-		h.csp = contentSecurityPolicy
+		h.csp = withMediaOrigin(contentSecurityPolicy, mediaOrigin)
 		if strings.HasPrefix(apiOrigin, "https://") {
 			h.csp += upgradeInsecureRequests
 		}

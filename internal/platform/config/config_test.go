@@ -852,3 +852,39 @@ func TestConfigLogValueRedactsSecrets(t *testing.T) {
 		}
 	}
 }
+
+// TestMediaOrigin checks that media_origin is empty by default, which serves the media from the
+// server's own origin, and takes an https origin, or an http one on a loopback host.
+func TestMediaOrigin(t *testing.T) {
+	cfg, _, err := Load(source(minimal(), nil))
+	if err != nil || cfg.MediaOrigin != "" || cfg.MediaBaseURL() != cfg.ServerOrigin() {
+		t.Fatalf("default: MediaOrigin = %q, MediaBaseURL() = %q, err = %v", cfg.MediaOrigin, cfg.MediaBaseURL(), err)
+	}
+	for _, v := range []string{"https://media.example", "https://cdn.example.org:8443", "http://localhost:9000", "http://127.0.0.1:9000", "http://[::1]:9000"} {
+		cfg, _, err := Load(source(with(minimal(), "MY_MEDIA_ORIGIN", v), nil))
+		if err != nil {
+			t.Errorf("%q: %v", v, err)
+			continue
+		}
+		if cfg.MediaOrigin != v || cfg.MediaBaseURL() != v {
+			t.Errorf("%q: MediaOrigin = %q, MediaBaseURL() = %q", v, cfg.MediaOrigin, cfg.MediaBaseURL())
+		}
+	}
+	for _, v := range []string{
+		"https://media.example/media",
+		"https://media.example/",
+		"https://media.example?x=1",
+		"https://media.example#x",
+		"http://media.example",
+		"http://192.0.2.1:9000",
+		"ftp://media.example",
+		"media.example",
+		"https://user@media.example",
+		"https://Media.example",
+		"/media",
+	} {
+		if _, _, err := Load(source(with(minimal(), "MY_MEDIA_ORIGIN", v), nil)); err == nil || !strings.Contains(err.Error(), "media_origin (MY_MEDIA_ORIGIN)") {
+			t.Errorf("%q: err = %v, want a media_origin error", v, err)
+		}
+	}
+}

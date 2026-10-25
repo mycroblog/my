@@ -22,6 +22,8 @@ func (a *App) setUpWeb(opts AppOptions) error {
 	h, err := web.New(web.Options{
 		Build: opts.WebBuild, DevViteOrigin: opts.DevViteOrigin,
 		Host: a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
+		// Images and media may come from the CDN in front of /media/ (media_origin).
+		MediaOrigin: a.Config.MediaOrigin,
 		// The instance's display name, read per request; the host when it has none.
 		InstanceName: a.instanceName,
 		// The landing page's link preview describes the instance by its summary, read per request.
