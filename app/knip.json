@@ -22,7 +22,8 @@
     },
     "../pkg/mybot/ts": {
       "entry": ["src/**/*.test.ts"],
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignore": ["test/runtimes.mjs"]
     }
   }
 }
