@@ -75,7 +75,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
 - **サービスの終了**（`/admin/closure`、`manage_service_closure`、FR-808・FR-809、[ADR-0088](../../adr/0088-service-shutdown-modes.md)）: 状態（`GET /admin/closure`）で出す区画（`h2` の `section`）が変わる。結果は先頭の `StatusMessage` に出し、失敗は操作したフォームかダイアログの中に出す（`role="alert"`）。
   - **予告なし**: 「終了を予告する」フォーム。閉鎖日（`datetime-local`、閲覧者のタイムゾーン。必須）・持ち出しの期限（空なら閉鎖日の 30 日後）・利用者へのメッセージ（5,000 文字まで）。閉鎖日までが 30 日より短いと、送る前から警告（`Callout`）を出す。日付に下限は無い。
   - **予告中**: 「いまの予告」（日時・メッセージの説明リストと、`short_notice` の警告。閉鎖日を過ぎたらクローズを促す一文。「予告を取り消す」は `ConfirmDialog`）、「予告を変更する」（同じフォーム）、「サーバーをクローズする」。
-    クローズの区画は、確認の前に点検（`GET /admin/closure/check`: `Delete` の見積もり、続いているサポーターの加入、終わっていない移転、保全の件数と、それぞれの注意。`federation_mode` にかかわらず `Delete` を送ることの説明）を出す。「クローズする」は閉鎖日を過ぎるまで押せず、押すと `ConfirmDialog`（`role="alertdialog"`）が開いて、サーバーのドメイン名（`GET /instance` の `domain`。大文字小文字は区別しない）の入力を求める。入力が合うまで実行できず（ネイティブの検証）、閉じるとき入力を捨てる。
+    クローズの区画は、確認の前に点検（`GET /admin/closure/check`: `Delete` の見積もり、続いているサポーターの加入、終わっていない移転、保全の件数と、それぞれの注意。`federation_mode` にかかわらず `Delete` を送ることの説明）を出す。「クローズする」は閉鎖日を過ぎるまで押せず、押すと `ConfirmDialog`（`role="alertdialog"`）が開いて、サーバーのドメイン名（`GET /instance` の `domain`。大文字小文字は区別しない）の入力を求める。合わない入力で確かめると送らずに欄のエラーにしてフォーカスを欄へ戻し、エラーは次の入力まで残す（欄の検証はフォーカスが離れるとエラーを消し、ダイアログが縮んで押している最中のボタンがずれて押下が失われるので使わない）。閉じるとき入力を捨てる。
   - **クローズ後**: 日程と、配送の進み具合（`progress`: 処理したアカウント数、`Delete` の展開待ち、配送の状態ごとの件数）。10 秒ごとに読み直し、配送中は「ワーカーを止めない」注意を、`delivery_completed` になったら完了を `Callout` で出す。クローズ後も管理の画面は使える（利用者の画面は閉鎖の画面だけ）。
   - 変更でボタンが画面から消えたとき、フォーカスはページの見出し（`h1`）へ移す。
 - **webhook**（`/admin/webhooks`・`/admin/webhooks/{id}`、`manage_webhooks`、FR-722、[ADR-0060](../../adr/0060-instance-webhooks.md)）: 「webhook を設定する」と「このサーバーの webhook」の 2 つの区画（`h2` の `section`）。

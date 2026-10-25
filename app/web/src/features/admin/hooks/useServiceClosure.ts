@@ -154,7 +154,7 @@ export function useWithdrawClosure(onDone: (status: string) => void) {
 }
 
 /** Whether `typed` is the server's domain, which closing asks for; the server compares without regard to case. */
-export function isServerDomain(typed: string, domain: string): boolean {
+function isServerDomain(typed: string, domain: string): boolean {
   return typed.trim().toLowerCase() === domain.toLowerCase();
 }
 
@@ -169,29 +169,42 @@ export function useCloseService(onDone: (status: string) => void) {
   const domain = instance.data?.domain ?? accountDomain;
   const close = useMutation({ ...closeServiceMutation(api) });
   const [typed, setTyped] = useState("");
+  // Whether the last attempt had a domain that does not match. It is kept until the next edit, never cleared on blur:
+  // the error under the field going away as the press moves the focus would shrink the dialog and move the confirm
+  // button from under the pointer before it is released, which loses the press.
+  const [mismatch, setMismatch] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   return {
     domain,
     typed,
-    changeTyped: setTyped,
+    mismatch,
+    changeTyped: (next: string) => {
+      setTyped(next);
+      setMismatch(false);
+    },
     isPending: close.isPending,
     error,
-    /** Empties what was typed and the failure, when the dialog closes. */
+    /** Empties what was typed, the mismatch and the failure, when the dialog closes. */
     reset: () => {
       setTyped("");
+      setMismatch(false);
       setError(undefined);
     },
-    close: async (): Promise<boolean> => {
-      if (!isServerDomain(typed, domain)) return false;
+    /** Closes the server if the typed domain matches: `mismatch` when it does not, `failed` when the request fails. */
+    close: async (): Promise<"closed" | "mismatch" | "failed"> => {
+      if (!isServerDomain(typed, domain)) {
+        setMismatch(true);
+        return "mismatch";
+      }
       setError(undefined);
       try {
         await close.mutateAsync(typed.trim());
         await refreshClosure(queryClient);
         onDone(t("client:admin.closure.closed"));
-        return true;
+        return "closed";
       } catch (failure) {
         setError(errorMessage(failure));
-        return false;
+        return "failed";
       }
     },
   };
