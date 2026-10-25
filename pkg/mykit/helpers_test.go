@@ -95,7 +95,7 @@ func TestUploadMedia(t *testing.T) {
 			t.Errorf("%s %s", r.Method, r.URL.Path)
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-		if err := r.ParseMultipartForm(1 << 20); err != nil { //nolint:gosec // G120: the body is bounded above
+		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			t.Fatal(err)
 		}
 		f, h, err := r.FormFile("file")

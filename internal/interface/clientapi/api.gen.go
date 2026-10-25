@@ -297,6 +297,7 @@ const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
 	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
 	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
@@ -388,6 +389,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountActionLifted:
 		return true
 	case AdminAuditActionAccountDeletionCancelled:
+		return true
+	case AdminAuditActionAccountMoved:
 		return true
 	case AdminAuditActionAccountStatusesRefetchQueued:
 		return true
@@ -3830,7 +3833,8 @@ type AdminAppealPage struct {
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-// suppression of the primary email address of the account's user). On a `domain`:
+// suppression of the primary email address of the account's user), `account_moved` (a limited
+// local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3898,7 +3902,8 @@ type AdminAuditEntry struct {
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-	// suppression of the primary email address of the account's user). On a `domain`:
+	// suppression of the primary email address of the account's user), `account_moved` (a limited
+	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -7768,6 +7773,21 @@ type MoveInstanceRuleRequest struct {
 	Position int `json:"position"`
 }
 
+// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`
+// or `passkey`.
+type MoveOwnAccountRequest struct {
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	TargetAccountId Id `json:"target_account_id"`
+}
+
 // MuteAccountRequest The settings of a mute.
 type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
@@ -8626,6 +8646,18 @@ type PreviewDomainBlockImportRequest struct {
 //     allow the operation.
 //   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
 //     already.
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
+//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//     (`POST /accounts/move/cancel`).
+//   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
+//     no move to cancel.
+//   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
+//     user's account among its aliases (`alsoKnownAs`). Add the alias on that account first.
+//   - `/api/v1/problems/move-target-moved` (422): the account to move to moved itself.
+//   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
+//     own, is not found, cannot be fetched from its server, or is suspended here.
+//   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
+//     or moved to that account before.
 //   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -10897,6 +10929,9 @@ type GetHashtagTimelineParams struct {
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
+// MoveOwnAccountJSONRequestBody defines body for MoveOwnAccount for application/json ContentType.
+type MoveOwnAccountJSONRequestBody = MoveOwnAccountRequest
+
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest
 
@@ -11136,6 +11171,12 @@ type ServerInterface interface {
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams)
+	// MoveOwnAccount Move the authenticated user's account to another account
+	// (POST /accounts/move)
+	MoveOwnAccount(w http.ResponseWriter, r *http.Request)
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	// (POST /accounts/move/cancel)
+	CancelOwnAccountMove(w http.ResponseWriter, r *http.Request)
 	// GetPasswordStatus Get whether the authenticated user has a password
 	// (GET /accounts/password)
 	GetPasswordStatus(w http.ResponseWriter, r *http.Request)
@@ -11993,6 +12034,34 @@ func (siw *ServerInterfaceWrapper) LookupAccount(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.LookupAccount(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MoveOwnAccount operation middleware
+func (siw *ServerInterfaceWrapper) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MoveOwnAccount(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelOwnAccountMove operation middleware
+func (siw *ServerInterfaceWrapper) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelOwnAccountMove(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19775,6 +19844,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/delete", wrapper.DeleteOwnAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move", wrapper.MoveOwnAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move/cancel", wrapper.CancelOwnAccountMove)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/password", wrapper.GetPasswordStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password/remove", wrapper.RemovePassword)
@@ -20476,6 +20547,97 @@ type LookupAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response LookupAccountdefaultApplicationProblemPlusJSONResponse) VisitLookupAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOwnAccountRequestObject struct {
+	Body *MoveOwnAccountJSONRequestBody
+}
+
+type MoveOwnAccountResponseObject interface {
+	VisitMoveOwnAccountResponse(w http.ResponseWriter) error
+}
+
+type MoveOwnAccount204Response struct {
+}
+
+func (response MoveOwnAccount204Response) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MoveOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response MoveOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOwnAccountMoveRequestObject struct {
+}
+
+type CancelOwnAccountMoveResponseObject interface {
+	VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error
+}
+
+type CancelOwnAccountMove204Response struct {
+}
+
+func (response CancelOwnAccountMove204Response) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36306,6 +36468,12 @@ type StrictServerInterface interface {
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(ctx context.Context, request LookupAccountRequestObject) (LookupAccountResponseObject, error)
+	// MoveOwnAccount Move the authenticated user's account to another account
+	// (POST /accounts/move)
+	MoveOwnAccount(ctx context.Context, request MoveOwnAccountRequestObject) (MoveOwnAccountResponseObject, error)
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	// (POST /accounts/move/cancel)
+	CancelOwnAccountMove(ctx context.Context, request CancelOwnAccountMoveRequestObject) (CancelOwnAccountMoveResponseObject, error)
 	// GetPasswordStatus Get whether the authenticated user has a password
 	// (GET /accounts/password)
 	GetPasswordStatus(ctx context.Context, request GetPasswordStatusRequestObject) (GetPasswordStatusResponseObject, error)
@@ -37192,6 +37360,61 @@ func (sh *strictHandler) LookupAccount(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LookupAccountResponseObject); ok {
 		if err := validResponse.VisitLookupAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MoveOwnAccount operation middleware
+func (sh *strictHandler) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
+	var request MoveOwnAccountRequestObject
+
+	var body MoveOwnAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MoveOwnAccount(ctx, request.(MoveOwnAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MoveOwnAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MoveOwnAccountResponseObject); ok {
+		if err := validResponse.VisitMoveOwnAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelOwnAccountMove operation middleware
+func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
+	var request CancelOwnAccountMoveRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelOwnAccountMove(ctx, request.(CancelOwnAccountMoveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelOwnAccountMove")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelOwnAccountMoveResponseObject); ok {
+		if err := validResponse.VisitCancelOwnAccountMoveResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

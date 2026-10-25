@@ -269,9 +269,33 @@ type FollowHandlerDeps struct {
 	// Quotes receives the answers to this server's QuoteRequests (ADR-0069 §3); nil takes them
 	// as answers about follows, which drops them.
 	Quotes QuoteAnswers
-	// Refusals answers the Follows that the federation mode refuses with a Reject (ADR-0076);
-	// nil drops them.
+	// Refusals answers the Follows that the federation mode refuses with a Reject (ADR-0076),
+	// and the Follows of the local accounts that moved (ADR-0089); nil drops them.
 	Refusals FollowRefuser
+	// Moves tells the local accounts that moved, which refuse new followers; nil means that none
+	// moved.
+	Moves MoveStates
+}
+
+// MoveStates reads the move in force of an account, appaccount.ErrNotFound when it has not
+// moved; *appaccount.Service implements it.
+type MoveStates interface {
+	MoveState(ctx context.Context, accountID string) (appaccount.MoveState, error)
+}
+
+// moved reports whether the account accountID has a move in force; a nil moves moves none.
+func moved(ctx context.Context, moves MoveStates, accountID string) (bool, error) {
+	if moves == nil {
+		return false, nil
+	}
+	_, err := moves.MoveState(ctx, accountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return true, nil
 }
 
 // FollowRefuser answers a Follow of a local actor that the federation mode refuses;
@@ -301,7 +325,8 @@ type QuoteAnswers interface {
 //   - Accept and Reject of a QuoteRequest this server sent: Quotes (ADR-0069 §3).
 //
 // The federation mode decides the flows (ADR-0076): a Follow that it refuses (follow_in) gets a
-// Reject from Refusals and records nothing; the answers of the relays are about the instance
+// Reject from Refusals and records nothing, as does a Follow of a local account that moved
+// (ADR-0089); the answers of the relays are about the instance
 // actor's membership, which passes whenever the processor lets them through; the answers to
 // QuoteRequests need publish, and the answers to the follows of local accounts follow_out.
 //
@@ -380,6 +405,15 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 				return fmt.Errorf("%w: a Follow of the instance actor", ErrDropActivity)
 			}
 			return h.d.Relays.ReceiveFollow(ctx, in, a)
+		case err == nil && a.Account.IsLocal():
+			switch m, err := moved(ctx, h.d.Moves, a.Account.ID); {
+			case err != nil:
+				return err
+			case m && h.d.Refusals == nil:
+				return fmt.Errorf("%w: a Follow of %s, which moved", ErrDropActivity, a.Account.URI)
+			case m:
+				return h.d.Refusals.Refuse(ctx, in, a)
+			}
 		case err != nil && !errors.Is(err, appaccount.ErrNotFound):
 			return err
 		}

@@ -1,0 +1,50 @@
+{
+  "closure.announced.export": {
+    "defaultMessage": "データをエクスポートする",
+    "description": "Link in the notice of the server's closure to the page where the user asks for an archive of their data and downloads it."
+  },
+  "closure.announced.export_until": {
+    "defaultMessage": "閉鎖のあとも、{date}まではログインしてデータをエクスポートできます。",
+    "description": "Detail line of the notice of the server's closure: until when the user may sign in and export their data after the closure. {date} is a date in the user's locale and time zone."
+  },
+  "closure.announced.headline": {
+    "defaultMessage": "{instance}は{date}に閉鎖されます。",
+    "description": "Headline of the notice kept at the top of every screen while the server's closure is announced. {instance} is the server's name; {date} is the closing date in the user's locale and time zone."
+  },
+  "closure.announced.move": {
+    "defaultMessage": "閉鎖の前に、アカウントを別のサーバーへ移転することもできます。ほかのサーバーにいるフォロワーも移転先に引き継がれます。",
+    "description": "Detail line of the notice of the server's closure: the user can move their account to another server (an ActivityPub Move) before the closure."
+  },
+  "closure.label": {
+    "defaultMessage": "サーバーの閉鎖のお知らせ",
+    "description": "Accessible name of the region that holds the notice of the server's closure, in the list of landmarks."
+  },
+  "closure.message_from": {
+    "defaultMessage": "運営者からのメッセージ：",
+    "description": "Label before the operators' own message in the notice of the server's closure and on the closed screen."
+  },
+  "closure.closed.body": {
+    "defaultMessage": "{instance}は{date}に閉鎖されました。そのほかの機能は止まっています。{until}までは、ログインしてデータを持ち出せます。",
+    "description": "Text on the screen shown to a signed-in user after the server has closed. {instance} is the server's name; {date} is when it closed and {until} the end of the export period, both in the user's locale and time zone."
+  },
+  "closure.closed.headline": {
+    "defaultMessage": "{instance}は閉鎖されました。",
+    "description": "Headline of the notice kept at the top of every screen, for a visitor who is not signed in, after the server has closed. {instance} is the server's name."
+  },
+  "closure.closed.sign_in": {
+    "defaultMessage": "{until}までは、ログインしてデータをエクスポートできます。",
+    "description": "Detail line of the notice for a visitor who is not signed in after the server has closed. {until} is the end of the export period in the user's locale and time zone."
+  },
+  "closure.closed.sign_out": {
+    "defaultMessage": "ログアウト",
+    "description": "Button on the screen of a closed server that signs the user out."
+  },
+  "closure.closed.title": {
+    "defaultMessage": "このサーバーは閉鎖されました",
+    "description": "Heading of the screen shown to a signed-in user after the server has closed; also the page name in the browser tab."
+  },
+  "closure.closed.loading": {
+    "defaultMessage": "データのエクスポートを読み込んでいます",
+    "description": "Accessible name of the loading indicator on the screen of a closed server while the list of data exports loads."
+  }
+}

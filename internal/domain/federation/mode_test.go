@@ -72,7 +72,7 @@ func TestSends(t *testing.T) {
 	cases := []struct {
 		name       string
 		a          federation.OutboundActivity
-		suspension bool
+		retracting bool
 		// off inbound outbound both
 		want string
 	}{
@@ -88,6 +88,8 @@ func TestSends(t *testing.T) {
 		{"Update of a profile", act(federation.OutboundAccount, federation.ActivityUpdate), false, "x x o o"},
 		{"Update of a suspension", act(federation.OutboundAccount, federation.ActivityUpdate), true, "x o o o"},
 		{"Delete of an actor", act(federation.OutboundAccount, federation.ActivityDelete), false, "x o o o"},
+		{"Update with movedTo", act(federation.OutboundAccount, federation.ActivityUpdate), true, "x o o o"},
+		{"Move", act(federation.OutboundMove, federation.ActivityMove), false, "x o o o"},
 		{"Follow", act(federation.OutboundFollow, federation.ActivityFollow), false, "x o x o"},
 		{"Undo Follow", act(federation.OutboundFollow, federation.ActivityUndo), false, "x o x o"},
 		{"Accept of a follow", act(federation.OutboundFollow, federation.ActivityAccept), false, "x x o o"},
@@ -108,7 +110,7 @@ func TestSends(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			for i, m := range federation.Modes() {
-				if got, want := federation.Sends(m, tc.a, tc.suspension), tc.want[2*i] == 'o'; got != want {
+				if got, want := federation.Sends(m, tc.a, tc.retracting), tc.want[2*i] == 'o'; got != want {
 					t.Errorf("Sends(%s) = %v, want %v", m, got, want)
 				}
 			}

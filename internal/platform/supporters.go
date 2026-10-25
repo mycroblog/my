@@ -71,7 +71,7 @@ func (a *App) setUpSupporterNotifications(cfg *config.Config, repo notification.
 		}
 		notification.RegisterSupporterJobs(a.Handlers, notification.SupporterMailDeps{
 			Mailboxes: supporterUsers{a}, Mailer: a.Mailer, Rejections: a.Identity, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
-			InstanceName: a.instanceName,
+			MailSite: a.mailSite,
 		})
 	}
 	notification.RegisterSupporterProjectors(a.Projectors, deps)

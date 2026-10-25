@@ -1,119 +1,195 @@
 {
+  "mail.action.open_notifications": {
+    "defaultMessage": "Open your notifications",
+    "description": "Label of the link in an email that opens the notifications of the web client."
+  },
+  "mail.action.set_new_password": {
+    "defaultMessage": "Set a new password",
+    "description": "Label of the link in an email that sets a new password."
+  },
   "mail.admin_account_moved.body": {
-    "defaultMessage": "An account that the moderators of {instance} limit moved to another account. The account it moved to does not get the limit.\n\nOpen your notifications to review it:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "An account that the moderators of {instance} limit moved to another account. The account it moved to does not get the limit.",
+    "description": "Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_account_moved.subject": {
     "defaultMessage": "An account limited on {instance} moved to another account",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.body": {
-    "defaultMessage": "A user of {instance} appealed a moderation action, and the appeal awaits the moderators.\n\nOpen your notifications to review it:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "A user of {instance} appealed a moderation action, and the appeal awaits the moderators.",
+    "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.subject": {
     "defaultMessage": "A new appeal awaits the moderators of {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a moderation action on their account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_custom_emoji_request.body": {
-    "defaultMessage": "A user of {instance} requested a custom emoji, or a new image of one, and the request awaits review.\n\nOpen your notifications to review it:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "A user of {instance} requested a custom emoji, or a new image of one, and the request awaits review.",
+    "description": "Paragraph of the email to an administrator about a new custom emoji request. It never names the user or the emoji. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_custom_emoji_request.subject": {
     "defaultMessage": "A custom emoji request awaits review on {instance}",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_report.body": {
-    "defaultMessage": "A new report awaits the moderators of {instance}.\n\nOpen your notifications to review it:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "A new report awaits the moderators of {instance}.",
+    "description": "Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_report.subject": {
     "defaultMessage": "A new report awaits the moderators of {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_service_closure_due.body": {
-    "defaultMessage": "The closing date of {instance} has passed. The server does not close by itself: close it in the administration screens or with my admin closure close.\n\nOpen your notifications:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line). Keep the command my admin closure close as it is."
+    "defaultMessage": "The closing date of {instance} has passed. The server does not close by itself: close it in the administration screens or with my admin closure close.",
+    "description": "Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is."
   },
   "mail.admin_service_closure_due.subject": {
     "defaultMessage": "The closing date of {instance} has passed",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_sign_up.body": {
-    "defaultMessage": "A new user signed up on {instance} and awaits approval.\n\nOpen your notifications to review the registration:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "A new user signed up on {instance} and awaits approval.",
+    "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_sign_up.subject": {
     "defaultMessage": "A new sign-up awaits approval on {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_webhook_disabled.body": {
-    "defaultMessage": "The server {instance} turned off one of its webhooks: its endpoint kept failing, or answered that it is gone.\n\nOpen your notifications to see which one, and turn it on again once the endpoint works:\n\n{url}\n\nYou get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Plain-text body of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "The server {instance} turned off one of its webhooks: its endpoint kept failing, or answered that it is gone.",
+    "description": "First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_webhook_disabled.detail": {
+    "defaultMessage": "Open your notifications to see which one, and turn it on again once the endpoint works.",
+    "description": "Second paragraph of the email to an administrator about a webhook endpoint that the server turned off, before the link to the notifications."
   },
   "mail.admin_webhook_disabled.subject": {
     "defaultMessage": "A webhook of {instance} was turned off",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "The password of your account on {instance} was changed, and your other sessions and apps were signed out.\n\nIf you did not change it, someone else may know your password. Set a new one at once:\n\n{url}\n\nThis email was sent by {host}.",
-    "description": "Plain-text body of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link (keep it on its own line)."
+    "defaultMessage": "The password of your account on {instance} was changed, and your other sessions and apps were signed out.",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_changed.detail": {
+    "defaultMessage": "If you did not change it, someone else may know your password. Set a new one at once.",
+    "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
   },
   "mail.password_changed.subject": {
     "defaultMessage": "Your password for {instance} was changed",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.\n\nIf you did not remove it, someone else may be signed in to your account. Set a new password at once:\n\n{url}\n\nThis email was sent by {host}.",
-    "description": "Plain-text body of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the page that asks for a password reset link, which sets a new password (keep it on its own line)."
+    "defaultMessage": "The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.detail": {
+    "defaultMessage": "If you did not remove it, someone else may be signed in to your account. Set a new password at once.",
+    "description": "Second paragraph of the email that tells a user their password was removed, before the link that asks for a password reset link, which sets a new password."
   },
   "mail.password_removed.subject": {
     "defaultMessage": "Your password for {instance} was removed",
     "description": "Subject of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_reset.body": {
-    "defaultMessage": "Someone asked to reset the password of your account on {instance}.\n\nOpen this link to set a new password:\n\n{url}\n\n{minutes, plural, one {The link works for # minute, once.} other {The link works for # minutes, once.}} If you did not ask for it at {host}, ignore this email; your password stays as it is.",
-    "description": "Plain-text body of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the reset link (keep it on its own line), {minutes} how long the link works."
+    "defaultMessage": "Someone asked to reset the password of your account on {instance}.",
+    "description": "First paragraph of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_reset.detail": {
+    "defaultMessage": "{minutes, plural, one {The link works for # minute, once.} other {The link works for # minutes, once.}}",
+    "description": "Second paragraph of the email with a password reset link: how long the link works. {minutes} is the number of minutes."
+  },
+  "mail.password_reset.reason": {
+    "defaultMessage": "You get this email because someone asked to reset your password at {host}. If it was not you, ignore this email; your password stays as it is.",
+    "description": "Sentence of the signature of the email with a password reset link: why it comes. {host} is the server's domain name."
   },
   "mail.password_reset.subject": {
     "defaultMessage": "Reset your password for {instance}",
     "description": "Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.reason.account": {
+    "defaultMessage": "You get this email because this address belongs to your account on {instance}.",
+    "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.moderator_notifications": {
+    "defaultMessage": "You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
+    "description": "Why a moderator who chose to get moderator notifications by email gets an email about a new item."
+  },
+  "mail.reason.supporter": {
+    "defaultMessage": "You get this email because you subscribe, or subscribed, to a supporter plan on {instance}.",
+    "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.signature.contact": {
+    "defaultMessage": "Contact: {email}",
+    "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
+  },
+  "mail.signature.unsubscribe": {
+    "defaultMessage": "Stop these emails: {url}",
+    "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
+  },
+  "mail.supporter_payment_failed.action": {
+    "defaultMessage": "Update your payment method",
+    "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."
+  },
   "mail.supporter_payment_failed.body": {
-    "defaultMessage": "A payment for your supporter plan “{plan}” on {instance} failed.\n\nYou keep the plan's benefits until {endsAt} (UTC). If no payment succeeds by then, they end. Update your payment method here:\n\n{url}\n\nYou get this email because you subscribe to a supporter plan on {instance}.",
-    "description": "Plain-text body of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {endsAt} the end of the grace period as YYYY-MM-DD HH:MM in UTC; {url} the link to the supporter page of the web client (keep it on its own line)."
+    "defaultMessage": "A payment for your supporter plan “{plan}” on {instance} failed.",
+    "description": "First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_payment_failed.detail": {
+    "defaultMessage": "You keep the plan's benefits until {endsAt} (UTC). If no payment succeeds by then, they end.",
+    "description": "Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC."
   },
   "mail.supporter_payment_failed.subject": {
     "defaultMessage": "A payment for your supporter plan on {instance} failed",
     "description": "Subject of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_plan_retired.body": {
-    "defaultMessage": "The administrators of {instance} retired the supporter plan “{plan}” that you subscribe to.\n\nYour subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.\n\nOpen your notifications:\n\n{url}\n\nYou get this email because you subscribe to a supporter plan on {instance}.",
-    "description": "Plain-text body of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "The administrators of {instance} retired the supporter plan “{plan}” that you subscribe to.",
+    "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
   },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "Your supporter plan on {instance} was retired",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_service_closure.body": {
-    "defaultMessage": "The administrators of {instance} announced that the server closes. Your subscription to the supporter plan “{plan}” is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.\n\nOpen your notifications:\n\n{url}\n\nYou get this email because you subscribe to a supporter plan on {instance}.",
-    "description": "Plain-text body of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "The administrators of {instance} announced that the server closes, which cancels your subscription to the supporter plan “{plan}”.",
+    "description": "First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_service_closure.detail": {
+    "defaultMessage": "Your subscription will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.",
+    "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
   },
   "mail.supporter_service_closure.subject": {
     "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
     "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}\n\nOpen your notifications:\n\n{url}\n\nYou get this email because you subscribed to a supporter plan on {instance}.",
-    "description": "Plain-text body of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none; {plan} the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why; {url} the link to the notifications (keep it on its own line)."
+    "defaultMessage": "Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "Your supporter plan on {instance} ended",
     "description": "Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.verify_email.action": {
+    "defaultMessage": "Confirm your email address",
+    "description": "Label of the link in the email that confirms a new account's email address."
+  },
   "mail.verify_email.body": {
-    "defaultMessage": "Welcome to {instance}.\n\nOpen this link to confirm your email address:\n\n{url}\n\n{hours, plural, one {The link works for # hour.} other {The link works for # hours.}} If you did not sign up at {host}, ignore this email.",
-    "description": "Plain-text body of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none; {host} the server's domain name, {url} the confirmation link (keep it on its own line), {hours} how long the link works."
+    "defaultMessage": "Welcome to {instance}.",
+    "description": "First paragraph of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.verify_email.detail": {
+    "defaultMessage": "{hours, plural, one {The link works for # hour.} other {The link works for # hours.}}",
+    "description": "Second paragraph of the email that confirms a new account's email address: how long the link works. {hours} is the number of hours."
+  },
+  "mail.verify_email.reason": {
+    "defaultMessage": "You get this email because this address was used to sign up at {host}. If you did not sign up, ignore this email.",
+    "description": "Sentence of the signature of the email that confirms a new account's email address: why it comes. {host} is the server's domain name."
   },
   "mail.verify_email.subject": {
     "defaultMessage": "Confirm your email address for {instance}",

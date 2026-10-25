@@ -16,6 +16,7 @@ import {
   Text,
 } from "@my/ui";
 import { useId, useRef } from "react";
+import { useIntl } from "react-intl";
 import { languageOptions, quotePolicies, quotePolicyDescription, quotePolicyLabel } from "../../compose";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useDisplaySettings } from "../../../lib/locale";
@@ -24,7 +25,7 @@ import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } fr
 import { useModeratorEmail } from "../hooks/useModeratorEmail";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
-import { type PreferenceControl, usePreferences } from "../hooks/usePreferences";
+import { type PreferenceControl, type PreferencesControls, usePreferences } from "../hooks/usePreferences";
 import { AutoplaySwitch } from "./AutoplaySwitch";
 import { NavigationSettings } from "./NavigationSettings";
 import { ThemeRadioGroup } from "./ThemeRadioGroup";
@@ -54,6 +55,7 @@ export function PreferencesForm() {
     timelineLanguages,
     timelineAutoInsert,
     emailModeratorNotifications,
+    emailSuppression,
   } = usePreferences();
   return (
     <Stack gap="8">
@@ -119,6 +121,7 @@ export function PreferencesForm() {
       </Switch>
       <PushNotifications />
       <ModeratorNotifications control={emailModeratorNotifications} />
+      <EmailDelivery suppression={emailSuppression} />
     </Stack>
   );
 }
@@ -176,6 +179,36 @@ function PushNotifications() {
           {push.error !== undefined && <InlineError alert>{push.error}</InlineError>}
         </>
       )}
+    </Stack>
+  );
+}
+
+/**
+ * That emails no longer reach the user's address (a hard bounce or a complaint, ADR-0086 §5), and since when; after a
+ * hard bounce, what to do. Nothing shows while they do reach it.
+ */
+function EmailDelivery({ suppression }: { suppression: PreferencesControls["emailSuppression"] }) {
+  const t = useT();
+  const intl = useIntl();
+  const headingId = useId();
+  if (suppression === undefined) return null;
+  const since = intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" });
+  return (
+    <Stack as="section" aria-labelledby={headingId} gap="3">
+      <Heading level={2} id={headingId}>
+        {t("client:settings.email_suppression.title")}
+      </Heading>
+      <Callout>
+        <Text as="p" size="sm" tone="fg">
+          {suppression.kind === "hard_bounce" ? t("client:settings.email_suppression.hard_bounce") : t("client:settings.email_suppression.complaint")}
+        </Text>
+        <Hint size="inherit">{t("client:settings.email_suppression.since", { since })}</Hint>
+        {suppression.kind === "hard_bounce" && (
+          <Text as="p" size="sm" tone="fg">
+            {t("client:settings.email_suppression.hard_bounce.action")}
+          </Text>
+        )}
+      </Callout>
     </Stack>
   );
 }

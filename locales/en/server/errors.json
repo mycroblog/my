@@ -522,5 +522,29 @@
   "errors.service_closing_detail": {
     "defaultMessage": "New registrations and supporter subscriptions stop while the closure is announced.",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
+  },
+  "errors.account_moved": {
+    "defaultMessage": "Your account has moved.",
+    "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
+  },
+  "errors.account_not_moved": {
+    "defaultMessage": "Your account has not moved.",
+    "description": "API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved."
+  },
+  "errors.move_alias_missing": {
+    "defaultMessage": "The account to move to does not list your account as an alias.",
+    "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "The account to move to has moved itself.",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
+  },
+  "errors.move_target_unavailable": {
+    "defaultMessage": "You cannot move to that account.",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "Your account moved too recently.",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
   }
 }

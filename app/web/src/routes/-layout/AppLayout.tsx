@@ -6,9 +6,11 @@ import { AppShell } from "@my/ui";
 import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useRef } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
+import { hasClosed, useClosure } from "../../lib/closure";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
 import { ConnectionBanner } from "./ConnectionBanner";
@@ -42,6 +44,7 @@ export function AppLayout() {
   const wideMain = useMatches({ select: (matches) => matches.some((match) => match.staticData.wideMain === true) });
   const signedOut = useSignedOut();
   const signedIn = useViewer().status === "signed-in";
+  const closure = useClosure();
   const showButton = !medium && pageWantsButton && signedIn;
   // The admin and moderation screens are a mode of their own, with a frame and a menu of their own (ADR-0058).
   const staffMode = isStaffMode(useLocation({ select: (location) => location.pathname }));
@@ -49,10 +52,21 @@ export function AppLayout() {
     return (
       <ComposeProvider>
         <ConnectionBanner />
+        <ClosureBanner />
         <AdminLayout skipLinkLabel={t("client:shell.skip_to_main")} mainId={mainId} mainRef={mainRef}>
           <Outlet />
         </AdminLayout>
       </ComposeProvider>
+    );
+  }
+  // Once the server has closed, a signed-in user has the closed screen and nothing else of the app: the client API refuses
+  // the rest (ADR-0088 §2). The staff's screens above stay, since the closure's progress is followed there.
+  if (hasClosed(closure) && signedIn) {
+    return (
+      <>
+        <ConnectionBanner />
+        <ClosedScreen closure={closure} />
+      </>
     );
   }
   return (
@@ -60,6 +74,8 @@ export function AppLayout() {
       {/* The one bar for being offline or rate-limited (web-client/16-look-states-and-wording.md G17), in the page from the start so that the
           change is announced. It pads for the top safe-area inset itself, so it comes before the shell, which pads for it. */}
       <ConnectionBanner />
+      {/* The notice of the server's closure, not closable, above the page on every screen while it is announced. */}
+      <ClosureBanner />
       <AppShell
         navigation={<Navigation />}
         navigationPlacement={signedOut ? "top" : "side"}

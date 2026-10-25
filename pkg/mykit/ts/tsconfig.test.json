@@ -1,0 +1,11 @@
+{
+  "extends": "../../../app/tsconfig.base.json",
+  "//": "The bun test files, which may use Bun's and Node.js's APIs that the library itself must not.",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["bun"]
+  },
+  "include": ["src/**/*.test.ts", "src/test"]
+}

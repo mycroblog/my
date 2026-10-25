@@ -138,7 +138,7 @@ func (q *Queries) GetRegistrationState(ctx context.Context, userID string) (User
 }
 
 const getUserTokenByHash = `-- name: GetUserTokenByHash :one
-SELECT id, user_id, purpose, email_address_id, token_hash, expires_at, issued_at FROM user_tokens WHERE token_hash = $1
+SELECT id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at FROM user_tokens WHERE token_hash = $1
 `
 
 func (q *Queries) GetUserTokenByHash(ctx context.Context, tokenHash []byte) (UserToken, error) {
@@ -149,6 +149,7 @@ func (q *Queries) GetUserTokenByHash(ctx context.Context, tokenHash []byte) (Use
 		&i.UserID,
 		&i.Purpose,
 		&i.EmailAddressID,
+		&i.UnsubscribeCategory,
 		&i.TokenHash,
 		&i.ExpiresAt,
 		&i.IssuedAt,
@@ -287,18 +288,19 @@ func (q *Queries) InsertRegistrationDecision(ctx context.Context, arg InsertRegi
 }
 
 const insertUserToken = `-- name: InsertUserToken :exec
-INSERT INTO user_tokens (id, user_id, purpose, email_address_id, token_hash, expires_at, issued_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO user_tokens (id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertUserTokenParams struct {
-	ID             string
-	UserID         string
-	Purpose        string
-	EmailAddressID *string
-	TokenHash      []byte
-	ExpiresAt      time.Time
-	IssuedAt       time.Time
+	ID                  string
+	UserID              string
+	Purpose             string
+	EmailAddressID      *string
+	UnsubscribeCategory *string
+	TokenHash           []byte
+	ExpiresAt           time.Time
+	IssuedAt            time.Time
 }
 
 func (q *Queries) InsertUserToken(ctx context.Context, arg InsertUserTokenParams) error {
@@ -307,6 +309,7 @@ func (q *Queries) InsertUserToken(ctx context.Context, arg InsertUserTokenParams
 		arg.UserID,
 		arg.Purpose,
 		arg.EmailAddressID,
+		arg.UnsubscribeCategory,
 		arg.TokenHash,
 		arg.ExpiresAt,
 		arg.IssuedAt,

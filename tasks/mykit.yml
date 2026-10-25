@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# pkg/mykit, the MIT-licensed Go client library of the client API (ADR-0093; the mykit context of
-# scripts/changed-contexts.sh). It is a Go module of its own, so the root module's `./...`, depguard, and go:check
-# never see it: these tasks check it. api:generate writes its generated client (pkg/mykit/api.gen.go).
+# pkg/mykit, the MIT-licensed client libraries of the client API (ADR-0093; the mykit context of
+# scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts. The Go
+# module is a module of its own, so the root module's `./...`, depguard, and go:check never see it: these tasks check
+# it. The npm package is a package of the client workspace (app/package.json), checked here by the ts-* tasks.
+# api:generate writes their generated code (pkg/mykit/api.gen.go, pkg/mykit/ts/src/schema.gen.ts).
 version: "3"
 
 vars:
@@ -12,10 +14,10 @@ vars:
 
 tasks:
   check:
-    desc: Check pkg/mykit (tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, and that it does not depend on the server module)
+    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses)
     # The license scope check (MIT in pkg/mykit) belongs to the api context, which a change of pkg/mykit alone does not
     # select.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ":api:license-scope"]
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, ":api:license-scope"]
 
   warm:
     desc: Download the modules and build the packages and test binaries of pkg/mykit once, so that its checks a CI job runs in parallel read the build cache
@@ -68,3 +70,45 @@ tasks:
     dir: pkg/mykit
     cmds:
       - go tool -modfile=../../tools/go.mod go-licenses check --allowed_licenses={{.MYKIT_ALLOWED_LICENSES}} ./...
+
+  ts-typecheck:
+    desc: Type-check @mycroblog/mykit with tsc (the library without Node.js types, and its tests)
+    deps: [":web:install"]
+    dir: pkg/mykit/ts
+    cmds:
+      - bun run typecheck
+
+  ts-lint:
+    desc: Run Oxlint on @mycroblog/mykit (pkg/mykit/ts/.oxlintrc.json, which forbids Node.js built-in modules in the library)
+    deps: [":web:install"]
+    dir: pkg/mykit/ts
+    cmds:
+      - bun run lint
+
+  ts-knip:
+    desc: Find unused files, exports, and dependencies of @mycroblog/mykit with knip (its workspace of app/knip.json)
+    deps: [":web:install"]
+    dir: app
+    cmds:
+      - bun run knip --workspace ../pkg/mykit/ts
+
+  ts-test:
+    desc: Run the @mycroblog/mykit unit tests with bun test
+    deps: [":web:install"]
+    dir: pkg/mykit/ts
+    cmds:
+      - bun test
+
+  ts-build:
+    desc: Build @mycroblog/mykit into pkg/mykit/ts/dist (ESM JavaScript and type declarations)
+    deps: [":web:install"]
+    dir: pkg/mykit/ts
+    cmds:
+      - bun run build
+
+  ts-licenses:
+    desc: Fail on licenses outside the permissive allowlist among the npm packages that @mycroblog/mykit depends on at run time
+    deps: [":web:install", ":i18n:install"]
+    dir: tools/i18n
+    cmds:
+      - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mykit/ts

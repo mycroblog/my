@@ -38,6 +38,14 @@ ON CONFLICT (account_id) DO UPDATE SET
   target_account_id = excluded.target_account_id,
   since = excluded.since;
 
+-- InsertAccountMoveCancellation inserts nothing when the move is cancelled already.
+-- name: InsertAccountMoveCancellation :execrows
+INSERT INTO account_move_cancellations (move_id, cancelled_at) VALUES (?, ?)
+ON CONFLICT (move_id) DO NOTHING;
+
+-- name: DeleteAccountMoveState :exec
+DELETE FROM account_move_states WHERE account_id = ?;
+
 -- name: DeleteAllAccountMoveStates :exec
 DELETE FROM account_move_states;
 

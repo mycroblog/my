@@ -32,6 +32,9 @@ func (o *Objects) ArchiveActor(ctx context.Context, accountID string, w io.Write
 	if images.Emojis, err = LocalActorEmojis(ctx, o.d.Reader.EmojiTags, o.d.Host, a); err != nil {
 		return err
 	}
+	if images.MovedTo, err = LocalActorMovedTo(ctx, o.d.Moves, a); err != nil {
+		return err
+	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	return enc.Encode(LocalActorDocument(o.d.Host, a, "", images))

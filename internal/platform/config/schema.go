@@ -454,7 +454,7 @@ var schema = []field{
 	},
 	{
 		key:          "mail_from",
-		doc:          "Sender address of emails, as a bare address such as `noreply@social.example`.",
+		doc:          "Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: \"<instance name>\" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set (ADR-0086 §3).",
 		requiredWhen: "when `mail` is not `none`",
 		check:        checkBareAddress,
 		set:          func(c *Config, v string) { c.MailFrom = v },

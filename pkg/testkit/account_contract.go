@@ -120,6 +120,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"StopsEmailsAfterAHardBounce", emailHardBounceStopsMail},
 		{"StopsNotificationEmailsAfterAComplaint", emailComplaintStopsNotifications},
 		{"EmailSuppressionsEqualARebuild", emailSuppressionEqualsRebuild},
+		{"TurnsOffNotificationEmailsWithUnsubscribeLinks", emailUnsubscribeTurnsOffNotifications},
 		{"ChangesPasswordsKeepingTheCurrentGrant", passwordChangeKeepsTheCurrentGrant},
 		{"RegistersTheWebClient", oauthRegistersTheWebClient},
 		{"ValidatesAuthorizationRequests", oauthValidatesAuthorizationRequests},

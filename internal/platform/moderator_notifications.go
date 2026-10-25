@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/notification"
@@ -30,7 +31,7 @@ func (a *App) setUpModeratorNotifications(cfg *config.Config, repo notification.
 		}
 		notification.RegisterModeratorJobs(a.Handlers, notification.MailDeps{
 			Staff: staff, Mailer: a.Mailer, Rejections: a.Identity, Messages: a.Messages, Host: cfg.Host, WebOrigin: cfg.WebOrigin,
-			InstanceName: a.instanceName,
+			MailSite: a.mailSite,
 		})
 	}
 	notification.RegisterModeratorProjectors(a.Projectors, deps)
@@ -82,6 +83,18 @@ func (s moderatorStaff) Mailbox(ctx context.Context, accountID string) (notifica
 	}
 	box, ok, err := s.a.Identity.ModeratorMailbox(ctx, userID)
 	return notification.Mailbox{EmailAddressID: box.EmailAddressID, Address: box.Address, Locale: box.Locale}, ok, err
+}
+
+// UnsubscribeLink implements notification.Staff.
+func (s moderatorStaff) UnsubscribeLink(ctx context.Context, accountID string) (string, error) {
+	userID, err := s.userOf(ctx, accountID)
+	if err != nil {
+		return "", err
+	}
+	if userID == "" {
+		return "", fmt.Errorf("platform: account %s has no user to unsubscribe", accountID)
+	}
+	return s.a.Identity.IssueUnsubscribeLink(ctx, userID, domainidentity.UnsubscribeModeratorNotifications)
 }
 
 // userOf returns the user of a local account; "" for any other account.

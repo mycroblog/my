@@ -85,7 +85,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		EmailDelivery: sendsEmail(cfg),
 		Messages:      a.Messages,
 		BaseURL:       cfg.ServerOrigin(),
-		InstanceName:  a.instanceName,
+		MailSite:      a.mailSite,
 	})
 	// The dynamically registered clients that nobody uses are deleted (ADR-0090 §1).
 	a.Identity.RegisterClientJobs(a.Handlers, a.Scheduler)

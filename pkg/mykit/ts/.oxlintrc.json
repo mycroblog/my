@@ -1,0 +1,25 @@
+// Oxlint for @mycroblog/mykit (`scripts/task.sh mykit:ts-lint`): the rules of the client workspace (app/.oxlintrc.json,
+// ADR-0049), whose overrides for app/ui and app/web match no file here, and the restriction of ADR-0093 §7: the
+// library runs on any runtime with fetch and web streams, so it imports no Node.js built-in module.
+{
+  "$schema": "../../../app/node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../../app/.oxlintrc.json"],
+  "ignorePatterns": ["**/node_modules/", "dist/", "src/schema.gen.ts"],
+  "overrides": [
+    {
+      "files": ["src/**/*.ts"],
+      "rules": {
+        "import/no-nodejs-modules": "error"
+      },
+      "plugins": ["import"]
+    },
+    // The tests run on Bun and may read files.
+    {
+      "files": ["src/**/*.test.ts"],
+      "rules": {
+        "import/no-nodejs-modules": "off"
+      },
+      "plugins": ["import"]
+    }
+  ]
+}

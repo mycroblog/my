@@ -43,6 +43,9 @@ type Staff interface {
 	// Mailbox returns where the moderator notifications of a local account are sent by email;
 	// ok is false when its user does not want them by email or has no usable address.
 	Mailbox(ctx context.Context, accountID string) (m Mailbox, ok bool, err error)
+	// UnsubscribeLink issues a new one-click unsubscribe link (ADR-0086 §4) that turns off the
+	// moderator notification emails of the user of a local account, for one email.
+	UnsubscribeLink(ctx context.Context, accountID string) (string, error)
 }
 
 // StaffMember is a local account whose user holds a permission.
@@ -232,14 +235,30 @@ type MailDeps struct {
 	Rejections RecipientRejections
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
-	// Host is the server's domain name, which the emails name the instance by when it has no
-	// display name.
+	// Host is the server's domain name, which the emails name the instance by when MailSite
+	// gives no name.
 	Host string
-	// InstanceName returns the instance's display name, which the emails
-	// name the instance by; nil or "" names it by Host.
-	InstanceName func(ctx context.Context) string
+	// MailSite returns the instance as its emails name it (ADR-0086 §2, §3); nil names it by
+	// Host.
+	MailSite func(ctx context.Context) kernel.MailSite
 	// WebOrigin is the origin of the web client, whose notifications page the emails link to.
 	WebOrigin string
+}
+
+// mailSite returns the instance as an email names it: site's answer, with Host for the name
+// and https://Host for the URL when it gives none.
+func mailSite(ctx context.Context, host string, site func(context.Context) kernel.MailSite) kernel.MailSite {
+	var s kernel.MailSite
+	if site != nil {
+		s = site(ctx)
+	}
+	if s.Name == "" {
+		s.Name = host
+	}
+	if s.URL == "" {
+		s.URL = "https://" + host
+	}
+	return s
 }
 
 // RegisterModeratorJobs registers the handler of JobModeratorEmail on reg. The handler sends
@@ -278,31 +297,40 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 	}
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return box.Locale }}
 	l := users.Localizer(ctx, "")
-	link := strings.TrimSuffix(d.WebOrigin, "/") + "/notifications"
-	name := d.Host
-	if d.InstanceName != nil {
-		if n := d.InstanceName(ctx); n != "" {
-			name = n
-		}
+	site := mailSite(ctx, d.Host, d.MailSite)
+	name := site.Name
+	draft := kernel.MailDraft{
+		Category: kernel.MailNotification, To: box.Address,
+		Action: &kernel.MailAction{Label: l.ServerMailActionOpenNotifications(), URL: strings.TrimSuffix(d.WebOrigin, "/") + "/notifications"},
+		Reason: l.ServerMailReasonModeratorNotifications(),
 	}
-	m := kernel.MailMessage{To: box.Address}
 	switch job.Type {
 	case notification.TypeAdminReport:
-		m.Subject, m.Text = l.ServerMailAdminReportSubject(name), l.ServerMailAdminReportBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminReportSubject(name), []string{l.ServerMailAdminReportBody(name)}
 	case notification.TypeAdminSignUp:
-		m.Subject, m.Text = l.ServerMailAdminSignUpSubject(name), l.ServerMailAdminSignUpBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminSignUpSubject(name), []string{l.ServerMailAdminSignUpBody(name)}
 	case notification.TypeAdminAppeal:
-		m.Subject, m.Text = l.ServerMailAdminAppealSubject(name), l.ServerMailAdminAppealBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminAppealSubject(name), []string{l.ServerMailAdminAppealBody(name)}
 	case notification.TypeAdminWebhookDisabled:
-		m.Subject, m.Text = l.ServerMailAdminWebhookDisabledSubject(name), l.ServerMailAdminWebhookDisabledBody(name, link)
+		draft.Subject = l.ServerMailAdminWebhookDisabledSubject(name)
+		draft.Paragraphs = []string{l.ServerMailAdminWebhookDisabledBody(name), l.ServerMailAdminWebhookDisabledDetail()}
 	case notification.TypeAdminCustomEmojiRequest:
-		m.Subject, m.Text = l.ServerMailAdminCustomEmojiRequestSubject(name), l.ServerMailAdminCustomEmojiRequestBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminCustomEmojiRequestSubject(name), []string{l.ServerMailAdminCustomEmojiRequestBody(name)}
 	case notification.TypeAdminAccountMoved:
-		m.Subject, m.Text = l.ServerMailAdminAccountMovedSubject(name), l.ServerMailAdminAccountMovedBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminAccountMovedSubject(name), []string{l.ServerMailAdminAccountMovedBody(name)}
 	case notification.TypeAdminServiceClosureDue:
-		m.Subject, m.Text = l.ServerMailAdminServiceClosureDueSubject(name), l.ServerMailAdminServiceClosureDueBody(name, link)
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminServiceClosureDueSubject(name), []string{l.ServerMailAdminServiceClosureDueBody(name)}
 	default:
 		return nil
+	}
+	// Each email carries its own unsubscribe link, issued only now that it is sent, so that the
+	// secret is in the email and nowhere else (ADR-0086 §4).
+	if draft.UnsubscribeURL, err = d.Staff.UnsubscribeLink(ctx, job.AccountID); err != nil {
+		return fmt.Errorf("notification: issue the unsubscribe link of %s: %w", job.NotificationID, err)
+	}
+	m, err := kernel.MailComposer{Site: site, Words: l}.Compose(draft)
+	if err != nil {
+		return fmt.Errorf("notification: compose the %s email of %s: %w", job.Type, job.NotificationID, err)
 	}
 	return sendMail(ctx, d.Mailer, d.Rejections, run, box, m, fmt.Sprintf("%s email of %s", job.Type, job.NotificationID))
 }

@@ -189,26 +189,41 @@ func NormalizeInviteCode(code string) string {
 	}, strings.ToUpper(code))
 }
 
-// TokenPurpose is what a one-time user token is for.
+// TokenPurpose is what a user token is for.
 type TokenPurpose string
 
-// Token purposes (data-model §4.1, user_tokens.purpose).
+// Token purposes (data-model §4.1, user_tokens.purpose). The verification and reset tokens work
+// once; an unsubscribe token works any number of times until it expires (ADR-0086 §4).
 const (
 	PurposeEmailVerification TokenPurpose = "email_verification"
 	PurposePasswordReset     TokenPurpose = "password_reset"
+	PurposeEmailUnsubscribe  TokenPurpose = "email_unsubscribe"
 )
 
-// UserToken is a one-time token sent to a user, such as the link of a verification email
-// (data-model §4.1, user_tokens). Only the SHA-256 digest of the token is stored (ADR-0019 §4).
+// UnsubscribeCategory is a category of email that its recipient can turn off from the email
+// itself (ADR-0086 §4). Each one is the preference of user_preferences that turns it off.
+type UnsubscribeCategory string
+
+// Unsubscribe categories (user_tokens.unsubscribe_category).
+const (
+	// UnsubscribeModeratorNotifications is the moderator notification emails (FR-712).
+	UnsubscribeModeratorNotifications UnsubscribeCategory = "email_moderator_notifications"
+)
+
+// UserToken is a token sent to a user, such as the link of a verification email (data-model
+// §4.1, user_tokens). Only the SHA-256 digest of the token is stored (ADR-0019 §4).
 type UserToken struct {
 	ID      string
 	UserID  string
 	Purpose TokenPurpose
 	// EmailAddressID is the address an email verification token confirms; "" for other purposes.
 	EmailAddressID string
-	TokenHash      []byte
-	ExpiresAt      time.Time
-	IssuedAt       time.Time
+	// UnsubscribeCategory is the category of email that an unsubscribe token turns off; "" for
+	// other purposes.
+	UnsubscribeCategory UnsubscribeCategory
+	TokenHash           []byte
+	ExpiresAt           time.Time
+	IssuedAt            time.Time
 }
 
 // Expired reports whether the token has expired at now.

@@ -1,0 +1,12 @@
+{
+  "extends": "../../../app/tsconfig.base.json",
+  "//": "The library: Node.js resolution, so that the ESM build runs as it is, and no ambient types beyond the web platform's (fetch, streams, crypto), so that importing a Node.js built-in module fails to type-check (ADR-0093 §7).",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/test"]
+}

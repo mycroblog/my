@@ -39,6 +39,7 @@ my instance set registration_mode invite
 ## メール確認
 
 設定 `mail`（[設定リファレンス](../reference/configuration.md#mail)）で送信方法を選びます。
+SMTP の設定例・DNS の設定・送信の失敗の見方は [メールの送信](email.md) にあります。
 
 - `mail = smtp`: 登録時に確認メールを送ります。リンクの有効期限は 24 時間で、1 回だけ使えます。
   リンクを開くと確認ボタンの画面になり、ボタンを押すと確認済みになります（メールのリンクを先読みするスキャナーでトークンを消費しないため）。

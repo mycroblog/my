@@ -47,6 +47,10 @@
         "@type": "@id"
       },
       "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+      "movedTo": {
+        "@id": "as:movedTo",
+        "@type": "@id"
+      },
       "quote": {
         "@id": "https://w3id.org/fep/044f#quote",
         "@type": "@id"
