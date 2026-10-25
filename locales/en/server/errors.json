@@ -35,6 +35,10 @@
     "defaultMessage": "The request conflicts with the current state of the resource.",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
+  "errors.email.not_suppressed": {
+    "defaultMessage": "The email address is not suppressed.",
+    "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
+  },
   "errors.export.in_progress": {
     "defaultMessage": "An archive of your data is already being prepared. Wait until it is ready.",
     "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."

@@ -171,6 +171,10 @@
     "defaultMessage": "Password reset link issued",
     "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."
   },
+  "admin.audit_log.action.email_suppression_lifted": {
+    "defaultMessage": "Email suppression lifted",
+    "description": "Heading of an audit log entry: a moderator lifted the suppression of the primary email address of a local account, so that emails are sent to it again."
+  },
   "admin.audit_log.action.text_changed": {
     "defaultMessage": "Text changed",
     "description": "Heading of an audit log entry: an administrator changed an instance text (such as the terms) in one language."

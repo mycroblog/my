@@ -113,7 +113,7 @@ readable after the target is gone. The audit log cannot be changed or deleted.
 
 Actions: account_action_issued, account_action_lifted,
 account_deletion_cancelled, revealed_private_data, two_factor_disabled,
-password_reset_link_issued (target kind account); domain_action_issued, domain_action_lifted (domain);
+password_reset_link_issued, email_suppression_lifted (target kind account); domain_action_issued, domain_action_lifted (domain);
 report_assigned, report_unassigned, report_resolved, report_reopened,
 report_note_added (report); registration_approved, registration_rejected
 (user); setting_changed, text_changed (setting); rule_added, rule_revised,

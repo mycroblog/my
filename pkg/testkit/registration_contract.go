@@ -682,9 +682,9 @@ func registrationModerators(t *testing.T, e *accountEnv) {
 
 	mailbox := func(userID string, wantOK bool) {
 		t.Helper()
-		address, locale, ok, err := r.ModeratorMailbox(ctx, userID)
-		if err != nil || ok != wantOK || (ok && (address != "root@example.com" || locale != "en")) {
-			t.Errorf("ModeratorMailbox(%s) = %q, %q, %v, %v; want ok %v", userID, address, locale, ok, err, wantOK)
+		box, ok, err := r.ModeratorMailbox(ctx, userID)
+		if err != nil || ok != wantOK || (ok && (box.Address != "root@example.com" || box.Locale != "en" || box.EmailAddressID == "")) {
+			t.Errorf("ModeratorMailbox(%s) = %+v, %v, %v; want ok %v", userID, box, ok, err, wantOK)
 		}
 	}
 	mailbox(root.User.ID, false) // off for a new user
