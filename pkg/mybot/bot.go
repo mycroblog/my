@@ -445,6 +445,7 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 				if err := b.catchUp(ctx); err != nil && ctx.Err() == nil {
 					b.logger.Warn("mybot: the catch-up failed; it runs again on the next connection", "error", err)
 				}
+				b.releaseHold()
 			}
 		}
 	})
@@ -453,9 +454,14 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 			if reconnected {
 				b.logger.Info("mybot: the event stream reconnected")
 			}
+			// Hold the position from the connection on: a notification of the new stream that is processed
+			// before the catch-up reads the position must not move it past those the catch-up has yet to list.
+			b.tracker.hold()
 			select {
 			case catchUp <- struct{}{}:
 			default:
+				// A catch-up is pending already, with its own hold.
+				b.releaseHold()
 			}
 		},
 		OnEvent: func(e mykit.StreamEvent) {
@@ -503,11 +509,7 @@ func (b *Bot) catchUp(ctx context.Context) error {
 		return fmt.Errorf("mybot: read the position from the store: %w", err)
 	}
 	b.tracker.hold()
-	defer func() {
-		if p := b.tracker.release(); p != "" {
-			b.setPosition(p)
-		}
-	}()
+	defer b.releaseHold()
 	cutoff := b.now().Add(-b.cfg.CatchUpLimit)
 	limit := 40
 	var found []mykit.Notification
@@ -533,6 +535,13 @@ func (b *Bot) catchUp(ctx context.Context) error {
 		b.submitNotification(&found[i])
 	}
 	return nil
+}
+
+// releaseHold ends a hold of the tracker and saves the position it moves to.
+func (b *Bot) releaseHold() {
+	if p := b.tracker.release(); p != "" {
+		b.setPosition(p)
+	}
 }
 
 // submitNotification hands a notification to the dispatcher.
