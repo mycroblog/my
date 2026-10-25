@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# The files each documentation rule of AGENTS.md ("Documentation") covers, checked by `agentkit docs lint`
+# (scripts/task.sh docs:rules). Every Markdown file not skipped is also checked for relative links and #anchors
+# that resolve.
+#
+# Patterns: `*` matches within one path segment, `**` any number of segments.
+
+# Files no rule reads.
+skip:
+  - "**/node_modules/**"
+  - "**/testdata/**"
+
+# Written in English only: no Japanese outside code spans, code blocks, and link destinations. A line that must
+# show Japanese (a UI string of the ja locale, say) carries `docs-lint: allow-japanese` in a comment on that line
+# or the line before.
+english:
+  - "*.md"
+  - "docs/README.md"
+  - "docs/agents/**"
+  - "docs/operations/**"
+  - "docs/reference/**"
+  - "schema/README.md"
+  - "deploy/**/*.md"
+  - "deploy/**/*.yaml"
+  - "deploy/**/*.yml"
+  - ".github/ISSUE_TEMPLATE/*"
+  - ".github/pull_request_template.md"
+  - "app/ui/README.md"
+  - "pkg/**/README.md"
+  - "tools/agentkit/README.md"
+
+# For users and operators: they explain the behaviour themselves and neither link to nor cite ADRs,
+# docs/requirements/, docs/architecture/, or GitHub issues and pull requests.
+operator:
+  - "README.md"
+  - "docs/operations/**"
+  - "docs/reference/**"
+
+# Files that do not follow a rule yet. Never add a file: write a new file to the rules. When you add or rewrite a
+# section of a listed file, convert the whole file and remove it here; the check fails while a listed file already
+# follows the rule.
+pending:
+  japanese:
+    - docs/operations/admin-cli.md
+    - docs/operations/billing-import.md
+    - docs/operations/captcha.md
+    - docs/operations/cdn.md
+    - docs/operations/crawlers.md
+    - docs/operations/database.md
+    - docs/operations/email.md
+    - docs/operations/instance-settings.md
+    - docs/operations/key-management.md
+    - docs/operations/link-previews.md
+    - docs/operations/moderation.md
+    - docs/operations/payments-payjp.md
+    - docs/operations/payments-stripe.md
+    - docs/operations/registration.md
+    - docs/operations/relays.md
+    - docs/operations/releasing.md
+    - docs/operations/running.md
+    - docs/operations/service-closure.md
+    - docs/operations/supporters.md
+    - docs/operations/webhooks.md
+  design-links:
+    - docs/operations/admin-cli.md
+    - docs/operations/billing-import.md
+    - docs/operations/captcha.md
+    - docs/operations/cdn.md
+    - docs/operations/crawlers.md
+    - docs/operations/database.md
+    - docs/operations/email.md
+    - docs/operations/instance-settings.md
+    - docs/operations/key-management.md
+    - docs/operations/link-previews.md
+    - docs/operations/maintenance.md
+    - docs/operations/moderation.md
+    - docs/operations/monitoring.md
+    - docs/operations/payments-payjp.md
+    - docs/operations/payments-stripe.md
+    - docs/operations/registration.md
+    - docs/operations/relays.md
+    - docs/operations/releasing.md
+    - docs/operations/running.md
+    - docs/operations/service-closure.md
+    - docs/operations/supporters.md
+    - docs/operations/webhooks.md
+    - docs/reference/build-tags.md
+    - docs/reference/commands.md
+    - docs/reference/configuration.md
+    - docs/reference/third-party-apps.md
+    - docs/reference/webhooks.md

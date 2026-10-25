@@ -51,6 +51,6 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 			statuses: d.StatusRepository(), purges: d.FederationRepository(), profiles: d.AccountRepository(), emojis: d.CustomEmojiRepository(),
 			autoDeletes: d.StatusRepository(),
 		},
-		projections: d.ProjectionStore(),
+		projections: d.ProjectionStore(), dataUpgrades: d.DataUpgradeRepository(),
 	}, nil
 }

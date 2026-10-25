@@ -398,6 +398,10 @@ func (e *ValidationError) Error() string {
 type Source struct {
 	// LookupEnv reads an environment variable; defaults to os.LookupEnv.
 	LookupEnv func(string) (string, bool)
+	// EnvNames lists the names of the environment variables, for finding the retired and
+	// unknown ones; defaults to the names of os.Environ when LookupEnv is nil too, and to none
+	// otherwise.
+	EnvNames func() []string
 	// ReadFile reads a file; defaults to os.ReadFile.
 	ReadFile func(string) ([]byte, error)
 	// File is the TOML file path; when empty, MY_CONFIG is used, and no file is read if that is unset too.
@@ -434,14 +438,38 @@ func MaintenanceRequested(src Source) (bool, error) {
 	return v == "true", nil
 }
 
-// open fills the defaults of src and reads its TOML file.
-func open(src Source) (Source, map[string]any, []Issue) {
+// withDefaults fills the zero fields of src.
+func withDefaults(src Source) Source {
+	if src.EnvNames == nil {
+		src.EnvNames = func() []string { return nil }
+		if src.LookupEnv == nil {
+			src.EnvNames = osEnvNames
+		}
+	}
 	if src.LookupEnv == nil {
 		src.LookupEnv = os.LookupEnv
 	}
 	if src.ReadFile == nil {
 		src.ReadFile = os.ReadFile
 	}
+	return src
+}
+
+// osEnvNames returns the names of the variables of the process environment.
+func osEnvNames() []string {
+	env := os.Environ()
+	names := make([]string, 0, len(env))
+	for _, kv := range env {
+		name, _, _ := strings.Cut(kv, "=")
+		names = append(names, name)
+	}
+	return names
+}
+
+// open fills the defaults of src and reads its TOML file. A retired key in the file or the
+// environment, and an unknown key in the file, is an issue.
+func open(src Source) (Source, map[string]any, []Issue) {
+	src = withDefaults(src)
 	var issues []Issue
 
 	file := map[string]any{}
@@ -457,6 +485,7 @@ func open(src Source) (Source, map[string]any, []Issue) {
 			issues = append(issues, Issue{Message: fmt.Sprintf("config file %s: %v", path, err)})
 		}
 	}
+	issues = append(issues, retiredIssues(path, file, src.EnvNames())...)
 	for _, k := range unknownKeys(file) {
 		issues = append(issues, Issue{Message: fmt.Sprintf("config file %s: unknown key %q", path, k)})
 	}
@@ -588,7 +617,8 @@ func v0Values(f *field) []string {
 func unknownKeys(file map[string]any) []string {
 	var unknown []string
 	for k := range file {
-		if !slices.ContainsFunc(schema, func(f field) bool { return f.key == k }) {
+		if !slices.ContainsFunc(schema, func(f field) bool { return f.key == k }) &&
+			!slices.ContainsFunc(retiredKeys, func(r retiredKey) bool { return r.key == k }) {
 			unknown = append(unknown, k)
 		}
 	}

@@ -34,6 +34,12 @@ A binary built with a build tag that leaves an adapter out rejects the values th
 The problems are described in the language of the process locale (` + "`LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG`" + `; English for ` + "`C`" + ` or an unsupported language),
 followed by the technical detail in English.
 
+A setting that a release renamed or removed is one of those problems, in the config file and in the environment alike:
+the error names the new key, or tells why the setting was removed ([renamed and removed settings](#renamed-and-removed-settings)).
+An unknown key in the config file is an error too. An environment variable that starts with ` + "`" + EnvPrefix + "`" + ` but sets nothing
+is ignored with a warning, in the log of ` + "`my serve`" + ` and in the output of ` + "`my config check`" + `, because the platform may add such variables:
+Kubernetes adds ` + "`" + EnvPrefix + "SERVICE_HOST`, `" + EnvPrefix + "PORT`" + ` and the like for a Service named ` + "`my`" + `, and those are ignored without a warning.
+
 ## Configuration and instance settings
 
 The settings on this page configure the deployment: what a process runs, which adapters it uses, where they are, and its secrets.
@@ -76,6 +82,21 @@ An instance setting that has never been set reads as its default, which is defin
 				fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c.value, inV0, c.doc)
 			}
 		}
+	}
+	b.WriteString("\n## Renamed and removed settings\n\n" +
+		"Using one of these keys, in the config file or as its environment variable (or `<NAME>_FILE`), stops the server with an error.\n\n")
+	if len(retiredKeys) == 0 {
+		b.WriteString("None.\n")
+		return b.String()
+	}
+	b.WriteString("| Key | Environment variable | Replacement or reason |\n| --- | --- | --- |\n")
+	for i := range retiredKeys {
+		r := &retiredKeys[i]
+		replaced := r.removed
+		if r.renamedTo != "" {
+			replaced = fmt.Sprintf("[`%s`](#%s)", r.renamedTo, r.renamedTo)
+		}
+		fmt.Fprintf(&b, "| `%s` | `%s` | %s |\n", r.key, r.env(), replaced)
 	}
 	return b.String()
 }

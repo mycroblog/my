@@ -65,6 +65,7 @@ func runServe(args []string, stderr io.Writer) int {
 
 	v := resolveVersion(version, debug.ReadBuildInfo)
 	logger.InfoContext(ctx, "starting", slog.String("version", v), slog.Any("config", cfg))
+	warnUnknownEnv(ctx, logger, src)
 	app, err := newApp(ctx, cfg, platform.AppOptions{
 		Logger: logger, Version: v, DevViteOrigin: *devVite, PseudoLocales: *pseudo,
 	})
@@ -93,6 +94,7 @@ func serveMaintenance(src config.Source, pseudo bool, stderr io.Writer) int {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
 	logger.InfoContext(ctx, "starting in maintenance mode", slog.String("version", resolveVersion(version, debug.ReadBuildInfo)), slog.Any("config", cfg))
+	warnUnknownEnv(ctx, logger, src)
 	app, err := platform.NewMaintenanceApp(cfg, platform.AppOptions{Logger: logger, PseudoLocales: pseudo})
 	if err != nil {
 		logger.ErrorContext(ctx, "start failed", slog.Any("error", err))

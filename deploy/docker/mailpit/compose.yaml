@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Mailpit (https://mailpit.axllent.org/, MIT) for development: an SMTP server that keeps every message it receives and
-# shows them in a web UI, for mail = smtp without sending real email (docs/operations/email.md, "開発環境").
+# shows them in a web UI, for mail = smtp without sending real email (docs/operations/email.md, development setup).
 # It offers STARTTLS with the certificate of scripts/mailpit-cert.sh and requires it, since mail = smtp refuses servers
 # without it, and needs no authentication. Start it alone for a `my serve` on the host (scripts/task.sh docker:mailpit),
 # or with the stack through ../compose.mailpit.yaml.

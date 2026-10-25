@@ -67,6 +67,15 @@ func TestRunConfig(t *testing.T) {
 			wantStdout: []string{"web", "file", "(redacted)", "configuration OK"},
 		},
 		{
+			name:       "an unknown MY_ variable is a warning",
+			args:       []string{"config", "check", "-config", file},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_HSOT": "typo.example", "MY_SERVICE_HOST": "10.0.0.1"},
+			wantCode:   0,
+			wantStdout: []string{"configuration OK"},
+			wantStderr: []string{"warning: the environment variable MY_HSOT starts with MY_ but is not a setting, so it is ignored"},
+			wantAbsent: []string{"MY_SERVICE_HOST"},
+		},
+		{
 			name:     "invalid lists every issue",
 			args:     []string{"config", "check"},
 			env:      map[string]string{"MY_DB": "mysql", "LC_ALL": "C"},
@@ -119,7 +128,7 @@ func TestRunConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LANGUAGE", "")
 			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DB", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
-				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER"} {
+				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_HSOT", "MY_SERVICE_HOST"} {
 				t.Setenv(k, tt.env[k]) // restores the original value after the test
 				if _, ok := tt.env[k]; !ok {
 					if err := os.Unsetenv(k); err != nil {

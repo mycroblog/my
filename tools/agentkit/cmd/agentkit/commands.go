@@ -43,6 +43,9 @@ Workflow (instead of gh / scripts/task.sh loops):
   gh sync                                              refresh the local cache of issues and pull requests
 
 Maintenance:
+  docs lint                                            links and anchors resolve, English-only documents have no
+                                                       Japanese, operator documents cite no design records
+                                                       (docs/lint.yaml)
   map check                                            every path is covered by tools/agentkit/context-map.yaml
   map show <path>                                      the context-map entries, docs and checks of a path
   stats [--since 2026-10-01] [--top 20]                token use of past Claude Code sessions in this repository
@@ -79,6 +82,8 @@ func run(args []string) error {
 		return runMap(r, rest)
 	case "adr":
 		return runADR(r, rest)
+	case "docs":
+		return runDocs(r, rest)
 	}
 	s, err := store.Open(r)
 	if err != nil {

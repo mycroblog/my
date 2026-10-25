@@ -11,7 +11,7 @@
 #   scripts/changed-contexts.sh --files FILE  the paths listed in FILE, one per line (CI and tests)
 #
 # Contexts:
-#   docs    Markdown lint and the ADR numbers                   (docs:check)
+#   docs    Markdown lint, the documentation rules, the ADR numbers (docs:check)
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
 #   mail    tools/mail, the MJML layout of the HTML emails       (mail:check)
@@ -114,7 +114,8 @@ classify() {
   esac
   case "$path" in
     # A Go module of its own: its Go files are not the go context's.
-    tools/agentkit/*.md)
+    # The documentation rules of docs:rules (agentkit docs lint).
+    tools/agentkit/*.md | tools/agentkit/internal/docslint/*)
       select_contexts docs
       return
       ;;

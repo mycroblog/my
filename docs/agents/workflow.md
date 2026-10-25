@@ -39,7 +39,7 @@ git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/1
 ## 4. Implement
 
 - Keep the change scoped to the issue, but apply the boy scout rule ([ADR-0024](../adr/0024-boy-scout-rule.md)):
-  fix broken things you find in a separate commit and list them under "ついでに直したもの" in the PR; file an issue for anything you cannot fix safely.
+  fix broken things you find in a separate commit and list them in the PR description; file an issue for anything you cannot fix safely.
 - Update docs that the change makes stale (ADR open questions, architecture overview, i18n catalogs).
 - Spikes ([ADR-0022](../adr/0022-spike-outputs-outside-repository.md)):
   - Push throwaway code to a `spike/<N>-<slug>` branch only. Never open a PR to merge it.

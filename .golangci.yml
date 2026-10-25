@@ -290,6 +290,18 @@ linters:
             - github.com/mycroblog/my/internal/app/projection
             - github.com/mycroblog/my/internal/app/queue
             - github.com/mycroblog/my/internal/app/uow
+        # app/dbupgrade runs and records the data upgrade steps of `my db upgrade` (ADR-0087 §2, §4)
+        # through step functions and a projection rebuild that the composition root passes; it
+        # depends only on kernel (Clock) and uow.
+        app-dbupgrade:
+          list-mode: strict
+          files:
+            - "**/internal/app/dbupgrade/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app/dbupgrade
+            - github.com/mycroblog/my/internal/app/kernel
+            - github.com/mycroblog/my/internal/app/uow
         # app/stream holds the ports of the real-time updates (Publisher / Subscriber, Bus,
         # Sweeper), the in-process broker, and the cross-process Relay shared by the modules that
         # publish, the streaming endpoint, and the Bus adapters; it depends only on kernel (the
