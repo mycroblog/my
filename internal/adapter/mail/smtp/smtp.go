@@ -4,6 +4,13 @@
 // (mail = smtp). It always upgrades the connection with STARTTLS and verifies the server's
 // certificate before it authenticates or sends anything, and refuses servers that do not offer
 // STARTTLS. Messages are plain text in UTF-8, quoted-printable encoded.
+//
+// A reply of 5xx to RCPT TO with an enhanced status code 5.1.x (RFC 3463: the address does
+// not exist) fails with kernel.ErrRecipientRejected, any other 5xx to RCPT TO or DATA with
+// kernel.ErrMailRejected, and everything else, such as a 4xx reply, a refused AUTH, or a
+// connection that fails, as a temporary failure. The errors name the SMTP command, the reply
+// code, and the enhanced status code, never the server's reply text, which often repeats the
+// recipient's address.
 package smtp
 
 import (
@@ -19,6 +26,8 @@ import (
 	"net"
 	"net/mail"
 	"net/smtp"
+	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -126,19 +135,44 @@ func (m *Mailer) dialogue(c *smtp.Client, to string, body []byte) error {
 		return err
 	}
 	if err := c.Rcpt(to); err != nil {
-		return err
+		return reply("RCPT TO", err)
 	}
 	w, err := c.Data()
 	if err != nil {
-		return err
+		return reply("DATA", err)
 	}
 	if _, err := w.Write(body); err != nil {
-		return err
+		return fmt.Errorf("DATA: %w", err)
 	}
 	if err := w.Close(); err != nil {
-		return err
+		return reply("DATA", err)
 	}
 	return c.Quit()
+}
+
+// enhancedStatus matches the enhanced status code (RFC 3463) at the start of a reply's text.
+var enhancedStatus = regexp.MustCompile(`^[245]\.\d{1,3}\.\d{1,3}\b`)
+
+// reply returns the error of a reply to the recipient or the message (command is "RCPT TO" or
+// "DATA"), classified as kernel.ErrRecipientRejected, kernel.ErrMailRejected, or temporary,
+// with the reply code and the enhanced status code but without the reply's text.
+func reply(command string, err error) error {
+	var te *textproto.Error
+	if !errors.As(err, &te) {
+		return fmt.Errorf("%s: %w", command, err)
+	}
+	status := enhancedStatus.FindString(te.Msg)
+	code := strconv.Itoa(te.Code)
+	if status != "" {
+		code += " " + status
+	}
+	switch {
+	case te.Code < 500 || te.Code > 599:
+		return fmt.Errorf("%s: reply %s", command, code)
+	case command == "RCPT TO" && strings.HasPrefix(status, "5.1."):
+		return fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrRecipientRejected)
+	}
+	return fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrMailRejected)
 }
 
 // compose returns the message in RFC 5322 form with CRLF line ends.

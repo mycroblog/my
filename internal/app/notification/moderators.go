@@ -5,7 +5,6 @@ package notification
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -204,22 +203,16 @@ type MailDeps struct {
 
 // RegisterModeratorJobs registers the handler of JobModeratorEmail on reg. The handler sends
 // nothing when the recipient no longer holds the notification's permission or no longer wants
-// it by email; a failure to send is retried. An email names only the kind of notification and
-// links to the notifications page, never the report or the user it is about.
+// it by email; a permanent rejection of the email fails the job and any other failure is
+// retried (queue.MailResult). An email names only the kind of notification and links to the
+// notifications page, never the report or the user it is about.
 func RegisterModeratorJobs(reg *queue.JobHandlerRegistry, d MailDeps) {
 	reg.Register(JobModeratorEmail, func(ctx context.Context, j queue.Job) queue.Result {
 		var job moderatorEmail
 		if err := json.Unmarshal(j.Payload, &job); err != nil {
 			return queue.Fail(fmt.Errorf("notification: the payload of %s: %w", j.ID, err))
 		}
-		err := sendModeratorEmail(ctx, d, job)
-		if errors.Is(err, kernel.ErrInvalidMail) {
-			return queue.Fail(err)
-		}
-		if err != nil {
-			return queue.Retry(0, err)
-		}
-		return queue.Done()
+		return queue.MailResult(sendModeratorEmail(ctx, d, job))
 	})
 }
 

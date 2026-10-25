@@ -5,8 +5,6 @@ package identity
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -25,7 +23,8 @@ import (
 //
 // A new password, from a reset or a change, ends the user's other sessions and grants
 // (password_changed) and keeps the passkeys and the two-factor authentication, which do not
-// depend on the password. The user is told by email when the Mailer delivers email.
+// depend on the password. The user is told by email when the Mailer delivers email
+// (JobPasswordNoticeEmail).
 
 // Password reset limits and lifetimes (ADR-0019 §4, §5).
 var (
@@ -69,10 +68,10 @@ type PasswordResetRequest struct {
 	HumanCheckToken string
 }
 
-// RequestPasswordReset emails a reset link to the address when it is the primary address of a
-// user whose local account can sign in, and does nothing otherwise: the result is the same
-// whether or not such a user exists, so that callers cannot tell. A failure to send the email
-// is logged, not returned, for the same reason.
+// RequestPasswordReset enqueues the email of a reset link (JobPasswordResetEmail) when the
+// address belongs to a user whose local account can sign in, and does nothing otherwise: the
+// result is the same whether or not such a user exists, so that callers cannot tell. The job
+// issues the link and sends it to the user's primary address.
 //
 // It fails with ErrPasswordResetByEmailUnavailable without email delivery, an error wrapping
 // identity.ErrInvalidEmail for an address that is not one, a *kernel.RateLimitedError after
@@ -122,22 +121,10 @@ func (s *Service) RequestPasswordReset(ctx context.Context, in PasswordResetRequ
 	case err != nil:
 		return err
 	}
-	email, _, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
-	if err != nil {
-		return err
-	}
-	prefs, err := s.d.Repository.FindPreferences(ctx, userID)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return err
-	}
-	secret, err := s.issueResetToken(ctx, userID, nil)
-	if err != nil {
-		return err
-	}
-	if err := s.sendPasswordReset(ctx, email.Address, prefs.Locale, secret); err != nil {
-		s.logger().ErrorContext(ctx, "send a password reset email", slog.String("user", userID), slog.Any("error", err))
-	}
-	return nil
+	job := passwordResetEmail{RequestID: s.d.IDs.NewID(), UserID: userID, RequestedAt: s.d.Clock.Now()}
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return s.enqueueMail(ctx, tx, JobPasswordResetEmail, job.RequestID, job)
+	})
 }
 
 // issueResetToken stores a new reset token of a user, with audit in the same transaction when
@@ -165,24 +152,6 @@ func (s *Service) issueResetToken(ctx context.Context, userID string, audit *app
 		return "", err
 	}
 	return secret, nil
-}
-
-// sendPasswordReset sends the reset email with the link that carries secret, worded in locale.
-// The error never contains the secret.
-func (s *Service) sendPasswordReset(ctx context.Context, to, locale, secret string) error {
-	m, err := s.mailContext(ctx, locale)
-	if err != nil {
-		return err
-	}
-	err = s.d.Mailer.Send(ctx, kernel.MailMessage{
-		To:      to,
-		Subject: m.l.ServerMailPasswordResetSubject(m.name),
-		Text:    m.l.ServerMailPasswordResetBody(m.host, m.name, int(PasswordResetTTL/time.Minute), s.link(PathResetPassword, secret)),
-	})
-	if err != nil {
-		return fmt.Errorf("identity: send the password reset email: %w", err)
-	}
-	return nil
 }
 
 // PasswordResetLink is a reset link that an administrator issued.
@@ -281,12 +250,14 @@ func (s *Service) ResetPassword(ctx context.Context, secret, password string) (u
 		if err := s.d.Repository.InsertUserTokenRedemption(ctx, tx, identity.UserTokenRedemption{TokenID: t.ID, RedeemedAt: now}); err != nil {
 			return err
 		}
-		return s.writePassword(ctx, tx, cred, "")
+		if err := s.writePassword(ctx, tx, cred, ""); err != nil {
+			return err
+		}
+		return s.enqueuePasswordNotice(ctx, tx, t.UserID, passwordChanged, cred.ID)
 	})
 	if err != nil {
 		return "", err
 	}
-	s.notifyPassword(ctx, t.UserID, passwordChanged)
 	return t.UserID, nil
 }
 
@@ -324,11 +295,12 @@ func (s *Service) ChangePassword(ctx context.Context, in ChangePasswordInput) er
 		return err
 	}
 	cred := identity.PasswordCredential{ID: s.d.IDs.NewID(), UserID: in.UserID, Hash: hash, SetAt: s.d.Clock.Now()}
-	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.writePassword(ctx, tx, cred, in.KeepFamilyID) }); err != nil {
-		return err
-	}
-	s.notifyPassword(ctx, in.UserID, passwordChanged)
-	return nil
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.writePassword(ctx, tx, cred, in.KeepFamilyID); err != nil {
+			return err
+		}
+		return s.enqueuePasswordNotice(ctx, tx, in.UserID, passwordChanged, cred.ID)
+	})
 }
 
 // writePassword records a new password and ends the user's sessions and grants but the grant
@@ -352,50 +324,4 @@ func (s *Service) endOtherSessions(ctx context.Context, tx uow.Tx, userID, keepF
 		return repo.RevokeTokensOfUser(ctx, tx, userID, identity.TokenRevokedPasswordChanged, at)
 	}
 	return repo.RevokeOtherTokensOfUser(ctx, tx, userID, keepFamilyID, identity.TokenRevokedPasswordChanged, at)
-}
-
-// passwordNotice is what happened to a user's password, for the email that tells them.
-type passwordNotice int
-
-const (
-	passwordChanged passwordNotice = iota
-	passwordRemoved
-)
-
-// notifyPassword tells a user by email that their password changed or was removed, with the link
-// that asks for a reset in case they did not do it. Without email delivery or a primary address
-// it sends nothing; a failure is logged, since the password has changed either way.
-func (s *Service) notifyPassword(ctx context.Context, userID string, notice passwordNotice) {
-	if !s.PasswordResetByEmail() {
-		return
-	}
-	err := s.sendPasswordNotice(ctx, userID, notice)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		s.logger().ErrorContext(ctx, "send the password change email", slog.String("user", userID), slog.Any("error", err))
-	}
-}
-
-func (s *Service) sendPasswordNotice(ctx context.Context, userID string, notice passwordNotice) error {
-	email, _, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
-	if err != nil {
-		return err
-	}
-	prefs, err := s.d.Repository.FindPreferences(ctx, userID)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return err
-	}
-	m, err := s.mailContext(ctx, prefs.Locale)
-	if err != nil {
-		return err
-	}
-	msg := kernel.MailMessage{
-		To:      email.Address,
-		Subject: m.l.ServerMailPasswordChangedSubject(m.name),
-		Text:    m.l.ServerMailPasswordChangedBody(m.host, m.name, s.link(PathForgotPassword, "")),
-	}
-	if notice == passwordRemoved {
-		msg.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordRemovedBody(m.host, m.name, s.link(PathForgotPassword, ""))
-	}
-	return s.d.Mailer.Send(ctx, msg)
 }

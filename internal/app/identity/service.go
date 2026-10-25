@@ -12,6 +12,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/i18n"
@@ -90,8 +91,12 @@ type Deps struct {
 	// list (FR-719); nil screens nothing.
 	SignupBlocks SignupScreen
 	// Mailer sends verification emails, password reset emails, and the notices of password
-	// changes; nil sends none and issues no verification tokens.
+	// changes from the jobs that RegisterMailJobs registers; nil sends none and issues no
+	// verification tokens.
 	Mailer kernel.Mailer
+	// Outbox enqueues the jobs that send those emails in the transactions of the use cases
+	// (ADR-0086 §1); a Mailer needs it.
+	Outbox queue.Outbox
 	// RequireEmailVerification keeps users whose primary address is unverified from using
 	// the app (Access.Allowed). It is false when the mailer delivers no email (mail = none);
 	// then a moderator's approval stands in for verification and open mode waits for one
