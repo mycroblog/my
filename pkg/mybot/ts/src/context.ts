@@ -2,6 +2,7 @@
 import type { Api, components, Sleep } from "@mycroblog/mykit";
 import type { Budget, Rate, ReplyLimiter, SendKind } from "./budget.js";
 import type { Job } from "./dispatch.js";
+import { type EveryJob, everyIdempotencyKey, NotScheduledError, PostedAlreadyError } from "./every.js";
 import { type Logger, withAttributes } from "./logger.js";
 import { plainText } from "./text.js";
 
@@ -117,14 +118,18 @@ export type ContextState = {
   /** The key of the account for the reply limits and the order of processing. */
   readonly sender: string;
   replies: number;
+  /** The scheduled job of the run, undefined for an event. */
+  readonly every: EveryJob | undefined;
+  /** Whether the run of the scheduled job posted. */
+  posted: boolean;
   /** Makes the helpers wait for the send budget (the sendBudget middleware). */
   budgeted: boolean;
 };
 
 /**
  * What a handler receives: the event, its post and its sender, the plain text and the command of a mention, and
- * helpers that answer within the defaults of the library. Its signal aborts when the bot stops and the grace period
- * is over.
+ * helpers that answer within the defaults of the library; or for a scheduled job its name and time, and post. Its
+ * signal aborts when the bot stops and the grace period is over.
  */
 export class Context {
   /** The notification of the event; undefined for onStatus. */
@@ -146,6 +151,13 @@ export class Context {
   command = "";
   /** The text after the command's name, with the spaces around it trimmed. */
   args = "";
+  /** The name of the scheduled job (Bot.every) that the context runs, "" for an event. */
+  readonly job: string;
+  /**
+   * The time of the run of the scheduled job, in milliseconds since the Unix epoch, which may be earlier than now for
+   * a run that catches up; undefined for an event.
+   */
+  readonly scheduledAt: number | undefined;
   /** Aborts when the bot stops and the grace period is over; pass it to the requests of the handler. */
   readonly signal: AbortSignal;
   /** The library's state; not for handlers. */
@@ -154,7 +166,13 @@ export class Context {
   /** A context is made by the bot for each event. */
   constructor(runtime: Runtime, job: Job, signal: AbortSignal) {
     this.signal = signal;
-    if (job.notification !== undefined) {
+    this.job = job.every?.name ?? "";
+    this.scheduledAt = job.every === undefined ? undefined : job.at;
+    if (job.every !== undefined) {
+      this.notification = undefined;
+      this.status = undefined;
+      this.account = undefined;
+    } else if (job.notification !== undefined) {
       this.notification = job.notification;
       this.status = job.notification.status;
       this.account = job.notification.account;
@@ -171,6 +189,8 @@ export class Context {
       source: job.notification?.id ?? job.status?.id ?? "",
       sender: job.sender,
       replies: 0,
+      every: job.every,
+      posted: false,
       budgeted: false,
     };
   }
@@ -193,6 +213,7 @@ export class Context {
     const { logger } = this[internal].runtime;
     if (this.notification !== undefined) return withAttributes(logger, { notification: this.notification.id, type: this.notification.type });
     if (this.status !== undefined) return withAttributes(logger, { status: this.status.id });
+    if (this.job !== "") return withAttributes(logger, { job: this.job, scheduledAt: new Date(this.scheduledAt ?? 0).toISOString() });
     return logger;
   }
 
@@ -249,6 +270,27 @@ export class Context {
     if (this.account === undefined) throw new NoAccountError();
     await this.#waitBudget("write");
     await this.api.POST("/accounts/{id}/follow", { params: { path: { id: this.account.id } }, body: {}, signal: this.signal });
+  }
+
+  /**
+   * Posts text from the handler of a scheduled job, with the visibility of its EveryOptions and the Idempotency-Key
+   * everyIdempotencyKey(job, scheduledAt): a run posts once, even when two processes of the bot run it, or a restart
+   * runs it again. It waits for the send budget. Outside a scheduled job it throws a NotScheduledError, and a second
+   * post of a run a PostedAlreadyError.
+   */
+  async post(text: string): Promise<Status> {
+    const state = this[internal];
+    const { every } = state;
+    if (every === undefined || this.scheduledAt === undefined) throw new NotScheduledError();
+    if (state.posted) throw new PostedAlreadyError();
+    await this.#waitBudget("post");
+    state.posted = true;
+    const { data } = await state.runtime.api.POST("/statuses", {
+      params: { header: { "Idempotency-Key": everyIdempotencyKey(every.name, this.scheduledAt) } },
+      body: { text, visibility: every.visibility },
+      signal: this.signal,
+    });
+    return answered(data, "createStatus");
   }
 
   /**

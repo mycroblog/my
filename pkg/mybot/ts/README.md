@@ -5,7 +5,8 @@
 Build bots for [my](https://github.com/mycroblog/my), an ActivityPub microblog server, on its API client
 [`@mycroblog/mykit`](https://github.com/mycroblog/my/blob/main/pkg/mykit/ts/README.md). You write the handlers of the bot's events; the library receives the
 events so that none is lost or answered twice across disconnections and restarts, and keeps the bot polite by default.
-It is ESM only and runs on Node.js 22 or later, Bun, and Deno; its only dependency is `@mycroblog/mykit`.
+It is ESM only and runs on Node.js 22 or later, Bun, and Deno; it depends on `@mycroblog/mykit` and on
+[`croner`](https://github.com/hexagon/croner) (MIT, no dependencies), which computes the times of the scheduled jobs.
 
 The Go library `github.com/mycroblog/my/pkg/mybot` has the same handlers, options, defaults, idempotency keys, and
 state file; the [differences](#differences-from-the-go-library) are at the end.
@@ -100,6 +101,36 @@ bot.use(async (ctx, next) => {
 The log goes to `console`, or to any `logger` with `debug`, `info`, `warn`, and `error`; each call has a message and
 an object of attributes.
 
+## Scheduled jobs
+
+`every` runs a handler at the times of a cron expression of five fields, minute hour day-of-month month day-of-week,
+in UTC or the IANA time zone `timeZone`:
+
+```ts
+bot.every(
+  "0 9 * * *",
+  async (ctx) => {
+    await ctx.post("Good morning");
+  },
+  { name: "morning", timeZone: "Asia/Tokyo" },
+);
+```
+
+- A field is `*`, a number, a range `a-b`, a step `*/n` or `a-b/n`, or a list of those; the day of the week is 0-7,
+  0 and 7 being Sunday, and a day matches when either day field does when both are other than `*`. A field of seconds,
+  the aliases such as `@daily`, the names of months and days, and `?`, `L`, `W`, and `#` throw a `ScheduleError`, so
+  that the Go library and this one take the same expressions. `parseSchedule(expr, timeZone)` gives the times without
+  a bot.
+- The times are wall-clock times of the time zone: one that a daylight saving time change skips does not run, and one
+  that the change repeats runs once.
+- `ctx.post(text)` posts once per run, with the visibility `unlisted` by default (`visibility: "public"` or `"local"`)
+  and the Idempotency-Key `mybot:every:<name>:<time in RFC 3339>` (`everyIdempotencyKey`): two processes of the bot, or
+  a restart in the middle of a run, post it once. `ctx.job` and `ctx.scheduledAt` name the run.
+- The run counts as the job's last run in the store after the handler returns. The times missed while the bot was
+  stopped are skipped by default; `catchUp: "latest"` runs the newest of them once when the bot starts (for a job that
+  never ran, its newest past time), and never a pile of them.
+- `name` (the expression by default) keys the last run and the idempotency key: keep it when the expression changes.
+
 ## Manners
 
 All on by default, and each can be turned off but the first:
@@ -122,8 +153,8 @@ These are a floor: read the rules of the server (whether it allows bots, how oft
 
 ## State
 
-The `store` keeps the processed notifications (for 7 days, `processedRetention`), the position of the catch-up, and the
-rotated refresh token. The default is a `FileStore` at `./mybot-state.json`: one JSON file, rewritten through a
+The `store` keeps the processed notifications (for 7 days, `processedRetention`), the position of the catch-up, the last
+runs of the scheduled jobs, and the rotated refresh token. The default is a `FileStore` at `./mybot-state.json`: one JSON file, rewritten through a
 temporary file and a rename, readable by its owner alone, in the same format as the Go library's. `MemoryStore` is for
 tests: a restart loses the rotated refresh token, and the next start sends the used one, which revokes the token. A bot
 that runs all the time, or is started again and again, needs a `FileStore` or a `Store` of its own (such as in a
@@ -134,6 +165,43 @@ database). Run one process per bot: the store takes no lock.
 When the signal aborts, the bot closes the event stream, takes no new events, and waits `shutdownGrace` (10 seconds) for
 the running handlers. Then it aborts `ctx.signal` of those still running; their notifications stay unprocessed and are
 handled again by the next start (without posting twice, through the idempotency keys).
+
+## Running once
+
+`bot.runOnce({ signal })` catches up the notifications since the store's position (back to `catchUpLimit`), runs each
+scheduled job's newest past time after its last run, whatever its `catchUp`, waits for the handlers, and resolves: for a
+bot that cron or a job runner such as Cloud Run jobs starts again and again. Such a bot needs a store that outlives the
+process.
+
+## Testing
+
+`@mycroblog/mybot/testing` tests a bot without a server. `Server` is a fake server of the client API behind a `fetch`
+that answers the operations that the bot calls with the types of the API; `options()` gives a bot its `fetch`, a token,
+a `MemoryStore`, and the server's `Clock`, which moves only when the test moves it:
+
+```ts
+import { Bot } from "@mycroblog/mybot";
+import { Server } from "@mycroblog/mybot/testing";
+
+const srv = new Server();
+const bot = new Bot(srv.options());
+bot.onCommand("ping", "answer pong", async (ctx) => {
+  await ctx.reply("pong");
+});
+const controller = new AbortController();
+const done = bot.run({ signal: controller.signal });
+srv.inject(srv.mention(srv.account("alice"), "ping", "public"));
+const [post] = await srv.waitPosted(1); // post.request.text is "@alice pong"
+controller.abort();
+await done;
+```
+
+- `inject` sends a notification on the event stream; `injectMissed` adds one that only the catch-up finds;
+  `dropStreams`, `disconnect`, and `reconnect` cut the stream.
+- `posted()`, `reactions()`, `favourites()`, and `follows()` return what the bot did; like the server, it posts once
+  per Idempotency-Key.
+- `clock.waitForSleepers(n)` waits for the scheduled jobs (and the pruning of the store) to sleep, and
+  `clock.advance(ms)` or `clock.set(at)` moves them on.
 
 ## Runtimes
 
@@ -151,3 +219,7 @@ the state file. With another `Store`, nothing of `node:` is loaded.
   the `context.Context` of the handler.
 - The scopes of a token are checked when they are known: for `oauth`, from the renewal; a `tokenSource` is not checked.
 - `User-Agent` ends with `mybot-ts`.
+- `catchUp` is `"skip"` or `"latest"`, and `ctx.scheduledAt` is `undefined` for an event.
+- The clock is the options `now` and `sleep` rather than a `Clock` interface.
+- The fake server of `@mycroblog/mybot/testing` is a `fetch` rather than an HTTP server, and its waits take a signal
+  (10 seconds by default) rather than a `context.Context`.

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT
 import type { components } from "@mycroblog/mykit";
+import type { EveryJob } from "./every.js";
 
 type Notification = components["schemas"]["Notification"];
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
 
-/** One event to handle: a notification, or a post of the home timeline. */
-export type Job = { notification: Notification; status?: undefined; sender: string } | { notification?: undefined; status: Status; sender: string };
+/** One job to run: a notification, a post of the home timeline, or the run at of a scheduled job. */
+export type Job =
+  | { notification: Notification; status?: undefined; every?: undefined; sender: string }
+  | { notification?: undefined; status: Status; every?: undefined; sender: string }
+  | { notification?: undefined; status?: undefined; every: EveryJob; at: number; sender: string };
 
 /** The key of the account that acted, "" for an event without one. */
 export function senderOf(account: Account | undefined): string {
