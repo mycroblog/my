@@ -8,6 +8,7 @@ package clientapi
 // http.ServeMux pattern that the generated code registers it with.
 var operationSecurity = map[string]operationAccess{
 	"DELETE /api/v1/admin/accounts/{id}/roles/{role}":                     {Operation: "revokeAccountRole", Scopes: []string{"admin:write"}},
+	"DELETE /api/v1/admin/closure/announcement":                           {Operation: "withdrawServiceClosure", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/custom_emojis/{id}":                             {Operation: "deleteCustomEmoji", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/oauth_client_host_denials/{host}":               {Operation: "allowOAuthClientHost", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/relays/{id}":                                    {Operation: "deleteRelay", Scopes: []string{"admin:write"}},
@@ -45,6 +46,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/appeals/{id}":                                      {Operation: "getAppeal", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/audit_log":                                         {Operation: "listAuditLog", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/billing_imports":                                   {Operation: "listBillingImports", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/closure":                                           {Operation: "getAdminServiceClosure", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/cost_items":                                        {Operation: "listCostItems", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/cost_items/{id}":                                   {Operation: "getCostItem", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/cost_totals":                                       {Operation: "getCostTotals", Scopes: []string{"admin:read"}},
@@ -256,6 +258,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/two_factor/totp/setup":                                  {Operation: "setUpTotp", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"PUT /api/v1/admin/accounts/{id}/roles/{role}":                        {Operation: "grantAccountRole", Scopes: []string{"admin:write"}},
 	"PUT /api/v1/admin/announcements/{id}":                                {Operation: "updateAdminAnnouncement", Scopes: []string{"admin:write"}},
+	"PUT /api/v1/admin/closure/announcement":                              {Operation: "announceServiceClosure", Scopes: []string{"admin:write"}},
 	"PUT /api/v1/admin/cost_items/{id}/end":                               {Operation: "setCostItemEnd", Scopes: []string{"admin:write"}},
 	"PUT /api/v1/admin/custom_emojis/{id}/image":                          {Operation: "replaceCustomEmojiImage", Scopes: []string{"admin:write"}},
 	"PUT /api/v1/admin/instance_texts/{key}":                              {Operation: "setInstanceText", Scopes: []string{"admin:write"}},

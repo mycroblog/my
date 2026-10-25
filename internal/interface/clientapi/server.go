@@ -224,6 +224,9 @@ type Options struct {
 	// Themes reads and replaces the instance theme for the admin operations and Instance.theme
 	// (admin_theme.go); nil answers no theme and 404 to the admin operations.
 	Themes Themes
+	// Closures reads, announces, and withdraws the service closure for the admin operations and
+	// Instance.closure (admin_closure.go); nil answers no closure and 404 to the admin operations.
+	Closures ServiceClosures
 	// ThemeStylesheetPath returns the path, on Origin, of a theme revision's stylesheet
 	// (web.ThemeStylesheetPath); nil leaves the stylesheet URLs and Instance.theme out.
 	ThemeStylesheetPath func(revisionID string) string

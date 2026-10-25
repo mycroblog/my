@@ -1586,6 +1586,13 @@ func (l *Localizer) ServerErrorsSelfRelationship() string {
 	return l.format("server:errors.self_relationship", nil)
 }
 
+// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes.
+//
+//	en: The service closure does not allow that in its current state.
+func (l *Localizer) ServerErrorsServiceClosureState() string {
+	return l.format("server:errors.service_closure.state", nil)
+}
+
 // ServerErrorsServiceUnavailable formats "server:errors.service_unavailable". Error title for HTTP 503 when the server cannot handle the request for now, e.g. another server it needs to reach is not responding.
 //
 //	en: The service is temporarily unavailable. Please try again later.

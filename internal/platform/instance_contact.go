@@ -47,7 +47,8 @@ func (a *App) instanceThumbnail(ctx context.Context) (*clientapi.InstanceImage, 
 }
 
 // nodeMetadata returns what NodeInfo's metadata says about the instance besides its name, in the
-// instance's default locale: its summary, its contact, and its thumbnail. A contact account that
+// instance's default locale: its summary, its contact, its thumbnail, and the closure of the
+// service. A contact account that
 // is gone or suspended is left out.
 func (a *App) nodeMetadata(ctx context.Context) (activitypub.NodeMetadata, error) {
 	settings, err := a.Instance.Settings(ctx)
@@ -81,6 +82,13 @@ func (a *App) nodeMetadata(ctx context.Context) (activitypub.NodeMetadata, error
 	}
 	if thumbnail != nil {
 		out.ThumbnailURL, out.ThumbnailAlt = thumbnail.URL, thumbnail.Alt
+	}
+	closure, err := a.Instance.Closure(ctx)
+	if err != nil {
+		return activitypub.NodeMetadata{}, err
+	}
+	out.Closure = activitypub.NodeClosure{
+		State: string(closure.CurrentState()), ClosesAt: closure.Schedule.ClosesAt, ExportUntil: closure.Schedule.ExportUntil,
 	}
 	return out, nil
 }
