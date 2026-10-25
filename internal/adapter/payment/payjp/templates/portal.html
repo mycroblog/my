@@ -1,0 +1,15 @@
+{{define "content"}}{{with .Notice}}<p class="notice" role="status">{{.}}</p>
+{{end}}{{if .Paused}}<p class="alert" role="alert">{{.L.ServerPaymentsPortalPaused}}</p>
+{{end}}<h2>{{.L.ServerPaymentsPortalCard}}</h2>
+<p>{{if .Card}}{{.Card}}{{else}}{{.L.ServerPaymentsPortalNoCard}}{{end}}</p>
+<h2>{{.L.ServerPaymentsPortalChangeCard}}</h2>
+{{template "card_form" .}}<h2>{{.L.ServerPaymentsPortalHistory}}</h2>
+{{if .Charges}}<table>
+<thead><tr><th scope="col">{{.L.ServerPaymentsPortalDate}}</th><th scope="col">{{.L.ServerPaymentsPortalAmount}}</th><th scope="col">{{.L.ServerPaymentsPortalRefunded}}</th></tr></thead>
+<tbody>
+{{range .Charges}}<tr><td><time datetime="{{.Date}}">{{.Date}}</time></td><td>{{.Amount}}</td><td>{{.Refunded}}</td></tr>
+{{end}}</tbody>
+</table>
+{{else}}<p>{{.L.ServerPaymentsPortalHistoryEmpty}}</p>
+{{end}}<p class="links"><a href="{{.Back}}">{{.L.ServerPaymentsBack}}</a></p>
+{{end}}
