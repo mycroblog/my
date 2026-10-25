@@ -6,21 +6,21 @@ body:
   - type: textarea
     id: background
     attributes:
-      label: Background / 背景
+      label: Background
       description: Why this is needed. Link requirement IDs (FR-xxx / NFR-xxx).
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
-      label: Scope / やること
+      label: Scope
       description: What to change. Also list what is explicitly out of scope.
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance criteria / 受け入れ基準
+      label: Acceptance criteria
       description: Verifiable checklist. An agent must be able to judge each item objectively.
       value: |
         - [ ]
@@ -35,5 +35,5 @@ body:
   - type: textarea
     id: notes
     attributes:
-      label: Notes for implementers / 補足
+      label: Notes for implementers
       description: Hints, pitfalls, files to look at, dependencies on other issues.

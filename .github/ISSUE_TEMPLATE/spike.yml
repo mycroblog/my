@@ -6,13 +6,13 @@ body:
   - type: textarea
     id: question
     attributes:
-      label: Question / 明らかにしたいこと
+      label: Question
     validations:
       required: true
   - type: textarea
     id: method
     attributes:
-      label: Method / 方法
+      label: Method
       description: What to build or measure. Throwaway code goes on an unmerged spike/<issue>-<slug> branch (ADR-0022).
   - type: input
     id: timebox
@@ -24,7 +24,7 @@ body:
   - type: textarea
     id: output
     attributes:
-      label: Expected output / 成果物
+      label: Expected output
       value: |
         - [ ] Findings report posted as a comment on this issue (code linked by commit permalink)
         - [ ] Conclusions written into the related ADR / docs via a separate PR
