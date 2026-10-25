@@ -6856,6 +6856,9 @@ type Instance struct {
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
+	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+	StatusPageUrl *string `json:"status_page_url,omitempty"`
+
 	// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
 	// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
 	// `signed_in`, the users signed in to this server.

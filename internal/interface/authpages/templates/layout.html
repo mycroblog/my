@@ -18,13 +18,14 @@
 {{template "content" .}}
 </div>
 </main>
-{{with .Documents}}<footer class="footer">
-<nav aria-label="{{$.L.ServerAuthDocumentFooterLabel}}">
+{{if or .Documents .StatusPageURL}}<footer class="footer">
+{{with .Documents}}<nav aria-label="{{$.L.ServerAuthDocumentFooterLabel}}">
 <ul class="footer-links">
 {{range .}}<li><a href="{{.Path}}">{{.Title}}</a></li>
 {{end}}</ul>
 </nav>
-</footer>
+{{end}}{{with .StatusPageURL}}<p class="footer-links"><a href="{{.}}" rel="noopener">{{$.L.ServerAuthStatusPageLink}}</a></p>
+{{end}}</footer>
 {{end}}</body>
 </html>
 {{end}}

@@ -159,6 +159,10 @@ type Options struct {
 	// ThemeStylesheet returns the URL of the instance theme's stylesheet, which the pages load
 	// after Stylesheet (ADR-0059), or "" when the theme changes nothing; nil loads none.
 	ThemeStylesheet func(ctx context.Context) string
+	// StatusPageURL is the address of the instance's status page, which the footer of every page
+	// links to (ADR-0085 §6); empty links to none. It is a setting, not read from the database, so
+	// the error pages of a database outage link to it too.
+	StatusPageURL string
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
 	// Moderation lists the actions that keep a signed-in user out of the app on the status
@@ -300,6 +304,8 @@ type page struct {
 	// Documents are the links to the published documents, in the footer of every page and on
 	// the registration form; render fills them.
 	Documents []documentLink
+	// StatusPageURL is the instance's status page, in the footer of every page; render fills it.
+	StatusPageURL string
 	// formAction lists origins the page's forms may be redirected to besides
 	// Options.FormActionOrigins.
 	formAction []string
@@ -333,6 +339,7 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, nam
 		p.InstanceName = h.o.InstanceName(r.Context())
 	}
 	p.Documents = h.documentLinks(r, p.L)
+	p.StatusPageURL = h.o.StatusPageURL
 	if h.o.ThemeStylesheet != nil {
 		p.ThemeStylesheet = h.o.ThemeStylesheet(r.Context())
 	}

@@ -35,6 +35,8 @@ type Options struct {
 	SoftwareVersion string
 	// SourceURL is where users get the server's source code, an https URL or a mailto: address (ADR-0011).
 	SourceURL string
+	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
+	StatusPageURL string
 	// Instance reads the instance settings and texts; nil reads every setting as its default
 	// and no text.
 	Instance InstanceInfo
