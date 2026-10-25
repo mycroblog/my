@@ -356,7 +356,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpDeadJobPurger(cfg)
-	if a.Mailer, err = newMailer(cfg, a.Logger); err != nil {
+	if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
 		return nil, err
 	}
 	a.HTTPClient = opts.HTTPClient
@@ -438,7 +438,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	return a, nil
 }
 
-func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
+func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
 		return mailnone.New(logger), nil
@@ -447,6 +447,8 @@ func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 			Host: cfg.SMTPHost, Port: cfg.SMTPPort, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword,
 			From: cfg.MailFrom, HelloName: hostOnly(cfg.Host),
 		})
+	case "ses":
+		return newSESMailer(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}

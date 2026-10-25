@@ -23,19 +23,40 @@
 | --- | --- |
 | `none`（既定） | 送らず、本文（リンクを含む）をサーバーのログに `mail not sent (mail = none)` として出す。メールを使わない構成と開発用 |
 | `smtp` | SMTP の提出（submission）で送る。STARTTLS を必須とし、証明書を検証してから認証・送信する |
+| `ses` | Amazon SES v2 の API（`SendEmail` の Raw content）で送る。認証は AWS SDK の既定の資格情報の連鎖（IAM ロールなど）で、SMTP のパスワードを持たない |
 
-`smtp` の設定は `mail_from`・`smtp_host`・`smtp_port`（既定 587）・`smtp_username`・`smtp_password` です。
+`smtp` の設定は `mail_from`・`smtp_host`・`smtp_port`（既定 587）・`smtp_username`・`smtp_password`、`ses` の設定は `mail_from`・`ses_region`・`ses_configuration_set` です。
 `mail_from` は `noreply@social.example` のような裸のアドレスで、`From` は `"<サーバー名>" <mail_from>` になり、`Message-ID` のドメインと SPF・DKIM・DMARC の対象（下記）もこのドメインです。
 `Reply-To` には、インスタンス設定の `contact_email` があればそれを付けます（[インスタンス設定](instance-settings.md)）。
 すべてのメールに `Auto-Submitted: auto-generated` が付きます。
+`smtp` と `ses` は同じ形のメールを組み立てます。SMTPUTF8 を使わないので、アドレスは ASCII で送り、国際化ドメインは Punycode に直します。ローカル部（`@` の前）が ASCII でないアドレスには送れず、そのジョブは失敗します。
 
 ## 事業者ごとの設定例
 
 秘密は環境変数かファイルで渡します（`MY_SMTP_PASSWORD` または `MY_SMTP_PASSWORD_FILE`）。設定ファイルには書かないでください。
 
+### Amazon SES（API）
+
+AWS で動かすときは `mail = ses` で SES v2 の API を使います。資格情報は AWS SDK の既定の連鎖（Lambda・ECS の実行ロール、環境変数、共有の設定ファイル）から取るので、秘密の設定はありません。
+
+1. SES で `mail_from` のドメインをアイデンティティとして検証し、Easy DKIM を有効にする（下記）。
+2. 本番のアクセスを申請して、サンドボックスを出る。サンドボックスでは検証済みのアドレスにしか送れない。
+3. 実行ロールに、`mail_from` のアイデンティティ（構成セットを使うならその構成セットにも）への `ses:SendEmail` を許可する。
+
+```sh
+MY_MAIL=ses
+MY_MAIL_FROM=noreply@social.example
+MY_SES_REGION=ap-northeast-1          # アイデンティティを検証したリージョン。空なら AWS_REGION
+MY_SES_CONFIGURATION_SET=my-events    # 任意。イベントの送り先を持つ構成セット
+```
+
+`ses_configuration_set` を設定すると、すべてのメールにその構成セットを適用します。SES はメールの `Message-ID` と `Date` を自分の値で上書きします。
+送信時に SES が同期で宛先を拒むことはありません。アカウントの抑止リストに載ったアドレスへの送信も受け付けたうえで送られず、あとから通知（SNS）でバウンスとして届きます。
+SES の通知を SNS で受けてバウンスと苦情を記録する受け口は [#1104](https://github.com/mycroblog/my/issues/1104) で作っています。
+
 ### Amazon SES（SMTP インタフェース）
 
-SES の SMTP インタフェースを `mail = smtp` で使います。SES の API を使うアダプタ（`mail = ses`）はまだなく、この構成では送信時の宛先の拒否だけを抑止として記録します（[メールが届かないアドレスの抑止](#メールが届かないアドレスの抑止)）。
+AWS の外で動かすときなど、IAM の資格情報を渡せない構成では、SES の SMTP インタフェースを `mail = smtp` で使います。この構成では送信時の宛先の拒否だけを抑止として記録します（[メールが届かないアドレスの抑止](#メールが届かないアドレスの抑止)）。
 
 1. SES で `mail_from` のドメインをアイデンティティとして検証し、Easy DKIM を有効にする（下記）。
 2. 本番のアクセスを申請して、サンドボックスを出る。サンドボックスでは検証済みのアドレスにしか送れない。
@@ -50,7 +71,7 @@ MY_SMTP_USERNAME=<SMTP 認証情報のユーザー名>
 MY_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
 ```
 
-SES は SMTPUTF8 に対応せず、アドレスは ASCII（ドメインは Punycode）で送ります。SES は `Message-ID` と `Date` を自分の値で上書きします。
+SES は `Message-ID` と `Date` を自分の値で上書きします。
 
 ### 一般的な SMTP の提出
 
@@ -92,6 +113,8 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 - **一時的な失敗**（接続・タイムアウト・4xx の応答）は再試行されます。取引のメールは 6 回（30 秒からの指数で、合計およそ 15 分）、通知のメールは既定の方針（10 回、およそ 4 時間）です。
   使い切ると失敗したジョブ（dead job）になります。`smtp_host` の誤り、認証の失敗、ネットワークの遮断はここに出ます。直したら `my job retry <id>` かジョブの画面で再実行します。
 - **恒久的な拒否**（宛先や内容への 5xx）は再試行せず、すぐ失敗にします。
+- `mail = ses` では、SES の `MessageRejected`（内容の拒否）が恒久的な拒否です。`TooManyRequestsException`（送信の速度の上限）・`SendingPausedException`・`MailFromDomainNotVerifiedException`・`AccountSuspendedException`、SES に届かない要求などは一時的な失敗で、アカウントや権限を直せば再試行で通ります。
+  エラーの文には SES のエラーコードだけが残ります。
 - 取引のメールは、要求から一定時間（リセット 15 分、確認 1 時間）を過ぎると、送らずに完了します。古いリンクが遅れて届かないようにするためで、失敗ではありません。
 - ジョブの実行時に、アドレスが抑止されている、確認済みになった、通知の権限や設定を失った、などで送る理由がなければ、送らずに完了します。
 
@@ -102,6 +125,7 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 
 宛先のアドレスが存在しないと SMTP サーバーが答えたとき（`RCPT TO` への 5xx で拡張ステータスが `5.1.x`）、サーバーはそのアドレスをハードバウンスとして記録し、以後の送信を止めます（ADR-0086 §5）。
 `mail = smtp` で記録するのは、この送信時の拒否だけです。送信を受け付けたあとに返る非同期のバウンスや、苦情のフィードバックループは受けません。
+`mail = ses` の送信では SES が同期で宛先を拒まないので、送信時の記録はありません（SES の通知の受け口は [#1104](https://github.com/mycroblog/my/issues/1104)）。
 
 | 種類 | 止めるメール |
 | --- | --- |

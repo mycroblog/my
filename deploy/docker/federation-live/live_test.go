@@ -512,6 +512,11 @@ type notification struct {
 	Reaction *struct {
 		Name string `json:"name"`
 	} `json:"reaction"`
+	// AccountMove is the move of an "account_moved" notification (this server's client API only).
+	AccountMove *struct {
+		Target  account `json:"target"`
+		Outcome string  `json:"outcome"`
+	} `json:"account_move"`
 }
 
 // isNotFound reports whether err is a 404 response.
