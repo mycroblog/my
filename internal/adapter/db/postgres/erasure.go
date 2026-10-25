@@ -85,7 +85,7 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 		q.EraseUserTokenRedemptions, q.EraseUserTokens, q.EraseSessionRevocations, q.EraseSessionActivity,
 		q.EraseSessions, q.EraseAuthorizationCodeRedemptions, q.EraseAuthorizationCodes,
 		q.EraseAccessTokenRevocations, q.EraseAccessTokens, q.EraseUserPreferences, q.EraseUserRoleBadgeDisplays, q.EraseUserTimelineLanguages, q.EraseUserTimeZone,
-		q.EraseRegistrationDecisions, q.EraseRegistrationApplications, q.EraseRegistrationState)
+		q.EraseRegistrationDecisions, q.EraseRegistrationApplications, q.EraseRegistrationState, q.EraseServiceClosureEmails)
 }
 
 // ListAuthorStatusesToErase implements content.ErasureRepository.

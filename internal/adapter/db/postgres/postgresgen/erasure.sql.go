@@ -995,6 +995,15 @@ func (q *Queries) EraseRegistrationState(ctx context.Context, userID string) err
 	return err
 }
 
+const eraseServiceClosureEmails = `-- name: EraseServiceClosureEmails :exec
+DELETE FROM service_closure_emails WHERE user_id = $1
+`
+
+func (q *Queries) EraseServiceClosureEmails(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, eraseServiceClosureEmails, userID)
+	return err
+}
+
 const eraseSessionActivity = `-- name: EraseSessionActivity :exec
 DELETE FROM session_activity WHERE session_id IN (
   SELECT s.id FROM sessions s WHERE s.user_id = $1)
