@@ -44,13 +44,5 @@ operator:
 # section of a listed file, convert the whole file and remove it here; the check fails while a listed file already
 # follows the rule.
 pending:
-  japanese:
-    - docs/operations/email.md
-    - docs/operations/instance-settings.md
-    - docs/operations/link-previews.md
-    - docs/operations/webhooks.md
-  design-links:
-    - docs/operations/email.md
-    - docs/operations/instance-settings.md
-    - docs/operations/link-previews.md
-    - docs/operations/webhooks.md
+  japanese: []
+  design-links: []

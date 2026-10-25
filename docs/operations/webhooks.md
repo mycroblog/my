@@ -1,51 +1,65 @@
-# サーバー単位の webhook
+# Server webhooks
 
-運営者向けの手順です。決定は [ADR-0060](../adr/0060-instance-webhooks.md)、受け手が受け取るもの（ヘッダ・署名・イベント・本文）は
-[webhook リファレンス](../reference/webhooks.md) です。
+This page is for operators. What a receiver gets (headers, signature, events, body) is described in the
+[webhook reference](../reference/webhooks.md).
 
-webhook は、通報・登録の申請・アカウントの作成とプロフィールの変更・処分・異議・ドメインの処分・ローカルの公開投稿・カスタム絵文字の管理操作を、
-Slack や Discord への中継、チケット管理、n8n などの自動化ツールへ流す口です。webhook を設定しないサーバーには、行もジョブも増えません。
+Webhooks send reports, registration requests, account creations and profile changes, moderation actions, appeals,
+domain actions, local public posts, and custom emoji management actions to a Slack or Discord relay, a ticketing system,
+or an automation tool such as n8n. A server with no webhooks configured stores no extra rows and runs no extra jobs.
 
-## 設定する
+## Set up a webhook
 
-管理画面の「Webhook」（`/admin/webhooks`）で、権限 `manage_webhooks` を持つ人が設定します。組み込みの `admin` ロールが持ちます。
+Anyone with the `manage_webhooks` permission can set webhooks up on the admin screen "Webhooks" (`/admin/webhooks`).
+The built-in `admin` role has it.
 
-1. 宛先の URL、説明、購読するイベントを選んで作ります。イベントには、`manage_webhooks` のほかにそれぞれの権限が要ります（通報は `manage_reports`、
-   登録・アカウント・処分・異議は `manage_accounts`、ドメインの処分は `manage_domains`、カスタム絵文字は `manage_custom_emojis`。公開投稿は追加の権限なし）。
-   持っていない権限のイベントは選べません。
-2. 作ったときに一度だけ秘密（`whsec_...`）が表示されます。受け手に設定してください。後から見ることはできません。
-3. 「テスト送信」で `webhook.test` を送り、配送の履歴で届いたことを確かめます。
+1. Create a webhook with a destination URL, a description, and the events to subscribe to. Each event also needs its own
+   permission besides `manage_webhooks`: `manage_reports` for reports, `manage_accounts` for registrations, accounts,
+   moderation actions and appeals, `manage_domains` for domain actions, and `manage_custom_emojis` for custom emoji.
+   Public posts need no extra permission. You cannot select an event whose permission you lack.
+2. The secret (`whsec_...`) is shown once, when the webhook is created. Set it on the receiver. It cannot be shown again.
+3. Choose "Send a test" to send `webhook.test`, and check in the deliveries that it arrived.
 
-作成・変更・削除・有効化・無効化・秘密の回転は監査ログに残ります。対象の表示名は説明と URL のホスト名で、URL そのものは残しません。
+Creating, changing, deleting, enabling, disabling, and rotating the secret of a webhook are recorded in the audit log.
+The target is shown as the description and the host name of the URL; the URL itself is not recorded.
 
-## 秘密を回転する
+## Rotate the secret
 
-「秘密を回転」で新しい秘密を作ると、その秘密が一度だけ表示されます。そのあと 24 時間は古い秘密でも署名し（`webhook-signature` に 2 つの署名が並ぶ）、
-そのあいだに受け手を新しい秘密に切り替えます。秘密は `kernel.Sealer` で封をして DB に置きます（鍵は [KEK](key-management.md)）。
+"New secret" creates a new secret and shows it once. For the next 24 hours messages are signed with the old secret too
+(`webhook-signature` carries two signatures), so you can switch the receiver to the new secret in that window.
+Secrets are sealed with `kernel.Sealer` before they are stored in the database; the key is the
+[KEK](key-management.md).
 
-## 失敗と再送
+## Failures and redelivery
 
-- 宛先が `2xx` 以外を返す・15 秒以内に応えない・接続できないと、5 秒・5 分・30 分・2 時間・5 時間・10 時間・10 時間の間隔で再送します（合計 8 回、約 27 時間）。
-  使い切った配送は dead job になり、配送の履歴の「再送」で同じ `webhook-id` のまま送り直せます。
-- 宛先が `410 Gone` を返すと、その場で無効にします。
-- 成功しないまま最初の失敗から 72 時間がたち、20 回以上続けて失敗した宛先は、サーバーが無効にします。
-  監査ログに `system` の `webhook_disabled` が残り、`manage_webhooks` を持つ人にアプリ内の通知（メールで受け取る設定ならメールも）が届きます。
-- 管理画面の一覧は、続いている失敗の回数と、サーバーが無効にした理由（`gone` / `failing`）を表示します。宛先を直したら有効にしてください。
-  無効だったあいだのメッセージは送り直しません。
-- メッセージと配送の履歴は 14 日で消えます（固定）。本文は通報のコメントなどの個人データを含みます。
+- If the destination answers with anything other than `2xx`, does not answer within 15 seconds, or cannot be reached,
+  the message is retried after 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours, and 10 hours (8 attempts in
+  total, about 27 hours). A delivery that has used them all becomes a dead job, and "Send again" in the deliveries sends
+  it again with the same `webhook-id`.
+- If the destination answers `410 Gone`, the webhook is disabled immediately.
+- The server disables a destination that has not succeeded for 72 hours since its first failure and has failed 20 or more
+  times in a row. The audit log gets a `webhook_disabled` entry by `system`, and everyone with `manage_webhooks` gets an
+  in-app notification (and an email, if they chose to receive notifications by email).
+- The list on the admin screen shows the number of failures in a row and the reason the server disabled a webhook
+  (`gone` or `failing`). Enable the webhook again after fixing the destination. Messages from the time it was disabled are
+  not sent again.
+- Messages and deliveries are deleted after 14 days (fixed). Bodies contain personal data such as the comment of a report.
 
-## 内部ネットワークの宛先
+## Destinations on an internal network
 
-送信は SSRF ガード（ADR-0019 §1）を通り、既定では公開のアドレスの `https`（ポート 443 と 80）にしか届きません。
-同じホストの n8n や VPC 内のチャットなど、内部の宛先に送るときは、設定 `webhook_allowed_destinations`（環境変数 `MY_WEBHOOK_ALLOWED_DESTINATIONS`）に
-ホスト名・IP アドレス・CIDR をカンマ区切りで書きます（[設定リファレンス](../reference/configuration.md#webhook_allowed_destinations)）。
+Delivery goes through the SSRF guard of outbound HTTP. By default it only reaches public addresses over `https` (ports 443
+and 80). To send to an internal destination, such as an n8n on the same host or a chat inside your VPC, list host names,
+IP addresses, and CIDRs, separated by commas, in the setting `webhook_allowed_destinations` (environment variable
+`MY_WEBHOOK_ALLOWED_DESTINATIONS`; see the [configuration reference](../reference/configuration.md#webhook_allowed_destinations)).
 
 ```sh
 MY_WEBHOOK_ALLOWED_DESTINATIONS=n8n.internal,10.0.0.0/8
 ```
 
-- 書いた宛先だけ、webhook の送信だけ、ガードの例外にします。ほかの用途（連合・メディア・リンクプレビュー）は変わりません。例外の宛先は `http` と任意のポートも使えます。
-- ホスト名は、解決したアドレスがどこでも送ります。CIDR は、URL がその範囲の IP アドレスを書いたときに送ります。範囲の中に解決するホスト名を使うときは、そのホスト名も書いてください。
-- 設定を変えられるのはサーバーに権限のある運営者だけです。管理画面の権限だけでは内部のネットワークに届きません。
-- ガードが拒否した宛先への試行は、配送の履歴に `forbidden_destination` と出ます。
-- 開発用の `http_allow_private_networks` は、webhook を含むすべての用途のガードを外します。
+- Only the listed destinations, and only for webhook delivery, are exempt from the guard. Federation, media, and link
+  previews are unchanged. An exempt destination may also use `http` and any port.
+- A host name is allowed whatever address it resolves to. A CIDR is allowed when the URL names an IP address in that
+  range. If you use a host name that resolves into the range, list the host name too.
+- Only an operator with access to the server can change the setting. The permissions of the admin screen alone cannot reach
+  an internal network.
+- An attempt at a destination the guard refused shows `forbidden_destination` in the deliveries.
+- The development setting `http_allow_private_networks` lifts the guard for every purpose, webhooks included.

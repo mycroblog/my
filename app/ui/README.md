@@ -298,7 +298,7 @@ The kit gives every region of data the same four states
 ## Server themes
 
 An administrator can override the tokens other than the palette and the badge colors for the whole server and add a custom CSS
-([ADR-0059](../../docs/adr/0059-design-tokens-and-instance-theme.md), [operations](../../docs/operations/instance-settings.md#テーマ)).
+([ADR-0059](../../docs/adr/0059-design-tokens-and-instance-theme.md), [operations](../../docs/operations/instance-settings.md#theme)).
 The server serves them as one stylesheet at `/theme/{revision}.css`: a `:root` rule with the overrides, then the custom CSS, both outside
 any cascade layer, so they win over the `@layer theme` that Tailwind emits the defaults into and over the utilities. That works only while
 the utilities refer to the variables, so no token is declared in `@theme inline`.
