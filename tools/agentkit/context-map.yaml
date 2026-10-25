@@ -512,6 +512,7 @@ entries:
   - name: upgrade-test
     paths: ["deploy/docker/upgrade-test/**", "scripts/upgrade-test.sh", "scripts/previous-minor.sh", "scripts/previous-minor-test.sh", "scripts/web-sign-in.sh"]
     docs: ["docs/operations/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]
+    userdocs: ["docs/operations/releasing.md#the-upgrade-test"]
     checks: [docker, shell]
     notes:
       - "The release gate's upgrade test (slow-suite.yml job upgrade): scripts/upgrade-test.sh fills a database through the previous release's images and upgrades it with this tree's, on both dialects; run `scripts/task.sh docker:upgrade-test PREVIOUS=<tag>`. scripts/previous-minor.sh picks the tag (`scripts/task.sh shell:test`). The data it seeds and reads goes through the client API and the CLI only, so it works against any earlier release."
