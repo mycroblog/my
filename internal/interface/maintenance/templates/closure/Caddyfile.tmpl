@@ -1,0 +1,29 @@
+# The static closure page of {{.Host}} for Caddy (ADR-0088 §6), written by
+# `my admin closure export-html`. Copy the pages of this directory to {{.Root}}
+# (or change root). Caddy gets the certificate itself.
+#
+# The paths of federation, discovery, and the profiles answer 410 Gone with no
+# page, so that the other servers stop asking. Every other path answers 410
+# with the closure page in the first language of Accept-Language that has a
+# page, or index.html with every language one after another.
+
+{{.Host}} {
+	@gone path {{caddyPaths .Paths .Prefixes}}
+	handle @gone {
+		respond 410
+	}
+
+	handle {
+		root * {{.Root}}
+		map {header.Accept-Language} {closure_page} {
+{{- range .Locales}}
+			~(?i)^{{.}}(-|,|;|$) /{{.}}.html
+{{- end}}
+			default /index.html
+		}
+		rewrite * {closure_page}
+		file_server {
+			status 410
+		}
+	}
+}

@@ -11,17 +11,17 @@
 </head>
 <body>
 <main>
-{{range .Sections}}{{$s := .}}<section lang="{{.Lang}}" dir="{{.Dir}}" aria-labelledby="maintenance-{{.Lang}}">
+{{range .Sections}}{{$s := .}}<section lang="{{.Lang}}" dir="{{.Dir}}" aria-labelledby="{{$.Kind}}-{{.Lang}}">
 <p class="server" dir="auto">{{.ServerName}}</p>
-<h1 id="maintenance-{{.Lang}}">{{.L.ServerMaintenanceTitle}}</h1>
-<p>{{.L.ServerMaintenanceDescription .ServerName}}</p>
-{{with .Message}}<h2>{{$s.L.ServerMaintenanceNotice}}</h2>
+<h1 id="{{$.Kind}}-{{.Lang}}">{{.Heading}}</h1>
+<p>{{.Description}}</p>
+{{with .Message}}<h2>{{$s.NoticeHeading}}</h2>
 <p class="message" dir="auto" lang="">{{.}}</p>
-{{end}}{{if .Until}}<dl>
-<dt>{{.L.ServerMaintenanceUntil}}</dt>
-<dd><time datetime="{{.Until}}">{{.UntilText}}</time></dd>
+{{end}}{{if .Date}}<dl>
+<dt>{{.DateLabel}}</dt>
+<dd><time datetime="{{.Date}}">{{.DateText}}</time></dd>
 </dl>
-{{end}}{{with .StatusPageURL}}<p><a href="{{.}}" rel="noopener">{{$s.L.ServerMaintenanceStatusPage}}</a></p>
+{{end}}{{with .StatusPageURL}}<p><a href="{{.}}" rel="noopener">{{$s.StatusPageText}}</a></p>
 {{end}}</section>
 {{end}}</main>
 </body>

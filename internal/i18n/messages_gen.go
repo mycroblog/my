@@ -1145,6 +1145,48 @@ func (l *Localizer) ServerAuthVerifyEmailTitle() string {
 	return l.format("server:auth.verify_email.title", nil)
 }
 
+// ServerClosureClosedOn formats "server:closure.closed_on". Label of the server's closing date (closes_at, ADR-0088), shown in UTC next to it on the static closure page.
+//
+//	en: Closing date
+func (l *Localizer) ServerClosureClosedOn() string {
+	return l.format("server:closure.closed_on", nil)
+}
+
+// ServerClosureDescription formats "server:closure.description". Explanation under the heading of the static closure page (my admin closure export-html). {server} is the server's name, or its host name.
+//
+//	en: {server} has closed and no longer runs. Its accounts and posts are gone, and their data can no longer be exported. Thank you for using it.
+func (l *Localizer) ServerClosureDescription(server string) string {
+	return l.format("server:closure.description", map[string]any{"server": server})
+}
+
+// ServerClosureDocumentTitle formats "server:closure.document_title". <title> of the static closure page. {server} is the server's name, or its host name.
+//
+//	en: Closed – {server}
+func (l *Localizer) ServerClosureDocumentTitle(server string) string {
+	return l.format("server:closure.document_title", map[string]any{"server": server})
+}
+
+// ServerClosureNotice formats "server:closure.notice". Heading over the administrators' message of the closure announcement on the static closure page.
+//
+//	en: Message from the administrators
+func (l *Localizer) ServerClosureNotice() string {
+	return l.format("server:closure.notice", nil)
+}
+
+// ServerClosureStatusPage formats "server:closure.status_page". Text of the link to the instance's status page (status_page_url) on the static closure page.
+//
+//	en: Check the service status
+func (l *Localizer) ServerClosureStatusPage() string {
+	return l.format("server:closure.status_page", nil)
+}
+
+// ServerClosureTitle formats "server:closure.title". Heading of the static closure page that the server's domain serves after the closure of the service (ADR-0088 §6).
+//
+//	en: This server has closed
+func (l *Localizer) ServerClosureTitle() string {
+	return l.format("server:closure.title", nil)
+}
+
 // ServerConfigErrors formats "server:config.errors". Summary printed before the list of configuration problems when the server refuses to start.
 //
 //	en: {count, plural, one {Found # configuration error.} other {Found # configuration errors.}}

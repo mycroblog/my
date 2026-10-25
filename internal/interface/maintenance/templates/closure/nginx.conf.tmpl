@@ -1,0 +1,48 @@
+# The static closure page of {{.Host}} for nginx (ADR-0088 §6), written by
+# `my admin closure export-html`. Copy the pages of this directory to {{.Root}}
+# (or change root), set the certificate, and include this file in the http block.
+#
+# The paths of federation, discovery, and the profiles answer 410 Gone with no
+# page, so that the other servers stop asking. Every other path answers 410
+# with the closure page in the first language of Accept-Language that has a
+# page, or index.html with every language one after another.
+
+map $http_accept_language $closure_page {
+    default /index.html;
+{{- range .Locales}}
+    "~*^{{.}}(-|,|;|$)" /{{.}}.html;
+{{- end}}
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{.Host}};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{.Host}};
+    ssl_certificate     /etc/ssl/{{.Host}}/fullchain.pem;
+    ssl_certificate_key /etc/ssl/{{.Host}}/privkey.pem;
+
+    root {{.Root}};
+{{range .Paths}}
+    location = {{.}} { return 410; }
+{{- end}}
+{{- range .Prefixes}}
+    location ^~ {{.}} { return 410; }
+{{- end}}
+
+    # The pages are reached only through error_page below.
+    location ~ ^/(index{{range .Locales}}|{{.}}{{end}})\.html$ {
+        internal;
+    }
+
+    location / {
+        error_page 410 $closure_page;
+        return 410;
+    }
+}
