@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+const deleteAccountMoveState = `-- name: DeleteAccountMoveState :exec
+DELETE FROM account_move_states WHERE account_id = $1
+`
+
+func (q *Queries) DeleteAccountMoveState(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, deleteAccountMoveState, accountID)
+	return err
+}
+
 const deleteAllAccountMoveStates = `-- name: DeleteAllAccountMoveStates :exec
 DELETE FROM account_move_states
 `
@@ -108,6 +117,25 @@ func (q *Queries) InsertAccountMove(ctx context.Context, arg InsertAccountMovePa
 		arg.ActivityUri,
 		arg.OccurredAt,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertAccountMoveCancellation = `-- name: InsertAccountMoveCancellation :execrows
+INSERT INTO account_move_cancellations (move_id, cancelled_at) VALUES ($1, $2)
+ON CONFLICT (move_id) DO NOTHING
+`
+
+type InsertAccountMoveCancellationParams struct {
+	MoveID      string
+	CancelledAt time.Time
+}
+
+// InsertAccountMoveCancellation inserts nothing when the move is cancelled already.
+func (q *Queries) InsertAccountMoveCancellation(ctx context.Context, arg InsertAccountMoveCancellationParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertAccountMoveCancellation, arg.MoveID, arg.CancelledAt)
 	if err != nil {
 		return 0, err
 	}

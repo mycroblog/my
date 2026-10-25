@@ -213,7 +213,7 @@ CREATE TABLE audit_log_entries (
     'role_created', 'role_updated', 'role_deleted', 'appeal_upheld',
     'appeal_overturned', 'account_deletion_cancelled',
     'revealed_private_data', 'signup_block_added', 'signup_block_lifted', 'two_factor_disabled',
-    'password_reset_link_issued',
+    'password_reset_link_issued', 'account_moved',
     'custom_emoji_created', 'custom_emoji_image_replaced', 'custom_emoji_copied', 'custom_emoji_updated',
     'custom_emoji_enabled', 'custom_emoji_disabled', 'custom_emoji_deleted',
     'webhook_created', 'webhook_updated', 'webhook_deleted', 'webhook_enabled', 'webhook_disabled',

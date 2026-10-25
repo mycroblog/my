@@ -241,6 +241,7 @@ export const auditActions = [
   "revealed_private_data",
   "two_factor_disabled",
   "password_reset_link_issued",
+  "account_moved",
   "domain_action_issued",
   "domain_action_lifted",
   "report_assigned",

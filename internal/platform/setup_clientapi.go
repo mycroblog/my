@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/interface/authpages"
@@ -57,6 +58,12 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		ReportCounts:  a.Moderation, RegistrationCounts: a.Identity, Registrations: a.Identity,
 		OwnAppeals: a.Moderation, AppealModeration: a.Moderation, SignupBlocks: a.Moderation,
 		OwnAccount: a.Identity, Exports: a.Exports, Imports: a.Imports,
+		// The moves of local accounts check their targets as received Moves do (ADR-0089).
+		LocalMoves: federation.NewLocalMoves(federation.LocalMovesDeps{
+			Accounts: a.Accounts, Targets: a.RemoteActors,
+			Domains: a.ModerationPolicy, Suspensions: a.ModerationPolicy, Limits: a.ModerationPolicy,
+		}),
+		MoveConfirmations: a.Identity,
 		// The instance texts and the web client's pages of the documents among them (#489), which
 		// GET /instance/documents/{kind} feeds.
 		InstanceTexts: a.Instance, Documents: a.Instance, TermsPath: web.PathAboutTerms, PrivacyPolicyPath: web.PathAboutPrivacyPolicy,

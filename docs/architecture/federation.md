@@ -173,7 +173,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | アクティビティ | 対象 | 処理 |
 | --- | --- | --- |
 | `Follow` | インスタンス Actor | 参加中のリレーの Actor からのものは `Accept` を、それ以外は `Reject` をインスタンス Actor が送る。フォローとしては記録しない（§13） |
-| `Follow` | ローカルの Actor | `graph.ReceiveFollow`。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す |
+| `Follow` | ローカルの Actor | `graph.ReceiveFollow`。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
 | `Accept` / `Reject` | リレーへの `Follow`（`object` の `id` がリレーの現在の `Follow`） | リレーの状態を `accepted`（主体を記録）/ `rejected` にする（§13）。リレーの Actor でない主体のものは捨てる |
 | `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外（GoToSocial の返信の承認など）なら捨てる |
 | `Reject` | 自分が送った `Follow`、または承認済みのフォロー | `graph.RejectRemote`。照合は `Accept` と同じ。承認待ちなら `follow_rejections`（`rejected_by = remote`）、承認済みなら `follow_terminations`（`removed_by_followee`） |
@@ -373,6 +373,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
 | `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
+| `account.move_cancelled`（ローカルのアカウントの移転の取り消し） | `Update`（Actor の文書。`movedTo` なし） | リモートフォロワーの inbox |
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
 | `content.quote_recorded`（ローカルの投稿の、引用の許可を宣言したリモートの投稿の `fep_044f` の引用。ADR-0069 §3） | `QuoteRequest`（`id` は `{引用元の IRI}/quote_request`、`object` は引用先、`instrument` は引用元。本文は projector が組み立てて保存する） | 引用先の作者の inbox |
 | `content.quote_changed`（ローカルの投稿の引用が、リモートの `QuoteAuthorization` で承認されたとき）、`content.quote_policy_changed` | 現在の版の `Update`（`quoteAuthorization` と `interactionPolicy` が新しくなる。版が増えないので `updated` は版の時刻のまま） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
@@ -399,7 +401,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Update` / `Delete` | 元の `Create` の `deliveries` → （`public` / `unlisted` だけ）その時点のフォロワー → （投票のある投稿の `Update` だけ）回答したアカウント（`ContextObjectFetch` で判定する。回答した人は投稿を見ているが、配送の相手とは限らないため） |
 | `Announce` / `Undo Announce` | ブーストした人の承認済みのフォロワー → 元投稿の作者 |
 | `Like` / `Undo Like`、投票への回答の `Create` | 投稿の作者 |
-| `Update`（Actor） | Actor の承認済みのフォロワー |
+| `Update`（Actor）、`Move` | Actor の承認済みのフォロワー |
 | `Delete`（Actor）、凍結とその終わりの `Update`（Actor。ペイロードの `shared_inboxes`） | Actor の承認済みのフォロワー → 既知の shared inbox（`account.KnownSharedInboxes`） |
 | `Follow` / `Accept` / `Reject` / `Undo Follow` | フォローの相手（その Actor の inbox。無ければ shared inbox）。公開範囲では判定しない |
 | `Flag` | 通報されたアカウント（その Actor の inbox。shared inbox に集約しない）。公開範囲では判定しない |
@@ -570,6 +572,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 連合の向きが `publish` を通さないとき、投稿・`/activity`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
+- 移転したローカルの Actor（`account_move_states` に行がある。ADR-0089）の文書は、移転を記録したトランザクションの後から取り消しまで、`movedTo`（移転先の Actor の `id`。`@context` の `as:movedTo`）を持ちます。Misskey は `Move` を受けると Actor を取り直し、この `movedTo` で移転を処理するので、`Move` より先に GET が返します。最小の文書（Authorized Fetch の署名なし、連合の向きが `inbound`）にも載せます。`inbound` でも `Move` を送るためです（§14.1）。エクスポートの Actor の文書も同じです。
+
 - `GET /ap/objects/{uuid}`（`/activity` を含む）は、署名から閲覧者（署名者のドメイン）を決め、`content.CanView`（`ContextObjectFetch`）を通します。権限が無いときと存在しないときは同じ 404 です（ADR-0018）。削除済みは、削除の前に閲覧できた相手にだけ `410 Gone` と `Tombstone` を返し、それ以外には 404 を返します（[ActivityPub §6.4](https://www.w3.org/TR/activitypub/#delete-activity-outbox)）。
 - 判定は `federation.Objects`（`internal/app/federation`）が行います。
   - 署名は §2 の受信の規則（`SignatureVerifier`）で検証します。署名が無い・検証できない GET は未ログインとして扱い、401 にはしません（Mastodon と同じ。401 にするのは Authorized Fetch だけ）。
@@ -592,7 +596,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
   | 対象 | 署名なし | 検証できる署名 |
   | --- | --- | --- |
-  | 利用者の Actor | 鍵の取得のための最小の文書（`@context`・`id`・`type`・`preferredUsername`・`inbox`・`publicKey`・`endpoints`。Mastodon と同じ項目） | Actor の文書全体 |
+  | 利用者の Actor | 鍵の取得のための最小の文書（`@context`・`id`・`type`・`preferredUsername`・`inbox`・`publicKey`・`endpoints`。Mastodon と同じ項目。移転済みなら `movedTo` も） | Actor の文書全体 |
   | インスタンス Actor | 文書全体（もともと最小の文書） | 文書全体 |
   | オブジェクト（`/activity` を含む）・コレクション | `401` | 無効なときと同じ判定 |
   | WebFinger・NodeInfo・host-meta・HTML を求めるリクエスト | 無効なときと同じ | 無効なときと同じ |
@@ -721,7 +725,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | `ingest` | 外の投稿・反応を取り込む（受信と取得） | × | ○ | × | ○ |
 | `follow_out` | ローカルの利用者が外のアカウントをフォローする往復（`Follow` / `Undo Follow` の送信、`Accept` / `Reject` の受信、`Move`） | × | ○ | × | ○ |
 | `follow_in` | 外のアカウントがローカルの利用者をフォローする往復（`Follow` / `Undo Follow` の受信、`Accept` / `Reject` の送信） | × | 断る | ○ | ○ |
-| `retract` | すでに外へ出したものの撤回（投稿の `Delete`、Actor の `Delete`、`Undo Like` / `Undo Announce` / `Undo EmojiReact`、凍結の `Update(Actor)`） | × | ○ | ○ | ○ |
+| `retract` | すでに外へ出したものの撤回（投稿の `Delete`、Actor の `Delete`、`Undo Like` / `Undo Announce` / `Undo EmojiReact`、凍結の `Update(Actor)`）と、移転の知らせ（`Move` の送信、`movedTo` 付きの `Update(Actor)`。ADR-0089） | × | ○ | ○ | ○ |
 | `protect` | 保護のための手続き（`Block` / `Undo Block` と `Flag` の送受信、外の Actor の自分自身の `Update` / `Delete` の受信） | × | ○ | ○ | ○ |
 | `identify` | 署名の検証のための鍵の取得と提供（外の Actor の取得、ローカルの Actor・インスタンス Actor の GET、WebFinger・host-meta・NodeInfo） | × | ○ | ○ | ○ |
 

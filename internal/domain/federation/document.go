@@ -31,6 +31,7 @@ func LDContext() []any {
 			"discoverable":              "toot:discoverable",
 			"indexable":                 "toot:indexable",
 			"suspended":                 "toot:suspended",
+			"movedTo":                   map[string]string{"@id": "as:movedTo", "@type": "@id"},
 			"schema":                    "http://schema.org#",
 			"PropertyValue":             "schema:PropertyValue",
 			"value":                     "schema:value",
@@ -85,6 +86,9 @@ type ActivityDocument struct {
 	// Accept of one (FEP-044f). Other activities have neither.
 	Instrument IRI `json:"instrument,omitempty"`
 	Result     IRI `json:"result,omitempty"`
+	// Target is the actor that a Move moves its object to (ADR-0089); other activities have
+	// none.
+	Target IRI `json:"target,omitempty"`
 }
 
 // NewActivityDocument returns the top-level document of an activity with its context. A zero
@@ -488,6 +492,9 @@ type ActorDocument struct {
 	// Suspended marks an actor that moderation suspended (Mastodon's toot:suspended); it is
 	// left out otherwise.
 	Suspended bool `json:"suspended,omitempty"`
+	// MovedTo is the actor that the actor moved to (as:movedTo, ADR-0089); it is left out when
+	// the actor has not moved.
+	MovedTo IRI `json:"movedTo,omitempty"`
 }
 
 // Embedded returns d without its context, to embed it in an activity.

@@ -462,6 +462,11 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 	if p, h, limited := s.LimitProblem(ctx, PostLimit, v.AccountID); limited {
 		return CreateStatusdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
 	}
+	if p, err := s.refuseMoved(ctx, v.AccountID); err != nil {
+		return nil, err
+	} else if p != nil {
+		return CreateStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
 	body := req.Body
 	if body.QuotedStatusId != nil {
 		if p, err := s.quotableRemotely(ctx, knownID(*body.QuotedStatusId)); err != nil {
@@ -718,11 +723,24 @@ func (s *Server) act(ctx context.Context, statusID string, run func(accountID st
 	return StatusAfterActionJSONResponse{}, nil, err
 }
 
+// actUnmoved is act for the actions that a moved account cannot do (ADR-0089): boosting,
+// reacting, and voting, refused with ProblemTypeAccountMoved.
+func (s *Server) actUnmoved(ctx context.Context, statusID string, run func(accountID string) error) (StatusAfterActionJSONResponse, *problem, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return StatusAfterActionJSONResponse{}, nil, err
+	}
+	if p, err := s.refuseMoved(ctx, v.AccountID); err != nil || p != nil {
+		return StatusAfterActionJSONResponse{}, p, err
+	}
+	return s.act(ctx, statusID, run)
+}
+
 func ignoreResult[T any](_ T, err error) error { return err }
 
 // BoostStatus serves POST /api/v1/statuses/{id}/boost.
 func (s *Server) BoostStatus(ctx context.Context, req BoostStatusRequestObject) (BoostStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id)) })
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id)) })
 	if p != nil {
 		return BoostStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -736,7 +754,7 @@ func (s *Server) VoteInPoll(ctx context.Context, req VoteInPollRequestObject) (V
 	if req.Body != nil {
 		pollID, choices = knownID(req.Body.PollId), req.Body.Choices
 	}
-	res, p, err := s.act(ctx, req.Id, func(a string) error {
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error {
 		return ignoreResult(s.o.Interactions.VotePoll(ctx, a, req.Id, pollID, choices))
 	})
 	if p != nil {
@@ -756,7 +774,7 @@ func (s *Server) UnboostStatus(ctx context.Context, req UnboostStatusRequestObje
 
 // FavouriteStatus serves POST /api/v1/statuses/{id}/favourite.
 func (s *Server) FavouriteStatus(ctx context.Context, req FavouriteStatusRequestObject) (FavouriteStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Favourite(ctx, a, req.Id)) })
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Favourite(ctx, a, req.Id)) })
 	if p != nil {
 		return FavouriteStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}

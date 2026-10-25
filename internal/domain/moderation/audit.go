@@ -185,6 +185,10 @@ const (
 	// AuditPasswordResetLinkIssued: an administrator issued a password reset link for the user
 	// of a local account (user_tokens, purpose password_reset).
 	AuditPasswordResetLinkIssued AuditAction = "password_reset_link_issued"
+	// AuditAccountMoved: a local account that moderation limits moved to another local account,
+	// which does not inherit the limit (account_moves, ADR-0089); the user who moved is the
+	// actor, and the entry tells the moderators to decide on the target.
+	AuditAccountMoved AuditAction = "account_moved"
 	// AuditCustomEmojiCreated: a local custom emoji was registered (custom_emojis).
 	AuditCustomEmojiCreated AuditAction = "custom_emoji_created"
 	// AuditCustomEmojiImageReplaced: a local custom emoji got a new image (custom_emoji_images).
@@ -336,6 +340,7 @@ var auditActions = []struct {
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
+	{AuditAccountMoved, AuditTargetAccount},
 	{AuditCustomEmojiCreated, AuditTargetCustomEmoji},
 	{AuditCustomEmojiImageReplaced, AuditTargetCustomEmoji},
 	{AuditCustomEmojiCopied, AuditTargetCustomEmoji},

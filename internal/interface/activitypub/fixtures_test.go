@@ -194,11 +194,14 @@ type server struct {
 	inbox    *fakeInbox
 	// suspended are the accounts that moderation suspends.
 	suspended fakeSuspensions
+	// moves are the targets that local accounts moved to, by account ID.
+	moves fakeMoves
 }
 
 func newServer(t *testing.T, accountDomain string) *server {
 	t.Helper()
 	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}, inbox: &fakeInbox{}, suspended: fakeSuspensions{}}
+	s.moves = fakeMoves{accounts: s.accounts, targets: map[string]string{}}
 	activitypub.New(activitypub.Options{
 		Host: host, AccountDomain: accountDomain, SoftwareVersion: "0.1.0", SourceURL: "https://github.com/mycroblog/my",
 		InstanceName:      func(context.Context) string { return "Example Social" },
@@ -211,7 +214,7 @@ func newServer(t *testing.T, accountDomain string) *server {
 			}, nil
 		},
 		Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Inbox: s.inbox, Problem: problem,
-		Suspensions: s.suspended, Images: profileImages,
+		Suspensions: s.suspended, Images: profileImages, Moves: s.moves,
 	}).Register(s.mux)
 	return s
 }
