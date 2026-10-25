@@ -42,21 +42,13 @@ operator:
 # follows the rule.
 pending:
   japanese:
-    - docs/operations/captcha.md
     - docs/operations/database.md
-    - docs/operations/moderation.md
-    - docs/operations/registration.md
     - docs/operations/releasing.md
-    - docs/operations/service-closure.md
   design-links:
-    - docs/operations/captcha.md
     - docs/operations/database.md
     - docs/operations/maintenance.md
-    - docs/operations/moderation.md
     - docs/operations/monitoring.md
-    - docs/operations/registration.md
     - docs/operations/releasing.md
-    - docs/operations/service-closure.md
     - docs/reference/build-tags.md
     - docs/reference/commands.md
     - docs/reference/configuration.md

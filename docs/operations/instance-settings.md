@@ -44,10 +44,10 @@ default locale, who can see the timelines, the instance name, description, terms
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch (secure mode). When `true`, an ActivityPub GET without a verifiable HTTP signature is answered with `401` for objects and collections, and with a minimal document that carries the key for a user's actor. The instance actor always returns its whole document, so any server can fetch the key to verify a signature |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | The direction of federation. `off`: no federation. `inbound`: you follow and read remote accounts, but local posts, profiles, and reactions are not sent out, and follows from outside are refused (`Reject`). `outbound`: you accept follows from outside and deliver local posts, but remote posts and reactions are not taken in. `both`: send and receive. A change takes effect at once and needs the permission `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | Dynamic client registration (RFC 7591). While `true`, `POST /oauth/register` accepts the registration of public clients without authentication. When `false`, the endpoint refuses every request with `403` (`access_denied`); clients that are already registered keep working. A periodic job deletes dynamically registered clients that are not used, following the configuration `dynamic_client_unredeemed_ttl` and `dynamic_client_idle_ttl`. A change takes effect at once and needs `manage_settings` |
-| `domain_actions_visibility` | `none` / `users` / `all` | `none` | Who can see the list of domains with actions taken (`GET /api/v1/instance/domain_actions`): nobody, signed-in users, or everyone ([moderation](moderation.md#処分したドメインの公開)) |
+| `domain_actions_visibility` | `none` / `users` / `all` | `none` | Who can see the list of domains with actions taken (`GET /api/v1/instance/domain_actions`): nobody, signed-in users, or everyone ([moderation](moderation.md#publishing-the-domains-you-act-on)) |
 | `domain_actions_rationale_visibility` | `none` / `users` / `all` | `none` | Who can see the public comments of that list. Someone who cannot see the list never sees them |
-| `appeal_window` | integer 20-365 (days) | `180` | How many days after an action the person concerned can appeal ([moderation](moderation.md#異議申し立て)). Changing it also changes the deadline of actions already taken |
-| `retention_session_origins` | integer 90-3650 (days) | `180` | How many days after a login to keep the IP address and User-Agent of the login ([moderation](moderation.md#記録の保持期間と保全)) |
+| `appeal_window` | integer 20-365 (days) | `180` | How many days after an action the person concerned can appeal ([moderation](moderation.md#appeals)). Changing it also changes the deadline of actions already taken |
+| `retention_session_origins` | integer 90-3650 (days) | `180` | How many days after a login to keep the IP address and User-Agent of the login ([moderation](moderation.md#record-retention-and-holds)) |
 | `retention_registration_origins` | integer 90-3650 (days) | `180` | How many days after registration to keep the IP address of the registration |
 | `retention_reports` | integer 180-3650 (days) | `365` | How many days after the last resolution to keep a report. A report that an action refers to is kept as long as the action |
 | `retention_moderation_actions` | integer 180-3650 (days) | `365` | How many days after the end of an action (the lift, the expiry, or the review of an appeal, whichever is later) to keep account actions and appeals |
@@ -233,7 +233,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   unknown or a value is invalid, the answer is a 422 that names the key and nothing changes. The changed keys are recorded as
   revisions and in the audit log in the same transaction.
 - Invitations, when the registration mode is `invite`, are created on the moderation screen ("Invites", `/moderation/invites`,
-  permission `manage_invites`; see [invite codes](registration.md#招待コード)).
+  permission `manage_invites`; see [invite codes](registration.md#invite-codes)).
 
 ## Rules
 
