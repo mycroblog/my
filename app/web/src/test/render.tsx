@@ -55,7 +55,14 @@ export async function renderApp({ path = "/home", locale = "en", createRouter = 
   const i18n: I18n = await loadI18n(locale);
   /** Where the app sent the browser away to (the authorization screen); jsdom cannot load it. */
   const leftTo: URL[] = [];
-  const services = createAppServices(testConfig, i18n, (url) => leftTo.push(url));
+  /** How many times the app loaded the page again (the end of a maintenance); jsdom cannot. */
+  const reloads = { count: 0 };
+  const services = createAppServices(testConfig, i18n, {
+    leaveApp: (url) => leftTo.push(url),
+    reload: () => {
+      reloads.count++;
+    },
+  });
   onTestFinished(() => {
     services.session.dispose();
   });
@@ -63,5 +70,5 @@ export async function renderApp({ path = "/home", locale = "en", createRouter = 
   const router = createRouter({ ...services, history: createMemoryHistory({ initialEntries: [path] }) });
   const user = userEvent.setup();
   const result = render(<App config={testConfig} {...services} router={router} />);
-  return { user, i18n, router, leftTo, ...services, ...result };
+  return { user, i18n, router, leftTo, reloads, ...services, ...result };
 }

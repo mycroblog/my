@@ -43,6 +43,61 @@ export class ApiError extends Error implements Problem {
   }
 }
 
+/** The problem type of the server's maintenance mode (ADR-0084 §3): a 503 to every operation, with Retry-After. */
+const maintenanceProblemType = "/api/v1/problems/maintenance";
+
+/**
+ * The server is under maintenance (ADR-0084 §3): it answers every operation, and the OAuth endpoints, with a 503 of
+ * this problem type. The session is still there, so nothing discards a token or signs out for it; the app shell shows
+ * the maintenance in place of the app (lib/maintenance.ts). The members that the problem adds are kept only when they
+ * are well formed, since the app shows them.
+ */
+export class MaintenanceError extends ApiError {
+  override name = "MaintenanceError";
+  /** The administrators' notice (the problem's `message`), in plain text and in no known language. */
+  readonly notice?: string;
+  /** When the maintenance is expected to end (the problem's `until`), in ms since the epoch. */
+  readonly until?: number;
+  /** The instance's status page (the problem's `status_page_url`), an https URL. */
+  readonly statusPageUrl?: string;
+
+  constructor(problem: Problem, options: { retryAt?: number | undefined } = {}) {
+    super(problem, options);
+    const { message, until, status_page_url: statusPageUrl } = this.document;
+    if (typeof message === "string" && message.trim() !== "") this.notice = message;
+    const end = typeof until === "string" ? Date.parse(until) : Number.NaN;
+    if (!Number.isNaN(end)) this.until = end;
+    if (typeof statusPageUrl === "string" && URL.parse(statusPageUrl)?.protocol === "https:") this.statusPageUrl = statusPageUrl;
+  }
+}
+
+/** Whether `problem`, the body of a response with `status`, is the maintenance problem. */
+function isMaintenance(problem: Problem, status: number): boolean {
+  return status === 503 && problem.type === maintenanceProblemType;
+}
+
+/** The media type of `response`'s body, lower-cased and without its parameters. */
+function mediaType(response: Response): string | undefined {
+  return response.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase();
+}
+
+/**
+ * The MaintenanceError of `response` when it is the maintenance problem, or null for any other response. It reads a
+ * copy of the body, so the caller can still read the response.
+ */
+export async function maintenanceFromResponse(response: Response): Promise<MaintenanceError | null> {
+  if (response.status !== 503 || mediaType(response) !== "application/problem+json") return null;
+  try {
+    const body: unknown = await response.clone().json();
+    if (isProblem(body) && isMaintenance(body, response.status)) {
+      return new MaintenanceError(body, { retryAt: retryAfterTime(response.headers.get("Retry-After"), Date.now()) });
+    }
+  } catch {
+    // Not JSON after all: some other 503.
+  }
+  return null;
+}
+
 /**
  * When the request that failed with `error` may be sent again, if it failed because the server limits how many
  * requests the user sends (429 Too Many Requests with Retry-After); undefined for any other error.
@@ -108,15 +163,15 @@ function isProblem(value: unknown): value is Problem {
 
 /**
  * The ApiError of a response with an error status. A body that is not a problem document (a proxy's
- * HTML page, say) becomes an `about:blank` problem titled from the client's catalog.
+ * HTML page, say) becomes an `about:blank` problem titled from the client's catalog. The maintenance problem becomes
+ * a MaintenanceError.
  */
 export async function apiErrorFromResponse(response: Response, t: Translate): Promise<ApiError> {
   const options = { retryAt: retryAfterTime(response.headers.get("Retry-After"), Date.now()) };
-  const mediaType = response.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase();
-  if (mediaType === "application/problem+json") {
+  if (mediaType(response) === "application/problem+json") {
     try {
       const body: unknown = await response.json();
-      if (isProblem(body)) return new ApiError(body, options);
+      if (isProblem(body)) return isMaintenance(body, response.status) ? new MaintenanceError(body, options) : new ApiError(body, options);
     } catch {
       // Not JSON after all; described by its status below.
     }

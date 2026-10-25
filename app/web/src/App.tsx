@@ -3,7 +3,7 @@
 // (react-intl and React Aria's locale), the TanStack Query cache, the session and the API client, the live
 // regions and toasts of @my/ui (with the prompt for a new version of the app), whether animations play by
 // themselves (lib/autoplay), how links leave the app (ExternalLinks), React Aria's router binding, and the router
-// with every page.
+// with every page, or the maintenance of the server in its place (Maintenance.tsx).
 import { AnnouncerProvider, AutoplayContext, Box, Center, ExternalLinkContext, Heading, I18nProvider as AriaI18nProvider, RouterProvider as AriaRouterProvider, Stack, Text, ToastProvider } from "@my/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type AnyRouter, RouterProvider } from "@tanstack/react-router";
@@ -16,6 +16,7 @@ import { type I18n, MessagesProvider, useT } from "./lib/i18n";
 import { AppLocaleProvider, useDisplaySettings } from "./lib/locale";
 import { isServerPath } from "./lib/paths";
 import type { AppServices } from "./lib/services";
+import { MaintenanceGate } from "./Maintenance";
 import { UpdatePrompt } from "./UpdatePrompt";
 
 export type AppProps = AppServices & {
@@ -24,7 +25,7 @@ export type AppProps = AppServices & {
   router: AnyRouter;
 };
 
-export function App({ config, locale, queryClient, api, session, leaveApp, router }: AppProps) {
+export function App({ config, locale, queryClient, api, session, leaveApp, maintenance, router }: AppProps) {
   const autoplay = useAutoplay();
   /**
    * Every @my/ui Link (and Menu item, Tab) with a same-origin href navigates through the router instead
@@ -56,7 +57,9 @@ export function App({ config, locale, queryClient, api, session, leaveApp, route
                   <AutoplayContext value={autoplay}>
                     <ExternalLinks>
                       <AriaRouterProvider navigate={navigate}>
-                        <RouterProvider router={router} />
+                        <MaintenanceGate maintenance={maintenance}>
+                          <RouterProvider router={router} />
+                        </MaintenanceGate>
                       </AriaRouterProvider>
                     </ExternalLinks>
                   </AutoplayContext>
