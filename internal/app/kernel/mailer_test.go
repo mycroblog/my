@@ -51,10 +51,24 @@ func TestValidateMail(t *testing.T) {
 	}
 }
 
-// words words the signature's contact line.
-type words struct{}
+// words words the signature's contact line in English, or in another locale and direction.
+type words struct{ locale, dir string }
 
 func (words) ServerMailSignatureContact(email string) string { return "Contact: " + email }
+
+func (w words) Locale() string {
+	if w.locale == "" {
+		return "en"
+	}
+	return w.locale
+}
+
+func (w words) Direction() string {
+	if w.dir == "" {
+		return "ltr"
+	}
+	return w.dir
+}
 
 func TestMailComposer(t *testing.T) {
 	draft := kernel.MailDraft{
@@ -76,7 +90,7 @@ func TestMailComposer(t *testing.T) {
 		t.Errorf("Text =\n%s\nwant\n%s", m.Text, want)
 	}
 	if m.Category != kernel.MailTransactional || m.To != draft.To || m.Subject != draft.Subject ||
-		m.FromName != "Example" || m.ReplyTo != "admin@social.example" || m.HTML != "" || len(m.Headers) != 0 {
+		m.FromName != "Example" || m.ReplyTo != "admin@social.example" || m.HTML == "" || len(m.Headers) != 0 {
 		t.Errorf("message = %+v", m)
 	}
 

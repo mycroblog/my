@@ -3,7 +3,10 @@
 package kernel
 
 import (
+	_ "embed"
 	"fmt"
+	htmltemplate "html/template"
+	"net/url"
 	"strings"
 	"text/template"
 	"unicode"
@@ -21,11 +24,17 @@ type MailSite struct {
 	ContactEmail string
 }
 
-// MailWords words the parts of the signature that the composer adds. The generated
-// *i18n.Localizer implements it, so a use case passes the localizer of the recipient's locale.
+// MailWords words the parts of the signature that the composer adds and names the locale of the
+// HTML version. The generated *i18n.Localizer implements it, so a use case passes the localizer
+// of the recipient's locale.
 type MailWords interface {
 	// ServerMailSignatureContact words the line of the signature with the contact address.
 	ServerMailSignatureContact(email string) string
+	// Locale is the BCP 47 tag of the words, the lang of the HTML version.
+	Locale() string
+	// Direction is "rtl" for a right-to-left locale and "ltr" otherwise, the dir of the HTML
+	// version.
+	Direction() string
 }
 
 // MailAction is the one thing an email asks the recipient to do: a button in HTML, and a line
@@ -51,7 +60,8 @@ type MailDraft struct {
 
 // MailComposer builds every email that the server sends from a MailDraft (ADR-0086 §2): the
 // plain-text body with the common signature (the server's name and URL, the contact address
-// when there is one, and why the email comes), the sender's display name, and the Reply-To.
+// when there is one, and why the email comes), the HTML version of the same content, the
+// sender's display name, and the Reply-To.
 type MailComposer struct {
 	Site  MailSite
 	Words MailWords
@@ -83,6 +93,78 @@ var mailText = template.Must(template.New("mail").Parse(
 {{.Reason}}
 `))
 
+// mailFrame is the HTML layout, compiled from tools/mail/frame.mjml with MJML
+// (`scripts/task.sh mail:gen`). html/template escapes every value for its context, and turns a
+// URL of a scheme other than http, https, and mailto into "#ZgotmplZ".
+//
+//go:embed mail_frame.gen.html
+var mailFrame string
+
+var mailHTML = htmltemplate.Must(htmltemplate.New("frame").Funcs(htmltemplate.FuncMap{
+	// comment writes one of the frame's own HTML comments, which html/template would drop: the
+	// conditional comments that lay the email out in Outlook. Its argument is always a constant
+	// of the generated frame, never data.
+	"comment": func(c string) htmltemplate.HTML {
+		return htmltemplate.HTML(c) //nolint:gosec // a constant of the generated frame, never data
+	},
+}).Parse(mailFrame))
+
+// htmlAction is a MailAction in the HTML version: a button when its URL is https, and the label
+// with the URL as text otherwise.
+type htmlAction struct {
+	Label string
+	// URL is the https URL of the button, "" for none.
+	URL string
+	// Text is the URL as text when it is not https.
+	Text string
+}
+
+// httpsURL returns u when it is an absolute https URL, "" otherwise: the HTML version links to
+// https URLs only (ADR-0086 §2).
+func httpsURL(u string) string {
+	p, err := url.Parse(u)
+	if err != nil || p.Scheme != "https" || p.Host == "" {
+		return ""
+	}
+	return u
+}
+
+// html renders the HTML version of d in the locale of c.Words, with the signature's contact line.
+func (c MailComposer) html(d MailDraft, contact string) (string, error) {
+	data := struct {
+		Lang, Dir, Start string
+		Subject          string
+		Paragraphs       []string
+		Action           *htmlAction
+		Site             MailSite
+		SiteURL          string
+		Contact          string
+		Reason           string
+	}{
+		Lang: "en", Dir: "ltr", Start: "left", Subject: d.Subject, Paragraphs: d.Paragraphs,
+		Site: MailSite{Name: oneLine(c.Site.Name)}, SiteURL: httpsURL(c.Site.URL), Contact: contact, Reason: d.Reason,
+	}
+	if c.Words != nil {
+		if l := c.Words.Locale(); l != "" {
+			data.Lang = l
+		}
+		if c.Words.Direction() == "rtl" {
+			data.Dir, data.Start = "rtl", "right"
+		}
+	}
+	if a := d.Action; a != nil {
+		data.Action = &htmlAction{Label: a.Label, URL: httpsURL(a.URL)}
+		if data.Action.URL == "" {
+			data.Action.Text = a.URL
+		}
+	}
+	var b strings.Builder
+	if err := mailHTML.Execute(&b, data); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
 // Compose returns the message of d. It fails with an error wrapping ErrInvalidMail when d has
 // no paragraph or no reason, and the message does not pass ValidateMail.
 func (c MailComposer) Compose(d MailDraft) (MailMessage, error) {
@@ -101,7 +183,11 @@ func (c MailComposer) Compose(d MailDraft) (MailMessage, error) {
 	if err := mailText.Execute(&b, data); err != nil {
 		return MailMessage{}, err
 	}
-	m := MailMessage{Category: d.Category, To: d.To, FromName: oneLine(c.Site.Name), Subject: d.Subject, Text: b.String()}
+	html, err := c.html(d, data.Contact)
+	if err != nil {
+		return MailMessage{}, err
+	}
+	m := MailMessage{Category: d.Category, To: d.To, FromName: oneLine(c.Site.Name), Subject: d.Subject, Text: b.String(), HTML: html}
 	// A contact address that is not one bare address leaves the replies to the sender rather
 	// than failing every email.
 	if bareAddress(c.Site.ContactEmail) {
