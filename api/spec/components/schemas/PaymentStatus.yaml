@@ -4,7 +4,7 @@ type: object
 required: [provider, mode, time_zone, warnings]
 properties:
   provider:
-    description: The provider of `payments_provider` (`stripe`).
+    description: The provider of `payments_provider` (`stripe`, `payjp`).
     type: string
   mode:
     description: |

@@ -119,6 +119,12 @@ type PaymentUnderTest struct {
 	Deliver       PaymentDeliver
 	CheckoutHosts []string
 	PortalHosts   []string
+	// TimedSignature reports that the provider signs each delivery's body and time, with several
+	// signatures while its secret rotates (Stripe). A provider that authenticates deliveries by a
+	// fixed token (PAY.JP, ADR-0099 §4) leaves it false: its Deliver ignores at, a key other than
+	// "" sends a wrong token, and the contract skips the cases of a tampered body, the time, and
+	// several signatures.
+	TimedSignature bool
 }
 
 // PaymentProviderFactory returns a provider whose account holds s. The factory registers the
@@ -129,7 +135,8 @@ type PaymentProviderFactory func(t *testing.T, s PaymentScenario) PaymentUnderTe
 // zone, and minimum amounts; EnsurePlan reusing its prices and archiving the ones it replaces;
 // checkouts on the allowed hosts that report our ID, completion, and expiry, and portal URLs;
 // commands that end the same when repeated; webhooks verified for their signature, time, and
-// mode without I/O, with several signatures and unknown types; the snapshots of every state;
+// mode without I/O, with several signatures and unknown types (the signature only, for a
+// provider without TimedSignature); the snapshots of every state;
 // money movements with their signs, Net = Gross - Fee, parents, periods, and dates in the
 // provider's time zone, final ones only; pages without gaps or repeats; the window of the
 // changes; and the kinds of failure.
@@ -398,6 +405,9 @@ func paymentWebhooks(t *testing.T, newProvider PaymentProviderFactory) {
 		{name: "live event on test credentials", at: s.Now, live: true, want: supporters.ErrorModeMismatch},
 	}
 	for _, r := range rejects {
+		if !u.TimedSignature && (r.want == supporters.ErrorStaleSignature || r.name == "tampered body") {
+			continue
+		}
 		h, body := u.Deliver(n, r.live, r.at, r.keys...)
 		if r.edit != nil {
 			h, body = r.edit(h, body)
@@ -406,14 +416,16 @@ func paymentWebhooks(t *testing.T, newProvider PaymentProviderFactory) {
 			t.Errorf("ParseWebhook(%s) = %v, want %s", r.name, err, r.want)
 		}
 	}
-	h, body := u.Deliver(n, false, s.Now, "whsec_rotated", "")
-	if got, err := p.ParseWebhook(h, body, s.Now); err != nil || got.EventID != n.EventID {
-		t.Errorf("ParseWebhook(two signatures, one valid) = %+v, %v, want it accepted", got, err)
+	if u.TimedSignature {
+		h, body := u.Deliver(n, false, s.Now, "whsec_rotated", "")
+		if got, err := p.ParseWebhook(h, body, s.Now); err != nil || got.EventID != n.EventID {
+			t.Errorf("ParseWebhook(two signatures, one valid) = %+v, %v, want it accepted", got, err)
+		}
 	}
 	// A provider that fails every request still verifies webhooks: ParseWebhook does no I/O.
 	s.Failure = supporters.ErrPaymentUnavailable
 	u = newProvider(t, s)
-	h, body = u.Deliver(n, false, s.Now)
+	h, body := u.Deliver(n, false, s.Now)
 	if _, err := u.Provider.ParseWebhook(h, body, s.Now); err != nil {
 		t.Errorf("ParseWebhook on an unavailable provider = %v, want no I/O", err)
 	}

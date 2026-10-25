@@ -64,6 +64,10 @@ const (
 // provider sends, so that it only stops a flood of forged requests.
 var WebhookIPLimit = kernel.Limit{Name: "payments.webhook.ip", Max: 3000, Window: 5 * time.Minute}
 
+// PageIPLimit bounds the requests to the pages of a PageServer from one client IP (ADR-0099 §1):
+// a checkout or a card change takes a handful, so it only stops a flood.
+var PageIPLimit = kernel.Limit{Name: "payments.pages.ip", Max: 300, Window: 5 * time.Minute}
+
 // PaymentsDeps are the ports of Payments.
 type PaymentsDeps struct {
 	UnitOfWork uow.UnitOfWork
@@ -73,10 +77,11 @@ type PaymentsDeps struct {
 	Outbox     queue.Outbox
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
-	// RateLimiter applies WebhookLimit; nil applies none.
+	// RateLimiter applies WebhookLimit and PageLimit; nil applies none.
 	RateLimiter *kernel.RateLimiter
-	// WebhookLimit defaults to WebhookIPLimit.
+	// WebhookLimit defaults to WebhookIPLimit, and PageLimit to PageIPLimit.
 	WebhookLimit kernel.Limit
+	PageLimit    kernel.Limit
 	// ReconcileInterval defaults to DefaultReconcileInterval, and ReconcileMaxRequests to
 	// DefaultReconcileMaxRequests.
 	ReconcileInterval    time.Duration
@@ -94,6 +99,9 @@ func NewPayments(d PaymentsDeps) *Payments {
 	if d.WebhookLimit.Max == 0 {
 		d.WebhookLimit = WebhookIPLimit
 	}
+	if d.PageLimit.Max == 0 {
+		d.PageLimit = PageIPLimit
+	}
 	if d.ReconcileInterval <= 0 {
 		d.ReconcileInterval = DefaultReconcileInterval
 	}
@@ -110,6 +118,35 @@ func NewPayments(d PaymentsDeps) *Payments {
 func (p *Payments) Provider() string { return p.d.Provider.Name() }
 
 func (p *Payments) now() time.Time { return kernel.Normalize(p.d.Clock.Now()) }
+
+// PagesResult is what Pages decided about a request to the pages of a provider.
+type PagesResult struct {
+	// Handler serves the request; nil when the provider is another than the configured one or
+	// serves no pages (404), or when the rate limit refused the request (429).
+	Handler http.Handler
+	// RateLimited reports that PageLimit refused the request, until RetryAfter.
+	RateLimited bool
+	RetryAfter  time.Duration
+}
+
+// Pages returns the handler of a request to the pages of provider (ADR-0099 §1): the
+// configured provider's when it is a PageServer and the client IP is within PageLimit.
+func (p *Payments) Pages(ctx context.Context, provider, clientIP string) (PagesResult, error) {
+	ps, ok := p.d.Provider.(PageServer)
+	if !ok || provider != p.d.Provider.Name() {
+		return PagesResult{}, nil
+	}
+	if p.d.RateLimiter != nil {
+		d, err := p.d.RateLimiter.Take(ctx, p.d.PageLimit, kernel.ClientKey(clientIP))
+		if err != nil {
+			return PagesResult{}, err
+		}
+		if !d.Allowed {
+			return PagesResult{RateLimited: true, RetryAfter: d.RetryAfter}, nil
+		}
+	}
+	return PagesResult{Handler: ps.Pages()}, nil
+}
 
 // WebhookRequest is a webhook delivery as the endpoint received it.
 type WebhookRequest struct {

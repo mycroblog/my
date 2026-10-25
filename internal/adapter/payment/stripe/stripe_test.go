@@ -57,6 +57,7 @@ func TestPaymentProviderContract(t *testing.T) {
 		p, f, _ := newOnFake(t, s)
 		return testkit.PaymentUnderTest{
 			Provider: p, Deliver: f.deliver(testSigningKey), CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost},
+			TimedSignature: true,
 		}
 	})
 }

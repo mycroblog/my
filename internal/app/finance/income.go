@@ -27,8 +27,8 @@ var ErrIncomeParentMissing = errors.New("finance: the payment of the movement is
 // that RecordIncome takes (ADR-0073 §1). Its fields are plain values, so that the module that
 // hands it over needs nothing of the finance domain.
 type IncomeMovement struct {
-	// Provider is the provider's name ("stripe"), and ProviderID its ID of the movement, unique
-	// per provider (Stripe: the balance transaction).
+	// Provider is the provider's name ("stripe", "payjp"), and ProviderID its ID of the movement, unique
+	// per provider (Stripe: the balance transaction; PAY.JP: ADR-0099 §5).
 	Provider   string
 	ProviderID string
 	// Kind is a finance.IncomeKind: payment, refund, chargeback, chargeback_reversal, or fee.

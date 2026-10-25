@@ -15,7 +15,7 @@
 CREATE TABLE supporter_program_changes (
   id uuid NOT NULL PRIMARY KEY,
   state text NOT NULL CHECK (state IN ('enabled', 'disabled')),
-  provider text NOT NULL CHECK (provider IN ('', 'stripe')),
+  provider text NOT NULL CHECK (provider IN ('', 'stripe', 'payjp')),
   changed_by_user_id uuid,
   changed_at timestamptz NOT NULL,
   CHECK ((state = 'enabled') = (provider <> ''))
@@ -77,7 +77,7 @@ CREATE TABLE supporter_plan_prices (
   interval text NOT NULL CHECK (interval IN ('month', 'year')),
   amount_minor bigint NOT NULL CHECK (amount_minor >= 1),
   currency text NOT NULL CHECK (length(currency) = 3),
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   provider_price_id text COLLATE "C" NOT NULL CHECK (length(provider_price_id) BETWEEN 1 AND 255),
   created_at timestamptz NOT NULL
 );
@@ -102,7 +102,7 @@ CREATE TABLE supporter_plan_price_archivals (
 CREATE TABLE supporter_customers (
   id uuid NOT NULL PRIMARY KEY,
   user_id uuid NOT NULL,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   provider_customer_id text COLLATE "C" NOT NULL CHECK (length(provider_customer_id) BETWEEN 1 AND 255),
   created_at timestamptz NOT NULL
 );
@@ -116,7 +116,7 @@ CREATE TABLE supporter_subscriptions (
   user_id uuid NOT NULL,
   plan_id uuid NOT NULL,
   price_id uuid NOT NULL,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   created_at timestamptz NOT NULL
 );
 CREATE INDEX supporter_subscriptions_user_id_id ON supporter_subscriptions (user_id, id DESC);
@@ -127,7 +127,7 @@ CREATE INDEX supporter_subscriptions_user_id_id ON supporter_subscriptions (user
 CREATE TABLE supporter_checkouts (
   id uuid NOT NULL PRIMARY KEY,
   subscription_id uuid NOT NULL,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   provider_checkout_id text COLLATE "C" NOT NULL CHECK (length(provider_checkout_id) BETWEEN 1 AND 255),
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL
@@ -140,7 +140,7 @@ CREATE INDEX supporter_checkouts_provider_expires_at ON supporter_checkouts (pro
 -- completed checkout that names it.
 CREATE TABLE supporter_subscription_links (
   subscription_id uuid NOT NULL PRIMARY KEY,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   provider_subscription_id text COLLATE "C" NOT NULL CHECK (length(provider_subscription_id) BETWEEN 1 AND 255),
   linked_at timestamptz NOT NULL
 );
@@ -187,7 +187,7 @@ CREATE TABLE supporter_subscription_reversals (
   id uuid NOT NULL PRIMARY KEY,
   subscription_id uuid NOT NULL,
   kind text NOT NULL CHECK (kind IN ('full_refund', 'partial_refund', 'chargeback')),
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   provider_reversal_id text COLLATE "C" NOT NULL CHECK (length(provider_reversal_id) BETWEEN 1 AND 255),
   occurred_at timestamptz NOT NULL
 );
@@ -235,7 +235,7 @@ CREATE TABLE supporter_listings (
 -- 45 days; a delivery that comes again after it is recorded again, and its job changes nothing.
 CREATE TABLE payment_webhook_receipts (
   id uuid NOT NULL PRIMARY KEY,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   event_id text COLLATE "C" NOT NULL CHECK (length(event_id) BETWEEN 1 AND 255),
   event_type text COLLATE "C" NOT NULL CHECK (length(event_type) BETWEEN 1 AND 100),
   object_id text COLLATE "C" NOT NULL CHECK (length(object_id) BETWEEN 1 AND 255),
@@ -252,7 +252,7 @@ CREATE INDEX payment_webhook_receipts_received_at ON payment_webhook_receipts (r
 -- partial row, and from changes_until minus 5 minutes for the provider's changes.
 CREATE TABLE payment_reconcile_runs (
   id uuid NOT NULL PRIMARY KEY,
-  provider text NOT NULL CHECK (provider IN ('stripe')),
+  provider text NOT NULL CHECK (provider IN ('stripe', 'payjp')),
   run_key text COLLATE "C" NOT NULL CHECK (length(run_key) BETWEEN 1 AND 255),
   outcome text NOT NULL CHECK (outcome IN ('succeeded', 'partial', 'failed')),
   error_kind text NOT NULL CHECK (error_kind IN (
