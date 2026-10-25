@@ -309,6 +309,57 @@ paths:
           $ref: '#/components/responses/CustomEmojiRequestProblem'
         default:
           $ref: '#/components/responses/Problem'
+  /instance/health:
+    get:
+      operationId: getServerHealth
+      summary: Get the health of the server
+      description: |
+        Whether the server can serve requests, for uptime monitors, status pages, and clients that
+        tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+        check's: the database is reachable and its schema is applied. Each process caches the
+        result for 60 seconds and runs one check for concurrent requests, so the database is
+        checked at most once a minute however often the endpoint is called. The endpoint takes no
+        access token and counts against no rate limit.
+
+        The body holds only the fixed words of `status`, never the reason of a failure. During the
+        maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+        `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
+        maintenance from an outage by the body (ADR-0085 §4).
+      tags:
+        - instance
+      security: []
+      responses:
+        '200':
+          description: The server is healthy.
+          headers:
+            Cache-Control:
+              description: Always `no-store`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerHealth'
+        '503':
+          description: |
+            The server is unavailable (`unavailable`: the database is unreachable or its schema is
+            not applied) or in the maintenance mode (`maintenance`).
+          headers:
+            Cache-Control:
+              description: Always `no-store`.
+              schema:
+                type: string
+            Retry-After:
+              description: The seconds until the maintenance is expected to end, during the maintenance mode only.
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerHealth'
+        default:
+          $ref: '#/components/responses/Problem'
   /instance/documents/{kind}:
     get:
       operationId: getInstanceDocument
@@ -15330,6 +15381,27 @@ components:
       enum:
         - allow
         - deny
+    ServerHealth:
+      description: |
+        The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+        localized.
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          description: |
+            `ok` while the server is healthy, `unavailable` while the database is unreachable or its
+            schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+          type: string
+          enum:
+            - ok
+            - unavailable
+            - maintenance
+        checked_at:
+          description: When this process last checked the database; absent during the maintenance mode.
+          type: string
+          format: date-time
     SetInstanceTextRequest:
       description: A new revision of an instance text.
       type: object

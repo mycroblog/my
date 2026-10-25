@@ -33,6 +33,8 @@ func clientLimits(caps map[string]int64) func(string) (kernel.Limit, bool) {
 func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 	api := clientapi.New(clientapi.Options{
 		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: cfg.SourceURL, StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
+		// The health endpoint of the uptime monitors (ADR-0085 §1).
+		ServerHealth:  newHealthCache(a.readyCheck, a.Clock),
 		SendsEmail:    sendsEmail(cfg),
 		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, InstanceThumbnail: a.instanceThumbnail,

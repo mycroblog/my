@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: |
+  The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+  localized.
+type: object
+required: [status]
+properties:
+  status:
+    description: |
+      `ok` while the server is healthy, `unavailable` while the database is unreachable or its
+      schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+    type: string
+    enum: [ok, unavailable, maintenance]
+  checked_at:
+    description: When this process last checked the database; absent during the maintenance mode.
+    type: string
+    format: date-time

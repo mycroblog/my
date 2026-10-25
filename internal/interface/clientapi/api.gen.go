@@ -2644,6 +2644,27 @@ func (e SearchIndexing) Valid() bool {
 	}
 }
 
+// Defines values for ServerHealthStatus.
+const (
+	ServerHealthStatusMaintenance ServerHealthStatus = "maintenance"
+	ServerHealthStatusOk          ServerHealthStatus = "ok"
+	ServerHealthStatusUnavailable ServerHealthStatus = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the ServerHealthStatus enum.
+func (e ServerHealthStatus) Valid() bool {
+	switch e {
+	case ServerHealthStatusMaintenance:
+		return true
+	case ServerHealthStatusOk:
+		return true
+	case ServerHealthStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SignupBlockImportSkippedReason.
 const (
 	SignupBlockImportSkippedReasonAlreadyBlocked SignupBlockImportSkippedReason = "already_blocked"
@@ -8635,6 +8656,21 @@ type RoleProblemReason string
 // the reverse.
 type SearchIndexing string
 
+// ServerHealth The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+// localized.
+type ServerHealth struct {
+	// CheckedAt When this process last checked the database; absent during the maintenance mode.
+	CheckedAt *time.Time `json:"checked_at,omitempty"`
+
+	// Status `ok` while the server is healthy, `unavailable` while the database is unreachable or its
+	// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+	Status ServerHealthStatus `json:"status"`
+}
+
+// ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
+// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+type ServerHealthStatus string
+
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
 	// Body The text, in any language; empty clears it.
@@ -11255,6 +11291,9 @@ type ServerInterface interface {
 	// ListInstanceDomainActions List the domains that the instance moderates
 	// (GET /instance/domain_actions)
 	ListInstanceDomainActions(w http.ResponseWriter, r *http.Request, params ListInstanceDomainActionsParams)
+	// GetServerHealth Get the health of the server
+	// (GET /instance/health)
+	GetServerHealth(w http.ResponseWriter, r *http.Request)
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(w http.ResponseWriter, r *http.Request, params GetInstanceIncomeTotalsParams)
@@ -17068,6 +17107,20 @@ func (siw *ServerInterfaceWrapper) ListInstanceDomainActions(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
+// GetServerHealth operation middleware
+func (siw *ServerInterfaceWrapper) GetServerHealth(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetServerHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetInstanceIncomeTotals operation middleware
 func (siw *ServerInterfaceWrapper) GetInstanceIncomeTotals(w http.ResponseWriter, r *http.Request) {
 
@@ -19205,6 +19258,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/custom_emoji_requests", wrapper.ListCustomEmojiRequests)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests", wrapper.CreateCustomEmojiRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests/{id}/withdraw", wrapper.WithdrawCustomEmojiRequest)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/health", wrapper.GetServerHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/documents/{kind}", wrapper.GetInstanceDocument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/domain_actions", wrapper.ListInstanceDomainActions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/cost_totals", wrapper.GetInstanceCostTotals)
@@ -30708,6 +30762,95 @@ func (response ListInstanceDomainActionsdefaultApplicationProblemPlusJSONRespons
 	return err
 }
 
+type GetServerHealthRequestObject struct {
+}
+
+type GetServerHealthResponseObject interface {
+	VisitGetServerHealthResponse(w http.ResponseWriter) error
+}
+
+type GetServerHealth200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetServerHealth200JSONResponse struct {
+	Body    ServerHealth
+	Headers GetServerHealth200ResponseHeaders
+}
+
+func (response GetServerHealth200JSONResponse) VisitGetServerHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetServerHealth503ResponseHeaders struct {
+	CacheControl *string
+	RetryAfter   *int
+}
+
+type GetServerHealth503JSONResponse struct {
+	Body    ServerHealth
+	Headers GetServerHealth503ResponseHeaders
+}
+
+func (response GetServerHealth503JSONResponse) VisitGetServerHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetServerHealthdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetServerHealthdefaultApplicationProblemPlusJSONResponse) VisitGetServerHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetInstanceIncomeTotalsRequestObject struct {
 	Params GetInstanceIncomeTotalsParams
 }
@@ -35852,6 +35995,9 @@ type StrictServerInterface interface {
 	// ListInstanceDomainActions List the domains that the instance moderates
 	// (GET /instance/domain_actions)
 	ListInstanceDomainActions(ctx context.Context, request ListInstanceDomainActionsRequestObject) (ListInstanceDomainActionsResponseObject, error)
+	// GetServerHealth Get the health of the server
+	// (GET /instance/health)
+	GetServerHealth(ctx context.Context, request GetServerHealthRequestObject) (GetServerHealthResponseObject, error)
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(ctx context.Context, request GetInstanceIncomeTotalsRequestObject) (GetInstanceIncomeTotalsResponseObject, error)
@@ -41146,6 +41292,30 @@ func (sh *strictHandler) ListInstanceDomainActions(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceDomainActionsResponseObject); ok {
 		if err := validResponse.VisitListInstanceDomainActionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetServerHealth operation middleware
+func (sh *strictHandler) GetServerHealth(w http.ResponseWriter, r *http.Request) {
+	var request GetServerHealthRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetServerHealth(ctx, request.(GetServerHealthRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetServerHealth")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetServerHealthResponseObject); ok {
+		if err := validResponse.VisitGetServerHealthResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
