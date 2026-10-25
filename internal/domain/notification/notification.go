@@ -18,9 +18,12 @@ type Type string
 // custom emoji requests (ADR-0070 §9), and supporter_payment_failed,
 // supporter_subscription_ended, and supporter_plan_retired from the supporter subscriptions
 // (ADR-0072 §16), and account_moved from the migration of the follows of a moved account
-// (ADR-0089). admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled,
-// admin_custom_emoji_request, and admin_account_moved go to the staff whose roles grant the
-// permission they need (ModeratorPermission).
+// (ADR-0089). service_closure tells every local user of the announcement of the service closure,
+// of the change of its dates, and of its withdrawal, and supporter_service_closure a subscriber
+// whose subscription the announcement cancels (ADR-0088 §2). admin_report, admin_sign_up,
+// admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, and
+// admin_service_closure_due go to the staff whose roles grant the permission they need
+// (ModeratorPermission).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -68,6 +71,16 @@ const (
 	// TypeAdminAccountMoved tells the holders of manage_accounts that an account that moderation
 	// limits moved, and that the target does not inherit the limit (ADR-0089).
 	TypeAdminAccountMoved Type = "admin_account_moved"
+	// TypeServiceClosure tells every local user that the closure of the service was announced,
+	// that its dates changed, or that it was withdrawn (ADR-0088 §2).
+	TypeServiceClosure Type = "service_closure"
+	// TypeAdminServiceClosureDue tells the holders of manage_service_closure that the closing
+	// date of the announcement in effect has passed, and that they close the server
+	// (ADR-0088 §1).
+	TypeAdminServiceClosureDue Type = "admin_service_closure_due"
+	// TypeSupporterServiceClosure tells a subscriber that the announcement of the service closure
+	// cancels their subscription at the end of its period (ADR-0088 §2).
+	TypeSupporterServiceClosure Type = "supporter_service_closure"
 )
 
 // MoveOutcome is what became of a follow of an account that moved (notifications.account_move_outcome).
@@ -88,6 +101,25 @@ const (
 	MoveDomainMuted MoveOutcome = "domain_muted"
 )
 
+// ClosureChange is what the service closure event of a service_closure did
+// (notifications.service_closure_change).
+type ClosureChange string
+
+// What a service_closure tells of.
+const (
+	// ClosureAnnounced: the closure was announced.
+	ClosureAnnounced ClosureChange = "announced"
+	// ClosureRescheduled: the dates of the announcement changed.
+	ClosureRescheduled ClosureChange = "rescheduled"
+	// ClosureWithdrawn: the announcement was withdrawn.
+	ClosureWithdrawn ClosureChange = "withdrawn"
+)
+
+// Valid reports whether c is a known change.
+func (c ClosureChange) Valid() bool {
+	return c == ClosureAnnounced || c == ClosureRescheduled || c == ClosureWithdrawn
+}
+
 // Valid reports whether o is a known move outcome.
 func (o MoveOutcome) Valid() bool {
 	switch o {
@@ -105,6 +137,7 @@ var Types = []Type{
 	TypeAppealDecided, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeCustomEmojiRequestDecided,
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
+	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 }
 
 // Valid reports whether t is a known notification type.
@@ -115,7 +148,8 @@ func (t Type) Valid() bool {
 		TypeRelationshipsSevered, TypeAppealDecided, TypeAdminAppeal, TypeAdminWebhookDisabled,
 		TypeAdminCustomEmojiRequest, TypeCustomEmojiRequestDecided,
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
-		TypeAccountMoved, TypeAdminAccountMoved:
+		TypeAccountMoved, TypeAdminAccountMoved,
+		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure:
 		return true
 	}
 	return false
@@ -155,8 +189,14 @@ type Notification struct {
 	// only.
 	AccountMoveID      string
 	AccountMoveOutcome MoveOutcome
-	DedupeKey          string
-	CreatedAt          time.Time
+	// ServiceClosureEventID is the service closure event of a service_closure, the announcement
+	// whose closing date has passed of an admin_service_closure_due, and the announcement that
+	// cancels the subscription of a supporter_service_closure; "" for the other types.
+	// ServiceClosureChange is what the event did, for a service_closure only.
+	ServiceClosureEventID string
+	ServiceClosureChange  ClosureChange
+	DedupeKey             string
+	CreatedAt             time.Time
 }
 
 var (
@@ -206,9 +246,15 @@ func (n Notification) Validate() error {
 		(n.Type == TypeAccountMoved && n.SourceAccountID == "") {
 		return errors.New("notification: an account_moved or an admin_account_moved, and only they, name a move, and an account_moved has the moved account and an outcome")
 	}
+	closure := n.Type == TypeServiceClosure || n.Type == TypeAdminServiceClosureDue || n.Type == TypeSupporterServiceClosure
+	if closure != (n.ServiceClosureEventID != "") || (n.Type == TypeServiceClosure) != (n.ServiceClosureChange != "") ||
+		(n.ServiceClosureChange != "" && !n.ServiceClosureChange.Valid()) || (closure && n.SourceAccountID != "") {
+		return errors.New("notification: the service closure notifications, and only they, name a service closure event, a service_closure what it did, and they have no source account")
+	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
 		n.Type == TypeAdminAccountMoved && n.SourceAccountID != "",
+		n.Type == TypeAdminServiceClosureDue && n.SourceAccountID != "",
 		n.Type == TypeAdminAppeal && n.SourceAccountID != "",
 		n.Type == TypeAdminWebhookDisabled && n.SourceAccountID != "",
 		n.Type == TypeAdminCustomEmojiRequest && n.SourceAccountID != "",
@@ -222,7 +268,8 @@ func (n Notification) Validate() error {
 // Supporter reports whether t is one of the supporter notifications, which tell a subscriber of
 // their supporter subscription (ADR-0072 §16).
 func (t Type) Supporter() bool {
-	return t == TypeSupporterPaymentFailed || t == TypeSupporterSubscriptionEnded || t == TypeSupporterPlanRetired
+	return t == TypeSupporterPaymentFailed || t == TypeSupporterSubscriptionEnded || t == TypeSupporterPlanRetired ||
+		t == TypeSupporterServiceClosure
 }
 
 // SupporterTransitionKey is the dedupe key of a supporter_payment_failed or a
@@ -236,6 +283,24 @@ func SupporterTransitionKey(t Type, transitionID string) string {
 // subscription of the plan, which is retired once.
 func SupporterPlanRetiredKey(planID, subscriptionID string) string {
 	return string(TypeSupporterPlanRetired) + ":" + planID + ":" + subscriptionID
+}
+
+// SupporterServiceClosureKey is the dedupe key of a supporter_service_closure notification: one
+// per subscription and announcement that starts the notice period.
+func SupporterServiceClosureKey(closureEventID, subscriptionID string) string {
+	return string(TypeSupporterServiceClosure) + ":" + closureEventID + ":" + subscriptionID
+}
+
+// ServiceClosureKey is the dedupe key of a service_closure notification: one per service
+// closure event.
+func ServiceClosureKey(closureEventID string) string {
+	return string(TypeServiceClosure) + ":" + closureEventID
+}
+
+// AdminServiceClosureDueKey is the dedupe key of an admin_service_closure_due notification: one
+// per announcement whose closing date has passed.
+func AdminServiceClosureDueKey(announcementID string) string {
+	return string(TypeAdminServiceClosureDue) + ":" + announcementID
 }
 
 // FollowKey is the dedupe key of a follow, follow_request, or follow_accepted notification:
@@ -289,13 +354,15 @@ const (
 	PermissionManageWebhooks Permission = "manage_webhooks"
 	// PermissionManageCustomEmojis is the identity module's manage_custom_emojis.
 	PermissionManageCustomEmojis Permission = "manage_custom_emojis"
+	// PermissionManageServiceClosure is the identity module's manage_service_closure.
+	PermissionManageServiceClosure Permission = "manage_service_closure"
 )
 
 // ModeratorPermission returns the permission that the recipient of a notification of type t
 // needs, when they get it and while they read it, and whether t needs one: admin_report needs
 // manage_reports, admin_sign_up, admin_appeal, and admin_account_moved manage_accounts, admin_webhook_disabled
-// manage_webhooks, and admin_custom_emoji_request manage_custom_emojis. The other types need
-// none.
+// manage_webhooks, admin_custom_emoji_request manage_custom_emojis, and
+// admin_service_closure_due manage_service_closure. The other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
 	case TypeAdminReport:
@@ -306,6 +373,8 @@ func ModeratorPermission(t Type) (Permission, bool) {
 		return PermissionManageWebhooks, true
 	case TypeAdminCustomEmojiRequest:
 		return PermissionManageCustomEmojis, true
+	case TypeAdminServiceClosureDue:
+		return PermissionManageServiceClosure, true
 	}
 	return "", false
 }

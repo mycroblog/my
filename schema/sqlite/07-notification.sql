@@ -21,7 +21,8 @@ CREATE TABLE notifications (
     'report_resolved', 'admin_report', 'admin_sign_up', 'relationships_severed', 'appeal_decided',
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
-    'account_moved', 'admin_account_moved'
+    'account_moved', 'admin_account_moved',
+    'service_closure', 'admin_service_closure_due', 'supporter_service_closure'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -48,6 +49,12 @@ CREATE TABLE notifications (
   account_move_id TEXT,
   -- account_moved: what became of the recipient's follow of the moved account.
   account_move_outcome TEXT CHECK (account_move_outcome IN ('followed', 'requested', 'blocking', 'blocked_by', 'domain_muted')),
+  -- service_closure, admin_service_closure_due: the service_closure_events row that it tells of
+  -- (the announcement whose closing date has passed, for admin_service_closure_due);
+  -- supporter_service_closure: the announcement that cancels the subscription.
+  service_closure_event_id TEXT,
+  -- service_closure: what the event did to the closure.
+  service_closure_change TEXT CHECK (service_closure_change IN ('announced', 'rescheduled', 'withdrawn')),
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   -- nobody is notified of their own actions.
@@ -122,7 +129,8 @@ CREATE TABLE push_subscription_alerts (
     'report_resolved', 'admin_report', 'admin_sign_up', 'relationships_severed', 'appeal_decided',
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
-    'account_moved', 'admin_account_moved'
+    'account_moved', 'admin_account_moved',
+    'service_closure', 'admin_service_closure_due', 'supporter_service_closure'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;

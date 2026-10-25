@@ -183,12 +183,13 @@ func TestHiddenTypes(t *testing.T) {
 		granted []Permission
 		want    []Type
 	}{
-		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
-		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
-		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest}},
-		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
-		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved}},
-		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, "view_audit"}, nil},
+		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
+		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
+		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminServiceClosureDue}},
+		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
+		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
+		{[]Permission{PermissionManageServiceClosure}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
+		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, PermissionManageServiceClosure, "view_audit"}, nil},
 	} {
 		if got := HiddenTypes(tc.granted); !slices.Equal(got, tc.want) {
 			t.Errorf("HiddenTypes(%v) = %v, want %v", tc.granted, got, tc.want)
@@ -196,5 +197,37 @@ func TestHiddenTypes(t *testing.T) {
 	}
 	if _, ok := ModeratorPermission(TypeFollow); ok {
 		t.Error("ModeratorPermission(follow) needs a permission")
+	}
+}
+
+func TestValidateServiceClosureNotifications(t *testing.T) {
+	const idA, idB, idN, idE, idS = "a", "b", "n", "e", "s"
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureEventID: idE, ServiceClosureChange: ClosureAnnounced, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureEventID: idE, ServiceClosureChange: ClosureWithdrawn, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminServiceClosureDue, ServiceClosureEventID: idE, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeSupporterServiceClosure, ServiceClosureEventID: idE, SupporterSubscriptionID: idS, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err != nil {
+			t.Errorf("Validate(%+v) = %v", n, err)
+		}
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureChange: ClosureAnnounced, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureEventID: idE, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureEventID: idE, ServiceClosureChange: "closed", DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeServiceClosure, ServiceClosureEventID: idE, ServiceClosureChange: ClosureAnnounced, SourceAccountID: idB, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminServiceClosureDue, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminServiceClosureDue, ServiceClosureEventID: idE, ServiceClosureChange: ClosureAnnounced, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeSupporterServiceClosure, ServiceClosureEventID: idE, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeSupporterServiceClosure, SupporterSubscriptionID: idS, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, ServiceClosureEventID: idE, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+	if p, ok := ModeratorPermission(TypeAdminServiceClosureDue); !ok || p != PermissionManageServiceClosure {
+		t.Errorf("ModeratorPermission(admin_service_closure_due) = %s, %v", p, ok)
 	}
 }

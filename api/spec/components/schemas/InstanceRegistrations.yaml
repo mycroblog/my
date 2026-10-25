@@ -6,6 +6,8 @@ properties:
   mode:
     description: |
       Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-      approval), `invite` (only with an invite), or `closed` (nobody).
+      approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+      sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+      the instance setting says.
     type: string
     enum: [open, approval, invite, closed]

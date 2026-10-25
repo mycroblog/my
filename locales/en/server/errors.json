@@ -523,6 +523,14 @@
     "defaultMessage": "You already mute the most domains allowed. Unmute one first.",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
   },
+  "errors.service_closing": {
+    "defaultMessage": "The closure of this server is announced.",
+    "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
+  },
+  "errors.service_closing_detail": {
+    "defaultMessage": "New registrations and supporter subscriptions stop while the closure is announced.",
+    "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
+  },
   "errors.account_moved": {
     "defaultMessage": "Your account has moved.",
     "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."

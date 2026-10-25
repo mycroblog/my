@@ -10,8 +10,10 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
@@ -189,6 +191,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
+	closures, err := s.notifiedClosures(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
 	parts, err := s.statusParts(ctx, views, found...)
 	if err != nil {
 		return nil, err
@@ -235,6 +241,13 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		if sub, ok := supporterSubs[n.SupporterSubscriptionID]; ok {
 			item.SupporterSubscription = &sub
 		}
+		if c, ok := closures[n.ServiceClosureEventID]; ok {
+			if n.ServiceClosureChange != "" {
+				change := ServiceClosureNoticeChange(n.ServiceClosureChange)
+				c.Change = &change
+			}
+			item.ServiceClosure = &c
+		}
 		if sv, ok := severances[n.SeveranceID]; ok {
 			item.RelationshipSeverance = newRelationshipSeverance(sv)
 		}
@@ -249,6 +262,44 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			return nil, err
 		}
 		out = append(out, item)
+	}
+	return out, nil
+}
+
+// ClosureEvents reads the service closure events of the notifications. *appinstance.Service
+// implements it.
+type ClosureEvents interface {
+	// ClosureEvent returns an event with its schedule; appinstance.ErrNotFound when there is none.
+	ClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error)
+}
+
+// notifiedClosures presents, by event ID, the service closure events that ns tell of, with the
+// dates of an announcement; an event that is gone is left out.
+func (s *Server) notifiedClosures(ctx context.Context, ns []notification.Notification) (map[string]ServiceClosureNotice, error) {
+	out := map[string]ServiceClosureNotice{}
+	if s.o.ClosureEvents == nil {
+		return out, nil
+	}
+	for _, n := range ns {
+		id := n.ServiceClosureEventID
+		if id == "" {
+			continue
+		}
+		if _, ok := out[id]; ok {
+			continue
+		}
+		e, err := s.o.ClosureEvents.ClosureEvent(ctx, id)
+		switch {
+		case errors.Is(err, appinstance.ErrNotFound):
+			continue
+		case err != nil:
+			return nil, fmt.Errorf("clientapi: the service closure event %s of notification %s: %w", id, n.ID, err)
+		}
+		var v ServiceClosureNotice
+		if e.Kind == instance.ClosureEventAnnounced {
+			v.ClosesAt, v.ExportUntil = utcPtr(e.Schedule.ClosesAt), utcPtr(e.Schedule.ExportUntil)
+		}
+		out[id] = v
 	}
 	return out, nil
 }

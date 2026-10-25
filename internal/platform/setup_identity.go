@@ -43,10 +43,13 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		WebClient: identity.WebClient{
 			ClientID: identity.DefaultWebClientID, Name: cfg.Host, RedirectURIs: []string{cfg.WebOrigin + WebClientCallbackPath},
 		},
+		// The effective mode: closed from the announcement of the service closure on (ADR-0088 §2),
+		// which also stops the approval of the pending registrations.
 		RegistrationMode: func(ctx context.Context) (domainidentity.RegistrationMode, error) {
 			mode, err := a.Instance.RegistrationMode(ctx)
 			return domainidentity.RegistrationMode(mode), err
 		},
+		Closure: a.Instance,
 		// A client_id that is an https URL is a Client ID Metadata Document, fetched through the
 		// SSRF guard while the instance setting accepts them (ADR-0090 §1).
 		HTTP: a.HTTPClient,
@@ -87,6 +90,9 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 	// The dynamically registered clients that nobody uses are deleted (ADR-0090 §1).
 	a.Identity.RegisterClientJobs(a.Handlers, a.Scheduler)
 	a.Identity.RegisterMailJobs(a.Handlers)
+	// The start of the notice period of the service closure rejects the pending registrations.
+	a.Identity.RegisterClosureProjectors(a.Projectors)
+	a.Identity.RegisterClosureJobs(a.Handlers)
 	a.AccountAdmin = identity.NewAccountAdmin(identity.AccountAdminDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Restrictions: a.AccountPolicy,
 		Clock: a.Clock, IDs: a.IDs,
