@@ -83,6 +83,9 @@ type Deps struct {
 	// Closure stops the approval of pending registrations from the announcement of the service
 	// closure on (ADR-0088 §2); nil never stops it.
 	Closure ServiceClosure
+	// ClosureView returns the state of the service closure that its emails read
+	// (RegisterClosureEmails); nil sends none of them.
+	ClosureView func(ctx context.Context) (identity.ServiceClosureView, error)
 	// IndexableDefault returns whether new accounts are indexable (the indexable_default
 	// setting, FR-412, ADR-0057); nil makes them not indexable.
 	IndexableDefault func(ctx context.Context) (bool, error)
@@ -113,6 +116,9 @@ type Deps struct {
 	Messages *i18n.Bundle
 	// BaseURL is the origin that links in emails point to, such as https://social.example.
 	BaseURL string
+	// WebOrigin is the origin of the web client, whose pages some emails link to; "" means
+	// BaseURL.
+	WebOrigin string
 	// MailSite returns the instance as its emails name it: its display name, its URL, and its
 	// contact address (ADR-0086 §2, §3). Nil, or an empty name or URL, names the instance by the
 	// host of BaseURL and links to BaseURL.

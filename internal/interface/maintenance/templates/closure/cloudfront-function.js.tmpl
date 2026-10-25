@@ -1,0 +1,35 @@
+// The static closure page of {{.Host}} for Amazon CloudFront (ADR-0088 §6), written by
+// `my admin closure export-html`: a CloudFront Function (runtime cloudfront-js-2.0) for the
+// viewer request event of the default cache behavior, in front of an S3 origin that holds the
+// pages of this directory at the root of the bucket.
+//
+// The paths of federation, discovery, and the profiles answer 410 Gone with no page, so that the
+// other servers stop asking. Every other path gets the closure page in the first language of
+// Accept-Language that has a page, or index.html with every language one after another; S3
+// serves it with 200, since a viewer request function cannot set the status of the origin's
+// response. Accept-Language must be in the cache key (a cache policy that includes it), or the
+// first visitor's language is cached for everyone.
+
+var gonePaths = {{json .Paths}};
+var gonePrefixes = {{json .Prefixes}};
+var locales = {{json .Locales}};
+
+function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  if (gonePaths.indexOf(uri) >= 0 || gonePrefixes.some(function (p) { return uri.startsWith(p); })) {
+    return { statusCode: 410, statusDescription: 'Gone' };
+  }
+  var header = request.headers['accept-language'];
+  var first = header ? header.value.split(',')[0].split(';')[0].trim().toLowerCase() : '';
+  var page = '/index.html';
+  for (var i = 0; i < locales.length; i++) {
+    var l = locales[i].toLowerCase();
+    if (first === l || first.startsWith(l + '-')) {
+      page = '/' + locales[i] + '.html';
+      break;
+    }
+  }
+  request.uri = page;
+  return request;
+}

@@ -1145,6 +1145,48 @@ func (l *Localizer) ServerAuthVerifyEmailTitle() string {
 	return l.format("server:auth.verify_email.title", nil)
 }
 
+// ServerClosureClosedOn formats "server:closure.closed_on". Label of the server's closing date (closes_at, ADR-0088), shown in UTC next to it on the static closure page.
+//
+//	en: Closing date
+func (l *Localizer) ServerClosureClosedOn() string {
+	return l.format("server:closure.closed_on", nil)
+}
+
+// ServerClosureDescription formats "server:closure.description". Explanation under the heading of the static closure page (my admin closure export-html). {server} is the server's name, or its host name.
+//
+//	en: {server} has closed and no longer runs. Its accounts and posts are gone, and their data can no longer be exported. Thank you for using it.
+func (l *Localizer) ServerClosureDescription(server string) string {
+	return l.format("server:closure.description", map[string]any{"server": server})
+}
+
+// ServerClosureDocumentTitle formats "server:closure.document_title". <title> of the static closure page. {server} is the server's name, or its host name.
+//
+//	en: Closed – {server}
+func (l *Localizer) ServerClosureDocumentTitle(server string) string {
+	return l.format("server:closure.document_title", map[string]any{"server": server})
+}
+
+// ServerClosureNotice formats "server:closure.notice". Heading over the administrators' message of the closure announcement on the static closure page.
+//
+//	en: Message from the administrators
+func (l *Localizer) ServerClosureNotice() string {
+	return l.format("server:closure.notice", nil)
+}
+
+// ServerClosureStatusPage formats "server:closure.status_page". Text of the link to the instance's status page (status_page_url) on the static closure page.
+//
+//	en: Check the service status
+func (l *Localizer) ServerClosureStatusPage() string {
+	return l.format("server:closure.status_page", nil)
+}
+
+// ServerClosureTitle formats "server:closure.title". Heading of the static closure page that the server's domain serves after the closure of the service (ADR-0088 §6).
+//
+//	en: This server has closed
+func (l *Localizer) ServerClosureTitle() string {
+	return l.format("server:closure.title", nil)
+}
+
 // ServerConfigErrors formats "server:config.errors". Summary printed before the list of configuration problems when the server refuses to start.
 //
 //	en: {count, plural, one {Found # configuration error.} other {Found # configuration errors.}}
@@ -2361,6 +2403,146 @@ func (l *Localizer) ServerMailReasonModeratorNotifications() string {
 //	en: You get this email because you subscribe, or subscribed, to a supporter plan on {instance}.
 func (l *Localizer) ServerMailReasonSupporter(instance string) string {
 	return l.format("server:mail.reason.supporter", map[string]any{"instance": instance})
+}
+
+// ServerMailServiceClosureAnnouncedBody formats "server:mail.service_closure_announced.body". First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: The administrators of {instance} announced that the server closes on {closesAt}. From then on, you can only sign in to export your data.
+func (l *Localizer) ServerMailServiceClosureAnnouncedBody(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_announced.body", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureAnnouncedSubject formats "server:mail.service_closure_announced.subject". Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} closes on {closesAt}
+func (l *Localizer) ServerMailServiceClosureAnnouncedSubject(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_announced.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureClosedBody formats "server:mail.service_closure_closed.body". First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} has closed. Until {exportUntil}, you can still sign in and export your data; nothing else works any more.
+func (l *Localizer) ServerMailServiceClosureClosedBody(exportUntil string, instance string) string {
+	return l.format("server:mail.service_closure_closed.body", map[string]any{"exportUntil": exportUntil, "instance": instance})
+}
+
+// ServerMailServiceClosureClosedDetail formats "server:mail.service_closure_closed.detail". Second paragraph of the email of the closed server: what happens after the deadline of the export.
+//
+//	en: After that, the administrators delete the server's data, and it cannot be recovered.
+func (l *Localizer) ServerMailServiceClosureClosedDetail() string {
+	return l.format("server:mail.service_closure_closed.detail", nil)
+}
+
+// ServerMailServiceClosureClosedSubject formats "server:mail.service_closure_closed.subject". Subject of the email of the service closure to every user with a verified address: the server has closed. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance} has closed
+func (l *Localizer) ServerMailServiceClosureClosedSubject(instance string) string {
+	return l.format("server:mail.service_closure_closed.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailServiceClosureDayBeforeBody formats "server:mail.service_closure_day_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} closes within a day, on {closesAt}. This is the last reminder before the closing date.
+func (l *Localizer) ServerMailServiceClosureDayBeforeBody(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_day_before.body", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureDayBeforeSubject formats "server:mail.service_closure_day_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} closes within a day, on {closesAt}
+func (l *Localizer) ServerMailServiceClosureDayBeforeSubject(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_day_before.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureExportWeekBeforeBody formats "server:mail.service_closure_export_week_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: You can export your data from {instance} until {exportUntil}, a week from now.
+func (l *Localizer) ServerMailServiceClosureExportWeekBeforeBody(exportUntil string, instance string) string {
+	return l.format("server:mail.service_closure_export_week_before.body", map[string]any{"exportUntil": exportUntil, "instance": instance})
+}
+
+// ServerMailServiceClosureExportWeekBeforeSubject formats "server:mail.service_closure_export_week_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: One week left to export your data from {instance}
+func (l *Localizer) ServerMailServiceClosureExportWeekBeforeSubject(instance string) string {
+	return l.format("server:mail.service_closure_export_week_before.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailServiceClosureRescheduledBody formats "server:mail.service_closure_rescheduled.body". First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: The administrators of {instance} changed the dates of its closure: the server now closes on {closesAt}.
+func (l *Localizer) ServerMailServiceClosureRescheduledBody(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_rescheduled.body", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureRescheduledSubject formats "server:mail.service_closure_rescheduled.subject". Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} now closes on {closesAt}
+func (l *Localizer) ServerMailServiceClosureRescheduledSubject(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_rescheduled.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureWeekBeforeBody formats "server:mail.service_closure_week_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: {instance} closes in a week, on {closesAt}. Export your data before you lose access to it.
+func (l *Localizer) ServerMailServiceClosureWeekBeforeBody(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_week_before.body", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureWeekBeforeSubject formats "server:mail.service_closure_week_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: One week until {instance} closes on {closesAt}
+func (l *Localizer) ServerMailServiceClosureWeekBeforeSubject(closesAt string, instance string) string {
+	return l.format("server:mail.service_closure_week_before.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+}
+
+// ServerMailServiceClosureWithdrawnBody formats "server:mail.service_closure_withdrawn.body". Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The administrators of {instance} withdrew the announced closure. The server goes on as before, and you do not need to do anything.
+func (l *Localizer) ServerMailServiceClosureWithdrawnBody(instance string) string {
+	return l.format("server:mail.service_closure_withdrawn.body", map[string]any{"instance": instance})
+}
+
+// ServerMailServiceClosureWithdrawnSubject formats "server:mail.service_closure_withdrawn.subject". Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance} is not closing
+func (l *Localizer) ServerMailServiceClosureWithdrawnSubject(instance string) string {
+	return l.format("server:mail.service_closure_withdrawn.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailServiceClosureActionExport formats "server:mail.service_closure.action_export". Label of the button of a service closure email that opens the page where the user exports their data.
+//
+//	en: Export your data
+func (l *Localizer) ServerMailServiceClosureActionExport() string {
+	return l.format("server:mail.service_closure.action_export", nil)
+}
+
+// ServerMailServiceClosureExport formats "server:mail.service_closure.export". Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
+//
+//	en: You can sign in and export your data until {exportUntil}. After that, the administrators delete the server's data.
+func (l *Localizer) ServerMailServiceClosureExport(exportUntil string) string {
+	return l.format("server:mail.service_closure.export", map[string]any{"exportUntil": exportUntil})
+}
+
+// ServerMailServiceClosureMessage formats "server:mail.service_closure.message". Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language.
+//
+//	en: Message from the administrators: {message}
+func (l *Localizer) ServerMailServiceClosureMessage(message string) string {
+	return l.format("server:mail.service_closure.message", map[string]any{"message": message})
+}
+
+// ServerMailServiceClosureMove formats "server:mail.service_closure.move". Paragraph of a service closure email during the notice: the user may move their account (ActivityPub Move) to another server before the closing date.
+//
+//	en: Before the closing date, you can also move your account to another server in the account settings, so that your followers follow you there.
+func (l *Localizer) ServerMailServiceClosureMove() string {
+	return l.format("server:mail.service_closure.move", nil)
+}
+
+// ServerMailServiceClosureReason formats "server:mail.service_closure.reason". Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: You get this email because this address belongs to your account on {instance}, whose closure affects your data. These emails cannot be turned off.
+func (l *Localizer) ServerMailServiceClosureReason(instance string) string {
+	return l.format("server:mail.service_closure.reason", map[string]any{"instance": instance})
 }
 
 // ServerMailSignatureContact formats "server:mail.signature.contact". Line of the signature at the end of every email with the instance's contact address. {email} is the address.

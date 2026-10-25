@@ -196,7 +196,7 @@ func adminUsage(w io.Writer) {
        my admin account disable-two-factor <account>   (my admin account disable-two-factor -help)
        my admin account password-reset-link <account>   (my admin account password-reset-link -help)
        my admin appeal list|uphold|overturn ...   (my admin appeal -help)
-       my admin closure announce|withdraw|status|check|close ...   (my admin closure -help)
+       my admin closure announce|withdraw|status|check|close|export-html ...   (my admin closure -help)
        my admin domain list|issue|lift ...   (my admin domain -help)
        my admin emoji create|list|enable|disable|delete ...   (my admin emoji -help)
        my admin federation sever ...   (my admin federation -help)
@@ -220,7 +220,8 @@ my admin account password-reset-link prints a link that sets a new password for
 a user who forgot theirs.
 my admin role grants and revokes the roles of local users.
 my admin closure announces the closure of the service, changes its dates,
-withdraws it, checks the server before the closure, and closes it.
+withdraws it, checks the server before the closure, closes it, and writes the
+static closure page for the domain to serve after the server stops.
 my admin emoji registers and manages the custom emoji.
 my admin federation severs the follows with remote accounts.
 my admin refetch queues the refetch of remote posts from their servers.

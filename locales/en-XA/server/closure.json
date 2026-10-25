@@ -1,0 +1,26 @@
+{
+  "closure.closed_on": {
+    "defaultMessage": "[Ƈŀǿǿşīƞɠ ḓȧȧŧḗḗ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "closure.description": {
+    "defaultMessage": "[{server} ħȧȧş ƈŀǿǿşḗḗḓ ȧȧƞḓ ƞǿǿ ŀǿǿƞɠḗḗř řŭŭƞş. Īŧş ȧȧƈƈǿǿŭŭƞŧş ȧȧƞḓ ƥǿǿşŧş ȧȧřḗḗ ɠǿǿƞḗḗ, ȧȧƞḓ ŧħḗḗīř ḓȧȧŧȧȧ ƈȧȧƞ ƞǿǿ ŀǿǿƞɠḗḗř ƀḗḗ ḗḗẋƥǿǿřŧḗḗḓ. Ŧħȧȧƞķ ẏǿǿŭŭ ƒǿǿř ŭŭşīƞɠ īŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "closure.document_title": {
+    "defaultMessage": "[Ƈŀǿǿşḗḗḓ – {server}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "closure.notice": {
+    "defaultMessage": "[Ḿḗḗşşȧȧɠḗḗ ƒřǿǿḿ ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "closure.status_page": {
+    "defaultMessage": "[Ƈħḗḗƈķ ŧħḗḗ şḗḗřṽīƈḗḗ şŧȧȧŧŭŭş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "closure.title": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  }
+}

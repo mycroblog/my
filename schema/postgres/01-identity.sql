@@ -454,6 +454,19 @@ CREATE TABLE email_suppressions (
   failure_id uuid NOT NULL
 );
 
+-- Event: a service closure email was queued for a user (ADR-0088 §2, ADR-0086 §1).
+-- closure_event_id is the event the email tells of (the announcement in effect for a reminder);
+-- the unique index makes each email of an event reach a user once.
+CREATE TABLE service_closure_emails (
+  id uuid NOT NULL PRIMARY KEY,
+  closure_event_id uuid NOT NULL,
+  email text NOT NULL CHECK (email IN ('announced', 'rescheduled', 'withdrawn', 'week_before', 'day_before', 'closed', 'export_week_before')),
+  user_id uuid NOT NULL,
+  queued_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX service_closure_emails_event_email_user ON service_closure_emails (closure_event_id, email, user_id);
+CREATE INDEX service_closure_emails_user_id ON service_closure_emails (user_id);
+
 -- Resource: a sign-up from the registration page, one per user. reason is the applicant's
 -- answer in approval mode; invite_id is the invite it redeemed in invite mode.
 CREATE TABLE registration_applications (

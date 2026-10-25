@@ -46,7 +46,8 @@ type peerMover interface {
 //
 //   - out: the peer user (bob, carol, grace) follows leave<peer>@my.test; arrive of the peer names
 //     it among its aliases; it moves to arrive of the peer (POST /accounts/move); the peer user
-//     follows arrive instead (the peer took the Move and moved its follower).
+//     follows arrive instead (the peer took the Move and moved its follower). On Misskey the
+//     target is arrive@my.test instead (misskeyOwnMoveTarget).
 //   - in: alice follows leave of the peer; arrive@my.test names it among its aliases
 //     (POST /accounts/aliases); it moves to arrive@my.test on the peer; alice follows arrive@my.test
 //     instead and has an account_moved notification of the move, with the outcome followed.
@@ -66,14 +67,35 @@ func TestMove(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range e.peers {
-		t.Run(p.name+"/out", func(t *testing.T) { e.moveOut(ctx, t, p, movers[p.name], password) })
+		target := moveTarget{handle: moveArrival + "@" + p.host, alias: movers[p.name].alias}
+		if p.name == "misskey" {
+			// The move goes to arrive@my.test, an account of another server to Misskey.
+			t.Logf("%s: %s moves to %s", misskeyOwnMoveTarget, moveLeaver+p.name, moveArrival+"@"+localHost)
+			target = moveTarget{handle: moveArrival + "@" + localHost, alias: func(ctx context.Context, handle, _ string) error {
+				return arrival.call(ctx, http.MethodPost, "/accounts/aliases", map[string]any{"acct": handle}, nil)
+			}}
+		}
+		t.Run(p.name+"/out", func(t *testing.T) { e.moveOut(ctx, t, p, target, password) })
 		t.Run(p.name+"/in", func(t *testing.T) { e.moveIn(ctx, t, p, movers[p.name], arrival) })
 	}
 }
 
-// moveOut moves leave<peer>@my.test to arrive of the peer, and checks that the peer user who
-// followed it follows arrive instead.
-func (e *env) moveOut(ctx context.Context, t *testing.T, p *peerClient, m peerMover, password string) {
+// moveTarget is the account that leave<peer>@my.test moves to, and how that account names the
+// leaver among its aliases (handle user@host, actor uri).
+type moveTarget struct {
+	handle string
+	alias  func(ctx context.Context, handle, uri string) error
+}
+
+// misskeyOwnMoveTarget is why leavemisskey@my.test moves to arrive@my.test, not to
+// arrive@misskey.test: Misskey 2026.10 fails the Move of a remote account to one of its own
+// (ApPersonService.processRemoteMove looks the local target up by its uri, which a local user does
+// not have: EntityNotFoundError), whoever sends the Move, and the follower stays where it was.
+const misskeyOwnMoveTarget = "Misskey fails a Move to one of its own accounts"
+
+// moveOut moves leave<peer>@my.test to the target, and checks that the peer user who followed it
+// follows the target instead.
+func (e *env) moveOut(ctx context.Context, t *testing.T, p *peerClient, to moveTarget, password string) {
 	name := moveLeaver + p.name
 	handle := name + "@" + localHost
 	leaver, err := signInLocalAs(ctx, e.http.Transport, name, password)
@@ -96,8 +118,8 @@ func (e *env) moveOut(ctx context.Context, t *testing.T, p *peerClient, m peerMo
 		return err == nil && r.Following, fmt.Sprintf("%+v %v", r, err)
 	})
 
-	arrive := moveArrival + "@" + p.host
-	if err := m.alias(ctx, handle, self.URI); err != nil {
+	arrive := to.handle
+	if err := to.alias(ctx, handle, self.URI); err != nil {
 		t.Fatalf("naming %s among the aliases of %s: %v", handle, arrive, err)
 	}
 	target, err := leaver.resolve(ctx, arrive)
@@ -251,6 +273,7 @@ type misskeyMover struct {
 	arrive, leave *misskeyAPI
 }
 
+// alias is not called while misskeyOwnMoveTarget holds: the local leaver moves to arrive@my.test.
 func (m misskeyMover) alias(ctx context.Context, handle, _ string) error {
 	return m.arrive.call(ctx, "i/update", map[string]any{"alsoKnownAs": []string{"@" + handle}}, nil)
 }

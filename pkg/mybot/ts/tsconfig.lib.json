@@ -1,0 +1,13 @@
+{
+  "extends": "../../../app/tsconfig.base.json",
+  "//": "The library: Node.js resolution, so that the ESM build runs as it is, and no ambient types beyond the web platform's (fetch, streams, AbortSignal), so that a static import of a Node.js built-in module fails to type-check (ADR-0094 §1). FileStore reaches the file system through a dynamic import of node:fs/promises, which Node.js, Bun, and Deno all provide. The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, so that checking needs no build of it.",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "customConditions": ["@mycroblog/source"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/test"]
+}

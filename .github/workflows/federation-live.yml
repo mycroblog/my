@@ -19,7 +19,7 @@ env:
 jobs:
   federation-live:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       FEDERATION_LIVE_OUT: ${{ github.workspace }}/.tmp/federation-live-out
     steps:

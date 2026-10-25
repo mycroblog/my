@@ -7,6 +7,9 @@ INSERT INTO email_delivery_failures (id, email_address_id, kind, source, feedbac
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (feedback_key) DO NOTHING;
 
+-- name: GetPrimaryEmailAddressIDByNormalized :one
+SELECT email_address_id FROM user_primary_emails WHERE address_normalized = $1;
+
 -- name: InsertEmailSuppressionLift :exec
 INSERT INTO email_suppression_lifts (id, email_address_id, reason, lifted_at) VALUES ($1, $2, $3, $4);
 

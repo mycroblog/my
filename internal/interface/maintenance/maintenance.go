@@ -2,7 +2,9 @@
 
 // Package maintenance answers every request of the maintenance mode (ADR-0084): a 503 that says
 // the server is under maintenance, in the form each surface understands, without touching any
-// adapter. It also renders the maintenance page that `my maintenance export` writes out.
+// adapter. It also renders the maintenance page that `my maintenance export` writes out, and in
+// the same template the static closure page and the front ends' configuration that
+// `my admin closure export-html` writes out (ADR-0088 §6).
 package maintenance
 
 import (
@@ -160,7 +162,7 @@ func (h *Handler) page(w http.ResponseWriter, r *http.Request) {
 	hd.Set("Content-Security-Policy", csp)
 	w.WriteHeader(http.StatusServiceUnavailable)
 	if r.Method != http.MethodHead {
-		_, _ = w.Write(html)
+		_, _ = w.Write(html) //nolint:gosec // G705: html/template escaped every value; the locale is one of the bundle's
 	}
 }
 

@@ -22,7 +22,7 @@
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
-#   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own (mykit:check)
+#   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
@@ -177,7 +177,9 @@ classify() {
       ;;
   esac
   case "$path" in
-    scripts/mykit-mod-check.sh)
+    # The server that the integration tests of pkg/mykit and pkg/mybot run (pkg/*/integration); the spec and the client API select
+    # mykit through api.
+    scripts/mykit-mod-check.sh | internal/platform/platformtest/*)
       select_contexts mykit
       known=1
       ;;

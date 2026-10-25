@@ -119,6 +119,86 @@
     "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon snqsɔɹıqǝ, oɹ snqsɔɹıqǝp, ʇo ɐ snddoɹʇǝɹ dʅɐu ou {instance}.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.service_closure.action_export": {
+    "defaultMessage": "‮Ǝxdoɹʇ ʎonɹ pɐʇɐ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.export": {
+    "defaultMessage": "‮⅄on ɔɐu sıƃu ıu ɐup ǝxdoɹʇ ʎonɹ pɐʇɐ nuʇıʅ {exportUntil}. ∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ's pɐʇɐ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.message": {
+    "defaultMessage": "‮Wǝssɐƃǝ ɟɹoɯ ʇɥǝ ɐpɯıuısʇɹɐʇoɹs: {message}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.move": {
+    "defaultMessage": "‮Ԑǝɟoɹǝ ʇɥǝ ɔʅosıuƃ pɐʇǝ, ʎon ɔɐu ɐʅso ɯoʌǝ ʎonɹ ɐɔɔonuʇ ʇo ɐuoʇɥǝɹ sǝɹʌǝɹ ıu ʇɥǝ ɐɔɔonuʇ sǝʇʇıuƃs, so ʇɥɐʇ ʎonɹ ɟoʅʅoʍǝɹs ɟoʅʅoʍ ʎon ʇɥǝɹǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.reason": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʇɥıs ɐppɹǝss qǝʅouƃs ʇo ʎonɹ ɐɔɔonuʇ ou {instance}, ʍɥosǝ ɔʅosnɹǝ ɐɟɟǝɔʇs ʎonɹ pɐʇɐ. ⊥ɥǝsǝ ǝɯɐıʅs ɔɐuuoʇ qǝ ʇnɹuǝp oɟɟ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_announced.body": {
+    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɐuuonuɔǝp ʇɥɐʇ ʇɥǝ sǝɹʌǝɹ ɔʅosǝs ou {closesAt}. Ⅎɹoɯ ʇɥǝu ou, ʎon ɔɐu ouʅʎ sıƃu ıu ʇo ǝxdoɹʇ ʎonɹ pɐʇɐ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_announced.subject": {
+    "defaultMessage": "‮{instance} ɔʅosǝs ou {closesAt}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.body": {
+    "defaultMessage": "‮{instance} ɥɐs ɔʅosǝp. ∩uʇıʅ {exportUntil}, ʎon ɔɐu sʇıʅʅ sıƃu ıu ɐup ǝxdoɹʇ ʎonɹ pɐʇɐ; uoʇɥıuƃ ǝʅsǝ ʍoɹʞs ɐuʎ ɯoɹǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.detail": {
+    "defaultMessage": "‮∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ's pɐʇɐ, ɐup ıʇ ɔɐuuoʇ qǝ ɹǝɔoʌǝɹǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.subject": {
+    "defaultMessage": "‮{instance} ɥɐs ɔʅosǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_day_before.body": {
+    "defaultMessage": "‮{instance} ɔʅosǝs ʍıʇɥıu ɐ pɐʎ, ou {closesAt}. ⊥ɥıs ıs ʇɥǝ ʅɐsʇ ɹǝɯıupǝɹ qǝɟoɹǝ ʇɥǝ ɔʅosıuƃ pɐʇǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_day_before.subject": {
+    "defaultMessage": "‮{instance} ɔʅosǝs ʍıʇɥıu ɐ pɐʎ, ou {closesAt}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_export_week_before.body": {
+    "defaultMessage": "‮⅄on ɔɐu ǝxdoɹʇ ʎonɹ pɐʇɐ ɟɹoɯ {instance} nuʇıʅ {exportUntil}, ɐ ʍǝǝʞ ɟɹoɯ uoʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_export_week_before.subject": {
+    "defaultMessage": "‮Ouǝ ʍǝǝʞ ʅǝɟʇ ʇo ǝxdoɹʇ ʎonɹ pɐʇɐ ɟɹoɯ {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_rescheduled.body": {
+    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɔɥɐuƃǝp ʇɥǝ pɐʇǝs oɟ ıʇs ɔʅosnɹǝ: ʇɥǝ sǝɹʌǝɹ uoʍ ɔʅosǝs ou {closesAt}.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_rescheduled.subject": {
+    "defaultMessage": "‮{instance} uoʍ ɔʅosǝs ou {closesAt}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_week_before.body": {
+    "defaultMessage": "‮{instance} ɔʅosǝs ıu ɐ ʍǝǝʞ, ou {closesAt}. Ǝxdoɹʇ ʎonɹ pɐʇɐ qǝɟoɹǝ ʎon ʅosǝ ɐɔɔǝss ʇo ıʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_week_before.subject": {
+    "defaultMessage": "‮Ouǝ ʍǝǝʞ nuʇıʅ {instance} ɔʅosǝs ou {closesAt}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_withdrawn.body": {
+    "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ʍıʇɥpɹǝʍ ʇɥǝ ɐuuonuɔǝp ɔʅosnɹǝ. ⊥ɥǝ sǝɹʌǝɹ ƃoǝs ou ɐs qǝɟoɹǝ, ɐup ʎon po uoʇ uǝǝp ʇo po ɐuʎʇɥıuƃ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "‮{instance} ıs uoʇ ɔʅosıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.signature.contact": {
     "defaultMessage": "‮Ↄouʇɐɔʇ: {email}‬",
     "description": "Generated from en by tools/i18n; do not edit."
