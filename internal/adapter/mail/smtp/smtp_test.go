@@ -331,3 +331,11 @@ func TestNewValidatesOptions(t *testing.T) {
 		}
 	}
 }
+
+func TestReportsTheEnhancedStatusOfARejection(t *testing.T) {
+	s, tc := newServer(t, true)
+	err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: unknownRecipient, Subject: "Hi", Text: "x"})
+	if !errors.Is(err, kernel.ErrRecipientRejected) || kernel.EnhancedStatus(err) != "5.1.1" {
+		t.Fatalf("Send to an unknown recipient = %v (status %q), want ErrRecipientRejected with 5.1.1", err, kernel.EnhancedStatus(err))
+	}
+}

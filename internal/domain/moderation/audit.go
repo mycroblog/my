@@ -188,6 +188,9 @@ const (
 	// AuditPasswordResetLinkIssued: an administrator issued a password reset link for the user
 	// of a local account (user_tokens, purpose password_reset).
 	AuditPasswordResetLinkIssued AuditAction = "password_reset_link_issued"
+	// AuditEmailSuppressionLifted: a moderator lifted the suppression of the primary email
+	// address of a local account (email_suppression_lifts, reason moderator).
+	AuditEmailSuppressionLifted AuditAction = "email_suppression_lifted"
 	// AuditCustomEmojiCreated: a local custom emoji was registered (custom_emojis).
 	AuditCustomEmojiCreated AuditAction = "custom_emoji_created"
 	// AuditCustomEmojiImageReplaced: a local custom emoji got a new image (custom_emoji_images).
@@ -344,6 +347,7 @@ var auditActions = []struct {
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
+	{AuditEmailSuppressionLifted, AuditTargetAccount},
 	{AuditCustomEmojiCreated, AuditTargetCustomEmoji},
 	{AuditCustomEmojiImageReplaced, AuditTargetCustomEmoji},
 	{AuditCustomEmojiCopied, AuditTargetCustomEmoji},

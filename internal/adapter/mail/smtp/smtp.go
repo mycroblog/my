@@ -168,13 +168,19 @@ func reply(command string, err error) error {
 	if status != "" {
 		code += " " + status
 	}
+	var out error
 	switch {
 	case te.Code < 500 || te.Code > 599:
-		return fmt.Errorf("%s: reply %s", command, code)
+		out = fmt.Errorf("%s: reply %s", command, code)
 	case command == "RCPT TO" && strings.HasPrefix(status, "5.1."):
-		return fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrRecipientRejected)
+		out = fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrRecipientRejected)
+	default:
+		out = fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrMailRejected)
 	}
-	return fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrMailRejected)
+	if status == "" {
+		return out
+	}
+	return &kernel.StatusError{Status: status, Err: out}
 }
 
 // compose returns the message in RFC 5322 form with CRLF line ends. From carries the server's

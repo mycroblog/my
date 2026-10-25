@@ -141,6 +141,8 @@ func (p *supporterProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 type SupporterMailDeps struct {
 	Mailboxes SupporterMailboxes
 	Mailer    kernel.Mailer
+	// Rejections records the rejected recipients; nil records none.
+	Rejections RecipientRejections
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
 	// Host is the server's domain name, which the emails name the instance by when MailSite
@@ -164,14 +166,14 @@ func RegisterSupporterJobs(reg *queue.JobHandlerRegistry, d SupporterMailDeps) {
 		if err := json.Unmarshal(j.Payload, &job); err != nil {
 			return queue.Fail(fmt.Errorf("notification: the payload of %s: %w", j.ID, err))
 		}
-		return queue.MailResult(sendSupporterEmail(ctx, d, job))
+		return queue.MailResult(sendSupporterEmail(ctx, d, j, job))
 	})
 }
 
 // graceLayout is how an email writes the end of a grace period: in UTC, which the text says.
 const graceLayout = "2006-01-02 15:04"
 
-func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, job supporterEmail) error {
+func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, run queue.Job, job supporterEmail) error {
 	box, ok, err := d.Mailboxes.SupporterMailbox(ctx, job.AccountID)
 	if err != nil || !ok {
 		return err
@@ -215,8 +217,5 @@ func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, job supporterE
 	if err != nil {
 		return fmt.Errorf("notification: compose the %s email of %s: %w", job.Type, job.NotificationID, err)
 	}
-	if err := d.Mailer.Send(ctx, m); err != nil {
-		return fmt.Errorf("notification: send the %s email of %s: %w", job.Type, job.NotificationID, err)
-	}
-	return nil
+	return sendMail(ctx, d.Mailer, d.Rejections, run, box, m, fmt.Sprintf("%s email of %s", job.Type, job.NotificationID))
 }

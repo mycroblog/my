@@ -429,7 +429,9 @@ func (s *Service) link(path, token string) string {
 	return link
 }
 
-// VerifyEmail redeems an email verification token and marks its address verified. It fails
+// VerifyEmail redeems an email verification token and marks its address verified; when the
+// address is suppressed by a failure from before the token, it lifts the suppression
+// (reverified). It fails
 // with ErrInvalidToken when the token is unknown, expired, already used, or for another
 // purpose; a token works once.
 func (s *Service) VerifyEmail(ctx context.Context, token string) (userID string, err error) {
@@ -456,12 +458,16 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) (userID string,
 	if err != nil {
 		return "", err
 	}
+	// The address received the email of the token, so it receives email again (ADR-0086 §5).
+	if err := s.liftAfterVerification(ctx, t.EmailAddressID, t.IssuedAt, now); err != nil {
+		return "", err
+	}
 	return t.UserID, nil
 }
 
 // ResendVerificationEmail enqueues a new verification email for a user's primary address
 // (JobVerificationEmail). Earlier links keep working until they expire. It fails with ErrAlreadyVerified when the
-// address is verified, with ErrNotFound when the user has no primary address, and with a
+// address is verified and no hard bounce suppresses it, with ErrNotFound when the user has no primary address, and with a
 // *kernel.RateLimitedError after VerificationEmailLimit.
 func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) error {
 	if s.d.Mailer == nil {
@@ -472,7 +478,11 @@ func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) er
 		return err
 	}
 	if verified {
-		return ErrAlreadyVerified
+		if again, err := s.verifiesAgain(ctx, email.ID); err != nil {
+			return err
+		} else if !again {
+			return ErrAlreadyVerified
+		}
 	}
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: ResendVerificationEmail needs a RateLimiter")
