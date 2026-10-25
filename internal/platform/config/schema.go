@@ -734,11 +734,12 @@ var schema = []field{
 	},
 	{
 		key: "payments_provider",
-		doc: "The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout, and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.",
+		doc: "The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page, ADR-0099), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No payments: the webhook endpoint and the reconciliation do not run."},
 			{value: "stripe", inV0: true, doc: "Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out."},
+			{value: "payjp", inV0: true, doc: "PAY.JP on its API v1 (ADR-0099): plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.PaymentsProvider = v },
 	},
@@ -757,6 +758,29 @@ var schema = []field{
 		requiredWhen: "when `payments_provider = stripe`",
 		check:        checkStripeWebhookSecret,
 		set:          func(c *Config, v string) { c.PaymentsStripeWebhookSecret = v },
+	},
+	{
+		key:          "payments_payjp_secret_key",
+		doc:          "The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp` (ADR-0099 §7). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.",
+		secret:       true,
+		requiredWhen: "when `payments_provider = payjp`",
+		check:        checkPayjpSecretKey,
+		set:          func(c *Config, v string) { c.PaymentsPayjpSecretKey = v },
+	},
+	{
+		key:          "payments_payjp_public_key",
+		doc:          "The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js (ADR-0099 §3, §7).",
+		requiredWhen: "when `payments_provider = payjp`",
+		check:        checkPayjpPublicKey,
+		set:          func(c *Config, v string) { c.PaymentsPayjpPublicKey = v },
+	},
+	{
+		key:          "payments_payjp_webhook_token",
+		doc:          "The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp` (ADR-0099 §4). Test and live mode have different tokens.",
+		secret:       true,
+		requiredWhen: "when `payments_provider = payjp`",
+		check:        checkPayjpWebhookToken,
+		set:          func(c *Config, v string) { c.PaymentsPayjpWebhookToken = v },
 	},
 	{
 		key:   "payments_reconcile_interval",
@@ -942,6 +966,17 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 			}
 		}
 	}
+	if vals["payments_provider"] == "payjp" {
+		for _, k := range []string{"payments_payjp_secret_key", "payments_payjp_public_key", "payments_payjp_webhook_token"} {
+			if !present[k] {
+				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when payments_provider is payjp"})
+			}
+		}
+		sk, pk := vals["payments_payjp_secret_key"], vals["payments_payjp_public_key"]
+		if present["payments_payjp_secret_key"] && present["payments_payjp_public_key"] && strings.HasPrefix(sk, "sk_live_") != strings.HasPrefix(pk, "pk_live_") {
+			issues = append(issues, Issue{Key: "payments_payjp_public_key", Message: "must be of the mode of payments_payjp_secret_key (both test or both live)"})
+		}
+	}
 	if vals["billing_aws_filter"] == "tag" && !present["billing_aws_tag"] {
 		issues = append(issues, Issue{Key: "billing_aws_tag", Missing: true, Message: "required when billing_aws_filter is tag"})
 	}
@@ -1055,6 +1090,31 @@ func checkStripeSecretKey(v string) error {
 func checkStripeWebhookSecret(v string) error {
 	if !strings.HasPrefix(v, "whsec_") || len(v) == len("whsec_") {
 		return errors.New("must be a Stripe webhook signing secret (whsec_)")
+	}
+	return nil
+}
+
+func checkPayjpSecretKey(v string) error {
+	for _, p := range []string{"sk_test_", "sk_live_"} {
+		if strings.HasPrefix(v, p) && len(v) > len(p) {
+			return nil
+		}
+	}
+	return errors.New("must be a PAY.JP secret key (sk_test_, sk_live_)")
+}
+
+func checkPayjpPublicKey(v string) error {
+	for _, p := range []string{"pk_test_", "pk_live_"} {
+		if strings.HasPrefix(v, p) && len(v) > len(p) {
+			return nil
+		}
+	}
+	return errors.New("must be a PAY.JP public key (pk_test_, pk_live_)")
+}
+
+func checkPayjpWebhookToken(v string) error {
+	if !strings.HasPrefix(v, "whook_") || len(v) == len("whook_") {
+		return errors.New("must be a PAY.JP webhook token (whook_)")
 	}
 	return nil
 }

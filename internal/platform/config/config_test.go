@@ -584,6 +584,31 @@ func TestLoadInvalid(t *testing.T) {
 			},
 		},
 		{
+			name: "payjp without keys",
+			env:  with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+			want: []string{
+				"payments_payjp_secret_key (MY_PAYMENTS_PAYJP_SECRET_KEY): required when payments_provider is payjp",
+				"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): required when payments_provider is payjp",
+				"payments_payjp_webhook_token (MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN): required when payments_provider is payjp",
+			},
+		},
+		{
+			name: "payjp with swapped keys and a bare token",
+			env: with(with(with(with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+				"MY_PAYMENTS_PAYJP_SECRET_KEY", "pk_test_abc"), "MY_PAYMENTS_PAYJP_PUBLIC_KEY", "sk_test_abc"), "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_"),
+			want: []string{
+				"payments_payjp_secret_key (MY_PAYMENTS_PAYJP_SECRET_KEY): must be a PAY.JP secret key",
+				"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): must be a PAY.JP public key",
+				"payments_payjp_webhook_token (MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN): must be a PAY.JP webhook token",
+			},
+		},
+		{
+			name: "payjp keys of two modes",
+			env: with(with(with(with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+				"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_live_abc"), "MY_PAYMENTS_PAYJP_PUBLIC_KEY", "pk_test_abc"), "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc"),
+			want: []string{"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): must be of the mode of payments_payjp_secret_key"},
+		},
+		{
 			name: "vapid private key that is not a P-256 key",
 			env:  with(minimal(), "MY_VAPID_PRIVATE_KEY", "c2hvcnQ"),
 			want: []string{"vapid_private_key (MY_VAPID_PRIVATE_KEY): "},
@@ -701,7 +726,8 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_VAPID_PRIVATE_KEY", "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
 		"MY_KV", "valkey", "MY_VALKEY_URL", "valkey://user:pass@cache:6379/0",
 		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my",
-		"MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"), nil))
+		"MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc",
+		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc"), nil))
 	if err != nil {
 		t.Fatal(err)
 	}

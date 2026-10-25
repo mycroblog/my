@@ -125,6 +125,43 @@ type PaymentUnderTest struct {
 	// "" sends a wrong token, and the contract skips the cases of a tampered body, the time, and
 	// several signatures.
 	TimedSignature bool
+	// Expected, when not nil, is what the provider reports of a scenario that it cannot hold as
+	// given (PAY.JP API v1, ADR-0099: one currency, no incomplete subscriptions, its own IDs of
+	// checkouts and refunds); nil means the scenario as given.
+	Expected *PaymentExpected
+}
+
+// PaymentExpected is what a provider reports of a PaymentScenario where it differs from the
+// scenario as given. Each field left zero means the scenario as given.
+type PaymentExpected struct {
+	// Currencies are the currencies that MinimumAmount knows, of JPY and USD.
+	Currencies []string
+	// Snapshots maps the Ref of a scenario's subscription to what GetSubscription reports of it;
+	// a nil entry is a subscription that the provider cannot hold, which the contract skips.
+	Snapshots map[supporters.SubscriptionRef]*supporters.SubscriptionSnapshot
+	// Gone is what GetSubscription reports of a subscription that does not exist; nil means it
+	// fails with not_found.
+	Gone func(ref supporters.SubscriptionRef) supporters.SubscriptionSnapshot
+	// Checkouts are the scenario's Checkouts as GetCheckout reports them, in their order, with
+	// the provider's refs.
+	Checkouts []supporters.CheckoutResult
+	// Money is what the provider reports of each of the scenario's Money, in its order, with
+	// Final false for a pending one; an entry with no ID is a movement that the provider cannot
+	// hold, which the contract skips. nil means PaymentMovements of the scenario.
+	Money []supporters.MoneyMovement
+	// Notices are the kinds of the notices that the provider's webhooks carry; nil means all.
+	Notices []supporters.NoticeKind
+	// NoChangesWindow reports a provider that keeps its changes for longer than the contract
+	// looks back, so that ListChanges never fails with ErrChangesWindow.
+	NoChangesWindow bool
+}
+
+// expected returns the expectations of u, the zero ones without any.
+func (u PaymentUnderTest) expected() PaymentExpected {
+	if u.Expected == nil {
+		return PaymentExpected{}
+	}
+	return *u.Expected
 }
 
 // PaymentProviderFactory returns a provider whose account holds s. The factory registers the
@@ -198,8 +235,13 @@ func paymentAccount(t *testing.T, newProvider PaymentProviderFactory) {
 			t.Errorf("Location = %v, want %v", got, s.Location)
 		}
 	}
-	p := newProvider(t, paymentScenario(t)).Provider
-	for _, c := range []string{"JPY", "USD"} {
+	u := newProvider(t, paymentScenario(t))
+	p := u.Provider
+	currencies := u.expected().Currencies
+	if currencies == nil {
+		currencies = []string{"JPY", "USD"}
+	}
+	for _, c := range currencies {
 		if n, ok := p.MinimumAmount(c); !ok || n <= 0 {
 			t.Errorf("MinimumAmount(%s) = %d, %v, want a positive minimum", c, n, ok)
 		}
@@ -305,7 +347,11 @@ func paymentCheckouts(t *testing.T, newProvider PaymentProviderFactory) {
 	if err != nil || got.Status != supporters.CheckoutOpen || got.LocalID != NamedID("local-new") {
 		t.Errorf("GetCheckout(new) = %+v, %v, want open with our ID", got, err)
 	}
-	for _, want := range s.Checkouts {
+	checkouts := s.Checkouts
+	if e := u.expected(); e.Checkouts != nil {
+		checkouts = e.Checkouts
+	}
+	for _, want := range checkouts {
 		got, err := p.GetCheckout(ctx, want.Ref)
 		if err != nil || got != want {
 			t.Errorf("GetCheckout(%s) = %+v, %v, want %+v", want.Ref, got, err, want)
@@ -372,6 +418,9 @@ func paymentWebhooks(t *testing.T, newProvider PaymentProviderFactory) {
 		{EventID: "evt_cs", Kind: supporters.NoticeCheckout, ObjectID: "cs_1"},
 		{EventID: "evt_money", Kind: supporters.NoticeMoney, ObjectID: "ch_1"},
 		{EventID: "evt_other", Kind: supporters.NoticeIgnored, ObjectID: "cus_1"},
+	}
+	if kinds := u.expected().Notices; kinds != nil {
+		notices = slices.DeleteFunc(notices, func(n supporters.Notice) bool { return !slices.Contains(kinds, n.Kind) })
 	}
 	for _, n := range notices {
 		h, body := u.Deliver(n, false, s.Now)
@@ -444,8 +493,15 @@ func paymentSnapshots(t *testing.T, newProvider PaymentProviderFactory) {
 	failed := paymentSub("sub_failed", NamedID("local-failed"), supporters.StatusPastDue)
 	failed.LatestPaymentFailed = paymentNow.Add(-2 * 24 * time.Hour)
 	s.Subscriptions = append(s.Subscriptions, canceling, failed, paymentSub("sub_not_ours", "", supporters.StatusActive))
-	p := newProvider(t, s).Provider
+	u := newProvider(t, s)
+	p, e := u.Provider, u.expected()
 	for _, want := range s.Subscriptions {
+		if exp, ok := e.Snapshots[want.Ref]; ok {
+			if exp == nil {
+				continue
+			}
+			want = *exp
+		}
 		got, err := p.GetSubscription(t.Context(), want.Ref)
 		if err != nil {
 			t.Errorf("GetSubscription(%s) = %v", want.Ref, err)
@@ -455,8 +511,13 @@ func paymentSnapshots(t *testing.T, newProvider PaymentProviderFactory) {
 			t.Errorf("GetSubscription(%s) = %+v, want %+v", want.Ref, got, want)
 		}
 	}
-	if _, err := p.GetSubscription(t.Context(), "sub_unknown"); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
-		t.Errorf("GetSubscription(unknown) = %v, want not_found", err)
+	got, err := p.GetSubscription(t.Context(), "sub_unknown")
+	if e.Gone == nil {
+		if supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
+			t.Errorf("GetSubscription(unknown) = %v, want not_found", err)
+		}
+	} else if want := e.Gone("sub_unknown"); err != nil || !sameSnapshot(got, want) {
+		t.Errorf("GetSubscription(unknown) = %+v, %v, want %+v", got, err, want)
 	}
 }
 
@@ -497,12 +558,21 @@ func paymentMoneyScenario(t *testing.T) PaymentScenario {
 func paymentMoney(t *testing.T, newProvider PaymentProviderFactory) {
 	ctx := t.Context()
 	s := paymentMoneyScenario(t)
-	p := newProvider(t, s).Provider
+	u := newProvider(t, s)
+	p := u.Provider
 	all := PaymentMovements(s)
+	if e := u.expected(); e.Money != nil {
+		all = e.Money
+	}
 	var want []supporters.MoneyMovement
+	var pending string
 	for _, m := range all {
-		if m.Final {
+		switch {
+		case m.ID == "":
+		case m.Final:
 			want = append(want, m)
+		default:
+			pending = m.ID
 		}
 	}
 	got := listMoney(t, p, time.Time{})
@@ -544,17 +614,22 @@ func paymentMoney(t *testing.T, newProvider PaymentProviderFactory) {
 	if late := got[1]; late.OccurredOn != (supporters.Date{Year: 2026, Month: 10, Day: 2}) {
 		t.Errorf("OccurredOn of a movement at 00:30 in Tokyo = %s, want 2026-10-02", late.OccurredOn)
 	}
-	since := listMoney(t, p, s.Money[3].OccurredAt)
-	if len(since) == 0 || since[0].ID != "txn_usd" {
-		t.Errorf("ListMoney(since the USD payment) starts with %v, want txn_usd", since)
+	sinceAt := s.Money[3].OccurredAt
+	first := want[slices.IndexFunc(want, func(m supporters.MoneyMovement) bool { return !m.OccurredAt.Before(sinceAt) })]
+	since := listMoney(t, p, sinceAt)
+	if len(since) == 0 || since[0].ID != first.ID {
+		t.Errorf("ListMoney(since %s) starts with %v, want %s", sinceAt, since, first.ID)
 	}
-	if m, err := p.GetMoney(ctx, "txn_p1"); err != nil || !sameMovement(m, want[0]) {
-		t.Errorf("GetMoney(txn_p1) = %+v, %v, want %+v", m, err, want[0])
+	if m, err := p.GetMoney(ctx, want[0].ID); err != nil || !sameMovement(m, want[0]) {
+		t.Errorf("GetMoney(%s) = %+v, %v, want %+v", want[0].ID, m, err, want[0])
 	}
-	if _, err := p.GetMoney(ctx, "txn_pending"); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
-		t.Errorf("GetMoney(pending) = %v, want not_found", err)
+	if _, err := p.GetMoney(ctx, pending); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
+		t.Errorf("GetMoney(pending %s) = %v, want not_found", pending, err)
 	}
 	for i, m := range s.Money {
+		if all[i].ID == "" {
+			continue
+		}
 		ch, err := p.Resolve(ctx, supporters.Notice{EventID: "evt_" + m.ID, Type: "money", Kind: supporters.NoticeMoney, ObjectID: m.object()})
 		if err != nil {
 			t.Errorf("Resolve(%s) = %v", m.ID, err)
@@ -629,7 +704,8 @@ func paymentPages(t *testing.T, newProvider PaymentProviderFactory) {
 			ObjectID: string(s.Subscriptions[i].Ref), OccurredAt: s.Now.Add(time.Duration(i-200) * time.Minute),
 		})
 	}
-	p := newProvider(t, s).Provider
+	u := newProvider(t, s)
+	p := u.Provider
 	var subs []supporters.SubscriptionRef
 	cursor, pages := "", 0
 	for {
@@ -675,6 +751,9 @@ func paymentPages(t *testing.T, newProvider PaymentProviderFactory) {
 	}
 	if page.Until.Before(changes[len(changes)-1].OccurredAt) {
 		t.Errorf("ListChanges Until = %s, before its last notice", page.Until)
+	}
+	if u.expected().NoChangesWindow {
+		return
 	}
 	if _, err := p.ListChanges(ctx, s.Now.Add(-40*24*time.Hour), ""); !errors.Is(err, supporters.ErrChangesWindow) {
 		t.Errorf("ListChanges(40 days ago) = %v, want ErrChangesWindow", err)
