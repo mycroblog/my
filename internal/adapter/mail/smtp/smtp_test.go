@@ -43,9 +43,10 @@ type server struct {
 
 	mu        sync.Mutex
 	delivered []kernel.MailMessage
-	envelope  []string // MAIL FROM and RCPT TO arguments
-	auth      []string // decoded AUTH PLAIN credentials
-	plainText []string // commands received before STARTTLS
+	headers   []mail.Header // the headers of the delivered messages
+	envelope  []string      // MAIL FROM and RCPT TO arguments
+	auth      []string      // decoded AUTH PLAIN credentials
+	plainText []string      // commands received before STARTTLS
 }
 
 // newServer starts a server with the certificate of an httptest TLS server (valid for
@@ -166,10 +167,16 @@ func (s *server) record(data []byte) {
 		m.Header.Get("Message-Id") == "" || m.Header.Get("Date") == "" {
 		s.t.Errorf("headers = %v", m.Header)
 	}
-	for _, line := range strings.Split(string(data), "\r\n") {
+	// ReadDotBytes returns the message with "\n" line ends.
+	for line := range strings.Lines(string(data)) {
 		if len(line) > 998 {
 			s.t.Errorf("line of %d bytes", len(line))
 		}
+	}
+	from, err := mail.ParseAddress(m.Header.Get("From"))
+	if err != nil {
+		s.t.Errorf("parse From %q: %v", m.Header.Get("From"), err)
+		return
 	}
 	body, err := io.ReadAll(quotedprintable.NewReader(m.Body))
 	if err != nil {
@@ -178,8 +185,10 @@ func (s *server) record(data []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.delivered = append(s.delivered, kernel.MailMessage{
-		To: m.Header.Get("To"), Subject: subject, Text: strings.ReplaceAll(string(body), "\r\n", "\n"),
+		To: m.Header.Get("To"), FromName: from.Name, ReplyTo: m.Header.Get("Reply-To"), Subject: subject,
+		Text: strings.ReplaceAll(string(body), "\r\n", "\n"),
 	})
+	s.headers = append(s.headers, m.Header)
 }
 
 func (s *server) messages() []kernel.MailMessage {
@@ -211,7 +220,7 @@ func TestMailerContract(t *testing.T) {
 
 func TestAuthenticatesOnlyAfterSTARTTLS(t *testing.T) {
 	s, tc := newServer(t, true)
-	if err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{To: "alice@example.com", Subject: "Hi", Text: "x"}); err != nil {
+	if err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"}); err != nil {
 		t.Fatal(err)
 	}
 	s.mu.Lock()
@@ -231,7 +240,7 @@ func TestAuthenticatesOnlyAfterSTARTTLS(t *testing.T) {
 
 func TestRefusesServersWithoutSTARTTLS(t *testing.T) {
 	s, tc := newServer(t, false)
-	err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{To: "alice@example.com", Subject: "Hi", Text: "x"})
+	err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"})
 	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
 		t.Fatalf("Send to a server without STARTTLS = %v", err)
 	}
@@ -246,10 +255,68 @@ func TestRefusesServersWithoutSTARTTLS(t *testing.T) {
 func TestRefusesAnUntrustedCertificate(t *testing.T) {
 	s, _ := newServer(t, true)
 	m := newMailer(t, s, &tls.Config{ServerName: "127.0.0.1", MinVersion: tls.VersionTLS12})
-	err := m.Send(t.Context(), kernel.MailMessage{To: "alice@example.com", Subject: "Hi", Text: "x"})
+	err := m.Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"})
 	var unknown x509.UnknownAuthorityError
 	if !errors.As(err, &unknown) {
 		t.Fatalf("Send with an untrusted certificate = %v, want x509.UnknownAuthorityError", err)
+	}
+}
+
+// The envelope names the server as the sender, marks the message as automatic, identifies it
+// by a UUIDv7 at the sender's domain, adds Reply-To only with a contact address, and carries
+// the allowed extra headers.
+func TestEnvelopeHeaders(t *testing.T) {
+	s, tc := newServer(t, true)
+	m := newMailer(t, s, tc)
+	name := strings.TrimSpace(strings.Repeat("例のソーシャル ", 12))
+	if err := m.Send(t.Context(), kernel.MailMessage{
+		Category: kernel.MailNotification, To: "alice@example.com", FromName: name, ReplyTo: "admin@social.example",
+		Subject: "Hi", Text: "x", Headers: map[string]string{
+			kernel.HeaderListUnsubscribe:     "<https://social.example/mail/unsubscribe?token=x>",
+			kernel.HeaderListUnsubscribePost: "List-Unsubscribe=One-Click",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "bob@example.com", Subject: "Hi", Text: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	s.mu.Lock()
+	headers := s.headers
+	s.mu.Unlock()
+	got := s.messages()
+	if len(headers) != 2 || len(got) != 2 {
+		t.Fatalf("delivered %d messages, want 2", len(got))
+	}
+	first, second := headers[0], headers[1]
+	from, err := mail.ParseAddress(first.Get("From"))
+	if err != nil || from.Name != name || from.Address != "noreply@social.example" {
+		t.Errorf("From = %q (%+v, %v), want the server's name and the sender", first.Get("From"), from, err)
+	}
+	if first.Get("Reply-To") != "admin@social.example" {
+		t.Errorf("Reply-To = %q", first.Get("Reply-To"))
+	}
+	if _, ok := second["Reply-To"]; ok {
+		t.Errorf("Reply-To without a contact address = %q", second.Get("Reply-To"))
+	}
+	if second.Get("From") != "<noreply@social.example>" {
+		t.Errorf("From without a name = %q", second.Get("From"))
+	}
+	for i, h := range headers {
+		if h.Get("Auto-Submitted") != "auto-generated" {
+			t.Errorf("message %d: Auto-Submitted = %q", i, h.Get("Auto-Submitted"))
+		}
+		id, ok := strings.CutSuffix(strings.TrimPrefix(h.Get("Message-Id"), "<"), "@social.example>")
+		if !ok || !kernel.ValidID(id) {
+			t.Errorf("message %d: Message-ID = %q, want <UUIDv7@social.example>", i, h.Get("Message-Id"))
+		}
+	}
+	if headers[0].Get("Message-Id") == headers[1].Get("Message-Id") {
+		t.Error("two messages share a Message-ID")
+	}
+	if first.Get("List-Unsubscribe") != "<https://social.example/mail/unsubscribe?token=x>" ||
+		first.Get("List-Unsubscribe-Post") != "List-Unsubscribe=One-Click" {
+		t.Errorf("List-Unsubscribe headers = %v", first)
 	}
 }
 
@@ -267,7 +334,7 @@ func TestNewValidatesOptions(t *testing.T) {
 
 func TestReportsTheEnhancedStatusOfARejection(t *testing.T) {
 	s, tc := newServer(t, true)
-	err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{To: unknownRecipient, Subject: "Hi", Text: "x"})
+	err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: unknownRecipient, Subject: "Hi", Text: "x"})
 	if !errors.Is(err, kernel.ErrRecipientRejected) || kernel.EnhancedStatus(err) != "5.1.1" {
 		t.Fatalf("Send to an unknown recipient = %v (status %q), want ErrRecipientRejected with 5.1.1", err, kernel.EnhancedStatus(err))
 	}

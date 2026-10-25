@@ -15,7 +15,7 @@ import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterLift } from "../../../lib/useFocusAfterRemoval";
-import type { AdminAccountDetail, AdminAccountPrivateData } from "../api/accounts";
+import type { AdminAccountDetail, AdminAccountPrivateData, EmailSuppression } from "../api/accounts";
 import { type AccountAction, accountActionTextLimit, type Report } from "../api/reports";
 import {
   adminAccountRegistrationStateLabels,
@@ -27,6 +27,7 @@ import {
   usePrivateData,
   useCopyPasswordResetLink,
   useIssuePasswordResetLink,
+  useLiftEmailSuppression,
   useRemoveTwoFactor,
 } from "../hooks/useAdminAccounts";
 import { useHasPermission } from "../hooks/usePermissions";
@@ -84,6 +85,9 @@ function AccountPage({ id }: { id: string }) {
       </DetailSection>
       {!account.local && account.state !== "deleted" && canRefetch && <RefetchStatusesSection target={{ kind: "account", id: account.id }} />}
       {account.local && canManageRoles && <AccountRoles accountId={account.id} handle={isolate(handle)} />}
+      {account.local && account.email_verified !== undefined && (
+        <EmailSuppressionSection id={account.id} suppression={account.email_suppression} handle={isolate(handle)} />
+      )}
       {account.local && account.two_factor_enabled !== undefined && (
         <TwoFactorSection id={account.id} enabled={account.two_factor_enabled} handle={isolate(handle)} />
       )}
@@ -202,6 +206,56 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
         </DescriptionList>
       )}
     </Stack>
+  );
+}
+
+/**
+ * Whether emails no longer reach the primary address of a local account (a hard bounce or a complaint, ADR-0086 §5),
+ * since when, and lifting it, which asks first; the lift is recorded in the audit log. Nothing shows while the address
+ * is not suppressed, except what a lift just did.
+ */
+function EmailSuppressionSection({ id, suppression, handle }: { id: string; suppression: EmailSuppression | undefined; handle: string }) {
+  const t = useT();
+  const intl = useIntl();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // The button goes away with the lift: focus moves to the region's heading.
+  const focusHeading = useFocusAfterChange(headingRef, suppression === undefined);
+  const lift = useLiftEmailSuppression(id, handle, focusHeading);
+  const canLift = useHasPermission("manage_accounts");
+  if (suppression === undefined && lift.status === undefined) return null;
+  return (
+    <DetailSection title={t("client:admin.account.email_suppression.title")} headingRef={headingRef}>
+      <StatusMessage tone="success">{lift.status}</StatusMessage>
+      {suppression !== undefined && (
+        <Stack align="start" gap="3">
+          <p>{suppression.kind === "hard_bounce" ? t("client:admin.account.email_suppression.hard_bounce") : t("client:admin.account.email_suppression.complaint")}</p>
+          <p>{t("client:admin.account.email_suppression.since", { since: intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" }) })}</p>
+          {canLift && (
+            <>
+              <Hint>{t("client:admin.account.email_suppression.lift.description")}</Hint>
+              <Button onPress={lift.open} isPending={lift.isPending}>
+                {t("client:admin.account.email_suppression.lift")}
+              </Button>
+            </>
+          )}
+        </Stack>
+      )}
+      <ConfirmDialog
+        isOpen={lift.isOpen}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) lift.cancel();
+        }}
+        title={t("client:admin.account.email_suppression.confirm.title", { handle })}
+        description={t("client:admin.account.email_suppression.confirm.description")}
+        confirmLabel={t("client:admin.account.email_suppression.lift")}
+        cancelLabel={t("client:admin.account_actions.confirm.cancel")}
+        onConfirm={() => {
+          lift.confirm();
+        }}
+        isPending={lift.isPending}
+        {...(lift.error === undefined ? {} : { errorMessage: t("client:admin.account.email_suppression.failed", { reason: lift.error }) })}
+      />
+    </DetailSection>
   );
 }
 

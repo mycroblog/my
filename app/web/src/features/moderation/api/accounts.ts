@@ -21,6 +21,7 @@ export type AdminAccountState = Schemas["AdminAccountState"];
 export type AdminAccountRestriction = Schemas["AdminAccountRestriction"];
 export type AdminAccountRegistrationState = Schemas["AdminAccountRegistrationState"];
 export type AdminAccountPrivateData = Schemas["AdminAccountPrivateData"];
+export type EmailSuppression = Schemas["EmailSuppression"];
 export type AdminPasswordResetLink = Schemas["AdminPasswordResetLink"];
 
 /** The states of an account, in the order of the search's select. */
@@ -130,6 +131,21 @@ export function disableAccountTwoFactorMutation(api: Api) {
 }
 
 /**
+ * Lifts the suppression of the primary email address of a local account (POST /admin/accounts/{id}/email_suppression/lift),
+ * as the options of useMutation. The server records it in the audit log; an address that is not suppressed is a 409.
+ */
+export function liftAccountEmailSuppressionMutation(api: Api) {
+  return {
+    mutationKey: ["post", "/admin/accounts/{id}/email_suppression/lift"] as const,
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await api.fetch.POST("/admin/accounts/{id}/email_suppression/lift", { params: { path: { id } } });
+      // The middleware throws an ApiError for every error status; this is only for the types.
+      if (error !== undefined) throw new ApiError(error);
+    },
+  };
+}
+
+/**
  * Issues a password reset link for the user of a local account (POST /admin/accounts/{id}/password_reset_link), as
  * the options of useMutation. The server stores only the link's hash, so the answer is the only place it is shown;
  * the server records the issuance in the audit log.
@@ -152,6 +168,14 @@ export function issuePasswordResetLinkMutation(api: Api) {
  * on screen are fetched again.
  */
 export async function refreshAccountTwoFactor(queryClient: QueryClient, api: Api, id: string): Promise<void> {
+  await Promise.all([queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }), refreshAuditLog(queryClient)]);
+}
+
+/**
+ * What lifting the email suppression of account `id` changes: its page, which shows the suppression, and the audit log,
+ * which records the lift. Both are marked stale; resolves once those on screen are fetched again.
+ */
+export async function refreshAccountEmailSuppression(queryClient: QueryClient, api: Api, id: string): Promise<void> {
   await Promise.all([queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }), refreshAuditLog(queryClient)]);
 }
 

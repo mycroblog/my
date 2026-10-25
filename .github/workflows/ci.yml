@@ -135,6 +135,8 @@ jobs:
             run: scripts/task.sh i18n:licenses
           - name: mykit:licenses
             run: scripts/task.sh mykit:licenses
+          - name: mykit:ts-licenses
+            run: scripts/task.sh mykit:ts-licenses
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           - name: web:playwright-image-check
@@ -365,8 +367,8 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
-    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, when
-    # the mykit context changes (its licenses run in preflight).
+    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, and the
+    # npm package @mycroblog/mykit in pkg/mykit/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -384,6 +386,13 @@ jobs:
       - name: Build pkg/mykit once
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:warm
+      # The TypeScript checks of @mycroblog/mykit run with the client workspace's packages (tsc and Oxlint on Node.js).
+      - name: Set up Bun
+        if: needs.changes.outputs.mykit == 'true'
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        if: needs.changes.outputs.mykit == 'true'
+        run: scripts/task.sh web:install
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
           - name: agentkit:test
@@ -418,6 +427,21 @@ jobs:
           - name: api:license-scope (mykit)
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh api:license-scope
+          - name: mykit:ts-typecheck
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:ts-typecheck
+          - name: mykit:ts-lint
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:ts-lint
+          - name: mykit:ts-knip
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:ts-knip
+          - name: mykit:ts-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:ts-test
+          - name: mykit:ts-build
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:ts-build
 
   check:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when

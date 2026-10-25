@@ -173,10 +173,15 @@ func (s *Service) sendVerificationEmail(ctx context.Context, run queue.Job, job 
 	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertUserToken(ctx, tx, t) }); err != nil {
 		return err
 	}
-	return s.send(ctx, run, JobVerificationEmail, job.UserID, email.ID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, run, JobVerificationEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailVerifyEmailSubject(m.name),
-		Text:    m.l.ServerMailVerifyEmailBody(m.host, int(EmailVerificationTTL/time.Hour), m.name, s.link(PathVerifyEmail, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailVerifyEmailBody(m.name),
+			m.l.ServerMailVerifyEmailDetail(int(EmailVerificationTTL / time.Hour)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailVerifyEmailAction(), URL: s.link(PathVerifyEmail, secret)},
+		Reason: m.l.ServerMailVerifyEmailReason(m.host),
 	})
 }
 
@@ -217,10 +222,15 @@ func (s *Service) sendPasswordResetEmail(ctx context.Context, run queue.Job, job
 	if err != nil {
 		return err
 	}
-	return s.send(ctx, run, JobPasswordResetEmail, job.UserID, email.ID, kernel.MailMessage{
-		To:      email.Address,
+	return s.send(ctx, run, JobPasswordResetEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
 		Subject: m.l.ServerMailPasswordResetSubject(m.name),
-		Text:    m.l.ServerMailPasswordResetBody(m.host, m.name, int(PasswordResetTTL/time.Minute), s.link(PathResetPassword, secret)),
+		Paragraphs: []string{
+			m.l.ServerMailPasswordResetBody(m.name),
+			m.l.ServerMailPasswordResetDetail(int(PasswordResetTTL / time.Minute)),
+		},
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathResetPassword, secret)},
+		Reason: m.l.ServerMailPasswordResetReason(m.host),
 	})
 }
 
@@ -250,29 +260,38 @@ func (s *Service) sendPasswordNoticeEmail(ctx context.Context, run queue.Job, jo
 	if err != nil {
 		return err
 	}
-	msg := kernel.MailMessage{To: email.Address}
+	d := kernel.MailDraft{
+		Category: kernel.MailTransactional, To: email.Address,
+		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathForgotPassword, "")},
+		Reason: m.l.ServerMailReasonAccount(m.name),
+	}
 	switch job.Notice {
 	case passwordChanged:
-		msg.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordChangedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordChangedBody(m.name), m.l.ServerMailPasswordChangedDetail()}
 	case passwordRemoved:
-		msg.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
-		msg.Text = m.l.ServerMailPasswordRemovedBody(m.host, m.name, s.link(PathForgotPassword, ""))
+		d.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
+		d.Paragraphs = []string{m.l.ServerMailPasswordRemovedBody(m.name), m.l.ServerMailPasswordRemovedDetail()}
 	default:
 		return nil
 	}
-	return s.send(ctx, run, JobPasswordNoticeEmail, job.UserID, email.ID, msg)
+	return s.send(ctx, run, JobPasswordNoticeEmail, job.UserID, email.ID, m.composer, d)
 }
 
-// send sends m, the email of the run of the job jobType to the address emailAddressID of
-// userID, and records a rejected recipient as a hard bounce of the address. Its error names the
-// job's type and the user's ID with the Mailer's error, which never contains the address or the
-// body; when the hard bounce cannot be recorded, it is that error, which retries the job.
-func (s *Service) send(ctx context.Context, run queue.Job, jobType, userID, emailAddressID string, m kernel.MailMessage) error {
+// send composes d with c and sends it, the email of the run of the job jobType to the address
+// emailAddressID of userID, and records a rejected recipient as a hard bounce of the address.
+// Its error names the job's type and the user's ID with the composer's or the Mailer's error,
+// which never contains the address or the body; when the hard bounce cannot be recorded, it is
+// that error, which retries the job.
+func (s *Service) send(ctx context.Context, run queue.Job, jobType, userID, emailAddressID string, c kernel.MailComposer, d kernel.MailDraft) error {
 	if s.d.Mailer == nil {
 		return nil
 	}
-	err := s.d.Mailer.Send(ctx, m)
+	m, err := c.Compose(d)
+	if err != nil {
+		return fmt.Errorf("identity: compose the %s email of user %s: %w", jobType, userID, err)
+	}
+	err = s.d.Mailer.Send(ctx, m)
 	if err == nil {
 		return nil
 	}

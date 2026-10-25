@@ -26,9 +26,10 @@ type MailerHarness struct {
 }
 
 // MailerContract verifies a kernel.Mailer adapter: it delivers a plain-text message with a
-// non-ASCII subject and body intact, and refuses messages that would inject headers (a line
-// break in the subject, a recipient with a display name or a second address) with
-// kernel.ErrInvalidMail without delivering anything. It classifies the backend's refusals: an
+// non-ASCII subject, sender's name, and body intact, with its Reply-To, and refuses messages
+// that would inject headers (a line break in the subject, the sender's name, the Reply-To, or
+// an extra header, a header that is not allowed, a recipient with a display name or a second
+// address) with kernel.ErrInvalidMail without delivering anything. It classifies the backend's refusals: an
 // address that does not exist as kernel.ErrRecipientRejected (which is kernel.ErrMailRejected),
 // another permanent refusal as kernel.ErrMailRejected only, and a temporary one as neither,
 // with errors that never contain the recipient's address.
@@ -37,8 +38,11 @@ func MailerContract(t *testing.T, newHarness func(t *testing.T) MailerHarness) {
 	t.Run("DeliversAMessage", func(t *testing.T) {
 		h := newHarness(t)
 		m := kernel.MailMessage{
-			To:      "alice@example.com",
-			Subject: "Confirm your email address for social.example — メールアドレスの確認",
+			Category: kernel.MailTransactional,
+			To:       "alice@example.com",
+			FromName: "例のソーシャル \"social.example\"",
+			ReplyTo:  "admin@social.example",
+			Subject:  "Confirm your email address for social.example — メールアドレスの確認",
 			Text: "Welcome.\n\nOpen this link:\n\nhttps://social.example/auth/verify_email?token=my_evt_" + strings.Repeat("A", 43) +
 				"\n\n" + strings.Repeat("A long line that a transfer encoding has to wrap. ", 4) + "\nこんにちは。\n",
 		}
@@ -49,18 +53,27 @@ func MailerContract(t *testing.T, newHarness func(t *testing.T) MailerHarness) {
 		if len(got) != 1 {
 			t.Fatalf("delivered %d messages, want 1", len(got))
 		}
-		if got[0].To != m.To || got[0].Subject != m.Subject || strings.TrimRight(got[0].Text, "\n") != strings.TrimRight(m.Text, "\n") {
+		if got[0].To != m.To || got[0].Subject != m.Subject || got[0].FromName != m.FromName || got[0].ReplyTo != m.ReplyTo ||
+			strings.TrimRight(got[0].Text, "\n") != strings.TrimRight(m.Text, "\n") {
 			t.Errorf("delivered %+v, want %+v", got[0], m)
 		}
 	})
 	t.Run("RefusesHeaderInjection", func(t *testing.T) {
 		h := newHarness(t)
+		const tr = kernel.MailTransactional
 		for _, m := range []kernel.MailMessage{
-			{To: "alice@example.com", Subject: "Hello\r\nBcc: mallory@example.com", Text: "x"},
-			{To: "Alice <alice@example.com>", Subject: "Hello", Text: "x"},
-			{To: "alice@example.com, mallory@example.com", Subject: "Hello", Text: "x"},
-			{To: "alice@example.com\r\nBcc: mallory@example.com", Subject: "Hello", Text: "x"},
-			{To: "alice@example.com", Subject: "", Text: "x"},
+			{Category: tr, To: "alice@example.com", Subject: "Hello\r\nBcc: mallory@example.com", Text: "x"},
+			{Category: tr, To: "Alice <alice@example.com>", Subject: "Hello", Text: "x"},
+			{Category: tr, To: "alice@example.com, mallory@example.com", Subject: "Hello", Text: "x"},
+			{Category: tr, To: "alice@example.com\r\nBcc: mallory@example.com", Subject: "Hello", Text: "x"},
+			{Category: tr, To: "alice@example.com", Subject: "", Text: "x"},
+			{Category: tr, To: "alice@example.com", FromName: "Example\r\nBcc: mallory@example.com", Subject: "Hello", Text: "x"},
+			{Category: tr, To: "alice@example.com", ReplyTo: "admin@example.com\r\nBcc: mallory@example.com", Subject: "Hello", Text: "x"},
+			{Category: tr, To: "alice@example.com", Subject: "Hello", Text: "x", Headers: map[string]string{"Bcc": "mallory@example.com"}},
+			{Category: tr, To: "alice@example.com", Subject: "Hello", Text: "x", Headers: map[string]string{
+				kernel.HeaderListUnsubscribe: "<https://social.example/>\r\nBcc: mallory@example.com",
+			}},
+			{To: "alice@example.com", Subject: "Hello", Text: "x"},
 		} {
 			if err := h.Mailer.Send(t.Context(), m); !errors.Is(err, kernel.ErrInvalidMail) {
 				t.Errorf("Send(%q, %q) = %v, want ErrInvalidMail", m.To, m.Subject, err)
@@ -83,7 +96,7 @@ func MailerContract(t *testing.T, newHarness func(t *testing.T) MailerHarness) {
 			if c.to == "" {
 				continue
 			}
-			err := h.Mailer.Send(t.Context(), kernel.MailMessage{To: c.to, Subject: "Hello", Text: "x"})
+			err := h.Mailer.Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: c.to, Subject: "Hello", Text: "x"})
 			if err == nil {
 				t.Errorf("Send(%q) succeeded", c.to)
 				continue
