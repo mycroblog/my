@@ -11,6 +11,9 @@
 internal/interface/web/dist/*
 !internal/interface/web/dist/.gitkeep
 !pkg/
+# The Go package that embeds the bundled OpenAPI document (internal/interface/clientapi serves it).
+!api/api.go
+!api/openapi.yaml
 !locales/
 !app/
 app/**/node_modules

@@ -36,6 +36,7 @@
 - [DB の初期化と作り直し](operations/database.md)
 - [サーバーの起動・停止とヘルスチェック](operations/running.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
+- [外形監視とステータスページ（UptimeRobot・Better Stack・Gatus・Uptime Kuma・Upptime）](operations/monitoring.md)
 - [リンクプレビュー（OGP / X Card / fediverse:creator）](operations/link-previews.md)
 - [検索エンジンと AI クローラー（robots.txt・noindex・AI の拒否の表明）](operations/crawlers.md)
 - [サーバー単位の webhook](operations/webhooks.md)

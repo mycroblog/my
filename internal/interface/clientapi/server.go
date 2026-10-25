@@ -37,6 +37,8 @@ type Options struct {
 	SourceURL string
 	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
 	StatusPageURL string
+	// ServerHealth answers GET /instance/health (ADR-0085 §1); nil answers it as unavailable.
+	ServerHealth HealthCheck
 	// Instance reads the instance settings and texts; nil reads every setting as its default
 	// and no text.
 	Instance InstanceInfo
@@ -320,7 +322,7 @@ func (s *Server) Register(r Router) {
 	})
 	HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseURL:          BasePath,
-		BaseRouter:       routerMux{r: r, wrap: s.guard},
+		BaseRouter:       routerMux{r: r, wrap: s.wrapOperation},
 		Middlewares:      []MiddlewareFunc{s.localize},
 		ErrorHandlerFunc: s.requestError,
 	})

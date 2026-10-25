@@ -112,6 +112,8 @@ paths:
     $ref: ./paths/custom_emoji_requests.yaml
   /custom_emoji_requests/{id}/withdraw:
     $ref: ./paths/custom_emoji_requests_{id}_withdraw.yaml
+  /instance/health:
+    $ref: ./paths/instance_health.yaml
   /instance/documents/{kind}:
     $ref: ./paths/instance_documents_{kind}.yaml
   /instance/domain_actions:
@@ -1363,6 +1365,8 @@ components:
       $ref: ./components/schemas/RoleProblemReason.yaml
     SearchIndexing:
       $ref: ./components/schemas/SearchIndexing.yaml
+    ServerHealth:
+      $ref: ./components/schemas/ServerHealth.yaml
     SetInstanceTextRequest:
       $ref: ./components/schemas/SetInstanceTextRequest.yaml
     SetQuotePolicyRequest:

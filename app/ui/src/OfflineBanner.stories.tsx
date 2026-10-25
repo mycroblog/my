@@ -5,6 +5,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect } from "storybook/test";
 import { Button } from "./Button";
+import { ExternalLink } from "./ExternalLink";
 import { OfflineBanner } from "./OfflineBanner";
 
 const meta = {
@@ -19,6 +20,16 @@ type Story = StoryObj<typeof meta>;
 export const Offline: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("status")).toHaveTextContent("You're offline.");
+  },
+};
+
+/** With an action, a link to the server's status page, which follows the message outside the live region. */
+export const WithAction: Story = {
+  args: { action: <ExternalLink href="https://status.example/" variant="standalone">Check the server's status</ExternalLink> },
+  play: async ({ canvas }) => {
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent("You're offline.");
+    await expect(status).not.toContainElement(canvas.getByRole("link", { name: "Check the server's status" }));
   },
 };
 
@@ -65,7 +76,8 @@ export const InAPage: Story = {
     toggle.focus();
     await userEvent.keyboard("{Enter}");
     await expect(status).toHaveTextContent("You're offline.");
-    await expect(getComputedStyle(status).position).toBe("sticky");
+    // The bar around the live region sticks.
+    await expect(getComputedStyle(status.parentElement ?? status).position).toBe("sticky");
     await userEvent.keyboard("{Enter}");
     await expect(status).toBeEmptyDOMElement();
     await expect(toggle).toHaveFocus();

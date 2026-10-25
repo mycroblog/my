@@ -246,8 +246,14 @@ my job delete <id> [<id>...] # 実行せずに消す
 | --- | --- | --- |
 | `GET /healthz` | liveness | プロセスが HTTP に応答できる。DB などの依存は見ない（DB の遅延でプロセスを再起動させないため） |
 | `GET /readyz` | readiness | DB に接続でき、スキーマが適用済み |
+| `GET /api/v1/instance/health` | 外形監視・ステータスページ・クライアント（[ADR-0085](../adr/0085-uptime-monitoring-status-page.md)、web の役割） | readiness と同じ。結果をプロセスの中で 60 秒キャッシュする |
 
-- 200 の本文は `{"status":"ok"}`。
+- `/healthz`・`/readyz` の 200 の本文は `{"status":"ok"}`。
+- `/readyz` は要求のたびに DB を検査し、同時の要求は 1 回の検査にまとめる。
+- `/api/v1/instance/health` は、正常なら 200 と `{"status":"ok","checked_at":"<RFC 3339>"}`、障害なら 503 と `{"status":"unavailable","checked_at":...}` を返す（`Cache-Control: no-store`）。
+  DB に触れるのは監視の頻度や要求の数によらず 1 プロセスで最大 1 分に 1 回で、アクセストークンもレート制限も見ない。外形監視はプローブ（`/readyz`）ではなくこちらに向ける。
+  監視サービスごとの設定、監視の間隔と費用、メンテナンス中の扱いは [外形監視の運用ガイド](monitoring.md)（英語）。
+- 3 つともアクセスログには Debug のレベルで出し、トレースのスパンを作らない。
 - readiness が満たされないときは 503 と RFC 9457 の `application/problem+json`（[ADR-0016](../adr/0016-client-api-style.md)）を返す。
   `title` は `Accept-Language` に合わせて翻訳され、内部の詳細は含めない。原因（接続エラー、足りないテーブル名）はログに出る。
 - 1 回の readiness 判定は 3 秒で打ち切る。

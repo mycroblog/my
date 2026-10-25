@@ -11,6 +11,18 @@
     "defaultMessage": "Contact",
     "description": "Heading of the section of the server's information page with how to reach the server's operators."
   },
+  "about.status.title": {
+    "defaultMessage": "Server status",
+    "description": "Heading of the section of the server's information page that links to the server's status page, on another site."
+  },
+  "about.status.description": {
+    "defaultMessage": "The operators tell of outages and maintenance of this server on its status page, which stays reachable when this server does not answer.",
+    "description": "Paragraph in the server status section of the server's information page: what the status page is for."
+  },
+  "about.status.link": {
+    "defaultMessage": "View the status page",
+    "description": "Link to the server's status page, on another site, on the server's information page. The link leaves the app."
+  },
   "about.description.title": {
     "defaultMessage": "Description",
     "description": "Heading of the section of the server's information page with the server's description."
