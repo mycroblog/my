@@ -1,86 +1,87 @@
-# サポーター（課金のプラン）
+# Supporters (paid plans)
 
-運営者向けの手順です。決定は [ADR-0072](../adr/0072-supporter-plans-and-roles.md)（プランと加入とロール）と [ADR-0074](../adr/0074-payment-provider-port.md)（決済の事業者との境界）、設定のキーは [設定リファレンス](../reference/configuration.md#payments_provider) です。
+A guide for operators. The deployment key `payments_provider` is described in the [configuration reference](../reference/configuration.md#payments_provider).
 
-管理者が有効にしたときだけ、ローカルの利用者が Web から課金のプランに加入し、支払いを続ける間プランに結び付いたロールを持ちます（FR-910〜FR-912）。既定では無効で、プランも加入の導線もどこにも出ません。
+Only when an administrator enables it, local users can subscribe to a paid plan on the web and hold the role tied to the plan for as long as they keep paying. The program is off by default, and no plan or subscription entry point appears anywhere until it is enabled.
 
-**my は、特定商取引法をはじめとする法令への適合を保証しません。** 表記の内容、最終確認の画面の表示、消費税とインボイスの扱いは、運営者が自分の国の法令に照らして確かめてください（下の「運営者が確かめること」）。
+**my does not guarantee compliance with any law, including Japan's Act on Specified Commercial Transactions.** Operators must check the content of the disclosure, the final confirmation screen, and the handling of consumption tax and invoices against the laws of their own country (see "What operators must check" below).
 
-## 有効にする
+## Enabling the program
 
-1. デプロイの設定 `payments_provider` に決済の事業者を設定し、その事業者の鍵と webhook の秘密を渡します（ADR-0074。事業者ごとの手順は adapter の docs）。`none` のままでは有効にできません。
-2. メールを送る構成にします（`mail` を `none` 以外に）。加入できるのはメールアドレスの確認が済んだ利用者だけなので、メールを送らないサーバーでは有効にできません。
-3. 管理画面の「文書」で、特定商取引法に基づく表記など（インスタンスの文章 `commerce_disclosure`、Markdown）を書きます。`/about/commerce` に出て、事業者のダッシュボードにこの URL を登録できます。空でも有効にできますが、管理画面に警告が出ます。
-4. 管理画面の「ロール」で、プランに結び付けるロールを作ります。持っている人がいなく、利用者の権限（区分 `member`）だけを持ち、`moderator` を含むどのスタッフのロールよりも `position` の低いロールです。
-5. 管理画面の「サポーター」（`/admin/supporters`、権限 `manage_supporters`）でプランを作ります。名前・説明・月額・年払いの割引率・絵文字の作成数の上限・順位・公開を決め、ロールを選びます。
-   月と年の価格は、サーバーが事業者に作ります（ダッシュボードで価格を作らないでください）。価格ができるまでプランは「準備中」で、加入を受け付けません。
-6. 「サポーター」で課金を有効にします。
+1. Set the deployment key `payments_provider` to your payment provider and pass the provider's keys and webhook secret. Provider-specific steps are in [payments-stripe.md](payments-stripe.md) and [payments-payjp.md](payments-payjp.md). The program cannot be enabled while the key is `none`.
+2. Configure the server to send email (`mail` other than `none`). Only users with a confirmed email address can subscribe, so a server that sends no email cannot enable the program.
+3. In "Terms and policies" in the administration, write the commerce disclosure (for Japan, the notice required by the Act on Specified Commercial Transactions), the instance text `commerce_disclosure`, in Markdown. It is published at `/about/commerce`, and you can register that URL in the provider's dashboard.
+   The program can be enabled with the text empty, but the administration shows a warning.
+4. In "Roles" in the administration, create the role to tie to the plan. It must have no holders, only member permissions (group `member`), and a `position` lower than that of every staff role, `moderator` included.
+5. In "Supporters" in the administration (`/admin/supporters`, permission `manage_supporters`), create the plan. Set the name, description, monthly price, discount for yearly payment, limit on custom emoji creation, order, and visibility, and choose the role.
+   The server creates the monthly and yearly prices at the provider (do not create prices in the provider's dashboard). Until the prices exist, the plan is "preparing" and accepts no subscriptions.
+6. Enable the program in "Supporters".
 
-プランを作ると、そのロールは手で付け外しできなくなり、権限と位置はプランのフォームから変えます。上位のプラン（順位が大きい）は、下位のプランのロールより上の位置で、その権限をすべて持ち、絵文字の上限も下位以上にします。
+Once a plan exists, its role can no longer be granted or revoked by hand, and you change its permissions and position from the plan's form. A higher plan (a larger order) sits above the roles of the lower plans, has all of their permissions, and has an emoji limit at least as high as theirs.
 
-## 事業者の側の設定
+## Setup at the provider
 
-- **再試行（dunning）**: 支払いに失敗してから 7 日たつと、こちらがロールを外します（事業者の再試行と独立）。事業者の再試行の期間は 7 日以上にし、最後は「解約」にしてください。猶予の後に払われればロールは戻ります。
-- **顧客ポータル**: 支払い方法と請求書のために開きます。ポータルでのプランの変更は無効にし、解約は期間の終わりの解約だけにします（ADR-0074）。プランの変更と解約は my の画面から行います。
-- **返金**: my からは返金しません。運営者が事業者の画面で行います。全額の返金とチャージバックはロールをすぐ外し、事業者のサブスクリプションもすぐ解約します。一部の返金ではロールを外しません。チャージバックに勝ってもロールは戻らず、利用者は再加入します。
+- **Retries (dunning)**: Seven days after a payment fails, the server removes the role (independently of the provider's retries). Set the provider's retry period to at least 7 days and make the final action "cancel". When the payment succeeds after the grace period, the role comes back.
+- **Customer portal**: The portal is opened for payment methods and invoices. Turn off plan changes in the portal and allow only cancellation at the end of the period. Plan changes and cancellations are made on the server's own screens.
+- **Refunds**: The server never refunds. The operator refunds in the provider's dashboard. A full refund and a chargeback remove the role at once and cancel the provider's subscription at once. A partial refund does not remove the role. Winning a chargeback does not restore the role; the user subscribes again.
 
-## 利用者の画面
+## What users see
 
-- 利用者は Web の「サポーター」（`/settings/supporter`）でプランと支払いの間隔（月・年）を選び、最終の確認の画面を経て事業者の決済画面に移ります。カード情報はこのサーバーを通りません。決済画面からはこの画面に戻り、戻った画面が加入の状態を読み直します。
-  加入中は、プランの変更（上げる変更はすぐ日割りで、下げる変更と年払いから月払いへは期間の終わりに）、予約した変更の取り消し、解約（期間の終わりまで特典が続く）と解約の取り消し、支払い方法と請求書のための顧客ポータルを同じ画面から使います。
-- 加入できるのは、メールアドレスの確認が済んだこのサーバーの利用者で、凍結・削除の予約がないアカウントだけです。同時に加入できるプランは 1 つです。
-- `/about` に公開しているプランの区画が出ます。Tauri のアプリでは、加入の画面・`/about` のプランの区画・それらへのリンクを出しません（ADR-0072 §14）。特典（バッジ・カスタム絵文字・会計）はアプリでも使えます。
+- On the web, a user opens "Supporter plans" (`/settings/supporter`), picks a plan and a payment interval (month or year), goes through a final confirmation screen, and moves on to the provider's payment page. Card details never pass through this server. The payment page returns to this screen, which then reads the state of the subscription again.
+  While subscribed, the user can change plans from the same screen (an upgrade applies at once with proration, while a downgrade and a switch from yearly to monthly apply at the end of the period), cancel a scheduled change, cancel the subscription (the benefits last until the end of the period) and undo a cancellation, and open the customer portal for payment methods and invoices.
+- Only users of this server who have a confirmed email address and an account that is neither suspended nor scheduled for deletion can subscribe. A user can hold one plan at a time.
+- `/about` shows a section with the public plans. In the Tauri app, the subscription screen, the plans section of `/about`, and the links to them do not appear. The benefits (badge, custom emoji, finance) work in the app too.
 
-## 加入者への通知
+## Notifications to subscribers
 
-加入者には次の 3 つを、通知・Web Push・メール（主アドレス、本人の言語）で 1 回ずつ知らせます（ADR-0072 §16）。
+Subscribers are told once about each of the following, by notification, Web Push, and email (to the primary address, in the user's language).
 
-- 支払いの失敗（`supporter_payment_failed`）: 加入が支払いの遅れ（`past_due`）に入ったとき。猶予の終わりの日時（メールは UTC）と、支払い方法を直す画面（`/settings/supporter`）へのリンク。
-- 加入の終わり（`supporter_subscription_ended`）: 特典のある状態から、猶予の切れ・失効・返金かチャージバックに入ったとき。理由を書きます。アカウントの削除による終わりは知らせません。
-- プランの廃止（`supporter_plan_retired`）: 廃止したプランの加入者（申し込み中を除く）に。加入が更新されないこと。
-- サービスの終了の予告（`supporter_service_closure`）: 予告の開始で期間の終わりに解約した加入の加入者（申し込み中を除く）に。加入が更新されないこと（ADR-0088 §2）。予告の間は新しい加入を受け付けません。
+- Payment failure (`supporter_payment_failed`): when the subscription becomes past due (`past_due`). It gives the end of the grace period (in UTC in the email) and a link to the screen where the payment method can be fixed (`/settings/supporter`).
+- End of the subscription (`supporter_subscription_ended`): when a subscription leaves a state with benefits because the grace period ran out, it expired, or it ended with a refund or a chargeback. The message states the reason. An end caused by deleting the account is not announced.
+- Plan retirement (`supporter_plan_retired`): to the subscribers of a retired plan (except pending ones). It says the subscription will not renew.
+- Announcement of the end of the service (`supporter_service_closure`): to the subscribers whose subscription was cancelled at the end of its period when the announcement began (except pending ones). It says the subscription will not renew. No new subscriptions are accepted during the announcement.
 
-Web Push と通知の文面は支払いの画面へ導きません。Web クライアントだけが通知に加入の画面へのリンクを出し、Tauri のアプリは出しません（ADR-0072 §14）。メールのリンクはブラウザで開く Web クライアントです。
+The text of Web Push and notifications does not lead to the payment screen. Only the web client puts a link to the subscription screen in a notification; the Tauri app does not. The links in emails open the web client in a browser.
 
 ## CLI
 
-`my admin supporters` で、管理画面と同じ操作の一部を行えます（`my admin supporters -help`）。
+`my admin supporters` performs part of the operations of the administration (`my admin supporters -help`).
 
-- `status`: 課金が有効か、有効にするのに要るもの（事業者、メール）と続いている加入の数。
-- `enable`・`disable`: 課金の有効化と無効化。無効化は、続いている加入があれば断ります。
-- `plans`: プランの一覧（廃止したものを含む。準備中・廃止と加入中の数）。
-- `subscriptions`: 加入の一覧（`-plan`・`-state` で絞る）。`cancel <加入の ID>` は加入をすぐ解約します（返金なし）。
+- `status`: whether the program is enabled, what it needs before it can be enabled (a provider, email), and the number of running subscriptions.
+- `enable`, `disable`: enable and disable the program. Disabling is refused while any subscription is running.
+- `plans`: the list of plans (retired ones included), with the number of preparing and retired plans and of subscriptions.
+- `subscriptions`: the list of subscriptions (filter with `-plan` and `-state`). `cancel <subscription ID>` cancels a subscription at once (no refund).
 
-有効化・無効化・解約は、監査ログに CLI の操作として残ります。プランの作成・変更・廃止は管理画面か管理 API で行います。
+Enabling, disabling, and cancelling are written to the audit log as CLI operations. Creating, changing, and retiring plans is done in the administration or through the admin API.
 
-## 参加者の一覧
+## The list of members
 
-- インスタンス設定 `supporter_list_visibility`（「サーバーの設定」、[インスタンス設定](instance-settings.md)）で、加入中の人の一覧（`/about/supporters`）を誰に見せるかを選びます。既定の `off` では一覧も `/about` からのリンクも出ません。
-- 一覧に出るのは、加入中の人のうち、自分で「プロフィール」の設定から掲載を選んだ人だけです（既定は載せない）。出すのはプランの名前と、各人のアバター・表示名・ハンドルだけで、金額・月払いか年払いか・日付・人数は出しません。
-- 掲載の選択は、プランを変えても残り、加入が終わる（ロールが外れる）と消えます。もう一度加入した人は、また載せないところから始まります。
-- 一覧のページと API は、検索エンジンへの表明（`search_indexing`）に関わらず、いつも `noindex, noarchive` です（ADR-0071 §4）。
+- The instance setting `supporter_list_visibility` ("Server settings"; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
+- The list shows only the subscribers who chose to be listed in their profile settings (nobody is listed by default). It shows the plan name and each person's avatar, display name, and handle, and never amounts, whether the payment is monthly or yearly, dates, or counts.
+- A choice to be listed stays when the subscriber changes plans, and disappears when the subscription ends (the role is removed). Someone who subscribes again starts unlisted.
+- The list page and its API always send `noindex, noarchive`, whatever the search-engine setting (`search_indexing`) says.
 
-## 価格の変更・非公開・廃止
+## Changing prices, hiding plans, and retiring plans
 
-- 月額か割引率を変えると、新しい価格は新しい加入とプランの変更から使います。既存の加入者は元の価格のまま更新します。既存の加入者を新しい価格に移す操作はありません。移したいときは、新しいプランを作り、古いプランを廃止します。
-- 非公開にすると、新しい加入とそのプランへの変更を受け付けません。既存の加入は続きます。
-- 廃止は戻せません。そのプランの加入は期間の終わりに解約され（申し込み中のものはすぐ閉じ、支払いの遅れが猶予を超えたものはすぐ解約）、最後の加入が終わるとロールはふつうのロールに戻ります。
+- When you change the monthly price or the discount, the new price applies to new subscriptions and plan changes. Existing subscribers renew at their original price. There is no operation to move existing subscribers to a new price. To move them, create a new plan and retire the old one.
+- Hiding a plan stops new subscriptions and changes to that plan. Existing subscriptions continue.
+- Retiring a plan cannot be undone. Its subscriptions are cancelled at the end of their period (pending ones close at once, and ones whose payment is late beyond the grace period are cancelled at once). When the last subscription ends, the role goes back to an ordinary role.
 
-## アカウントと加入
+## Accounts and subscriptions
 
-- アカウントの削除と BAN（削除の予約）は、加入をすぐ解約します。返金はしません。BAN を覆しても加入は戻りません。
-- 凍結は、期間の終わりの解約を予約します。凍結を解いても自動では戻らず、本人が期間の終わりまでに解約を取り消すか、再加入します。
-- 管理者は「サポーター」の加入者の一覧から、1 つの加入をすぐ解約できます（返金なし。監査ログに残ります）。
+- Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund. Reversing a ban does not restore the subscriptions.
+- Suspending an account schedules cancellation at the end of the period. Lifting the suspension does not restore it automatically; the user cancels the cancellation before the end of the period or subscribes again.
+- From the list of subscribers in "Supporters", an administrator can cancel one subscription at once (no refund; it is written to the audit log).
 
-## 無効にする・事業者を替える
+## Disabling the program and changing providers
 
-- 続いている加入（申し込み中・有効・解約の予約・支払いの遅れ・猶予の切れ）が 1 つでもあれば、無効にできません。先にすべてのプランを廃止し、加入が終わってから無効にします。
-- 事業者を替えるときは、無効にしてから `payments_provider` を替え、新しい事業者で有効にし直します。既存の加入者は再加入します。設定の事業者が有効にしたときの事業者と違う間は、新しい加入と変更を断り、管理画面に警告が出ます。
+- The program cannot be disabled while any subscription is running (pending, active, scheduled to cancel, past due, or past the grace period). Retire every plan first and disable the program after the subscriptions have ended.
+- To change providers, disable the program, change `payments_provider`, and enable the program again with the new provider. Existing subscribers subscribe again. While the configured provider differs from the one the program was enabled with, the server refuses new subscriptions and changes, and the administration shows a warning.
 
-## 運営者が確かめること（要検証）
+## What operators must check (not yet verified)
 
-my はこれらを判断しません。運営者の国の法令と事業者の規約に照らして確かめてください。
+my does not judge any of these. Check them against the laws of your country and the terms of your provider.
 
-- 特定商取引法に基づく表記に載せる事項（事業者の名前・住所・電話番号・代金・支払いの時期と方法・提供の時期・解約の方法など）と、その公開の方法。
-- 最終確認の画面（特定商取引法 12 条の 6）で、事業者の決済画面と my の確認の画面を合わせて、分量・価格・支払いの時期・提供の時期・解約の方法と効果を表示できているか。
-- 消費税の扱いと、適格請求書（インボイス）を発行するか。
+- The items that the commerce disclosure must contain (the seller's name, address, and phone number, the price, when and how to pay, when the service is provided, how to cancel, and so on) and how it must be published.
+- That the final confirmation screen (Article 12-6 of the Act on Specified Commercial Transactions) shows the quantity, the price, the payment timing, the delivery timing, and the way to cancel and its effect, taking the provider's payment page and my's confirmation screen together.
+- The handling of consumption tax, and whether you issue qualified invoices.
