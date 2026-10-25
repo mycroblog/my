@@ -220,7 +220,7 @@ entries:
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
   - name: adapter-payment
     paths: ["internal/adapter/payment/**"]
-    docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0099-payjp-payment-adapter.md", "docs/operations/payments-stripe.md"]
+    docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0099-payjp-payment-adapter.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
 
   # --- Server: interfaces -------------------------------------------------------------------------------
   - name: client-api
