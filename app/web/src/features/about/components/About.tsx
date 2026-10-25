@@ -6,6 +6,7 @@ import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
+import { useStatusPageUrl } from "../../../lib/statusPage";
 import { DocumentLink, DocumentsSection } from "../../documents";
 import { AboutSupportersSection } from "../../supporters";
 import type { Instance, PublicDomainAction } from "../api/about";
@@ -15,11 +16,13 @@ import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/u
  * The body of the instance's information page (`/about`), under the page's heading: the thumbnail, the summary, the
  * description, the rules followed by its terms of service and privacy policy, the remote domains it moderates as far
  * as the instance lists them, what it states to search engines and AI crawlers, what running it costs and what its
- * supporters bring in as far as the instance publishes them, its supporter plans and the supporter list, its commerce disclosures, how to reach the operators, where to get its source code, and the license notices of what the web app bundles.
+ * supporters bring in as far as the instance publishes them, its supporter plans and the supporter list, its commerce disclosures, how to reach the operators,
+ * its status page, where to get its source code, and the license notices of what the web app bundles.
  * Everyone may read it, signed in or not.
  */
 export function About() {
   const about = useAbout();
+  const statusPageUrl = useStatusPageUrl();
   return (
     <Stack gap="8">
       {about.thumbnail !== undefined && <ServerThumbnail thumbnail={about.thumbnail} />}
@@ -43,6 +46,7 @@ export function About() {
       <AboutSupportersSection />
       {about.commerceDisclosureUrl !== undefined && <CommerceDisclosure url={about.commerceDisclosureUrl} />}
       {about.contact !== undefined && <Contact contact={about.contact} />}
+      {statusPageUrl !== undefined && <StatusPage url={statusPageUrl} />}
       {about.sourceUrl !== undefined && <SourceCode url={about.sourceUrl} />}
       <Licenses />
     </Stack>
@@ -198,6 +202,24 @@ function CommerceDisclosure({ url }: { url: string }) {
     <Section title={t("client:about.commerce.title")}>
       <p>
         <DocumentLink href={url}>{t("client:about.commerce.link")}</DocumentLink>
+      </p>
+    </Section>
+  );
+}
+
+/**
+ * The link to the instance's status page, where its operators tell of outages and maintenance (FR-810, ADR-0085 §6).
+ * The page is another site, so the link leaves the app (web-client/README.md Y12).
+ */
+function StatusPage({ url }: { url: string }) {
+  const t = useT();
+  return (
+    <Section title={t("client:about.status.title")}>
+      <p>{t("client:about.status.description")}</p>
+      <p>
+        <ExternalLink href={url} variant="standalone">
+          {t("client:about.status.link")}
+        </ExternalLink>
       </p>
     </Section>
   );

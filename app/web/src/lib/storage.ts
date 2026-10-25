@@ -266,6 +266,19 @@ export const timelinesKey = declareKey<StoredTimelines | null>("my:instance:time
   userData: false,
 });
 
+/**
+ * The instance's status page (GET /instance's `status_page_url`, an https URL) as last read, so that the offline bar can
+ * link to it when the server does not answer (lib/statusPage, ADR-0085 §6); null when the instance has none or has
+ * not been read on this browser. An instance setting, not the user's data.
+ */
+export const statusPageKey = declareKey<string | null>("my:instance:status-page", {
+  area: "local",
+  version: 1,
+  defaultValue: null,
+  parse: schemaParser(z.url({ protocol: /^https$/ })),
+  userData: false,
+});
+
 /** The saved compose state of one account (features/compose): its draft and outbox, checked further by the draft store. */
 export type StoredCompose = { draft: Record<string, unknown>; outbox: Record<string, unknown>[] };
 

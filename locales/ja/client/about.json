@@ -11,6 +11,18 @@
     "defaultMessage": "連絡先",
     "description": "Heading of the section of the server's information page with how to reach the server's operators."
   },
+  "about.status.title": {
+    "defaultMessage": "サーバーの状態",
+    "description": "Heading of the section of the server's information page that links to the server's status page, on another site."
+  },
+  "about.status.description": {
+    "defaultMessage": "このサーバーの障害やメンテナンスは、運営者がステータスページで知らせます。ステータスページは、このサーバーが応答しないときも開けます。",
+    "description": "Paragraph in the server status section of the server's information page: what the status page is for."
+  },
+  "about.status.link": {
+    "defaultMessage": "ステータスページを見る",
+    "description": "Link to the server's status page, on another site, on the server's information page. The link leaves the app."
+  },
   "about.description.title": {
     "defaultMessage": "説明",
     "description": "Heading of the section of the server's information page with the server's description."

@@ -175,6 +175,10 @@
     "defaultMessage": "Too many requests were sent to the server. What failed to load loads again at {time}.",
     "description": "Text of the bar at the top of the app while the server's rate limit refuses requests (HTTP 429). {time} is the time of day the app loads again, with seconds (for example 12:34:56). Screen readers announce it when it appears."
   },
+  "shell.status_page": {
+    "defaultMessage": "Check the server's status",
+    "description": "Link after the offline text of the bar at the top of the app, to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
   "shell.skip_to_main": {
     "defaultMessage": "Skip to main content",
     "description": "Link at the very start of every page, visible when focused, that moves keyboard focus past the navigation."

@@ -85,6 +85,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:display:autoplay` | localStorage | アニメーションの自動再生（§13） | いいえ |
 | `my:display:navigation` | localStorage | ナビゲーションの項目の順番と隠した項目（§9） | いいえ |
 | `my:instance:timelines` | localStorage | インスタンスが提供する公開タイムライン（§9） | いいえ |
+| `my:instance:status-page` | localStorage | 最後に読んだ `GET /instance` の `status_page_url`（§11、ADR-0085 §6） | いいえ |
 | `my:emoji:recent` | localStorage | よく使う絵文字（Unicode 絵文字の基の列とカスタム絵文字の `:shortcode:`）と、減衰させた回数・最後に使った時刻（§12、ADR-0091 §3） | いいえ |
 | `my:emoji:skin-tone` | localStorage | 絵文字のピッカーで選んだ肌の色（§12、ADR-0091 §3） | いいえ |
 | `my:compose:recent-tags` | localStorage | この端末で送った投稿で最近使ったハッシュタグ（16 個まで、新しい順。§12、ADR-0092 §1） | はい |

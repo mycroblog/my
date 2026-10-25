@@ -7,8 +7,9 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { timelineQueryOptions } from "./features/timeline";
-import { homeTimelineKey } from "./lib/storage";
+import { homeTimelineKey, statusPageKey } from "./lib/storage";
 import { instanceFixture, statusPage, timelineStatusFixture } from "./test/fixtures";
+import { newTabName } from "./test/links";
 import { apiBase, resumableSession, withViewer } from "./test/msw/http";
 import { server } from "./test/msw/server";
 import { renderApp } from "./test/render";
@@ -91,6 +92,61 @@ describe("the offline bar", () => {
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("feed", { name: "Local timeline" })).toBeInTheDocument();
     expectOfflineBar(false);
+  });
+
+  /** Serves an instance with a status page; offline, no request gets a response, as noResponseOffline does. */
+  function serveStatusPage() {
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        offline || unreachable ? HttpResponse.error() : HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" }),
+      ),
+    );
+  }
+
+  test("links to the server's status page after its message, outside the live region (FR-810)", async () => {
+    serveStatusPage();
+    await renderApp({ path: "/local" });
+    await screen.findByRole("feed", { name: "Local timeline" });
+    // GET /instance has answered.
+    await waitFor(() => {
+      expect(statusPageKey.read()).toBe("https://status.example/");
+    });
+    expect(screen.queryByRole("link", { name: newTabName("Check the server's status") })).not.toBeInTheDocument();
+
+    goOffline();
+    expectOfflineBar(true);
+    const link = screen.getByRole("link", { name: newTabName("Check the server's status") });
+    expect(link).toHaveAttribute("href", "https://status.example/");
+    for (const region of screen.getAllByRole("status")) expect(region).not.toContainElement(link);
+
+    goOnline();
+    expect(screen.queryByRole("link", { name: newTabName("Check the server's status") })).not.toBeInTheDocument();
+  });
+
+  test("a start without the network links to the status page that the server named last time", async () => {
+    serveStatusPage();
+    const view = await renderApp({ path: "/local" });
+    await screen.findByRole("feed", { name: "Local timeline" });
+    await waitFor(() => {
+      expect(statusPageKey.read()).toBe("https://status.example/");
+    });
+    view.unmount();
+
+    // A reload offline: GET /instance gets no response.
+    offline = true;
+    await renderApp({ path: "/local" });
+    await waitFor(() => {
+      expectOfflineBar(true);
+    });
+    expect(screen.getByRole("link", { name: newTabName("Check the server's status") })).toHaveAttribute("href", "https://status.example/");
+  });
+
+  test("has no link to a status page when the server has none", async () => {
+    await renderApp({ path: "/local" });
+    await screen.findByRole("feed", { name: "Local timeline" });
+    goOffline();
+    expectOfflineBar(true);
+    expect(screen.queryByRole("link", { name: newTabName("Check the server's status") })).not.toBeInTheDocument();
   });
 });
 

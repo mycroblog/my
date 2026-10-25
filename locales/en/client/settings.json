@@ -371,6 +371,10 @@
     "defaultMessage": "Settings pages",
     "description": "Heading of the list of links to the pages of the settings."
   },
+  "settings.menu.status_page": {
+    "defaultMessage": "Server status",
+    "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
   "settings.moderator_notifications.email": {
     "defaultMessage": "Also send them by email",
     "description": "Label of the switch that also sends the moderator notifications by email."

@@ -110,6 +110,25 @@ describe("the information page", () => {
     expect(within(source).queryByRole("term")).not.toBeInTheDocument();
   });
 
+  test("links to the server's status page in a new tab, after the contact, when the server has one (FR-810)", async () => {
+    serveInstance({ contact: { email: "admin@my.example" }, status_page_url: "https://status.example/" });
+    await renderApp({ path: "/about" });
+    const status = await screen.findByRole("region", { name: "Server status" });
+    const link = within(status).getByRole("link", { name: newTabName("View the status page") });
+    expect(link).toHaveAttribute("href", "https://status.example/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    const headings = within(screen.getByRole("main")).getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    expect(headings.slice(headings.indexOf("Contact"), headings.indexOf("Contact") + 3)).toEqual(["Contact", "Server status", "Source code"]);
+  });
+
+  test("has no status section when the server has no status page", async () => {
+    serveInstance({});
+    await renderApp({ path: "/about" });
+    await screen.findByRole("region", { name: "Source code" });
+    expect(screen.queryByRole("region", { name: "Server status" })).not.toBeInTheDocument();
+  });
+
   test("links to the license notices of what the web app bundles, which load in place of the app", async () => {
     const { user, leftTo } = await renderApp({ path: "/about" });
     const licenses = await screen.findByRole("region", { name: "Licenses" });

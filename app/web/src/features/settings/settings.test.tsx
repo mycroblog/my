@@ -20,6 +20,7 @@ import { apiBase, problem, signedInHandler, withViewer } from "../../test/msw/ht
 import { server } from "../../test/msw/server";
 import { nodeUploadFile } from "../../test/multipart";
 import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
+import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
 
 /**
@@ -818,5 +819,24 @@ describe("the settings page", () => {
       "/settings/account-status",
       "/settings/account",
     ]);
+  });
+
+  test("links to the server's status page under the menu, in a new tab, when the server has one (FR-810)", async () => {
+    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" })));
+    await renderApp({ path: "/settings" });
+
+    const menu = await screen.findByRole("navigation", { name: "Settings pages" });
+    const link = await within(menu).findByRole("link", { name: newTabName("Server status") });
+    expect(link).toHaveAttribute("href", "https://status.example/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(within(menu).getAllByRole("link").at(-1)).toBe(link);
+  });
+
+  test("has no link to a status page when the server has none", async () => {
+    await renderApp({ path: "/settings" });
+
+    const menu = await screen.findByRole("navigation", { name: "Settings pages" });
+    expect(within(menu).getAllByRole("link").at(-1)).toHaveAttribute("href", "/settings/account");
+    expect(within(menu).queryByRole("link", { name: newTabName("Server status") })).not.toBeInTheDocument();
   });
 });

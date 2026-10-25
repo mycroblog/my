@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { RailItem, Stack } from "@my/ui";
+import { Box, ExternalLink, RailItem, Stack } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { useStatusPageUrl } from "../../../lib/statusPage";
 import { type Permission, useViewerPermissions } from "../../moderation";
 import { useSupporterEntry } from "../../supporters";
 
@@ -29,21 +30,35 @@ const pages: readonly { href: string; label: ClientMessageKey; permission?: Perm
   { href: "/settings/account", label: "client:settings.account.title" },
 ];
 
-/** The links to the pages of the settings, as the items of the section menu; the page the user is on is current. */
+/**
+ * The links to the pages of the settings, as the items of the section menu; the page the user is on is current. Below
+ * them, set apart by a line, the help: the link to the instance's status page (FR-810, ADR-0085 §6), which leaves the
+ * app (web-client/README.md Y12); none when the instance has no status page.
+ */
 export function SettingsMenu({ pathname }: { pathname: string }) {
   const t = useT();
   const permissions = useViewerPermissions();
   const supporters = useSupporterEntry();
+  const statusPageUrl = useStatusPageUrl();
   const shown = pages.filter(
     (page) => (page.permission === undefined || permissions.includes(page.permission)) && (page.supporters === undefined || supporters),
   );
   return (
-    <Stack as="ul" gap="1">
-      {shown.map((page) => (
-        <li key={page.href}>
-          <RailItem form="section" href={page.href} icon={null} label={t(page.label)} current={pathname === page.href} />
-        </li>
-      ))}
-    </Stack>
+    <>
+      <Stack as="ul" gap="1">
+        {shown.map((page) => (
+          <li key={page.href}>
+            <RailItem form="section" href={page.href} icon={null} label={t(page.label)} current={pathname === page.href} />
+          </li>
+        ))}
+      </Stack>
+      {statusPageUrl !== undefined && (
+        <Box marginTop="3" border="top" paddingX="3" paddingTop="3">
+          <ExternalLink href={statusPageUrl} variant="standalone" size="sm">
+            {t("client:settings.menu.status_page")}
+          </ExternalLink>
+        </Box>
+      )}
+    </>
   );
 }
