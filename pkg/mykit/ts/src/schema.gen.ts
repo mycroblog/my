@@ -4205,6 +4205,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/accounts/{id}/email_suppression/lift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lift the suppression of the email address of a local account
+         * @description Lets the server send email again to the primary address of a local account's user, which
+         *     a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+         *     mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+         *     the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+         *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+         *     `manage_accounts` permission.
+         */
+        post: operations["liftAdminAccountEmailSuppression"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/roles": {
         parameters: {
             query?: never;
@@ -4760,6 +4785,61 @@ export interface paths {
          */
         post: operations["revokeInvite"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the service closure
+         * @description The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+         *     and whether its notice is short. Needs the `manage_service_closure` permission.
+         */
+        get: operations["getAdminServiceClosure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/closure/announcement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Announce the closure of the service
+         * @description Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+         *     of the announcement in effect. Each call records a new announcement, kept with the earlier
+         *     ones, and the audit log's `service_closure_announced`. The announcement shows in
+         *     `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+         *     closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+         *     a 400 that names the parameter; a server that is closed already answers the 409
+         *     `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+         *     answered with `short_notice`. Needs the `manage_service_closure` permission.
+         */
+        put: operations["announceServiceClosure"];
+        post?: never;
+        /**
+         * Withdraw the announcement of the closure
+         * @description Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+         *     audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+         *     server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+         *     `manage_service_closure` permission.
+         */
+        delete: operations["withdrawServiceClosure"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5554,6 +5634,13 @@ export interface components {
             followers_count?: number;
             /** @description The number of accounts that the account actively follows; present where `followers_count` is. */
             following_count?: number;
+            /**
+             * @description The account that the account moved to (ADR-0089), when it moved: clients show that it
+             *     moved, with a link to this one. Present on the account's own endpoints, where
+             *     `followers_count` is, and without a `moved` of its own (moves are not followed in
+             *     chains).
+             */
+            moved?: components["schemas"]["Account"];
         };
         /**
          * @description A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -5565,6 +5652,24 @@ export interface components {
             /** @description The name on the badge. */
             label: string;
             color: components["schemas"]["BadgeColor"];
+        };
+        /**
+         * @description The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+         *     `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+         *     its posts stay where they are.
+         */
+        AccountMove: {
+            /** @description The account that the moved account moved to; omitted when it is gone. */
+            target?: components["schemas"]["Account"];
+            /**
+             * @description What became of the user's follow of the moved account, for an `account_moved` only:
+             *     `followed`, the user follows `target` instead; `requested`, the user's follow of
+             *     `target` awaits its approval instead; and the user still follows the moved account
+             *     when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+             *     the user mutes the server of `target` (`domain_muted`).
+             * @enum {string}
+             */
+            outcome?: "followed" | "requested" | "blocking" | "blocked_by" | "domain_muted";
         };
         /** @description A metadata field of a profile as the user typed it. */
         AccountFieldSource: {
@@ -5693,6 +5798,12 @@ export interface components {
              */
             email_verified?: boolean;
             /**
+             * @description The suppression of the primary email address of a local account; omitted when it
+             *     is not suppressed. A moderator lifts it with
+             *     `POST /admin/accounts/{id}/email_suppression/lift`.
+             */
+            email_suppression?: components["schemas"]["EmailSuppression"];
+            /**
              * @description Whether the user of a local account signs in with two-factor authentication;
              *     omitted for a remote account.
              */
@@ -5747,6 +5858,22 @@ export interface components {
              * @description When the registration entered its `registration_state`.
              */
             state_changed_at: string;
+        };
+        /**
+         * @description The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+         *     after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+         *     email) stops every email but the verification email that the user asks for; verifying the
+         *     address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+         *     notification and announcement emails only.
+         */
+        EmailSuppression: {
+            /** @enum {string} */
+            kind: "hard_bounce" | "complaint";
+            /**
+             * Format: date-time
+             * @description When the failure that started the suppression happened.
+             */
+            since: string;
         };
         /**
          * @description Where the registration of a local account stands; a user made with the command line is
@@ -5895,7 +6022,8 @@ export interface components {
          *     `revealed_private_data` (a moderator was shown the account's email address and IP
          *     addresses), `two_factor_disabled` (an administrator removed the account's two-factor
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
-         *     a new password for the account's user). On a `domain`:
+         *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+         *     suppression of the primary email address of the account's user). On a `domain`:
          *     `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
          *     `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
          *     `user` (a registration):
@@ -5943,10 +6071,12 @@ export interface components {
          *     every token of the client, and `oauth_client_enabled`; the label is the client's name and its
          *     `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
          *     tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
-         *     the host.
+         *     the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
+         *     the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
+         *     and the label are `service_closure`.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -6003,7 +6133,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -6887,6 +7017,65 @@ export interface components {
              */
             revised_at?: string;
         };
+        /** @description The service closure as its administrators see it (ADR-0088 §1). */
+        AdminServiceClosure: {
+            state: components["schemas"]["ServiceClosureState"];
+            /**
+             * Format: date-time
+             * @description When the server closes; omitted for `none`.
+             */
+            closes_at?: string;
+            /**
+             * Format: date-time
+             * @description Until when the users may export their data after the closure; omitted for `none`.
+             */
+            export_until?: string;
+            /** @description The operator's message to the users; omitted when there is none. */
+            message?: string;
+            /**
+             * Format: date-time
+             * @description When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
+             */
+            announced_at?: string;
+            /**
+             * Format: date-time
+             * @description When the state last changed; omitted for `none`.
+             */
+            changed_at?: string;
+            /**
+             * @description Whether the announcement gives the users less than 30 days from `announced_at` to
+             *     `closes_at`, which the admin screen and the CLI warn about: the users may not have the
+             *     time to export their data and move their accounts. A short notice is allowed.
+             */
+            short_notice: boolean;
+        };
+        /** @description The schedule of an announcement of the closure of the service. */
+        AnnounceServiceClosureRequest: {
+            /**
+             * Format: date-time
+             * @description When the server closes. It has no lower bound, so that the server can close at short notice.
+             */
+            closes_at: string;
+            /**
+             * Format: date-time
+             * @description Until when the users may export their data after the closure; not before `closes_at`.
+             *     30 days after `closes_at` when omitted.
+             */
+            export_until?: string;
+            /** @description The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none. */
+            message?: string;
+        };
+        /**
+         * @description Where the server is in its closure (ADR-0088 §1):
+         *
+         *     - `none`: no closure is announced.
+         *     - `announced`: the closure is announced; the server runs as before until it closes.
+         *     - `closed`: the server is closed and delivers the deletion of its local accounts to the
+         *       other servers. The users can still sign in and export their data until `export_until`.
+         *     - `delivery_completed`: the server is closed and those deliveries have ended.
+         * @enum {string}
+         */
+        ServiceClosureState: "none" | "announced" | "closed" | "delivery_completed";
         /** @description A webhook endpoint (ADR-0060). Its secret is never shown again after it is made. */
         AdminWebhook: {
             id: components["schemas"]["Id"];
@@ -8167,6 +8356,7 @@ export interface components {
             limits: components["schemas"]["InstanceLimits"];
             timelines: components["schemas"]["InstanceTimelines"];
             federation: components["schemas"]["InstanceFederation"];
+            closure?: components["schemas"]["InstanceClosure"];
             /**
              * @description Whether the instance sends email (the server setting `mail` is not `none`). Without
              *     email, the moderator notifications come only in the app, so clients do not offer
@@ -8273,6 +8463,26 @@ export interface components {
              * @enum {string}
              */
             mode: "off" | "inbound" | "outbound" | "both";
+        };
+        /**
+         * @description The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+         *     the server closes; absent when none is announced. Clients show it on every screen with the
+         *     way to export the data and to move the account.
+         */
+        InstanceClosure: {
+            state: components["schemas"]["ServiceClosureState"];
+            /**
+             * Format: date-time
+             * @description When the server closes; it may have passed already.
+             */
+            closes_at: string;
+            /**
+             * Format: date-time
+             * @description Until when the users may still sign in and export their data after the closure.
+             */
+            export_until: string;
+            /** @description The operator's message to the users, as plain text; omitted when there is none. */
+            message?: string;
         };
         /** @description Limits that clients check before sending a request. */
         InstanceLimits: {
@@ -8796,6 +9006,7 @@ export interface components {
              */
             supporter_subscription?: components["schemas"]["SupporterSubscription"];
             relationship_severance?: components["schemas"]["RelationshipSeverance"];
+            account_move?: components["schemas"]["AccountMove"];
             /** @description The emoji of a `reaction`; omitted for the other types. */
             reaction?: components["schemas"]["ReactionEmoji"];
         };
@@ -8855,9 +9066,14 @@ export interface components {
          *     (the administrators retired the plan; the subscription ends with its period). Each is
          *     sent once per change of the subscription. A client must not lead from them to
          *     subscribing or paying where it offers no way to subscribe.
+         *     `account_moved` tells that an account that the user followed (`account`) moved to another
+         *     one; its `account_move` carries the target and what became of the user's follow. It is
+         *     sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+         *     account that the moderators limit moved, and the target does not get the limit; its
+         *     `account_move` carries the target, and it has no `account`.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -9186,11 +9402,13 @@ export interface components {
          *     deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
          *     member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
          *     and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-         *     `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
+         *     `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+         *     of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
+         *     admin role by default, ADR-0088). The others guard no client API operation
          *     yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure";
         /**
          * @description A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
          *     `:shortcode:` into the text.
@@ -9310,6 +9528,12 @@ export interface components {
              */
             email_moderator_notifications: boolean;
             /**
+             * @description Whether emails no longer reach the primary address, read-only; omitted when they do.
+             *     After a `hard_bounce`, the user asks for the verification email again to show that the
+             *     address works.
+             */
+            readonly email_suppression?: components["schemas"]["EmailSuppression"];
+            /**
              * @description Whether the web client inserts new timeline posts without asking, instead of offering them
              *     behind a "show new posts" button (ADR-0077). Off for a new user; the same on every device.
              */
@@ -9409,6 +9633,9 @@ export interface components {
          *       deleted; `reason` says why.
          *     - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
          *       reason in `theme_errors` (`PUT /admin/theme`).
+         *     - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
+         *       allow the operation: withdrawing an announcement when none is in effect, or announcing
+         *       the closure of a server that is closed already (`/admin/closure/announcement`).
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
          *     - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
@@ -10731,6 +10958,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminTheme"];
+            };
+        };
+        /** @description The service closure. */
+        AdminServiceClosure: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminServiceClosure"];
             };
         };
         /** @description The webhook. */
@@ -15573,6 +15810,28 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    liftAdminAccountEmailSuppression: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the account, local or remote. */
+                id: components["parameters"]["AdminAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The suppression is lifted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     listRoles: {
         parameters: {
             query?: never;
@@ -16121,6 +16380,49 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminInvite"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminServiceClosure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminServiceClosure"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    announceServiceClosure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnounceServiceClosureRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminServiceClosure"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    withdrawServiceClosure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminServiceClosure"];
             default: components["responses"]["Problem"];
         };
     };
