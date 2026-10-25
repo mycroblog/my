@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+put:
+  operationId: announceServiceClosure
+  summary: Announce the closure of the service
+  description: |
+    Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+    of the announcement in effect. Each call records a new announcement, kept with the earlier
+    ones, and the audit log's `service_closure_announced`. The announcement shows in
+    `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+    closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+    a 400 that names the parameter; a server that is closed already answers the 409
+    `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+    answered with `short_notice`. Needs the `manage_service_closure` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AnnounceServiceClosureRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminServiceClosure.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: withdrawServiceClosure
+  summary: Withdraw the announcement of the closure
+  description: |
+    Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+    audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+    server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+    `manage_service_closure` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  responses:
+    "200":
+      $ref: ../components/responses/AdminServiceClosure.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

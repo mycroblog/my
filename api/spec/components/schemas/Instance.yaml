@@ -34,6 +34,8 @@ properties:
     $ref: ./InstanceTimelines.yaml
   federation:
     $ref: ./InstanceFederation.yaml
+  closure:
+    $ref: ./InstanceClosure.yaml
   sends_email:
     description: |
       Whether the instance sends email (the server setting `mail` is not `none`). Without

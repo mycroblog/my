@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -36,6 +37,33 @@ type NodeMetadata struct {
 	// ThumbnailURL and ThumbnailAlt are the image that represents the instance and its alt text
 	// (thumbnail.url and thumbnail.alt).
 	ThumbnailURL, ThumbnailAlt string
+	// Closure is the closure of the service (serviceClosure); the zero value is none.
+	Closure NodeClosure
+}
+
+// NodeClosure is the closure of the service as NodeInfo's metadata states it (ADR-0088 §2).
+type NodeClosure struct {
+	// State is the state of instance.Closure (none, announced, closed, delivery_completed); ""
+	// is none.
+	State string
+	// ClosesAt and ExportUntil are its schedule, the zero time for none.
+	ClosesAt, ExportUntil time.Time
+}
+
+// nodeServiceClosure is metadata.serviceClosure: the state, and the dates while a closure is
+// announced or after it.
+type nodeServiceClosure struct {
+	State       string     `json:"state"`
+	ClosesAt    *time.Time `json:"closesAt,omitempty"`
+	ExportUntil *time.Time `json:"exportUntil,omitempty"`
+}
+
+func newNodeServiceClosure(c NodeClosure) nodeServiceClosure {
+	if c.State == "" || c.State == "none" {
+		return nodeServiceClosure{State: "none"}
+	}
+	closes, until := c.ClosesAt.UTC(), c.ExportUntil.UTC()
+	return nodeServiceClosure{State: c.State, ClosesAt: &closes, ExportUntil: &until}
 }
 
 // nodeMaintainer is the maintainer of Misskey's NodeInfo metadata.
@@ -53,11 +81,11 @@ type nodeThumbnail struct {
 
 // metadata returns NodeInfo's metadata: nodeName and, from m, the keys that Mastodon, Misskey,
 // and Pleroma read (nodeDescription; maintainer as Misskey; staffAccounts as Pleroma, the actor
-// ids) with the thumbnail.
+// ids) with the thumbnail, and the closure of the service.
 func metadata(name, sourceURL string, m NodeMetadata, mode federation.Mode) map[string]any {
 	// federationMode tells other servers and their users the direction this server federates
-	// in (ADR-0076).
-	out := map[string]any{"nodeName": name, "federationMode": mode}
+	// in (ADR-0076); serviceClosure tells them whether and when it closes (ADR-0088 §2).
+	out := map[string]any{"nodeName": name, "federationMode": mode, "serviceClosure": newNodeServiceClosure(m.Closure)}
 	if sourceURL != "" {
 		// Where users get the source (AGPL-3.0 section 13, ADR-0011), also when it is a mailto: address, which
 		// software.repository cannot hold.

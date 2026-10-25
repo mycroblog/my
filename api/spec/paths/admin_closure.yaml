@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+get:
+  operationId: getAdminServiceClosure
+  summary: Read the service closure
+  description: |
+    The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+    and whether its notice is short. Needs the `manage_service_closure` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      $ref: ../components/responses/AdminServiceClosure.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

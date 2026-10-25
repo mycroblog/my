@@ -315,6 +315,8 @@ export const auditActions = [
   "oauth_client_enabled",
   "oauth_client_host_denied",
   "oauth_client_host_allowed",
+  "service_closure_announced",
+  "service_closure_withdrawn",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */
@@ -343,6 +345,7 @@ export const auditTargetKinds = [
   "payment_provider",
   "oauth_client",
   "oauth_client_host",
+  "instance",
 ] as const satisfies readonly AuditTargetKind[];
 
 /**

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+description: |
+  Where the server is in its closure (ADR-0088 §1):
+
+  - `none`: no closure is announced.
+  - `announced`: the closure is announced; the server runs as before until it closes.
+  - `closed`: the server is closed and delivers the deletion of its local accounts to the
+    other servers. The users can still sign in and export their data until `export_until`.
+  - `delivery_completed`: the server is closed and those deliveries have ended.
+type: string
+enum: [none, announced, closed, delivery_completed]
