@@ -42,20 +42,16 @@ operator:
 # follows the rule.
 pending:
   japanese:
-    - docs/operations/database.md
     - docs/operations/email.md
     - docs/operations/instance-settings.md
     - docs/operations/link-previews.md
-    - docs/operations/releasing.md
     - docs/operations/webhooks.md
   design-links:
-    - docs/operations/database.md
     - docs/operations/email.md
     - docs/operations/instance-settings.md
     - docs/operations/link-previews.md
     - docs/operations/maintenance.md
     - docs/operations/monitoring.md
-    - docs/operations/releasing.md
     - docs/operations/webhooks.md
     - docs/reference/build-tags.md
     - docs/reference/commands.md

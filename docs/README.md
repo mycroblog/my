@@ -9,7 +9,7 @@
 - [CAPTCHA against bots (Turnstile / hCaptcha / reCAPTCHA)](operations/captcha.md)
 - [Domain blocks and handling reports](operations/moderation.md)
 - [Managing the key encryption key (KEK)](operations/key-management.md)
-- [Setting up and recreating the database](operations/database.md)
+- [Database: initializing, upgrading, and recreating](operations/database.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Serving media through a CDN (media_origin, origin pull, caching and purging)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)

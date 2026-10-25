@@ -11,7 +11,7 @@ my serve          # start according to the configured role (-config <file> reads
 ```
 
 `my serve` validates the configuration, builds the database, job queue and key-management adapters, and accepts HTTP on `listen`.
-It does not apply the schema: apply it with Atlas before starting (see [Database setup and rebuilding](database.md)).
+It does not apply the schema: apply it with Atlas before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service applies it before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503.
 
