@@ -43,11 +43,43 @@ await bot.run({ signal: controller.signal });
 `bot.run` verifies the account, receives the events until the signal aborts, then shuts down gracefully and resolves.
 It rejects when the bot cannot start: `NotBotError`, `ScopeError` (with `missing`), or a `ProblemError` of the server.
 
+## Examples
+
+Each example is a `createBot` in `bot.ts`, its tests against [`@mycroblog/mybot/testing`](#testing) in `bot.test.ts`,
+and a `main.ts` that runs it; the Go library has the same examples.
+
+| Example | What it does |
+| --- | --- |
+| [`examples/echo`](https://github.com/mycroblog/my/blob/main/pkg/mybot/ts/examples/echo) | replies to every mention with its text (`onMention`) |
+| [`examples/schedule`](https://github.com/mycroblog/my/blob/main/pkg/mybot/ts/examples/schedule) | posts a greeting at 9:00 every morning in a time zone (`every` with `catchUp: "latest"`) |
+| [`examples/commands`](https://github.com/mycroblog/my/blob/main/pkg/mybot/ts/examples/commands) | answers the commands `help`, `ping`, and `dice 2d6` (`onCommand`) |
+
+The bots read `MYBOT_SERVER`, `MYBOT_CLIENT_ID`, `MYBOT_CLIENT_SECRET`, `MYBOT_REFRESH_TOKEN`, and `MYBOT_STATE` (the
+state file, `./mybot-state.json` by default) from the environment ([`examples/env.ts`](https://github.com/mycroblog/my/blob/main/pkg/mybot/ts/examples/env.ts)):
+
+```sh
+MYBOT_SERVER=https://example.com MYBOT_CLIENT_ID=... MYBOT_CLIENT_SECRET=... MYBOT_REFRESH_TOKEN=... \
+  bun examples/echo/main.ts
+```
+
 ## Getting a token
 
-A bot always acts as a user: run it on an account of its own. Sign in to the server as that account, register an app
-(a confidential client) on the settings page, and issue a token to yourself there: that gives a client ID, a client
-secret, and a refresh token, without a redirect. Pass them as `oauth` and `refreshToken`.
+A bot always acts as a user: run it on an account of its own. The steps:
+
+1. Sign in to the server as the bot's account and open **Settings → Development** (`/settings/apps`).
+2. Register an app with the type **Confidential**. The form needs a redirect URI even when no redirect is used:
+   `http://127.0.0.1/callback` serves both this and the Go library's `examples/login`. Give it at least the scopes
+   below.
+3. Copy the client ID and the secret, which is shown once.
+4. Press **Issue token** on the app and choose the scopes (empty for all of the app's). The server issues an access
+   token and a refresh token for your own account, without a redirect, and shows them once.
+5. Pass the client ID and the secret as `oauth` and the refresh token as `refreshToken`. The access token is not
+   needed: the bot gets a new one with the refresh token.
+
+To authorize a bot through the consent page instead, use the Authorization Code flow with PKCE (mykit's
+`newCodeVerifier`, `codeChallenge`, and `exchange`): the Go library's
+[`examples/login`](https://github.com/mycroblog/my/blob/main/pkg/mybot/examples/login) receives the code on a loopback
+redirect and prints the refresh token, which works for a bot in either language.
 
 The scopes the default handlers need are `read:accounts`, `read:notifications`, `read:statuses` (for the event
 stream), and `write:statuses`, plus `write:accounts` with `setBotFlag`. A token without them stops the bot at start.
@@ -62,13 +94,17 @@ saves nothing for it.
 - In the default mode `"streaming"` the bot opens the event stream (`GET /api/v1/streaming`; mykit reconnects it).
   After every connection, the first and each reconnection, it reads the notifications newest first back to the position
   in its store, or to `catchUpLimit` (24 hours; `0` turns the catch-up off), and handles those it missed, oldest first.
+- The catch-up covers the time the stream is closed: a stop of the bot, or a cut connection. A notification that the
+  server sends while the stream stays open but that never reaches the bot, such as one a proxy drops, is older than the
+  next one the bot processes, and the catch-up does not find it
+  ([#1291](https://github.com/mycroblog/my/issues/1291)). Behind a proxy that drops events, use `mode: "polling"`.
 - Every notification is recorded in the store after its handler returns, and one recorded before is not handled again.
   A process that stops in the middle of a handler handles that notification again on the next start: replies carry an
   `Idempotency-Key` derived from the notification (`replyIdempotencyKey`), so the server posts each of them once.
 - `mode: "polling"` reads the notifications every `pollInterval` (a minute) instead, for networks whose proxies do not
   pass an event stream.
 - `onStatus` receives the new posts of the home timeline from the event stream alone: they are not caught up after a
-  disconnection, and the polling mode does not receive them.
+  disconnection or a restart, and the polling mode does not receive them.
 - Up to `concurrency` (4) handlers run at once; the events of one sender run one after the other.
 
 ## Handlers
@@ -147,9 +183,14 @@ All on by default, and each can be turned off but the first:
   when less than a tenth of the server's rate limit remains (its `RateLimit` fields), for the limit to reset. A write
   that would wait longer than `maxSendWait` (10 minutes) is dropped with a `BudgetExceededError` and logged.
 - The bot refuses to start on an account without the bot flag, which tells people and other servers that a program
-  posts: set the flag, or pass `setBotFlag: true` (the bot sets it) or `allowNonBot: true`.
+  posts: turn on **This is a bot** in **Settings → Profile**, or pass `setBotFlag: true` (the bot sets it, with
+  `write:accounts`) or `allowNonBot: true`. Posting from an app never sets the flag by itself.
 
-These are a floor: read the rules of the server (whether it allows bots, how often they may post) before you run one.
+Writes through `ctx.api` skip the budget and the reply limits: give their posts an `Idempotency-Key` from
+`replyIdempotencyKey`.
+
+These are a floor: **read the rules of the server** (whether it allows bots, how often they may post) before you run
+one, and set the limits lower when they ask for it.
 
 ## State
 
@@ -164,7 +205,8 @@ database). Run one process per bot: the store takes no lock.
 
 When the signal aborts, the bot closes the event stream, takes no new events, and waits `shutdownGrace` (10 seconds) for
 the running handlers. Then it aborts `ctx.signal` of those still running; their notifications stay unprocessed and are
-handled again by the next start (without posting twice, through the idempotency keys).
+handled again by the next start (without posting twice, through the idempotency keys). Give a container longer than
+the grace period to stop: `docker stop` waits 10 seconds by default, so use `docker stop -t 30`.
 
 ## Running once
 

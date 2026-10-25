@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# The build context of pkg/mybot/examples/Dockerfile (the repository root): the Go modules pkg/mykit and pkg/mybot.
+*
+!pkg/mykit/
+!pkg/mybot/
+pkg/mykit/ts/
+pkg/mykit/integration/
+pkg/mybot/ts/
+pkg/mybot/integration/
+**/mybot-state.json
