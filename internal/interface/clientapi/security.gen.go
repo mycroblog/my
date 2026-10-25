@@ -152,6 +152,8 @@ var operationSecurity = map[string]operationAccess{
 	"PATCH /api/v1/oauth_apps/{id}":                                       {Operation: "updateOAuthApp", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"PATCH /api/v1/preferences":                                           {Operation: "updatePreferences", Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/delete":                                        {Operation: "deleteOwnAccount", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
+	"POST /api/v1/accounts/move":                                          {Operation: "moveOwnAccount", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
+	"POST /api/v1/accounts/move/cancel":                                   {Operation: "cancelOwnAccountMove", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/password":                                      {Operation: "changePassword", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/password/remove":                               {Operation: "removePassword", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/accounts/{id}/block":                                    {Operation: "blockAccount", Scopes: []string{"write:blocks"}},

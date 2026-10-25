@@ -180,3 +180,33 @@ func TestReceives(t *testing.T) {
 		}
 	}
 }
+
+// TestMoveSends checks the federation modes that send the move of a local account (ADR-0089,
+// federation.md §14.1): its Move and the Update of the actor with movedTo are retractions, sent
+// in inbound too, and nothing goes out when the mode is off. The Update of an actor that has not
+// moved is the profile's, which inbound does not send. The Move goes to the followers only.
+func TestMoveSends(t *testing.T) {
+	const target = "https://new.example/users/alice"
+	move := subject{act: federation.OutboundActivity{ObjectKind: federation.OutboundMove, Type: federation.ActivityMove}, movedTo: target}
+	moved := subject{act: federation.OutboundActivity{ObjectKind: federation.OutboundAccount, Type: federation.ActivityUpdate}, movedTo: target}
+	profile := subject{act: federation.OutboundActivity{ObjectKind: federation.OutboundAccount, Type: federation.ActivityUpdate}}
+	for _, tc := range []struct {
+		name string
+		s    subject
+		// off inbound outbound both
+		want string
+	}{
+		{"Move", move, "x o o o"},
+		{"Update with movedTo", moved, "x o o o"},
+		{"Update of the profile", profile, "x x o o"},
+	} {
+		for i, m := range federation.Modes() {
+			if got, want := federation.Sends(m, tc.s.act, tc.s.retracting()), tc.want[2*i] == 'o'; got != want {
+				t.Errorf("%s: Sends(%s) = %v, want %v", tc.name, m, got, want)
+			}
+		}
+	}
+	if got := move.phases(); len(got) != 1 || got[0] != phaseFollowers {
+		t.Errorf("phases of a Move = %v, want the followers", got)
+	}
+}

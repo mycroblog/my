@@ -110,14 +110,20 @@ func newRemoteFollowEnv(t *testing.T, newHarness RemoteFollowFactory) *remoteFol
 	})
 	appfederation.NewFanOut(appfederation.FanOutDeps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Federation, Outbox: outbox,
-		Accounts: ae.accounts, Graph: e.graph, Follows: e.graph,
+		Accounts: ae.accounts, Graph: e.graph, Follows: e.graph, Moves: ae.accounts,
 		Clock: ae.clock, IDs: ae.ids, Host: contractHost,
 	}).RegisterJobs(e.handlers)
 	e.processor = appfederation.NewInboxProcessor(appfederation.InboxProcessorDeps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Inbox, Actors: storedActors{ae.accounts},
 		Fetcher: &inboxFetcher{clock: ae.clock, docs: map[string][]byte{}, errs: map[string]error{}}, Clock: ae.clock,
 	})
-	appfederation.RegisterFollowHandlers(e.processor, appfederation.FollowHandlerDeps{Graph: e.graph, Accounts: ae.accounts})
+	appfederation.RegisterFollowHandlers(e.processor, appfederation.FollowHandlerDeps{
+		Graph: e.graph, Accounts: ae.accounts, Moves: ae.accounts,
+		Refusals: appfederation.NewFollowRefusals(appfederation.FollowRefusalsDeps{
+			UnitOfWork: h.UnitOfWork, Outbound: h.Federation, Outbox: outbox, Inboxes: ae.accounts,
+			Clock: ae.clock, IDs: ae.ids, Host: contractHost,
+		}),
+	})
 	return e
 }
 
@@ -250,6 +256,12 @@ func (e *remoteFollowEnv) followOf(t *testing.T, uri string) graph.Follow {
 // as type → the document and the inboxes it goes to.
 func (e *remoteFollowEnv) sent(t *testing.T, followID string) []remoteSent {
 	t.Helper()
+	return e.sentOf(t, federation.OutboundFollow, followID)
+}
+
+// sentOf is sent for the activities about the object id of kind.
+func (e *remoteFollowEnv) sentOf(t *testing.T, kind federation.OutboundObjectKind, id string) []remoteSent {
+	t.Helper()
 	ctx := t.Context()
 	fanOut, _, ok := e.handlers.Lookup(appfederation.JobFanOut)
 	if !ok {
@@ -271,7 +283,7 @@ func (e *remoteFollowEnv) sent(t *testing.T, followID string) []remoteSent {
 			t.Fatalf("fan-out %s = %+v (%v), want Done", j.Payload, r, r.Err())
 		}
 	}
-	acts, err := e.h.Federation.ListOutboundActivitiesOf(ctx, federation.OutboundFollow, followID)
+	acts, err := e.h.Federation.ListOutboundActivitiesOf(ctx, kind, id)
 	if err != nil {
 		t.Fatalf("ListOutboundActivitiesOf: %v", err)
 	}

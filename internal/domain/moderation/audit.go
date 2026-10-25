@@ -191,6 +191,10 @@ const (
 	// AuditEmailSuppressionLifted: a moderator lifted the suppression of the primary email
 	// address of a local account (email_suppression_lifts, reason moderator).
 	AuditEmailSuppressionLifted AuditAction = "email_suppression_lifted"
+	// AuditAccountMoved: a local account that moderation limits moved to another local account,
+	// which does not inherit the limit (account_moves, ADR-0089); the user who moved is the
+	// actor, and the entry tells the moderators to decide on the target.
+	AuditAccountMoved AuditAction = "account_moved"
 	// AuditCustomEmojiCreated: a local custom emoji was registered (custom_emojis).
 	AuditCustomEmojiCreated AuditAction = "custom_emoji_created"
 	// AuditCustomEmojiImageReplaced: a local custom emoji got a new image (custom_emoji_images).
@@ -352,6 +356,7 @@ var auditActions = []struct {
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
 	{AuditEmailSuppressionLifted, AuditTargetAccount},
+	{AuditAccountMoved, AuditTargetAccount},
 	{AuditCustomEmojiCreated, AuditTargetCustomEmoji},
 	{AuditCustomEmojiImageReplaced, AuditTargetCustomEmoji},
 	{AuditCustomEmojiCopied, AuditTargetCustomEmoji},

@@ -75,7 +75,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 	a.FanOut = federation.NewFanOut(federation.FanOutDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Outbox: outbox,
 		Statuses: federation.ContentStatuses{Service: a.Content, Interactions: a.Interactions},
-		Accounts: a.Accounts, Graph: a.Graph, Parts: a.Statuses, Follows: a.Graph, Images: a.Media.Images,
+		Accounts: a.Accounts, Graph: a.Graph, Parts: a.Statuses, Follows: a.Graph, Images: a.Media.Images, Moves: a.Accounts,
 		EmojiTags: a.Media.EmojiTags, Quotes: a.Content,
 		Blocks:  a.Graph,
 		Reports: a.Moderation,

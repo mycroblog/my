@@ -295,6 +295,7 @@ const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
 	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
 	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
@@ -386,6 +387,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountActionLifted:
 		return true
 	case AdminAuditActionAccountDeletionCancelled:
+		return true
+	case AdminAuditActionAccountMoved:
 		return true
 	case AdminAuditActionAccountStatusesRefetchQueued:
 		return true
@@ -3806,7 +3809,8 @@ type AdminAppealPage struct {
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-// suppression of the primary email address of the account's user). On a `domain`:
+// suppression of the primary email address of the account's user), `account_moved` (a limited
+// local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3874,7 +3878,8 @@ type AdminAuditEntry struct {
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-	// suppression of the primary email address of the account's user). On a `domain`:
+	// suppression of the primary email address of the account's user), `account_moved` (a limited
+	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -7762,6 +7767,21 @@ type MoveInstanceRuleRequest struct {
 	Position int `json:"position"`
 }
 
+// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`
+// or `passkey`.
+type MoveOwnAccountRequest struct {
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	TargetAccountId Id `json:"target_account_id"`
+}
+
 // MuteAccountRequest The settings of a mute.
 type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
@@ -8609,6 +8629,18 @@ type PreviewDomainBlockImportRequest struct {
 //     allow the operation.
 //   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
 //     already.
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
+//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//     (`POST /accounts/move/cancel`).
+//   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
+//     no move to cancel.
+//   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
+//     user's account among its aliases (`alsoKnownAs`). Add the alias on that account first.
+//   - `/api/v1/problems/move-target-moved` (422): the account to move to moved itself.
+//   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
+//     own, is not found, cannot be fetched from its server, or is suspended here.
+//   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
+//     or moved to that account before.
 //   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -10872,6 +10904,9 @@ type GetHashtagTimelineParams struct {
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
+// MoveOwnAccountJSONRequestBody defines body for MoveOwnAccount for application/json ContentType.
+type MoveOwnAccountJSONRequestBody = MoveOwnAccountRequest
+
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest
 
@@ -12341,6 +12376,79 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MoveOwnAccountWithBody Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MoveOwnAccount Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPasswordStatus Get whether the authenticated user has a password
 	//
@@ -16469,6 +16577,109 @@ func (c *Client) DeleteOwnAccount(ctx context.Context, body DeleteOwnAccountJSON
 // Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLookupAccountRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MoveOwnAccountWithBody Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveOwnAccountRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MoveOwnAccount Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveOwnAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CancelOwnAccountMove Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelOwnAccountMoveRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -24036,6 +24247,73 @@ func NewLookupAccountRequest(server string, params *LookupAccountParams) (*http.
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMoveOwnAccountRequest calls the generic MoveOwnAccount builder with application/json body
+func NewMoveOwnAccountRequest(server string, body MoveOwnAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMoveOwnAccountRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewMoveOwnAccountRequestWithBody constructs an http.Request for the MoveOwnAccount method, with any body, and a specified content type
+func NewMoveOwnAccountRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCancelOwnAccountMoveRequest constructs an http.Request for the CancelOwnAccountMove method
+func NewCancelOwnAccountMoveRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/move/cancel")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35786,6 +36064,81 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccountWithResponse(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*LookupAccountResponse, error)
 
+	// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error)
+
+	// MoveOwnAccountWithResponse Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithResponse(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error)
+
+	// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error)
+
 	// GetPasswordStatusWithResponse Get whether the authenticated user has a password
 	//
 	// Whether the user signs in with a password, or with passkeys only after removing it
@@ -40325,6 +40678,108 @@ func (r LookupAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r LookupAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// MoveOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for MoveOwnAccount
+type MoveOwnAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MoveOwnAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MoveOwnAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MoveOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MoveOwnAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MoveOwnAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MoveOwnAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MoveOwnAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CancelOwnAccountMoveResponseDefaultHeaders the declared response headers of an HTTP default response for CancelOwnAccountMove
+type CancelOwnAccountMoveResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CancelOwnAccountMoveResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CancelOwnAccountMoveResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CancelOwnAccountMoveResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CancelOwnAccountMoveResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelOwnAccountMoveResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelOwnAccountMoveResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelOwnAccountMoveResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -57589,6 +58044,99 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 	return ParseLookupAccountResponse(rsp)
 }
 
+// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error) {
+	rsp, err := c.MoveOwnAccountWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveOwnAccountResponse(rsp)
+}
+
+// MoveOwnAccountWithResponse Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error) {
+	rsp, err := c.MoveOwnAccount(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveOwnAccountResponse(rsp)
+}
+
+// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error) {
+	rsp, err := c.CancelOwnAccountMove(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelOwnAccountMoveResponse(rsp)
+}
+
 // GetPasswordStatusWithResponse Get whether the authenticated user has a password
 //
 // Whether the user signs in with a password, or with passkeys only after removing it
@@ -64169,6 +64717,132 @@ func ParseLookupAccountResponse(rsp *http.Response) (*LookupAccountResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers LookupAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseMoveOwnAccountResponse parses an HTTP response from a MoveOwnAccountWithResponse call
+func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MoveOwnAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers MoveOwnAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCancelOwnAccountMoveResponse parses an HTTP response from a CancelOwnAccountMoveWithResponse call
+func ParseCancelOwnAccountMoveResponse(rsp *http.Response) (*CancelOwnAccountMoveResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelOwnAccountMoveResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers CancelOwnAccountMoveResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
