@@ -218,6 +218,9 @@ func newServer(t *testing.T, accountDomain string) *server {
 			return activitypub.NodeMetadata{
 				Description: "A server for examples.", ContactActorURI: account.ActorURI(host, aliceID), ContactName: "Alice",
 				ContactEmail: "admin@example.com", ThumbnailURL: "https://" + host + "/media/thumbnail.webp", ThumbnailAlt: "The beach",
+				Closure: activitypub.NodeClosure{
+					State: "announced", ClosesAt: time.Date(2027, 1, 31, 15, 0, 0, 0, time.UTC), ExportUntil: time.Date(2027, 3, 2, 15, 0, 0, 0, time.UTC),
+				},
 			}, nil
 		},
 		Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Inbox: s.inbox, Problem: problem,

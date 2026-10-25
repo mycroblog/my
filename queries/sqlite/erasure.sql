@@ -62,6 +62,18 @@ SELECT EXISTS (SELECT 1 FROM account_erasures WHERE account_id = sqlc.arg(accoun
 
 -- identity: the user's rows, which do not grow with other users ---------------------------------
 
+-- name: EraseEmailSuppressions :exec
+DELETE FROM email_suppressions WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = sqlc.arg(user_id));
+
+-- name: EraseEmailSuppressionLifts :exec
+DELETE FROM email_suppression_lifts WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = sqlc.arg(user_id));
+
+-- name: EraseEmailDeliveryFailures :exec
+DELETE FROM email_delivery_failures WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = sqlc.arg(user_id));
+
 -- name: EraseEmailVerifications :exec
 DELETE FROM user_email_verifications WHERE email_address_id IN (
   SELECT a.id FROM user_email_addresses a WHERE a.user_id = sqlc.arg(user_id));

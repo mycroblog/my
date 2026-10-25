@@ -78,6 +78,7 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 	}
 	// Children before their parents.
 	return runSteps(ctx, userID, "erase user data",
+		q.EraseEmailSuppressions, q.EraseEmailSuppressionLifts, q.EraseEmailDeliveryFailures,
 		q.EraseEmailVerifications, q.EraseUserPrimaryEmail, q.EraseEmailAddresses, q.ErasePasswordCredentialRemovals, q.ErasePasswordCredentials,
 		q.EraseTOTPRecoveryCodeUses, q.EraseTOTPRecoveryCodes, q.EraseTOTPEnrollmentRevocations, q.EraseTOTPEnrollments,
 		q.ErasePasskeyCredentialRevocations, q.ErasePasskeyCredentials,

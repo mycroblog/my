@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -21,6 +22,15 @@ type fakePreferences struct {
 	userID string
 	p      appidentity.UserPreferences
 	err    error
+	// suppression is the suppression of the user's address, if any.
+	suppression *identity.EmailSuppression
+}
+
+func (f *fakePreferences) PrimaryEmailSuppression(_ context.Context, userID string) (identity.EmailSuppression, bool, error) {
+	if userID != f.userID || f.suppression == nil {
+		return identity.EmailSuppression{}, false, nil
+	}
+	return *f.suppression, true, nil
 }
 
 func (f *fakePreferences) Preferences(_ context.Context, userID string) (appidentity.UserPreferences, error) {
@@ -93,6 +103,25 @@ func TestGetPreferences(t *testing.T) {
 	}
 	if res := e.get(t, "/preferences", map[string]string{"Authorization": "Bearer write"}); res.StatusCode != http.StatusForbidden {
 		t.Errorf("write token = %d, want 403", res.StatusCode)
+	}
+}
+
+func TestPreferencesShowAnUndeliverableAddress(t *testing.T) {
+	e, prefs := newPreferencesEnv(t)
+	since := time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
+	prefs.suppression = &identity.EmailSuppression{Kind: identity.EmailHardBounce, FailureID: "f", Since: since}
+	for _, res := range []*http.Response{
+		e.get(t, "/preferences", map[string]string{"Authorization": "Bearer read-accounts"}),
+		e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{}`),
+	} {
+		var got clientapi.Preferences
+		if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+			t.Fatal(err)
+		}
+		if res.StatusCode != http.StatusOK || got.EmailSuppression == nil ||
+			got.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !got.EmailSuppression.Since.Equal(since) {
+			t.Errorf("%s = %d %+v, want the hard bounce", res.Request.Method, res.StatusCode, got.EmailSuppression)
+		}
 	}
 }
 

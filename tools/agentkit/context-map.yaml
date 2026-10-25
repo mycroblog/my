@@ -163,7 +163,7 @@ entries:
       - "ActivityPub wire formats and federated URIs stay spec-compliant even in v0."
   - name: module-instance
     paths: ["internal/domain/instance/**", "internal/app/instance/**"]
-    docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md"]
+    docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md", "docs/adr/0088-service-shutdown-modes.md"]
   - name: module-webhook
     paths: ["internal/domain/webhook/**", "internal/app/webhook/**"]
     docs: ["docs/architecture/data-model/04-tables/11-webhook.md#411-webhook", "docs/reference/webhooks.md"]

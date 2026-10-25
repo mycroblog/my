@@ -430,6 +430,8 @@ paths:
     $ref: ./paths/admin_accounts_{id}_two_factor_disable.yaml
   /admin/accounts/{id}/password_reset_link:
     $ref: ./paths/admin_accounts_{id}_password_reset_link.yaml
+  /admin/accounts/{id}/email_suppression/lift:
+    $ref: ./paths/admin_accounts_{id}_email_suppression_lift.yaml
   /admin/roles:
     $ref: ./paths/admin_roles.yaml
   /admin/roles/{role}:
@@ -472,6 +474,10 @@ paths:
     $ref: ./paths/admin_invites.yaml
   /admin/invites/{id}/revoke:
     $ref: ./paths/admin_invites_{id}_revoke.yaml
+  /admin/closure:
+    $ref: ./paths/admin_closure.yaml
+  /admin/closure/announcement:
+    $ref: ./paths/admin_closure_announcement.yaml
   /admin/oauth_clients:
     $ref: ./paths/admin_oauth_clients.yaml
   /admin/oauth_clients/{id}/disable:
@@ -706,6 +712,8 @@ components:
       $ref: ./components/responses/AdminSupporterProgram.yaml
     AdminTheme:
       $ref: ./components/responses/AdminTheme.yaml
+    AdminServiceClosure:
+      $ref: ./components/responses/AdminServiceClosure.yaml
     AdminWebhook:
       $ref: ./components/responses/AdminWebhook.yaml
     AdminWebhookDelivery:
@@ -781,6 +789,8 @@ components:
       $ref: ./components/schemas/AdminAccountPrivateData.yaml
     AdminAccountRegistration:
       $ref: ./components/schemas/AdminAccountRegistration.yaml
+    EmailSuppression:
+      $ref: ./components/schemas/EmailSuppression.yaml
     AdminAccountRegistrationState:
       $ref: ./components/schemas/AdminAccountRegistrationState.yaml
     AdminAccountRestriction:
@@ -951,6 +961,12 @@ components:
       $ref: ./components/schemas/AdminSupporterSubscriptionPage.yaml
     AdminTheme:
       $ref: ./components/schemas/AdminTheme.yaml
+    AdminServiceClosure:
+      $ref: ./components/schemas/AdminServiceClosure.yaml
+    AnnounceServiceClosureRequest:
+      $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
+    ServiceClosureState:
+      $ref: ./components/schemas/ServiceClosureState.yaml
     AdminWebhook:
       $ref: ./components/schemas/AdminWebhook.yaml
     AdminWebhookAttempt:
@@ -1177,6 +1193,8 @@ components:
       $ref: ./components/schemas/InstanceDomainActionPage.yaml
     InstanceFederation:
       $ref: ./components/schemas/InstanceFederation.yaml
+    InstanceClosure:
+      $ref: ./components/schemas/InstanceClosure.yaml
     InstanceLimits:
       $ref: ./components/schemas/InstanceLimits.yaml
     InstanceRegistrations:

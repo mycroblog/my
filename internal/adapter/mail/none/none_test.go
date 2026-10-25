@@ -34,14 +34,16 @@ func (b *logBuffer) messages(t *testing.T) []kernel.MailMessage {
 	dec := json.NewDecoder(bytes.NewReader(b.buf.Bytes()))
 	for dec.More() {
 		var line struct {
-			To      string `json:"to"`
-			Subject string `json:"subject"`
-			Text    string `json:"text"`
+			To       string `json:"to"`
+			FromName string `json:"from_name"`
+			ReplyTo  string `json:"reply_to"`
+			Subject  string `json:"subject"`
+			Text     string `json:"text"`
 		}
 		if err := dec.Decode(&line); err != nil {
 			t.Fatal(err)
 		}
-		out = append(out, kernel.MailMessage{To: line.To, Subject: line.Subject, Text: line.Text})
+		out = append(out, kernel.MailMessage{To: line.To, FromName: line.FromName, ReplyTo: line.ReplyTo, Subject: line.Subject, Text: line.Text})
 	}
 	return out
 }

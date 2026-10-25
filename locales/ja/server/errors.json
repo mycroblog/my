@@ -43,6 +43,10 @@
     "defaultMessage": "このリクエストはリソースの現在の状態と矛盾しています。",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
+  "errors.email.not_suppressed": {
+    "defaultMessage": "このメールアドレスへの送信は止まっていません。",
+    "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
+  },
   "errors.export.in_progress": {
     "defaultMessage": "データのアーカイブをすでに作成中です。完了するまでお待ちください。",
     "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."
@@ -262,6 +266,10 @@
   "errors.supporters.plan_unavailable": {
     "defaultMessage": "このサポーターのプランは加入を受け付けていません。",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
+  },
+  "errors.service_closure.state": {
+    "defaultMessage": "いまのサービスの終了の状態ではこの操作はできません。",
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes."
   },
   "errors.supporters.subscription_state": {
     "defaultMessage": "いまの加入の状態ではこの操作はできません。",

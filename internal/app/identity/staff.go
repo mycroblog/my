@@ -85,29 +85,41 @@ func (s *Service) PermissionHolders(ctx context.Context, tx uow.Tx, p identity.P
 	return out, nil
 }
 
-// ModeratorMailbox returns the address and locale that a user's moderator notifications are sent
-// to by email. ok is false when the user does not want them by email, has no primary address,
-// or, where an unverified address keeps users out, has not verified it.
-func (s *Service) ModeratorMailbox(ctx context.Context, userID string) (address, locale string, ok bool, err error) {
+// Mailbox is where a user's notification emails go: the primary address and its ID, and the
+// user's locale.
+type Mailbox struct {
+	EmailAddressID string
+	Address        string
+	Locale         string
+}
+
+// ModeratorMailbox returns where a user's moderator notifications are sent by email. ok is
+// false when the user does not want them by email, has no primary address, where an
+// unverified address keeps users out, has not verified it, or when the suppression of the
+// address stops notifications (ADR-0086 §5).
+func (s *Service) ModeratorMailbox(ctx context.Context, userID string) (box Mailbox, ok bool, err error) {
 	prefs, err := s.d.Repository.FindPreferences(ctx, userID)
 	switch {
 	case errors.Is(err, ErrNotFound):
-		return "", "", false, nil
+		return Mailbox{}, false, nil
 	case err != nil:
-		return "", "", false, err
+		return Mailbox{}, false, err
 	case !prefs.EmailModeratorNotifications:
-		return "", "", false, nil
+		return Mailbox{}, false, nil
 	}
 	email, verified, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
 	switch {
 	case errors.Is(err, ErrNotFound):
-		return "", "", false, nil
+		return Mailbox{}, false, nil
 	case err != nil:
-		return "", "", false, err
+		return Mailbox{}, false, err
 	case s.d.RequireEmailVerification && !verified:
-		return "", "", false, nil
+		return Mailbox{}, false, nil
 	}
-	return email.Address, prefs.Locale, true, nil
+	if stopped, err := s.mailStopped(ctx, email.ID, identity.MailNotification); err != nil || stopped {
+		return Mailbox{}, false, err
+	}
+	return Mailbox{EmailAddressID: email.ID, Address: email.Address, Locale: prefs.Locale}, true, nil
 }
 
 // CountPendingRegistrations counts the registrations that await a moderator's decision

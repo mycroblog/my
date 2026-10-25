@@ -43,6 +43,10 @@
     "defaultMessage": "The request conflicts with the current state of the resource.",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
+  "errors.email.not_suppressed": {
+    "defaultMessage": "The email address is not suppressed.",
+    "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
+  },
   "errors.export.in_progress": {
     "defaultMessage": "An archive of your data is already being prepared. Wait until it is ready.",
     "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."
@@ -262,6 +266,10 @@
   "errors.supporters.plan_unavailable": {
     "defaultMessage": "The supporter plan takes no subscriptions.",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
+  },
+  "errors.service_closure.state": {
+    "defaultMessage": "The service closure does not allow that in its current state.",
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes."
   },
   "errors.supporters.subscription_state": {
     "defaultMessage": "Your subscription cannot do that in its current state.",

@@ -326,13 +326,43 @@ func (q *Queries) EraseEmailAddresses(ctx context.Context, userID string) error 
 	return err
 }
 
-const eraseEmailVerifications = `-- name: EraseEmailVerifications :exec
+const eraseEmailDeliveryFailures = `-- name: EraseEmailDeliveryFailures :exec
+DELETE FROM email_delivery_failures WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = $1)
+`
 
-DELETE FROM user_email_verifications WHERE email_address_id IN (
+func (q *Queries) EraseEmailDeliveryFailures(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, eraseEmailDeliveryFailures, userID)
+	return err
+}
+
+const eraseEmailSuppressionLifts = `-- name: EraseEmailSuppressionLifts :exec
+DELETE FROM email_suppression_lifts WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = $1)
+`
+
+func (q *Queries) EraseEmailSuppressionLifts(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, eraseEmailSuppressionLifts, userID)
+	return err
+}
+
+const eraseEmailSuppressions = `-- name: EraseEmailSuppressions :exec
+
+DELETE FROM email_suppressions WHERE email_address_id IN (
   SELECT a.id FROM user_email_addresses a WHERE a.user_id = $1)
 `
 
 // identity: the user's rows, which do not grow with other users ---------------------------------
+func (q *Queries) EraseEmailSuppressions(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, eraseEmailSuppressions, userID)
+	return err
+}
+
+const eraseEmailVerifications = `-- name: EraseEmailVerifications :exec
+DELETE FROM user_email_verifications WHERE email_address_id IN (
+  SELECT a.id FROM user_email_addresses a WHERE a.user_id = $1)
+`
+
 func (q *Queries) EraseEmailVerifications(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, eraseEmailVerifications, userID)
 	return err
