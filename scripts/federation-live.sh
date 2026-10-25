@@ -146,14 +146,18 @@ wait_ready relay.test /actor
 # eve (the signature scenario), judy (the relay scenario: nobody on my.test follows her), and the
 # administrator mod. ivan@my.test is the relay scenario's user, whom nobody on Mastodon follows. On GoToSocial: carol (alice's follower) and
 # erin (never follows alice). On Misskey: grace (alice's follower) and heidi (never follows alice), made
-# by its administrator mkadmin.
-log "creating alice, frank, ivan, and otto @my.test, bob, dave, eve, judy, and mod @mastodon.test, carol and erin @gts.test, and grace and heidi @misskey.test"
+# by its administrator mkadmin. The move scenario (TestMove) has arrive and leave on every server, and
+# leavemastodon, leavegotosocial, and leavemisskey on my.test: each of them moves once.
+log "creating alice, frank, ivan, otto, arrive, and leave<peer> @my.test, bob, dave, eve, judy, mod, arrive, and leave @mastodon.test, carol, erin, arrive, and leave @gts.test, and grace, heidi, arrive, and leave @misskey.test"
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username alice -email alice@my.test >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username frank -email frank@my.test >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username ivan -email ivan@my.test >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username otto -email otto@my.test >/dev/null
+for user in arrive leavemastodon leavegotosocial leavemisskey; do
+	printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username "$user" -email "$user@my.test" >/dev/null
+done
 
-for user in bob dave eve judy; do
+for user in bob dave eve judy arrive leave; do
 	"${compose[@]}" exec -T mastodon-web bin/tootctl accounts create "$user" --email "$user@mastodon.test" --confirmed --approve >/dev/null
 done
 # mod is the administrator whose token reads the reports (TestReportForwarding).
@@ -192,7 +196,7 @@ wait_ready my.test /readyz
 wait_ready mastodon.test /health
 
 gts=(exec -T gotosocial /gotosocial/gotosocial admin account)
-for user in carol erin; do
+for user in carol erin arrive leave; do
 	"${compose[@]}" "${gts[@]}" create --username "$user" --email "$user@gts.test" --password "$gts_password" >/dev/null
 	"${compose[@]}" "${gts[@]}" confirm --username "$user" >/dev/null
 done
@@ -212,7 +216,9 @@ misskey_token_admin="$(misskey_create mkadmin)"
 [[ -n "$misskey_token_admin" ]] || fail "could not create the administrator of misskey.test"
 misskey_token_grace="$(misskey_create grace "$misskey_token_admin")"
 misskey_token_heidi="$(misskey_create heidi "$misskey_token_admin")"
-[[ -n "$misskey_token_grace" && -n "$misskey_token_heidi" ]] || fail "could not create the Misskey users"
+misskey_token_arrive="$(misskey_create arrive "$misskey_token_admin")"
+misskey_token_leave="$(misskey_create leave "$misskey_token_admin")"
+[[ -n "$misskey_token_grace" && -n "$misskey_token_heidi" && -n "$misskey_token_arrive" && -n "$misskey_token_leave" ]] || fail "could not create the Misskey users"
 misskey admin/update-meta "$(jq -nc --arg i "$misskey_token_admin" '{i: $i, federation: "all"}')" >/dev/null
 misskey admin/roles/update-default-policies \
 	"$(jq -nc --arg i "$misskey_token_admin" '{i: $i, policies: {rateLimitFactor: 0}}')" >/dev/null
@@ -232,6 +238,8 @@ export FEDERATION_LIVE_MASTODON_ADMIN_TOKEN="$mastodon_token_mod"
 export FEDERATION_LIVE_GTS_PASSWORD="$gts_password"
 export FEDERATION_LIVE_MISSKEY_TOKEN="$misskey_token_grace"
 export FEDERATION_LIVE_MISSKEY_TOKEN_HEIDI="$misskey_token_heidi"
+export FEDERATION_LIVE_MISSKEY_TOKEN_ARRIVE="$misskey_token_arrive"
+export FEDERATION_LIVE_MISSKEY_TOKEN_LEAVE="$misskey_token_leave"
 export FEDERATION_LIVE_MISSKEY_ADMIN_TOKEN="$misskey_token_admin"
 env | grep '^FEDERATION_LIVE_' >"$work/scenarios.env"
 cd "$root"
