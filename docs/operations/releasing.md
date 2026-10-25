@@ -2,7 +2,7 @@
 
 リリースを作る人（決定者）向けの手順です。リリースは `release.yml` だけが作ります（[ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)）。
 `release.yml` は、指定したコミットで遅い検査（`slow-suite.yml`）を回し、すべて通ったときだけ、そのコミットにタグを打って GitHub Release を下書きで作り、
-クライアントライブラリ（[ライブラリ](#ライブラリmykit)）を同じ版で公開します。遅い検査の中身と、ほかにどこで回るかは [workflow.md の「What CI runs where」](../agents/workflow.md#what-ci-runs-where) にあります。
+クライアントライブラリ（[ライブラリ](#ライブラリmykit-と-mybot)）を同じ版で公開します。遅い検査の中身と、ほかにどこで回るかは [workflow.md の「What CI runs where」](../agents/workflow.md#what-ci-runs-where) にあります。
 
 ## 版
 
@@ -31,7 +31,7 @@
    `release` が通った後にジョブ `npm` だけが落ちたときは、原因（多くは trusted publisher の登録）を直してその run の落ちたジョブを回し直す
    （`gh run rerun <run-id> -R mycroblog/my --failed`）。すでに公開した版は飛ばす。
 4. 通ったら、下書きの Release（`gh release view v0.1.0 -R mycroblog/my`、または Releases の画面）を見て、自動で作られた変更の一覧を整え、
-   「mykit」の節（[ライブラリ](#ライブラリmykit)）と「API の変更」の節を書いて、公開する。プレリリースの版は、プレリリースとして下書きされる。
+   「mykit」と「mybot」の節（[ライブラリ](#ライブラリmykit-と-mybot)）と「API の変更」の節を書いて、公開する。プレリリースの版は、プレリリースとして下書きされる。
 
 ## API の変更
 
@@ -49,39 +49,49 @@
   `Sunset` の日が過ぎていなければならない。同じマイナーリリースの中で非推奨にして削除してはならない。
 - `Sunset` の日は `Deprecation` の日より前にしない（生成器が検査する）。非推奨にするときは、次のマイナーリリースの予定より後の日にする。
 
-## ライブラリ（mykit）
+## ライブラリ（mykit と mybot）
 
-クライアントライブラリ `mykit` は、サーバーと同じ版の番号で同じリリースに出します（[ADR-0093](../adr/0093-api-client-library-mykit.md) §8）。
+クライアントライブラリ `mykit` とボット制作ライブラリ `mybot` は、サーバーと同じ版の番号で同じリリースに出します
+（[ADR-0093](../adr/0093-api-client-library-mykit.md) §8、[ADR-0094](../adr/0094-bot-library-mybot.md) §1）。
 版を付ける手順は `scripts/release-libraries.sh`（試験は `scripts/release-libraries-test.sh`、`scripts/task.sh shell:test`）にあります。
 
 - **Go のタグ**: ジョブ `release` が、サーバーのタグ `vX.Y.Z` と同じコミットに `pkg/mykit/vX.Y.Z` を打つ。Go のモジュールはタグを打つだけで公開になり、
   proxy.golang.org が最初に求められたときに取り込む。タグがすでにあれば、最初のジョブで落ちる。
-- **npm の公開**: ジョブ `npm` が、`release` の後に `@mycroblog/mykit` をビルドし、`package.json` の版をリリースの版（`v` を除いた `X.Y.Z`）にして公開する。
+  - `pkg/mybot/go.mod` は、`main` では `pkg/mykit` を仮の版で require して `../mykit` に置き換えている（同じコミットの `mykit` で作るため）。
+    利用者は `replace` を読まないので、ジョブ `release` は、検査したコミットの上に `pkg/mybot/go.mod` だけを `require github.com/mycroblog/my/pkg/mykit vX.Y.Z` に変えたコミットを
+    GitHub の API で作り、そこに `pkg/mybot/vX.Y.Z` を打つ（`scripts/release-libraries.sh go-mod`）。このコミットはどのブランチにも載らず、タグが持つ。
+- **npm の公開**: ジョブ `npm` が、`release` の後に `@mycroblog/mykit` と `@mycroblog/mybot` をビルドし、`package.json` の版をリリースの版（`v` を除いた `X.Y.Z`）にして、
+  `mykit`・`mybot` の順に公開する。
+  - `@mycroblog/mybot` の `dependencies` の `@mycroblog/mykit`（リポジトリでは `workspace:*`）は、公開の前に同じ版 `X.Y.Z` に固定する。`npm publish` は `workspace:` を書き換えないため。
   - 認証は npm の trusted publishing（GitHub Actions の OIDC。ジョブの権限 `id-token: write`）で、npm のトークンは秘密にも置かない。
     trusted publishing は npm CLI 11.5.1 以降・Node.js 22.14.0 以降が要り、ジョブは `.tool-versions` の Node.js とその npm を使って、版を確かめてから公開する。
   - `npm publish --provenance` で来歴（provenance）を付ける。npm の画面のパッケージの版に、ビルドしたワークフローとコミットが出る。
   - プレリリースの版（`vX.Y.Z-<識別子>`）は dist-tag `next` に、正式な版は `latest` に出す。`npm install @mycroblog/mykit` が入れるのは `latest` だけ。
   - 同じ版がすでに registry にあれば、その公開を飛ばす（落ちたジョブの回し直しのため）。npm は一度使った版の番号を、取り消した後も使わせない。
-- **リリースノートの「mykit」の節**: ジョブ `release` が、下書きの Release の先頭に「mykit」の節（Go と npm の入れ方）を置く。公開する前に、節の末尾の注釈を次で置き換える。
-  - 手書きの層（再試行・ページング・ストリーミング・トークン）の破壊的変更。Conventional Commits の `!` が付いたコミットから拾う（v0 の間は許す）
-  - 生成したクライアントの型や関数で、この版で `Deprecated` にしたものと消したもの（「API の変更」の節と同じ操作）
+- **リリースノートの「mykit」と「mybot」の節**: ジョブ `release` が、下書きの Release の先頭に両方の節（Go と npm の入れ方）を置く。公開する前に、各節の末尾の注釈を置き換える。
+  - 「mykit」: 手書きの層（再試行・ページング・ストリーミング・トークン）の破壊的変更（Conventional Commits の `!` が付いたコミットから拾う。v0 の間は許す）と、
+    生成したクライアントの型や関数で、この版で `Deprecated` にしたものと消したもの（「API の変更」の節と同じ操作）
+  - 「mybot」: `mybot` の破壊的変更（`!` が付いたコミット。扱いは `mykit` と同じ）
 
-  どちらもなければ「なし」と書く。
+  なければ「なし」と書く。
 - **最初の公開の前の作業（決定者、1 回だけ。[#1167](https://github.com/mycroblog/my/issues/1167)）**: npm の trusted publisher はパッケージの設定に登録するので、
   パッケージがまだ registry にないうちは登録できない。
   1. npm の組織 `mycroblog` を作り、決定者を所有者にする。
-  2. `@mycroblog/mykit` の最初の版を手元から 1 度だけ公開する（2FA を使う。来歴は付かない）。リポジトリの根で次を回し、`package.json` の変更は戻す。
+  2. `@mycroblog/mykit` と `@mycroblog/mybot` の最初の版を手元から 1 度だけ公開する（2FA を使う。来歴は付かない）。
+     `mybot` は同じ版の `mykit` に依存するので `mykit` から出す。リポジトリの根で次を回し、`package.json` の変更は戻す。
 
      ```sh
      (cd app && bun install --frozen-lockfile)
      (cd pkg/mykit/ts && bun run build)
-     scripts/release-libraries.sh npm-version v0.0.0-placeholder.0 pkg/mykit/ts
+     (cd pkg/mybot/ts && bun run build)
+     scripts/release-libraries.sh npm-version v0.0.0-placeholder.0 pkg/mykit/ts pkg/mybot/ts
      (cd pkg/mykit/ts && npm publish --access public --tag next)
-     git checkout -- pkg/mykit/ts/package.json
+     (cd pkg/mybot/ts && npm publish --access public --tag next)
+     git checkout -- pkg/mykit/ts/package.json pkg/mybot/ts/package.json
      ```
 
-  3. npmjs.com のパッケージの Settings の「Trusted Publisher」で GitHub Actions を選び、Organization or user `mycroblog`、Repository `my`、
-     Workflow filename `release.yml` を登録する（Environment は空のまま）。
+  3. 2 つのパッケージそれぞれで、npmjs.com のパッケージの Settings の「Trusted Publisher」で GitHub Actions を選び、
+     Organization or user `mycroblog`、Repository `my`、Workflow filename `release.yml` を登録する（Environment は空のまま）。
   4. 同じ Settings の「Publishing access」を「Require two-factor authentication and disallow tokens」にする。trusted publishing は OIDC なので影響しない。
 
   登録の前に `release.yml` を回すと、ジョブ `npm` が認証で落ちる。登録した後に、そのジョブだけを回し直せばよい。
@@ -95,15 +105,18 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
 ```
 
 - 遅い検査が落ちるブランチで回すと、`release` のジョブが skip され、タグができないことを確かめられる（`gh api repos/mycroblog/my/git/ref/tags/v0.0.0-test.1` が 404）。
-- 通るブランチで回すと、そのブランチの先頭にタグ（サーバーと `pkg/mykit/v0.0.0-test.1`）と下書きの Release ができ、
-  `@mycroblog/mykit@0.0.0-test.1` が dist-tag `next` に来歴付きで公開される。npm の版の画面で来歴を確かめたら、タグと Release を消す。
+- 通るブランチで回すと、タグ（ブランチの先頭にサーバーと `pkg/mykit/v0.0.0-test.1`、その上のコミットに `pkg/mybot/v0.0.0-test.1`）と下書きの Release ができ、
+  `@mycroblog/mykit@0.0.0-test.1` と `@mycroblog/mybot@0.0.0-test.1` が dist-tag `next` に来歴付きで公開される。
+  `pkg/mybot/v0.0.0-test.1` の `pkg/mybot/go.mod` が `pkg/mykit v0.0.0-test.1` を require し、npm の `@mycroblog/mybot@0.0.0-test.1` が `@mycroblog/mykit` の `0.0.0-test.1` に依存し、
+  npm の版の画面に来歴があることを確かめたら、タグと Release を消す。
 
   ```sh
   gh release delete v0.0.0-test.1 -R mycroblog/my --cleanup-tag --yes
   gh api -X DELETE repos/mycroblog/my/git/refs/tags/pkg/mykit/v0.0.0-test.1
+  gh api -X DELETE repos/mycroblog/my/git/refs/tags/pkg/mybot/v0.0.0-test.1
   ```
 
-  npm に出た版は、72 時間のうちなら `npm unpublish @mycroblog/mykit@0.0.0-test.1` で取り消せるが、その番号は二度と使えない。
+  npm に出た版は、72 時間のうちなら `npm unpublish @mycroblog/mybot@0.0.0-test.1`（`mykit` も同じ）で取り消せるが、その番号は二度と使えない。
   proxy.golang.org がすでに取り込んだ Go の版は、タグを消しても残る。試す版の番号は、正式な版と重ならない `v0.0.0-test.N` にする。
 
 ## 成果物

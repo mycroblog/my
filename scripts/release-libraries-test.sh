@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests scripts/release-libraries.sh on copies of the libraries' package.json in a temporary directory; it changes
-# no file of the repository.
+# Tests scripts/release-libraries.sh on copies of the libraries' package.json and pkg/mybot/go.mod in a temporary
+# directory; it changes no file of the repository.
 #
 #   scripts/release-libraries-test.sh
 set -euo pipefail
@@ -39,7 +39,21 @@ done
 expect_error "unknown command" "$script" publish v0.1.0
 
 # The Go tags.
-expect_eq "go-tags" "pkg/mykit/v0.1.0-rc.1" "$("$script" go-tags v0.1.0-rc.1)"
+expect_eq "go-tags" "pkg/mykit/v0.1.0-rc.1 pkg/mybot/v0.1.0-rc.1" "$("$script" go-tags v0.1.0-rc.1 | paste -sd ' ')"
+
+# go-mod on a copy of pkg/mybot/go.mod: mykit is required at the release's tag, and nothing else changes.
+mykit=github.com/mycroblog/my/pkg/mykit
+mkdir -p "$work/gomod"
+cp "$root/pkg/mybot/go.mod" "$work/gomod/"
+"$script" go-mod v0.1.0-rc.1 "$work/gomod/go.mod"
+expect_eq "mybot requires mykit at the tag" v0.1.0-rc.1 \
+  "$(go mod edit -json "$work/gomod/go.mod" | jq -r --arg m "$mykit" '.Require[] | select(.Path == $m) | .Version')"
+expect_eq "mybot keeps the other requirements and the replacement" \
+  "$(go mod edit -json "$root/pkg/mybot/go.mod" | jq -S --arg m "$mykit" 'del(.Require[] | select(.Path == $m))')" \
+  "$(go mod edit -json "$work/gomod/go.mod" | jq -S --arg m "$mykit" 'del(.Require[] | select(.Path == $m))')"
+printf 'module example.com/x\n\ngo 1.27\n' > "$work/gomod/other.mod"
+expect_error "go.mod without mykit" "$script" go-mod v0.1.0 "$work/gomod/other.mod"
+expect_error "go-mod with a bad version" "$script" go-mod 0.1.0 "$work/gomod/go.mod"
 
 # npm-version on a copy of @mycroblog/mykit's package.json.
 mkdir -p "$work/mykit"
@@ -50,6 +64,15 @@ expect_eq "mykit dependencies" "$(jq -S .dependencies "$root/pkg/mykit/ts/packag
   "$(jq -S .dependencies "$work/mykit/package.json")"
 expect_eq "mykit other fields" "$(jq -S 'del(.version)' "$root/pkg/mykit/ts/package.json")" \
   "$(jq -S 'del(.version)' "$work/mykit/package.json")"
+
+# npm-version on a copy of @mycroblog/mybot's package.json: its @mycroblog/mykit is pinned to the same version.
+mkdir -p "$work/mybot"
+cp "$root/pkg/mybot/ts/package.json" "$work/mybot/"
+"$script" npm-version v0.1.0-rc.1 "$work/mybot"
+expect_eq "mybot version" 0.1.0-rc.1 "$(jq -r .version "$work/mybot/package.json")"
+expect_eq "mybot pins mykit" 0.1.0-rc.1 "$(jq -r '.dependencies["@mycroblog/mykit"]' "$work/mybot/package.json")"
+expect_eq "mybot other dependencies" "$(jq -S '.dependencies | del(.["@mycroblog/mykit"])' "$root/pkg/mybot/ts/package.json")" \
+  "$(jq -S '.dependencies | del(.["@mycroblog/mykit"])' "$work/mybot/package.json")"
 
 # A workspace dependency on a package of the release is pinned; one on another package fails and leaves the file.
 mkdir -p "$work/pin" "$work/other"
@@ -72,6 +95,7 @@ expect_error "no package.json" "$script" npm-version v1.2.3 "$work/none"
 # The release notes name the tag and the npm version.
 notes="$("$script" notes v0.1.0-rc.1)"
 for want in "## mykit" "go get github.com/mycroblog/my/pkg/mykit@v0.1.0-rc.1" "npm install @mycroblog/mykit@0.1.0-rc.1" \
+  "## mybot" "go get github.com/mycroblog/my/pkg/mybot@v0.1.0-rc.1" "npm install @mycroblog/mybot@0.1.0-rc.1" \
   "dist-tag \`next\`"; do
   [[ "$notes" == *"$want"* ]] || fail "notes: no '$want'"
 done
