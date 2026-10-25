@@ -100,21 +100,22 @@ func Refuses(mode Mode, flow Flow) bool {
 }
 
 // OutboundFlows returns the flows of an outbound activity a (federation.md §7). The activity goes
-// out when the mode allows one of them, or, for a Reject, refuses one of them (Sends). suspension
+// out when the mode allows one of them, or, for a Reject, refuses one of them (Sends). retracting
 // tells the Update of an actor that carries its suspension (ADR-0036), which takes the actor's
-// profile back.
+// profile back, or its movedTo (ADR-0089), which only tells the followers where it went.
 //
 //   - The Create and Update of a status, a boost, a favourite or reaction, a vote, a
 //     QuoteRequest, and the answers to remote QuoteRequests: publish. Their Delete or Undo, and
 //     the Delete of a revoked QuoteAuthorization: retract.
-//   - The Update of an actor: publish; of its suspension, and its Delete: retract.
+//   - The Update of an actor: publish; of its suspension or with its movedTo, its Delete, and the
+//     Move of the actor: retract (ADR-0089, so that inbound sends them too).
 //   - Follow and Undo Follow: follow_out; Accept and Reject of a follow, and the Reject of a
 //     refused Follow: follow_in.
 //   - Block, Undo Block, and Flag: protect.
 //   - The Follow and Undo of a relay's membership: ingest or publish (receiving or sending
 //     through the relay); the Accept of a relay's Follow of the instance actor: publish; the
 //     Reject of another Follow of the instance actor: follow_in.
-func OutboundFlows(a OutboundActivity, suspension bool) []Flow {
+func OutboundFlows(a OutboundActivity, retracting bool) []Flow {
 	switch a.ObjectKind {
 	case OutboundStatus, OutboundBoost, OutboundFavourite, OutboundPollVote, OutboundQuote:
 		if a.Type == ActivityDelete || a.Type == ActivityUndo {
@@ -122,10 +123,12 @@ func OutboundFlows(a OutboundActivity, suspension bool) []Flow {
 		}
 		return []Flow{FlowPublish}
 	case OutboundAccount:
-		if a.Type == ActivityDelete || suspension {
+		if a.Type == ActivityDelete || retracting {
 			return []Flow{FlowRetract}
 		}
 		return []Flow{FlowPublish}
+	case OutboundMove:
+		return []Flow{FlowRetract}
 	case OutboundFollow:
 		if a.Type == ActivityFollow || a.Type == ActivityUndo {
 			return []Flow{FlowFollowOut}
@@ -149,8 +152,8 @@ func OutboundFlows(a OutboundActivity, suspension bool) []Flow {
 
 // Sends reports whether mode lets the outbound activity a go out: one of its flows passes, or a
 // is a Reject that answers a flow the mode refuses (Refuses).
-func Sends(mode Mode, a OutboundActivity, suspension bool) bool {
-	for _, f := range OutboundFlows(a, suspension) {
+func Sends(mode Mode, a OutboundActivity, retracting bool) bool {
+	for _, f := range OutboundFlows(a, retracting) {
 		if Allows(mode, f) || a.Type == ActivityReject && Refuses(mode, f) {
 			return true
 		}
@@ -162,8 +165,8 @@ func Sends(mode Mode, a OutboundActivity, suspension bool) bool {
 // ones that what it takes back went to: a retraction in a mode that does not publish goes only
 // to the inboxes of the original delivery and the followers at the time (ADR-0076), never to
 // every known shared inbox.
-func AddsRecipients(mode Mode, a OutboundActivity, suspension bool) bool {
-	for _, f := range OutboundFlows(a, suspension) {
+func AddsRecipients(mode Mode, a OutboundActivity, retracting bool) bool {
+	for _, f := range OutboundFlows(a, retracting) {
 		if f != FlowRetract {
 			return true
 		}

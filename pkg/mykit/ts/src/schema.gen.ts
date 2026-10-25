@@ -552,6 +552,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move the authenticated user's account to another account
+         * @description Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+         *     checking the user's current `password` or a `passkey` of the user; a user without a
+         *     password confirms with a passkey. Find the target's ID with
+         *     `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+         *
+         *     The target is fetched again from its server, and it must list this account among its
+         *     aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+         *     `/api/v1/problems/move-alias-missing` when the target does not list this account,
+         *     `/api/v1/problems/move-target-moved` when the target moved itself,
+         *     `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+         *     cannot be fetched, or is suspended here (it or its server), and
+         *     `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+         *     move was cancelled, or for a target the account moved to before.
+         *
+         *     Once moved, the account's followers on other servers get a `Move` and follow the target,
+         *     the followers on this server follow it too, and the account's profile names the target
+         *     (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+         *     aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+         *     following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+         *     password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+         *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+         *     `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+         *     accepted every hour.
+         */
+        post: operations["moveOwnAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/move/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel the move of the authenticated user's account
+         * @description Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+         *     can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+         *     its actor without `movedTo`. The followers that moved stay with the target, and the next
+         *     move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+         *     `/api/v1/problems/account-not-moved`.
+         */
+        post: operations["cancelOwnAccountMove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/password": {
         parameters: {
             query?: never;
@@ -6072,7 +6138,8 @@ export interface components {
          *     addresses), `two_factor_disabled` (an administrator removed the account's two-factor
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
          *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-         *     suppression of the primary email address of the account's user). On a `domain`:
+         *     suppression of the primary email address of the account's user), `account_moved` (a limited
+         *     local account moved to another local account, which does not inherit the limit). On a `domain`:
          *     `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
          *     `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
          *     `user` (a registration):
@@ -6127,7 +6194,7 @@ export interface components {
          *     `service_closure`.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -8098,6 +8165,16 @@ export interface components {
             passkey?: components["schemas"]["PasskeyAssertion"];
         };
         /**
+         * @description The move of the user's own account: the account it moves to, and the confirmation, `password`
+         *     or `passkey`.
+         */
+        MoveOwnAccountRequest: {
+            target_account_id: components["schemas"]["Id"];
+            /** @description The user's current password. */
+            password?: string;
+            passkey?: components["schemas"]["PasskeyAssertion"];
+        };
+        /**
          * @description A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
          *     such as `例え.jp` is accepted) and the public comment (at most 5,000 characters).
          */
@@ -9754,6 +9831,18 @@ export interface components {
          *       allow the operation.
          *     - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
          *       already.
+         *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
+         *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+         *       (`POST /accounts/move/cancel`).
+         *     - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
+         *       no move to cancel.
+         *     - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
+         *       user's account among its aliases (`alsoKnownAs`). Add the alias on that account first.
+         *     - `/api/v1/problems/move-target-moved` (422): the account to move to moved itself.
+         *     - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
+         *       own, is not found, cannot be fetched from its server, or is suspended here.
+         *     - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
+         *       or moved to that account before.
          *     - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
          *       answers every operation with this problem and `Retry-After`. Keep the tokens, show the
          *       maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -11977,6 +12066,48 @@ export interface operations {
         };
         responses: {
             /** @description The account is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    moveOwnAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveOwnAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The account moved. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelOwnAccountMove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The move is cancelled. */
             204: {
                 headers: {
                     [name: string]: unknown;

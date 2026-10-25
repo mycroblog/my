@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: moveOwnAccount
+  x-first-party-only: true
+  summary: Move the authenticated user's account to another account
+  description: |
+    Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+    checking the user's current `password` or a `passkey` of the user; a user without a
+    password confirms with a passkey. Find the target's ID with
+    `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+
+    The target is fetched again from its server, and it must list this account among its
+    aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+    `/api/v1/problems/move-alias-missing` when the target does not list this account,
+    `/api/v1/problems/move-target-moved` when the target moved itself,
+    `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+    cannot be fetched, or is suspended here (it or its server), and
+    `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+    move was cancelled, or for a target the account moved to before.
+
+    Once moved, the account's followers on other servers get a `Move` and follow the target,
+    the followers on this server follow it too, and the account's profile names the target
+    (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+    aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+    following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+    password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+    `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+    `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+    accepted every hour.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/MoveOwnAccountRequest.yaml
+  responses:
+    "204":
+      description: The account moved.
+    default:
+      $ref: ../components/responses/Problem.yaml

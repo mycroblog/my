@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package authpages serves the server-rendered sign-in, sign-out, registration, email
-// verification, password reset (password_reset.go), and OAuth authorization (consent) screens
-// (ADR-0030): plain HTML forms from html/template that work without JavaScript, worded from the
-// server message catalog and styled by one stylesheet that the web client's build provides. With
+// verification, password reset (password_reset.go), email unsubscribe (mail_unsubscribe.go), and
+// OAuth authorization (consent) screens (ADR-0030): plain HTML forms from html/template that
+// work without JavaScript, worded from the server message catalog and styled by one stylesheet
+// that the web client's build provides. With
 // a CAPTCHA (Options.HumanCheck), the sign-in, registration, and password reset forms also load
 // the service's widget (humancheck.go). In a browser with passkeys, the web build's script adds
 // a passkey button to the sign-in form (passkey.go); without JavaScript the page stays the
@@ -11,9 +12,9 @@
 //
 // A sign-in or sign-up starts a browser session carried by the __Host-my_session cookie
 // (Secure, HttpOnly, SameSite=Lax, Path=/) with a new token every time (ADR-0019 §4). Every POST
-// passes net/http.CrossOriginProtection and must carry the anti-forgery token of the
-// __Host-my_csrf cookie in its csrf_token field, for browsers that send neither Sec-Fetch-Site
-// nor Origin (ADR-0019 §4). Failed sign-ins answer with one message whether or not the account
+// but the one-click unsubscribe passes net/http.CrossOriginProtection and must carry the
+// anti-forgery token of the __Host-my_csrf cookie in its csrf_token field, for browsers that
+// send neither Sec-Fetch-Site nor Origin (ADR-0019 §4). Failed sign-ins answer with one message whether or not the account
 // exists.
 //
 // A signed-in user whose account cannot be used yet (a registration waiting for approval or
@@ -184,6 +185,9 @@ type Options struct {
 	// PasswordReset serves the pages that reset a forgotten password (password_reset.go), which
 	// the sign-in page links to; nil leaves them out.
 	PasswordReset PasswordReset
+	// MailUnsubscribe serves the unsubscribe links of notification emails (mail_unsubscribe.go);
+	// nil leaves them out.
+	MailUnsubscribe MailUnsubscribe
 }
 
 // Handler serves the screens.
@@ -211,6 +215,9 @@ const (
 	pageForgotPassword = "forgot_password"
 	pageResetPassword  = "reset_password"
 	pagePasswordReset  = "password_reset"
+	// The pages of mail_unsubscribe.go.
+	pageMailUnsubscribe  = "mail_unsubscribe"
+	pageMailUnsubscribed = "mail_unsubscribed"
 )
 
 // New returns a Handler on o.
@@ -220,7 +227,7 @@ func New(o Options) *Handler {
 	}
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
-		pageForgotPassword, pageResetPassword, pagePasswordReset} {
+		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed} {
 		h.pages[name] = template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/"+name+".html"))
 	}
 	h.cop.SetDenyHandler(http.HandlerFunc(h.crossOrigin))
@@ -253,6 +260,11 @@ func (h *Handler) Register(r Router) {
 		r.Handle("POST "+PathForgotPassword, h.cop.Handler(http.HandlerFunc(h.forgotPassword)))
 		r.Handle("GET "+PathResetPassword, http.HandlerFunc(h.resetPasswordPage))
 		r.Handle("POST "+PathResetPassword, h.cop.Handler(http.HandlerFunc(h.resetPassword)))
+	}
+	if h.o.MailUnsubscribe != nil {
+		// Mail providers send the one-click POST from their servers (mail_unsubscribe.go).
+		r.Handle("GET "+PathMailUnsubscribe, http.HandlerFunc(h.mailUnsubscribePage))
+		r.Handle("POST "+PathMailUnsubscribe, http.HandlerFunc(h.mailUnsubscribe))
 	}
 	if h.o.OAuth != nil {
 		r.Handle("GET "+PathAuthorize, http.HandlerFunc(h.authorizePage))
@@ -293,6 +305,8 @@ type page struct {
 	// of the page that sets the new password (password_reset.go).
 	ForgotPassword *forgotPasswordView
 	NewPassword    *newPasswordView
+	// Unsubscribe is the page of an unsubscribe link (mail_unsubscribe.go).
+	Unsubscribe *unsubscribeView
 	// Consent is the authorization request on the consent page.
 	Consent *consent
 	// HumanCheck is the CAPTCHA widget of the form; the page's Content-Security-Policy admits

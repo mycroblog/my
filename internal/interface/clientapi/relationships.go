@@ -166,7 +166,7 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 
 // FollowAccount serves POST /api/v1/accounts/{id}/follow.
 func (s *Server) FollowAccount(ctx context.Context, req FollowAccountRequestObject) (FollowAccountResponseObject, error) {
-	res, p, err := s.relateGuarded(ctx, req.Id, s.followableRemotely, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateGuarded(ctx, req.Id, s.followable, func(v Viewer) (appgraph.Relationship, error) {
 		r, err := s.o.Graph.Follow(ctx, v.AccountID, req.Id)
 		if err != nil || req.Body == nil || (req.Body.ShowBoosts == nil && req.Body.Notify == nil) {
 			return r, err
@@ -187,6 +187,15 @@ func (s *Server) FollowAccount(ctx context.Context, req FollowAccountRequestObje
 		return FollowAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	return FollowAccount200JSONResponse{*res}, nil
+}
+
+// followable refuses every follow of an account that moved (ADR-0089), and then the follows that
+// followableRemotely refuses.
+func (s *Server) followable(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error) {
+	if p, err := s.refuseMoved(ctx, v.AccountID); err != nil || p != nil {
+		return p, err
+	}
+	return s.followableRemotely(ctx, v, a)
 }
 
 // followableRemotely refuses a new follow of a remote account while the federation mode does

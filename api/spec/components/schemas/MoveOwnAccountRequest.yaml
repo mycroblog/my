@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The move of the user's own account: the account it moves to, and the confirmation, `password`
+  or `passkey`.
+type: object
+required: [target_account_id]
+properties:
+  target_account_id:
+    $ref: ./Id.yaml
+  password:
+    description: The user's current password.
+    type: string
+    minLength: 1
+    maxLength: 1024
+  passkey:
+    $ref: ./PasskeyAssertion.yaml

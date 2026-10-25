@@ -245,6 +245,11 @@ type Options struct {
 	// show as moved, and the moves that account_moved and admin_account_moved tell of; nil shows
 	// none.
 	Moves AccountMoves
+	// LocalMoves moves the viewer's own account and cancels its move, and MoveConfirmations
+	// checks the password or passkey that confirms a move (ADR-0089); nil for either serves no
+	// move (404).
+	LocalMoves        LocalMoves
+	MoveConfirmations MoveConfirmations
 	// ReportCounts and RegistrationCounts count what awaits the moderators (admin_counts.go);
 	// nil leaves the count out.
 	ReportCounts       ReportCounts

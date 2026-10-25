@@ -97,6 +97,8 @@
 
 - **移転はライフサイクルと直交する軸** です（ADR-0020 規約 2）。移転済みでも `account_lifecycle_states` は変わりません。
 - リモートのアカウントの移転は、検証を通った `Move` を `account.Service.RecordRemoteMove` が `initiated_by = remote` で記録します（[federation.md §3.4](../../federation.md)）。同じ移転先への 2 度目の `Move` は一意制約で何も記録せず、別の移転先への `Move` は最新の行の `occurred_at` から 7 日（`account.RemoteMoveInterval`）以内なら記録しません（待ち時間は状態の列を持たず、読み取りのときに判定します）。
+- ローカルのアカウントの移転は、`federation.LocalMoves` が移転先を確かめた後に `account.Service.RecordLocalMove` が `initiated_by = self` で記録します。最新の行の `occurred_at` から 30 日（`account.LocalMoveInterval`）以内は、その移転が取り消されていても記録せず、前に移った移転先へは一意制約のため移れません。移転元が制限中で移転先がローカルのとき、`account.moved` は監査ログ `account_moved` の ID を運び、`moderation` がその記録を書きます。
+- 取り消し（`account.Service.CancelMove`）は `account_move_cancellations` を記録し、ドメインイベント `account.move_cancelled` で projector が `account_move_states` の行を消します。`federation` は `movedTo` の無い `Update(Actor)` を送ります。
 - 記録は同じトランザクションでドメインイベント `account.moved` を出し、projector が `account_move_states` をその移転に向けます。`moderation` が移転元を `limit` しているかを運び（`SourceLimited`）、`notification` がモデレーターに知らせます。`graph` はこのイベントからジョブ `graph.migrate_follows` を積みます（§4.5）。
 - 投影はアカウントごとの最新の移転（`occurred_at`、`id` の順）で、それが取り消されていれば行を作りません（`account.MoveStates`）。取り消しは行を消します。
 - 移転先は client API のアカウントの表現の `moved`（アカウント自身のエンドポイント）に出します（`account.Service.MoveState`）。
