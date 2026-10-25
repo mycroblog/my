@@ -9,6 +9,7 @@ import (
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -53,6 +54,7 @@ type repositories struct {
 	supporters   supporters.Repository
 	retention    retentionRepositories
 	projections  projection.Store
+	dataUpgrades dbupgrade.Repository
 }
 
 // openDatabase connects the database that cfg.DB selects and returns its repositories. With

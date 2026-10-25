@@ -7,6 +7,7 @@
 | `dead_jobs` | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `last_error`, `created_at`, `failed_at` | — | `(failed_at)` |
 | `job_attempts`（イベント） | `job_id`, `attempt`, `job_type`, `outcome`（`enum(retry, dead)`）, `error`（`text`、2,000 バイトまで）, `worker`, `started_at`, `finished_at` | PK `(job_id, attempt, finished_at)` | `(finished_at)` |
 | `kv_entries`（`kv/db`） | `namespace`, `key`, `value`（`bytes`）, `expires_at`（NULL 可 = 無期限） | PK `(namespace, key)` | `(expires_at)` |
+| `data_upgrade_runs`（イベント、`db/*`） | `step_key`（`string`）, `completed_at` | PK `(step_key)` | — |
 
 - ジョブのペイロードはアダプタ間を渡る「解釈しない文書」なので `document` 型です（ドメインのデータは入れず、ID を渡します）。
 - `outbox_events` は投入先のキューに渡す値（`run_at` を含む）をすべて持ち、リレーがそのまま `JobQueue.Enqueue` に渡します。
@@ -33,3 +34,9 @@
   取得は、同じキーの他のジョブがリース中のとき、または自分より前に投入された同じキーのジョブが `jobs` に残っている（遅延中・リトライ待ちを含む）ときは、そのジョブを飛ばします。
   この判定はインデックス `(ordering_key, run_at)` で同じキーの行を引きます。
   PostgreSQL では同じキーのジョブを同時に取得する 2 つのトランザクションが互いのリースを見落とさないよう、取得はキーのトランザクション内 advisory lock を取ってから候補を再確認します。
+- `data_upgrade_runs` は【イベント】で、`my db upgrade` が完了した更新の手順（[ADR-0087](../../../adr/0087-schema-changes-after-launch.md) §2・§4）を 1 手順 1 行で記録します。
+  手順は `internal/app/dbupgrade` の `Step` で、キー・説明・実行の関数（冪等で、小さなトランザクションの繰り返し）・作り直す投影の名前を持ち、`internal/platform/setup_dbupgrade.go` に登録します。
+  手順の実行と投影の作り直しが終わってから記録するので、途中で失敗した手順は次の `my db upgrade` でもう一度実行します。同じ手順を 2 回記録しても最初の行が残ります。
+  contract を含む版は前提とする手順のキーと、足りないときに通る版を持ち、`my db upgrade --check`（`schema apply` の前）が記録に無ければ終了コード 1 で止まります。
+  表の無い DB は新しい DB として通し、この表の無い DB（スキーマがこの表より古い）はすべての前提が足りないものとして扱います。
+  contract の後も手順は実行の関数を外して登録を残すので、新しい DB でも記録が揃い、readiness は登録したすべての手順の記録を求めます。

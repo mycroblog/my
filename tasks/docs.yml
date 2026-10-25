@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Documentation and the repository's bookkeeping: markdownlint, the ADR numbers, and that CI runs every check
+# Documentation and the repository's bookkeeping: markdownlint, the documentation rules, the ADR numbers, and that CI runs every check
 # (the docs context of scripts/changed-contexts.sh).
 version: "3"
 
@@ -9,13 +9,19 @@ vars:
 
 tasks:
   check:
-    desc: Run the documentation checks, markdownlint, the ADR numbers, and the CI coverage of `check`, in parallel
-    deps: [lint, adr-numbers, ci-coverage]
+    desc: Run the documentation checks, markdownlint, the documentation rules, the ADR numbers, and the CI coverage of `check`, in parallel
+    deps: [lint, rules, adr-numbers, ci-coverage]
 
   lint:
     desc: Lint Markdown files
     cmds:
       - "{{.MARKDOWNLINT}}"
+
+  rules:
+    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, or an operator document points at design records (AGENTS.md "Documentation", docs/lint.yaml)
+    deps: [":agentkit:build"]
+    cmds:
+      - bin/agentkit docs lint
 
   adr-numbers:
     desc: Fail if two files in docs/adr share a number

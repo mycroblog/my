@@ -393,8 +393,8 @@ jobs:
             run: scripts/task.sh i18n:test
 
   repo:
-    # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
-    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
+    # files), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
@@ -433,6 +433,8 @@ jobs:
             run: scripts/task.sh agentkit:mod-check
           - name: agentkit:deps-check
             run: scripts/task.sh agentkit:deps-check
+          - name: docs:rules
+            run: scripts/task.sh docs:rules
           - name: docs:adr-numbers
             run: scripts/task.sh docs:adr-numbers
           - name: docs:ci-coverage

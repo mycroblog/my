@@ -45,6 +45,6 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 			statuses: d.StatusRepository(), purges: d.FederationRepository(), profiles: d.AccountRepository(), emojis: d.CustomEmojiRepository(),
 			autoDeletes: d.StatusRepository(),
 		},
-		projections: d.ProjectionStore(),
+		projections: d.ProjectionStore(), dataUpgrades: d.DataUpgradeRepository(),
 	}, nil
 }

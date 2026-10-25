@@ -18,9 +18,9 @@ If another pull request takes the same number first, `docs:adr-numbers` fails in
 - **Context** cites requirement IDs and states why the decision is needed now.
 - **Decision Drivers** are ranked; the decision must be explainable from them.
 - At least two **Considered Options**, described fairly — including the strongest case for the one not chosen.
-- **Decision** for a Proposed ADR is phrased as a recommendation ("推奨案") and states what would overturn it.
+- **Decision** for a Proposed ADR is phrased as a recommendation (`推奨案`, "recommended option") and states what would overturn it.
 - **Consequences** list the bad parts too, and follow-up work that should become issues.
-- Facts about third-party services (prices, limits, feature support) are marked **要検証** unless verified against official docs,
+- Facts about third-party services (prices, limits, feature support) are marked **`要検証`** (to be verified) unless verified against official docs,
   with the date and source of verification when they are.
 - Keep it short. Long research goes into a spike report and is linked.
 
