@@ -4845,6 +4845,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/closure/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check the server before its closure
+         * @description What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+         *     deliveries, the supporter subscriptions that it cancels, the account migrations that have
+         *     not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+         *     permission.
+         */
+        get: operations["getAdminServiceClosureCheck"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/closure/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close the server
+         * @description Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+         *     closure whose `closes_at` has passed can close; before it, without an announcement, or once
+         *     closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+         *     server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+         *     in the audit log and cancels every supporter subscription that goes on, in the same
+         *     transaction. From then on, the client API serves only the users' own data and exports
+         *     (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+         */
+        post: operations["closeService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/oauth_clients": {
         parameters: {
             query?: never;
@@ -6072,11 +6121,13 @@ export interface components {
          *     `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
          *     tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
          *     the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-         *     the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-         *     and the label are `service_closure`.
+         *     the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+         *     `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+         *     the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+         *     `service_closure`.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -7048,6 +7099,36 @@ export interface components {
              *     time to export their data and move their accounts. A short notice is allowed.
              */
             short_notice: boolean;
+        };
+        /**
+         * @description What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+         *     screen and the CLI show it with the confirmation of the closure.
+         */
+        AdminServiceClosureCheck: {
+            /** @description The local accounts of users that are not deleted, each of which the closure sends a `Delete` of. */
+            local_accounts: number;
+            /** @description The shared inboxes known to the server, which each `Delete` goes to. */
+            delivery_inboxes: number;
+            /** @description The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`. */
+            estimated_deletes: number;
+            /** @description The supporter subscriptions that go on, which the closure cancels at once without a refund. */
+            live_supporter_subscriptions: number;
+            /**
+             * @description The account migrations (the sending of a `Move` and the jobs that move the followers,
+             *     ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+             *     the admin screen and the CLI warn while it is not 0.
+             */
+            pending_migrations: number;
+            /**
+             * @description The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+             *     their records with the CLI before discarding the data of the closed server.
+             */
+            retention_holds: number;
+        };
+        /** @description The confirmation of the closure of the server. */
+        CloseServiceRequest: {
+            /** @description The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case. */
+            confirm_domain: string;
         };
         /** @description The schedule of an announcement of the closure of the service. */
         AnnounceServiceClosureRequest: {
@@ -9634,8 +9715,18 @@ export interface components {
          *     - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
          *       reason in `theme_errors` (`PUT /admin/theme`).
          *     - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
-         *       allow the operation: withdrawing an announcement when none is in effect, or announcing
-         *       the closure of a server that is closed already (`/admin/closure/announcement`).
+         *       allow the operation: withdrawing an announcement when none is in effect, announcing the
+         *       closure of a server that is closed already (`/admin/closure/announcement`), or closing a
+         *       server whose closure is not announced or whose `closes_at` has not come
+         *       (`POST /admin/closure/close`).
+         *     - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+         *       server serves only the operations with which the users take their data away: their own
+         *       account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
+         *       `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
+         *       (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+         *       the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
+         *       `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
+         *       this problem; signing in and resetting a password stay available outside the client API.
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
          *     - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
@@ -10968,6 +11059,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminServiceClosure"];
+            };
+        };
+        /** @description The checks before the closure of the service. */
+        AdminServiceClosureCheck: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminServiceClosureCheck"];
             };
         };
         /** @description The webhook. */
@@ -16421,6 +16522,36 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminServiceClosure"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminServiceClosureCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminServiceClosureCheck"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    closeService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseServiceRequest"];
+            };
+        };
         responses: {
             200: components["responses"]["AdminServiceClosure"];
             default: components["responses"]["Problem"];
