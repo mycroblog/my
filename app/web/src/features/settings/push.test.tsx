@@ -102,6 +102,7 @@ const everyUserType = [
   "favourite",
   "reaction",
   "quote",
+  "account_moved",
   "moderation_notice",
   "appeal_decided",
   "report_resolved",
@@ -179,7 +180,7 @@ describe("push notifications", () => {
       expect(toggle).toBeChecked();
     });
     const kinds = within(section).getByRole("group", { name: "Notify me of" });
-    expect(within(kinds).getAllByRole("checkbox")).toHaveLength(10);
+    expect(within(kinds).getAllByRole("checkbox")).toHaveLength(11);
     expect(within(kinds).getByRole("checkbox", { name: "Boosts" })).toBeChecked();
   });
 

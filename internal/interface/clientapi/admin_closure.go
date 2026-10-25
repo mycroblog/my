@@ -34,6 +34,20 @@ type ServiceClosures interface {
 	CheckClosure(ctx context.Context) (appinstance.ClosureCheck, error)
 	// CloseService closes the server for good, audited.
 	CloseService(ctx context.Context, byUserID string) (instance.Closure, error)
+	// ClosureProgress returns how far the closure's Deletes have gone, and false while the
+	// server is not closed.
+	ClosureProgress(ctx context.Context) (appinstance.ClosureProgress, bool, error)
+}
+
+// adminServiceClosureProgress returns AdminServiceClosure.progress.
+func adminServiceClosureProgress(p appinstance.ClosureProgress) *AdminServiceClosureProgress {
+	d := p.Deliveries
+	return &AdminServiceClosureProgress{
+		Accounts: p.Accounts, FanoutsPending: p.FanOuts,
+		Deliveries: AdminServiceClosureDeliveries{
+			Pending: d["pending"], Succeeded: d["succeeded"], PermanentFailure: d["permanent_failure"], Skipped: d["skipped"], Dead: d["dead"],
+		},
+	}
 }
 
 func adminServiceClosure(c instance.Closure) AdminServiceClosure {
@@ -103,7 +117,15 @@ func (s *Server) GetAdminServiceClosure(ctx context.Context, _ GetAdminServiceCl
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: admin service closure: %w", err)
 	}
-	return GetAdminServiceClosure200JSONResponse{closureResponse(c)}, nil
+	res := closureResponse(c)
+	progress, ok, err := s.o.Closures.ClosureProgress(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: admin service closure: %w", err)
+	}
+	if ok {
+		res.Body.Progress = adminServiceClosureProgress(progress)
+	}
+	return GetAdminServiceClosure200JSONResponse{res}, nil
 }
 
 // AnnounceServiceClosure serves PUT /api/v1/admin/closure/announcement.

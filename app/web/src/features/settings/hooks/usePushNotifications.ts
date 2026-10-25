@@ -35,6 +35,7 @@ const userGroups: readonly PushAlertGroup[] = [
   { id: "favourite", label: "client:settings.push.type.favourite", types: ["favourite"] },
   { id: "reaction", label: "client:settings.push.type.reaction", types: ["reaction"] },
   { id: "quote", label: "client:settings.push.type.quote", types: ["quote"] },
+  { id: "account_moved", label: "client:settings.push.type.account_moved", types: ["account_moved"] },
   {
     id: "moderation",
     label: "client:settings.push.type.moderation",
@@ -56,7 +57,7 @@ const supporterGroup: PushAlertGroup = {
 const moderatorGroup: PushAlertGroup = {
   id: "admin",
   label: "client:settings.push.type.admin",
-  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request"],
+  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request", "admin_account_moved"],
 };
 
 /** What the preferences show of Web Push on this device. */

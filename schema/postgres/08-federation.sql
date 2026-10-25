@@ -82,6 +82,23 @@ CREATE TABLE delivery_attempts (
 );
 CREATE INDEX delivery_attempts_delivery_id_id ON delivery_attempts (delivery_id, id);
 
+-- Event: the fan-out of an outbound activity has enqueued its last batch, recorded for the
+-- activities whose end something waits for: the Delete of a local actor, which the service
+-- closure waits for (ADR-0088 §3), and the Move, which it counts as a pending migration.
+CREATE TABLE outbound_fanout_completions (
+  outbound_activity_id uuid NOT NULL PRIMARY KEY,
+  completed_at timestamptz NOT NULL
+);
+
+-- Event: the Delete of a local actor that the service closure sends (ADR-0088 §3), one per
+-- account, so that the closure's fan-out records it once however often its pages run.
+CREATE TABLE closure_deletes (
+  account_id uuid NOT NULL PRIMARY KEY,
+  outbound_activity_id uuid NOT NULL,
+  recorded_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX closure_deletes_outbound_activity_id ON closure_deletes (outbound_activity_id);
+
 -- Resource: a server this instance has seen.
 CREATE TABLE remote_instances (
   domain text NOT NULL PRIMARY KEY,

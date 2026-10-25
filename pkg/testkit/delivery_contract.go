@@ -49,7 +49,12 @@ type deliveryEnv struct {
 	// mode is the federation mode that the deliveries read when they run (ADR-0076); "" is
 	// both.
 	mode federation.Mode
+	// closing says that the server is closed and delivers the closure's Deletes (ADR-0088).
+	closing bool
 }
+
+// ClosureRetracts implements appfederation.ClosureSettings with d.closing.
+func (d *deliveryEnv) ClosureRetracts(context.Context) (bool, error) { return d.closing, nil }
 
 // FederationMode implements appfederation.ModeSettings with d.mode.
 func (d *deliveryEnv) FederationMode(context.Context) (federation.Mode, error) {
@@ -84,7 +89,7 @@ func newDeliveryEnv(t *testing.T, e *fedEnv) *deliveryEnv {
 		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Federation,
 		Client: appfederation.NewSignedHTTPClient(d.net, deliverySigner{}, NewKeyValueStore(e.clock), e.clock),
 		Keys:   d.keys, Proofs: d.proofs, Domains: e.domains, Breaker: d.breaker, Clock: e.clock, IDs: e.ids,
-		Logger: slog.New(slog.DiscardHandler), Meter: d.meter, Modes: d,
+		Logger: slog.New(slog.DiscardHandler), Meter: d.meter, Modes: d, Closure: d,
 	})
 	d.deliverer.RegisterJobs(e.handlers)
 	return d
@@ -512,6 +517,65 @@ func fedSkipsWhatTheModeDoesNotSend(t *testing.T, e *fedEnv) {
 		}
 		if a := d.last(t, del); !tc.sent && a.Outcome != federation.DeliverySkipped {
 			t.Errorf("%s of %s: attempt %+v, want skipped", tc.mode, tc.typ, a)
+		}
+	}
+}
+
+// fedSendsOnlyTheClosureDeletes delivers, once the server is closed, the Delete of a local actor
+// whatever the federation mode, and skips what was queued before (ADR-0088 §2).
+func fedSendsOnlyTheClosureDeletes(t *testing.T, e *fedEnv) {
+	d := newDeliveryEnv(t, e)
+	d.net.answer("remote.example", http.StatusAccepted)
+	d.mode, d.closing = federation.ModeOff, true
+	queued := d.delivery(t, federation.ActivityCreate, "remote.example")
+	retracted := d.delivery(t, federation.ActivityDelete, "remote.example")
+	closure := d.delivery(t, federation.ActivityDelete, "remote.example")
+	act, err := d.h.Federation.FindOutboundActivity(t.Context(), closure.OutboundActivityID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The closure's Delete is of the actor: record it again as such.
+	actorDelete := federation.OutboundActivity{
+		ID: d.ids.NewID(), Type: federation.ActivityDelete, ActorAccountID: d.actor, ObjectKind: federation.OutboundAccount,
+		ObjectID: d.actor, CreatedAt: d.clock.Now(),
+	}
+	actorDelete.ActivityURI = federation.IRI("https://" + contractHost + "/ap/activities/" + actorDelete.ID)
+	closure = federation.Delivery{ID: d.ids.NewID(), OutboundActivityID: actorDelete.ID, InboxURL: "https://remote.example/inbox", Domain: "remote.example", CreatedAt: d.clock.Now()}
+	err = d.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		if err := d.h.Federation.InsertOutboundActivity(t.Context(), tx, actorDelete); err != nil {
+			return err
+		}
+		doc, err := d.h.Federation.FindOutboundDocument(t.Context(), act.ID)
+		if err != nil {
+			return err
+		}
+		if _, err := d.h.Federation.InsertOutboundDocument(t.Context(), tx, actorDelete.ID, doc, d.clock.Now()); err != nil {
+			return err
+		}
+		_, err = d.h.Federation.InsertDelivery(t.Context(), tx, closure)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		del  federation.Delivery
+		sent bool
+	}{
+		{"a Create queued before the closure", queued, false},
+		{"the Delete of a status", retracted, false},
+		{"the Delete of the actor", closure, true},
+	} {
+		before := d.net.count("remote.example")
+		if r := d.deliver(t, tc.del); !r.IsDone() {
+			t.Fatalf("%s: %+v, want Done", tc.name, r)
+		}
+		if sent := d.net.count("remote.example") > before; sent != tc.sent {
+			t.Errorf("%s while closed in mode off: sent = %v, want %v", tc.name, sent, tc.sent)
+		}
+		if a := d.last(t, tc.del); !tc.sent && a.Outcome != federation.DeliverySkipped {
+			t.Errorf("%s while closed: attempt %+v, want skipped", tc.name, a)
 		}
 	}
 }
