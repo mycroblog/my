@@ -2,7 +2,8 @@
 #
 # The client API (ADR-0016, ADR-0029, ADR-0066; the api context of scripts/changed-contexts.sh). The split spec in
 # api/spec/ is the source of truth and api/openapi.yaml is its bundle; oapi-codegen is pinned in tools/go.mod and
-# the Redocly CLI here. The bundle and the Go code are committed; the web client's TypeScript types are not (ADR-0081).
+# the Redocly CLI here. The bundle, the Go code, and the TypeScript types of @mycroblog/mykit are committed; the web
+# client's TypeScript types are not (ADR-0081).
 version: "3"
 
 vars:
@@ -43,6 +44,7 @@ tasks:
       - internal/interface/clientapi/api.gen.go
       - pkg/mykit/api.gen.go
       - internal/interface/clientapi/security.gen.go
+      - pkg/mykit/ts/src/schema.gen.ts
       - app/web/src/lib/api/schema.gen.ts
     env:
       REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"
@@ -67,8 +69,9 @@ tasks:
       - scripts/generate.sh --ts
 
   generate-check:
-    desc: Fail if the committed bundle or Go client API code (the server's and pkg/mykit's) is stale
-    deps: [warm]
+    desc: Fail if the committed bundle, Go client API code (the server's and pkg/mykit's), or @mycroblog/mykit types are stale
+    # openapi-typescript is a dependency of the client workspace.
+    deps: [":web:install", warm]
     env:
       REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"
     cmds:

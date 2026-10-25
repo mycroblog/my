@@ -275,6 +275,14 @@
     "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ḓǿǿ ŧħīş ŧǿǿ ẏǿǿŭŭř ǿǿẇƞ ȧȧƈƈǿǿŭŭƞŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.service_closed": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř īş ƈŀǿǿşḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closed_detail": {
+    "defaultMessage": "[Ŧħḗḗ şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ. Ẏǿǿŭŭ ƈȧȧƞ şŧīŀŀ şīɠƞ īƞ ȧȧƞḓ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.service_closure.state": {
     "defaultMessage": "[Ŧħḗḗ şḗḗřṽīƈḗḗ ƈŀǿǿşŭŭřḗḗ ḓǿǿḗḗş ƞǿǿŧ ȧȧŀŀǿǿẇ ŧħȧȧŧ īƞ īŧş ƈŭŭřřḗḗƞŧ şŧȧȧŧḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."

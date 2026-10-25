@@ -35,7 +35,7 @@ tasks:
     desc: Install the pinned client workspace dependencies (app/bun.lock)
     run: once
     dir: app
-    sources: [bun.lock, bunfig.toml, package.json, "*/package.json"]
+    sources: [bun.lock, bunfig.toml, package.json, "*/package.json", ../pkg/mykit/ts/package.json]
     status:
       - test -d node_modules
     cmds:
