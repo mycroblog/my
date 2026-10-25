@@ -232,7 +232,8 @@ jobs:
     # The Docker Compose smoke test (linux/amd64, ADR-0079): what only the images show, beyond the Go tests that already
     # assemble and start the server: that the Dockerfile builds, that .dockerignore keeps what the images need, the
     # wiring of deploy/docker/compose.yaml, and the runtime image. A pull request's own docker files decide it, so the
-    # merge queue does not run it again; the slow suite runs it with the linux/arm64 builds.
+    # merge queue does not run it again; the slow suite runs it with the linux/arm64 builds. The promtool check of the
+    # alerting rules (deploy/monitoring) runs first, in the same job, since it also needs Docker.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
@@ -244,6 +245,8 @@ jobs:
           fetch-depth: 0
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      - name: docker:alert-rules
+        run: scripts/task.sh docker:alert-rules
       - name: docker:smoke
         run: scripts/task.sh docker:smoke
 

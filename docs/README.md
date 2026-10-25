@@ -15,6 +15,7 @@
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
 - [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
 - [External monitoring and status pages (UptimeRobot, Better Stack, Gatus, Uptime Kuma, Upptime)](operations/monitoring.md)
+- [Alerts and runbook (Prometheus alerting rules, what to do when an alert fires, telling users about an incident)](operations/alerts.md)
 - [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)
 - [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
 - [Server webhooks](operations/webhooks.md)

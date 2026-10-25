@@ -1,0 +1,278 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Prometheus alerting rules for my, for a server that runs with metrics_exporter = prometheus and a Prometheus that
+# scrapes metrics_listen (GET /metrics) under the job name "my". docs/operations/alerts.md explains each alert, its
+# threshold, and what to do when it fires (the runbook_url of each rule points there).
+#
+# Load it with `rule_files: [alerts.yml]` in prometheus.yml and route the alerts with Alertmanager: `severity: page`
+# needs someone now, `severity: ticket` can wait for working hours. The thresholds are starting points for a small
+# server; tune them, and the `for` durations, to your traffic. alerts.test.yml holds the promtool unit tests
+# (`scripts/task.sh docker:alert-rules`).
+#
+# The instance-wide gauges (my_queue_*, my_media_stored_bytes, my_metrics_snapshot_age_seconds) carry the same value
+# in every process, so the rules take their max(). The other metrics belong to one process (job, instance).
+
+groups:
+  - name: my-queue
+    rules:
+      - alert: MyQueueBacklog
+        expr: max(my_queue_oldest_ready_age_seconds) > 300
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Jobs wait more than 5 minutes for a worker
+          description: The oldest ready job of the database queue has waited {{ $value | humanizeDuration }}.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuebacklog
+      - alert: MyQueueStalled
+        expr: max(my_queue_oldest_ready_age_seconds) > 1800
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Jobs wait more than 30 minutes for a worker
+          description: >-
+            The oldest ready job of the database queue has waited {{ $value | humanizeDuration }}; deliveries,
+            notifications, and emails are late.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myqueuestalled
+      - alert: MyDeadJobsIncreasing
+        expr: max(delta(my_queue_dead[1h])) > 10
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: More than 10 jobs failed for good in the last hour
+          description: The number of failed jobs grew by {{ $value | humanize }} in the last hour.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeadjobsincreasing
+      - alert: MyMetricsSnapshotStale
+        expr: >-
+          max by (my_metrics_snapshot_part) (my_metrics_snapshot_age_seconds{my_metrics_snapshot_part="queue"}) > 300
+          or
+          max by (my_metrics_snapshot_part) (my_metrics_snapshot_age_seconds{my_metrics_snapshot_part="totals"}) > 3600
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The instance-wide gauges are not refreshed
+          description: >-
+            The {{ $labels.my_metrics_snapshot_part }} part of the metrics snapshot is
+            {{ $value | humanizeDuration }} old, so the queue and storage alerts see old values.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymetricssnapshotstale
+
+  - name: my-federation
+    rules:
+      - alert: MyDeliveryFailuresHigh
+        expr: >-
+          sum(rate(my_delivery_attempts_total{my_outcome=~"retry|failed"}[15m]))
+            / sum(rate(my_delivery_attempts_total[15m])) > 0.5
+          and sum(rate(my_delivery_attempts_total[15m])) > 0.01
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: More than half of the delivery attempts fail
+          description: '{{ $value | humanizePercentage }} of the delivery attempts failed in the last 15 minutes.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryfailureshigh
+      - alert: MyDeliveryAllFailing
+        expr: >-
+          sum(rate(my_delivery_attempts_total{my_outcome=~"retry|failed"}[15m]))
+            / sum(rate(my_delivery_attempts_total[15m])) > 0.95
+          and sum(rate(my_delivery_attempts_total[15m])) > 0.05
+        for: 15m
+        labels:
+          severity: page
+        annotations:
+          summary: Almost every delivery attempt fails
+          description: >-
+            {{ $value | humanizePercentage }} of the delivery attempts failed in the last 15 minutes; the cause is
+            most likely on this server's side.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryallfailing
+      - alert: MyInboxRejectionsHigh
+        expr: >-
+          sum(rate(my_inbox_activities_total{my_outcome="rejected"}[15m]))
+            / sum(rate(my_inbox_activities_total[15m])) > 0.25
+          and sum(rate(my_inbox_activities_total[15m])) > 0.01
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The inbox refuses more than a quarter of the activities it receives
+          description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes were refused in the last 15 minutes.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxrejectionshigh
+      - alert: MyInboxErrors
+        expr: >-
+          sum(rate(my_inbox_activities_total{my_outcome="error"}[15m]))
+            / sum(rate(my_inbox_activities_total[15m])) > 0.05
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The inbox fails on more than 5% of the activities it receives
+          description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes ended in an internal error.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxerrors
+
+  - name: my-http
+    rules:
+      - alert: MyHTTPErrorsHigh
+        expr: >-
+          sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[5m]))
+            / sum(rate(http_server_request_duration_seconds_count[5m])) > 0.05
+          and sum(rate(http_server_request_duration_seconds_count[5m])) > 0.1
+        for: 10m
+        labels:
+          severity: page
+        annotations:
+          summary: More than 5% of the requests fail with a 5xx
+          description: '{{ $value | humanizePercentage }} of the HTTP requests answered 5xx in the last 5 minutes.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorshigh
+      - alert: MyHTTPErrorsElevated
+        expr: >-
+          sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[30m]))
+            / sum(rate(http_server_request_duration_seconds_count[30m])) > 0.01
+          and sum(rate(http_server_request_duration_seconds_count[30m])) > 0.01
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: More than 1% of the requests fail with a 5xx
+          description: '{{ $value | humanizePercentage }} of the HTTP requests answered 5xx in the last 30 minutes.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myhttperrorselevated
+      - alert: MyAPILatencyHigh
+        # The streaming endpoint holds its request open for the life of the stream, so it is left out.
+        expr: >-
+          histogram_quantile(0.95, sum by (le) (rate(
+            http_server_request_duration_seconds_bucket{my_surface="client_api", http_route!="/api/v1/streaming"}[10m]
+          ))) > 0.3
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The client API's 95th percentile is over 300 ms
+          description: The 95th percentile of the client API requests is {{ $value | humanizeDuration }}.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myapilatencyhigh
+
+  - name: my-resources
+    rules:
+      - alert: MyTargetDown
+        expr: up{job="my"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Prometheus cannot scrape {{ $labels.instance }}
+          description: The metrics listener of {{ $labels.instance }} has not answered for 5 minutes.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mytargetdown
+      - alert: MyNotReady
+        expr: increase(my_readiness_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: '{{ $labels.instance }} fails its readiness checks'
+          description: The readiness check of {{ $labels.instance }} keeps failing; the database is out of reach or the schema is not applied.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mynotready
+      - alert: MyProcessRestarting
+        # process_uptime_seconds goes down only when the process starts again.
+        expr: resets(process_uptime_seconds[1h]) >= 3
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.instance }} restarted {{ $value }} times in an hour'
+          description: The process behind {{ $labels.instance }} keeps restarting.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myprocessrestarting
+      - alert: MyMemoryNearLimit
+        # go_memory_limit_bytes is there only when GOMEMLIMIT is set.
+        expr: >-
+          sum by (job, instance) (go_memory_used_bytes)
+            / max by (job, instance) (go_memory_limit_bytes) > 0.9
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.instance }} uses more than 90% of GOMEMLIMIT'
+          description: The Go runtime of {{ $labels.instance }} uses {{ $value | humanizePercentage }} of its memory limit.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymemorynearlimit
+      - alert: MyDBPoolSaturated
+        expr: >-
+          sum by (job, instance, db_client_connection_pool_name) (db_client_connection_count{db_client_connection_state="used"})
+            / max by (job, instance, db_client_connection_pool_name) (db_client_connection_max) > 0.9
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.instance }} uses more than 90% of its database connections'
+          description: '{{ $value | humanizePercentage }} of the {{ $labels.db_client_connection_pool_name }} pool is in use.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolsaturated
+      - alert: MyDBPoolWaiting
+        expr: >-
+          rate(db_client_connection_wait_time_seconds_total[5m]) > 0.5
+          or increase(db_client_connection_timeouts_total[10m]) > 0
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Requests on {{ $labels.instance }} wait for a database connection
+          description: Work on {{ $labels.instance }} waits for a free connection of the {{ $labels.db_client_connection_pool_name }} pool.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydbpoolwaiting
+      - alert: MyFileDescriptorsNearLimit
+        expr: process_unix_file_descriptor_count / my_process_file_descriptor_limit > 0.8
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.instance }} uses more than 80% of its file descriptors'
+          description: '{{ $labels.instance }} has {{ $value | humanizePercentage }} of its file descriptor limit open.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myfiledescriptorsnearlimit
+      - alert: MyAdapterErrors
+        expr: >-
+          sum by (job, instance, my_adapter) (rate(my_adapter_operation_duration_seconds_count{my_outcome="error"}[5m]))
+            / sum by (job, instance, my_adapter) (rate(my_adapter_operation_duration_seconds_count[5m])) > 0.05
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: More than 5% of the {{ $labels.my_adapter }} operations fail on {{ $labels.instance }}
+          description: '{{ $value | humanizePercentage }} of the operations of the {{ $labels.my_adapter }} adapter failed.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myadaptererrors
+      - alert: MyRemoteMediaCacheOverLimit
+        # 1073741824 is the default remote_media_cache_max_bytes; use your value.
+        expr: max(my_media_stored_bytes{my_media_origin="remote_cache"}) > 1.2 * 1073741824
+        for: 3h
+        labels:
+          severity: ticket
+        annotations:
+          summary: The remote media cache stays over its size limit
+          description: The copies of remote media take {{ $value | humanize1024 }}B, over the limit the hourly cleanup keeps.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremotemediacacheoverlimit
+      - alert: MyMediaStorageLarge
+        # 50 GiB is an example; set it below what your storage plan or budget allows.
+        expr: sum(max by (my_media_origin) (my_media_stored_bytes)) > 50 * 1024 * 1024 * 1024
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: The media files take more than the planned storage
+          description: The media files in blob storage take {{ $value | humanize1024 }}B.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymediastoragelarge
+
+  - name: my-email
+    rules:
+      - alert: MyEmailFailing
+        expr: sum(increase(my_job_duration_seconds_count{my_job_type=~".*_email.*", my_outcome="dead"}[1h])) > 0
+        labels:
+          severity: ticket
+        annotations:
+          summary: Emails failed for good in the last hour
+          description: 'Email jobs that ran out of retries or were refused for good in the last hour: {{ $value | humanize }}.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailfailing
+      - alert: MyEmailRetrying
+        expr: >-
+          sum(rate(my_job_duration_seconds_count{my_job_type=~".*_email.*", my_outcome="retry"}[15m]))
+            / sum(rate(my_job_duration_seconds_count{my_job_type=~".*_email.*"}[15m])) > 0.5
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Most email sends fail and wait for a retry
+          description: '{{ $value | humanizePercentage }} of the email job runs failed and will be retried.'
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailretrying

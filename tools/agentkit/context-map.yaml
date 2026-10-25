@@ -392,6 +392,12 @@ entries:
     paths: ["deploy/**", "Dockerfile"]
     docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
     checks: [docker]
+  - name: monitoring
+    paths: ["deploy/monitoring/**", "docs/operations/alerts.md"]
+    docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md"]
+    checks: [docker, docs]
+    notes:
+      - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them."
 
   # --- Tools ----------------------------------------------------------------------------------------------
   - name: agentkit
