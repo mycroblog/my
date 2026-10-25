@@ -3,7 +3,7 @@
 A guide for operators. It shows how to point an uptime monitor at the server, how to keep the monitoring from raising the running cost,
 and how to tell the maintenance mode from an outage. The decisions are in [ADR-0085](../adr/0085-uptime-monitoring-status-page.md)
 (and [ADR-0084](../adr/0084-maintenance-mode.md) for the maintenance mode); the probe paths are in
-[the health check section of the running guide](running.md#ヘルスチェックfr-802).
+[the health check section of the running guide](running.md#health-checks).
 
 Third-party facts below carry the date they were confirmed and their source. Services change their plans and screens; check the linked page before relying on a limit.
 
