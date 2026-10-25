@@ -43,10 +43,10 @@
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch（secure mode、FR-408）。`true` にすると、検証できる HTTP 署名の無い ActivityPub の GET に、オブジェクトとコレクションは `401` で、利用者の Actor は鍵の取得のための最小の文書で答える（[federation.md §10](../architecture/federation.md#10-コレクションとオブジェクトの-get)）。インスタンス Actor は署名なしでも文書全体を返すので、署名の検証のための鍵の取得はどのサーバーからもできる |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | 連合の向き（FR-413、[federation.md §14](../architecture/federation.md#14-連合の向き)）。`off` は連合しない。`inbound` は外のアカウントをフォローして読むが、ローカルの投稿・プロフィール・反応を外へ出さず、外からのフォローは断る（`Reject`）。`outbound` は外からのフォローを受けてローカルの投稿を届けるが、外の投稿・反応を取り込まない。`both` は送受信する。変更はすぐに効き、`manage_settings` の権限で変えられる |
 | `dynamic_client_registration` | `true` / `false` | `true` | 動的クライアント登録（RFC 7591、ADR-0090 §1）。`true` の間、`POST /oauth/register` が認証なしで public client の登録を受ける。`false` にすると、このエンドポイントはすべての要求を `403`（`access_denied`）で断る。すでに登録されたクライアントはそのまま使える。使われない動的登録のクライアントは、設定 `dynamic_client_unredeemed_ttl`・`dynamic_client_idle_ttl` に従って定期のジョブが削除する。変更はすぐに効き、`manage_settings` の権限で変えられる |
-| `domain_actions_visibility` | `none` / `users` / `all` | `none` | 処分したドメインの一覧（`GET /api/v1/instance/domain_actions`）を誰に見せるか: 誰にも / ログインした利用者に / 誰にでも（FR-718、[ドメイン単位の処分と通報の対応](moderation.md#処分したドメインの公開)） |
+| `domain_actions_visibility` | `none` / `users` / `all` | `none` | 処分したドメインの一覧（`GET /api/v1/instance/domain_actions`）を誰に見せるか: 誰にも / ログインした利用者に / 誰にでも（FR-718、[ドメイン単位の処分と通報の対応](moderation.md#publishing-the-domains-you-act-on)） |
 | `domain_actions_rationale_visibility` | `none` / `users` / `all` | `none` | その一覧の公開コメントを誰に見せるか。一覧を見られない相手には見せない（FR-718） |
-| `appeal_window` | 整数 20〜365（日） | `180` | 処分から何日のあいだ、本人が異議を申し立てられるか（FR-707、ADR-0038、[異議申し立て](moderation.md#異議申し立て)）。変えると、すでに出た処分の期限も変わる |
-| `retention_session_origins` | 整数 90〜3650（日） | `180` | ログイン元の IP アドレスと User-Agent を、ログインから何日残すか（ADR-0038、[記録の保持期間と保全](moderation.md#記録の保持期間と保全)） |
+| `appeal_window` | 整数 20〜365（日） | `180` | 処分から何日のあいだ、本人が異議を申し立てられるか（FR-707、ADR-0038、[異議申し立て](moderation.md#appeals)）。変えると、すでに出た処分の期限も変わる |
+| `retention_session_origins` | 整数 90〜3650（日） | `180` | ログイン元の IP アドレスと User-Agent を、ログインから何日残すか（ADR-0038、[記録の保持期間と保全](moderation.md#record-retention-and-holds)） |
 | `retention_registration_origins` | 整数 90〜3650（日） | `180` | 登録元の IP アドレスを、登録から何日残すか |
 | `retention_reports` | 整数 180〜3650（日） | `365` | 通報を、最後の解決から何日残すか。処分が参照する通報は処分と同じだけ残る |
 | `retention_moderation_actions` | 整数 180〜3650（日） | `365` | アカウントへの処分と異議申し立てを、処分の終わり（解除・期限切れ・異議の審査の遅い方）から何日残すか |
@@ -197,7 +197,7 @@ CLI で変えられる設定値は、Web クライアントの管理画面とク
 - **クライアント API**: `GET /api/v1/admin/settings` がすべての設定値を、現在値・既定値・設定済みか・型と受け付ける値（選択肢・範囲）とともに返します。
   `PATCH /api/v1/admin/settings` は `{"values": {"<キー>": "<値>", ...}}` の設定値をまとめて変えます。値はすべて文字列で、CLI と同じく正規形にして保存します。
   1 つでも知らないキーか不正な値があれば、そのキーを挙げた 422 で、何も変えません。変えたキーは同じトランザクションで版と監査ログに残ります。
-- 登録モードを `invite` にしたときの招待は、モデレーションの画面（「招待」、`/moderation/invites`、権限 `manage_invites`）で作ります（[利用者登録](registration.md#招待コード)）。
+- 登録モードを `invite` にしたときの招待は、モデレーションの画面（「招待」、`/moderation/invites`、権限 `manage_invites`）で作ります（[利用者登録](registration.md#invite-codes)）。
 
 ## ルール
 
