@@ -30,6 +30,11 @@ const (
 	// PathReadiness answers 200 when the database is reachable and its schema is applied
 	// (every table of schema/<dialect> exists), and 503 with a problem document otherwise.
 	PathReadiness = "/readyz"
+	// PathInstanceHealth is the health endpoint of the client API for uptime monitors, status
+	// pages, and the clients (ADR-0085 §1): the readiness check's answer, which reaches the
+	// database at most once every healthCacheTTL per process (healthCache). The client API
+	// serves it on the web role; the maintenance mode (ADR-0084) answers it itself.
+	PathInstanceHealth = "/api/v1/instance/health"
 )
 
 // readinessTimeout bounds one readiness check, so that a hung database fails the probe
@@ -71,12 +76,10 @@ func (a *App) liveness(w http.ResponseWriter, _ *http.Request) {
 	writeStatusOK(w)
 }
 
+// readiness checks the App on every request, one check for the concurrent requests
+// (readyCheck).
 func (a *App) readiness(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), readinessTimeout)
-	defer cancel()
-	if err := a.Ready(ctx); err != nil {
-		a.Logger.WarnContext(r.Context(), "not ready", slog.Any("error", err))
-		a.readinessFailures.Add(context.WithoutCancel(r.Context()), 1, kernel.Labels{})
+	if err := a.readyCheck(r.Context()); err != nil {
 		// The default locale lives in the database that just failed, so it is not consulted.
 		l := (&i18n.Resolver{Bundle: a.Messages}).RequestLocalizer(r)
 		a.writeProblem(w, r, l, http.StatusServiceUnavailable, l.ServerHealthUnavailable())
@@ -372,11 +375,12 @@ func validRequestID(id string) bool {
 }
 
 // accessLog logs one line per request. It logs the path without the query string, which may
-// carry tokens, and logs the health checks at debug level, since probes call them constantly.
+// carry tokens, and logs the health checks at debug level, since probes and uptime monitors
+// call them constantly (isHealthCheck).
 // The line carries the labels of http.server.request.duration under the same names and values,
 // and its duration in seconds (ADR-0055 §5), so that a log-based metric counts the requests as
 // the metric does: http.route and my.surface are those that problemFallback found, and are absent
-// when the request reached no route (the health checks, the requests refused before routing),
+// when the request reached no route (the probes of the platform, the requests refused before routing),
 // which the metric does not measure either. With the HTTP metrics, it also records the request's
 // http.server.request.duration in a unit of work of the Meter (ADR-0055 §3), which the line
 // carries with metrics_exporter = emf (§5). The request is a span of the Tracer
@@ -410,7 +414,7 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 		}
 		recorded = true
 		level := slog.LevelInfo
-		if r.URL.Path == PathLiveness || r.URL.Path == PathReadiness {
+		if isHealthCheck(r.URL.Path) {
 			level = slog.LevelDebug
 		}
 		attrs := make([]slog.Attr, 0, 7)
@@ -425,6 +429,12 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 		)
 		kernel.LogUnit(r.Context(), a.Logger, level, "http request", a.Meter, attrs, HTTPRequestDuration)
 	})
+}
+
+// isHealthCheck tells whether path is a health check: a probe of the platform or the endpoint
+// of the uptime monitors, which the access log writes at debug level and no span traces.
+func isHealthCheck(path string) bool {
+	return path == PathLiveness || path == PathReadiness || path == PathInstanceHealth
 }
 
 // Keys of the access log that are not labels of the HTTP metrics, named after the

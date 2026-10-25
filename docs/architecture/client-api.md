@@ -230,7 +230,9 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 
 ### 4.2 `/api/v1` の認証・認可・レート制限
 
-`Server.Register` は生成コードが登録する各操作のハンドラを `guard` で包みます。`guard` はリクエストの解釈より前に、次の順で動きます。
+`Server.Register` は生成コードが登録する各操作のハンドラを `guard` で包みます。例外は外形監視の `getServerHealth`（`GET /instance/health`、[ADR-0085](../adr/0085-uptime-monitoring-status-page.md) §1）だけで、
+トークンの照合もレート制限も DB を起こしうるので `guard` を通しません（`wrapOperation`）。トークンを送られても読まず、応答は閲覧者によらず、DB の検査の回数はプロセスの中の 60 秒のキャッシュが抑えます。
+`guard` はリクエストの解釈より前に、次の順で動きます。
 
 1. **認証**: `Authorization` ヘッダだけを読みます。Cookie とクエリ文字列は読みません（ADR-0019 §4。`TestCookiesNeverAuthenticate`）。
    ヘッダがなければ匿名です。あれば `Bearer <token>` でなければならず、`identity.Service.AuthenticateBearer` が照合します。
