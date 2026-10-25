@@ -35,6 +35,7 @@ english:
 # docs/requirements/, docs/architecture/, or GitHub issues and pull requests.
 operator:
   - "README.md"
+  - "SECURITY.md"
   - "docs/operations/**"
   - "docs/reference/**"
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.

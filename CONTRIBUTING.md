@@ -3,6 +3,8 @@
 Human contributors and coding agents work by the same rules. [AGENTS.md](AGENTS.md) lists them in full, and the
 decisions behind them are the Architecture Decision Records indexed in [docs/adr/README.md](docs/adr/README.md).
 
+Do not report security vulnerabilities in issues or pull requests; follow [SECURITY.md](SECURITY.md) instead.
+
 ## Setup
 
 Tool versions are pinned in `.tool-versions` (use [asdf](https://asdf-vm.com/) or [mise](https://mise.jdx.dev/)).
