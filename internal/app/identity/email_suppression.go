@@ -38,6 +38,9 @@ type EmailSuppressionRepository interface {
 	// FindEmailSuppression returns the suppression of an address; ErrNotFound when it is not
 	// suppressed.
 	FindEmailSuppression(ctx context.Context, emailAddressID string) (identity.EmailSuppression, error)
+	// FindPrimaryEmailAddressID returns the ID of the primary email address that normalizes to
+	// normalized; ErrNotFound when no user has it.
+	FindPrimaryEmailAddressID(ctx context.Context, normalized string) (string, error)
 }
 
 // DeliveryFailure is a failure of delivery to record (RecordDeliveryFailure).
@@ -73,6 +76,41 @@ func (s *Service) RecordDeliveryFailure(ctx context.Context, in DeliveryFailure)
 		return fmt.Errorf("identity: record the delivery failure of address %s: %w", in.EmailAddressID, err)
 	}
 	return nil
+}
+
+// AddressFailure is a failure of delivery that names the address it happened to rather than its
+// ID (RecordAddressFailure), such as an SES notification.
+type AddressFailure struct {
+	// Addresses are the forms of the recipient's address to look up, in order: a source that
+	// writes an internationalized domain in Punycode passes the Unicode form too, since the
+	// mailers send to the ASCII form.
+	Addresses      []string
+	Kind           identity.EmailFailureKind
+	Source         identity.EmailFailureSource
+	FeedbackKey    string
+	EnhancedStatus string
+	OccurredAt     time.Time
+}
+
+// RecordAddressFailure records a delivery failure of the primary email address that the first
+// matching form of in.Addresses names, compared normalized (RecordDeliveryFailure), and reports
+// whether an address matched. An address that no user has as primary records nothing: the
+// server sends only to primary addresses.
+func (s *Service) RecordAddressFailure(ctx context.Context, in AddressFailure) (bool, error) {
+	for _, address := range in.Addresses {
+		id, err := s.d.Repository.FindPrimaryEmailAddressID(ctx, identity.NormalizeEmail(address))
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return false, fmt.Errorf("identity: find the address of a delivery failure: %w", err)
+		}
+		return true, s.RecordDeliveryFailure(ctx, DeliveryFailure{
+			EmailAddressID: id, Kind: in.Kind, Source: in.Source, FeedbackKey: in.FeedbackKey,
+			EnhancedStatus: in.EnhancedStatus, OccurredAt: in.OccurredAt,
+		})
+	}
+	return false, nil
 }
 
 // RecordRecipientRejection records the rejection of the recipient of the email that the run of

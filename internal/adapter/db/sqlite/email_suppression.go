@@ -59,6 +59,15 @@ func (r *IdentityRepository) FindEmailSuppression(ctx context.Context, emailAddr
 	}, nil
 }
 
+// FindPrimaryEmailAddressID implements identity.Repository.
+func (r *IdentityRepository) FindPrimaryEmailAddressID(ctx context.Context, normalized string) (string, error) {
+	id, err := r.db.reader().GetPrimaryEmailAddressIDByNormalized(ctx, normalized)
+	if err != nil {
+		return "", notFound(err, appidentity.ErrNotFound, "primary email address")
+	}
+	return id, nil
+}
+
 // RebuildEmailSuppressions implements identity.Repository.
 func (r *IdentityRepository) RebuildEmailSuppressions(ctx context.Context, tx uow.Tx) error {
 	return execAll(ctx, tx, "rebuild email suppressions", (*sqlitegen.Queries).DeleteAllEmailSuppressions, (*sqlitegen.Queries).RebuildEmailSuppressions)
