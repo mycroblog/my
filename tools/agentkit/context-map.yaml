@@ -254,12 +254,13 @@ entries:
 
   # --- Schema and queries -------------------------------------------------------------------------------
   - name: schema
-    paths: ["schema/**", "queries/**", "sqlc.yaml"]
+    paths: ["schema/**", "queries/**", "sqlc.yaml", "scripts/db-lint.sh", "scripts/db-lint-test.sh"]
     docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
     checks: [schema, go]
     shared: true
     notes:
       - "Edit the owning module's file schema/<dialect>/<NN>-<module>.sql in every dialect together (schema/README.md); never hand-write migrations; `scripts/task.sh go:sqlc` after query changes. Query files stay ASCII-only."
+      - "A schema change must upgrade a database of the previous main without losing data (schema/README.md#changing-the-schema): `scripts/task.sh db:lint DB_DIALECT=sqlite|postgres` fails on a destructive change; a projection rebuild or a contract needs the decider's db:destructive label."
 
   # --- Test kits ------------------------------------------------------------------------------------------
   - name: testkit

@@ -95,7 +95,7 @@ scripts/task.sh db:reset                      # DB の中身をすべて消し�
 scripts/task.sh db:check                      # db:reset のあと差分が空であることを検査（CI と同じ）
 scripts/task.sh db:check-all                  # SQLite と、db:up のコンテナの PostgreSQL の両方で db:check
 
-scripts/task.sh db:up DB_DIALECT=postgres     # PostgreSQL コンテナ（DB `my` と開発用 DB `my_dev`）を起動
+scripts/task.sh db:up DB_DIALECT=postgres     # PostgreSQL コンテナ（DB `my` と開発用 DB `my_dev`・`my_lint`）を起動
 scripts/task.sh db:apply DB_DIALECT=postgres  # db:diff / db:reset / db:check も同様
 scripts/task.sh db:down                       # コンテナとデータを削除
 ```
@@ -104,8 +104,8 @@ scripts/task.sh db:down                       # コンテナとデータを削�
   PostgreSQL の URL は `search_path=public` を付けたスキーマ単位の URL にします。
 - コンテナ以外の PostgreSQL に適用するときは、準備 SQL の実行方法も `PG_BOOTSTRAP` で指定します
   （例: `PG_BOOTSTRAP='psql -v ON_ERROR_STOP=1 -q "postgres://..."'`）。開発用 DB にも準備 SQL を先に流しておきます。
-- 差分の適用に失敗する変更は、開発用の DB なら `scripts/task.sh db:reset` で作り直します。`v0.1.0` 以降の PR は、データを失わずに直前の `main` から更新できるスキーマ変更にします（[ADR-0087](docs/adr/0087-schema-changes-after-launch.md)）。
-- CI は両方言について、空の DB への適用と、適用後に差分が残らないことを検査します（`scripts/task.sh db:check-all`）。
+- 差分の適用に失敗する変更は、開発用の DB なら `scripts/task.sh db:reset` で作り直します。`v0.1.0` 以降の PR は、データを失わずに直前の `main` から更新できるスキーマ変更にします（[ADR-0087](docs/adr/0087-schema-changes-after-launch.md)）。`scripts/task.sh db:lint DB_DIALECT=sqlite|postgres` が破壊的な差分を検出します。変更の分類と承認のラベルは [schema/README.md](schema/README.md#changing-the-schema) にあります。
+- CI は両方言について、空の DB への適用と、適用後に差分が残らないことを検査します（`scripts/task.sh db:check-all`）。スキーマを変えた PR では、base との破壊的な差分も検査します（`db:lint`）。
 
 ## クライアント API
 

@@ -36,3 +36,55 @@ PostgreSQL:
   timestamp is timestamptz; bool is boolean; bytes is bytea.
 - Atlas Community Edition does not manage extensions, sequences, views, or triggers; keep them out of the schema.
   Extensions go in `postgres.bootstrap.sql`.
+
+## Changing the schema
+
+From `v0.1.0`, each pull request that changes the schema must upgrade a database of the previous `main` without losing
+data (ADR-0087). Before `v0.1.0` a database may still be recreated, but the same check applies: a destructive change
+needs the decider's approval. Classify the change first:
+
+| Class | Examples | How |
+| --- | --- | --- |
+| A. Additive | A new table or index; a new column that is nullable or has a `DEFAULT`; a relaxed constraint (a dropped `CHECK`, a new value in the list of an enum's `CHECK`) | Change the schema in one pull request |
+| B. Projection rebuild | A changed, dropped, or rebuilt column or table of a projection (ADR-0020) | One pull request with the decider's approval; the upgrade rebuilds the projection from its events (`my projection rebuild`) |
+| C. Data loss or rewrite | A dropped column or table of a resource, event, or current-value table; a changed type; a split column; a `NOT NULL`, `UNIQUE`, or `CHECK` that existing rows may not satisfy | Never in one pull request: split it in two, below |
+
+The two steps of C:
+
+1. **Expand** (release N): add the new tables or columns as in A. The server writes to and reads from the new side, and an
+   upgrade step of `my db upgrade` rewrites the existing rows (keyed, idempotent, in small transactions). A column that
+   must be `NOT NULL` gets a `DEFAULT` or goes in a new table, so that the previous release still writes while the new
+   schema is applied before the new server starts.
+2. **Contract** (a later minor release): remove the old columns or tables from the schema. The release names the upgrade
+   steps it relies on, and needs the decider's approval.
+
+### db:lint
+
+`scripts/task.sh db:lint` (`scripts/db-lint.sh`) compares `schema/<dialect>/` of the working tree with the same directory
+at `BASE` (default `origin/main`). It writes the migrations empty → base and base → working tree into a temporary
+directory with `atlas migrate diff` and lints the second with `atlas migrate lint`, which also runs it on a dev database;
+no migration file stays in the repository. It fails when:
+
+- the lint reports any diagnostic, warnings included: a dropped table or column (a renamed column is a drop and an add),
+  `NOT NULL` on an existing column or a new one without `DEFAULT`, a new unique index;
+- `atlas schema inspect` shows a changed type of an existing column (Atlas copies the rows or lets PostgreSQL cast them
+  without a diagnostic), or a new `CHECK` on an existing table that names an existing column (a `CHECK` on new columns
+  only, and a list of an enum's values that grows, are additive);
+- the change does not apply on top of the base, such as a type PostgreSQL cannot cast.
+
+```sh
+scripts/task.sh db:lint DB_DIALECT=sqlite
+scripts/task.sh db:up                          # PostgreSQL: the dev database my_lint of the container
+scripts/task.sh db:lint DB_DIALECT=postgres
+scripts/task.sh db:lint-test DB_DIALECT=sqlite # the lint itself, on the fixtures of testdata/lint/<dialect>/
+```
+
+CI runs it for both dialects:
+
+- **Pull requests** that change the schema (the `db-lint` job) compare with the base branch. A destructive change fails
+  unless the pull request has the label **`db:destructive`**, which only the decider adds, for a class B change or a
+  contract. Adding or removing the label reruns the checks.
+- **The merge queue** compares with the base of the merge group and does not check the label again (a merge group
+  carries no labels): it reports destructive changes and fails only when the schema does not apply on top of that base.
+
+A class C change in one pull request is never approved: split it into expand and contract instead.

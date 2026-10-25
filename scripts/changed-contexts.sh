@@ -152,7 +152,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    schema/* | scripts/install-atlas.sh)
+    schema/* | scripts/install-atlas.sh | scripts/db-lint.sh | scripts/db-lint-test.sh)
       select_contexts schema go
       known=1
       ;;
