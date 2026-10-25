@@ -93,6 +93,14 @@ jobs:
               skip-cache: true
               # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
               args: --allow-serial-runners
+          - name: mykit:mybot-lint
+            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+            with:
+              version: v${{ steps.go.outputs.golangci-lint }}
+              working-directory: pkg/mybot
+              skip-cache: true
+              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
+              args: --allow-serial-runners
           - name: go:build-tags
             run: scripts/task.sh go:build-tags
 
