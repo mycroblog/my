@@ -1,248 +1,299 @@
-# インスタンス設定
+# Instance settings
 
-運営者向けの手順です。要件は FR-001・FR-101・FR-202・FR-408・FR-704・FR-705・FR-718・FR-725（[機能要件](../requirements/01-functional.md)）、
-テーブルは [データモデル §4.9](../architecture/data-model/04-tables/09-instance.md#49-instance) です。
+This page is for operators. It covers the settings that define how your instance is run: registration mode, post length,
+default locale, who can see the timelines, the instance name, description, terms, rules, theme, and custom emoji.
 
-## 設定（環境変数）とインスタンス設定（DB）の分担
+## Configuration and instance settings
 
-| | 設定 | インスタンス設定 |
+| | Configuration | Instance settings |
 | --- | --- | --- |
-| 内容 | デプロイの構成: 役割・アダプタ・接続先・ホスト名・秘密情報 | 運営の方針: 登録モード・文字数上限・既定のロケール・タイムラインを誰に見せるか、インスタンスの名前・説明・規約 |
-| 置き場所 | 環境変数 `MY_*` と設定ファイル（[設定リファレンス](../reference/configuration.md)、ADR-0010） | DB。変更はすべて版として残る |
-| 変更 | プロセスの再起動で反映 | `my instance set`・Web クライアントの管理画面・クライアント API で即時に反映（[管理画面とクライアント API](#管理画面とクライアント-api)） |
-| 未設定のとき | スキーマの既定値（必須なら起動しない） | コードで定義した既定値 |
+| What | How the deployment is built: roles, adapters, endpoints, host names, secrets | How the instance is run: registration mode, post length limit, default locale, who can see the timelines, the instance name, description, and terms |
+| Where | Environment variables `MY_*` and the configuration file ([configuration reference](../reference/configuration.md)) | The database. Every change is kept as a revision |
+| Changing | Takes effect when the process restarts | Takes effect immediately with `my instance set`, the admin screens of the web client, or the client API ([admin screens and the client API](#admin-screens-and-the-client-api)) |
+| When unset | The default in the schema (the server does not start if the key is required) | The default defined in the code |
 
-- **同じキーが両方にあることはありません。** どちらかがもう一方を上書きする優先順位は存在しません。
-  環境変数や設定ファイルでインスタンス設定を与えることはできず、DB に設定（環境変数）の値を置くこともできません。
-  両方のキーが重ならないことはテスト（`TestConfigAndInstanceSettingsShareNoKey`）で保証します。
-- 新しい値をどちらに置くかは、「再起動なしに運営者が変えるものか」で決めます。デプロイごとに決まり、変えるとプロセスの構成が変わるものは設定、
-  運営中に変えるものはインスタンス設定です。
+- **No key is in both.** Neither overrides the other. You cannot give an instance setting through an environment variable or
+  the configuration file, and you cannot store a configuration value in the database. A test
+  (`TestConfigAndInstanceSettingsShareNoKey`) guarantees that the two sets of keys do not overlap.
+- To decide where a new value belongs, ask whether an operator changes it without a restart. A value that is fixed per
+  deployment and changes the structure of the process is configuration; a value that changes while the instance is running is
+  an instance setting.
 
-## 前提
+## Prerequisites
 
-- 設定が [設定リファレンス](../reference/configuration.md) どおりに与えられている（`my config check`）。
-- DB にスキーマが適用済み（Atlas で `schema/<dialect>/` を適用する。[ADR-0023](../adr/0023-declarative-schema-management.md)）。
+- The configuration is given as described in the [configuration reference](../reference/configuration.md) (`my config check`).
+- The schema is applied to the database (apply `schema/<dialect>/` with Atlas).
 
-## キー
+## Keys
 
-### 設定値（1 キー 1 値）
+### Settings (one key, one value)
 
-| キー | 型 | 既定値 | 説明 |
+| Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | 登録モード（FR-001、[利用者登録](registration.md)）。サービスの終了の予告中とクローズの後は、実効値が `closed` になる（設定の値は変わらず、予告を取り消すと元に戻る。`GET /instance` と NodeInfo は実効値を示す。[ADR-0088](../adr/0088-service-shutdown-modes.md) §2） |
-| `max_status_length` | 整数 1〜100000 | `500` | 投稿の文字数上限（FR-101） |
-| `default_locale` | BCP 47 言語タグ | `en` | 既定のロケール。新しい利用者の UI ロケールの初期値で、利用者の希望に合うカタログが無いときにも使う（ADR-0009） |
-| `local_timeline_access` | `off` / `logged_in` / `everyone` | `everyone` | ローカルタイムライン（`GET /api/v1/timelines/local`）を誰に見せるか: 誰にも / ログインした利用者に / 誰にでも（FR-202）。`off` は 404、`logged_in` はログインしていない訪問者に 401 を返し、ナビゲーションにも出さない。`everyone` でないとき、ランディングページは見本の投稿を出さない |
-| `federated_timeline_access` | `off` / `logged_in` / `everyone` | `everyone` | 連合タイムライン（`GET /api/v1/timelines/public`）を誰に見せるか。値の意味はローカルタイムラインと同じ（FR-202） |
-| `preview_image` | メディア ID（空 = 未設定） | 空 | 画像のない投稿・プロフィールのリンクプレビュー画像（`og:image`）。未設定なら同梱の既定画像（[リンクプレビュー](link-previews.md)） |
-| `contact_account` | ローカルアカウントのユーザー名（空 = 未設定） | 空 | 運営への連絡先のアカウント。[連絡先とサムネイル](#連絡先とサムネイル) |
-| `contact_email` | メールアドレス（空 = 未設定） | 空 | 運営への連絡先のメールアドレス。サーバーが送るメールの `Reply-To` と末尾の署名にも使う（ADR-0086 §3） |
-| `thumbnail` | メディア ID（空 = 未設定） | 空 | インスタンスを表す画像（サムネイル） |
-| `remote_media_policy` | `none` / `avatars` / `all` | `none` | リモートのメディアの複製を持つか（FR-409、ADR-0005）。`none` はメディアプロキシが毎回中継し、`avatars` はアバター・ヘッダー・カスタム絵文字、`all` はすべてを `remote_media_cache_ttl` の間 Blob にキャッシュする。キャッシュの合計の上限は設定 `remote_media_cache_max_bytes`（[federation.md §9](../architecture/federation.md#9-リモートメディア)） |
-| `remote_media_cache_ttl` | 整数 60〜31536000（秒） | `86400` | 取得したリモートのメディアを持ってよい期間。メディアプロキシのレスポンスの `Cache-Control: max-age` で、CDN とブラウザがこの間キャッシュする（[federation.md §9](../architecture/federation.md#9-リモートメディア)） |
-| `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch（secure mode、FR-408）。`true` にすると、検証できる HTTP 署名の無い ActivityPub の GET に、オブジェクトとコレクションは `401` で、利用者の Actor は鍵の取得のための最小の文書で答える（[federation.md §10](../architecture/federation.md#10-コレクションとオブジェクトの-get)）。インスタンス Actor は署名なしでも文書全体を返すので、署名の検証のための鍵の取得はどのサーバーからもできる |
-| `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | 連合の向き（FR-413、[federation.md §14](../architecture/federation.md#14-連合の向き)）。`off` は連合しない。`inbound` は外のアカウントをフォローして読むが、ローカルの投稿・プロフィール・反応を外へ出さず、外からのフォローは断る（`Reject`）。`outbound` は外からのフォローを受けてローカルの投稿を届けるが、外の投稿・反応を取り込まない。`both` は送受信する。変更はすぐに効き、`manage_settings` の権限で変えられる |
-| `dynamic_client_registration` | `true` / `false` | `true` | 動的クライアント登録（RFC 7591、ADR-0090 §1）。`true` の間、`POST /oauth/register` が認証なしで public client の登録を受ける。`false` にすると、このエンドポイントはすべての要求を `403`（`access_denied`）で断る。すでに登録されたクライアントはそのまま使える。使われない動的登録のクライアントは、設定 `dynamic_client_unredeemed_ttl`・`dynamic_client_idle_ttl` に従って定期のジョブが削除する。変更はすぐに効き、`manage_settings` の権限で変えられる |
-| `domain_actions_visibility` | `none` / `users` / `all` | `none` | 処分したドメインの一覧（`GET /api/v1/instance/domain_actions`）を誰に見せるか: 誰にも / ログインした利用者に / 誰にでも（FR-718、[ドメイン単位の処分と通報の対応](moderation.md#publishing-the-domains-you-act-on)） |
-| `domain_actions_rationale_visibility` | `none` / `users` / `all` | `none` | その一覧の公開コメントを誰に見せるか。一覧を見られない相手には見せない（FR-718） |
-| `appeal_window` | 整数 20〜365（日） | `180` | 処分から何日のあいだ、本人が異議を申し立てられるか（FR-707、ADR-0038、[異議申し立て](moderation.md#appeals)）。変えると、すでに出た処分の期限も変わる |
-| `retention_session_origins` | 整数 90〜3650（日） | `180` | ログイン元の IP アドレスと User-Agent を、ログインから何日残すか（ADR-0038、[記録の保持期間と保全](moderation.md#record-retention-and-holds)） |
-| `retention_registration_origins` | 整数 90〜3650（日） | `180` | 登録元の IP アドレスを、登録から何日残すか |
-| `retention_reports` | 整数 180〜3650（日） | `365` | 通報を、最後の解決から何日残すか。処分が参照する通報は処分と同じだけ残る |
-| `retention_moderation_actions` | 整数 180〜3650（日） | `365` | アカウントへの処分と異議申し立てを、処分の終わり（解除・期限切れ・異議の審査の遅い方）から何日残すか |
-| `retention_audit_log` | 整数 365〜3650（日） | `730` | 監査ログの行を、記録から何日残すか |
-| `search_indexing` | `allow` / `deny` | `deny` | 検索エンジンに索引を許すか（FR-725、ADR-0057）。`allow` でも、索引されるのは `indexable` のアカウントのプロフィールと `public` の投稿だけ（[検索エンジンと AI クローラー](crawlers.md)） |
-| `ai_usage` | `allow` / `deny_training` / `deny` | `deny` | AI への表明（FR-725、ADR-0057）。`deny_training` は学習を拒否し、`deny` は学習と AI での利用（AI 検索・アシスタント・エージェント）を拒否する |
-| `indexable_default` | `true` / `false` | `false` | 新規アカウントの `indexable` の既定（FR-412）。変えても既存のアカウントの `indexable` は変わらない |
-| `security_contact` | `https:` か `mailto:` の URI（空 = 未設定） | 空 | 脆弱性の連絡先。設定すると `/.well-known/security.txt`（RFC 9116）を返す |
-| `require_media_description` | `true` / `false` | `false` | ローカルの投稿に添付するすべての画像に代替テキストを必須にするか（FR-105）。`true` にすると、代替テキストが無いか空白だけの画像のある投稿と編集を 422 で拒む。`GET /api/v1/instance` の `limits.require_media_description` で公開し、Web クライアントは説明の入力欄を必須にする。利用者ごとの設定 `require_media_description`（送る前に確かめるだけ）とは別 |
-| `link_cards_enabled` | `true` / `false` | `true` | 投稿中のリンクのカードを出すか（FR-117、ADR-0062）。`true` ではサーバーがリンクの先のページを取得してカードを作る（[federation.md §9.1](../architecture/federation.md#91-リンクのカード)）。`false` にすると取得をやめ、作ったカードも出さない |
-| `oauth_metadata_document_clients` | `true` / `false` | `true` | Client ID Metadata Document のクライアントを受けるか（[ADR-0090](../adr/0090-third-party-oauth-apps.md) §1）。`true` では `client_id` が `https` の URL の認可要求で、サーバーがその URL のメタデータを取得してクライアントとして扱う（事前の登録は要らない）。取得はリダイレクトを追わず、5 KB までで、応答のキャッシュ指示に従って最大 24 時間使い回す。`false` にすると取得をやめ、このクライアントの認可要求・トークンの交換と更新を断る |
-| `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 運営の費用（`/admin/finance` で記録したもの）をどこまで公開するか（FR-903、[ADR-0067](../adr/0067-finance-cost-records.md) §8）。`private` は公開しない（`GET /api/v1/instance/cost_totals` は 404）、`totals` は期間ごとの通貨ごとの合計だけ、`breakdown` は合計と事業者・区分ごとの内訳を、情報ページ（`/about` と `/about/costs`）と API で誰にでも見せる。`breakdown` ではどの事業者（クラウドなど）で動いているかが知られる。どの段階でも項目の名前・メモ・個々の支払いは公開しない。公開するのは今日（UTC）を含む期間まで |
-| `finance_viewer_item_names` | `true` / `false` | `false` | 権限 `view_finance` を持つ利用者が会計の画面（`/finance`、`GET /api/v1/finance/cost_totals`）で、費用の項目の名前と、取り込んだ費用のサービス名を見るか（[ADR-0070](../adr/0070-permission-split-emoji-finance.md) §5）。合計と事業者・区分ごとの内訳はこの設定によらずいつも見せる |
-| `finance_viewer_item_memos` | `true` / `false` | `false` | 権限 `view_finance` を持つ利用者が会計の画面で費用の項目のメモを見るか（ADR-0070 §5）。名前かメモのどちらかが `true` なら、期間ごとに項目の行（事業者・区分・その期間の額に、有効なら名前・メモ）を出す。`manage_finance` を持つ人は設定によらずすべてを見る |
-| `finance_viewer_income` | `totals` / `plans` | `totals` | 権限 `view_finance` を持つ利用者に、収入を合計だけ（`totals`）か、加えてプランごとの加入者の数まで（`plans`）見せるか（ADR-0070 §5）。プランごとの金額と誰が払ったかはどの値でも見せない。`income_visibility` が `plans` なら、この値によらず公開されている人数を見せる。収入は Web の会計の画面（`/finance`）と `GET /api/v1/finance/income_totals` で読む |
-| `income_visibility` | `private` / `totals` / `plans` | `private` | サポーターの収入（決済の事業者の手数料を引いた額、FR-917、[ADR-0073](../adr/0073-income-records-and-publication.md) §7）をどこまで公開するか。`finance_visibility` とは別に選ぶ。`private` は公開しない（`GET /api/v1/instance/income_totals` は 404）、`totals` は期間ごとの通貨ごとの収入の合計だけ、`plans` は加えていまのプランごとの加入者の数を誰にでも見せる。加入者の少ないプランでは、人数から誰が加入しているかが推測されうる。収入と費用の差（収支）は、この値と `finance_visibility` がどちらも `private` でないときだけ出す（片方だけの公開では、収支から隠した側が分かるため）。どの値でも、個々の支払い・加入者・プランごとの金額・総額と手数料は公開しない。公開するのは今日（UTC）を含む期間まで |
-| `supporter_list_visibility` | `off` / `public` / `signed_in` | `off` | サポーターの一覧（`GET /api/v1/instance/supporters` と `/about/supporters`、[ADR-0071](../adr/0071-role-badges-and-supporter-list.md) §4）を誰に見せるか。`off` は誰にも見せない（API は 404、`/about` からのリンクも出ない）、`public` は誰にでも、`signed_in` はこのサーバーにサインインした人だけに見せる（サインインしていなければ API は 401）。一覧に出るのは、加入中の人のうち自分で掲載を選んだ人のアカウントとプランだけで、金額・月払いか年払いか・日付・人数はどの値でも出さない。一覧のページと API の応答は、`search_indexing` に関わらずいつも `noindex, noarchive` |
-| `user_app_registration` | `true` / `false` | `true` | ログインした利用者が自分の OAuth のアプリ（public / confidential）を client API（`POST /api/v1/oauth_apps`）で登録できるか（FR-003、[ADR-0090](../adr/0090-third-party-oauth-apps.md) §1）。`false` にすると登録は 403 になる。登録済みのアプリの一覧・変更・削除・シークレットの再発行・自分へのトークン発行と、ほかの利用者による認可はそのまま使える |
+| `registration_mode` | `open` / `approval` / `invite` / `closed` | `approval` | The registration mode ([registration](registration.md)). While a service shutdown is announced and after it is closed, the effective value is `closed`. The stored value does not change, and cancelling the announcement restores it. `GET /instance` and NodeInfo show the effective value |
+| `max_status_length` | integer 1-100000 | `500` | The maximum length of a post, in characters |
+| `default_locale` | BCP 47 language tag | `en` | The default locale. It is the initial UI locale of new users, and the fallback when no catalog matches a user's preference |
+| `local_timeline_access` | `off` / `logged_in` / `everyone` | `everyone` | Who can see the local timeline (`GET /api/v1/timelines/local`): nobody, signed-in users, or everyone. `off` answers 404 and `logged_in` answers visitors who are not signed in with 401; in both cases the navigation hides it. Unless the value is `everyone`, the landing page shows no sample posts |
+| `federated_timeline_access` | `off` / `logged_in` / `everyone` | `everyone` | Who can see the federated timeline (`GET /api/v1/timelines/public`). The values mean the same as for the local timeline |
+| `preview_image` | media ID (empty = unset) | empty | The link preview image (`og:image`) for posts and profiles without an image. When unset, the bundled default image is used ([link previews](link-previews.md)) |
+| `contact_account` | username of a local account (empty = unset) | empty | The account to contact the operators. See [contact and thumbnail](#contact-and-thumbnail) |
+| `contact_email` | email address (empty = unset) | empty | The email address to contact the operators. It is also the `Reply-To` and the signature of the emails the server sends |
+| `thumbnail` | media ID (empty = unset) | empty | An image that represents the instance (thumbnail) |
+| `remote_media_policy` | `none` / `avatars` / `all` | `none` | Whether to keep copies of remote media. `none`: the media proxy relays every request. `avatars`: avatars, headers, and custom emoji are cached in blob storage for `remote_media_cache_ttl`. `all`: all remote media is. The total size of the cache is limited by the configuration `remote_media_cache_max_bytes` |
+| `remote_media_cache_ttl` | integer 60-31536000 (seconds) | `86400` | How long fetched remote media may be kept. It is also the `Cache-Control: max-age` of the media proxy responses, so CDNs and browsers cache for this long |
+| `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch (secure mode). When `true`, an ActivityPub GET without a verifiable HTTP signature is answered with `401` for objects and collections, and with a minimal document that carries the key for a user's actor. The instance actor always returns its whole document, so any server can fetch the key to verify a signature |
+| `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | The direction of federation. `off`: no federation. `inbound`: you follow and read remote accounts, but local posts, profiles, and reactions are not sent out, and follows from outside are refused (`Reject`). `outbound`: you accept follows from outside and deliver local posts, but remote posts and reactions are not taken in. `both`: send and receive. A change takes effect at once and needs the permission `manage_settings` |
+| `dynamic_client_registration` | `true` / `false` | `true` | Dynamic client registration (RFC 7591). While `true`, `POST /oauth/register` accepts the registration of public clients without authentication. When `false`, the endpoint refuses every request with `403` (`access_denied`); clients that are already registered keep working. A periodic job deletes dynamically registered clients that are not used, following the configuration `dynamic_client_unredeemed_ttl` and `dynamic_client_idle_ttl`. A change takes effect at once and needs `manage_settings` |
+| `domain_actions_visibility` | `none` / `users` / `all` | `none` | Who can see the list of domains with actions taken (`GET /api/v1/instance/domain_actions`): nobody, signed-in users, or everyone ([moderation](moderation.md#publishing-the-domains-you-act-on)) |
+| `domain_actions_rationale_visibility` | `none` / `users` / `all` | `none` | Who can see the public comments of that list. Someone who cannot see the list never sees them |
+| `appeal_window` | integer 20-365 (days) | `180` | How many days after an action the person concerned can appeal ([moderation](moderation.md#appeals)). Changing it also changes the deadline of actions already taken |
+| `retention_session_origins` | integer 90-3650 (days) | `180` | How many days after a login to keep the IP address and User-Agent of the login ([moderation](moderation.md#record-retention-and-holds)) |
+| `retention_registration_origins` | integer 90-3650 (days) | `180` | How many days after registration to keep the IP address of the registration |
+| `retention_reports` | integer 180-3650 (days) | `365` | How many days after the last resolution to keep a report. A report that an action refers to is kept as long as the action |
+| `retention_moderation_actions` | integer 180-3650 (days) | `365` | How many days after the end of an action (the lift, the expiry, or the review of an appeal, whichever is later) to keep account actions and appeals |
+| `retention_audit_log` | integer 365-3650 (days) | `730` | How many days after being recorded to keep an audit log row |
+| `search_indexing` | `allow` / `deny` | `deny` | Whether search engines may index the instance. Even with `allow`, only the profiles of `indexable` accounts and `public` posts are indexed ([search engines and AI crawlers](crawlers.md)) |
+| `ai_usage` | `allow` / `deny_training` / `deny` | `deny` | The statement to AI services. `deny_training` refuses training; `deny` refuses training and use by AI (AI search, assistants, agents) |
+| `indexable_default` | `true` / `false` | `false` | The default of `indexable` for new accounts. Changing it does not change existing accounts |
+| `security_contact` | `https:` or `mailto:` URI (empty = unset) | empty | Where to report vulnerabilities. When set, the server serves `/.well-known/security.txt` (RFC 9116) |
+| `require_media_description` | `true` / `false` | `false` | Whether every image attached to a local post needs alt text. When `true`, a post or an edit with an image whose alt text is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
+| `link_cards_enabled` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built |
+| `oauth_metadata_document_clients` | `true` / `false` | `true` | Whether to accept Client ID Metadata Document clients. When `true`, for an authorization request whose `client_id` is an `https` URL, the server fetches the metadata at that URL and treats it as the client (no prior registration). The fetch follows no redirects, reads at most 5 KB, and reuses the response for at most 24 hours following its cache directives. When `false`, it stops fetching and refuses authorization requests, token exchanges, and refreshes of these clients |
+| `finance_visibility` | `private` / `totals` / `breakdown` | `private` | How much of the running costs (recorded on `/admin/finance`) to publish. `private`: nothing is published (`GET /api/v1/instance/cost_totals` is 404). `totals`: only the total per period and currency. `breakdown`: the totals and a breakdown by provider and category, shown to everyone on the information pages (`/about` and `/about/costs`) and in the API. `breakdown` reveals which provider (for example, which cloud) you run on. At every level, item names, memos, and individual payments stay private. Periods up to and including the one containing today (UTC) are published |
+| `finance_viewer_item_names` | `true` / `false` | `false` | Whether users with the permission `view_finance` see cost item names and the service names of imported costs on the finance screen (`/finance`, `GET /api/v1/finance/cost_totals`). Totals and the breakdown by provider and category are always shown, whatever this setting is |
+| `finance_viewer_item_memos` | `true` / `false` | `false` | Whether users with `view_finance` see the memos of cost items on the finance screen. If either the name or the memo setting is `true`, each period shows item rows (provider, category, and the amount of that period, plus the name and memo where enabled). People with `manage_finance` see everything regardless |
+| `finance_viewer_income` | `totals` / `plans` | `totals` | Whether users with `view_finance` see only the income totals (`totals`) or also the number of subscribers per plan (`plans`). The amount per plan and who paid are never shown. If `income_visibility` is `plans`, the published counts are shown whatever this value is. Income is read on the finance screen of the web client (`/finance`) and in `GET /api/v1/finance/income_totals` |
+| `income_visibility` | `private` / `totals` / `plans` | `private` | How much of the supporter income (the amount after the payment provider's fees) to publish. It is chosen separately from `finance_visibility`. `private`: nothing is published (`GET /api/v1/instance/income_totals` is 404). `totals`: only the income total per period and currency. `plans`: also the current number of subscribers per plan, shown to everyone. For a plan with few subscribers, the count can let people guess who subscribes. The balance (income minus costs) is shown only when neither this value nor `finance_visibility` is `private`; otherwise the balance would reveal the side you hid. At every level, individual payments, subscribers, the amount per plan, and gross amounts and fees stay private. Periods up to and including the one containing today (UTC) are published |
+| `supporter_list_visibility` | `off` / `public` / `signed_in` | `off` | Who can see the list of supporters (`GET /api/v1/instance/supporters` and `/about/supporters`). `off`: nobody (the API answers 404 and `/about` has no link). `public`: everyone. `signed_in`: only people signed in to this server (the API answers 401 otherwise). The list shows only the accounts and plans of active subscribers who chose to be listed; amounts, monthly or yearly billing, dates, and counts are never shown. The list page and the API response are always `noindex, noarchive`, whatever `search_indexing` is |
+| `user_app_registration` | `true` / `false` | `true` | Whether signed-in users can register their own OAuth apps (public or confidential) with the client API (`POST /api/v1/oauth_apps`). When `false`, registering answers 403. Listing, changing, and deleting registered apps, reissuing secrets, issuing a token to yourself, and authorization by other users keep working |
 
-- 値は保存前に正規形にします（`TRUE` → `true`、`0750` → `750`、`ja_jp` → `ja-JP`、メディア ID は小文字）。不正な値は何も書き込まずに拒否します。
-- `preview_image` と `thumbnail` は、存在する画像のメディア（処理中を含む）だけを受け付けます。`preview_image` は、処理が終わるまでと、処理に失敗した画像の代わりには既定画像が出ます。
-  どの版でも一度設定したメディアは、未添付アップロードの消去（FR-803）で消えません。
-- `contact_account` は、削除されていないローカルの利用者のユーザー名だけを受け付けます（小文字にして保存）。`contact_email` は `alice@example.com` の形のアドレスだけを受け付けます。
+- Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
+  An invalid value is rejected and nothing is written.
+- `preview_image` and `thumbnail` accept only the media of an image that exists (including one still being processed).
+  Until processing finishes, and in place of an image whose processing failed, `preview_image` falls back to the default image.
+  Once a media has been set in any revision, the cleanup of unattached uploads does not delete it.
+- `contact_account` accepts only the username of a local user who is not deleted (stored in lowercase). `contact_email`
+  accepts only an address of the form `alice@example.com`.
 
-### 文章（1 キー 1 値）
+### Texts (one key, one value)
 
-| キー | 上限 | 説明 |
+| Key | Limit | Description |
 | --- | --- | --- |
-| `name` | 100 文字・1 行（空白だけは不可） | インスタンスの名前（表示名）。[名前とドメイン](#名前とドメイン) |
-| `short_description` | 500 文字 | 短い説明 |
-| `description` | 20000 文字 | 説明 |
-| `terms` | 100000 文字 | 利用規約（Markdown） |
-| `privacy_policy` | 100000 文字 | プライバシーポリシー（Markdown） |
-| `commerce_disclosure` | 100000 文字 | 特定商取引法に基づく表記など、課金のプランの販売者の表記（Markdown。[サポーター](supporters.md)） |
-| `preview_image_alt` | 1500 文字 | `preview_image` の画像の代替テキスト（`og:image:alt`）。無ければ「〇〇のイメージ画像」 |
-| `thumbnail_alt` | 1500 文字 | `thumbnail` の画像の代替テキスト |
+| `name` | 100 characters, one line (whitespace alone is not allowed) | The instance name (display name). See [name and domain](#name-and-domain) |
+| `short_description` | 500 characters | A short description |
+| `description` | 20000 characters | The description |
+| `terms` | 100000 characters | The terms of service (Markdown) |
+| `privacy_policy` | 100000 characters | The privacy policy (Markdown) |
+| `commerce_disclosure` | 100000 characters | The seller's disclosure for paid plans, such as the notice that Japanese law requires (Markdown; [supporters](supporters.md)) |
+| `preview_image_alt` | 1500 characters | The alt text of the `preview_image` image (`og:image:alt`). When unset, "Image of {instance name}" is used |
+| `thumbnail_alt` | 1500 characters | The alt text of the `thumbnail` image |
 
-- 文章はキーごとに 1 つの値です。管理者が好きな言語で 1 回書き、どのロケールの読み手にも同じ値を出します。ほかの言語の読み手は機械翻訳などで読みます。
-  管理画面の欄の名前や説明は、ほかの画面の文言と同じく閲覧者の言語に翻訳します（対象になるのは管理者が書く値だけです）。
-- 書かれた言語はサーバーには分からないので、Web クライアントとサーバーが描画する画面は、文章を `dir="auto"` と `lang=""`（言語が不明であることを示す HTML の値）で出し、画面の言語を引き継がせません。
-- 空の文章を設定すると、その文章を消したことになります。
-- 文章は CLI のほか、Web クライアントの管理画面（名前・短い説明・説明は「サーバーの設定」、`/admin/settings`。利用規約・プライバシーポリシー・特定商取引法に基づく表記などは「規約とポリシー」、`/admin/documents`）とクライアント API（`GET /api/v1/admin/instance_texts`・`PUT /api/v1/admin/instance_texts/{key}`）で変えられます。どちらもロールの権限 `manage_settings` が要り、変更は監査ログ（`text_changed`）に残ります。
+- Each text has one value. An administrator writes it once in whatever language they like, and readers of every locale see the
+  same value; readers of other languages rely on machine translation or the like. The labels and descriptions of the admin
+  fields are translated into the viewer's language like any other screen text; only the value an administrator writes is not.
+- The server does not know the language of a text, so the web client and the screens rendered by the server output texts with
+  `dir="auto"` and `lang=""` (the HTML value for an unknown language) instead of inheriting the language of the screen.
+- Setting an empty text deletes it.
+- Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description in
+  "Server settings", `/admin/settings`; terms, privacy policy, the commerce disclosure, and the like in "Terms and policies",
+  `/admin/documents`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+  Both need the role permission `manage_settings`, and changes are recorded in the audit log (`text_changed`).
 
-### 利用規約とプライバシーポリシー
+### Terms and privacy policy
 
-- `terms`・`privacy_policy`・`commerce_disclosure` は Markdown で書きます（CommonMark と、GitHub Flavored Markdown の表・取り消し線・URL の自動リンク）。段落の中の改行はそのまま改行になり、`#` の見出しはページの題の下の段（`h2`）から始まります。
-- サーバーが HTML にしてサニタイズし（匿名の `GET /api/v1/instance/documents/{kind}`）、Web クライアントのページ `/about/terms`・`/about/privacy`・`/about/commerce` が表示します。生の HTML・画像・`http` / `https` / `mailto` 以外のリンクは出ません。ページはサインインが要りません（Web クライアントなので JavaScript は要ります）。`/about/commerce` は決済の事業者に渡す URL です。
-- 書いた文書は、登録の画面（作成のボタンの前の同意の文とリンク）、サーバーが描画するすべての画面のフッター、Web クライアント（3 列目・メニュー・設定・サインインの画面）からリンクされます。書かれていない文書はリンクされず、本文の API は 404 です。
+- Write `terms`, `privacy_policy`, and `commerce_disclosure` in Markdown (CommonMark plus the GitHub Flavored Markdown tables,
+  strikethrough, and autolinks). A line break inside a paragraph stays a line break, and `#` headings start one level below the
+  page title (`h2`).
+- The server converts them to HTML and sanitizes it (anonymous `GET /api/v1/instance/documents/{kind}`), and the web client
+  pages `/about/terms`, `/about/privacy`, and `/about/commerce` show them. Raw HTML, images, and links other than `http`,
+  `https`, and `mailto` are removed. The pages need no sign-in (they are web client pages, so they need JavaScript).
+  `/about/commerce` is the URL to give to the payment provider.
+- A document you write is linked from the registration screen (the consent text and links before the create button), the footer
+  of every screen the server renders, and the web client (the third column, the menu, the settings, and the sign-in screen).
+  A document that is not written is not linked, and its API answers 404.
 
-### 名前とドメイン
+### Name and domain
 
-インスタンスはドメインと名前を別々に持ちます。
+An instance has a domain and a name, separately.
 
-- **ドメイン**は設定 `host`（とハンドルのドメイン `account_domain`）で、運営中は変えられません。ハンドル（`@alice@example.com`）・URL・ActivityPub の ID・`GET /api/v1/instance` の `domain` は、名前があってもドメインのままです。
-- **名前**は文章 `name` で、人に向けてインスタンスを名指す場所に出ます: Web クライアントのサイドバーと「このサーバーについて」、ブラウザのタブのタイトル、
-  サーバーが描画するログイン・登録・メール確認・アカウントの状態・認可同意の画面、メール（メールアドレスの確認・モデレーターへの通知）、
-  リンクプレビューの `og:site_name`、Web App Manifest の `name` / `short_name`、NodeInfo の `metadata.nodeName`、`GET /api/v1/instance` の `name`。
-- 名前はどのロケールでも同じです。名前が無ければ、名前の代わりにドメイン（`host`）を出します。
-- 変更は再起動なしで、次の要求から反映されます。開いている Web クライアントのタブのタイトルとサイドバーは、管理画面で保存したときに更新されます。
+- The **domain** is the configuration `host` (and `account_domain`, the domain of handles). It cannot be changed while the
+  instance is running. Handles (`@alice@example.com`), URLs, ActivityPub IDs, and `domain` in `GET /api/v1/instance` stay the
+  domain even when there is a name.
+- The **name** is the text `name`. It appears wherever the instance is named to people: the sidebar and "About this server" of the
+  web client, the browser tab title, the sign-in, registration, email confirmation, account status, and authorization consent
+  screens rendered by the server, emails (email address confirmation and moderator notifications), `og:site_name` of link
+  previews, `name` / `short_name` of the Web App Manifest, `metadata.nodeName` of NodeInfo, and `name` in `GET /api/v1/instance`.
+- The name is the same in every locale. When there is no name, the domain (`host`) is shown instead.
+- A change takes effect from the next request, without a restart. The tab title and sidebar of an open web client update when
+  you save on the admin screen.
 
-### 連絡先とサムネイル
+### Contact and thumbnail
 
-運営への連絡先（`contact_account`・`contact_email`）とインスタンスを表す画像（`thumbnail` と文章 `thumbnail_alt`）は、次の場所に出ます。
-どれも未設定なら出ません。
+The contact for the operators (`contact_account`, `contact_email`) and the image that represents the instance (`thumbnail`
+and the text `thumbnail_alt`) appear in the places below. Whatever is unset does not appear.
 
-- Web クライアントの「このサーバーについて」（`/about`）。サムネイルはサインインしていない人の最初の画面（`/`）にも出ます。
-- `GET /api/v1/instance` の `contact`（`account` と `email`）と `thumbnail`（`url`・`width`・`height`・`alt`）。
-- NodeInfo の `metadata`。Misskey の慣行の `maintainer`（`name` は連絡先のアカウントの表示名、無ければユーザー名。`email` は `contact_email`）、
-  Pleroma・Akkoma の慣行の `staffAccounts`（連絡先のアカウントの Actor の ID）、`thumbnail`（`url` と `alt`）、短い説明 `short_description` の `nodeDescription`。
+- "About this server" of the web client (`/about`). The thumbnail also appears on the first screen (`/`) for people who are not
+  signed in.
+- `contact` (`account` and `email`) and `thumbnail` (`url`, `width`, `height`, `alt`) in `GET /api/v1/instance`.
+- `metadata` in NodeInfo: `maintainer` by the Misskey convention (`name` is the display name of the contact account, or its
+  username when it has none; `email` is `contact_email`), `staffAccounts` by the Pleroma and Akkoma convention (the actor ID of
+  the contact account), `thumbnail` (`url` and `alt`), and `nodeDescription` from the short description `short_description`.
 
-連絡先のアカウントが凍結・削除されたときは、アカウントは出さずにメールアドレスだけを出します。
-変更は Web クライアントの管理画面（「サーバーの設定」、`/admin/settings`）か、CLI・クライアント API で行います。
+When the contact account is suspended or deleted, the account is not shown and only the email address is.
+Change them on the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
 
-## 使い方
+## Usage
 
 ```sh
-my instance list                                      # すべての設定値（既定値かどうか）と文章
+my instance list                                      # all settings (and whether each is the default) and texts
 my instance get registration_mode
 my instance set registration_mode open
-my instance set name "例のソーシャル"                 # どのロケールでも同じ名前
-my instance set description - < description.txt       # 値 "-" は標準入力から読む
+my instance set name "Example Social"                 # the same name in every locale
+my instance set description - < description.txt       # the value "-" reads standard input
 my instance get name
-my instance set name ""                               # 名前を消す
-my instance history registration_mode                 # 変更履歴（新しい順、-limit で件数）
+my instance set name ""                               # delete the name
+my instance history registration_mode                 # revision history (newest first, -limit sets the count)
 my instance history description
-my instance set -owner admin preview_image ./preview.png   # 画像を admin のメディアとしてアップロードし、プレビュー画像にする
-my instance set preview_image 0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f   # アップロード済みのメディア ID を指定
-my instance set preview_image_alt "青い鳥のマスコット"
-my instance set preview_image ""                      # 同梱の既定画像に戻す
-my instance set contact_account admin                 # 連絡先のアカウント
+my instance set -owner admin preview_image ./preview.png   # upload the image as media of admin and use it as the preview image
+my instance set preview_image 0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f   # give the ID of media that is already uploaded
+my instance set preview_image_alt "A blue bird mascot"
+my instance set preview_image ""                      # back to the bundled default image
+my instance set contact_account admin                 # the contact account
 my instance set contact_email admin@example.com
-my instance set -owner admin thumbnail ./thumbnail.png  # サムネイル
-my instance set thumbnail_alt "海辺の町の写真"
+my instance set -owner admin thumbnail ./thumbnail.png  # the thumbnail
+my instance set thumbnail_alt "A town by the sea"
 ```
 
-- フラグはキーと値より前に書きます。
-- `-owner <ユーザー名>` を付けると、`preview_image`・`thumbnail` の値を画像ファイルのパスとして読み、そのローカルアカウントのメディアとしてアップロードします。
-  画像はワーカーが処理してから使われます（[メディア](../architecture/data-model/04-tables/04-content.md#44-content)）。推奨は 1200×630 の横長の画像です。
-- 変更は 1 回のトランザクションで版（`instance_*_revisions`）を記録し、現在値（`instance_settings` / `instance_texts`）を更新します。
-  CLI からの変更は変更者なし（履歴の `BY` が `cli`）として残ります。
-- 同じ値を設定し直しても版は増えます。
-- 終了コード: 0 は成功、1 は値の拒否や DB のエラー（何も変更しない）、2 は引数の誤り。
+- Write flags before the key and value.
+- With `-owner <username>`, the value of `preview_image` or `thumbnail` is read as the path of an image file and uploaded as
+  media of that local account. The worker processes the image before it is used. A landscape image of 1200x630 is recommended.
+- A change records a revision (`instance_*_revisions`) and updates the current value (`instance_settings` / `instance_texts`)
+  in one transaction. A change from the CLI is recorded without an actor (`BY` is `cli` in the history).
+- Setting the same value again still adds a revision.
+- Exit codes: 0 for success, 1 for a rejected value or a database error (nothing changes), 2 for wrong arguments.
 
-### 連合の向きを変えるとき
+### Changing the direction of federation
 
-- 狭めても、フォロー関係・取り込んだ投稿・配送の記録は残り、`Undo` / `Reject` は送りません。流れが止まるだけで、`both` などに戻すとそのまま再開します。
-- 狭めている間に作った投稿・反応は、戻しても遡って配送しません。
-- 外の側では、`inbound` の間はローカルの利用者のフォロワーに何も届かず、`outbound` / `off` の間はローカルの利用者のフォローが更新されません。
-- `off` の間に行った削除（投稿・アカウント）は外に伝わりません。`inbound` / `outbound` では、それまでに外へ出したものの撤回（`Delete` など）は元の配送先とその時点のフォロワーに送ります。
-- 変更は `instance_setting_revisions` と監査ログ（`target_kind = setting`）に残ります。
+- Narrowing it keeps follow relationships, imported posts, and delivery records, and sends no `Undo` or `Reject`. The flow just
+  stops, and returning to `both` (or another mode) resumes it as it was.
+- Posts and reactions made while narrowed are not delivered retroactively after you widen it again.
+- On the remote side, local users' followers receive nothing while the mode is `inbound`, and local users' follows are not
+  updated while it is `outbound` or `off`.
+- Deletions (of posts or accounts) made while the mode is `off` are not sent out. In `inbound` and `outbound`, the retraction
+  of what was already sent out (`Delete` and the like) goes to the original recipients and the followers at that time.
+- Changes are recorded in `instance_setting_revisions` and the audit log (`target_kind = setting`).
 
-関係も切りたいときは、CLI `my admin federation sever` を使います。
+To cut the relationships too, use the CLI `my admin federation sever`.
 
 ```sh
-my admin federation sever -direction in     # 外のアカウントによる、ローカルの利用者のフォローを終わらせる
-my admin federation sever -direction out    # ローカルの利用者による、外のアカウントのフォローを終わらせる
+my admin federation sever -direction in     # end follows of local users by remote accounts
+my admin federation sever -direction out    # end follows of remote accounts by local users
 my admin federation sever -direction both
 ```
 
-- ローカルのアカウントと外のアカウントのあいだの承認待ちと有効なフォローを、モデレーションによる終了（`follow_terminations`、`reason = moderation`）として終わらせます。モードの変更は自動では呼びません。
-- 外へ `Reject`（`in`）・`Undo`（`out`）を送るのは、そのときのモードが送るときだけです。送らないモード（`off` など）では、ローカルの側だけで終わり、外の側には伝わりません。
-- 何度実行しても安全です。終わった数を標準出力に示します。
+- It ends the pending and active follows between local and remote accounts as terminations by moderation
+  (`follow_terminations`, `reason = moderation`). A change of mode never calls it automatically.
+- `Reject` (`in`) or `Undo` (`out`) is sent to the remote side only when the current mode sends that direction. In a mode that
+  does not (such as `off`), the follow ends on the local side only and the remote side is not told.
+- It is safe to run repeatedly. It prints the number of follows it ended to standard output.
 
-## 管理画面とクライアント API
+## Admin screens and the client API
 
-CLI で変えられる設定値は、Web クライアントの管理画面とクライアント API でも変えられます。どちらもロールの権限 `manage_settings` が要り（組み込みの `admin` だけが持つ）、
-変更は CLI と同じく版として残り、キーごとに監査ログ（`setting_changed`、対象は設定、操作者はその利用者）に記録されます。監査ログはモデレーションの画面（「監査ログ」、`/moderation/audit-log`）で引けます。
+Every setting the CLI can change can also be changed on the admin screens of the web client and with the client API. Both need
+the role permission `manage_settings` (only the built-in `admin` role has it). As with the CLI, a change is kept as a revision
+and recorded per key in the audit log (`setting_changed`, the target is the setting and the actor is that user). Look at the
+audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 
-- **Web クライアント**（「サーバーの設定」、`/admin/settings`、[ADR-0058](../adr/0058-moderation-admin-separation.md) のサーバー管理）: 名前・説明と、次の設定を変えられます。
-  設定はまとめて 1 つのフォームで保存し、変えたものだけを送ります。
+- **Web client** ("Server settings", `/admin/settings`): you can change the name and description, and the settings below.
+  The settings are saved together in one form, and only what you changed is sent.
 
-  | 区画 | 設定 |
+  | Section | Settings |
   | --- | --- |
-  | 登録 | `registration_mode` |
-  | 言語 | `default_locale`（アプリのある言語から選ぶ） |
-  | タイムライン | `local_timeline_access`・`federated_timeline_access` |
-  | 投稿 | `require_media_description` |
-  | 連合 | `authorized_fetch`・`remote_media_policy`・`remote_media_cache_ttl`（1 時間・1 日・7 日・30 日・365 日から選ぶ）・`link_cards_enabled` |
-  | 制限・凍結したサーバー | `domain_actions_visibility`・`domain_actions_rationale_visibility` |
-  | 運営の費用 | `finance_visibility`（`breakdown` の選択肢に、事業者と区分が知られることを書く）・`finance_viewer_item_names`・`finance_viewer_item_memos`・`finance_viewer_income`（会計を閲覧できる人に見せる範囲） |
-  | 収入 | `income_visibility`（`plans` の選択肢に、加入者の少ないプランでは誰が加入しているかが推測されうることを書く） |
-  | サポーターの一覧 | `supporter_list_visibility` |
-  | 検索エンジンと AI | `search_indexing`・`indexable_default`・`ai_usage`・`security_contact` |
+  | Registration | `registration_mode` |
+  | Language | `default_locale` (chosen from the languages the app has) |
+  | Timelines | `local_timeline_access`, `federated_timeline_access` |
+  | Posts | `require_media_description` |
+  | Federation | `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards_enabled` |
+  | Limited and suspended servers | `domain_actions_visibility`, `domain_actions_rationale_visibility` |
+  | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
+  | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
+  | Supporter list | `supporter_list_visibility` |
+  | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
+  | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
 
-  連絡先とサムネイル（`contact_account`・`contact_email`・`thumbnail` と文章 `thumbnail_alt`）は、名前と説明の下の「連絡先とサムネイル」の区画で変えます。画像は選んだときにアップロードされ、保存したときにサムネイルになります。
+  Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) are changed in the
+  "Contact and thumbnail" section below the name and description. An image is uploaded when you choose it and becomes the
+  thumbnail when you save.
 
-  `max_status_length`・`preview_image`・`appeal_window`・保持期間（`retention_*`）は、画面には出ず、CLI とクライアント API で変えます。
-- **クライアント API**: `GET /api/v1/admin/settings` がすべての設定値を、現在値・既定値・設定済みか・型と受け付ける値（選択肢・範囲）とともに返します。
-  `PATCH /api/v1/admin/settings` は `{"values": {"<キー>": "<値>", ...}}` の設定値をまとめて変えます。値はすべて文字列で、CLI と同じく正規形にして保存します。
-  1 つでも知らないキーか不正な値があれば、そのキーを挙げた 422 で、何も変えません。変えたキーは同じトランザクションで版と監査ログに残ります。
-- 登録モードを `invite` にしたときの招待は、モデレーションの画面（「招待」、`/moderation/invites`、権限 `manage_invites`）で作ります（[利用者登録](registration.md#invite-codes)）。
+  `max_status_length`, `preview_image`, `appeal_window`, and the retention periods (`retention_*`) do not appear on the screen;
+  change them with the CLI or the client API.
+- **Client API**: `GET /api/v1/admin/settings` returns every setting with its current value, its default, whether it is set,
+  and its type and accepted values (choices or range). `PATCH /api/v1/admin/settings` changes settings together with
+  `{"values": {"<key>": "<value>", ...}}`. All values are strings, normalized and stored as with the CLI. If a single key is
+  unknown or a value is invalid, the answer is a 422 that names the key and nothing changes. The changed keys are recorded as
+  revisions and in the audit log in the same transaction.
+- Invitations, when the registration mode is `invite`, are created on the moderation screen ("Invites", `/moderation/invites`,
+  permission `manage_invites`; see [invite codes](registration.md#invite-codes)).
 
-## ルール
+## Rules
 
-インスタンスのルール（FR-705）は、`GET /api/v1/instance` の `rules` が並べ、通報が ID で引用します。
+The rules of the instance appear in `rules` of `GET /api/v1/instance`, and reports cite them by ID.
 
-- ルールは 1 行の文（300 文字まで）と任意の補足（1,000 文字まで）を 1 つずつ持ちます。文章と同じく、管理者が好きな言語で書き、どのロケールでも同じ値を出します（`dir="auto"` と `lang=""`）。有効なルールは 100 個までです。
-- 変更（文の改訂・並べ替え）はすべて版（`instance_rule_revisions`）として残り、ルールの ID は変わりません。
-- 廃止したルールは有効なルールの一覧から消えます。元には戻せませんが、通報からは引き続き参照できます。
+- A rule has a one-line sentence (up to 300 characters) and an optional supplement (up to 1,000 characters). As with texts, the
+  administrator writes them in whatever language they like and every locale sees the same value (`dir="auto"` and `lang=""`).
+  There can be at most 100 active rules.
+- Every change (a revised sentence, a reordering) is kept as a revision (`instance_rule_revisions`), and the ID of a rule does
+  not change.
+- A retired rule disappears from the list of active rules. It cannot be brought back, but reports can still refer to it.
 
 ```sh
-my instance rule add -hint "嫌がらせをしない" "親切に"   # 有効なルールの最後に追加
-my instance rule edit <rule> "いつも親切に"             # 文を変える。補足は -hint を付けたときだけ変わる
-my instance rule move <rule> 1                        # 1 番目に移し、有効なルールを 1, 2, ... と振り直す
-my instance rule retire <rule>                        # 廃止する
-my instance rule list                                 # 有効なルール（-all で廃止したものも）
+my instance rule add -hint "No harassment" "Be kind"   # add at the end of the active rules
+my instance rule edit <rule> "Always be kind"          # change the sentence; the supplement changes only with -hint
+my instance rule move <rule> 1                         # move to position 1 and renumber the active rules 1, 2, ...
+my instance rule retire <rule>                         # retire it
+my instance rule list                                  # active rules (-all includes retired ones)
 ```
 
-- 管理 API は `/api/v1/admin/rules`（一覧・追加・取得・改訂・移動・廃止）で、ロールの権限 `manage_rules` を要します。
-- Web クライアントの管理画面（「ルール」、`/admin/rules`、`manage_rules`）で、文と補足でのルールの追加、編集、「上へ」「下へ」での並べ替え、廃止（確認のダイアログを経る）ができます。
-  どの変更も監査ログ（`rule_added`・`rule_revised`・`rule_moved`・`rule_retired`）に残ります。
-- 終了コードは設定と同じです（0 は成功、1 は値の拒否や DB のエラー、2 は引数の誤り）。
+- The admin API is `/api/v1/admin/rules` (list, add, get, revise, move, retire) and needs the role permission `manage_rules`.
+- On the admin screen of the web client ("Rules", `/admin/rules`, `manage_rules`) you can add a rule with a sentence and a
+  supplement, edit it, reorder it with "Move up" and "Move down", and retire it (after a confirmation dialog). Every change
+  is recorded in the audit log (`rule_added`, `rule_revised`, `rule_moved`, `rule_retired`).
+- The exit codes are the same as for settings (0 for success, 1 for a rejected value or a database error, 2 for wrong arguments).
 
-## テーマ
+## Theme
 
-サーバー単位のテーマ（FR-605、[ADR-0059](../adr/0059-design-tokens-and-instance-theme.md)）は、Web クライアントのデザイントークンの上書きと、任意の CSS（カスタム CSS）1 つです。
-すべての閲覧者の Web クライアントとサーバーが描画する画面（ログイン・登録・規約など）に、ライトとダークの両方で当たります。
+The server-wide theme is a set of overrides of the web client's design tokens plus one optional piece of CSS (custom CSS). It
+applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on), in
+both light and dark.
 
-- 上書きできるトークンは `app/ui/src/theme.css` の原色（`--palette-*`）以外で、一覧・既定値・範囲は [app/ui/README.md](../../app/ui/README.md#server-themes) にあります。
-  色はライト / ダークそれぞれ `#rrggbb`（`color-overlay` は `#rrggbbaa` も可）で、ほかは種類ごとの形（長さ・数・時間・緩急・フォント名の並び・影）と範囲に収まる値です。
-  `font-sans` / `font-mono` を上書きするときは、先頭に `"my Noto Color Emoji"` を残してください。残さないと、Web クライアントの絵文字が OS のフォントで描かれます（[ADR-0096](../adr/0096-emoji-css-import.md)）。
-- 保存のときにサーバーが、値の形と範囲、色のトークンのすべての組のコントラスト（上書きしないトークンは既定値で、ライト / ダークの両方で WCAG 2.2 AA）、カスタム CSS の長さ（64 KiB）を検査し、
-  1 つでも満たさなければ何も保存しません。
-- カスタム CSS は、サーバーは中身を読まずに、トークンの規則の後に `@layer` の外で同じスタイルシートに入れて返します。Web クライアントと同じ CSP の下で動くので、別のオリジンの画像・フォント・`@import` は読めません。
-  **カスタム CSS の結果（コントラスト・横スクロール・タップ領域・フォーカスの表示・右から左の言語）はサーバーが確かめず、管理者の責任です。** クラス名とページの構造は版で変わるので、安定して使えるのはトークンだけです。
-- テーマは版（`instance_theme_revisions`）として残り、現在の版のスタイルシートを `/theme/{版の ID}.css`（`immutable` で長期キャッシュ）で配ります。
-  HTML の外枠は共有キャッシュ（60 秒と再検証の 300 秒）を持つので、保存してから全員に届くまで数分かかります。開いているページは読み込み直すまで前の見た目のままです。
-- 外枠の `<meta name="theme-color">`（ライト / ダーク）と Web App Manifest の `theme_color` / `background_color`（ライト）は、テーマの `color-surface` の値になります。
-- トークンもカスタム CSS も無い版を保存すると、テーマは既定に戻り、スタイルシートを読み込まなくなります。
-- Web クライアントの管理画面（「テーマ」、`/admin/theme`）とクライアント API（`GET` / `PUT /api/v1/admin/theme`）と CLI で変えられます。
-  管理画面とクライアント API はロールの権限 `manage_settings` が要り、変更は監査ログ（`setting_changed`、対象 `theme`）に残ります。
+- You can override every token in `app/ui/src/theme.css` except the primitive colors (`--palette-*`). The list, defaults, and
+  ranges are in [app/ui/README.md](../../app/ui/README.md#server-themes). A color is `#rrggbb` for light and for dark
+  (`color-overlay` may also be `#rrggbbaa`); the other tokens take a value of the shape of their kind (length, number,
+  duration, easing, font name list, shadow) within its range. When you override `font-sans` or `font-mono`, keep
+  `"my Noto Color Emoji"` first; otherwise the emoji of the web client are drawn with the OS font.
+- When you save, the server checks the shape and range of the values, the contrast of every pair of color tokens (tokens you do
+  not override use their defaults; WCAG 2.2 AA in both light and dark), and the length of the custom CSS (64 KiB). If any check
+  fails, nothing is saved.
+- The server does not read the custom CSS. It puts it in the same stylesheet after the token rules, outside any `@layer`. It runs
+  under the same CSP as the web client, so images, fonts, and `@import` from another origin cannot load.
+  **The server does not check the effects of custom CSS (contrast, horizontal scrolling, tap target size, focus indication,
+  right-to-left languages); that is the administrator's responsibility.** Class names and the page structure change between
+  versions, so only the tokens are stable to rely on.
+- A theme is kept as revisions (`instance_theme_revisions`), and the stylesheet of the current revision is served at
+  `/theme/{revision ID}.css` (`immutable`, cached for a long time). The HTML shell has a shared cache (60 seconds plus 300
+  seconds of revalidation), so it takes a few minutes after you save for everyone to get it. A page that is already open keeps
+  the old look until it is reloaded.
+- `<meta name="theme-color">` (light and dark) in the shell and `theme_color` / `background_color` (light) of the Web App
+  Manifest take the value of the theme's `color-surface`.
+- Saving a revision with no tokens and no custom CSS resets the theme to the default, and the stylesheet is no longer loaded.
+- You can change it on the admin screen of the web client ("Theme", `/admin/theme`), with the client API (`GET` / `PUT
+  /api/v1/admin/theme`), and with the CLI. The admin screen and the client API need the role permission `manage_settings`, and
+  changes are recorded in the audit log (`setting_changed`, target `theme`).
 
 ```sh
-my instance theme get > theme.json                    # 今のテーマを管理 API と同じ JSON で出す
-my instance theme set < theme.json                    # テーマ全体を置き換える（検査に通らなければ理由を出して何もしない）
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # 既定に戻す
+my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
+my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
+echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
 ```
 
 ```json
@@ -255,42 +306,60 @@ echo '{"tokens":[],"custom_css":""}' | my instance theme set   # 既定に戻す
 }
 ```
 
-## カスタム絵文字
+## Custom emoji
 
-ローカルのカスタム絵文字（FR-111、[ADR-0051](../adr/0051-custom-emoji.md)）は、投稿の本文・CW とプロフィールの表示名・自己紹介・補足情報で `:shortcode:` と書くと画像で表示され、
-送る Note と Actor の `Emoji` タグで Mastodon・Misskey・GoToSocial・Akkoma にも届きます。
+Local custom emoji are shown as images when someone writes `:shortcode:` in the body or content warning of a post, or in the
+display name, bio, or profile fields. They also reach Mastodon, Misskey, GoToSocial, and Akkoma through the `Emoji` tag of the
+Notes and actors you send.
 
-- shortcode は 2〜30 文字の英字・数字・`_` で、大文字と小文字を区別し、登録した後は変えられません。別名（10 個まで）とカテゴリ（64 文字まで）は絵文字ピッカーの検索と分類に使います。
-- 画像は PNG・GIF・WebP で、設定 `custom_emoji_max_bytes`（既定 256 KiB）以下、縦横 1,024 px 以下です。64 / 128 / 256 px の箱に収めた派生を作り、元の画像は残しません。
-  APNG は最初のフレームだけの静止画になります。GoToSocial は既定で 100 KiB を超える絵文字を取得しないので、小さい画像を勧めます。
-- 無効にした絵文字は、投稿・プロフィール・連合・ピッカーのどこにも出ず、`:shortcode:` の文字に戻ります。ピッカーに出さない設定にした絵文字は、ピッカーに出ないだけで、書けば使えます。
-  ほかのサーバーから届いた絵文字は、無効にすることと、このサーバーの絵文字として複製することだけができます。
-- 複製は、ほかのサーバーの絵文字の画像をメディアプロキシと同じ制限で取得し（`reject_media` のドメインの画像は取得しない）、上と同じ検査をして、新しいローカルの絵文字として登録します。
-  shortcode は元の絵文字のものか、指定したものです。画像は 256 px の箱に縮み、取得できない・検査に通らない画像は何も残しません。
-- 削除は取り消せません。過去の投稿の絵文字も文字に戻り、同じ shortcode で登録し直しても別の絵文字です。連合先が複製した画像は消せません。
-- 管理画面（「カスタム絵文字」、`/admin/custom-emojis`）とクライアント API（`/api/v1/admin/custom_emojis`）と CLI で、同じ操作ができます。
-  管理画面とクライアント API はロールの権限 `manage_custom_emojis`（組み込みの `admin` だけが持つ）が要ります。
-  登録・複製・画像の差し替え・設定と別名の変更・有効化と無効化・削除は、どこから行っても監査ログ（対象 `custom_emoji`）に残ります（CLI の操作は CLI の操作として）。
+- A shortcode is 2-30 letters, digits, or `_`. It is case-sensitive and cannot be changed after the emoji is registered.
+  Aliases (up to 10) and a category (up to 64 characters) are used for searching and grouping in the emoji picker.
+- The image is PNG, GIF, or WebP, at most `custom_emoji_max_bytes` (default 256 KiB) and at most 1,024 px on each side. The
+  server makes derivatives that fit boxes of 64, 128, and 256 px and does not keep the original. An APNG becomes a still image
+  of its first frame. GoToSocial by default does not fetch emoji larger than 100 KiB, so small images are recommended.
+- A disabled emoji appears nowhere (posts, profiles, federation, the picker), and `:shortcode:` is shown as text again. An emoji
+  set to be hidden from the picker is only missing from the picker and can still be used by writing it. An emoji that came from
+  another server can only be disabled or copied as an emoji of this server.
+- Copying fetches the image of another server's emoji under the same limits as the media proxy (images from domains with
+  `reject_media` are not fetched), runs the same checks as above, and registers it as a new local emoji. The shortcode is the
+  original's or the one you give. The image shrinks to the 256 px box, and an image that cannot be fetched or fails the checks
+  leaves nothing behind.
+- Deletion cannot be undone. Emoji in past posts turn back into text too, and registering the same shortcode again makes a
+  different emoji. Images that federated servers copied cannot be deleted.
+- The admin screen ("Custom emoji", `/admin/custom-emojis`), the client API (`/api/v1/admin/custom_emojis`), and the CLI do the
+  same things. The admin screen and the client API need the role permission `manage_custom_emojis` (only the built-in `admin`
+  has it). Registering, copying, replacing the image, changing settings and aliases, enabling and disabling, and deleting are
+  recorded in the audit log (target `custom_emoji`) whichever way they are done (an operation from the CLI is recorded as a CLI
+  operation).
 
 ```sh
-my admin emoji create -shortcode blobcat -category Cats -alias neko blobcat.png   # 登録する
-my admin emoji list -local                                                        # ローカルの絵文字を新しい順に出す
-my admin emoji update -category Animals -alias cat -alias neko <emoji id>         # カテゴリと別名を変える（別名は置き換え。-no-aliases で消す）
-my admin emoji update -hidden <emoji id>                                          # ピッカーに出さない（-hidden=false で戻す）
-my admin emoji replace-image <emoji id> blobcat2.png                              # 画像を差し替える
-my admin emoji disable <emoji id>                                                 # 無効にする（enable で戻す。リモートの絵文字も）
-my admin emoji list -remote -domain mastodon.example                              # ほかのサーバーの絵文字を出す
-my admin emoji copy [-shortcode <name>] <emoji id>                                # リモートの絵文字をローカルへ複製する
-my admin emoji delete <emoji id>                                                  # 削除する
-my admin emoji requests list [-state pending|approved|rejected|withdrawn|lapsed|all] # 作成の申請を出す（既定は審査中）
-my admin emoji requests approve <request id>                                      # 申請を承認する
-my admin emoji requests reject [-reason <text>] <request id>                      # 申請を却下する（理由は申請者に見える）
+my admin emoji create -shortcode blobcat -category Cats -alias neko blobcat.png   # register one
+my admin emoji list -local                                                        # list local emoji, newest first
+my admin emoji update -category Animals -alias cat -alias neko <emoji id>         # change the category and aliases (aliases are replaced; -no-aliases removes them)
+my admin emoji update -hidden <emoji id>                                          # hide it from the picker (-hidden=false restores it)
+my admin emoji replace-image <emoji id> blobcat2.png                              # replace the image
+my admin emoji disable <emoji id>                                                 # disable it (enable restores it; remote emoji too)
+my admin emoji list -remote -domain mastodon.example                              # list emoji of another server
+my admin emoji copy [-shortcode <name>] <emoji id>                                # copy a remote emoji to local
+my admin emoji delete <emoji id>                                                  # delete it
+my admin emoji requests list [-state pending|approved|rejected|withdrawn|lapsed|all] # list creation requests (pending by default)
+my admin emoji requests approve <request id>                                      # approve a request
+my admin emoji requests reject [-reason <text>] <request id>                      # reject a request (the requester sees the reason)
 ```
 
-- ロールの権限 `create_custom_emojis`（利用者の機能。[ADR-0070](../adr/0070-permission-split-emoji-finance.md)）を持つ人は、設定の「カスタム絵文字」（`/settings/custom-emojis`）から
-  絵文字の作成を申請し、自分が作った絵文字の別名・カテゴリ・ピッカーに出すかを変え、削除できます。画像の差し替えも申請です。
-  申請は `manage_custom_emojis` を持つ人が承認するまで、どこにも出ません（ピッカー・投稿・リアクション・連合）。管理画面の「カスタム絵文字」の「申請」のタブ、クライアント API（`/api/v1/admin/custom_emoji_requests`）、上の CLI で承認・却下します。
-  申請は `manage_custom_emojis` を持つ人に通知され（`admin_custom_emoji_request`）、承認と却下は申請者に通知されます。申請・取り下げ・承認・却下は監査ログ（対象 `custom_emoji_request`）に残ります。
-- 審査中の作成の申請は shortcode を予約します。同じ shortcode の申請と絵文字の登録は、却下か取り下げまでできません。承認した絵文字の画像はインスタンスの Actor のアップロードとして複製するので、申請者のアカウントを消しても残ります。
-- 作成者は、`create_custom_emojis` を持つ間だけ自分の絵文字を変えられます。ロールを外しても絵文字は残ります。管理者は作成者にかかわらずすべての絵文字を変更・削除できます。
-- 作成数の上限は、ロールがサポーターのプランから来るときプランの「絵文字の上限」（[ADR-0072](../adr/0072-supporter-plans-and-roles.md)）で、作った絵文字と審査中の作成の申請の合計を数えます。管理者が手で付けたロールと、サポーター制度が無効のときは上限がありません。
+- A user with the role permission `create_custom_emojis` (a user feature) can request the creation of an emoji from "Custom
+  emoji" in the settings (`/settings/custom-emojis`), change the aliases, category, and picker visibility of emoji they
+  created, and delete them. Replacing an image is also a request. A request appears nowhere (picker, posts, reactions,
+  federation) until someone with `manage_custom_emojis` approves it. Approve or reject it on the "Requests" tab of "Custom
+  emoji" on the admin screen, with the client API (`/api/v1/admin/custom_emoji_requests`), or with the CLI above. People with
+  `manage_custom_emojis` are notified of a request (`admin_custom_emoji_request`), and the requester is notified of the
+  approval or rejection. Requesting, withdrawing, approving, and rejecting are recorded in the audit log (target
+  `custom_emoji_request`).
+- A pending creation request reserves its shortcode. A request or a registration with the same shortcode is not possible until
+  the pending one is rejected or withdrawn. The image of an approved emoji is copied as an upload of the instance actor, so it
+  stays even if the requester's account is deleted.
+- A creator can change their emoji only while they hold `create_custom_emojis`. The emoji stay if the role is removed.
+  Administrators can change and delete every emoji regardless of the creator.
+- When the role comes from a supporter plan, the number of emoji a user can create is limited by the plan's emoji limit; it
+  counts the emoji they created plus their pending creation requests. A role an administrator assigned by hand, and a server
+  where supporters are disabled, have no limit.
