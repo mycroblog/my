@@ -41,6 +41,33 @@ func (e AIUsage) Valid() bool {
 	}
 }
 
+// Defines values for AccountMoveOutcome.
+const (
+	AccountMoveOutcomeBlockedBy   AccountMoveOutcome = "blocked_by"
+	AccountMoveOutcomeBlocking    AccountMoveOutcome = "blocking"
+	AccountMoveOutcomeDomainMuted AccountMoveOutcome = "domain_muted"
+	AccountMoveOutcomeFollowed    AccountMoveOutcome = "followed"
+	AccountMoveOutcomeRequested   AccountMoveOutcome = "requested"
+)
+
+// Valid indicates whether the value is a known member of the AccountMoveOutcome enum.
+func (e AccountMoveOutcome) Valid() bool {
+	switch e {
+	case AccountMoveOutcomeBlockedBy:
+		return true
+	case AccountMoveOutcomeBlocking:
+		return true
+	case AccountMoveOutcomeDomainMuted:
+		return true
+	case AccountMoveOutcomeFollowed:
+		return true
+	case AccountMoveOutcomeRequested:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
@@ -295,6 +322,7 @@ const (
 	AdminAuditActionDomainActionIssued            AdminAuditAction = "domain_action_issued"
 	AdminAuditActionDomainActionLifted            AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued   AdminAuditAction = "domain_statuses_refetch_queued"
+	AdminAuditActionEmailSuppressionLifted        AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionInviteCreated                 AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                 AdminAuditAction = "invite_revoked"
 	AdminAuditActionOauthClientDisabled           AdminAuditAction = "oauth_client_disabled"
@@ -326,6 +354,8 @@ const (
 	AdminAuditActionRuleMoved                     AdminAuditAction = "rule_moved"
 	AdminAuditActionRuleRetired                   AdminAuditAction = "rule_retired"
 	AdminAuditActionRuleRevised                   AdminAuditAction = "rule_revised"
+	AdminAuditActionServiceClosureAnnounced       AdminAuditAction = "service_closure_announced"
+	AdminAuditActionServiceClosureWithdrawn       AdminAuditAction = "service_closure_withdrawn"
 	AdminAuditActionSettingChanged                AdminAuditAction = "setting_changed"
 	AdminAuditActionSignupBlockAdded              AdminAuditAction = "signup_block_added"
 	AdminAuditActionSignupBlockLifted             AdminAuditAction = "signup_block_lifted"
@@ -409,6 +439,8 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
+	case AdminAuditActionEmailSuppressionLifted:
+		return true
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
@@ -470,6 +502,10 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionRuleRetired:
 		return true
 	case AdminAuditActionRuleRevised:
+		return true
+	case AdminAuditActionServiceClosureAnnounced:
+		return true
+	case AdminAuditActionServiceClosureWithdrawn:
 		return true
 	case AdminAuditActionSettingChanged:
 		return true
@@ -546,6 +582,7 @@ const (
 	AdminAuditTargetKindCustomEmoji           AdminAuditTargetKind = "custom_emoji"
 	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
+	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
 	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
 	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
@@ -582,6 +619,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindCustomEmojiRequest:
 		return true
 	case AdminAuditTargetKindDomain:
+		return true
+	case AdminAuditTargetKindInstance:
 		return true
 	case AdminAuditTargetKindInvite:
 		return true
@@ -1595,6 +1634,24 @@ func (e DomainBlockSeverity) Valid() bool {
 	}
 }
 
+// Defines values for EmailSuppressionKind.
+const (
+	EmailSuppressionKindComplaint  EmailSuppressionKind = "complaint"
+	EmailSuppressionKindHardBounce EmailSuppressionKind = "hard_bounce"
+)
+
+// Valid indicates whether the value is a known member of the EmailSuppressionKind enum.
+func (e EmailSuppressionKind) Valid() bool {
+	switch e {
+	case EmailSuppressionKindComplaint:
+		return true
+	case EmailSuppressionKindHardBounce:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FinanceViewerIncome.
 const (
 	FinanceViewerIncomePlans  FinanceViewerIncome = "plans"
@@ -2071,6 +2128,8 @@ func (e ModerationAppealState) Valid() bool {
 
 // Defines values for NotificationType.
 const (
+	NotificationTypeAccountMoved               NotificationType = "account_moved"
+	NotificationTypeAdminAccountMoved          NotificationType = "admin_account_moved"
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
@@ -2098,6 +2157,10 @@ const (
 // Valid indicates whether the value is a known member of the NotificationType enum.
 func (e NotificationType) Valid() bool {
 	switch e {
+	case NotificationTypeAccountMoved:
+		return true
+	case NotificationTypeAdminAccountMoved:
+		return true
 	case NotificationTypeAdminAppeal:
 		return true
 	case NotificationTypeAdminCustomEmojiRequest:
@@ -2308,24 +2371,25 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
-	PermissionCreateCustomEmojis  Permission = "create_custom_emojis"
-	PermissionManageAccounts      Permission = "manage_accounts"
-	PermissionManageAnnouncements Permission = "manage_announcements"
-	PermissionManageCustomEmojis  Permission = "manage_custom_emojis"
-	PermissionManageDomains       Permission = "manage_domains"
-	PermissionManageFinance       Permission = "manage_finance"
-	PermissionManageInvites       Permission = "manage_invites"
-	PermissionManageJobs          Permission = "manage_jobs"
-	PermissionManageLoginRecovery Permission = "manage_login_recovery"
-	PermissionManageOauthApps     Permission = "manage_oauth_apps"
-	PermissionManageReports       Permission = "manage_reports"
-	PermissionManageRoles         Permission = "manage_roles"
-	PermissionManageRules         Permission = "manage_rules"
-	PermissionManageSettings      Permission = "manage_settings"
-	PermissionManageSupporters    Permission = "manage_supporters"
-	PermissionManageWebhooks      Permission = "manage_webhooks"
-	PermissionViewAudit           Permission = "view_audit"
-	PermissionViewFinance         Permission = "view_finance"
+	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionManageAccounts       Permission = "manage_accounts"
+	PermissionManageAnnouncements  Permission = "manage_announcements"
+	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
+	PermissionManageDomains        Permission = "manage_domains"
+	PermissionManageFinance        Permission = "manage_finance"
+	PermissionManageInvites        Permission = "manage_invites"
+	PermissionManageJobs           Permission = "manage_jobs"
+	PermissionManageLoginRecovery  Permission = "manage_login_recovery"
+	PermissionManageOauthApps      Permission = "manage_oauth_apps"
+	PermissionManageReports        Permission = "manage_reports"
+	PermissionManageRoles          Permission = "manage_roles"
+	PermissionManageRules          Permission = "manage_rules"
+	PermissionManageServiceClosure Permission = "manage_service_closure"
+	PermissionManageSettings       Permission = "manage_settings"
+	PermissionManageSupporters     Permission = "manage_supporters"
+	PermissionManageWebhooks       Permission = "manage_webhooks"
+	PermissionViewAudit            Permission = "view_audit"
+	PermissionViewFinance          Permission = "view_finance"
 )
 
 // Valid indicates whether the value is a known member of the Permission enum.
@@ -2356,6 +2420,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageRoles:
 		return true
 	case PermissionManageRules:
+		return true
+	case PermissionManageServiceClosure:
 		return true
 	case PermissionManageSettings:
 		return true
@@ -2657,6 +2723,30 @@ func (e ServerHealthStatus) Valid() bool {
 	case ServerHealthStatusOk:
 		return true
 	case ServerHealthStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceClosureState.
+const (
+	ServiceClosureStateAnnounced         ServiceClosureState = "announced"
+	ServiceClosureStateClosed            ServiceClosureState = "closed"
+	ServiceClosureStateDeliveryCompleted ServiceClosureState = "delivery_completed"
+	ServiceClosureStateNone              ServiceClosureState = "none"
+)
+
+// Valid indicates whether the value is a known member of the ServiceClosureState enum.
+func (e ServiceClosureState) Valid() bool {
+	switch e {
+	case ServiceClosureStateAnnounced:
+		return true
+	case ServiceClosureStateClosed:
+		return true
+	case ServiceClosureStateDeliveryCompleted:
+		return true
+	case ServiceClosureStateNone:
 		return true
 	default:
 		return false
@@ -3247,6 +3337,9 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
+	// Moved An account, as clients show it (FR-006).
+	Moved *Account `json:"moved,omitempty"`
+
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
@@ -3288,6 +3381,28 @@ type AccountFieldSource struct {
 	// Value The value as plain text, at most 255 characters.
 	Value string `json:"value"`
 }
+
+// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+// its posts stay where they are.
+type AccountMove struct {
+	// Outcome What became of the user's follow of the moved account, for an `account_moved` only:
+	// `followed`, the user follows `target` instead; `requested`, the user's follow of
+	// `target` awaits its approval instead; and the user still follows the moved account
+	// when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+	// the user mutes the server of `target` (`domain_muted`).
+	Outcome *AccountMoveOutcome `json:"outcome,omitempty"`
+
+	// Target An account, as clients show it (FR-006).
+	Target *Account `json:"target,omitempty"`
+}
+
+// AccountMoveOutcome What became of the user's follow of the moved account, for an `account_moved` only:
+// `followed`, the user follows `target` instead; `requested`, the user's follow of
+// `target` awaits its approval instead; and the user still follows the moved account
+// when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+// the user mutes the server of `target` (`domain_muted`).
+type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
@@ -3449,6 +3564,11 @@ type AdminAccountDetail struct {
 
 	// Actions The newest 20 actions on the account, newest first.
 	Actions []AdminAccountAction `json:"actions"`
+
+	// EmailSuppression The suppression of the primary email address of a local account; omitted when it
+	// is not suppressed. A moderator lifts it with
+	// `POST /admin/accounts/{id}/email_suppression/lift`.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
 
 	// EmailVerified Whether the primary email address of a local account is verified; omitted when
 	// it has none.
@@ -3679,7 +3799,8 @@ type AdminAppealPage struct {
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
-// a new password for the account's user). On a `domain`:
+// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+// suppression of the primary email address of the account's user). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3727,7 +3848,9 @@ type AdminAppealPage struct {
 // every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 // `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 // tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
-// the host.
+// the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
+// the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
+// and the label are `service_closure`.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -3742,7 +3865,8 @@ type AdminAuditEntry struct {
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
-	// a new password for the account's user). On a `domain`:
+	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+	// suppression of the primary email address of the account's user). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -3790,7 +3914,9 @@ type AdminAuditEntry struct {
 	// every token of the client, and `oauth_client_enabled`; the label is the client's name and its
 	// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 	// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
-	// the host.
+	// the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
+	// the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
+	// and the label are `service_closure`.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -4735,6 +4861,38 @@ type AdminSameIpAccounts struct {
 	Ip       string         `json:"ip"`
 }
 
+// AdminServiceClosure The service closure as its administrators see it (ADR-0088 §1).
+type AdminServiceClosure struct {
+	// AnnouncedAt When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
+	AnnouncedAt *time.Time `json:"announced_at,omitempty"`
+
+	// ChangedAt When the state last changed; omitted for `none`.
+	ChangedAt *time.Time `json:"changed_at,omitempty"`
+
+	// ClosesAt When the server closes; omitted for `none`.
+	ClosesAt *time.Time `json:"closes_at,omitempty"`
+
+	// ExportUntil Until when the users may export their data after the closure; omitted for `none`.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+
+	// Message The operator's message to the users; omitted when there is none.
+	Message *string `json:"message,omitempty"`
+
+	// ShortNotice Whether the announcement gives the users less than 30 days from `announced_at` to
+	// `closes_at`, which the admin screen and the CLI warn about: the users may not have the
+	// time to export their data and move their accounts. A short notice is allowed.
+	ShortNotice bool `json:"short_notice"`
+
+	// State Where the server is in its closure (ADR-0088 §1):
+	//
+	// - `none`: no closure is announced.
+	// - `announced`: the closure is announced; the server runs as before until it closes.
+	// - `closed`: the server is closed and delivers the deletion of its local accounts to the
+	//   other servers. The users can still sign in and export their data until `export_until`.
+	// - `delivery_completed`: the server is closed and those deliveries have ended.
+	State ServiceClosureState `json:"state"`
+}
+
 // AdminSetting An instance setting: its value and what it accepts. Every value is a string in its
 // canonical form, whatever its kind.
 type AdminSetting struct {
@@ -5186,6 +5344,19 @@ type AdminWebhookState string
 // server disabled it after the endpoint answered 410 Gone. `failing`: the server disabled
 // it after the deliveries kept failing, without a success, for 72 hours and 20 attempts.
 type AdminWebhookStateReason string
+
+// AnnounceServiceClosureRequest The schedule of an announcement of the closure of the service.
+type AnnounceServiceClosureRequest struct {
+	// ClosesAt When the server closes. It has no lower bound, so that the server can close at short notice.
+	ClosesAt time.Time `json:"closes_at"`
+
+	// ExportUntil Until when the users may export their data after the closure; not before `closes_at`.
+	// 30 days after `closes_at` when omitted.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+
+	// Message The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none.
+	Message *string `json:"message,omitempty"`
+}
 
 // Announcement An announcement of the server to every local user (FR-726), as the user sees it.
 type Announcement struct {
@@ -6029,6 +6200,9 @@ type CredentialAccount struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
+	// Moved An account, as clients show it (FR-006).
+	Moved *Account `json:"moved,omitempty"`
+
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
@@ -6497,6 +6671,21 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
+// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+// email) stops every email but the verification email that the user asks for; verifying the
+// address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+// notification and announcement emails only.
+type EmailSuppression struct {
+	Kind EmailSuppressionKind `json:"kind"`
+
+	// Since When the failure that started the suppression happened.
+	Since time.Time `json:"since"`
+}
+
+// EmailSuppressionKind defines model for EmailSuppression.Kind.
+type EmailSuppressionKind string
+
 // EnableTotpRequest The setup to enroll and a code of the app that shows it has the secret.
 type EnableTotpRequest struct {
 	// Code The six-digit code that the app shows now.
@@ -6823,6 +7012,11 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// Closure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+	// the server closes; absent when none is announced. Clients show it on every screen with the
+	// way to export the data and to move the account.
+	Closure *InstanceClosure `json:"closure,omitempty"`
+
 	// CommerceDisclosureUrl The web client's page of the commerce disclosures of the supporter plans (`/about/commerce`,
 	// the URL that the operators give the payment provider), which needs no sign-in and shows
 	// `GET /instance/documents/commerce_disclosure`; omitted when the instance has none.
@@ -6930,6 +7124,29 @@ type Instance struct {
 
 	// Version The server version.
 	Version string `json:"version"`
+}
+
+// InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+// the server closes; absent when none is announced. Clients show it on every screen with the
+// way to export the data and to move the account.
+type InstanceClosure struct {
+	// ClosesAt When the server closes; it may have passed already.
+	ClosesAt time.Time `json:"closes_at"`
+
+	// ExportUntil Until when the users may still sign in and export their data after the closure.
+	ExportUntil time.Time `json:"export_until"`
+
+	// Message The operator's message to the users, as plain text; omitted when there is none.
+	Message *string `json:"message,omitempty"`
+
+	// State Where the server is in its closure (ADR-0088 §1):
+	//
+	// - `none`: no closure is announced.
+	// - `announced`: the closure is announced; the server runs as before until it closes.
+	// - `closed`: the server is closed and delivers the deletion of its local accounts to the
+	//   other servers. The users can still sign in and export their data until `export_until`.
+	// - `delivery_completed`: the server is closed and those deliveries have ended.
+	State ServiceClosureState `json:"state"`
 }
 
 // InstanceContact How people reach the instance's operators (the instance settings `contact_account` and
@@ -7565,6 +7782,11 @@ type Notification struct {
 	// Account An account, as clients show it (FR-006).
 	Account *Account `json:"account,omitempty"`
 
+	// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+	// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+	// its posts stay where they are.
+	AccountMove *AccountMove `json:"account_move,omitempty"`
+
 	// AppealId The appeal that an `admin_appeal` is about.
 	AppealId *Id `json:"appeal_id,omitempty"`
 
@@ -7659,6 +7881,11 @@ type Notification struct {
 	// (the administrators retired the plan; the subscription ends with its period). Each is
 	// sent once per change of the subscription. A client must not lead from them to
 	// subscribing or paying where it offers no way to subscribe.
+	// `account_moved` tells that an account that the user followed (`account`) moved to another
+	// one; its `account_move` carries the target and what became of the user's follow. It is
+	// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+	// account that the moderators limit moved, and the target does not get the limit; its
+	// `account_move` carries the target, and it has no `account`.
 	Type NotificationType `json:"type"`
 }
 
@@ -7726,6 +7953,11 @@ type NotificationPage struct {
 // (the administrators retired the plan; the subscription ends with its period). Each is
 // sent once per change of the subscription. A client must not lead from them to
 // subscribing or paying where it offers no way to subscribe.
+// `account_moved` tells that an account that the user followed (`account`) moved to another
+// one; its `account_move` carries the target and what became of the user's follow. It is
+// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+// account that the moderators limit moved, and the target does not get the limit; its
+// `account_move` carries the target, and it has no `account`.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -8052,7 +8284,9 @@ type PaymentStatusWarnings string
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
 // member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-// `/admin/oauth_client_host_denials` (ADR-0090). The others guard no client API operation
+// `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+// of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
+// admin role by default, ADR-0088). The others guard no client API operation
 // yet.
 type Permission string
 
@@ -8176,6 +8410,11 @@ type Preferences struct {
 	// primary address. Off for a new user.
 	EmailModeratorNotifications bool `json:"email_moderator_notifications"`
 
+	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
+	// After a `hard_bounce`, the user asks for the verification email again to show that the
+	// address works.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
+
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale string `json:"locale"`
 
@@ -8289,6 +8528,9 @@ type PreviewDomainBlockImportRequest struct {
 //     deleted; `reason` says why.
 //   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
 //     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
+//     allow the operation: withdrawing an announcement when none is in effect, or announcing
+//     the closure of a server that is closed already (`/admin/closure/announcement`).
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
 //   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
@@ -8717,6 +8959,15 @@ type ServerHealth struct {
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
 // schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
 type ServerHealthStatus string
+
+// ServiceClosureState Where the server is in its closure (ADR-0088 §1):
+//
+//   - `none`: no closure is announced.
+//   - `announced`: the closure is announced; the server runs as before until it closes.
+//   - `closed`: the server is closed and delivers the deletion of its local accounts to the
+//     other servers. The users can still sign in and export their data until `export_until`.
+//   - `delivery_completed`: the server is closed and those deliveries have ended.
+type ServiceClosureState string
 
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
@@ -10603,6 +10854,9 @@ type OverturnAppealJSONRequestBody = DecideAppealRequest
 // UpholdAppealJSONRequestBody defines body for UpholdAppeal for application/json ContentType.
 type UpholdAppealJSONRequestBody = DecideAppealRequest
 
+// AnnounceServiceClosureJSONRequestBody defines body for AnnounceServiceClosure for application/json ContentType.
+type AnnounceServiceClosureJSONRequestBody = AnnounceServiceClosureRequest
+
 // CreateCostItemJSONRequestBody defines body for CreateCostItem for application/json ContentType.
 type CreateCostItemJSONRequestBody = CostItemCreateRequest
 
@@ -12442,6 +12696,18 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/accounts/{id}/actions (the `CreateAccountAction` operationId).
 	CreateAccountAction(ctx context.Context, id AdminAccountId, body CreateAccountActionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+	//
+	// Lets the server send email again to the primary address of a local account's user, which
+	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `manage_accounts` permission.
+	//
+	// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+	LiftAdminAccountEmailSuppression(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 	//
 	// Issues a link that sets a new password for a local account's user, for an
@@ -12723,6 +12989,56 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/billing_imports/{source}/runs (the `RunBillingImport` operationId).
 	RunBillingImport(ctx context.Context, source BillingSourceName, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminServiceClosure Read the service closure
+	//
+	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+	// and whether its notice is short. Needs the `manage_service_closure` permission.
+	//
+	// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
+	GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WithdrawServiceClosure Withdraw the announcement of the closure
+	//
+	// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+	// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+	// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+	// `manage_service_closure` permission.
+	//
+	// Corresponds with DELETE /admin/closure/announcement (the `WithdrawServiceClosure` operationId).
+	WithdrawServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AnnounceServiceClosureWithBody Announce the closure of the service
+	//
+	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// of the announcement in effect. Each call records a new announcement, kept with the earlier
+	// ones, and the audit log's `service_closure_announced`. The announcement shows in
+	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+	// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+	// a 400 that names the parameter; a server that is closed already answers the 409
+	// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+	// answered with `short_notice`. Needs the `manage_service_closure` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+	AnnounceServiceClosureWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AnnounceServiceClosure Announce the closure of the service
+	//
+	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// of the announcement in effect. Each call records a new announcement, kept with the earlier
+	// ones, and the audit log's `service_closure_announced`. The announcement shows in
+	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+	// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+	// a 400 that names the parameter; a server that is closed already answers the 409
+	// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+	// answered with `short_notice`. Needs the `manage_service_closure` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+	AnnounceServiceClosure(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListCostItems List the cost items
 	//
@@ -16787,6 +17103,28 @@ func (c *Client) CreateAccountAction(ctx context.Context, id AdminAccountId, bod
 	return c.Client.Do(req)
 }
 
+// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+//
+// Lets the server send email again to the primary address of a local account's user, which
+// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `manage_accounts` permission.
+//
+// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+func (c *Client) LiftAdminAccountEmailSuppression(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLiftAdminAccountEmailSuppressionRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 //
 // Issues a link that sets a new password for a local account's user, for an
@@ -17299,6 +17637,96 @@ func (c *Client) ListBillingImports(ctx context.Context, reqEditors ...RequestEd
 // Corresponds with POST /admin/billing_imports/{source}/runs (the `RunBillingImport` operationId).
 func (c *Client) RunBillingImport(ctx context.Context, source BillingSourceName, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRunBillingImportRequest(c.Server, source)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminServiceClosure Read the service closure
+//
+// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+// and whether its notice is short. Needs the `manage_service_closure` permission.
+//
+// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
+func (c *Client) GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminServiceClosureRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// WithdrawServiceClosure Withdraw the announcement of the closure
+//
+// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+// `manage_service_closure` permission.
+//
+// Corresponds with DELETE /admin/closure/announcement (the `WithdrawServiceClosure` operationId).
+func (c *Client) WithdrawServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWithdrawServiceClosureRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AnnounceServiceClosureWithBody Announce the closure of the service
+//
+// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// of the announcement in effect. Each call records a new announcement, kept with the earlier
+// ones, and the audit log's `service_closure_announced`. The announcement shows in
+// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+// a 400 that names the parameter; a server that is closed already answers the 409
+// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+// answered with `short_notice`. Needs the `manage_service_closure` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+func (c *Client) AnnounceServiceClosureWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnnounceServiceClosureRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AnnounceServiceClosure Announce the closure of the service
+//
+// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// of the announcement in effect. Each call records a new announcement, kept with the earlier
+// ones, and the audit log's `service_closure_announced`. The announcement shows in
+// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+// a 400 that names the parameter; a server that is closed already answers the 409
+// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+// answered with `short_notice`. Needs the `manage_service_closure` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+func (c *Client) AnnounceServiceClosure(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnnounceServiceClosureRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24691,6 +25119,40 @@ func NewCreateAccountActionRequestWithBody(server string, id AdminAccountId, con
 	return req, nil
 }
 
+// NewLiftAdminAccountEmailSuppressionRequest constructs an http.Request for the LiftAdminAccountEmailSuppression method
+func NewLiftAdminAccountEmailSuppressionRequest(server string, id AdminAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/accounts/%s/email_suppression/lift", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewIssueAdminAccountPasswordResetLinkRequest constructs an http.Request for the IssueAdminAccountPasswordResetLink method
 func NewIssueAdminAccountPasswordResetLinkRequest(server string, id AdminAccountId) (*http.Request, error) {
 	var err error
@@ -25536,6 +25998,100 @@ func NewRunBillingImportRequest(server string, source BillingSourceName) (*http.
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetAdminServiceClosureRequest constructs an http.Request for the GetAdminServiceClosure method
+func NewGetAdminServiceClosureRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/closure")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewWithdrawServiceClosureRequest constructs an http.Request for the WithdrawServiceClosure method
+func NewWithdrawServiceClosureRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/closure/announcement")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAnnounceServiceClosureRequest calls the generic AnnounceServiceClosure builder with application/json body
+func NewAnnounceServiceClosureRequest(server string, body AnnounceServiceClosureJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAnnounceServiceClosureRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAnnounceServiceClosureRequestWithBody constructs an http.Request for the AnnounceServiceClosure method, with any body, and a specified content type
+func NewAnnounceServiceClosureRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/closure/announcement")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -35441,6 +35997,20 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/accounts/{id}/actions (the `CreateAccountAction` operationId).
 	CreateAccountActionWithResponse(ctx context.Context, id AdminAccountId, body CreateAccountActionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAccountActionResponse, error)
 
+	// LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
+	//
+	// Lets the server send email again to the primary address of a local account's user, which
+	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `manage_accounts` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+	LiftAdminAccountEmailSuppressionWithResponse(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*LiftAdminAccountEmailSuppressionResponse, error)
+
 	// IssueAdminAccountPasswordResetLinkWithResponse Issue a password reset link for a local account
 	//
 	// Issues a link that sets a new password for a local account's user, for an
@@ -35754,6 +36324,60 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/billing_imports/{source}/runs (the `RunBillingImport` operationId).
 	RunBillingImportWithResponse(ctx context.Context, source BillingSourceName, reqEditors ...RequestEditorFn) (*RunBillingImportResponse, error)
+
+	// GetAdminServiceClosureWithResponse Read the service closure
+	//
+	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+	// and whether its notice is short. Needs the `manage_service_closure` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
+	GetAdminServiceClosureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminServiceClosureResponse, error)
+
+	// WithdrawServiceClosureWithResponse Withdraw the announcement of the closure
+	//
+	// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+	// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+	// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+	// `manage_service_closure` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/closure/announcement (the `WithdrawServiceClosure` operationId).
+	WithdrawServiceClosureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WithdrawServiceClosureResponse, error)
+
+	// AnnounceServiceClosureWithBodyWithResponse Announce the closure of the service
+	//
+	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// of the announcement in effect. Each call records a new announcement, kept with the earlier
+	// ones, and the audit log's `service_closure_announced`. The announcement shows in
+	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+	// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+	// a 400 that names the parameter; a server that is closed already answers the 409
+	// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+	// answered with `short_notice`. Needs the `manage_service_closure` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+	AnnounceServiceClosureWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnnounceServiceClosureResponse, error)
+
+	// AnnounceServiceClosureWithResponse Announce the closure of the service
+	//
+	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// of the announcement in effect. Each call records a new announcement, kept with the earlier
+	// ones, and the audit log's `service_closure_announced`. The announcement shows in
+	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+	// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+	// a 400 that names the parameter; a server that is closed already answers the 409
+	// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+	// answered with `short_notice`. Needs the `manage_service_closure` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+	AnnounceServiceClosureWithResponse(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*AnnounceServiceClosureResponse, error)
 
 	// ListCostItemsWithResponse List the cost items
 	//
@@ -40966,6 +41590,57 @@ func (r CreateAccountActionResponse) ContentType() string {
 	return ""
 }
 
+// LiftAdminAccountEmailSuppressionResponseDefaultHeaders the declared response headers of an HTTP default response for LiftAdminAccountEmailSuppression
+type LiftAdminAccountEmailSuppressionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type LiftAdminAccountEmailSuppressionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *LiftAdminAccountEmailSuppressionResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r LiftAdminAccountEmailSuppressionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r LiftAdminAccountEmailSuppressionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LiftAdminAccountEmailSuppressionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LiftAdminAccountEmailSuppressionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LiftAdminAccountEmailSuppressionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // IssueAdminAccountPasswordResetLinkResponse201Headers the declared response headers of an HTTP 201 response for IssueAdminAccountPasswordResetLink
 type IssueAdminAccountPasswordResetLinkResponse201Headers struct {
 	CacheControl *string
@@ -42218,6 +42893,201 @@ func (r RunBillingImportResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RunBillingImportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminServiceClosureResponse200Headers the declared response headers of an HTTP 200 response for GetAdminServiceClosure
+type GetAdminServiceClosureResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminServiceClosureResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminServiceClosure
+type GetAdminServiceClosureResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminServiceClosureResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminServiceClosure
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminServiceClosureResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminServiceClosureResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminServiceClosureResponse) GetJSON200() *AdminServiceClosure {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminServiceClosureResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminServiceClosureResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminServiceClosureResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminServiceClosureResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminServiceClosureResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// WithdrawServiceClosureResponse200Headers the declared response headers of an HTTP 200 response for WithdrawServiceClosure
+type WithdrawServiceClosureResponse200Headers struct {
+	CacheControl *string
+}
+
+// WithdrawServiceClosureResponseDefaultHeaders the declared response headers of an HTTP default response for WithdrawServiceClosure
+type WithdrawServiceClosureResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type WithdrawServiceClosureResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminServiceClosure
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *WithdrawServiceClosureResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *WithdrawServiceClosureResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r WithdrawServiceClosureResponse) GetJSON200() *AdminServiceClosure {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r WithdrawServiceClosureResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r WithdrawServiceClosureResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r WithdrawServiceClosureResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WithdrawServiceClosureResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r WithdrawServiceClosureResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AnnounceServiceClosureResponse200Headers the declared response headers of an HTTP 200 response for AnnounceServiceClosure
+type AnnounceServiceClosureResponse200Headers struct {
+	CacheControl *string
+}
+
+// AnnounceServiceClosureResponseDefaultHeaders the declared response headers of an HTTP default response for AnnounceServiceClosure
+type AnnounceServiceClosureResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AnnounceServiceClosureResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminServiceClosure
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AnnounceServiceClosureResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AnnounceServiceClosureResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AnnounceServiceClosureResponse) GetJSON200() *AdminServiceClosure {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AnnounceServiceClosureResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AnnounceServiceClosureResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AnnounceServiceClosureResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AnnounceServiceClosureResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AnnounceServiceClosureResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -56944,6 +57814,26 @@ func (c *ClientWithResponses) CreateAccountActionWithResponse(ctx context.Contex
 	return ParseCreateAccountActionResponse(rsp)
 }
 
+// LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
+//
+// Lets the server send email again to the primary address of a local account's user, which
+// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `manage_accounts` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+func (c *ClientWithResponses) LiftAdminAccountEmailSuppressionWithResponse(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*LiftAdminAccountEmailSuppressionResponse, error) {
+	rsp, err := c.LiftAdminAccountEmailSuppression(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLiftAdminAccountEmailSuppressionResponse(rsp)
+}
+
 // IssueAdminAccountPasswordResetLinkWithResponse Issue a password reset link for a local account
 //
 // Issues a link that sets a new password for a local account's user, for an
@@ -57400,6 +58290,84 @@ func (c *ClientWithResponses) RunBillingImportWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseRunBillingImportResponse(rsp)
+}
+
+// GetAdminServiceClosureWithResponse Read the service closure
+//
+// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+// and whether its notice is short. Needs the `manage_service_closure` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
+func (c *ClientWithResponses) GetAdminServiceClosureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminServiceClosureResponse, error) {
+	rsp, err := c.GetAdminServiceClosure(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminServiceClosureResponse(rsp)
+}
+
+// WithdrawServiceClosureWithResponse Withdraw the announcement of the closure
+//
+// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
+// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
+// `manage_service_closure` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/closure/announcement (the `WithdrawServiceClosure` operationId).
+func (c *ClientWithResponses) WithdrawServiceClosureWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WithdrawServiceClosureResponse, error) {
+	rsp, err := c.WithdrawServiceClosure(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWithdrawServiceClosureResponse(rsp)
+}
+
+// AnnounceServiceClosureWithBodyWithResponse Announce the closure of the service
+//
+// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// of the announcement in effect. Each call records a new announcement, kept with the earlier
+// ones, and the audit log's `service_closure_announced`. The announcement shows in
+// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+// a 400 that names the parameter; a server that is closed already answers the 409
+// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+// answered with `short_notice`. Needs the `manage_service_closure` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+func (c *ClientWithResponses) AnnounceServiceClosureWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnnounceServiceClosureResponse, error) {
+	rsp, err := c.AnnounceServiceClosureWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnnounceServiceClosureResponse(rsp)
+}
+
+// AnnounceServiceClosureWithResponse Announce the closure of the service
+//
+// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// of the announcement in effect. Each call records a new announcement, kept with the earlier
+// ones, and the audit log's `service_closure_announced`. The announcement shows in
+// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
+// closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
+// a 400 that names the parameter; a server that is closed already answers the 409
+// `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
+// answered with `short_notice`. Needs the `manage_service_closure` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
+func (c *ClientWithResponses) AnnounceServiceClosureWithResponse(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*AnnounceServiceClosureResponse, error) {
+	rsp, err := c.AnnounceServiceClosure(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnnounceServiceClosureResponse(rsp)
 }
 
 // ListCostItemsWithResponse List the cost items
@@ -64592,6 +65560,69 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 	return response, nil
 }
 
+// ParseLiftAdminAccountEmailSuppressionResponse parses an HTTP response from a LiftAdminAccountEmailSuppressionWithResponse call
+func ParseLiftAdminAccountEmailSuppressionResponse(rsp *http.Response) (*LiftAdminAccountEmailSuppressionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LiftAdminAccountEmailSuppressionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers LiftAdminAccountEmailSuppressionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseIssueAdminAccountPasswordResetLinkResponse parses an HTTP response from a IssueAdminAccountPasswordResetLinkWithResponse call
 func ParseIssueAdminAccountPasswordResetLinkResponse(rsp *http.Response) (*IssueAdminAccountPasswordResetLinkResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -66056,6 +67087,237 @@ func ParseRunBillingImportResponse(rsp *http.Response) (*RunBillingImportRespons
 	switch {
 	case true:
 		var headers RunBillingImportResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminServiceClosureResponse parses an HTTP response from a GetAdminServiceClosureWithResponse call
+func ParseGetAdminServiceClosureResponse(rsp *http.Response) (*GetAdminServiceClosureResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminServiceClosureResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminServiceClosure
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminServiceClosureResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminServiceClosureResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseWithdrawServiceClosureResponse parses an HTTP response from a WithdrawServiceClosureWithResponse call
+func ParseWithdrawServiceClosureResponse(rsp *http.Response) (*WithdrawServiceClosureResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WithdrawServiceClosureResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminServiceClosure
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers WithdrawServiceClosureResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers WithdrawServiceClosureResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAnnounceServiceClosureResponse parses an HTTP response from a AnnounceServiceClosureWithResponse call
+func ParseAnnounceServiceClosureResponse(rsp *http.Response) (*AnnounceServiceClosureResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AnnounceServiceClosureResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminServiceClosure
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AnnounceServiceClosureResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AnnounceServiceClosureResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

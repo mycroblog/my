@@ -72,6 +72,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"ListsWithTypesAndPages", notificationLists},
 		{"TracksReadMarkersAndDismissals", notificationReads},
 		{"NotifiesModerators", notificationModerators},
+		{"NotifiesModeratorsOfLimitedMoves", notificationLimitedMoves},
 		{"NotifiesAppeals", notificationAppeals},
 	}
 	for _, tc := range cases {

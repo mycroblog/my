@@ -1,4 +1,12 @@
 {
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "{instance} のモデレーターが制限しているアカウントが別のアカウントに移転しました。移転先のアカウントには制限が引き継がれません。\n\n次のリンクから通知を開いて、確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
+    "description": "Plain-text body of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "{instance} で制限中のアカウントが別のアカウントに移転しました",
+    "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_appeal.body": {
     "defaultMessage": "{instance} の利用者が処分に異議を申し立て、モデレーターの審査を待っています。\n\n次のリンクから通知を開いて、確認してください。\n\n{url}\n\nモデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
     "description": "Plain-text body of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none; {url} the link to the notifications (keep it on its own line)."

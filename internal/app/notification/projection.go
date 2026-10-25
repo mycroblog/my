@@ -79,6 +79,10 @@ type ProjectorDeps struct {
 //   - moderation.relationships_severed: relationships_severed, to the local account that lost
 //     follows to a suspension, once per severance (notification.RelationshipsSeveredKey). It
 //     comes from the instance and has no source account.
+//   - graph.follow_migrated: account_moved, to the local follower of an account that moved, from
+//     that account, with what became of the follow (ADR-0089), once per move
+//     (notification.AccountMovedKey). The follower may no longer follow the moved account, so a
+//     limit on it does not keep the notification back.
 //   - moderation.appeal_decided: appeal_decided, to the account that appealed. It comes from
 //     the instance and has no source account; its dedupe key is the appeal's
 //     (notification.AppealDecidedKey).
@@ -206,6 +210,14 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		return p.notify(ctx, tx, notification.Notification{
 			RecipientAccountID: a.TargetAccountID, Type: notification.TypeModerationNotice, ModerationActionID: a.ID,
 			DedupeKey: notification.ModerationNoticeKey(a.ID), CreatedAt: a.IssuedAt,
+		})
+	})
+	r.Register(appgraph.EventFollowMigrated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appgraph.FollowMigrated)
+		return p.notify(ctx, tx, notification.Notification{
+			RecipientAccountID: ev.AccountID, SourceAccountID: ev.SourceAccountID, Type: notification.TypeAccountMoved,
+			AccountMoveID: ev.MoveID, AccountMoveOutcome: notification.MoveOutcome(ev.Outcome),
+			DedupeKey: notification.AccountMovedKey(ev.MoveID), CreatedAt: ev.At,
 		})
 	})
 	r.Register(appmoderation.EventRelationshipsSevered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -390,8 +402,10 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 		if err != nil || hidden {
 			return err
 		}
-		if reached, err := p.reaches(ctx, tx, n.RecipientAccountID, n.SourceAccountID); err != nil || !reached {
-			return err
+		if n.Type != notification.TypeAccountMoved {
+			if reached, err := p.reaches(ctx, tx, n.RecipientAccountID, n.SourceAccountID); err != nil || !reached {
+				return err
+			}
 		}
 		if n.SourceDomain, err = p.d.Accounts.DomainOf(ctx, tx, n.SourceAccountID); err != nil {
 			return err

@@ -214,6 +214,7 @@ CREATE TABLE audit_log_entries (
     'appeal_overturned', 'account_deletion_cancelled',
     'revealed_private_data', 'signup_block_added', 'signup_block_lifted', 'two_factor_disabled',
     'password_reset_link_issued',
+    'email_suppression_lifted',
     'custom_emoji_created', 'custom_emoji_image_replaced', 'custom_emoji_copied', 'custom_emoji_updated',
     'custom_emoji_enabled', 'custom_emoji_disabled', 'custom_emoji_deleted',
     'webhook_created', 'webhook_updated', 'webhook_deleted', 'webhook_enabled', 'webhook_disabled',
@@ -227,13 +228,14 @@ CREATE TABLE audit_log_entries (
     'supporter_plan_retired', 'supporter_subscription_canceled',
     'custom_emoji_request_submitted', 'custom_emoji_request_withdrawn', 'custom_emoji_request_approved',
     'custom_emoji_request_rejected', 'payment_reconcile_queued',
-    'oauth_client_disabled', 'oauth_client_enabled', 'oauth_client_host_denied', 'oauth_client_host_allowed'
+    'oauth_client_disabled', 'oauth_client_enabled', 'oauth_client_host_denied', 'oauth_client_host_allowed',
+    'service_closure_announced', 'service_closure_withdrawn'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
     'signup_block', 'custom_emoji', 'webhook', 'announcement', 'invite', 'relay', 'billing_source',
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
-    'payment_provider', 'oauth_client', 'oauth_client_host'
+    'payment_provider', 'oauth_client', 'oauth_client_host', 'instance'
   )),
   target_id text COLLATE "C" NOT NULL,
   target_label text NOT NULL,

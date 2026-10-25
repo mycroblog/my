@@ -65,14 +65,14 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 			},
 			{
 				Name: "account", Module: "account",
-				Tables: []string{"account_handles", "account_profile_heads", "account_lifecycle_states", "remote_account_heads"},
+				Tables: []string{"account_handles", "account_profile_heads", "account_lifecycle_states", "remote_account_heads", "account_move_states"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return account.RebuildProjections(ctx, u, r.accounts)
 				},
 			},
 			{
 				Name: "identity", Module: "identity",
-				Tables: []string{"user_roles", "user_registration_states", "user_primary_emails"},
+				Tables: []string{"user_roles", "user_registration_states", "user_primary_emails", "email_suppressions"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return identity.RebuildProjections(ctx, u, r.identities)
 				},

@@ -143,6 +143,10 @@
     "defaultMessage": "通知",
     "description": "Heading and document title of the notifications page."
   },
+  "notifications.type.admin_account_moved": {
+    "defaultMessage": "モデレーターが制限しているアカウントが別のアカウントに移転しました",
+    "description": "Notification sentence to a moderator: an account that the moderators limit moved to another account, which does not get the limit."
+  },
   "notifications.type.admin_appeal": {
     "defaultMessage": "モデレーターに新しい異議申し立てが届きました",
     "description": "Notification sentence to a moderator: a user appealed a moderation action on their account."
@@ -226,6 +230,10 @@
   "notifications.custom_emoji_request.reason": {
     "defaultMessage": "管理者の理由：",
     "description": "Label before the reason of a rejected custom emoji request in its notification."
+  },
+  "notifications.type.account_moved": {
+    "defaultMessage": "{name} が別のアカウントに移転しました",
+    "description": "Notification sentence. {name} is the display name of an account that the user followed, which moved to another account."
   },
   "notifications.type.appeal_decided": {
     "defaultMessage": "あなたの異議申し立てが審査されました",

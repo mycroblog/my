@@ -35,6 +35,10 @@ type fakeAccountAdmin struct {
 	twoFactorRemovals []string
 	// resetLinks are the password reset links issued ("account by user").
 	resetLinks []string
+	// suppressed holds the accounts whose addresses are suppressed, and lifts the lifts of
+	// their suppression ("account by user").
+	suppressed map[string]identity.EmailSuppression
+	lifts      []string
 	// perms are the permissions of the env's users.
 	perms fakePermissions
 }
@@ -81,8 +85,27 @@ func (f *fakeAccountAdmin) Detail(_ context.Context, id string) (appidentity.Adm
 		d.HasEmail, d.EmailVerified = true, true
 		d.Roles = []identity.Role{{Key: identity.RoleAdmin}}
 		d.TwoFactorEnabled = f.twoFactor[id]
+		if sup, ok := f.suppressed[id]; ok {
+			d.EmailSuppression = &sup
+		}
 	}
 	return d, nil
+}
+
+func (f *fakeAccountAdmin) LiftEmailSuppression(_ context.Context, id, by string) error {
+	a, ok := f.accounts[id]
+	switch {
+	case !ok:
+		return appaccount.ErrNotFound
+	case a.Local == nil:
+		return appidentity.ErrNotLocalAccount
+	}
+	if _, ok := f.suppressed[id]; !ok {
+		return appidentity.ErrNotSuppressed
+	}
+	delete(f.suppressed, id)
+	f.lifts = append(f.lifts, id+" by "+by)
+	return nil
 }
 
 func (f *fakeAccountAdmin) Reveal(_ context.Context, id, by string) (appidentity.PrivateData, error) {
@@ -148,7 +171,10 @@ func (f *fakeAccountAdmin) RecentReportsOf(_ context.Context, target string, lim
 // newAccountAdminEnv is newAccountModerationEnv with the account management.
 func newAccountAdminEnv(t *testing.T) (*authEnv, *fakeAccountAdmin, *fakeAccountModeration) {
 	t.Helper()
-	admin := &fakeAccountAdmin{twoFactor: map[string]bool{aliceAccountID: true}}
+	admin := &fakeAccountAdmin{
+		twoFactor:  map[string]bool{aliceAccountID: true},
+		suppressed: map[string]identity.EmailSuppression{aliceAccountID: {Kind: identity.EmailHardBounce, FailureID: "f", Since: adminNow.Add(-time.Minute)}},
+	}
 	mod := &fakeAccountModeration{now: adminNow}
 	e, reports := newModerationEnvWith(t, func(o *clientapi.Options) {
 		accounts := o.Accounts.(fakeAccounts)
@@ -242,7 +268,8 @@ func TestGetAdminAccount(t *testing.T) {
 		!slices.Equal(d.Roles, []string{identity.RoleAdmin}) || d.EmailVerified == nil || !*d.EmailVerified ||
 		d.Registration == nil || d.Registration.Reason == nil || *d.Registration.Reason != "hi" || !d.Registration.StateChangedAt.Equal(adminNow) ||
 		len(d.Actions) != 1 || d.Actions[0].Kind != clientapi.AdminAccountActionKindLimit ||
-		d.TwoFactorEnabled == nil || !*d.TwoFactorEnabled {
+		d.TwoFactorEnabled == nil || !*d.TwoFactorEnabled ||
+		d.EmailSuppression == nil || d.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !d.EmailSuppression.Since.Equal(adminNow.Add(-time.Minute)) {
 		t.Errorf("alice = %d %+v", res.StatusCode, d)
 	}
 	// The reports of the account, newest first.
@@ -253,6 +280,7 @@ func TestGetAdminAccount(t *testing.T) {
 	res = e.send(t, http.MethodGet, "/admin/accounts/"+reporterAccountID, "admin-read", "")
 	remote := decodeJSON[clientapi.AdminAccountDetail](t, res)
 	if res.StatusCode != http.StatusOK || remote.Local || remote.Registration != nil || remote.EmailVerified != nil || remote.TwoFactorEnabled != nil ||
+		remote.EmailSuppression != nil ||
 		len(remote.Roles) != 0 || len(remote.Actions) != 0 || len(remote.Reports) != 0 {
 		t.Errorf("remote = %d %+v", res.StatusCode, remote)
 	}
@@ -361,6 +389,42 @@ func TestIssueAdminAccountPasswordResetLink(t *testing.T) {
 	}
 	if want := []string{aliceAccountID + " by " + userOf(aliceAccountID)}; !slices.Equal(admin.resetLinks, want) {
 		t.Errorf("issued = %v, want %v", admin.resetLinks, want)
+	}
+	res = e.send(t, http.MethodPost, path(reporterAccountID), "admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+		t.Errorf("remote = %d %+v, want 422 naming id", res.StatusCode, p)
+	}
+	res = e.send(t, http.MethodPost, path(reportThree), "admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusNotFound {
+		t.Errorf("unknown = %d %+v", res.StatusCode, p)
+	}
+}
+
+func TestLiftAdminAccountEmailSuppression(t *testing.T) {
+	e, admin, _ := newAccountAdminEnv(t)
+	path := func(id string) string { return "/admin/accounts/" + id + "/email_suppression/lift" }
+	res := e.send(t, http.MethodPost, path(aliceAccountID), "bob-admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeMissingPermission ||
+		p.Detail == nil || !strings.Contains(*p.Detail, "manage_accounts") {
+		t.Errorf("by bob = %d %+v, want 403 for manage_accounts", res.StatusCode, p)
+	}
+	res = e.send(t, http.MethodPost, path(aliceAccountID), "admin-read", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeInsufficientScope {
+		t.Errorf("with admin:read = %d %+v, want 403 insufficient scope", res.StatusCode, p)
+	}
+	if len(admin.lifts) != 0 {
+		t.Fatalf("a refused lift ran: %v", admin.lifts)
+	}
+	res = e.send(t, http.MethodPost, path(aliceAccountID), "admin", "")
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("lift = %d, want 204", res.StatusCode)
+	}
+	if want := []string{aliceAccountID + " by " + userOf(aliceAccountID)}; !slices.Equal(admin.lifts, want) {
+		t.Errorf("lifts = %v, want %v", admin.lifts, want)
+	}
+	res = e.send(t, http.MethodPost, path(aliceAccountID), "admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeEmailNotSuppressed {
+		t.Errorf("lift twice = %d %+v, want 409 email-not-suppressed", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reporterAccountID), "admin", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {

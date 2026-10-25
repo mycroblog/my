@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -53,8 +54,34 @@ type StaffMember struct {
 
 // Mailbox is the address and the locale of the moderator notification emails to a user.
 type Mailbox struct {
-	Address string
-	Locale  string
+	// EmailAddressID identifies Address, for the record of a rejected recipient.
+	EmailAddressID string
+	Address        string
+	Locale         string
+}
+
+// RecipientRejections records the recipients that the mail server rejects as hard bounces,
+// which stop the later emails to them (ADR-0086 §5). *identity.Service implements it.
+type RecipientRejections interface {
+	// RecordRecipientRejection records rejection, the error of the email that the run of a
+	// job sent to an address, when it is kernel.ErrRecipientRejected.
+	RecordRecipientRejection(ctx context.Context, run queue.Job, emailAddressID string, rejection error) error
+}
+
+// sendMail sends m, the email of the run of a job to box, and records a rejected recipient
+// through rejections (nil records nothing). what names the email in the errors; when the
+// rejection cannot be recorded, the error is that one, which retries the job.
+func sendMail(ctx context.Context, mailer kernel.Mailer, rejections RecipientRejections, run queue.Job, box Mailbox, m kernel.MailMessage, what string) error {
+	err := mailer.Send(ctx, m)
+	if err == nil {
+		return nil
+	}
+	if rejections != nil {
+		if rerr := rejections.RecordRecipientRejection(ctx, run, box.EmailAddressID, err); rerr != nil {
+			return fmt.Errorf("notification: record the rejected %s: %w", what, rerr)
+		}
+	}
+	return fmt.Errorf("notification: send the %s: %w", what, err)
 }
 
 // JobModeratorEmail is the job that sends a moderator notification by email.
@@ -90,9 +117,11 @@ type ModeratorDeps struct {
 //     (ADR-0060).
 //   - content.custom_emoji_request_recorded of a submission: admin_custom_emoji_request, to the
 //     holders of manage_custom_emojis other than the requester (ADR-0070 §9).
+//   - account.moved of an account that moderation limits: admin_account_moved, to the holders
+//     of manage_accounts, since the target does not inherit the limit (ADR-0089).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey) make projecting an event again
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey) make projecting an event again
 // create nothing more. For each recipient who wants them by email and whose notification is
 // new, the projector enqueues JobModeratorEmail through d.Outbox.
 func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
@@ -124,6 +153,16 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 		return p.notify(ctx, tx, notification.Notification{
 			Type: notification.TypeAdminWebhookDisabled, DedupeKey: notification.AdminWebhookDisabledKey(ev.StateChangeID), CreatedAt: ev.At,
 		})
+	})
+	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appaccount.Moved)
+		if !ev.SourceLimited {
+			return nil
+		}
+		return p.notify(ctx, tx, notification.Notification{
+			Type: notification.TypeAdminAccountMoved, AccountMoveID: ev.Move.ID,
+			DedupeKey: notification.AdminAccountMovedKey(ev.Move.ID), CreatedAt: ev.Move.OccurredAt,
+		}, ev.Move.AccountID, ev.Move.TargetAccountID)
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.CustomEmojiRequestRecorded)
@@ -189,6 +228,8 @@ func (p *moderatorProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 type MailDeps struct {
 	Staff  Staff
 	Mailer kernel.Mailer
+	// Rejections records the rejected recipients; nil records none.
+	Rejections RecipientRejections
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
 	// Host is the server's domain name, which the emails name the instance by when it has no
@@ -212,11 +253,11 @@ func RegisterModeratorJobs(reg *queue.JobHandlerRegistry, d MailDeps) {
 		if err := json.Unmarshal(j.Payload, &job); err != nil {
 			return queue.Fail(fmt.Errorf("notification: the payload of %s: %w", j.ID, err))
 		}
-		return queue.MailResult(sendModeratorEmail(ctx, d, job))
+		return queue.MailResult(sendModeratorEmail(ctx, d, j, job))
 	})
 }
 
-func sendModeratorEmail(ctx context.Context, d MailDeps, job moderatorEmail) error {
+func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job moderatorEmail) error {
 	perm, ok := notification.ModeratorPermission(job.Type)
 	if !ok {
 		return nil
@@ -256,11 +297,10 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, job moderatorEmail) err
 		m.Subject, m.Text = l.ServerMailAdminWebhookDisabledSubject(name), l.ServerMailAdminWebhookDisabledBody(name, link)
 	case notification.TypeAdminCustomEmojiRequest:
 		m.Subject, m.Text = l.ServerMailAdminCustomEmojiRequestSubject(name), l.ServerMailAdminCustomEmojiRequestBody(name, link)
+	case notification.TypeAdminAccountMoved:
+		m.Subject, m.Text = l.ServerMailAdminAccountMovedSubject(name), l.ServerMailAdminAccountMovedBody(name, link)
 	default:
 		return nil
 	}
-	if err := d.Mailer.Send(ctx, m); err != nil {
-		return fmt.Errorf("notification: send the %s email of %s: %w", job.Type, job.NotificationID, err)
-	}
-	return nil
+	return sendMail(ctx, d.Mailer, d.Rejections, run, box, m, fmt.Sprintf("%s email of %s", job.Type, job.NotificationID))
 }
