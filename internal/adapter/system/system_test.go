@@ -15,7 +15,8 @@ func TestClockContract(t *testing.T) {
 }
 
 func TestClockTracksSystemTime(t *testing.T) {
-	before := time.Now().Add(-time.Millisecond)
+	// Now may hold over a step back of the system clock of up to a minute.
+	before := time.Now().Add(-time.Minute - time.Millisecond)
 	now := system.Clock{}.Now()
 	after := time.Now()
 	if now.Before(before) || now.After(after) {

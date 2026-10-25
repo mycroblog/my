@@ -6,6 +6,7 @@ package system
 
 import (
 	"crypto/rand"
+	"sync/atomic"
 	"time"
 	"uuid"
 
@@ -17,9 +18,39 @@ type Clock struct{}
 
 var _ kernel.Clock = Clock{}
 
-// Now returns the current system time in UTC, truncated to milliseconds.
+// Now returns the current system time in UTC, truncated to milliseconds. Within the process it
+// never goes back by up to maxHold: when the system clock steps back that little (time
+// synchronization does, every few seconds on some virtual machines), Now keeps the latest time
+// it returned until the system clock passes it, so that the times one process records in a row
+// keep their order. A step back beyond maxHold is a correction of a wrong clock, which Now
+// follows.
 func (Clock) Now() time.Time {
-	return kernel.Normalize(time.Now())
+	return processClock.at(time.Now())
+}
+
+// maxHold is the longest step back of the system clock that Now holds over.
+const maxHold = time.Minute
+
+// processClock is the latest time that Now returned in the process.
+var processClock floor
+
+// floor holds the latest time it returned, in Unix milliseconds.
+type floor struct{ last atomic.Int64 }
+
+// at returns wall truncated to milliseconds in UTC, or the latest time it returned when wall is
+// before it by at most maxHold.
+func (f *floor) at(wall time.Time) time.Time {
+	t := kernel.Normalize(wall)
+	ms := t.UnixMilli()
+	for {
+		prev := f.last.Load()
+		if ms < prev && prev-ms <= maxHold.Milliseconds() {
+			return time.UnixMilli(prev).UTC()
+		}
+		if f.last.CompareAndSwap(prev, ms) {
+			return t
+		}
+	}
 }
 
 // IDGenerator issues UUIDv7s with uuid.NewV7, which orders IDs within the same millisecond
