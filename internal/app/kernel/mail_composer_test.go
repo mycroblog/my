@@ -113,6 +113,28 @@ func TestMailComposerHTMLLinksHTTPSOnly(t *testing.T) {
 	}
 }
 
+func TestMailComposerHTMLUnsubscribe(t *testing.T) {
+	d := htmlDraft()
+	d.Category = kernel.MailNotification
+	d.UnsubscribeURL = "https://social.example/mail/unsubscribe?token=t&x=1"
+	html := composeHTML(t, htmlSite, words{}, d)
+	want := `>Stop these emails: <a href="https://social.example/mail/unsubscribe?token=t&amp;x=1" class="mail-link"`
+	if !strings.Contains(html, want) {
+		t.Errorf("HTML has no %q", want)
+	}
+	// A link that is not https is text.
+	d.UnsubscribeURL = "http://social.example/mail/unsubscribe?token=t"
+	html = composeHTML(t, htmlSite, words{}, d)
+	if !strings.Contains(html, ">Stop these emails: http://social.example/mail/unsubscribe?token=t</div>") ||
+		strings.Contains(html, `href="http://social.example/mail`) {
+		t.Error("HTML links to an unsubscribe URL that is not https")
+	}
+	// A transactional email has no unsubscribe line.
+	if html := composeHTML(t, htmlSite, words{}, htmlDraft()); strings.Contains(html, "Stop these emails") {
+		t.Error("transactional HTML has an unsubscribe line")
+	}
+}
+
 func TestMailComposerHTMLRightToLeft(t *testing.T) {
 	html := composeHTML(t, htmlSite, words{locale: "ar", dir: "rtl"}, htmlDraft())
 	if !strings.Contains(html, `<html lang="ar" dir="rtl"`) {

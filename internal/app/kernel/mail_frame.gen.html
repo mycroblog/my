@@ -237,7 +237,19 @@
     
                 </td>
               </tr>
-            
+            {{with .Unsubscribe}}
+              <tr>
+                <td
+                   align="{{$.Start}}" class="mail-muted" style="font-size:0px;padding:4px 0 0 0;word-break:break-word;"
+                >
+                  
+      <div
+         style="font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans CJK JP', 'Hiragino Sans', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;font-size:13px;line-height:1.6;text-align:{{$.Start}};color:#746e6c;"
+      >{{.Before}}{{with .URL}}<a href="{{.}}" class="mail-link" style="color: #b64d4d; word-break: break-all;">{{.}}</a>{{end}}{{.After}}</div>
+    
+                </td>
+              </tr>
+            {{end}}
         </tbody>
       </table>
     

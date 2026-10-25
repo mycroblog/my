@@ -43,6 +43,9 @@ type Staff interface {
 	// Mailbox returns where the moderator notifications of a local account are sent by email;
 	// ok is false when its user does not want them by email or has no usable address.
 	Mailbox(ctx context.Context, accountID string) (m Mailbox, ok bool, err error)
+	// UnsubscribeLink issues a new one-click unsubscribe link (ADR-0086 §4) that turns off the
+	// moderator notification emails of the user of a local account, for one email.
+	UnsubscribeLink(ctx context.Context, accountID string) (string, error)
 }
 
 // StaffMember is a local account whose user holds a permission.
@@ -317,6 +320,11 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 		draft.Subject, draft.Paragraphs = l.ServerMailAdminAccountMovedSubject(name), []string{l.ServerMailAdminAccountMovedBody(name)}
 	default:
 		return nil
+	}
+	// Each email carries its own unsubscribe link, issued only now that it is sent, so that the
+	// secret is in the email and nowhere else (ADR-0086 §4).
+	if draft.UnsubscribeURL, err = d.Staff.UnsubscribeLink(ctx, job.AccountID); err != nil {
+		return fmt.Errorf("notification: issue the unsubscribe link of %s: %w", job.NotificationID, err)
 	}
 	m, err := kernel.MailComposer{Site: site, Words: l}.Compose(draft)
 	if err != nil {

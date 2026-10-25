@@ -114,7 +114,7 @@ func (s *Server) ListStatusReactions(ctx context.Context, req ListStatusReaction
 
 // ReactToStatus serves PUT /api/v1/statuses/{id}/reaction.
 func (s *Server) ReactToStatus(ctx context.Context, req ReactToStatusRequestObject) (ReactToStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.React(ctx, a, req.Id, req.Body.Emoji)) })
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.React(ctx, a, req.Id, req.Body.Emoji)) })
 	if p != nil {
 		return ReactToStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}

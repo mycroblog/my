@@ -51,10 +51,13 @@ func TestValidateMail(t *testing.T) {
 	}
 }
 
-// words words the signature's contact line in English, or in another locale and direction.
+// words words the signature's contact and unsubscribe lines in English, or in another locale and
+// direction.
 type words struct{ locale, dir string }
 
 func (words) ServerMailSignatureContact(email string) string { return "Contact: " + email }
+
+func (words) ServerMailSignatureUnsubscribe(url string) string { return "Stop these emails: " + url }
 
 func (w words) Locale() string {
 	if w.locale == "" {
@@ -111,7 +114,30 @@ func TestMailComposer(t *testing.T) {
 		t.Errorf("Compose with a named contact = %+v, %v", m, err)
 	}
 
+	// A notification with an unsubscribe link carries it in the List-Unsubscribe headers and at
+	// the end of the signature.
+	const unsubscribe = "https://social.example/mail/unsubscribe?token=my_eut_x"
+	notice := kernel.MailDraft{
+		Category: kernel.MailNotification, To: "alice@example.com", Subject: "New report",
+		Paragraphs: []string{"A new report came in."}, Reason: "You chose these emails.", UnsubscribeURL: unsubscribe,
+	}
+	m, err = kernel.MailComposer{Site: kernel.MailSite{Name: "Example", URL: "https://social.example"}, Words: words{}}.Compose(notice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(m.Text, "\nYou chose these emails.\nStop these emails: "+unsubscribe+"\n") {
+		t.Errorf("Text without the unsubscribe link:\n%s", m.Text)
+	}
+	if m.Headers[kernel.HeaderListUnsubscribe] != "<"+unsubscribe+">" ||
+		m.Headers[kernel.HeaderListUnsubscribePost] != "List-Unsubscribe=One-Click" || len(m.Headers) != 2 {
+		t.Errorf("Headers = %v", m.Headers)
+	}
+
 	for name, d := range map[string]kernel.MailDraft{
+		"unsubscribe from a transactional email": {
+			Category: kernel.MailTransactional, To: "alice@example.com", Subject: "x", Paragraphs: []string{"p"}, Reason: "r",
+			UnsubscribeURL: unsubscribe,
+		},
 		"no paragraph": {Category: kernel.MailTransactional, To: "alice@example.com", Subject: "x", Reason: "r"},
 		"no reason":    {Category: kernel.MailTransactional, To: "alice@example.com", Subject: "x", Paragraphs: []string{"p"}},
 		"injection":    {Category: kernel.MailTransactional, To: "alice@example.com", Subject: "x\nBcc: m@x", Paragraphs: []string{"p"}, Reason: "r"},

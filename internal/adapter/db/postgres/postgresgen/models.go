@@ -1169,13 +1169,14 @@ type UserRegistrationState struct {
 }
 
 type UserToken struct {
-	ID             string
-	UserID         string
-	Purpose        string
-	EmailAddressID *string
-	TokenHash      []byte
-	ExpiresAt      time.Time
-	IssuedAt       time.Time
+	ID                  string
+	UserID              string
+	Purpose             string
+	EmailAddressID      *string
+	UnsubscribeCategory *string
+	TokenHash           []byte
+	ExpiresAt           time.Time
+	IssuedAt            time.Time
 }
 
 type WebhookEndpointFailure struct {

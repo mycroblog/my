@@ -21,6 +21,21 @@
         "typescript": "npm:@typescript/typescript6@6.0.2",
       },
     },
+    "../pkg/mykit/ts": {
+      "name": "@mycroblog/mykit",
+      "version": "0.0.0",
+      "dependencies": {
+        "openapi-fetch": "0.17.0",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "openapi-typescript": "7.13.0",
+        "oxlint": "1.87.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "npm:@typescript/typescript6@6.0.2",
+      },
+    },
     "ui": {
       "name": "@my/ui",
       "version": "0.0.0",
@@ -486,6 +501,8 @@
     "@my/ui": ["@my/ui@workspace:ui"],
 
     "@my/web": ["@my/web@workspace:web"],
+
+    "@mycroblog/mykit": ["@mycroblog/mykit@workspace:../pkg/mykit/ts"],
 
     "@napi-rs/lzma-linux-x64-gnu": ["@napi-rs/lzma-linux-x64-gnu@1.5.1", "", { "os": "linux", "cpu": "x64" }, "sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ=="],
 

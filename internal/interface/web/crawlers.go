@@ -33,9 +33,9 @@ const (
 const HeaderNoIndex = "noindex"
 
 // robotsDisallowed are the paths that no crawler needs: the APIs, the sign-in and OAuth screens,
-// ActivityPub documents, and the media proxy. /.well-known/ and /nodeinfo stay open, for the
-// statistics and server lists that read NodeInfo (FR-402).
-var robotsDisallowed = []string{"/api/", "/oauth/", "/auth/", "/ap/", "/media/proxy/"}
+// the email unsubscribe links, ActivityPub documents, and the media proxy. /.well-known/ and
+// /nodeinfo stay open, for the statistics and server lists that read NodeInfo (FR-402).
+var robotsDisallowed = []string{"/api/", "/oauth/", "/auth/", "/mail/", "/ap/", "/media/proxy/"}
 
 // crawlerDirectives are the meta tags and headers that state a CrawlerPolicy on a response.
 type crawlerDirectives struct {

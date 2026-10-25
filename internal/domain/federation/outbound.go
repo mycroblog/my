@@ -42,13 +42,16 @@ const (
 	// refuses (inbound, ADR-0076), recorded without a follow. Its object is the remote actor; its
 	// document is stored when it is recorded, and it goes to one inbox (the payload's).
 	OutboundRefusal OutboundObjectKind = "refusal"
+	// OutboundMove is the Move of a local account to another (ADR-0089): its object is the move
+	// (account_moves), and it goes to the actor's followers.
+	OutboundMove OutboundObjectKind = "move"
 )
 
 // Valid reports whether k is one of the outbound object kinds.
 func (k OutboundObjectKind) Valid() bool {
 	switch k {
 	case OutboundStatus, OutboundBoost, OutboundFavourite, OutboundFollow, OutboundBlock, OutboundAccount, OutboundReport, OutboundPollVote, OutboundRelay,
-		OutboundQuote, OutboundRefusal:
+		OutboundQuote, OutboundRefusal, OutboundMove:
 		return true
 	}
 	return false

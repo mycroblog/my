@@ -115,6 +115,10 @@
     "defaultMessage": "[Ƈǿǿƞŧȧȧƈŧ: {email}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.signature.unsubscribe": {
+    "defaultMessage": "[Şŧǿǿƥ ŧħḗḗşḗḗ ḗḗḿȧȧīŀş: {url}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.supporter_payment_failed.action": {
     "defaultMessage": "[Ŭƥḓȧȧŧḗḗ ẏǿǿŭŭř ƥȧȧẏḿḗḗƞŧ ḿḗḗŧħǿǿḓ]",
     "description": "Generated from en by tools/i18n; do not edit."

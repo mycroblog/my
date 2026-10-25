@@ -175,7 +175,7 @@ func TestRobotsTxt(t *testing.T) {
 				t.Fatalf("no group for every crawler:\n%s", body)
 			}
 			want := "Content-Usage: " + tc.contentUsage + "\nContent-Signal: " + tc.contentSignal + "\n" +
-				"Disallow: /api/\nDisallow: /oauth/\nDisallow: /auth/\nDisallow: /ap/\nDisallow: /media/proxy/\nAllow: /\n"
+				"Disallow: /api/\nDisallow: /oauth/\nDisallow: /auth/\nDisallow: /mail/\nDisallow: /ap/\nDisallow: /media/proxy/\nAllow: /\n"
 			if every != want {
 				t.Errorf("group for every crawler =\n%s\nwant\n%s", every, want)
 			}

@@ -6,7 +6,8 @@ description: |
   addresses), `two_factor_disabled` (an administrator removed the account's two-factor
   authentication), `password_reset_link_issued` (an administrator issued a link that sets
   a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-  suppression of the primary email address of the account's user). On a `domain`:
+  suppression of the primary email address of the account's user), `account_moved` (a limited
+  local account moved to another local account, which does not inherit the limit). On a `domain`:
   `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
   `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
   `user` (a registration):
@@ -55,8 +56,10 @@ description: |
   `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
   tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
   the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-  the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-  and the label are `service_closure`.
+  the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+  `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+  the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+  `service_closure`.
 type: string
 enum:
   - account_action_issued
@@ -90,6 +93,7 @@ enum:
   - two_factor_disabled
   - password_reset_link_issued
   - email_suppression_lifted
+  - account_moved
   - custom_emoji_created
   - custom_emoji_image_replaced
   - custom_emoji_copied
@@ -141,3 +145,5 @@ enum:
   - oauth_client_host_allowed
   - service_closure_announced
   - service_closure_withdrawn
+  - service_closure_closed
+  - service_closure_delivery_completed

@@ -167,6 +167,10 @@
     "defaultMessage": "二要素認証の解除",
     "description": "Heading of an audit log entry: an administrator removed the two-factor authentication of a local account."
   },
+  "admin.audit_log.action.account_moved": {
+    "defaultMessage": "制限中のアカウントの移転",
+    "description": "Heading of an audit log entry: a local account that moderation limits moved to another local account, which does not inherit the limit; a moderator decides whether to limit the target."
+  },
   "admin.audit_log.action.password_reset_link_issued": {
     "defaultMessage": "パスワード再設定リンクの発行",
     "description": "Heading of an audit log entry: an administrator issued a password reset link for the user of a local account."
@@ -530,6 +534,14 @@
   "admin.audit_log.action.service_closure_withdrawn": {
     "defaultMessage": "サービスの終了の予告を取り消した",
     "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
+  "admin.audit_log.action.service_closure_closed": {
+    "defaultMessage": "サービスのクローズ",
+    "description": "Kind of an audited operation: an administrator closed the server for good (the closure of the service)."
+  },
+  "admin.audit_log.action.service_closure_delivery_completed": {
+    "defaultMessage": "クローズの配送の完了",
+    "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
   },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth のアプリ",

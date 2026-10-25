@@ -1,4 +1,12 @@
 {
+  "errors.account_moved": {
+    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ħȧȧş ḿǿǿṽḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.account_not_moved": {
+    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ħȧȧş ƞǿǿŧ ḿǿǿṽḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.account_unavailable": {
     "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ŭŭşḗḗ ŧħḗḗ ȧȧƥƥ řīɠħŧ ƞǿǿẇ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -171,6 +179,22 @@
     "defaultMessage": "[Ẏǿǿŭŭř řǿǿŀḗḗş ƞḗḗḗḗḓ ŧħḗḗ ƥḗḗřḿīşşīǿǿƞ {permission}.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.move_alias_missing": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ḓǿǿḗḗş ƞǿǿŧ ŀīşŧ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ȧȧş ȧȧƞ ȧȧŀīȧȧş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ħȧȧş ḿǿǿṽḗḗḓ īŧşḗḗŀƒ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_target_unavailable": {
+    "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ḿǿǿṽḗḗ ŧǿǿ ŧħȧȧŧ ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ḿǿǿṽḗḗḓ ŧǿǿǿǿ řḗḗƈḗḗƞŧŀẏ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.not_found": {
     "defaultMessage": "[Ŧħḗḗ řḗḗɋŭŭḗḗşŧḗḗḓ řḗḗşǿǿŭŭřƈḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -265,6 +289,14 @@
   },
   "errors.self_relationship": {
     "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ḓǿǿ ŧħīş ŧǿǿ ẏǿǿŭŭř ǿǿẇƞ ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closed": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř īş ƈŀǿǿşḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closed_detail": {
+    "defaultMessage": "[Ŧħḗḗ şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ. Ẏǿǿŭŭ ƈȧȧƞ şŧīŀŀ şīɠƞ īƞ ȧȧƞḓ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.service_closure.state": {

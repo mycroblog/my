@@ -292,88 +292,91 @@ func (e AdminAnnouncementState) Valid() bool {
 
 // Defines values for AdminAuditAction.
 const (
-	AdminAuditActionAccountActionIssued           AdminAuditAction = "account_action_issued"
-	AdminAuditActionAccountActionLifted           AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled      AdminAuditAction = "account_deletion_cancelled"
-	AdminAuditActionAccountStatusesRefetchQueued  AdminAuditAction = "account_statuses_refetch_queued"
-	AdminAuditActionAnnouncementCreated           AdminAuditAction = "announcement_created"
-	AdminAuditActionAnnouncementPublished         AdminAuditAction = "announcement_published"
-	AdminAuditActionAnnouncementUpdated           AdminAuditAction = "announcement_updated"
-	AdminAuditActionAnnouncementWithdrawn         AdminAuditAction = "announcement_withdrawn"
-	AdminAuditActionAppealOverturned              AdminAuditAction = "appeal_overturned"
-	AdminAuditActionAppealUpheld                  AdminAuditAction = "appeal_upheld"
-	AdminAuditActionBillingImportQueued           AdminAuditAction = "billing_import_queued"
-	AdminAuditActionCostItemCanceled              AdminAuditAction = "cost_item_canceled"
-	AdminAuditActionCostItemCreated               AdminAuditAction = "cost_item_created"
-	AdminAuditActionCostItemEndChanged            AdminAuditAction = "cost_item_end_changed"
-	AdminAuditActionCostItemPriceRevised          AdminAuditAction = "cost_item_price_revised"
-	AdminAuditActionCostItemRelabeled             AdminAuditAction = "cost_item_relabeled"
-	AdminAuditActionCustomEmojiCopied             AdminAuditAction = "custom_emoji_copied"
-	AdminAuditActionCustomEmojiCreated            AdminAuditAction = "custom_emoji_created"
-	AdminAuditActionCustomEmojiDeleted            AdminAuditAction = "custom_emoji_deleted"
-	AdminAuditActionCustomEmojiDisabled           AdminAuditAction = "custom_emoji_disabled"
-	AdminAuditActionCustomEmojiEnabled            AdminAuditAction = "custom_emoji_enabled"
-	AdminAuditActionCustomEmojiImageReplaced      AdminAuditAction = "custom_emoji_image_replaced"
-	AdminAuditActionCustomEmojiRequestApproved    AdminAuditAction = "custom_emoji_request_approved"
-	AdminAuditActionCustomEmojiRequestRejected    AdminAuditAction = "custom_emoji_request_rejected"
-	AdminAuditActionCustomEmojiRequestSubmitted   AdminAuditAction = "custom_emoji_request_submitted"
-	AdminAuditActionCustomEmojiRequestWithdrawn   AdminAuditAction = "custom_emoji_request_withdrawn"
-	AdminAuditActionCustomEmojiUpdated            AdminAuditAction = "custom_emoji_updated"
-	AdminAuditActionDomainActionIssued            AdminAuditAction = "domain_action_issued"
-	AdminAuditActionDomainActionLifted            AdminAuditAction = "domain_action_lifted"
-	AdminAuditActionDomainStatusesRefetchQueued   AdminAuditAction = "domain_statuses_refetch_queued"
-	AdminAuditActionEmailSuppressionLifted        AdminAuditAction = "email_suppression_lifted"
-	AdminAuditActionInviteCreated                 AdminAuditAction = "invite_created"
-	AdminAuditActionInviteRevoked                 AdminAuditAction = "invite_revoked"
-	AdminAuditActionOauthClientDisabled           AdminAuditAction = "oauth_client_disabled"
-	AdminAuditActionOauthClientEnabled            AdminAuditAction = "oauth_client_enabled"
-	AdminAuditActionOauthClientHostAllowed        AdminAuditAction = "oauth_client_host_allowed"
-	AdminAuditActionOauthClientHostDenied         AdminAuditAction = "oauth_client_host_denied"
-	AdminAuditActionPasswordResetLinkIssued       AdminAuditAction = "password_reset_link_issued"
-	AdminAuditActionPaymentReconcileQueued        AdminAuditAction = "payment_reconcile_queued"
-	AdminAuditActionRegistrationApproved          AdminAuditAction = "registration_approved"
-	AdminAuditActionRegistrationRejected          AdminAuditAction = "registration_rejected"
-	AdminAuditActionRelayAccepted                 AdminAuditAction = "relay_accepted"
-	AdminAuditActionRelayAdded                    AdminAuditAction = "relay_added"
-	AdminAuditActionRelayFollowed                 AdminAuditAction = "relay_followed"
-	AdminAuditActionRelayRejected                 AdminAuditAction = "relay_rejected"
-	AdminAuditActionRelayRemoved                  AdminAuditAction = "relay_removed"
-	AdminAuditActionRelayUnfollowed               AdminAuditAction = "relay_unfollowed"
-	AdminAuditActionReportAssigned                AdminAuditAction = "report_assigned"
-	AdminAuditActionReportNoteAdded               AdminAuditAction = "report_note_added"
-	AdminAuditActionReportReopened                AdminAuditAction = "report_reopened"
-	AdminAuditActionReportResolved                AdminAuditAction = "report_resolved"
-	AdminAuditActionReportUnassigned              AdminAuditAction = "report_unassigned"
-	AdminAuditActionRevealedPrivateData           AdminAuditAction = "revealed_private_data"
-	AdminAuditActionRoleCreated                   AdminAuditAction = "role_created"
-	AdminAuditActionRoleDeleted                   AdminAuditAction = "role_deleted"
-	AdminAuditActionRoleGranted                   AdminAuditAction = "role_granted"
-	AdminAuditActionRoleRevoked                   AdminAuditAction = "role_revoked"
-	AdminAuditActionRoleUpdated                   AdminAuditAction = "role_updated"
-	AdminAuditActionRuleAdded                     AdminAuditAction = "rule_added"
-	AdminAuditActionRuleMoved                     AdminAuditAction = "rule_moved"
-	AdminAuditActionRuleRetired                   AdminAuditAction = "rule_retired"
-	AdminAuditActionRuleRevised                   AdminAuditAction = "rule_revised"
-	AdminAuditActionServiceClosureAnnounced       AdminAuditAction = "service_closure_announced"
-	AdminAuditActionServiceClosureWithdrawn       AdminAuditAction = "service_closure_withdrawn"
-	AdminAuditActionSettingChanged                AdminAuditAction = "setting_changed"
-	AdminAuditActionSignupBlockAdded              AdminAuditAction = "signup_block_added"
-	AdminAuditActionSignupBlockLifted             AdminAuditAction = "signup_block_lifted"
-	AdminAuditActionStatusRefetchQueued           AdminAuditAction = "status_refetch_queued"
-	AdminAuditActionSupporterPlanCreated          AdminAuditAction = "supporter_plan_created"
-	AdminAuditActionSupporterPlanRetired          AdminAuditAction = "supporter_plan_retired"
-	AdminAuditActionSupporterPlanRevised          AdminAuditAction = "supporter_plan_revised"
-	AdminAuditActionSupporterProgramDisabled      AdminAuditAction = "supporter_program_disabled"
-	AdminAuditActionSupporterProgramEnabled       AdminAuditAction = "supporter_program_enabled"
-	AdminAuditActionSupporterSubscriptionCanceled AdminAuditAction = "supporter_subscription_canceled"
-	AdminAuditActionTextChanged                   AdminAuditAction = "text_changed"
-	AdminAuditActionTwoFactorDisabled             AdminAuditAction = "two_factor_disabled"
-	AdminAuditActionWebhookCreated                AdminAuditAction = "webhook_created"
-	AdminAuditActionWebhookDeleted                AdminAuditAction = "webhook_deleted"
-	AdminAuditActionWebhookDisabled               AdminAuditAction = "webhook_disabled"
-	AdminAuditActionWebhookEnabled                AdminAuditAction = "webhook_enabled"
-	AdminAuditActionWebhookSecretRotated          AdminAuditAction = "webhook_secret_rotated"
-	AdminAuditActionWebhookUpdated                AdminAuditAction = "webhook_updated"
+	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
+	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
+	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
+	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
+	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
+	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
+	AdminAuditActionAnnouncementUpdated             AdminAuditAction = "announcement_updated"
+	AdminAuditActionAnnouncementWithdrawn           AdminAuditAction = "announcement_withdrawn"
+	AdminAuditActionAppealOverturned                AdminAuditAction = "appeal_overturned"
+	AdminAuditActionAppealUpheld                    AdminAuditAction = "appeal_upheld"
+	AdminAuditActionBillingImportQueued             AdminAuditAction = "billing_import_queued"
+	AdminAuditActionCostItemCanceled                AdminAuditAction = "cost_item_canceled"
+	AdminAuditActionCostItemCreated                 AdminAuditAction = "cost_item_created"
+	AdminAuditActionCostItemEndChanged              AdminAuditAction = "cost_item_end_changed"
+	AdminAuditActionCostItemPriceRevised            AdminAuditAction = "cost_item_price_revised"
+	AdminAuditActionCostItemRelabeled               AdminAuditAction = "cost_item_relabeled"
+	AdminAuditActionCustomEmojiCopied               AdminAuditAction = "custom_emoji_copied"
+	AdminAuditActionCustomEmojiCreated              AdminAuditAction = "custom_emoji_created"
+	AdminAuditActionCustomEmojiDeleted              AdminAuditAction = "custom_emoji_deleted"
+	AdminAuditActionCustomEmojiDisabled             AdminAuditAction = "custom_emoji_disabled"
+	AdminAuditActionCustomEmojiEnabled              AdminAuditAction = "custom_emoji_enabled"
+	AdminAuditActionCustomEmojiImageReplaced        AdminAuditAction = "custom_emoji_image_replaced"
+	AdminAuditActionCustomEmojiRequestApproved      AdminAuditAction = "custom_emoji_request_approved"
+	AdminAuditActionCustomEmojiRequestRejected      AdminAuditAction = "custom_emoji_request_rejected"
+	AdminAuditActionCustomEmojiRequestSubmitted     AdminAuditAction = "custom_emoji_request_submitted"
+	AdminAuditActionCustomEmojiRequestWithdrawn     AdminAuditAction = "custom_emoji_request_withdrawn"
+	AdminAuditActionCustomEmojiUpdated              AdminAuditAction = "custom_emoji_updated"
+	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
+	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
+	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
+	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
+	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
+	AdminAuditActionOauthClientDisabled             AdminAuditAction = "oauth_client_disabled"
+	AdminAuditActionOauthClientEnabled              AdminAuditAction = "oauth_client_enabled"
+	AdminAuditActionOauthClientHostAllowed          AdminAuditAction = "oauth_client_host_allowed"
+	AdminAuditActionOauthClientHostDenied           AdminAuditAction = "oauth_client_host_denied"
+	AdminAuditActionPasswordResetLinkIssued         AdminAuditAction = "password_reset_link_issued"
+	AdminAuditActionPaymentReconcileQueued          AdminAuditAction = "payment_reconcile_queued"
+	AdminAuditActionRegistrationApproved            AdminAuditAction = "registration_approved"
+	AdminAuditActionRegistrationRejected            AdminAuditAction = "registration_rejected"
+	AdminAuditActionRelayAccepted                   AdminAuditAction = "relay_accepted"
+	AdminAuditActionRelayAdded                      AdminAuditAction = "relay_added"
+	AdminAuditActionRelayFollowed                   AdminAuditAction = "relay_followed"
+	AdminAuditActionRelayRejected                   AdminAuditAction = "relay_rejected"
+	AdminAuditActionRelayRemoved                    AdminAuditAction = "relay_removed"
+	AdminAuditActionRelayUnfollowed                 AdminAuditAction = "relay_unfollowed"
+	AdminAuditActionReportAssigned                  AdminAuditAction = "report_assigned"
+	AdminAuditActionReportNoteAdded                 AdminAuditAction = "report_note_added"
+	AdminAuditActionReportReopened                  AdminAuditAction = "report_reopened"
+	AdminAuditActionReportResolved                  AdminAuditAction = "report_resolved"
+	AdminAuditActionReportUnassigned                AdminAuditAction = "report_unassigned"
+	AdminAuditActionRevealedPrivateData             AdminAuditAction = "revealed_private_data"
+	AdminAuditActionRoleCreated                     AdminAuditAction = "role_created"
+	AdminAuditActionRoleDeleted                     AdminAuditAction = "role_deleted"
+	AdminAuditActionRoleGranted                     AdminAuditAction = "role_granted"
+	AdminAuditActionRoleRevoked                     AdminAuditAction = "role_revoked"
+	AdminAuditActionRoleUpdated                     AdminAuditAction = "role_updated"
+	AdminAuditActionRuleAdded                       AdminAuditAction = "rule_added"
+	AdminAuditActionRuleMoved                       AdminAuditAction = "rule_moved"
+	AdminAuditActionRuleRetired                     AdminAuditAction = "rule_retired"
+	AdminAuditActionRuleRevised                     AdminAuditAction = "rule_revised"
+	AdminAuditActionServiceClosureAnnounced         AdminAuditAction = "service_closure_announced"
+	AdminAuditActionServiceClosureClosed            AdminAuditAction = "service_closure_closed"
+	AdminAuditActionServiceClosureDeliveryCompleted AdminAuditAction = "service_closure_delivery_completed"
+	AdminAuditActionServiceClosureWithdrawn         AdminAuditAction = "service_closure_withdrawn"
+	AdminAuditActionSettingChanged                  AdminAuditAction = "setting_changed"
+	AdminAuditActionSignupBlockAdded                AdminAuditAction = "signup_block_added"
+	AdminAuditActionSignupBlockLifted               AdminAuditAction = "signup_block_lifted"
+	AdminAuditActionStatusRefetchQueued             AdminAuditAction = "status_refetch_queued"
+	AdminAuditActionSupporterPlanCreated            AdminAuditAction = "supporter_plan_created"
+	AdminAuditActionSupporterPlanRetired            AdminAuditAction = "supporter_plan_retired"
+	AdminAuditActionSupporterPlanRevised            AdminAuditAction = "supporter_plan_revised"
+	AdminAuditActionSupporterProgramDisabled        AdminAuditAction = "supporter_program_disabled"
+	AdminAuditActionSupporterProgramEnabled         AdminAuditAction = "supporter_program_enabled"
+	AdminAuditActionSupporterSubscriptionCanceled   AdminAuditAction = "supporter_subscription_canceled"
+	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
+	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
+	AdminAuditActionWebhookCreated                  AdminAuditAction = "webhook_created"
+	AdminAuditActionWebhookDeleted                  AdminAuditAction = "webhook_deleted"
+	AdminAuditActionWebhookDisabled                 AdminAuditAction = "webhook_disabled"
+	AdminAuditActionWebhookEnabled                  AdminAuditAction = "webhook_enabled"
+	AdminAuditActionWebhookSecretRotated            AdminAuditAction = "webhook_secret_rotated"
+	AdminAuditActionWebhookUpdated                  AdminAuditAction = "webhook_updated"
 )
 
 // Valid indicates whether the value is a known member of the AdminAuditAction enum.
@@ -384,6 +387,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountActionLifted:
 		return true
 	case AdminAuditActionAccountDeletionCancelled:
+		return true
+	case AdminAuditActionAccountMoved:
 		return true
 	case AdminAuditActionAccountStatusesRefetchQueued:
 		return true
@@ -504,6 +509,10 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionRuleRevised:
 		return true
 	case AdminAuditActionServiceClosureAnnounced:
+		return true
+	case AdminAuditActionServiceClosureClosed:
+		return true
+	case AdminAuditActionServiceClosureDeliveryCompleted:
 		return true
 	case AdminAuditActionServiceClosureWithdrawn:
 		return true
@@ -3800,7 +3809,8 @@ type AdminAppealPage struct {
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-// suppression of the primary email address of the account's user). On a `domain`:
+// suppression of the primary email address of the account's user), `account_moved` (a limited
+// local account moved to another local account, which does not inherit the limit). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3849,8 +3859,10 @@ type AdminAppealPage struct {
 // `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 // tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
 // the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-// the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-// and the label are `service_closure`.
+// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+// `service_closure`.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -3866,7 +3878,8 @@ type AdminAuditEntry struct {
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
-	// suppression of the primary email address of the account's user). On a `domain`:
+	// suppression of the primary email address of the account's user), `account_moved` (a limited
+	// local account moved to another local account, which does not inherit the limit). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -3915,8 +3928,10 @@ type AdminAuditEntry struct {
 	// `client_id`. On an `oauth_client_host`: `oauth_client_host_denied`, which also revokes the
 	// tokens of the clients on the host, and `oauth_client_host_allowed`; the ID and the label are
 	// the host. On the `instance`: `service_closure_announced`, the announcement of the closure of
-	// the service or a change of its dates, and `service_closure_withdrawn`, its withdrawal; the ID
-	// and the label are `service_closure`.
+	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
+	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
+	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
+	// `service_closure`.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -4893,6 +4908,31 @@ type AdminServiceClosure struct {
 	State ServiceClosureState `json:"state"`
 }
 
+// AdminServiceClosureCheck What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+// screen and the CLI show it with the confirmation of the closure.
+type AdminServiceClosureCheck struct {
+	// DeliveryInboxes The shared inboxes known to the server, which each `Delete` goes to.
+	DeliveryInboxes int `json:"delivery_inboxes"`
+
+	// EstimatedDeletes The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
+	EstimatedDeletes int `json:"estimated_deletes"`
+
+	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund.
+	LiveSupporterSubscriptions int `json:"live_supporter_subscriptions"`
+
+	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
+	LocalAccounts int `json:"local_accounts"`
+
+	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers,
+	// ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+	// the admin screen and the CLI warn while it is not 0.
+	PendingMigrations int `json:"pending_migrations"`
+
+	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+	// their records with the CLI before discarding the data of the closed server.
+	RetentionHolds int `json:"retention_holds"`
+}
+
 // AdminSetting An instance setting: its value and what it accepts. Every value is a string in its
 // canonical form, whatever its kind.
 type AdminSetting struct {
@@ -5627,6 +5667,12 @@ type ChangePasswordRequest struct {
 
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+}
+
+// CloseServiceRequest The confirmation of the closure of the server.
+type CloseServiceRequest struct {
+	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
+	ConfirmDomain string `json:"confirm_domain"`
 }
 
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
@@ -7721,6 +7767,21 @@ type MoveInstanceRuleRequest struct {
 	Position int `json:"position"`
 }
 
+// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`
+// or `passkey`.
+type MoveOwnAccountRequest struct {
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	TargetAccountId Id `json:"target_account_id"`
+}
+
 // MuteAccountRequest The settings of a mute.
 type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
@@ -8529,8 +8590,18 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
 //     reason in `theme_errors` (`PUT /admin/theme`).
 //   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
-//     allow the operation: withdrawing an announcement when none is in effect, or announcing
-//     the closure of a server that is closed already (`/admin/closure/announcement`).
+//     allow the operation: withdrawing an announcement when none is in effect, announcing the
+//     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
+//     server whose closure is not announced or whose `closes_at` has not come
+//     (`POST /admin/closure/close`).
+//   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+//     server serves only the operations with which the users take their data away: their own
+//     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
+//     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
+//     (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
+//     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
+//     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
 //   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
@@ -8558,6 +8629,18 @@ type PreviewDomainBlockImportRequest struct {
 //     allow the operation.
 //   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
 //     already.
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
+//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//     (`POST /accounts/move/cancel`).
+//   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
+//     no move to cancel.
+//   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
+//     user's account among its aliases (`alsoKnownAs`). Add the alias on that account first.
+//   - `/api/v1/problems/move-target-moved` (422): the account to move to moved itself.
+//   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
+//     own, is not found, cannot be fetched from its server, or is suspended here.
+//   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
+//     or moved to that account before.
 //   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -10821,6 +10904,9 @@ type GetHashtagTimelineParams struct {
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
+// MoveOwnAccountJSONRequestBody defines body for MoveOwnAccount for application/json ContentType.
+type MoveOwnAccountJSONRequestBody = MoveOwnAccountRequest
+
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest
 
@@ -10856,6 +10942,9 @@ type UpholdAppealJSONRequestBody = DecideAppealRequest
 
 // AnnounceServiceClosureJSONRequestBody defines body for AnnounceServiceClosure for application/json ContentType.
 type AnnounceServiceClosureJSONRequestBody = AnnounceServiceClosureRequest
+
+// CloseServiceJSONRequestBody defines body for CloseService for application/json ContentType.
+type CloseServiceJSONRequestBody = CloseServiceRequest
 
 // CreateCostItemJSONRequestBody defines body for CreateCostItem for application/json ContentType.
 type CreateCostItemJSONRequestBody = CostItemCreateRequest
@@ -12288,6 +12377,79 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MoveOwnAccountWithBody Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MoveOwnAccount Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPasswordStatus Get whether the authenticated user has a password
 	//
 	// Whether the user signs in with a password, or with passkeys only after removing it
@@ -13039,6 +13201,46 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
 	AnnounceServiceClosure(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminServiceClosureCheck Check the server before its closure
+	//
+	// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+	// deliveries, the supporter subscriptions that it cancels, the account migrations that have
+	// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+	// permission.
+	//
+	// Corresponds with GET /admin/closure/check (the `GetAdminServiceClosureCheck` operationId).
+	GetAdminServiceClosureCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CloseServiceWithBody Close the server
+	//
+	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+	// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+	// in the audit log and cancels every supporter subscription that goes on, in the same
+	// transaction. From then on, the client API serves only the users' own data and exports
+	// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+	CloseServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CloseService Close the server
+	//
+	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+	// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+	// in the audit log and cancels every supporter subscription that goes on, in the same
+	// transaction. From then on, the client API serves only the users' own data and exports
+	// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+	CloseService(ctx context.Context, body CloseServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListCostItems List the cost items
 	//
@@ -16385,6 +16587,109 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 	return c.Client.Do(req)
 }
 
+// MoveOwnAccountWithBody Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveOwnAccountRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MoveOwnAccount Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveOwnAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CancelOwnAccountMove Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelOwnAccountMoveRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetPasswordStatus Get whether the authenticated user has a password
 //
 // Whether the user signs in with a password, or with passkeys only after removing it
@@ -17727,6 +18032,76 @@ func (c *Client) AnnounceServiceClosureWithBody(ctx context.Context, contentType
 // Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
 func (c *Client) AnnounceServiceClosure(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAnnounceServiceClosureRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminServiceClosureCheck Check the server before its closure
+//
+// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+// deliveries, the supporter subscriptions that it cancels, the account migrations that have
+// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+// permission.
+//
+// Corresponds with GET /admin/closure/check (the `GetAdminServiceClosureCheck` operationId).
+func (c *Client) GetAdminServiceClosureCheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminServiceClosureCheckRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CloseServiceWithBody Close the server
+//
+// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+// in the audit log and cancels every supporter subscription that goes on, in the same
+// transaction. From then on, the client API serves only the users' own data and exports
+// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+func (c *Client) CloseServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCloseServiceRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CloseService Close the server
+//
+// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+// in the audit log and cancels every supporter subscription that goes on, in the same
+// transaction. From then on, the client API serves only the users' own data and exports
+// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+func (c *Client) CloseService(ctx context.Context, body CloseServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCloseServiceRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -23879,6 +24254,73 @@ func NewLookupAccountRequest(server string, params *LookupAccountParams) (*http.
 	return req, nil
 }
 
+// NewMoveOwnAccountRequest calls the generic MoveOwnAccount builder with application/json body
+func NewMoveOwnAccountRequest(server string, body MoveOwnAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMoveOwnAccountRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewMoveOwnAccountRequestWithBody constructs an http.Request for the MoveOwnAccount method, with any body, and a specified content type
+func NewMoveOwnAccountRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCancelOwnAccountMoveRequest constructs an http.Request for the CancelOwnAccountMove method
+func NewCancelOwnAccountMoveRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/move/cancel")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetPasswordStatusRequest constructs an http.Request for the GetPasswordStatus method
 func NewGetPasswordStatusRequest(server string) (*http.Request, error) {
 	var err error
@@ -26087,6 +26529,73 @@ func NewAnnounceServiceClosureRequestWithBody(server string, contentType string,
 	}
 
 	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetAdminServiceClosureCheckRequest constructs an http.Request for the GetAdminServiceClosureCheck method
+func NewGetAdminServiceClosureCheckRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/closure/check")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCloseServiceRequest calls the generic CloseService builder with application/json body
+func NewCloseServiceRequest(server string, body CloseServiceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCloseServiceRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCloseServiceRequestWithBody constructs an http.Request for the CloseService method, with any body, and a specified content type
+func NewCloseServiceRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/closure/close")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -35555,6 +36064,81 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccountWithResponse(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*LookupAccountResponse, error)
 
+	// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error)
+
+	// MoveOwnAccountWithResponse Move the authenticated user's account to another account
+	//
+	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// checking the user's current `password` or a `passkey` of the user; a user without a
+	// password confirms with a passkey. Find the target's ID with
+	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+	//
+	// The target is fetched again from its server, and it must list this account among its
+	// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+	// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+	// `/api/v1/problems/move-target-moved` when the target moved itself,
+	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+	// cannot be fetched, or is suspended here (it or its server), and
+	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+	// move was cancelled, or for a target the account moved to before.
+	//
+	// Once moved, the account's followers on other servers get a `Move` and follow the target,
+	// the followers on this server follow it too, and the account's profile names the target
+	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+	// accepted every hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+	MoveOwnAccountWithResponse(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error)
+
+	// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error)
+
 	// GetPasswordStatusWithResponse Get whether the authenticated user has a password
 	//
 	// Whether the user signs in with a password, or with passkeys only after removing it
@@ -36378,6 +36962,48 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /admin/closure/announcement (the `AnnounceServiceClosure` operationId).
 	AnnounceServiceClosureWithResponse(ctx context.Context, body AnnounceServiceClosureJSONRequestBody, reqEditors ...RequestEditorFn) (*AnnounceServiceClosureResponse, error)
+
+	// GetAdminServiceClosureCheckWithResponse Check the server before its closure
+	//
+	// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+	// deliveries, the supporter subscriptions that it cancels, the account migrations that have
+	// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+	// permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/closure/check (the `GetAdminServiceClosureCheck` operationId).
+	GetAdminServiceClosureCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminServiceClosureCheckResponse, error)
+
+	// CloseServiceWithBodyWithResponse Close the server
+	//
+	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+	// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+	// in the audit log and cancels every supporter subscription that goes on, in the same
+	// transaction. From then on, the client API serves only the users' own data and exports
+	// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+	CloseServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CloseServiceResponse, error)
+
+	// CloseServiceWithResponse Close the server
+	//
+	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+	// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+	// in the audit log and cancels every supporter subscription that goes on, in the same
+	// transaction. From then on, the client API serves only the users' own data and exports
+	// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+	CloseServiceWithResponse(ctx context.Context, body CloseServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*CloseServiceResponse, error)
 
 	// ListCostItemsWithResponse List the cost items
 	//
@@ -40058,6 +40684,108 @@ func (r LookupAccountResponse) ContentType() string {
 	return ""
 }
 
+// MoveOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for MoveOwnAccount
+type MoveOwnAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MoveOwnAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MoveOwnAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MoveOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MoveOwnAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MoveOwnAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MoveOwnAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MoveOwnAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CancelOwnAccountMoveResponseDefaultHeaders the declared response headers of an HTTP default response for CancelOwnAccountMove
+type CancelOwnAccountMoveResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CancelOwnAccountMoveResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CancelOwnAccountMoveResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CancelOwnAccountMoveResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CancelOwnAccountMoveResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelOwnAccountMoveResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelOwnAccountMoveResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelOwnAccountMoveResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetPasswordStatusResponse200Headers the declared response headers of an HTTP 200 response for GetPasswordStatus
 type GetPasswordStatusResponse200Headers struct {
 	CacheControl *string
@@ -43088,6 +43816,136 @@ func (r AnnounceServiceClosureResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AnnounceServiceClosureResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminServiceClosureCheckResponse200Headers the declared response headers of an HTTP 200 response for GetAdminServiceClosureCheck
+type GetAdminServiceClosureCheckResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminServiceClosureCheckResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminServiceClosureCheck
+type GetAdminServiceClosureCheckResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminServiceClosureCheckResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminServiceClosureCheck
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminServiceClosureCheckResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminServiceClosureCheckResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminServiceClosureCheckResponse) GetJSON200() *AdminServiceClosureCheck {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminServiceClosureCheckResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminServiceClosureCheckResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminServiceClosureCheckResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminServiceClosureCheckResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminServiceClosureCheckResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CloseServiceResponse200Headers the declared response headers of an HTTP 200 response for CloseService
+type CloseServiceResponse200Headers struct {
+	CacheControl *string
+}
+
+// CloseServiceResponseDefaultHeaders the declared response headers of an HTTP default response for CloseService
+type CloseServiceResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CloseServiceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminServiceClosure
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CloseServiceResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CloseServiceResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CloseServiceResponse) GetJSON200() *AdminServiceClosure {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CloseServiceResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CloseServiceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CloseServiceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CloseServiceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CloseServiceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -57186,6 +58044,99 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 	return ParseLookupAccountResponse(rsp)
 }
 
+// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error) {
+	rsp, err := c.MoveOwnAccountWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveOwnAccountResponse(rsp)
+}
+
+// MoveOwnAccountWithResponse Move the authenticated user's account to another account
+//
+// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// checking the user's current `password` or a `passkey` of the user; a user without a
+// password confirms with a passkey. Find the target's ID with
+// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
+//
+// The target is fetched again from its server, and it must list this account among its
+// aliases (`alsoKnownAs`), which its owner sets there first. The move is refused with a 422:
+// `/api/v1/problems/move-alias-missing` when the target does not list this account,
+// `/api/v1/problems/move-target-moved` when the target moved itself,
+// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
+// cannot be fetched, or is suspended here (it or its server), and
+// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
+// move was cancelled, or for a target the account moved to before.
+//
+// Once moved, the account's followers on other servers get a `Move` and follow the target,
+// the followers on this server follow it too, and the account's profile names the target
+// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
+// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
+// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
+// accepted every hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
+func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error) {
+	rsp, err := c.MoveOwnAccount(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveOwnAccountResponse(rsp)
+}
+
+// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
+func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error) {
+	rsp, err := c.CancelOwnAccountMove(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelOwnAccountMoveResponse(rsp)
+}
+
 // GetPasswordStatusWithResponse Get whether the authenticated user has a password
 //
 // Whether the user signs in with a password, or with passkeys only after removing it
@@ -58368,6 +59319,66 @@ func (c *ClientWithResponses) AnnounceServiceClosureWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseAnnounceServiceClosureResponse(rsp)
+}
+
+// GetAdminServiceClosureCheckWithResponse Check the server before its closure
+//
+// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+// deliveries, the supporter subscriptions that it cancels, the account migrations that have
+// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
+// permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/closure/check (the `GetAdminServiceClosureCheck` operationId).
+func (c *ClientWithResponses) GetAdminServiceClosureCheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminServiceClosureCheckResponse, error) {
+	rsp, err := c.GetAdminServiceClosureCheck(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminServiceClosureCheckResponse(rsp)
+}
+
+// CloseServiceWithBodyWithResponse Close the server
+//
+// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+// in the audit log and cancels every supporter subscription that goes on, in the same
+// transaction. From then on, the client API serves only the users' own data and exports
+// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+func (c *ClientWithResponses) CloseServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CloseServiceResponse, error) {
+	rsp, err := c.CloseServiceWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCloseServiceResponse(rsp)
+}
+
+// CloseServiceWithResponse Close the server
+//
+// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// closure whose `closes_at` has passed can close; before it, without an announcement, or once
+// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
+// server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+// in the audit log and cancels every supporter subscription that goes on, in the same
+// transaction. From then on, the client API serves only the users' own data and exports
+// (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/closure/close (the `CloseService` operationId).
+func (c *ClientWithResponses) CloseServiceWithResponse(ctx context.Context, body CloseServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*CloseServiceResponse, error) {
+	rsp, err := c.CloseService(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCloseServiceResponse(rsp)
 }
 
 // ListCostItemsWithResponse List the cost items
@@ -63740,6 +64751,132 @@ func ParseLookupAccountResponse(rsp *http.Response) (*LookupAccountResponse, err
 	return response, nil
 }
 
+// ParseMoveOwnAccountResponse parses an HTTP response from a MoveOwnAccountWithResponse call
+func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MoveOwnAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers MoveOwnAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCancelOwnAccountMoveResponse parses an HTTP response from a CancelOwnAccountMoveWithResponse call
+func ParseCancelOwnAccountMoveResponse(rsp *http.Response) (*CancelOwnAccountMoveResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelOwnAccountMoveResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers CancelOwnAccountMoveResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetPasswordStatusResponse parses an HTTP response from a GetPasswordStatusWithResponse call
 func ParseGetPasswordStatusResponse(rsp *http.Response) (*GetPasswordStatusResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -67318,6 +68455,160 @@ func ParseAnnounceServiceClosureResponse(rsp *http.Response) (*AnnounceServiceCl
 		response.Headers200 = &headers
 	case true:
 		var headers AnnounceServiceClosureResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminServiceClosureCheckResponse parses an HTTP response from a GetAdminServiceClosureCheckWithResponse call
+func ParseGetAdminServiceClosureCheckResponse(rsp *http.Response) (*GetAdminServiceClosureCheckResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminServiceClosureCheckResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminServiceClosureCheck
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminServiceClosureCheckResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminServiceClosureCheckResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCloseServiceResponse parses an HTTP response from a CloseServiceWithResponse call
+func ParseCloseServiceResponse(rsp *http.Response) (*CloseServiceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CloseServiceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminServiceClosure
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CloseServiceResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers CloseServiceResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

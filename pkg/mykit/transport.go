@@ -123,12 +123,8 @@ func discard(resp *http.Response) {
 // is longer than limit.
 func retryDelay(retryAfter string, n int, limit time.Duration, now time.Time) (time.Duration, bool) {
 	if retryAfter != "" {
-		var d time.Duration
-		if secs, err := strconv.Atoi(retryAfter); err == nil {
-			d = time.Duration(max(secs, 0)) * time.Second
-		} else if at, err := http.ParseTime(retryAfter); err == nil {
-			d = max(at.Sub(now), 0)
-		} else {
+		d, ok := parseRetryAfter(retryAfter, now)
+		if !ok {
 			d = time.Second
 		}
 		return d, d <= limit
@@ -136,6 +132,18 @@ func retryDelay(retryAfter string, n int, limit time.Duration, now time.Time) (t
 	d := time.Second << min(n, 10)
 	d += rand.N(d / 2) //nolint:gosec // jitter, not a secret
 	return min(d, limit), true
+}
+
+// parseRetryAfter reads a Retry-After header, in seconds or an HTTP date, as the wait from now. It reports
+// false when the header is absent or unreadable.
+func parseRetryAfter(retryAfter string, now time.Time) (time.Duration, bool) {
+	if secs, err := strconv.Atoi(retryAfter); err == nil {
+		return time.Duration(max(secs, 0)) * time.Second, true
+	}
+	if at, err := http.ParseTime(retryAfter); err == nil {
+		return max(at.Sub(now), 0), true
+	}
+	return 0, false
 }
 
 // sleepContext waits for d, or returns the error of ctx when it ends first.

@@ -34,63 +34,65 @@ type AuditActorKind = moderation.AuditActorKind
 
 // The audited operations and their targets that other modules emit.
 const (
-	AuditRegistrationApproved          = moderation.AuditRegistrationApproved
-	AuditRegistrationRejected          = moderation.AuditRegistrationRejected
-	AuditSettingChanged                = moderation.AuditSettingChanged
-	AuditTextChanged                   = moderation.AuditTextChanged
-	AuditRuleAdded                     = moderation.AuditRuleAdded
-	AuditRuleRevised                   = moderation.AuditRuleRevised
-	AuditRuleMoved                     = moderation.AuditRuleMoved
-	AuditRuleRetired                   = moderation.AuditRuleRetired
-	AuditRoleGranted                   = moderation.AuditRoleGranted
-	AuditRoleRevoked                   = moderation.AuditRoleRevoked
-	AuditRoleCreated                   = moderation.AuditRoleCreated
-	AuditRoleUpdated                   = moderation.AuditRoleUpdated
-	AuditRoleDeleted                   = moderation.AuditRoleDeleted
-	AuditWebhookCreated                = moderation.AuditWebhookCreated
-	AuditWebhookUpdated                = moderation.AuditWebhookUpdated
-	AuditWebhookDeleted                = moderation.AuditWebhookDeleted
-	AuditWebhookEnabled                = moderation.AuditWebhookEnabled
-	AuditWebhookDisabled               = moderation.AuditWebhookDisabled
-	AuditWebhookSecretRotated          = moderation.AuditWebhookSecretRotated
-	AuditAnnouncementCreated           = moderation.AuditAnnouncementCreated
-	AuditAnnouncementUpdated           = moderation.AuditAnnouncementUpdated
-	AuditAnnouncementPublished         = moderation.AuditAnnouncementPublished
-	AuditAnnouncementWithdrawn         = moderation.AuditAnnouncementWithdrawn
-	AuditInviteCreated                 = moderation.AuditInviteCreated
-	AuditInviteRevoked                 = moderation.AuditInviteRevoked
-	AuditRelayAdded                    = moderation.AuditRelayAdded
-	AuditRelayFollowed                 = moderation.AuditRelayFollowed
-	AuditRelayUnfollowed               = moderation.AuditRelayUnfollowed
-	AuditRelayRemoved                  = moderation.AuditRelayRemoved
-	AuditRelayAccepted                 = moderation.AuditRelayAccepted
-	AuditRelayRejected                 = moderation.AuditRelayRejected
-	AuditStatusRefetchQueued           = moderation.AuditStatusRefetchQueued
-	AuditAccountStatusesRefetchQueued  = moderation.AuditAccountStatusesRefetchQueued
-	AuditDomainStatusesRefetchQueued   = moderation.AuditDomainStatusesRefetchQueued
-	AuditBillingImportQueued           = moderation.AuditBillingImportQueued
-	AuditCostItemCreated               = moderation.AuditCostItemCreated
-	AuditCostItemRelabeled             = moderation.AuditCostItemRelabeled
-	AuditCostItemPriceRevised          = moderation.AuditCostItemPriceRevised
-	AuditCostItemEndChanged            = moderation.AuditCostItemEndChanged
-	AuditCostItemCanceled              = moderation.AuditCostItemCanceled
-	AuditSupporterProgramEnabled       = moderation.AuditSupporterProgramEnabled
-	AuditSupporterProgramDisabled      = moderation.AuditSupporterProgramDisabled
-	AuditSupporterPlanCreated          = moderation.AuditSupporterPlanCreated
-	AuditSupporterPlanRevised          = moderation.AuditSupporterPlanRevised
-	AuditSupporterPlanRetired          = moderation.AuditSupporterPlanRetired
-	AuditSupporterSubscriptionCanceled = moderation.AuditSupporterSubscriptionCanceled
-	AuditCustomEmojiRequestSubmitted   = moderation.AuditCustomEmojiRequestSubmitted
-	AuditCustomEmojiRequestWithdrawn   = moderation.AuditCustomEmojiRequestWithdrawn
-	AuditCustomEmojiRequestApproved    = moderation.AuditCustomEmojiRequestApproved
-	AuditCustomEmojiRequestRejected    = moderation.AuditCustomEmojiRequestRejected
-	AuditPaymentReconcileQueued        = moderation.AuditPaymentReconcileQueued
-	AuditOAuthClientDisabled           = moderation.AuditOAuthClientDisabled
-	AuditOAuthClientEnabled            = moderation.AuditOAuthClientEnabled
-	AuditOAuthClientHostDenied         = moderation.AuditOAuthClientHostDenied
-	AuditOAuthClientHostAllowed        = moderation.AuditOAuthClientHostAllowed
-	AuditServiceClosureAnnounced       = moderation.AuditServiceClosureAnnounced
-	AuditServiceClosureWithdrawn       = moderation.AuditServiceClosureWithdrawn
+	AuditRegistrationApproved            = moderation.AuditRegistrationApproved
+	AuditRegistrationRejected            = moderation.AuditRegistrationRejected
+	AuditSettingChanged                  = moderation.AuditSettingChanged
+	AuditTextChanged                     = moderation.AuditTextChanged
+	AuditRuleAdded                       = moderation.AuditRuleAdded
+	AuditRuleRevised                     = moderation.AuditRuleRevised
+	AuditRuleMoved                       = moderation.AuditRuleMoved
+	AuditRuleRetired                     = moderation.AuditRuleRetired
+	AuditRoleGranted                     = moderation.AuditRoleGranted
+	AuditRoleRevoked                     = moderation.AuditRoleRevoked
+	AuditRoleCreated                     = moderation.AuditRoleCreated
+	AuditRoleUpdated                     = moderation.AuditRoleUpdated
+	AuditRoleDeleted                     = moderation.AuditRoleDeleted
+	AuditWebhookCreated                  = moderation.AuditWebhookCreated
+	AuditWebhookUpdated                  = moderation.AuditWebhookUpdated
+	AuditWebhookDeleted                  = moderation.AuditWebhookDeleted
+	AuditWebhookEnabled                  = moderation.AuditWebhookEnabled
+	AuditWebhookDisabled                 = moderation.AuditWebhookDisabled
+	AuditWebhookSecretRotated            = moderation.AuditWebhookSecretRotated
+	AuditAnnouncementCreated             = moderation.AuditAnnouncementCreated
+	AuditAnnouncementUpdated             = moderation.AuditAnnouncementUpdated
+	AuditAnnouncementPublished           = moderation.AuditAnnouncementPublished
+	AuditAnnouncementWithdrawn           = moderation.AuditAnnouncementWithdrawn
+	AuditInviteCreated                   = moderation.AuditInviteCreated
+	AuditInviteRevoked                   = moderation.AuditInviteRevoked
+	AuditRelayAdded                      = moderation.AuditRelayAdded
+	AuditRelayFollowed                   = moderation.AuditRelayFollowed
+	AuditRelayUnfollowed                 = moderation.AuditRelayUnfollowed
+	AuditRelayRemoved                    = moderation.AuditRelayRemoved
+	AuditRelayAccepted                   = moderation.AuditRelayAccepted
+	AuditRelayRejected                   = moderation.AuditRelayRejected
+	AuditStatusRefetchQueued             = moderation.AuditStatusRefetchQueued
+	AuditAccountStatusesRefetchQueued    = moderation.AuditAccountStatusesRefetchQueued
+	AuditDomainStatusesRefetchQueued     = moderation.AuditDomainStatusesRefetchQueued
+	AuditBillingImportQueued             = moderation.AuditBillingImportQueued
+	AuditCostItemCreated                 = moderation.AuditCostItemCreated
+	AuditCostItemRelabeled               = moderation.AuditCostItemRelabeled
+	AuditCostItemPriceRevised            = moderation.AuditCostItemPriceRevised
+	AuditCostItemEndChanged              = moderation.AuditCostItemEndChanged
+	AuditCostItemCanceled                = moderation.AuditCostItemCanceled
+	AuditSupporterProgramEnabled         = moderation.AuditSupporterProgramEnabled
+	AuditSupporterProgramDisabled        = moderation.AuditSupporterProgramDisabled
+	AuditSupporterPlanCreated            = moderation.AuditSupporterPlanCreated
+	AuditSupporterPlanRevised            = moderation.AuditSupporterPlanRevised
+	AuditSupporterPlanRetired            = moderation.AuditSupporterPlanRetired
+	AuditSupporterSubscriptionCanceled   = moderation.AuditSupporterSubscriptionCanceled
+	AuditCustomEmojiRequestSubmitted     = moderation.AuditCustomEmojiRequestSubmitted
+	AuditCustomEmojiRequestWithdrawn     = moderation.AuditCustomEmojiRequestWithdrawn
+	AuditCustomEmojiRequestApproved      = moderation.AuditCustomEmojiRequestApproved
+	AuditCustomEmojiRequestRejected      = moderation.AuditCustomEmojiRequestRejected
+	AuditPaymentReconcileQueued          = moderation.AuditPaymentReconcileQueued
+	AuditOAuthClientDisabled             = moderation.AuditOAuthClientDisabled
+	AuditOAuthClientEnabled              = moderation.AuditOAuthClientEnabled
+	AuditOAuthClientHostDenied           = moderation.AuditOAuthClientHostDenied
+	AuditOAuthClientHostAllowed          = moderation.AuditOAuthClientHostAllowed
+	AuditServiceClosureAnnounced         = moderation.AuditServiceClosureAnnounced
+	AuditServiceClosureWithdrawn         = moderation.AuditServiceClosureWithdrawn
+	AuditServiceClosureClosed            = moderation.AuditServiceClosureClosed
+	AuditServiceClosureDeliveryCompleted = moderation.AuditServiceClosureDeliveryCompleted
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -162,8 +164,9 @@ type AuditQuery struct {
 }
 
 // RegisterAuditProjector registers the projector that writes the audit log entry of every
-// AuditRecorded, and of every appcontent.CustomEmojiAdministered and
-// appcontent.CustomEmojiRequestRecorded, into the transaction that
+// AuditRecorded, of every appcontent.CustomEmojiAdministered and
+// appcontent.CustomEmojiRequestRecorded, and of the appaccount.Moved that carry an audit ID, into
+// the transaction that
 // emits it. An invalid entry fails the operation: an operation that cannot be audited does not
 // happen.
 func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
@@ -182,6 +185,20 @@ func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return r.Project(ctx, tx, AuditRecorded{Entry: customEmojiRequestAuditEntry(e.(appcontent.CustomEmojiRequestRecorded))})
+	})
+	// The account module cannot emit AuditRecorded either: the local move of a limited account to
+	// a local one is audited from appaccount.Moved, whose AuditID it sets (ADR-0089).
+	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appaccount.Moved)
+		if ev.AuditID == "" {
+			return nil
+		}
+		entry := AuditEntry{
+			ID: ev.AuditID, Action: moderation.AuditAccountMoved, TargetKind: moderation.AuditTargetAccount,
+			TargetID: ev.Move.AccountID, TargetLabel: ev.SourceLabel, SourceEventID: ev.Move.ID, OccurredAt: ev.Move.OccurredAt,
+		}
+		entry.ActorKind, entry.ActorUserID = moderation.AuditActor(ev.ByUserID)
+		return r.Project(ctx, tx, AuditRecorded{Entry: entry})
 	})
 }
 

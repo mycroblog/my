@@ -86,13 +86,15 @@ const (
 	ReasonAccountSuspended Reason = "account_suspended"
 	// ReasonStaff: a staff member canceled the subscription.
 	ReasonStaff Reason = "staff"
+	// ReasonServiceClosed: the server was closed (ADR-0088 §2).
+	ReasonServiceClosed Reason = "service_closed"
 )
 
 // Reasons returns every reason, in the order of the schema's CHECK.
 func Reasons() []Reason {
 	return []Reason{
 		ReasonStarted, ReasonSynced, ReasonGraceExpired, ReasonReversed, ReasonPlanRetired, ReasonAccountClosed,
-		ReasonAccountSuspended, ReasonStaff,
+		ReasonAccountSuspended, ReasonStaff, ReasonServiceClosed,
 	}
 }
 

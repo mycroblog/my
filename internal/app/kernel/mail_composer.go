@@ -30,6 +30,8 @@ type MailSite struct {
 type MailWords interface {
 	// ServerMailSignatureContact words the line of the signature with the contact address.
 	ServerMailSignatureContact(email string) string
+	// ServerMailSignatureUnsubscribe words the line of the signature with the unsubscribe link.
+	ServerMailSignatureUnsubscribe(url string) string
 	// Locale is the BCP 47 tag of the words, the lang of the HTML version.
 	Locale() string
 	// Direction is "rtl" for a right-to-left locale and "ltr" otherwise, the dir of the HTML
@@ -56,12 +58,17 @@ type MailDraft struct {
 	Action *MailAction
 	// Reason is the one sentence of the signature that says why the recipient gets the email.
 	Reason string
+	// UnsubscribeURL is the one-click unsubscribe link of a notification or announcement email
+	// (ADR-0086 §4), "" for none. The composer puts it in the List-Unsubscribe headers and the
+	// signature; a transactional email has none.
+	UnsubscribeURL string
 }
 
 // MailComposer builds every email that the server sends from a MailDraft (ADR-0086 §2): the
 // plain-text body with the common signature (the server's name and URL, the contact address
-// when there is one, and why the email comes), the HTML version of the same content, the
-// sender's display name, and the Reply-To.
+// when there is one, why the email comes, and the unsubscribe link when there is one), the HTML
+// version of the same content, the sender's display name, the Reply-To, and the
+// List-Unsubscribe headers (RFC 8058).
 type MailComposer struct {
 	Site  MailSite
 	Words MailWords
@@ -91,7 +98,8 @@ var mailText = template.Must(template.New("mail").Parse(
 {{with .Contact}}{{.}}
 {{end}}
 {{.Reason}}
-`))
+{{with .Unsubscribe}}{{.}}
+{{end}}`))
 
 // mailFrame is the HTML layout, compiled from tools/mail/frame.mjml with MJML
 // (`scripts/task.sh mail:gen`). html/template escapes every value for its context, and turns a
@@ -129,6 +137,32 @@ func httpsURL(u string) string {
 	return u
 }
 
+// htmlLine is a line of the signature whose sentence holds a URL: Before, the URL as a link, and
+// After. A URL that is not https is no link, and the whole sentence is Before.
+type htmlLine struct {
+	Before, URL, After string
+}
+
+// linkMark stands for the URL while a sentence is worded, so that the sentence can be split
+// around it: a control character, which no message has.
+const linkMark = "\x00"
+
+// unsubscribeLine words the unsubscribe line of the HTML version for u.
+func (c MailComposer) unsubscribeLine(u string) *htmlLine {
+	word := func(u string) string { return u }
+	if c.Words != nil {
+		word = c.Words.ServerMailSignatureUnsubscribe
+	}
+	if httpsURL(u) == "" {
+		return &htmlLine{Before: word(u)}
+	}
+	before, after, ok := strings.Cut(word(linkMark), linkMark)
+	if !ok {
+		return &htmlLine{Before: word(u)}
+	}
+	return &htmlLine{Before: before, URL: u, After: after}
+}
+
 // html renders the HTML version of d in the locale of c.Words, with the signature's contact line.
 func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 	data := struct {
@@ -140,6 +174,7 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 		SiteURL          string
 		Contact          string
 		Reason           string
+		Unsubscribe      *htmlLine
 	}{
 		Lang: "en", Dir: "ltr", Start: "left", Subject: d.Subject, Paragraphs: d.Paragraphs,
 		Site: MailSite{Name: oneLine(c.Site.Name)}, SiteURL: httpsURL(c.Site.URL), Contact: contact, Reason: d.Reason,
@@ -151,6 +186,9 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 		if c.Words.Direction() == "rtl" {
 			data.Dir, data.Start = "rtl", "right"
 		}
+	}
+	if d.UnsubscribeURL != "" {
+		data.Unsubscribe = c.unsubscribeLine(d.UnsubscribeURL)
 	}
 	if a := d.Action; a != nil {
 		data.Action = &htmlAction{Label: a.Label, URL: httpsURL(a.URL)}
@@ -166,18 +204,28 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 }
 
 // Compose returns the message of d. It fails with an error wrapping ErrInvalidMail when d has
-// no paragraph or no reason, and the message does not pass ValidateMail.
+// no paragraph or no reason, has an unsubscribe link in a transactional email, and the message
+// does not pass ValidateMail.
 func (c MailComposer) Compose(d MailDraft) (MailMessage, error) {
 	if len(d.Paragraphs) == 0 || d.Reason == "" {
 		return MailMessage{}, fmt.Errorf("%w: an email needs a paragraph and a reason", ErrInvalidMail)
 	}
+	if d.UnsubscribeURL != "" && d.Category == MailTransactional {
+		return MailMessage{}, fmt.Errorf("%w: a transactional email has no unsubscribe link", ErrInvalidMail)
+	}
 	data := struct {
 		MailDraft
-		Site    MailSite
-		Contact string
+		Site                 MailSite
+		Contact, Unsubscribe string
 	}{MailDraft: d, Site: c.Site}
 	if c.Site.ContactEmail != "" && c.Words != nil {
 		data.Contact = c.Words.ServerMailSignatureContact(c.Site.ContactEmail)
+	}
+	if d.UnsubscribeURL != "" {
+		data.Unsubscribe = d.UnsubscribeURL
+		if c.Words != nil {
+			data.Unsubscribe = c.Words.ServerMailSignatureUnsubscribe(d.UnsubscribeURL)
+		}
 	}
 	var b strings.Builder
 	if err := mailText.Execute(&b, data); err != nil {
@@ -192,6 +240,12 @@ func (c MailComposer) Compose(d MailDraft) (MailMessage, error) {
 	// than failing every email.
 	if bareAddress(c.Site.ContactEmail) {
 		m.ReplyTo = c.Site.ContactEmail
+	}
+	if d.UnsubscribeURL != "" {
+		m.Headers = map[string]string{
+			HeaderListUnsubscribe:     "<" + d.UnsubscribeURL + ">",
+			HeaderListUnsubscribePost: "List-Unsubscribe=One-Click",
+		}
 	}
 	if err := ValidateMail(m); err != nil {
 		return MailMessage{}, err

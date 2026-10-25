@@ -259,9 +259,17 @@
     "defaultMessage": "The supporter plan takes no subscriptions.",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
   },
+  "errors.service_closed": {
+    "defaultMessage": "This server is closed.",
+    "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
+  },
+  "errors.service_closed_detail": {
+    "defaultMessage": "The server has closed. You can still sign in and export your data.",
+    "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
+  },
   "errors.service_closure.state": {
     "defaultMessage": "The service closure does not allow that in its current state.",
-    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes."
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes."
   },
   "errors.supporters.subscription_state": {
     "defaultMessage": "Your subscription cannot do that in its current state.",
@@ -506,5 +514,29 @@
   "errors.domain_mutes.too_many": {
     "defaultMessage": "You already mute the most domains allowed. Unmute one first.",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
+  },
+  "errors.account_moved": {
+    "defaultMessage": "Your account has moved.",
+    "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
+  },
+  "errors.account_not_moved": {
+    "defaultMessage": "Your account has not moved.",
+    "description": "API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved."
+  },
+  "errors.move_alias_missing": {
+    "defaultMessage": "The account to move to does not list your account as an alias.",
+    "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "The account to move to has moved itself.",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
+  },
+  "errors.move_target_unavailable": {
+    "defaultMessage": "You cannot move to that account.",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "Your account moved too recently.",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
   }
 }

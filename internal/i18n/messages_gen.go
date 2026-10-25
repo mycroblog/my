@@ -508,6 +508,48 @@ func (l *Localizer) ServerAuthLinkNewTab() string {
 	return l.format("server:auth.link.new_tab", nil)
 }
 
+// ServerAuthMailUnsubscribeDoneModeratorNotifications formats "server:auth.mail_unsubscribe.done_moderator_notifications". Body of the page after an unsubscribe link stopped the moderator notification emails.
+//
+//	en: You no longer get moderator notifications by email. You can turn them back on in your preferences.
+func (l *Localizer) ServerAuthMailUnsubscribeDoneModeratorNotifications() string {
+	return l.format("server:auth.mail_unsubscribe.done_moderator_notifications", nil)
+}
+
+// ServerAuthMailUnsubscribeDoneTitle formats "server:auth.mail_unsubscribe.done_title". Title and heading of the page after an unsubscribe link stopped its emails.
+//
+//	en: Emails stopped
+func (l *Localizer) ServerAuthMailUnsubscribeDoneTitle() string {
+	return l.format("server:auth.mail_unsubscribe.done_title", nil)
+}
+
+// ServerAuthMailUnsubscribeInvalid formats "server:auth.mail_unsubscribe.invalid". Error when an unsubscribe link is unknown or expired. Must not say which.
+//
+//	en: This link is not valid. It may have expired. You can stop the emails in your preferences.
+func (l *Localizer) ServerAuthMailUnsubscribeInvalid() string {
+	return l.format("server:auth.mail_unsubscribe.invalid", nil)
+}
+
+// ServerAuthMailUnsubscribePromptModeratorNotifications formats "server:auth.mail_unsubscribe.prompt_moderator_notifications". Text above the button that stops the moderator notification emails, on the page of their unsubscribe link.
+//
+//	en: Stop getting moderator notifications by email? They still appear in the app.
+func (l *Localizer) ServerAuthMailUnsubscribePromptModeratorNotifications() string {
+	return l.format("server:auth.mail_unsubscribe.prompt_moderator_notifications", nil)
+}
+
+// ServerAuthMailUnsubscribeSubmit formats "server:auth.mail_unsubscribe.submit". Button that stops the emails of an unsubscribe link.
+//
+//	en: Stop these emails
+func (l *Localizer) ServerAuthMailUnsubscribeSubmit() string {
+	return l.format("server:auth.mail_unsubscribe.submit", nil)
+}
+
+// ServerAuthMailUnsubscribeTitle formats "server:auth.mail_unsubscribe.title". Title and heading of the page that the unsubscribe link of a notification email opens.
+//
+//	en: Stop emails
+func (l *Localizer) ServerAuthMailUnsubscribeTitle() string {
+	return l.format("server:auth.mail_unsubscribe.title", nil)
+}
+
 // ServerAuthResetPasswordDone formats "server:auth.reset_password.done". Body of the page after a new password was set from a reset link.
 //
 //	en: Your password is changed, and every session that used the old one is signed out. Sign in with the new password.
@@ -1124,6 +1166,20 @@ func (l *Localizer) ServerConfigMissing(name string) string {
 	return l.format("server:config.missing", map[string]any{"name": name})
 }
 
+// ServerErrorsAccountMoved formats "server:errors.account_moved". API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first.
+//
+//	en: Your account has moved.
+func (l *Localizer) ServerErrorsAccountMoved() string {
+	return l.format("server:errors.account_moved", nil)
+}
+
+// ServerErrorsAccountNotMoved formats "server:errors.account_not_moved". API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved.
+//
+//	en: Your account has not moved.
+func (l *Localizer) ServerErrorsAccountNotMoved() string {
+	return l.format("server:errors.account_not_moved", nil)
+}
+
 // ServerErrorsAccountUnavailable formats "server:errors.account_unavailable". API error title for HTTP 403 when the access token is valid but its user cannot use the app: the registration is pending or rejected, the email address is unconfirmed, or the account is deactivated or deleted.
 //
 //	en: Your account cannot use the app right now.
@@ -1425,6 +1481,34 @@ func (l *Localizer) ServerErrorsMissingPermissionDetail(permission string) strin
 	return l.format("server:errors.missing_permission_detail", map[string]any{"permission": permission})
 }
 
+// ServerErrorsMoveAliasMissing formats "server:errors.move_alias_missing". API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first.
+//
+//	en: The account to move to does not list your account as an alias.
+func (l *Localizer) ServerErrorsMoveAliasMissing() string {
+	return l.format("server:errors.move_alias_missing", nil)
+}
+
+// ServerErrorsMoveTargetMoved formats "server:errors.move_target_moved". API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account.
+//
+//	en: The account to move to has moved itself.
+func (l *Localizer) ServerErrorsMoveTargetMoved() string {
+	return l.format("server:errors.move_target_moved", nil)
+}
+
+// ServerErrorsMoveTargetUnavailable formats "server:errors.move_target_unavailable". API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server.
+//
+//	en: You cannot move to that account.
+func (l *Localizer) ServerErrorsMoveTargetUnavailable() string {
+	return l.format("server:errors.move_target_unavailable", nil)
+}
+
+// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before.
+//
+//	en: Your account moved too recently.
+func (l *Localizer) ServerErrorsMoveTooSoon() string {
+	return l.format("server:errors.move_too_soon", nil)
+}
+
 // ServerErrorsNotFound formats "server:errors.not_found". API error message for HTTP 404.
 //
 //	en: The requested resource was not found.
@@ -1593,7 +1677,21 @@ func (l *Localizer) ServerErrorsSelfRelationship() string {
 	return l.format("server:errors.self_relationship", nil)
 }
 
-// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes.
+// ServerErrorsServiceClosed formats "server:errors.service_closed". API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports.
+//
+//	en: This server is closed.
+func (l *Localizer) ServerErrorsServiceClosed() string {
+	return l.format("server:errors.service_closed", nil)
+}
+
+// ServerErrorsServiceClosedDetail formats "server:errors.service_closed_detail". API error detail for HTTP 403 when the server is closed: what the users can still do.
+//
+//	en: The server has closed. You can still sign in and export your data.
+func (l *Localizer) ServerErrorsServiceClosedDetail() string {
+	return l.format("server:errors.service_closed_detail", nil)
+}
+
+// ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes.
 //
 //	en: The service closure does not allow that in its current state.
 func (l *Localizer) ServerErrorsServiceClosureState() string {
@@ -2221,6 +2319,13 @@ func (l *Localizer) ServerMailReasonSupporter(instance string) string {
 //	en: Contact: {email}
 func (l *Localizer) ServerMailSignatureContact(email string) string {
 	return l.format("server:mail.signature.contact", map[string]any{"email": email})
+}
+
+// ServerMailSignatureUnsubscribe formats "server:mail.signature.unsubscribe". Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link.
+//
+//	en: Stop these emails: {url}
+func (l *Localizer) ServerMailSignatureUnsubscribe(url string) string {
+	return l.format("server:mail.signature.unsubscribe", map[string]any{"url": url})
 }
 
 // ServerMailSupporterPaymentFailedAction formats "server:mail.supporter_payment_failed.action". Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed.

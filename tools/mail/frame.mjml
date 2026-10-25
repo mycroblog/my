@@ -54,6 +54,9 @@
         <mj-text mj-class="muted" css-class="mail-muted" padding="0 0 4px 0">{{.}}</mj-text>
         <mj-raw>{{end}}</mj-raw>
         <mj-text mj-class="muted" css-class="mail-muted" padding="12px 0 0 0">{{.Reason}}</mj-text>
+        <mj-raw>{{with .Unsubscribe}}</mj-raw>
+        <mj-text mj-class="muted" css-class="mail-muted" padding="4px 0 0 0">{{.Before}}{{with .URL}}<a href="{{.}}" class="mail-link" style="color: %color-accent:light%; word-break: break-all;">{{.}}</a>{{end}}{{.After}}</mj-text>
+        <mj-raw>{{end}}</mj-raw>
       </mj-column>
     </mj-section>
   </mj-body>

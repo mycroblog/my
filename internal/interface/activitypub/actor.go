@@ -30,13 +30,17 @@ func (h *Handler) actorDocument(ctx context.Context, a appaccount.Actor) (federa
 	if images.Emojis, err = appfederation.LocalActorEmojis(ctx, h.o.EmojiTags, h.o.Host, a); err != nil {
 		return federation.ActorDocument{}, err
 	}
+	if images.MovedTo, err = appfederation.LocalActorMovedTo(ctx, h.o.Moves, a); err != nil {
+		return federation.ActorDocument{}, err
+	}
 	return appfederation.LocalActorDocument(h.o.Host, a, h.instanceActorUsername(), images), nil
 }
 
 // keyDocument is the minimal actor document that authorized fetch serves to a request without
 // a verified signature: what a server needs to verify the actor's signatures and to address it,
 // with the properties Mastodon keeps in the same case (id, type, preferredUsername, inbox,
-// publicKey, endpoints).
+// publicKey, endpoints), and the movedTo of an actor that moved, which Misskey reads when the
+// actor's Move arrives (ADR-0089) and which a federation mode that sends the Move must serve.
 type keyDocument struct {
 	Context           []any                         `json:"@context"`
 	ID                federation.IRI                `json:"id"`
@@ -45,13 +49,14 @@ type keyDocument struct {
 	Inbox             federation.IRI                `json:"inbox"`
 	PublicKey         *federation.PublicKeyDocument `json:"publicKey,omitempty"`
 	Endpoints         map[string]federation.IRI     `json:"endpoints"`
+	MovedTo           federation.IRI                `json:"movedTo,omitempty"`
 }
 
 // keyDocumentOf returns the minimal document of a full actor document.
 func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 	return keyDocument{
 		Context: doc.Context, ID: doc.ID, Type: doc.Type, PreferredUsername: doc.PreferredUsername,
-		Inbox: doc.Inbox, PublicKey: doc.PublicKey, Endpoints: doc.Endpoints,
+		Inbox: doc.Inbox, PublicKey: doc.PublicKey, Endpoints: doc.Endpoints, MovedTo: doc.MovedTo,
 	}
 }
 

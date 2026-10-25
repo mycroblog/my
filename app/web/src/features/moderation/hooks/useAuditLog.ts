@@ -16,6 +16,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   two_factor_disabled: "client:admin.audit_log.action.two_factor_disabled",
   password_reset_link_issued: "client:admin.audit_log.action.password_reset_link_issued",
   email_suppression_lifted: "client:admin.audit_log.action.email_suppression_lifted",
+  account_moved: "client:admin.audit_log.action.account_moved",
   domain_action_issued: "client:admin.audit_log.action.domain_action_issued",
   domain_action_lifted: "client:admin.audit_log.action.domain_action_lifted",
   report_assigned: "client:admin.audit_log.action.report_assigned",
@@ -92,6 +93,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   oauth_client_host_allowed: "client:admin.audit_log.action.oauth_client_host_allowed",
   service_closure_announced: "client:admin.audit_log.action.service_closure_announced",
   service_closure_withdrawn: "client:admin.audit_log.action.service_closure_withdrawn",
+  service_closure_closed: "client:admin.audit_log.action.service_closure_closed",
+  service_closure_delivery_completed: "client:admin.audit_log.action.service_closure_delivery_completed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
