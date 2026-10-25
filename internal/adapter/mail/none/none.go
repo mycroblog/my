@@ -34,6 +34,7 @@ func (m *Mailer) Send(ctx context.Context, msg kernel.MailMessage) error {
 		return err
 	}
 	m.log.InfoContext(ctx, "mail not sent (mail = none)",
-		slog.String("to", msg.To), slog.String("subject", msg.Subject), slog.String("text", msg.Text))
+		slog.String("category", string(msg.Category)), slog.String("to", msg.To), slog.String("from_name", msg.FromName),
+		slog.String("reply_to", msg.ReplyTo), slog.String("subject", msg.Subject), slog.String("text", msg.Text))
 	return nil
 }
