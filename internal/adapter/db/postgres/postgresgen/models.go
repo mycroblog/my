@@ -244,6 +244,11 @@ type DataImportItem struct {
 	HideNotifications bool
 }
 
+type DataUpgradeRun struct {
+	StepKey     string
+	CompletedAt time.Time
+}
+
 type Delivery struct {
 	ID                 string
 	OutboundActivityID string
