@@ -1208,6 +1208,20 @@ func (l *Localizer) ServerConfigMissing(name string) string {
 	return l.format("server:config.missing", map[string]any{"name": name})
 }
 
+// ServerConfigReadinessErrors formats "server:config.readiness.errors". Summary printed by `my config check` before the list of settings that are valid but break or weaken a production instance, such as a key-encryption key that is not random. The command fails on them.
+//
+//	en: {count, plural, one {Found # setting that is not ready for production.} other {Found # settings that are not ready for production.}}
+func (l *Localizer) ServerConfigReadinessErrors(count int) string {
+	return l.format("server:config.readiness.errors", map[string]any{"count": count})
+}
+
+// ServerConfigReadinessWarnings formats "server:config.readiness.warnings". Summary printed by `my config check` before the list of settings and instance settings that are usual in development and may be deliberate in production, such as mail = none. The command still succeeds.
+//
+//	en: {count, plural, one {Found # warning about running in production.} other {Found # warnings about running in production.}}
+func (l *Localizer) ServerConfigReadinessWarnings(count int) string {
+	return l.format("server:config.readiness.warnings", map[string]any{"count": count})
+}
+
 // ServerErrorsAccountMoved formats "server:errors.account_moved". API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first.
 //
 //	en: Your account has moved.

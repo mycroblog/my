@@ -158,7 +158,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
   `deprecated: true` と `x-sunset` はどちらか一方だけでは `scripts/task.sh api:generate`（`securitygen`）が失敗します。
 - 非推奨の操作の応答には、成功も guard のエラー（401・403・429）も、`Deprecation: @<UNIX 秒>`（[RFC 9745](https://www.rfc-editor.org/rfc/rfc9745)、Structured Fields の Date）と
   `Sunset: <HTTP-date>`（[RFC 8594](https://www.rfc-editor.org/rfc/rfc8594)）が付きます。ほかの操作には付きません。ヘッダは `security.gen.go` の `Deprecated`・`Sunset` から `guard` が付けます。
-- 削除は、非推奨にした版から少なくとも 1 つ後の v0.x のマイナーリリースで行います。リリースの手順は [releasing.md](../operations/releasing.md#api-の変更) にあります。
+- 削除は、非推奨にした版から少なくとも 1 つ後の v0.x のマイナーリリースで行います。リリースの手順は [releasing.md](../operations/releasing.md#api-changes) にあります。
   セキュリティの修正は猶予なしに変えてよく、その場合もリリースノートに書きます。
 
 ## 3. エンドポイントを追加する手順

@@ -10,5 +10,13 @@
   "config.missing": {
     "defaultMessage": "[Ŧħḗḗ řḗḗɋŭŭīřḗḗḓ şḗḗŧŧīƞɠ {name} īş ƞǿǿŧ şḗḗŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "config.readiness.errors": {
+    "defaultMessage": "[{count,plural,one{Ƒǿǿŭŭƞḓ # şḗḗŧŧīƞɠ ŧħȧȧŧ īş ƞǿǿŧ řḗḗȧȧḓẏ ƒǿǿř ƥřǿǿḓŭŭƈŧīǿǿƞ.} other{Ƒǿǿŭŭƞḓ # şḗḗŧŧīƞɠş ŧħȧȧŧ ȧȧřḗḗ ƞǿǿŧ řḗḗȧȧḓẏ ƒǿǿř ƥřǿǿḓŭŭƈŧīǿǿƞ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "config.readiness.warnings": {
+    "defaultMessage": "[{count,plural,one{Ƒǿǿŭŭƞḓ # ẇȧȧřƞīƞɠ ȧȧƀǿǿŭŭŧ řŭŭƞƞīƞɠ īƞ ƥřǿǿḓŭŭƈŧīǿǿƞ.} other{Ƒǿǿŭŭƞḓ # ẇȧȧřƞīƞɠş ȧȧƀǿǿŭŭŧ řŭŭƞƞīƞɠ īƞ ƥřǿǿḓŭŭƈŧīǿǿƞ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
   }
 }

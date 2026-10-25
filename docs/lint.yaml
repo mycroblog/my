@@ -42,13 +42,9 @@ operator:
 # follows the rule.
 pending:
   japanese:
-    - docs/operations/database.md
-    - docs/operations/releasing.md
   design-links:
-    - docs/operations/database.md
     - docs/operations/maintenance.md
     - docs/operations/monitoring.md
-    - docs/operations/releasing.md
     - docs/reference/build-tags.md
     - docs/reference/commands.md
     - docs/reference/configuration.md

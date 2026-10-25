@@ -6,13 +6,18 @@ A guide for operators. The [configuration reference](../reference/configuration.
 
 ```sh
 my config check   # report every configuration problem at once
+my config check -instance   # also warn about instance settings that are not set (opens the database)
 my serve          # start according to the configured role (-config <file> reads a TOML file)
 ```
 
 `my serve` validates the configuration, builds the database, job queue and key-management adapters, and accepts HTTP on `listen`.
-It does not apply the schema: apply it with Atlas before starting (see [Database setup and rebuilding](database.md)).
+It does not apply the schema: apply it with Atlas before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service applies it before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503.
+
+In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
+`my serve` logs both as warnings when it starts but starts anyway, so run `my config check` as a step of the deployment.
+The [production checklist](production-checklist.md) lists the checks and what to verify by hand before going live.
 
 | `role` | HTTP | Job worker |
 | --- | --- | --- |

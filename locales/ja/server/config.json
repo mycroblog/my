@@ -10,5 +10,13 @@
   "config.missing": {
     "defaultMessage": "必須の設定 {name} が設定されていません。",
     "description": "A required configuration value is absent at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE_URL."
+  },
+  "config.readiness.errors": {
+    "defaultMessage": "{count, plural, other {本番に向かない設定が#件あります。}}",
+    "description": "Summary printed by `my config check` before the list of settings that are valid but break or weaken a production instance, such as a key-encryption key that is not random. The command fails on them."
+  },
+  "config.readiness.warnings": {
+    "defaultMessage": "{count, plural, other {本番での運用についての警告が#件あります。}}",
+    "description": "Summary printed by `my config check` before the list of settings and instance settings that are usual in development and may be deliberate in production, such as mail = none. The command still succeeds."
   }
 }

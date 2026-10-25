@@ -43,7 +43,8 @@ The KEK is a secret setting, so it can be passed only through the environment va
 
 - Give every process, such as web and worker, the same KEK.
 - The KEK never appears in logs or error messages (only the key ID does).
-- `my config check` validates the KEK's format (base64 of 32 bytes) and prints the value as `(redacted)`.
+- `my config check` validates the KEK's format (base64 of 32 bytes) and prints the value as `(redacted)`. In the `production` profile it also fails on a KEK
+  that is not random, such as all zeros or a repeated byte, and `my serve` logs a warning about one (see the [production checklist](production-checklist.md)).
 
 ## Back it up
 
@@ -79,6 +80,6 @@ Web Push is signed with the server's VAPID key (P-256, RFC 8292). It is a secret
 
 - Create a key pair with `my config vapid-key`, and give every process the private key (the value of `vapid_private_key = ...`) through `MY_VAPID_PRIVATE_KEY` or `MY_VAPID_PRIVATE_KEY_FILE`.
   The server derives the public key from the private key and hands it to clients, so you do not configure it.
-- If you do not set it, Web Push is disabled and clients do not offer it.
+- If you do not set it, Web Push is disabled and clients do not offer it. In the `production` profile, `my config check` and the start of `my serve` warn about that.
 - Browsers bind a subscription to the public key, so changing the key stops delivery to existing subscriptions. When a user turns push notifications on again in settings, the client subscribes again with the new key.
   Do not change the key unless it leaked; if it leaks, switch to a new key and ask users to turn notifications on again.
