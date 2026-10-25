@@ -12,6 +12,8 @@
 | `outbound_activity_documents` | イベント | `outbound_activity_id`（PK）, `document`（`document`）, `built_at` | 配送する本文。展開ジョブが 1 回だけ組み立て（投稿の `Delete` と `Like` / `Undo Like` は記録のトランザクションで組み立てる）、すべての配送とリトライが同じ本文を送る。保持期間（30 日）後に削除 |
 | `deliveries` | イベント | `id`, `outbound_activity_id`, `inbox_url`（shared inbox に集約済み）, `domain`, `created_at` | 一意 `(outbound_activity_id, inbox_url)` |
 | `delivery_attempts` | イベント | `id`, `delivery_id`, `outcome`（`enum(succeeded, retryable_failure, permanent_failure, skipped)`）, `signature_scheme`（`enum(rfc9421, cavage)`、NULL 可 = 応答が無い）, `http_status`（`int`、NULL 可）, `error`（`text`、NULL 可）, `attempted_at` | インデックス `(delivery_id, id)`。保持期間（30 日）後に削除（NFR-OPS-3） |
+| `outbound_fanout_completions` | イベント | `outbound_activity_id`（PK）, `completed_at` | 展開が最後のバッチを積んだ（送らずに終えた展開を含む）。ローカルの Actor の `Delete` と `Move` だけ記録する（サービスのクローズが待ち、点検が数える。[federation.md §15](../../federation.md#15-サービスの終了)） |
+| `closure_deletes` | イベント | `account_id`（PK）, `outbound_activity_id`（一意）, `recorded_at` | サービスのクローズの `Delete`（Actor）。アカウントごとに 1 行で、ページの再実行でも増えない（[ADR-0088](../../../adr/0088-service-shutdown-modes.md) §3） |
 | `remote_instances` | リソース | `domain`（PK）, `first_seen_at` | |
 | `instance_nodeinfo_observations` | イベント | `id`, `domain`, `software_name`, `software_version`, `observed_at` | インデックス `(domain, id DESC)` |
 | `instance_availability_events` | イベント | `id`, `domain`, `kind`（`enum(marked_unavailable, marked_available)`）, `reason`（`enum(failure_days, delivery_succeeded, inbound_request, probe_succeeded, operator)`）, `occurred_at` | インデックス `(domain, id DESC)`。配送先として扱うかの判断の記録（管理画面で理由を示す） |

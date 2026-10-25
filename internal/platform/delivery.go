@@ -28,8 +28,9 @@ func (a *App) setUpDelivery(repo federation.Repository) error {
 		LinkedData: ld,
 		Domains:    a.ModerationPolicy,
 		Clock:      a.Clock, IDs: a.IDs, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer,
-		// The federation mode decides what goes out when each delivery runs (ADR-0076).
-		Modes: federationModes{a},
+		// The federation mode decides what goes out when each delivery runs (ADR-0076), and the
+		// service closure before it (ADR-0088 §2).
+		Modes: federationModes{a}, Closure: closureSettings{a},
 	})
 	a.Deliverer.RegisterJobs(a.Handlers)
 	federation.NewProber(federation.ProbeDeps{

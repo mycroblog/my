@@ -37,6 +37,9 @@ between this server and Mastodon, for the live test of
   | `mod@mastodon.test`, `mkadmin@misskey.test` | The administrators whose tokens read the moderators' reports in `TestReportForwarding` |
   | `ivan@my.test`, `judy@mastodon.test` | `TestRelay`: nobody follows them, so their posts reach the other server only through the relay |
   | `otto@my.test` | `TestFederationMode`: no peer knows him before the scenario, so his `Follow` is the first a peer learns of him |
+  | `leavemastodon@my.test`, `leavegotosocial@my.test`, `leavemisskey@my.test` | `TestMove`: each moves to `arrive` of its peer |
+  | `arrive@my.test` | `TestMove`: `leave` of every peer moves to her |
+  | `arrive@`, `leave@` `mastodon.test`, `gts.test`, `misskey.test` | `TestMove`: `leave` moves to `arrive@my.test`, and `leave<peer>@my.test` moves to `arrive`. Mastodon moves once every 30 days and takes one `Move` of an account every 7 days, so every move of a run has accounts of its own |
 
 - **Signatures**: to exercise RFC 9421, which Mastodon and this server only use after a 401, the proxy answers 401
   to a draft-cavage POST signed by eve (to this server) or addressed to eve's inbox (to Mastodon). The script
@@ -56,7 +59,8 @@ between this server and Mastodon, for the live test of
   that its text mentions), a renote is a boost, and a reaction (👍) is a favourite.
 - The scenarios reach the servers through the proxy's published port and read what this server recorded
   (`received_activities`) from the published PostgreSQL port. `TestFederationMode` also reads the proxy's access log
-  with `docker compose logs`, to log which requests a peer made to this server.
+  with `docker compose logs`, to log which requests a peer made to this server, and `TestMove` sets the aliases and moves of Mastodon users with
+  `docker compose exec mastodon-web bin/rails runner`.
 
 ## Running it
 
@@ -96,6 +100,7 @@ leave (a scenario that runs alone makes the follows it needs).
 | Scenario | Checks |
 | --- | --- |
 | `TestFederationMode` | The federation direction ([ADR-0076](../../../docs/adr/0076-federation-direction.md)), with otto, in the modes `inbound`, `outbound`, `off`, and `both` again. `inbound`: otto's follow of the peer user is accepted although his actor is the minimal document, the peer's posts reach him, and the peer user's follow of him is rejected and stays pending on neither side; the scenario logs how the peer shows otto and the GETs (WebFinger, actor) it made to this server, from the proxy's access log. `outbound`: the peer user's follow is accepted and otto's post reaches the peer; the peer's post, reply, and favourite reach the inbox and show nowhere. `off`: otto's actor, WebFinger, and NodeInfo answer 404; the peer, made to fetch otto again (Mastodon and Misskey get the 404; GoToSocial answers from what it stored and fetches nothing), keeps him and the follow. `both`: otto's next post reaches the peer. The mode is the whole server's: the scenario runs first (its file sorts first) and sets the mode back to `both` |
+| `TestMove` | The move of an account ([ADR-0089](../../../docs/adr/0089-account-migration-move.md), FR-414) in both directions. Out: the peer user follows `leave<peer>@my.test`, `arrive` of the peer names it among its aliases, it moves there (`POST /accounts/move`), and the peer user follows `arrive` instead. In: alice follows `leave` of the peer, `arrive@my.test` names it among her aliases (`POST /accounts/aliases`), it moves to `arrive@my.test`, and alice follows `arrive@my.test` instead and has an `account_moved` notification with the outcome `followed`. The aliases and moves on the peer: Mastodon's settings run in a Rails runner (`AccountAlias`, `AccountMigration` and `MoveService`; it has no client API for them), GoToSocial's `POST /api/v1/accounts/alias` and `/move`, and Misskey's `i/update` (`alsoKnownAs`) and `i/move`. Akkoma, which is not in the stack, has the regression test of its `Move` with fixtures instead (`AccountMoveContract`, `pkg/testkit/fixtures/federation/akkoma/3.20/move.json`) |
 | `TestPeerResolvesLocal` | The peer finds `alice@my.test` through WebFinger and fetches her actor |
 | `TestLocalResolvesPeer` | This server finds the peer user through WebFinger and fetches the actor with a signed GET |
 | `TestFollowFromPeer` | The peer's signed `Follow` reaches this server's inbox and is verified and recorded; then it is accepted |

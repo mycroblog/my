@@ -31,8 +31,9 @@ func (a *App) setUpActivityPub(cfg *config.Config, version string) {
 		EmojiTags:   a.Media.EmojiTags,
 		Aliases:     a.Accounts,
 		Moves:       a.Accounts,
-		// The federation mode decides which documents are served (ADR-0076).
-		Modes: federationModes{a},
+		// The federation mode decides which documents are served (ADR-0076), and the service
+		// closure before it (ADR-0088 §2), so the handler reads the setting as it is.
+		Modes: settingModes{a}, Closure: a.closureState,
 	})
 	ap.Register(surfaceRouter{a, surfaceActivityPub})
 	// The web client's pages answer the requests that ask for ActivityPub: a post page redirects

@@ -32,7 +32,8 @@ import (
 // followers to the target (a Follow to the target and an Undo Follow to the source), keeps the
 // follow of a follower that blocks the target, copies the blocks and mutes of the source to the
 // target, notifies each follower once with account_moved, and changes nothing when it runs
-// again. The moves of local accounts are verified too (account_move_out_contract.go), and so are
+// again; the Move that Akkoma sends, to a target with the actor that Akkoma renders (fixtures
+// akkoma/3.20/move and actor-also-known-as), migrates the follows too. The moves of local accounts are verified too (account_move_out_contract.go), and so are
 // the aliases of local accounts (account_aliases, aliasesAddAndRemove) and that a Move to a local
 // account is recorded only when that account names the source among its aliases. The target is
 // fetched from a fake origin; nothing goes over the network.
@@ -50,6 +51,7 @@ func AccountMoveContract(t *testing.T, newHarness RemoteFollowFactory) {
 		{"SendsALocalMove", movesSendLocal},
 		{"RefusesAndCancelsLocalMoves", movesRefuseAndCancelLocal},
 		{"MovesWithinTheServer", movesWithinTheServer},
+		{"AcceptsTheMoveOfAkkoma", movesFromAkkoma},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newMoveEnv(t, newHarness)) })
@@ -428,4 +430,75 @@ func movesMigrate(t *testing.T, e *moveEnv) {
 	if again := notified(); !reflect.DeepEqual(again, first) {
 		t.Errorf("notifications after the migration again = %+v, want %+v", again, first)
 	}
+}
+
+// movesFromAkkoma receives the Move that Akkoma sends (akkoma/3.20/move: to as an array, with
+// published and context) to a target with the actor that Akkoma renders, naming the source in
+// alsoKnownAs (akkoma/3.20/actor-also-known-as). Akkoma is not in the live interoperability test,
+// so this is its regression test (ADR-0089 相互運用の確かめ方).
+func movesFromAkkoma(t *testing.T, e *moveEnv) {
+	ctx := t.Context()
+	const (
+		source = "https://akkoma.example/users/akko"
+		target = "https://remote.example/users/akko"
+	)
+	doc, err := federation.Normalize(federationFixture(t, "akkoma/3.20/actor-also-known-as"), e.clock.Now(), appfederation.CanonicalHost)
+	if err != nil || doc.Actor == nil || doc.Actor.ID != target {
+		t.Fatalf("Normalize(actor-also-known-as) = %+v, %v, want the actor %s", doc, err, target)
+	}
+	e.targets.t = t
+	e.targets.docs[doc.Actor.ID] = doc.Actor
+	sourceID := e.remote(t, source)
+	follower := e.register(t, "follower").AccountID
+	e.follow(t, follower, sourceID)
+
+	if got := e.receive(t, federationFixture(t, "akkoma/3.20/move")); got != appfederation.InboxHandled {
+		t.Fatalf("the Move of Akkoma = %q, want handled", got)
+	}
+	moved, err := e.accounts.FindByURI(ctx, target)
+	if err != nil {
+		t.Fatalf("the target was not stored: %v", err)
+	}
+	if st, err := e.accounts.MoveState(ctx, sourceID); err != nil || st.TargetAccountID != moved.Account.ID {
+		t.Fatalf("MoveState = %+v, %v, want the target %s", st, err, moved.Account.ID)
+	}
+	if ran := e.migrate(t); ran == 0 {
+		t.Fatal("the Move enqueued no migration")
+	}
+	if r := e.relationship(t, follower, moved.Account.ID); r.Following != graph.StatePending {
+		t.Errorf("follower → target = %q, want pending", r.Following)
+	}
+	if r := e.relationship(t, follower, sourceID); r.Following != graph.StateNone {
+		t.Errorf("follower → source = %q, want none", r.Following)
+	}
+	ns, err := e.notifs.List(ctx, follower, appnotification.Query{Types: []notification.Type{notification.TypeAccountMoved}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ns) != 1 || ns[0].SourceAccountID != sourceID || ns[0].AccountMoveOutcome != notification.MoveRequested {
+		t.Errorf("notifications of the follower = %+v, want one account_moved from the source, requested", ns)
+	}
+	if got := e.moveOutcomes(appfederation.MoveOutcomeRecorded); got != 1 {
+		t.Errorf("recorded Moves = %v, want 1", got)
+	}
+	if err := e.meter.Err(); err != nil {
+		t.Error(err)
+	}
+}
+
+// federationFixture returns the JSON of the federation fixture at path
+// (<implementation>/<version>/<name>).
+func federationFixture(t *testing.T, path string) []byte {
+	t.Helper()
+	fixtures, err := FederationFixtures()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range fixtures {
+		if f.Path() == path {
+			return f.JSON
+		}
+	}
+	t.Fatalf("no federation fixture %s", path)
+	return nil
 }

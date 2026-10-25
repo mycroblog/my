@@ -87,10 +87,13 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		{"SignsIntegrityProofs", fedSignsIntegrityProofs},
 		{"BreaksTheCircuitOfAHost", fedBreaksTheCircuit},
 		{"SkipsWhatTheFederationModeDoesNotSend", fedSkipsWhatTheModeDoesNotSend},
+		{"SendsOnlyTheClosureDeletes", fedSendsOnlyTheClosureDeletes},
 		{"MarksServersUnavailableAndBack", fedMarksServersUnavailable},
 		{"BuriesExhaustedDeliveries", fedBuriesExhaustedDeliveries},
 		{"ProbesUnavailableServers", fedProbesUnavailableServers},
 		{"ListsAndClearsServersForOperators", fedListsServersForOperators},
+		{"DeliversTheClosureDeletes", fedDeliversTheClosureDeletes},
+		{"CountsPendingMoves", fedCountsPendingMoves},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newFedEnv(t, newHarness)) })
@@ -114,8 +117,10 @@ type fedEnv struct {
 	suspensions *fedSuspensions
 	// handled are the fan-out jobs run so far, to run them again.
 	handled []queue.Job
-	// projectors are the projectors of the harness's UnitOfWork.
+	// projectors are the projectors of the harness's UnitOfWork, and outbox enqueues on jobs
+	// after their commits.
 	projectors *uow.Projectors
+	outbox     queue.Outbox
 }
 
 func newFedEnv(t *testing.T, newHarness FederationFactory) *fedEnv {
@@ -136,6 +141,7 @@ func newFedEnv(t *testing.T, newHarness FederationFactory) *fedEnv {
 	}
 	e.parts = &fedParts{accounts: e.accounts, tags: map[string]content.Tag{}, media: map[string][]appcontent.MediaView{}}
 	outbox := queue.AfterCommit(projectors, e.jobs, nil)
+	e.outbox = outbox
 	appfederation.RegisterOutboundProjectors(projectors, appfederation.RecorderDeps{
 		Repository: h.Federation, Outbox: outbox, IDs: e.ids, Host: contractHost,
 	})

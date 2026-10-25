@@ -22,7 +22,7 @@
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
-#   mykit   pkg/mykit, the client libraries, and their integration tests (mykit:check)
+#   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and the integration tests (mykit:check)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
@@ -127,11 +127,12 @@ classify() {
       ;;
     # pkg/mykit is a Go module of its own too (ADR-0093). Its generated client comes from the spec, and the license
     # scope check of the api context reads its SPDX headers, which mykit:check runs as well.
-    pkg/mykit/*.md)
+    pkg/mykit/*.md | pkg/mybot/*.md)
       select_contexts docs
       return
       ;;
-    pkg/mykit/*)
+    # pkg/mybot, a Go module of its own on top of pkg/mykit (ADR-0094), is checked by the mykit context too.
+    pkg/mykit/* | pkg/mybot/*)
       select_contexts mykit
       return
       ;;

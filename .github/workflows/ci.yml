@@ -138,6 +138,8 @@ jobs:
             run: scripts/task.sh mykit:licenses
           - name: mykit:ts-licenses
             run: scripts/task.sh mykit:ts-licenses
+          - name: mykit:mybot-licenses
+            run: scripts/task.sh mykit:mybot-licenses
           - name: mail:licenses
             run: scripts/task.sh mail:licenses
           - name: mail:typecheck
@@ -208,6 +210,16 @@ jobs:
               skip-cache: true
               # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
               args: --allow-serial-runners
+      # A fourth parallel instance of the action fails to read the event payload (`Unexpected end of JSON input`), so
+      # the bot library's lint runs after the others.
+      - name: mykit:mybot-lint
+        if: needs.changes.outputs.mykit == 'true'
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          working-directory: pkg/mybot
+          only-new-issues: true
+          skip-cache: true
 
   docker-smoke:
     # The Docker Compose smoke test (linux/amd64, ADR-0079): what only the images show, beyond the Go tests that already
@@ -378,9 +390,9 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
-    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, its
-    # integration tests, and the npm package @mycroblog/mykit in pkg/mykit/ts when the mykit context changes (their
-    # licenses run in preflight).
+    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # own, the integration tests of pkg/mykit, and the npm package @mycroblog/mykit in pkg/mykit/ts when the mykit
+    # context changes (their licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -395,7 +407,7 @@ jobs:
       # As in server-static: build agentkit and its test binaries once before the parallel checks.
       - name: Build agentkit once
         run: scripts/task.sh agentkit:warm
-      - name: Build pkg/mykit once
+      - name: Build pkg/mykit and pkg/mybot once
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:warm
       # The TypeScript checks of @mycroblog/mykit run with the client workspace's packages (tsc and Oxlint on Node.js).
@@ -444,6 +456,21 @@ jobs:
           - name: mykit:server-dep-check
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:server-dep-check
+          - name: mykit:mybot-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-test
+          - name: mykit:mybot-vet
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-vet
+          - name: mykit:mybot-build
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-build
+          - name: mykit:mybot-mod-check
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-mod-check
+          - name: mykit:mybot-server-dep-check
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-server-dep-check
           - name: api:license-scope (mykit)
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh api:license-scope

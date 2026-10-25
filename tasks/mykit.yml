@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# pkg/mykit, the MIT-licensed client libraries of the client API (ADR-0093; the mykit context of
-# scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts. The Go
-# module is a module of its own, so the root module's `./...`, depguard, and go:check never see it: these tasks check
-# it. The npm package is a package of the client workspace (app/package.json), checked here by the ts-* tasks.
+# pkg/mykit and pkg/mybot, the MIT-licensed client libraries of the client API (ADR-0093, ADR-0094; the mykit context
+# of scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts, and
+# the Go module pkg/mybot, the bot library on top of mykit. The Go modules are modules of their own, so the root
+# module's `./...`, depguard, and go:check never see them: these tasks check them (the mybot-* tasks pkg/mybot).
+# The npm package is a package of the client workspace (app/package.json), checked here by the ts-* tasks.
 # api:generate writes their generated code (pkg/mykit/api.gen.go, pkg/mykit/ts/src/schema.gen.ts).
 #
 # The integration tests (integration-vet, integration-test) live in pkg/mykit/integration, a test module that is never
@@ -26,20 +27,16 @@ vars:
 
 tasks:
   check:
-    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses)
-    # The license scope check (MIT in pkg/mykit) belongs to the api context, which a change of pkg/mykit alone does not
+    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go checks of pkg/mybot
+    # The license scope check (MIT in pkg/mykit and pkg/mybot) belongs to the api context, which a change of pkg/mykit alone does not
     # select.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, ":api:license-scope"]
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, ":api:license-scope"]
 
   warm:
-    desc: Download the modules and build the packages and test binaries of pkg/mykit and of its integration tests (with the server's packages) once, so that its checks a CI job runs in parallel read the build cache
+    desc: Download the modules and build the packages and test binaries of pkg/mykit, its integration tests (with the server's packages), and pkg/mybot once, so that their checks a CI job runs in parallel read the build cache
     cmds:
-      - cmd: go mod download
-        dir: pkg/mykit
-      - cmd: go build ./...
-        dir: pkg/mykit
-      - cmd: go test -run '^$' ./...
-        dir: pkg/mykit
+      - for: [pkg/mykit, pkg/mybot]
+        cmd: cd {{.ITEM}} && go mod download && go build ./... && go test -run '^$' ./...
       - cmd: GOFLAGS={{.INTEGRATION_GOFLAGS}} go test -run '^$' ./...
         dir: pkg/mykit/integration
 
@@ -144,3 +141,47 @@ tasks:
     dir: tools/i18n
     cmds:
       - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mykit/ts
+
+  mybot-mod-check:
+    desc: Fail if pkg/mybot/go.mod and go.sum are not tidy
+    dir: pkg/mybot
+    cmds:
+      - go mod tidy -diff
+
+  mybot-server-dep-check:
+    desc: Fail if pkg/mybot/go.mod requires or replaces the server module, or replaces anything but pkg/mykit with ../mykit (scripts/mykit-mod-check.sh)
+    cmds:
+      - scripts/mykit-mod-check.sh pkg/mybot/go.mod
+
+  mybot-vet:
+    desc: Run go vet on pkg/mybot
+    dir: pkg/mybot
+    cmds:
+      - go vet ./...
+
+  mybot-lint:
+    desc: Run golangci-lint on pkg/mybot
+    dir: pkg/mybot
+    cmds:
+      # golangci-lint holds a lock while it runs: wait for it rather than fail beside go:lint or agentkit:lint.
+      - golangci-lint run --allow-serial-runners ./...
+
+  mybot-test:
+    desc: Run the pkg/mybot unit tests
+    dir: pkg/mybot
+    cmds:
+      - go test ./...
+
+  mybot-build:
+    desc: Build pkg/mybot statically (CGO_ENABLED=0)
+    dir: pkg/mybot
+    env:
+      CGO_ENABLED: "0"
+    cmds:
+      - go build ./...
+
+  mybot-licenses:
+    desc: Fail on dependency licenses of pkg/mybot outside the permissive allowlist
+    dir: pkg/mybot
+    cmds:
+      - go tool -modfile=../../tools/go.mod go-licenses check --allowed_licenses={{.MYKIT_ALLOWED_LICENSES}} ./...

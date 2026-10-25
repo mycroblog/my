@@ -435,6 +435,33 @@ describe("the notifications page", () => {
     expect(within(feed).getByRole("article", { name: /Bob reacted to your post with :blobcat:/ })).toBeInTheDocument();
   });
 
+  test("tells that an account the user followed moved, and what became of the follow", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const at = "2026-10-16T09:00:00Z";
+    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example", display_name: "Carol" };
+    const items: Notification[] = [
+      { id: "0192f0c4-7a8e-7000-8000-0000000000e1", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "followed" } },
+      { id: "0192f0c4-7a8e-7000-8000-0000000000e2", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "requested" } },
+      { id: "0192f0c4-7a8e-7000-8000-0000000000e3", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "blocking" } },
+      // The new account is gone: the row says only that the account moved.
+      { id: "0192f0c4-7a8e-7000-8000-0000000000e4", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { outcome: "followed" } },
+    ];
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const rows = within(feed).getAllByRole("article");
+    expect(rows).toHaveLength(4);
+    expect(rows[0]).toHaveTextContent("You follow ⁨@carol@new.example⁩ now.");
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "Open ⁨@carol@new.example⁩" })).toHaveAttribute("href", "/@carol@new.example");
+    expect(rows[1]).toHaveTextContent("Your request to follow ⁨@carol@new.example⁩ awaits its approval.");
+    expect(rows[2]).toHaveTextContent("You did not follow ⁨@carol@new.example⁩, because you block it.");
+    expect(rows[3]).toHaveTextContent("Bob moved to another account");
+    expect(within(rows[3] as HTMLElement).queryByRole("link", { name: /^Open/ })).not.toBeInTheDocument();
+  });
+
   test("says which suspension ended follows and how many the user lost", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });

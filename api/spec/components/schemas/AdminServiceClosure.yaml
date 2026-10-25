@@ -30,3 +30,5 @@ properties:
       `closes_at`, which the admin screen and the CLI warn about: the users may not have the
       time to export their data and move their accounts. A short notice is allowed.
     type: boolean
+  progress:
+    $ref: ./AdminServiceClosureProgress.yaml

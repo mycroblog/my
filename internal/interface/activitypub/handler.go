@@ -16,6 +16,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/graph"
+	"github.com/mycroblog/my/internal/domain/instance"
 )
 
 // Accounts is what the handlers need from the account module; *account.Service implements it.
@@ -100,6 +101,9 @@ type Options struct {
 	Inbox Inbox
 	// Modes reads the federation mode (ADR-0076) per request; nil federates both ways.
 	Modes appfederation.ModeSettings
+	// Closure reads the state of the service closure (ADR-0088 §2) per request, which comes
+	// before the federation mode; nil never closes.
+	Closure func(ctx context.Context) (instance.ClosureState, error)
 	// HTML serves the web client's page for profile pages (/@alice) and other single-segment
 	// paths when the request does not ask for ActivityPub; nil answers 404.
 	HTML http.Handler
@@ -150,19 +154,29 @@ const (
 // statuses, their activities, the collections, the custom emoji, and the approvals of quotes
 // publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
 // what exists).
+//
+// The service closure comes first (ADR-0088 §2): once the server is closed, the inboxes, the
+// statuses, the collections, WebFinger, and host-meta answer 410 Gone, the latter before any
+// signature is verified; the actors are served as suspended while the closure's Deletes are
+// delivered, so that their receivers can verify them, and are gone afterwards; NodeInfo states
+// the closure. None of it depends on the federation mode.
 func (h *Handler) Register(r Router) {
-	identify := func(next http.HandlerFunc) http.HandlerFunc { return h.gate(federation.FlowIdentify, next) }
-	publish := func(next http.HandlerFunc) http.HandlerFunc { return h.gate(federation.FlowPublish, next) }
-	r.Handle("GET "+PathWebFinger, h.wellKnown(identify(h.webFinger)))
-	r.Handle("GET "+PathHostMeta, h.wellKnown(identify(h.hostMeta)))
-	r.Handle("GET "+PathHostMetaJSON, h.wellKnown(identify(h.hostMetaJSON)))
-	r.Handle("GET "+PathNodeInfoIndex, h.wellKnown(identify(h.nodeInfoIndex)))
-	r.Handle("GET "+PathNodeInfo, identify(h.nodeInfo))
-	r.Handle("GET "+actorsPrefix+"{id}", identify(h.actor))
+	identify := func(op instance.ClosureOperation, next http.HandlerFunc) http.HandlerFunc {
+		return h.closure(op, h.gate(federation.FlowIdentify, next), next)
+	}
+	publish := func(next http.HandlerFunc) http.HandlerFunc {
+		return h.closure(instance.ClosureFederate, h.gate(federation.FlowPublish, next), nil)
+	}
+	r.Handle("GET "+PathWebFinger, h.wellKnown(identify(instance.ClosureWebFinger, h.webFinger)))
+	r.Handle("GET "+PathHostMeta, h.wellKnown(identify(instance.ClosureWebFinger, h.hostMeta)))
+	r.Handle("GET "+PathHostMetaJSON, h.wellKnown(identify(instance.ClosureWebFinger, h.hostMetaJSON)))
+	r.Handle("GET "+PathNodeInfoIndex, h.wellKnown(identify(instance.ClosureNodeInfo, h.nodeInfoIndex)))
+	r.Handle("GET "+PathNodeInfo, identify(instance.ClosureNodeInfo, h.nodeInfo))
+	r.Handle("GET "+actorsPrefix+"{id}", h.closure(instance.ClosureServeActors, h.gate(federation.FlowIdentify, h.actor), h.closedActor))
 	r.Handle("GET "+actorsPrefix+"{id}/{collection}", publish(h.collection))
 	if h.o.Inbox != nil {
-		r.Handle("POST "+sharedInboxPath, http.HandlerFunc(h.sharedInbox))
-		r.Handle("POST "+actorsPrefix+"{id}/"+collInbox, http.HandlerFunc(h.actorInbox))
+		r.Handle("POST "+sharedInboxPath, h.closure(instance.ClosureFederate, h.sharedInbox, nil))
+		r.Handle("POST "+actorsPrefix+"{id}/"+collInbox, h.closure(instance.ClosureFederate, h.actorInbox, nil))
 	}
 	r.Handle("GET "+objectsPrefix+"{id}", publish(h.object))
 	r.Handle("GET "+objectsPrefix+"{id}/"+activitySegment, publish(h.object))
@@ -216,6 +230,54 @@ func (h *Handler) gate(flow federation.Flow, next http.HandlerFunc) http.Handler
 		}
 		next(w, r)
 	}
+}
+
+// closure serves open while the server is not closed (instance.ClosureFederate), closed while
+// the closure runs op, and otherwise 410 Gone (ADR-0088 §2). A nil closed is gone whenever the
+// server is closed.
+func (h *Handler) closure(op instance.ClosureOperation, open, closed http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := instance.ClosureNone
+		if h.o.Closure != nil {
+			var err error
+			if state, err = h.o.Closure(r.Context()); err != nil {
+				h.o.Logger.ErrorContext(r.Context(), "activitypub: read the service closure failed", slog.Any("error", err))
+				h.o.Problem(w, r, http.StatusInternalServerError)
+				return
+			}
+		}
+		switch {
+		case instance.ClosureAllows(state, instance.ClosureFederate):
+			open(w, r)
+		case closed != nil && instance.ClosureAllows(state, op):
+			closed(w, r)
+		default:
+			h.gone(w, r)
+		}
+	}
+}
+
+// gone answers 410 Gone for a closed server: a GET under /ap/ gets a Tombstone of the requested
+// id, and any other request the error response.
+func (h *Handler) gone(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet || !strings.HasPrefix(r.URL.Path, apPrefix) {
+		h.o.Problem(w, r, http.StatusGone)
+		return
+	}
+	id := federation.IRI((&url.URL{Scheme: "https", Host: h.o.Host, Path: r.URL.Path}).String())
+	body, err := json.Marshal(tombstone{Context: as2Profile, ID: id, Type: federation.ObjectTombstone})
+	if err != nil {
+		h.o.Problem(w, r, http.StatusGone)
+		return
+	}
+	writeBody(w, typeActivityJSON, cachePrivate, http.StatusGone, body)
+}
+
+// tombstone is the document of a gone object.
+type tombstone struct {
+	Context string                `json:"@context"`
+	ID      federation.IRI        `json:"id"`
+	Type    federation.ObjectType `json:"type"`
 }
 
 // notFound answers with the one 404 response that missing and hidden resources share.
