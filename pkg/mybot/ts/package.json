@@ -1,0 +1,40 @@
+{
+  "name": "@mycroblog/mybot",
+  "version": "0.0.0",
+  "description": "Build bots for mycroblog/my on @mycroblog/mykit: event handlers, commands, catch-up without duplicates, and polite defaults",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mycroblog/my.git",
+    "directory": "pkg/mybot/ts"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@mycroblog/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.lib.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.lib.tsbuildinfo && tsc -p tsconfig.test.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.test.tsbuildinfo",
+    "lint": "oxlint",
+    "test": "bun test --conditions=@mycroblog/source",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@mycroblog/mykit": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "oxlint": "1.87.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  }
+}

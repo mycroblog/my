@@ -140,6 +140,8 @@ jobs:
             run: scripts/task.sh mykit:ts-licenses
           - name: mykit:mybot-licenses
             run: scripts/task.sh mykit:mybot-licenses
+          - name: mykit:mybot-ts-licenses
+            run: scripts/task.sh mykit:mybot-ts-licenses
           - name: mail:licenses
             run: scripts/task.sh mail:licenses
           - name: mail:typecheck
@@ -391,8 +393,8 @@ jobs:
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
     # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
-    # own, their integration tests, and the npm package @mycroblog/mykit in pkg/mykit/ts when the mykit context changes
-    # (their licenses run in preflight).
+    # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
+    # pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -497,6 +499,38 @@ jobs:
           - name: mykit:ts-build
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:ts-build
+          - name: mykit:mybot-ts-typecheck
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-ts-typecheck
+          - name: mykit:mybot-ts-lint
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-ts-lint
+          - name: mykit:mybot-ts-knip
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-ts-knip
+          - name: mykit:mybot-ts-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:mybot-ts-test
+
+      # After the parallel checks, whose mykit:ts-build would rewrite mykit's dist/ beside the build of mybot: the ESM
+      # build of @mycroblog/mybot on Node.js 22, the oldest Node.js it supports, and on Deno (ADR-0094 §1), a bot run on
+      # each (pkg/mybot/ts/test/runtimes.mjs). Bun runs the unit tests above.
+      - name: Set up Node.js 22
+        if: needs.changes.outputs.mykit == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.23.3"
+      - name: Set up Deno
+        if: needs.changes.outputs.mykit == 'true'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: "2.9.7"
+      - name: mykit:mybot-ts-build
+        if: needs.changes.outputs.mykit == 'true'
+        run: scripts/task.sh mykit:mybot-ts-build
+      - name: mykit:mybot-ts-runtimes
+        if: needs.changes.outputs.mykit == 'true'
+        run: scripts/task.sh mykit:mybot-ts-runtimes
 
   check:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when

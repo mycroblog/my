@@ -21,6 +21,20 @@
         "typescript": "npm:@typescript/typescript6@6.0.2",
       },
     },
+    "../pkg/mybot/ts": {
+      "name": "@mycroblog/mybot",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mycroblog/mykit": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "oxlint": "1.87.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "npm:@typescript/typescript6@6.0.2",
+      },
+    },
     "../pkg/mykit/ts": {
       "name": "@mycroblog/mykit",
       "version": "0.0.0",
@@ -501,6 +515,8 @@
     "@my/ui": ["@my/ui@workspace:ui"],
 
     "@my/web": ["@my/web@workspace:web"],
+
+    "@mycroblog/mybot": ["@mycroblog/mybot@workspace:../pkg/mybot/ts"],
 
     "@mycroblog/mykit": ["@mycroblog/mykit@workspace:../pkg/mykit/ts"],
 

@@ -19,6 +19,11 @@
       "entry": ["src/**/*.test.ts", "examples/*.ts"],
       "project": ["src/**/*.ts", "examples/*.ts"],
       "ignoreDependencies": ["openapi-typescript"]
+    },
+    "../pkg/mybot/ts": {
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["test/runtimes.mjs"]
     }
   }
 }
