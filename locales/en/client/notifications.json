@@ -143,6 +143,10 @@
     "defaultMessage": "Notifications",
     "description": "Heading and document title of the notifications page."
   },
+  "notifications.type.admin_account_moved": {
+    "defaultMessage": "An account that the moderators limit moved to another account",
+    "description": "Notification sentence to a moderator: an account that the moderators limit moved to another account, which does not get the limit."
+  },
   "notifications.type.admin_appeal": {
     "defaultMessage": "A new appeal awaits the moderators",
     "description": "Notification sentence to a moderator: a user appealed a moderation action on their account."
@@ -226,6 +230,10 @@
   "notifications.custom_emoji_request.reason": {
     "defaultMessage": "The administrator's reason:",
     "description": "Label before the reason of a rejected custom emoji request in its notification."
+  },
+  "notifications.type.account_moved": {
+    "defaultMessage": "{name} moved to another account",
+    "description": "Notification sentence. {name} is the display name of an account that the user followed, which moved to another account."
   },
   "notifications.type.appeal_decided": {
     "defaultMessage": "The moderators decided your appeal",

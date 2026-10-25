@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -116,9 +117,11 @@ type ModeratorDeps struct {
 //     (ADR-0060).
 //   - content.custom_emoji_request_recorded of a submission: admin_custom_emoji_request, to the
 //     holders of manage_custom_emojis other than the requester (ADR-0070 §9).
+//   - account.moved of an account that moderation limits: admin_account_moved, to the holders
+//     of manage_accounts, since the target does not inherit the limit (ADR-0089).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey) make projecting an event again
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey) make projecting an event again
 // create nothing more. For each recipient who wants them by email and whose notification is
 // new, the projector enqueues JobModeratorEmail through d.Outbox.
 func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
@@ -150,6 +153,16 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 		return p.notify(ctx, tx, notification.Notification{
 			Type: notification.TypeAdminWebhookDisabled, DedupeKey: notification.AdminWebhookDisabledKey(ev.StateChangeID), CreatedAt: ev.At,
 		})
+	})
+	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appaccount.Moved)
+		if !ev.SourceLimited {
+			return nil
+		}
+		return p.notify(ctx, tx, notification.Notification{
+			Type: notification.TypeAdminAccountMoved, AccountMoveID: ev.Move.ID,
+			DedupeKey: notification.AdminAccountMovedKey(ev.Move.ID), CreatedAt: ev.Move.OccurredAt,
+		}, ev.Move.AccountID, ev.Move.TargetAccountID)
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.CustomEmojiRequestRecorded)
@@ -284,6 +297,8 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 		m.Subject, m.Text = l.ServerMailAdminWebhookDisabledSubject(name), l.ServerMailAdminWebhookDisabledBody(name, link)
 	case notification.TypeAdminCustomEmojiRequest:
 		m.Subject, m.Text = l.ServerMailAdminCustomEmojiRequestSubject(name), l.ServerMailAdminCustomEmojiRequestBody(name, link)
+	case notification.TypeAdminAccountMoved:
+		m.Subject, m.Text = l.ServerMailAdminAccountMovedSubject(name), l.ServerMailAdminAccountMovedBody(name, link)
 	default:
 		return nil
 	}

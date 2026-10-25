@@ -199,3 +199,38 @@ CREATE TABLE announcement_reads (
   read_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, announcement_id)
 ) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: the service closure (data-model §4.9, FR-808, ADR-0088). Owned by
+-- internal/app/instance. The transitions are checked in internal/domain/instance (closure.go).
+-- ---------------------------------------------------------------------------------------------
+
+-- Event: one change of the service closure: an announcement (or a change of its dates), its
+-- withdrawal, the closure, and the end of the closure's deliveries. by_user_id is NULL for the
+-- CLI and for the server itself.
+CREATE TABLE service_closure_events (
+  id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('announced', 'withdrawn', 'closed', 'delivery_completed')),
+  by_user_id TEXT,
+  occurred_at INTEGER NOT NULL
+) STRICT;
+
+-- Event (subtype of an announced event): the schedule that the announcement states: the closing
+-- date, until when the users may export their data, and the operator's message ('' for none).
+CREATE TABLE service_closure_schedules (
+  event_id TEXT NOT NULL PRIMARY KEY,
+  closes_at INTEGER NOT NULL,
+  export_until INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  CHECK (export_until >= closes_at)
+) STRICT;
+
+-- Projection: the current state of the service closure, one row while a closure is announced or
+-- has happened; no row is a server without a closure. announcement_event_id is the announcement
+-- whose schedule is in effect, event_id the latest event.
+CREATE TABLE service_closure_heads (
+  id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  state TEXT NOT NULL CHECK (state IN ('announced', 'closed', 'delivery_completed')),
+  event_id TEXT NOT NULL,
+  announcement_event_id TEXT NOT NULL
+) STRICT;

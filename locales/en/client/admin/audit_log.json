@@ -523,6 +523,14 @@
     "defaultMessage": "OAuth app host allowed",
     "description": "Kind of an audited operation: an administrator lifted the denial of a host of client metadata documents."
   },
+  "admin.audit_log.action.service_closure_announced": {
+    "defaultMessage": "Service closure announced",
+    "description": "Kind of an audited operation: an administrator announced the closure of the service or changed its dates."
+  },
+  "admin.audit_log.action.service_closure_withdrawn": {
+    "defaultMessage": "Service closure withdrawn",
+    "description": "Kind of an audited operation: an administrator withdrew the announcement of the closure of the service."
+  },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth app",
     "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
@@ -530,5 +538,9 @@
   "admin.audit_log.target_kind.oauth_client_host": {
     "defaultMessage": "OAuth app host",
     "description": "Kind of target of an audited operation: a host whose client metadata documents were denied, shown by the host name."
+  },
+  "admin.audit_log.target_kind.instance": {
+    "defaultMessage": "Instance",
+    "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
   }
 }

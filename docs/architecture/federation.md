@@ -137,7 +137,7 @@ ADR-0033 の推奨案に従い、**署名の検証までを同期**、**処理�
 - 実装は `federation.InboxProcessor`（`internal/app/federation`）です。
   - 手順 2 の取り直しでは、埋め込みの文書をすべて信用しないものにします。`Create` / `Update` はオブジェクトを `id` から取得し、`attributedTo` が主体のものに差し替えます。`Delete` は対象がオリジンで消えている（404 / 410 / `Tombstone`）ときだけ通します。自分自身の `Update` はハンドラが Actor を取得し直します。それ以外はアクティビティを `id` から取得し、同じ `id`・型・主体のときにその文書を使います。
   - 主体はポート `InboxActors`（`RemoteActors.Resolve`）で解決し、ローカルの主体は捨てます。制限はポート `DomainPolicy`（主体のホスト）と `AccountPolicy`（主体のアカウント）で判定します（実装は `moderation.FederationPolicy`、§11）。
-  - ハンドラは `Handle(型, ハンドラ)` で登録します。主体が自分自身を対象にする `Update` / `Delete` は `HandleOwnActor` で別に登録します（`RemoteActors.RegisterInboxHandlers` が登録する Actor の更新・削除）。登録の無い型は `info` のログを残して完了にします（未知の型・`Move`・まだハンドラの無い型）。
+  - ハンドラは `Handle(型, ハンドラ)` で登録します。主体が自分自身を対象にする `Update` / `Delete` は `HandleOwnActor` で別に登録します（`RemoteActors.RegisterInboxHandlers` が登録する Actor の更新・削除）。登録の無い型は `info` のログを残して完了にします（未知の型・まだハンドラの無い型）。
   - `Undo` は取り消す活動の型ごとに `HandleUndo(型, ハンドラ)` で登録します（`Handle(Undo, …)` は使わない）。`object` に活動が埋め込まれていればその型のハンドラだけに、URI だけなら登録順にハンドラを呼び、`ErrUnknownObject` 以外を返したところで止めます。どれも対象を知らなければ tombstone です。埋め込みの型は振り分けにだけ使い、ハンドラは対象が主体のものであることを DB で確かめます。
   - ハンドラは、対象が無いことを `ErrUnknownObject`、捨てることを `ErrDropActivity`、処理できないことを `ErrUnprocessable`（`Fail`）で返します。取得の `ErrFetchNotFound` / `ErrFetchGone` / `ErrFetchRefused` は捨てる、`ErrFetchFailed` / `ErrFetchUnavailable` とその他のエラーは `Retry` です。
   - 記録や原本が無い・正規化できない・記録と主体が違うジョブは `Fail` です。
@@ -193,8 +193,14 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Block` | ローカルの Actor | `graph.ReceiveBlock`。両方向のフォローを終了し、相手の投稿を閲覧者から隠す（`feed_exclusions`）。対象がローカルの利用者の Actor でなければ捨てる |
 | `Flag` | ローカルの Actor / 投稿 | `moderation.FileRemoteReport`（`reports.uri`）。送信者のドメインに `report_intake` の制限があれば捨てる。通報の対象は `object` の最初のローカルの Actor、無ければ最初のローカルの投稿の作者で、その作者の投稿を `report_statuses` に残す。ローカルの対象が無ければ捨てる |
 | `Add` / `Remove` | 主体の `featured` | `StatusHandlers.FeaturedChanged`。`target` が、保存した主体の Actor の文書が宣言する `featured` と一致し、主体と同じオリジンなら、ジョブ `federation.fetch_featured` を投入してピン留めの一覧を取得し直す（§6.2）。`object` は読まない。署名者が主体であることは §3.2 で確かめてあるので、主体がコレクションの持ち主になる。ほかの `target`（主体のほかのコレクション・別のオリジン・`target` なし）と、ほかの人の `featured` への `Add` / `Remove` は捨てる |
-| `Move` ほか未知の型 | — | ログとメトリクスに残して完了にする（`Move` は v0 の非目標） |
+| `Move` | 主体自身（`object` が `actor`。FEP-7628 の push mode） | `federation.RegisterMoveHandler`（ADR-0089）。次をすべて満たすときだけ処理し、満たさなければ理由を `info` のログとメトリクス `my.move.activities`（`my.outcome`）に残して完了にする: `object` が主体である（`not_own_actor`。移転先が送る pull mode は受けない）、`target` があって主体と異なる（`same_account`）、`target` をキャッシュを使わずに取り直せて（`RemoteActors.RefreshActor`。§6.2 と同じく保存する）その `id` が `target` である（`target_unavailable`）、その `alsoKnownAs` に主体がある（`alias_missing`。ローカルの `target` はポート `LocalAliases` の別名で確かめ、ポートの無いいまはだれも受け入れない）、`target` が `movedTo` を持たず、このサーバーでも移転済みでない（`target_moved`。連鎖をたどらない）、主体・`target` のアカウントにもドメインにも `suspend` の処分が無い（`suspended`）。通ったら `account.RecordRemoteMove` が `account_moves`（`initiated_by = remote`、`activity_uri` は `Move`）と `account_move_states` に記録する（`recorded`）。同じ移転先への `Move` は何も増やさず（`duplicate`）、別の移転先への `Move` は前の移転から 7 日以内なら捨てる（`too_soon`）。`account.moved` を購読する `graph` がジョブ `graph.migrate_follows` でローカルの関係を移す（下） |
+| 未知の型 | — | ログとメトリクスに残して完了にする |
 
+- `Move` の移し替え（`graph.migrate_follows`、冪等キーは移転元と移転先の組）は、移転元をフォロー・ブロック・ミュートしているローカルの利用者を 100 件ずつのページでたどり、ページの間を 10 秒あけます（`graph.MigratePageInterval`）。利用者ごとに 1 つの短いトランザクションです。
+  - 移転元を承認済みでフォローしている利用者が、移転先をブロックしておらず、移転先からブロックされておらず、移転先のドメインをミュートしていなければ、移転先へフォローし（`show_boosts`・`notify` を引き継ぐ。移転先がリモートか鍵アカウントなら承認待ちで、`Follow` を送る）、移転元へのフォローを `follow_terminations`（`reason = moved`）で終えて `Undo Follow` を送ります。そうでなければ移転元へのフォローを残します（Mastodon と同じ）。どちらでも `graph.follow_migrated` が通知 `account_moved`（移転元から。移転先をフォローしたか、しなかった理由）を作ります。
+  - 移転元をブロックしている利用者は移転先もブロックし（`Block` を送る）、移転元をミュートしている利用者は、移転先をまだミュートしていなければ、同じ通知の扱いと期限で移転先をミュートします。
+  - ジョブをもう一度動かしても、移ったフォロワーは移転元をフォローしておらず、ブロック・ミュートは既にあり、通知は移転ごとに 1 つ（重複排除キー）なので、何も増えません。
+- 移転元にこのサーバーの `limit` があれば（`moderation.FederationPolicy.AccountLimited`）、移転先へは引き継がず、`account.moved` から `manage_accounts` を持つモデレーターに通知 `admin_account_moved` を出します（§11）。
 - ブースト・お気に入り・絵文字リアクションのハンドラは `federation.RegisterInteractionHandlers` です。`Announce` の対象の取り込みは投稿のハンドラ（`StatusHandlers`）と同じ規則で行います。コントラクトテストは `testkit.RemoteInteractionContract` で、主要実装のフィクスチャの `Announce` / `Like` / `EmojiReact` / `Undo` を受け取り、お気に入りと絵文字リアクションの `Like` / `Undo Like` を送ります（`Like` の枠の付け替えでは、外したものの `Undo` が新しい `Like` の前に記録され、同じ inbox へその順に届く。§7.2 の順序キー）。
 - リアクションの送信（ローカルの人のリアクション）はまだありません。リモートの人のリアクションはローカルの投稿へのものだけを記録し、何も送りません。
 
@@ -359,7 +365,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `content.poll_voted`（リモートの投票だけ） | 選んだ選択肢ごとに `Create`。`object` は `Note`（`id` は回答の `uri`、`name` は選択肢の題、`inReplyTo` は `Question`、`attributedTo` は回答した人、`to` は投票の作者）で、`Create` の `id` は `{Note}/activity`。Mastodon が送る形で、Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial は回答として数える（FR-112）。本文は projector がイベントから組み立てて保存する | 投稿の作者の inbox |
 | `content.poll_voted`（ローカルの投票。ローカルとリモートのアカウントの回答）、`content.poll_closed`（ローカルの投票） | ジョブ `federation.poll_update`（冪等キーは投票ごと）を、回答なら 3 分後（`PollUpdateDelay`。その間の回答は 1 つの `Update` にまとまる）に、締め切りならすぐに動かす。ジョブは投票が投稿の現在版のものなら、その版の `Update` を記録する。`Question` の票数は展開がその時点の集計から組み立てる | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー）+ 回答したリモートのアカウント |
 | `graph.follow_requested` / `graph.followed`（相手がリモート） | `Follow` | 相手の inbox |
-| `graph.follow_terminated`（`unfollowed` / `blocked` / `moderation`、自分がフォローした相手がリモート） | `Undo Follow` | 相手の inbox |
+| `graph.follow_terminated`（`unfollowed` / `blocked` / `moderation` / `moved`、自分がフォローした相手がリモート） | `Undo Follow` | 相手の inbox |
 | `graph.followed` / `graph.follow_accepted` / `graph.follow_rejected`（フォローした人がリモート。相手の `Accept` / `Reject` によるものを除く） | `Accept` / `Reject` | フォローした人の inbox |
 | `graph.follow_resent`（フォローした人がリモート） | `Accept`（もう一度届いた `Follow` を埋め込む） | フォローした人の inbox |
 | `graph.follow_terminated`（`removed_by_followee`、フォローした人がリモート） | `Reject` | フォローした人の inbox |
@@ -612,6 +618,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 判定はサブドメインにも効きます（[data-model §4.3](data-model/04-tables/03-moderation.md#ドメイン単位の処分)）。
 - プロフィールを開いたときの outbox の取得（§6.3、ADR-0044）は、アカウントの `federation` の制限があれば始めず、ドメインの `federation` の制限は `Fetcher` が止めます。ドメインの `public_discovery` の制限は止めません（利用者が自分で開いたプロフィールで、取り込んだ投稿は連合タイムライン・検索に出ない）。
 - `Block` の受信は `graph` の関係として記録します（相手からのブロックで、モデレーションの処分ではありません）。
+- `Move` の受信（§3.4、ADR-0089）は、移転元・移転先のアカウントかドメインに `suspend` があれば捨てます。処分は移転先へ引き継ぎません。移転元に `limit` があれば（`FederationPolicy.AccountLimited`、`visibility_ceiling_private` の制限）、`manage_accounts` を持つモデレーターに通知 `admin_account_moved` を出し、移転先に処分を下すかはモデレーターが決めます。
 - `Flag` の受信は `reports`（`uri` は `Flag` の `id`、`id` が無ければ受信の記録と同じ `urn:my:digest:…`。同じ `Flag` の再処理は何もしない）と `report_states`（`open`）になり、モデレーターの通報一覧に入ります（FR-701）。コメントは 5,000 文字で切ります。
 - `moderation.FederationPolicy` は、呼ばれるたびに期限内の制限を読みます（`DomainPolicy`・`AccountPolicy`・`content.MediaFetchPolicy` と、`Flag` の `RejectsReports`）。処分は `moderation.Service` の `IssueDomainAction` / `LiftDomainAction` と、アカウントへの `IssueAccountAction`（リモートのアカウントには制限だけを生む `limit` / `suspend` / `force_sensitive`）/ `LiftAccountAction` が記録します。
   ドメイン単位の処分の発行・解除・一覧と、通報の一覧・担当・解決は、管理 API（`/api/v1/admin/domain_actions`・`/api/v1/admin/reports`、権限 `manage_domains` / `manage_reports`）と CLI（`my admin domain` / `my admin report`）から行います（[運用手順](../operations/moderation.md)）。入力されたドメインは `CanonicalHost` で正規化してから渡します。
@@ -738,6 +745,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | リレー（§13） | 参加・送信・受信をしない | 受信だけ | 送信だけ（受信は捨てる） | 送受信 |
 
 `off` では、ローカルの Actor・投稿・コレクションがどれも `404` です（`410` にしません）。NodeInfo は `metadata.federationMode` にモードを出します。
+NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`state`。`none`・`announced`・`closed`・`delivery_completed`）と、予告の後は閉鎖日（`closesAt`）と持ち出しの期限（`exportUntil`）を出します（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）。
 
 非同期の inbox は、型を次の流れに対応させます。
 

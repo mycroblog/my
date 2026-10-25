@@ -52,6 +52,10 @@ const (
 	// deny the hosts of Client ID Metadata Documents (ADR-0090 §1). It is server administration
 	// (ADR-0058 §4): only the built-in admin role has it by default.
 	PermManageOAuthApps Permission = "manage_oauth_apps"
+	// PermManageServiceClosure: announce the closure of the service, change its dates, withdraw
+	// it, and close the server (FR-808, FR-809, ADR-0088 §1). It is server administration
+	// (ADR-0058 §4): only the built-in admin role has it by default.
+	PermManageServiceClosure Permission = "manage_service_closure"
 )
 
 // AllPermissions lists every permission.
@@ -61,6 +65,7 @@ func AllPermissions() []Permission {
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
+		PermManageServiceClosure,
 	}
 }
 

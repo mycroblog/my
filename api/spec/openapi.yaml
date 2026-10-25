@@ -470,6 +470,10 @@ paths:
     $ref: ./paths/admin_invites.yaml
   /admin/invites/{id}/revoke:
     $ref: ./paths/admin_invites_{id}_revoke.yaml
+  /admin/closure:
+    $ref: ./paths/admin_closure.yaml
+  /admin/closure/announcement:
+    $ref: ./paths/admin_closure_announcement.yaml
   /admin/oauth_clients:
     $ref: ./paths/admin_oauth_clients.yaml
   /admin/oauth_clients/{id}/disable:
@@ -702,6 +706,8 @@ components:
       $ref: ./components/responses/AdminSupporterProgram.yaml
     AdminTheme:
       $ref: ./components/responses/AdminTheme.yaml
+    AdminServiceClosure:
+      $ref: ./components/responses/AdminServiceClosure.yaml
     AdminWebhook:
       $ref: ./components/responses/AdminWebhook.yaml
     AdminWebhookDelivery:
@@ -741,6 +747,8 @@ components:
       $ref: ./components/schemas/Account.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
+    AccountMove:
+      $ref: ./components/schemas/AccountMove.yaml
     AccountFieldSource:
       $ref: ./components/schemas/AccountFieldSource.yaml
     AccountPage:
@@ -941,6 +949,12 @@ components:
       $ref: ./components/schemas/AdminSupporterSubscriptionPage.yaml
     AdminTheme:
       $ref: ./components/schemas/AdminTheme.yaml
+    AdminServiceClosure:
+      $ref: ./components/schemas/AdminServiceClosure.yaml
+    AnnounceServiceClosureRequest:
+      $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
+    ServiceClosureState:
+      $ref: ./components/schemas/ServiceClosureState.yaml
     AdminWebhook:
       $ref: ./components/schemas/AdminWebhook.yaml
     AdminWebhookAttempt:
@@ -1167,6 +1181,8 @@ components:
       $ref: ./components/schemas/InstanceDomainActionPage.yaml
     InstanceFederation:
       $ref: ./components/schemas/InstanceFederation.yaml
+    InstanceClosure:
+      $ref: ./components/schemas/InstanceClosure.yaml
     InstanceLimits:
       $ref: ./components/schemas/InstanceLimits.yaml
     InstanceRegistrations:

@@ -62,4 +62,10 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 		}),
 	})
 	a.QuoteHandlers.Register(a.InboxProcessor)
+	// The Moves of remote accounts move their local followers (ADR-0089).
+	federation.RegisterMoveHandler(a.InboxProcessor, federation.MoveHandlerDeps{
+		Targets: a.RemoteActors, Accounts: a.Accounts,
+		Domains: a.ModerationPolicy, Suspensions: a.ModerationPolicy, Limits: a.ModerationPolicy,
+		Host: cfg.Host, Meter: a.Meter, Logger: a.Logger,
+	})
 }

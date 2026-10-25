@@ -90,6 +90,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   oauth_client_enabled: "client:admin.audit_log.action.oauth_client_enabled",
   oauth_client_host_denied: "client:admin.audit_log.action.oauth_client_host_denied",
   oauth_client_host_allowed: "client:admin.audit_log.action.oauth_client_host_allowed",
+  service_closure_announced: "client:admin.audit_log.action.service_closure_announced",
+  service_closure_withdrawn: "client:admin.audit_log.action.service_closure_withdrawn",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -117,6 +119,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   payment_provider: "client:admin.audit_log.target_kind.payment_provider",
   oauth_client: "client:admin.audit_log.target_kind.oauth_client",
   oauth_client_host: "client:admin.audit_log.target_kind.oauth_client_host",
+  instance: "client:admin.audit_log.target_kind.instance",
 };
 
 /** Who performed an operation without a user's account to show. */

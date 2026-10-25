@@ -18,6 +18,9 @@
 | `announcement_state_changes` | イベント | `id`, `announcement_id`, `state`（`enum(published, withdrawn)`）, `changed_by_user_id`（NULL 可 = CLI による変更）, `changed_at` | インデックス `(announcement_id, id DESC)` |
 | `announcement_heads` | 投影 | `announcement_id`（PK）, `revision_id`, `state`（`enum(draft, published, withdrawn)`）, `published_at`（最後に公開した時刻） | CHECK `(state = 'draft') = (published_at IS NULL)`。インデックス `(state)` |
 | `announcement_reads` | 現在値 | `user_id`, `announcement_id`, `read_at` | PK `(user_id, announcement_id)`。既読の履歴には意味がない（ADR-0020 規約 5） |
+| `service_closure_events` | イベント | `id`, `kind`（`enum(announced, withdrawn, closed, delivery_completed)`）, `by_user_id`（NULL 可 = CLI とサーバー自身による変更）, `occurred_at` | サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md)）の状態の変化 |
+| `service_closure_schedules` | イベント（`announced` の部分型） | `event_id`（PK）, `closes_at`, `export_until`, `message`（`string(5000)`。空 = なし） | CHECK `export_until >= closes_at` |
+| `service_closure_heads` | 投影 | `id`（PK。常に 1）, `state`（`enum(announced, closed, delivery_completed)`）, `event_id`（最後のイベント）, `announcement_event_id`（効いている予定の `announced`） | 終了を予告している間とその後に 1 行。行が無い = 予告なし |
 
 - 設定値は 1 キー 1 スカラーにします。複合的な設定はキーを分けます（JSON にしない）。
   キー・型・既定値・検証は `internal/domain/instance` に定義し、`key` の `CHECK` と一緒に増やします。一度も設定していないキーは既定値として読みます。
@@ -47,3 +50,8 @@
   - 利用者に見えるのは、公開中で今が期間の中にあるお知らせです。期間の始まりと公開の遅いほう（`ShowsFrom`）の新しい順に並べます。
   - 本文は文書と同じく版に Markdown のまま記録し、読むたびに HTML にしてサニタイズします（`instance.DocumentRenderer`、ADR-0019）。
   - 既読は `announcement_reads` の行の有無で表し、アカウントの消去（§8）で消えます。
+- サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md) §1）は、`manage_service_closure` を持つ人が管理 API・CLI（`my admin closure`）から予告し、日付を変え、取り消します。
+  - 遷移は `internal/domain/instance` の `Closure.Check` が検査します。`announced` は予告が無いときと予告中（日付の変更）、`withdrawn` は予告中だけ、`closed` は予告中で `closes_at` を過ぎたときだけ、`delivery_completed` はクローズの後だけです。`closed` の後に戻る遷移はありません。
+  - 日付の変更は新しい `announced` で表し、`service_closure_heads.announcement_event_id` がそれを指します。取り消すと行が消え、その後の `announced` は新しい予告です。
+  - `closes_at` に下限はありません。`export_until` は `closes_at` 以後で、指定が無ければ `closes_at` の 30 日後です。予告から `closes_at` までが 30 日より短いとき、管理 API と CLI は告知の期間が短いと警告します。
+  - 状態はリクエストとジョブごとに読み、各入口は `instance.ClosureAllows(state, 操作)` で判定します。遷移はすべて監査ログ（`target_kind = instance`）に残ります。

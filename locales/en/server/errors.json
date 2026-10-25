@@ -259,6 +259,10 @@
     "defaultMessage": "The supporter plan takes no subscriptions.",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
   },
+  "errors.service_closure.state": {
+    "defaultMessage": "The service closure does not allow that in its current state.",
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, and nothing goes back after the server closes."
+  },
   "errors.supporters.subscription_state": {
     "defaultMessage": "Your subscription cannot do that in its current state.",
     "description": "API error title for HTTP 409 when the state of a user's subscription to a supporter plan does not allow the operation (ADR-0072 §8): a change needs an active subscription, a cancellation an active or past-due one, a resumption a canceling one."

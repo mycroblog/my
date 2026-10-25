@@ -45,7 +45,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		Streams: a.Streams, HomeEntries: a.Timeline,
 		Permissions: a.Identity, InstanceHealth: a.InstanceHealth, DeadJobs: a.DeadJobs,
 		Queue:      clientapi.QueueDashboard{Adapter: cfg.Queue, Inspector: a.JobInspector, Attempts: a.JobAttempts, Clock: a.Clock},
-		Moderation: a.Moderation, UserAccounts: a.Accounts, FiledReports: a.Moderation, Severances: a.Moderation,
+		Moderation: a.Moderation, UserAccounts: a.Accounts, FiledReports: a.Moderation, Severances: a.Moderation, Moves: a.Accounts,
 		AccountModeration: a.Moderation, ProfileRestrictions: a.AccountPolicy, OwnModeration: a.Moderation,
 		AccountAdmin: a.AccountAdmin, AccountReports: a.Moderation, PasswordResetLinks: a.Identity,
 		AuditLog: a.Moderation,
@@ -63,7 +63,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		// The instance settings, and the invites with the registration page they open (#624).
 		Settings: a.Instance, Invites: a.Identity, OAuthClients: a.Identity, SignUpPath: authpages.PathSignUp,
 		// The instance theme (ADR-0059) and the URLs of its stylesheets, which the web handler serves.
-		Themes: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
+		Themes: a.Instance, Closures: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
 		// The custom emoji of the picker and their administration (ADR-0051).
 		CustomEmojis:        a.CustomEmojis,
 		CustomEmojiRequests: a.CustomEmojis,

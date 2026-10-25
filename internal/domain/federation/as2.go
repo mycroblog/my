@@ -382,10 +382,15 @@ type Actor struct {
 	// AttributionDomains is Mastodon's toot:attributionDomains: the domains whose pages may
 	// name the actor as their fediverse:creator (ADR-0062 §5), lowercase.
 	AttributionDomains []string
-	PublicKeys         []PublicKey
-	Fields             []Field
-	Emojis             []Emoji
-	Published          time.Time
+	// AlsoKnownAs is as:alsoKnownAs: the other actors that the actor declares as its own, at
+	// most MaxItems. A Move to the actor is accepted only from one of them (ADR-0089).
+	AlsoKnownAs []IRI
+	// MovedTo is as:movedTo: the actor that the actor moved to, "" when it has not moved.
+	MovedTo    IRI
+	PublicKeys []PublicKey
+	Fields     []Field
+	Emojis     []Emoji
+	Published  time.Time
 }
 
 // Bot reports whether the actor is an automated account.

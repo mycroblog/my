@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+description: The service closure as its administrators see it (ADR-0088 §1).
+type: object
+required: [state, short_notice]
+properties:
+  state:
+    $ref: ./ServiceClosureState.yaml
+  closes_at:
+    description: When the server closes; omitted for `none`.
+    type: string
+    format: date-time
+  export_until:
+    description: Until when the users may export their data after the closure; omitted for `none`.
+    type: string
+    format: date-time
+  message:
+    description: The operator's message to the users; omitted when there is none.
+    type: string
+  announced_at:
+    description: When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
+    type: string
+    format: date-time
+  changed_at:
+    description: When the state last changed; omitted for `none`.
+    type: string
+    format: date-time
+  short_notice:
+    description: |
+      Whether the announcement gives the users less than 30 days from `announced_at` to
+      `closes_at`, which the admin screen and the CLI warn about: the users may not have the
+      time to export their data and move their accounts. A short notice is allowed.
+    type: boolean

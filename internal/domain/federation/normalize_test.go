@@ -289,6 +289,7 @@ func TestNormalizeActor(t *testing.T) {
 		"followers":"https://a.example/u/alice/followers","following":"https://a.example/u/alice/following","featured":"https://a.example/u/alice/featured",
 		"endpoints":{"sharedInbox":"https://a.example/inbox"},"icon":{"type":"Image","url":"https://a.example/a.png"},"image":"https://a.example/h.png",
 		"manuallyApprovesFollowers":true,"discoverable":true,"indexable":true,"published":"2020-01-01T00:00:00Z","isCat":true,
+		"alsoKnownAs":["https://old.example/users/alice","https://a.example/u/alice"],"movedTo":"https://new.example/users/alice",
 		"publicKey":{"id":"https://a.example/u/alice#main-key","owner":"https://a.example/u/alice","publicKeyPem":"-----BEGIN PUBLIC KEY-----"},
 		"attachment":[{"type":"PropertyValue","name":"Site","value":"<a href=\"https://alice.example\">alice.example</a>"}],
 		"tag":[{"type":"Emoji","name":":blob:","icon":{"url":"https://a.example/e.png"}}]}`)
@@ -302,6 +303,7 @@ func TestNormalizeActor(t *testing.T) {
 		SharedInbox: "https://a.example/inbox", Followers: "https://a.example/u/alice/followers", Following: "https://a.example/u/alice/following",
 		Featured: "https://a.example/u/alice/featured", Icon: "https://a.example/a.png", Image: "https://a.example/h.png",
 		ManuallyApprovesFollowers: true, Discoverable: true, Indexable: true, Published: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		AlsoKnownAs: []federation.IRI{"https://old.example/users/alice", "https://a.example/u/alice"}, MovedTo: "https://new.example/users/alice",
 		PublicKeys: []federation.PublicKey{{ID: "https://a.example/u/alice#main-key", Owner: "https://a.example/u/alice", PEM: "-----BEGIN PUBLIC KEY-----"}},
 		Fields:     []federation.Field{{Name: "Site", Value: `<a href="https://alice.example">alice.example</a>`}},
 		Emojis:     []federation.Emoji{{Shortcode: "blob", IconURL: "https://a.example/e.png"}},

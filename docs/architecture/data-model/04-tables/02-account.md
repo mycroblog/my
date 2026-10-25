@@ -86,3 +86,17 @@
 - 行が無いアカウントは `active` とみなします。作成時には行を作らず、最初のライフサイクルイベントで作ります（イベントからの再構築と一致させるため）。
 - 投影はイベントを `id` 順に畳み込んで作ります: `deactivated` → `deactivated`、`reactivated` / `deletion_cancelled` → `active`、`deletion_scheduled` → `deletion_scheduled`（`deletion_due_at` を写す）、`deleted` / `remote_deleted` → `deleted`。`deleted` は最終状態で、以後のイベントでは変わりません。`since` は最後に状態を変えたイベントの `occurred_at` です。
 - `deletion_due_at` は、イベントでは `kind = deletion_scheduled` のとき、投影では `state = deletion_scheduled` のときだけ値を持ちます（`CHECK` 制約）。
+
+#### 移転（ADR-0089）
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `account_moves` | イベント | `id`, `account_id`（移転元）, `target_account_id`, `initiated_by`（`enum(self, remote)`）, `activity_uri`（NULL 可。受けた `Move`）, `occurred_at` | 一意 `(account_id, target_account_id)`、インデックス `(account_id, occurred_at DESC, id DESC)`、`CHECK (account_id <> target_account_id)` |
+| `account_move_cancellations` | イベント | `move_id`（PK）, `cancelled_at` | ローカルの移転だけ |
+| `account_move_states` | 投影 | `account_id`（PK）, `move_id`, `target_account_id`, `since` | インデックス `(target_account_id)` |
+
+- **移転はライフサイクルと直交する軸** です（ADR-0020 規約 2）。移転済みでも `account_lifecycle_states` は変わりません。
+- リモートのアカウントの移転は、検証を通った `Move` を `account.Service.RecordRemoteMove` が `initiated_by = remote` で記録します（[federation.md §3.4](../../federation.md)）。同じ移転先への 2 度目の `Move` は一意制約で何も記録せず、別の移転先への `Move` は最新の行の `occurred_at` から 7 日（`account.RemoteMoveInterval`）以内なら記録しません（待ち時間は状態の列を持たず、読み取りのときに判定します）。
+- 記録は同じトランザクションでドメインイベント `account.moved` を出し、projector が `account_move_states` をその移転に向けます。`moderation` が移転元を `limit` しているかを運び（`SourceLimited`）、`notification` がモデレーターに知らせます。`graph` はこのイベントからジョブ `graph.migrate_follows` を積みます（§4.5）。
+- 投影はアカウントごとの最新の移転（`occurred_at`、`id` の順）で、それが取り消されていれば行を作りません（`account.MoveStates`）。取り消しは行を消します。
+- 移転先は client API のアカウントの表現の `moved`（アカウント自身のエンドポイント）に出します（`account.Service.MoveState`）。
