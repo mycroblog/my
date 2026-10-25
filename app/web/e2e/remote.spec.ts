@@ -179,7 +179,7 @@ test.describe("a profile of another server", () => {
     await expect(article.getByRole("link", { name: `Carol @${carol.acct}` })).toBeVisible();
   });
 
-  test("shows the post's pictures behind its content warning, marking the one without a description", async ({ page, makeAxeBuilder }) => {
+  test("shows the post's pictures behind its content warning, naming the one without a description for screen readers only", async ({ page, makeAxeBuilder }) => {
     const article = page.getByRole("feed").getByRole("article");
     // The first collapsed button is the content warning's; the menu button of the actions is collapsed too.
     await article.getByRole("button", { expanded: false }).first().click();
@@ -187,10 +187,10 @@ test.describe("a profile of another server", () => {
     await expect(images).toHaveCount(2);
     await expect(images.first()).toHaveAttribute("alt", "A blue square on canvas");
     await expect(images.first()).toHaveAttribute("src", picture);
-    // The badge's text is the picture's name.
-    const badge = (await images.nth(1).getAttribute("alt")) ?? "";
-    expect(badge).not.toBe("");
-    await expect(article.getByText(badge, { exact: true })).toBeVisible();
+    // The picture without a description is named by the app's text, which the post does not show (web-client/README.md Y9).
+    const name = message("timeline.media.no_description", host);
+    await expect(images.nth(1)).toHaveAttribute("alt", name);
+    await expect(article.getByText(name, { exact: true })).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
