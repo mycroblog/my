@@ -83,7 +83,7 @@ func TestFederationFixturesProvenance(t *testing.T) {
 // host (RFC 2606, RFC 6761).
 var namespaceHosts = []string{
 	"www.w3.org", "w3id.org", "purl.archive.org", "schema.org", "ostatus.org", "joinmastodon.org",
-	"misskey-hub.net", "gotosocial.org", "litepub.social", "joinsharkey.org", "fedibird.com",
+	"misskey-hub.net", "gotosocial.org", "litepub.social", "joinsharkey.org", "fedibird.com", "smithereen.software",
 }
 
 var urlPattern = regexp.MustCompile(`[a-z][a-z0-9+.-]*://[^\s"'<>\\]+`)
