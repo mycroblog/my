@@ -59,6 +59,14 @@ tasks:
     cmds:
       - scripts/docker-smoke.sh
 
+  # Not part of `check`: it builds the images of two releases and takes minutes (CI job upgrade, in the slow suite).
+  upgrade-test:
+    desc: Upgrade databases made by the release PREVIOUS (a tag) with this tree's images and check the data (DIALECTS, default both)
+    requires:
+      vars: [PREVIOUS]
+    cmds:
+      - scripts/upgrade-test.sh {{shellQuote .PREVIOUS}} {{.DIALECTS}}
+
   mailpit:
     desc: Create the certificate of the development Mailpit and start it (deploy/docker/mailpit; SMTP on 127.0.0.1:1025, UI on http://127.0.0.1:8025)
     cmds:

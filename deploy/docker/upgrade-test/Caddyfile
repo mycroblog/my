@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# remote.test of the upgrade test (compose.yaml): a static ActivityPub server with one Person, carol. The files in
+# /srv come from scripts/upgrade-test.sh. Signatures are not checked, and every POST to an inbox is taken with 202.
+
+{
+	admin off
+	auto_https disable_redirects
+	skip_install_trust
+}
+
+https://remote.test {
+	tls /certs/server.pem /certs/server.key
+	log {
+		output stdout
+		format json
+	}
+
+	@inbox {
+		method POST
+		path /users/carol/inbox /inbox
+	}
+	respond @inbox 202
+
+	handle /.well-known/webfinger {
+		header Content-Type "application/jrd+json"
+		rewrite * /webfinger.json
+		file_server {
+			root /srv
+		}
+	}
+	handle /users/carol {
+		header Content-Type "application/activity+json"
+		rewrite * /carol.json
+		file_server {
+			root /srv
+		}
+	}
+	respond 404
+}
