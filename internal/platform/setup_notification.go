@@ -8,7 +8,7 @@ import (
 )
 
 // setUpNotification builds Web Push, registers the notification module's projectors, and builds
-// its service and the notifications of the moderators and the supporters. It comes after the
+// its service and the notifications of the moderators, the service closure, and the supporters. It comes after the
 // graph and content projectors, whose events these projectors turn into notifications.
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	pusher, err := a.setUpPush(cfg, pushes)
@@ -21,7 +21,8 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	a.Notifications = notification.NewService(notification.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
 	})
-	a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
+	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
+	a.setUpClosureNotifications(repo, moderators, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)
 	return nil
 }

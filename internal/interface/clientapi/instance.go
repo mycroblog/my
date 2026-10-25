@@ -78,7 +78,6 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 			return nil, err
 		}
 	}
-	out.Registrations = InstanceRegistrations{Mode: InstanceRegistrationsMode(settings.RegistrationMode())}
 	out.Limits = InstanceLimits{MaxPostCharacters: settings.MaxStatusLength(), RequireMediaDescription: settings.RequireMediaDescription()}
 	out.Timelines = InstanceTimelines{Local: TimelineAccess(settings.LocalTimelineAccess()), Federated: TimelineAccess(settings.FederatedTimelineAccess())}
 	// The direction the instance federates in, by which clients offer the operations on remote
@@ -122,6 +121,13 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.Closure, err = s.instanceClosure(ctx); err != nil {
 		return nil, err
 	}
+	// The registration mode that sign-ups follow: closed from the announcement on, whatever the
+	// setting says (instance.EffectiveRegistrationMode).
+	closure := instance.ClosureNone
+	if out.Closure != nil {
+		closure = instance.ClosureState(out.Closure.State)
+	}
+	out.Registrations = InstanceRegistrations{Mode: InstanceRegistrationsMode(instance.EffectiveRegistrationMode(settings.RegistrationMode(), closure))}
 
 	cache := cachePublic
 	if _, ok := ViewerFrom(ctx); ok {

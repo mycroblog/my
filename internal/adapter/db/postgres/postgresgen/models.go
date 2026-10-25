@@ -20,6 +20,12 @@ type Account struct {
 	CreatedAt time.Time
 }
 
+type AccountAlias struct {
+	AccountID string
+	AliasUri  string
+	AddedAt   time.Time
+}
+
 type AccountDomainMute struct {
 	AccountID string
 	Domain    string
@@ -597,6 +603,8 @@ type Notification struct {
 	ReactionCustomEmojiID   *string
 	AccountMoveID           *string
 	AccountMoveOutcome      *string
+	ServiceClosureEventID   *string
+	ServiceClosureChange    *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

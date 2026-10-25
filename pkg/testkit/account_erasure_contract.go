@@ -270,6 +270,14 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	}
 	e.rows(t, "notifications", "recipient_account_id", aliceID, 4) // bob's follow, favourite, boost; carol's reaction
 	e.rows(t, "notifications", "source_account_id", aliceID, 4)    // alice's follow, favourite, boost, reaction
+	carolActor, err := e.accounts.FindByID(ctx, carol)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := e.accounts.AddAlias(ctx, aliceID, carolActor); err != nil {
+		t.Fatal(err)
+	}
+	e.rows(t, "account_aliases", "account_id", aliceID, 1)
 
 	e.deleteAccount(t, aliceID)
 	e.clock.Advance(appaccount.ErasureDelay)
@@ -288,7 +296,7 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 		actor.Lifecycle.State != account.StateDeleted || actor.Account.URI == "" {
 		t.Errorf("erased actor = %+v, want the account, its username, and its lifecycle only", actor)
 	}
-	for _, table := range []string{"account_profile_revisions", "account_profile_heads", "account_keys", "follow_counters",
+	for _, table := range []string{"account_profile_revisions", "account_profile_heads", "account_keys", "account_aliases", "follow_counters",
 		"account_post_counters", "local_post_counters", "mutes", "account_domain_mutes", "favourites", "reactions", "bookmarks", "status_pins",
 		"notification_read_markers"} {
 		e.rows(t, table, "account_id", aliceID, 0)

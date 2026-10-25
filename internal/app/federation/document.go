@@ -271,6 +271,9 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if images.Emojis, err = LocalActorEmojis(ctx, f.d.EmojiTags, f.d.Host, s.actor); err != nil {
 			return nil, err
 		}
+		if images.AlsoKnownAs, err = LocalActorAliases(ctx, f.d.Aliases, s.actor); err != nil {
+			return nil, err
+		}
 		images.MovedTo = s.movedTo
 		return accountDocument(f.d.Host, act, s.actor, images, s.suspended)
 	}

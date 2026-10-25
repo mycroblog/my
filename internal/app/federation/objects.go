@@ -100,6 +100,8 @@ type ObjectsDeps struct {
 	Reader   StatusReader
 	// Images reads the avatars and headers of the actors that archives export; nil exports none.
 	Images ProfileImages
+	// Aliases reads the aliases of the actors that archives export; nil exports none.
+	Aliases AliasReader
 	// Moves tells the actor that an exported actor moved to (ADR-0089); nil exports no movedTo.
 	Moves MoveReader
 	// Signatures verifies the signatures of GET requests; nil treats every request as unsigned.

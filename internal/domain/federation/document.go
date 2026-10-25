@@ -489,6 +489,9 @@ type ActorDocument struct {
 	// Icon and Image are the avatar and the header, left out when the actor has none.
 	Icon  *ImageDocument `json:"icon,omitempty"`
 	Image *ImageDocument `json:"image,omitempty"`
+	// AlsoKnownAs are the other actors that the actor declares as its own (as:alsoKnownAs, the
+	// accounts it moves from, ADR-0089), left out when it has none.
+	AlsoKnownAs []IRI `json:"alsoKnownAs,omitempty"`
 	// Suspended marks an actor that moderation suspended (Mastodon's toot:suspended); it is
 	// left out otherwise.
 	Suspended bool `json:"suspended,omitempty"`
@@ -504,14 +507,15 @@ func (d ActorDocument) Embedded() ActorDocument {
 }
 
 // Suspend returns d as a suspended actor is published (federation.md §11.1, ADR-0036): marked
-// suspended, with the profile emptied (name, summary, fields, tags) and nothing that invites
-// following or discovery, while the id, the collections, the inboxes, and the key stay, so that
-// servers can still address the actor and verify its signatures.
+// suspended, with the profile emptied (name, summary, fields, tags, aliases) and nothing that
+// invites following or discovery, while the id, the collections, the inboxes, and the key stay,
+// so that servers can still address the actor and verify its signatures.
 func (d ActorDocument) Suspend() ActorDocument {
 	empty, no := "", false
 	d.Name, d.Summary = &empty, &empty
 	d.Tag, d.Attachment = []any{}, []PropertyValue{}
 	d.Icon, d.Image = nil, nil
+	d.AlsoKnownAs = nil
 	d.ManuallyApprovesFollowers = false
 	if d.Discoverable != nil {
 		d.Discoverable = &no
