@@ -14,6 +14,7 @@ tasks:
       - shellcheck scripts/*.sh
 
   test:
-    desc: Test the scripts of release.yml that version the client libraries (scripts/release-libraries-test.sh)
+    desc: Test the scripts of the release (scripts/release-libraries-test.sh, scripts/previous-minor-test.sh)
     cmds:
       - scripts/release-libraries-test.sh
+      - scripts/previous-minor-test.sh

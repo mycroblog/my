@@ -3,16 +3,39 @@ name: Slow suite
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
 # live interoperability test with Mastodon, GoToSocial, and Misskey, the PostgreSQL tests on a real postgres container
 # (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the Docker Compose smoke test (linux/amd64)
-# with the linux/arm64 image builds, golangci-lint over everything with the build tag sets, and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
+# with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0087 §4), golangci-lint over everything with the build tag sets,
+# and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
 # and it runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`. Every job checks out the commit
 # of the run (github.sha), so a caller tests the commit it was started on.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
 # a nightly run on the same commit must not cancel each other. The callers set their own groups.
 
+# The inputs choose the release that the upgrade job upgrades from (docs/operations/releasing.md, "The upgrade test"):
+# `version`, the candidate, upgrades from the latest patch of the previous minor version; with no `version` (nightly),
+# from the latest release. `previous` names the tag instead, for a pre-release tried from a branch:
+# `gh workflow run slow-suite.yml --ref <branch> -f previous=v0.0.0-test.1`.
 on:
   workflow_call:
+    inputs:
+      version:
+        description: "The version the commit is released as (vX.Y.Z or vX.Y.Z-<pre-release>); empty for the head of main."
+        type: string
+        default: ""
+      previous:
+        description: "The tag to upgrade from instead of the one the version picks."
+        type: string
+        default: ""
   workflow_dispatch:
+    inputs:
+      version:
+        description: "The version the commit is released as (vX.Y.Z or vX.Y.Z-<pre-release>); empty for the head of main."
+        type: string
+        default: ""
+      previous:
+        description: "The tag to upgrade from instead of the one the version picks (e.g. v0.0.0-test.1)."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -56,6 +79,49 @@ jobs:
             run: scripts/task.sh docker:smoke
           - name: docker:build-arm64
             run: scripts/task.sh docker:build-arm64
+
+  upgrade:
+    # A database made and filled by the previous release's images, upgraded with this commit's images in the order of
+    # deploy/docker/compose.yaml (my db upgrade -check, schema apply, my db upgrade), on SQLite and PostgreSQL
+    # (scripts/upgrade-test.sh). The previous release's images are built from its tag; once releases publish their
+    # images, MY_PREVIOUS_IMAGE and MY_PREVIOUS_SCHEMA_IMAGE take them from the registry instead. Without a previous
+    # minor version (the first one, v0.1.0) the test is skipped and the job passes.
+    runs-on: ubuntu-latest
+    steps:
+      # Every tag, to pick the previous release and build its images; the images take their version from `git describe`.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Pick the previous release
+        id: previous
+        env:
+          VERSION: ${{ inputs.version }}
+          PREVIOUS: ${{ inputs.previous }}
+        run: |
+          if [ -n "$PREVIOUS" ]; then
+            if ! [[ "$PREVIOUS" =~ ^v[0-9] ]] || ! git rev-parse -q --verify "refs/tags/$PREVIOUS" > /dev/null; then
+              echo "::error::previous must be a release tag (v...): $PREVIOUS"
+              exit 1
+            fi
+            tag="$PREVIOUS"
+          else
+            tag="$(git tag -l 'v[0-9]*' | scripts/previous-minor.sh "$VERSION")"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ -z "$tag" ]; then
+            echo "No minor version before ${VERSION:-the head of main}: the upgrade test is skipped." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Upgrading from $tag to ${VERSION:-the head of main} ($GITHUB_SHA)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Set up go-task
+        if: steps.previous.outputs.tag != ''
+        uses: ./.github/actions/setup-task
+      - name: docker:upgrade-test
+        if: steps.previous.outputs.tag != ''
+        env:
+          PREVIOUS: ${{ steps.previous.outputs.tag }}
+        run: scripts/task.sh docker:upgrade-test PREVIOUS="$PREVIOUS"
 
   go-static:
     # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
@@ -105,7 +171,7 @@ jobs:
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
   result:
     if: always()
-    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, docker, go-static, codeql]
+    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, docker, upgrade, go-static, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

@@ -13,7 +13,9 @@ name: Release
 # dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
-# gate can be tried on a branch without making a release of it.
+# gate can be tried on a branch without making a release of it. The suite's upgrade job upgrades from the latest patch
+# of the previous minor version; a pre-release may name another tag in `previous`, so that the job runs before any
+# minor version exists (`-f version=v0.0.0-test.2 -f previous=v0.0.0-test.1`).
 
 on:
   workflow_dispatch:
@@ -22,6 +24,10 @@ on:
         description: "The version to release: vX.Y.Z, or vX.Y.Z-<pre-release> (e.g. v0.1.0-rc.1)."
         type: string
         required: true
+      previous:
+        description: "Pre-releases only: the tag the upgrade test upgrades from instead of the previous minor version's latest patch."
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -41,6 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ inputs.version }}
+          PREVIOUS: ${{ inputs.previous }}
           REF: ${{ github.ref }}
         run: |
           if ! [[ "$VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
@@ -49,6 +56,10 @@ jobs:
           fi
           if [ "$REF" != refs/heads/main ] && [[ "$VERSION" != *-* ]]; then
             echo "::error::$REF is not main: release it as a pre-release version (vX.Y.Z-<pre-release>)."
+            exit 1
+          fi
+          if [ -n "$PREVIOUS" ] && [[ "$VERSION" != *-* ]]; then
+            echo "::error::previous is for pre-releases only: $VERSION upgrades from the previous minor version."
             exit 1
           fi
           for tag in "$VERSION" "pkg/mykit/$VERSION" "pkg/mybot/$VERSION"; do
@@ -61,6 +72,9 @@ jobs:
   slow-suite:
     needs: validate
     uses: ./.github/workflows/slow-suite.yml
+    with:
+      version: ${{ inputs.version }}
+      previous: ${{ inputs.previous }}
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
       actions: read

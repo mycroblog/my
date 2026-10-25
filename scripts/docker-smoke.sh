@@ -22,6 +22,9 @@ export MY_VERSION="${MY_VERSION:-smoke}"
 MY_KEK="$(openssl rand -base64 32)"
 export MY_KEK
 
+# shellcheck source=scripts/web-sign-in.sh
+. "$root/scripts/web-sign-in.sh"
+
 compose=(docker compose --project-directory "$root/deploy/docker" -f "$root/deploy/docker/compose.yaml" -p my-smoke)
 
 fail() {
@@ -120,52 +123,9 @@ config="$(echo "$shell" | sed -n 's|.*<script type="application/json" id="config
 api_origin="$(echo "$config" | jq -r '.apiOrigin')"
 [[ "$api_origin" == "$MY_WEB_ORIGIN" ]] || fail "the shell's apiOrigin is $api_origin, want $MY_WEB_ORIGIN"
 
-b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-# The value of a query parameter of a URL, percent-decoded.
-param() {
-	local v
-	v="$(printf '%s' "${1#*\?}" | tr '&' '\n' | sed -n "s/^$2=//p" | head -n 1)"
-	v="${v//+/ }"
-	printf '%b' "${v//%/\\x}"
-}
-# A hidden field of the sign-in form.
-field() { echo "$2" | grep -o "name=\"$1\" value=\"[^\"]*\"" | head -n 1 | sed 's/.*value="//; s/"$//; s/&amp;/\&/g'; }
-
-verifier="$(openssl rand 32 | b64url)"
-challenge="$(printf '%s' "$verifier" | openssl dgst -sha256 -binary | b64url)"
-state="$(openssl rand 16 | b64url)"
-callback="$MY_WEB_ORIGIN/login/callback"
-jar="$(mktemp)"
-# The cookie jar keeps the session and CSRF cookies: curl, like browsers, takes Secure cookies from http://localhost.
-browser=(curl -fsS -b "$jar" -c "$jar")
-redirect=("${browser[@]}" -o /dev/null -w '%{redirect_url}')
-
-sign_in="$("${redirect[@]}" -G --data-urlencode response_type=code --data-urlencode client_id=my-web \
-	--data-urlencode "redirect_uri=$callback" --data-urlencode "code_challenge=$challenge" \
-	--data-urlencode code_challenge_method=S256 --data-urlencode "state=$state" "$api_origin/oauth/authorize")"
-[[ "$sign_in" == "$api_origin/auth/sign_in?"* ]] || fail "the authorization endpoint redirects to '$sign_in', want the sign-in page"
-form="$("${browser[@]}" "$sign_in")"
-csrf="$(field csrf_token "$form")"
-return_to="$(field return_to "$form")"
-[[ -n "$csrf" && -n "$return_to" ]] || fail "the sign-in page has no csrf_token or return_to: $form"
-authorize="$("${redirect[@]}" -H "Origin: $api_origin" --data-urlencode "csrf_token=$csrf" --data-urlencode "return_to=$return_to" \
-	--data-urlencode email=alice@example.com --data-urlencode password=smoke-test-password "$api_origin/auth/sign_in")"
-[[ "$authorize" == "$api_origin/oauth/authorize?"* ]] || fail "signing in redirects to '$authorize', want the authorization endpoint"
-back="$("${redirect[@]}" "$authorize")"
-[[ "$back" == "$callback?"* ]] || fail "the authorization endpoint redirects to '$back', want $callback"
-[[ "$(param "$back" state)" == "$state" ]] || fail "the redirect does not carry the state: $back"
-[[ "$(param "$back" iss)" == "$api_origin" ]] || fail "the redirect's issuer is not $api_origin: $back"
-code="$(param "$back" code)"
-[[ -n "$code" ]] || fail "the redirect has no code: $back"
-
-tokens="$("${browser[@]}" -H "Origin: $MY_WEB_ORIGIN" --data-urlencode grant_type=authorization_code \
-	--data-urlencode "code=$code" --data-urlencode "redirect_uri=$callback" --data-urlencode client_id=my-web \
-	--data-urlencode "code_verifier=$verifier" "$api_origin/oauth/token")"
-access="$(echo "$tokens" | jq -er '.access_token')" || fail "unexpected token response: $tokens"
-grep -q '__Host-my_rt' "$jar" || fail "the token endpoint set no refresh token cookie"
+access="$(web_sign_in "$api_origin" "$MY_WEB_ORIGIN" alice@example.com smoke-test-password)"
 me="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/accounts/verify_credentials")"
 echo "$me" | jq -e '.username == "alice"' >/dev/null || fail "unexpected verify_credentials: $me"
-rm -f "$jar"
 
 # Start again on the same volume, as an upgrade to a new image does: the one-off services run again in order on the
 # existing database, and the server comes back ready with the account kept.

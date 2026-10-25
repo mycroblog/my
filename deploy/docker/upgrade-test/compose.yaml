@@ -1,0 +1,111 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# The upgrade test of the release gate (scripts/upgrade-test.sh, docs/operations/releasing.md): a database made and
+# filled by the previous release's images, upgraded by the candidate's images in the order of deploy/docker/compose.yaml
+# (upgrade-check, schema, upgrade, then the server), on SQLite or PostgreSQL. The script sets the images and the
+# dialect, generates the private CA and the remote server's files, and runs this file in two phases:
+#
+#   previous   the previous release's schema image applies its schema (`run --no-deps schema`), and its server starts
+#              (`up --no-deps my`); a release may lack `my db upgrade`, so the one-off my db services do not run
+#   candidate  `up my` with the candidate's images runs upgrade-check, schema, and upgrade, then starts the server
+#
+# remote.test is a static ActivityPub server (Caddy with a certificate of the private CA): one Person, carol, whose
+# inbox takes every POST with 202. The server trusts only that CA and may reach this network's private addresses.
+#
+# Third-party images are pinned by tag and digest.
+
+name: my-upgrade-test
+
+x-app: &app
+  image: ${MY_IMAGE:?set by scripts/upgrade-test.sh}
+  environment:
+    MY_HOST: ${MY_HOST:?set by scripts/upgrade-test.sh}
+    MY_WEB_ORIGIN: ${MY_WEB_ORIGIN:?set by scripts/upgrade-test.sh}
+    MY_ROLE: all
+    MY_DB: ${MY_DB:?set by scripts/upgrade-test.sh}
+    MY_DATABASE_URL: ${MY_DATABASE_URL:?set by scripts/upgrade-test.sh}
+    MY_BLOB_FS_DIR: /data/blobs
+    MY_KEK: ${MY_KEK:?set by scripts/upgrade-test.sh}
+    # remote.test is on a private address (allowed only in the development profile).
+    MY_PROFILE: development
+    MY_HTTP_ALLOW_PRIVATE_NETWORKS: "true"
+    SSL_CERT_FILE: /certs/ca.pem
+  volumes:
+    - data:/data
+    - ${UPGRADE_TEST_CERTS:?set by scripts/upgrade-test.sh}:/certs:ro
+  depends_on: &app-deps
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    # Started for both dialects; SQLite leaves it unused.
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-my.sh:ro
+      # The previous release's schema/postgres.bootstrap.sql, as its operator would have run it.
+      - ${UPGRADE_TEST_BOOTSTRAP:?set by scripts/upgrade-test.sh}:/bootstrap/postgres.bootstrap.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "my", "-h", "127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  remote:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${UPGRADE_TEST_CERTS:?set by scripts/upgrade-test.sh}:/certs:ro
+      - ${UPGRADE_TEST_REMOTE:?set by scripts/upgrade-test.sh}:/srv:ro
+    networks:
+      default:
+        aliases:
+          - remote.test
+
+  upgrade-check:
+    <<: *app
+    command: [db, upgrade, -check]
+    restart: "no"
+
+  schema:
+    image: ${MY_SCHEMA_IMAGE:?set by scripts/upgrade-test.sh}
+    depends_on:
+      <<: *app-deps
+      upgrade-check:
+        condition: service_completed_successfully
+    command:
+      - schema
+      - apply
+      - --url=${SCHEMA_URL:?set by scripts/upgrade-test.sh}
+      - --to=file:///schema/${MY_DB}
+      - --dev-url=${SCHEMA_DEV_URL:?set by scripts/upgrade-test.sh}
+      - --auto-approve
+    volumes:
+      - data:/data
+    restart: "no"
+
+  upgrade:
+    <<: *app
+    depends_on:
+      <<: *app-deps
+      schema:
+        condition: service_completed_successfully
+    command: [db, upgrade]
+    restart: "no"
+
+  my:
+    <<: *app
+    depends_on:
+      <<: *app-deps
+      remote:
+        condition: service_started
+      upgrade:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${MY_HTTP_PORT:?set by scripts/upgrade-test.sh}:8080"
+    restart: "no"
+
+volumes:
+  data:

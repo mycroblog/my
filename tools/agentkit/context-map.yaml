@@ -398,6 +398,12 @@ entries:
     checks: [docker, docs]
     notes:
       - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them."
+  - name: upgrade-test
+    paths: ["deploy/docker/upgrade-test/**", "scripts/upgrade-test.sh", "scripts/previous-minor.sh", "scripts/previous-minor-test.sh", "scripts/web-sign-in.sh"]
+    docs: ["docs/operations/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]
+    checks: [docker, shell]
+    notes:
+      - "The release gate's upgrade test (slow-suite.yml job upgrade): scripts/upgrade-test.sh fills a database through the previous release's images and upgrades it with this tree's, on both dialects; run `scripts/task.sh docker:upgrade-test PREVIOUS=<tag>`. scripts/previous-minor.sh picks the tag (`scripts/task.sh shell:test`). The data it seeds and reads goes through the client API and the CLI only, so it works against any earlier release."
 
   # --- Tools ----------------------------------------------------------------------------------------------
   - name: agentkit

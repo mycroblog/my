@@ -206,7 +206,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    Dockerfile | .dockerignore | deploy/* | scripts/docker-smoke.sh | scripts/federation-live.sh)
+    Dockerfile | .dockerignore | deploy/* | scripts/docker-smoke.sh | scripts/web-sign-in.sh | scripts/upgrade-test.sh | scripts/federation-live.sh)
       select_contexts docker
       known=1
       ;;
