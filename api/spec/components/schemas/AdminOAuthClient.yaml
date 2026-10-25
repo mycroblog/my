@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An OAuth client, as the administrators see it.
 type: object
 required: [id, client_id, name, registration, confidential, scope, disabled, created_at]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A run of a job that did not succeed.
 type: object
 required: [attempt, type, outcome, error, worker, started_at, finished_at]

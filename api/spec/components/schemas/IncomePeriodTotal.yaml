@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A week, month, or year of the income totals (`label`: `2026-W17`, `2026-04`, or `2026`):
   the net income of each currency (what the payments brought less the provider's fees and the

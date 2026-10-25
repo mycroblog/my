@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A document that the instance has published, rendered for reading. The administrators write
   it once, in any language, so every locale gets the same text.

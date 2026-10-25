@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
   such as `例え.jp` is accepted) and the public comment (at most 5,000 characters).

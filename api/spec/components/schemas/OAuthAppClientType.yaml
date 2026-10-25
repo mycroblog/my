@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `public`: the app has no secret (a single-page, native, or command-line app).
   `confidential`: the app runs on a server and authenticates with its secret at the token

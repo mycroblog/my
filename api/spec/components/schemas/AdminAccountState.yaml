@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The state of an account, the first that applies: `deleted` (deleted here or on its
   server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`

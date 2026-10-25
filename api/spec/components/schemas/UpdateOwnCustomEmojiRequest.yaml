@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The settings of a custom emoji that the user made to change; absent ones stay.
 type: object
 properties:

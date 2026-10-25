@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a role change is refused. `key`: not 1 to 64 lowercase ASCII letters, digits, `_`,
   and `-`. `key_taken`: another role has the key. `position`: outside 0 to 999.

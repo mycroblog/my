@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
   without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's

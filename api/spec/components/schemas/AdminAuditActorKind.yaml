@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who performed the operation. `user`: a signed-in moderator or administrator.
   `cli`: the `my` command line, which acts as no user. `system`: the server itself.

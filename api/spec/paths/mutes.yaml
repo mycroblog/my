@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 get:
   operationId: listMutes
   summary: List the accounts that the viewer mutes

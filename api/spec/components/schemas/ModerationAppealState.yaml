@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Where an appeal stands: `pending` awaits the moderators, `upheld` kept the action, and
   `overturned` lifted it.

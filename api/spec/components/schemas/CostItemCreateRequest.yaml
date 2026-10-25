@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A new cost item. The schedule and the start date never change: to change them, end the
   item and record a new one. `ends_on` is the last date a payment can fall on, omitted for

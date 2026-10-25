@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A rule of the instance (FR-705). Its text and hint hold one value each, written in any
   language and the same in every locale. Reports cite it by `id`.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A role (FR-720): a named set of permissions. A higher position outranks a lower one;
   a user may grant, revoke, create, change, and delete only the roles at or below their

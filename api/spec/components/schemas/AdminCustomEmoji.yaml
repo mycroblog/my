@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
   one recorded from the posts and profiles of another server.

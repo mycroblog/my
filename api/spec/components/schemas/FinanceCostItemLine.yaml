@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The amount of a cost item, or of a service of the imported costs, in a currency over a
   period, with the provider and the category of its breakdown line. `provider` is the spelling

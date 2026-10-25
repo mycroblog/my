@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A capability that a role grants. `manage_accounts`: the accounts and their moderation
   actions.

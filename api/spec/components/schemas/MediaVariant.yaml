@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A rendition of a media file, without metadata. Its URL never serves other content, so
   it may be cached for good. `content_type`, `width`, `height`, and `size` are present

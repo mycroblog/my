@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A metadata field of a profile as the user typed it.
 type: object
 required: [name, value]

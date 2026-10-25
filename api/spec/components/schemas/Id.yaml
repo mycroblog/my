@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The ID of a resource, a UUIDv7 in its canonical string form.
 type: string
 format: uuid

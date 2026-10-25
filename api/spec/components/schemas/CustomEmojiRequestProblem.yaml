@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The problem of a custom emoji request that cannot be decided or withdrawn (409,
   `/api/v1/problems/custom-emoji-request-conflict`); `reason` says why.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
   image of one they made, which a holder of `manage_custom_emojis` approves or rejects

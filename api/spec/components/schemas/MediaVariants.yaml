@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The renditions of a ready media file within the sizes of its purpose (see
   `MediaUpload.purpose`), never larger than the file. `small`, `medium`, and `large` are

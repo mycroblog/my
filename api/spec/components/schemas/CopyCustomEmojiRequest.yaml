@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The local custom emoji that a copy of a remote one becomes.
 type: object
 properties:

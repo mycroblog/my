@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
   payment of a schedule longer than a month (every 2 or more months, every year, every 5 or

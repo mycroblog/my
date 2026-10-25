@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A new supporter plan on a role that nobody holds, whose permissions are member
   permissions and whose position is below every staff role. The currency never changes.

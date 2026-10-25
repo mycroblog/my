@@ -26,7 +26,7 @@
 | `internal/interface/clientapi/streaming.go` | 手書きの `GET /streaming`（SSE、§5） |
 | `internal/interface/clientapi/apitest` | ハンドラの応答を spec と照合するテストヘルパー |
 | `app/web/src/lib/api/schema.gen.ts` | 生成物。Web クライアントの型（openapi-typescript）。コミットせず（ADR-0081）、型を読むタスクが先に `scripts/task.sh api:generate-ts` で作る |
-| `scripts/api-spec-check.sh` | ルートが `api/spec/` のすべてのファイルを列挙し、各ファイルが SPDX の見出しで始まることの検査（`scripts/task.sh api:spec-check`、`scripts/task.sh api:check` に含む） |
+| `scripts/api-spec-check.sh` | ルートが `api/spec/` のすべてのファイルを列挙し、各ファイルが `SPDX-License-Identifier: MIT` の見出しで始まることの検査（`scripts/task.sh api:spec-check`、`scripts/task.sh api:check` に含む） |
 | `scripts/generate.sh` | 生成スクリプト（`scripts/task.sh api:generate` / `api:generate-ts` / `api:generate-check`）。`api/spec/` をバンドルしてから、バンドルを生成器に渡す。TS の型の生成に `app/web` の依存を使うので、先に `scripts/task.sh web:install` を実行する（`api:generate` の依存で自動） |
 
 列挙型の定数は `<型名><値>`（`StatusVisibilityPublic`）の名前で生成します（`oapi-codegen.yaml` の `always-prefix-enum-values`）。別の列挙型を足しても名前が衝突・変化しません。
@@ -41,7 +41,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   ルート以外のファイルで `#/components/...` は書きません（そのファイル自身を指すため）。バンドルでは `#/components/schemas/Status` に戻ります。
   この文書の `#/components/...` は、`components` の項目の名前を指します。
 - 1 ファイルは 1 つのオブジェクトで、`file.yaml#/...` の断片で他のファイルの中を指しません。パスのファイルは他のパスのファイルを参照しません。リモートの URL への `$ref` は書きません。
-- ファイルはそれぞれ `# SPDX-License-Identifier: AGPL-3.0-only` で始めます。
+- ファイルはそれぞれ `# SPDX-License-Identifier: MIT` で始めます。
 - YAML のコメントはバンドルで消えます。クライアントに伝えることは `description` に書き、コメントは保守のための短い注記だけにします。区切りのコメントは置きません。
 - `api/openapi.yaml` が main と競合したときは、手でマージせず `scripts/task.sh api:generate` で作り直します（他の生成物と同じ）。spec 全体の検索は `api/openapi.yaml` で行えます。
 

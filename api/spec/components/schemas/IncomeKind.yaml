@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
   subscription, `refund` and `chargeback` of a payment (a negative gross), the

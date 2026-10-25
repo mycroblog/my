@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
   `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.

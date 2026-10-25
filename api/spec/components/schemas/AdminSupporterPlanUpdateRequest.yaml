@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A change of a supporter plan; an omitted property keeps its value. A new monthly price,
   in the plan's currency, or discount makes new prices for the new subscriptions and the

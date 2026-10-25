@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `merge` adds the file's entries and keeps what the user has; `overwrite` also removes
   what the user has that the file does not list.

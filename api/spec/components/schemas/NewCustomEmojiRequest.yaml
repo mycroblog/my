@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A new custom emoji request: `create` takes the `shortcode` of the new emoji, and `image` the
   `emoji_id` of a local emoji that the user made. `media_id` is an upload of the user that

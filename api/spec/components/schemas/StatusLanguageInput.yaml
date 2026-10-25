@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A BCP 47 language tag; omitted means the user's default post language.
 type: string
 minLength: 1

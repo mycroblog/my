@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A report as a moderator opens it: the report with its internal notes, the posts it
   points at, and what the moderators had about its target.

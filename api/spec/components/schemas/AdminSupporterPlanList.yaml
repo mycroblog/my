@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Every supporter plan, retired ones too, by rank.
 type: object
 required: [items]

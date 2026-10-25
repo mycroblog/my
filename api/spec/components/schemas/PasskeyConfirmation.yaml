@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The start of a confirmation with a passkey.
 type: object
 required: [options, confirmation_token, expires_at]

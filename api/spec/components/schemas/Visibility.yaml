@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
   `local` logged-in users of this instance and followers; `unlisted` everyone, kept off

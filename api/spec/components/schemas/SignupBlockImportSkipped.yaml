@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A line of an imported list whose block was not added.
 type: object
 required: [line, value, reason]
