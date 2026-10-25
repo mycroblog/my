@@ -28,8 +28,17 @@ export {
   type Handler,
   type Middleware,
 } from "./context.js";
+export {
+  everyIdempotencyKey,
+  NotScheduledError,
+  PostedAlreadyError,
+  type CatchUp,
+  type EveryOptions,
+  type EveryVisibility,
+} from "./every.js";
 export { defaultStatePath, FileStore } from "./filestore.js";
 export { defaultHelp, defaultMiddleware, manners, recover, sendBudget, type Command } from "./handler.js";
 export type { Logger } from "./logger.js";
 export { MemoryStore, type Store } from "./store.js";
+export { parseSchedule, Schedule, ScheduleError } from "./schedule.js";
 export { plainText } from "./text.js";

@@ -13,9 +13,11 @@ import {
 import { Budget, defaultMaxSendWait, defaultPostRate, defaultReplyLimits, defaultWriteRate, type Rate, ReplyLimiter } from "./budget.js";
 import { answered, Context, type Handler, type Middleware, type Runtime } from "./context.js";
 import { Dispatcher, type Job, senderOf, Tracker } from "./dispatch.js";
+import type { EveryJob, EveryOptions } from "./every.js";
 import { defaultStatePath, FileStore } from "./filestore.js";
 import { chain, type Command, defaultHelp, defaultMiddleware, parseCommand } from "./handler.js";
 import type { Logger } from "./logger.js";
+import { Schedule } from "./schedule.js";
 import type { Store } from "./store.js";
 
 type Notification = components["schemas"]["Notification"];
@@ -41,6 +43,9 @@ export const defaultProcessedRetention = 7 * 24 * hour;
 export const defaultConcurrency = 4;
 /** How long the shutdown waits for the running handlers: 10 seconds. */
 export const defaultShutdownGrace = 10_000;
+
+/** The longest wait of setTimeout, about 24.8 days: a scheduled job further away sleeps again. */
+const maxTimeout = 2 ** 31 - 1;
 
 /** The product token of the library in User-Agent. */
 const userAgentProduct = "mybot-ts";
@@ -122,9 +127,12 @@ export type BotOptions = {
   /** Leaves defaultMiddleware out of the chain, for a bot that builds its own with use. */
   noDefaultMiddleware?: boolean;
 
-  /** The clock, in milliseconds since the Unix epoch; for tests. */
+  /**
+   * The clock, in milliseconds since the Unix epoch, of the scheduled jobs, the send budget, and the reply limits; for
+   * tests, such as the Clock of @mycroblog/mybot/testing.
+   */
   now?: () => number;
-  /** Waits for the send budget and between polls; for tests. */
+  /** Waits for the scheduled jobs, the send budget, the pruning of the store, and between polls; for tests. */
   sleep?: Sleep;
 };
 
@@ -241,6 +249,7 @@ export class Bot {
   readonly #handlers: Handlers = {};
   readonly #commands = new Map<string, { command: Command; handler: Handler }>();
   readonly #middleware: Middleware[] = [];
+  readonly #every: EveryJob[] = [];
   readonly #logger: Logger;
   readonly #budget: Budget;
   readonly #replies: ReplyLimiter;
@@ -348,6 +357,24 @@ export class Bot {
    */
   onStatus(handler: Handler): void {
     this.#handlers.status = handler;
+  }
+
+  /**
+   * Registers a scheduled job: handler runs at each time of the cron expression expr, of the five fields minute hour
+   * day-of-month month day-of-week (parseSchedule), in options.timeZone (UTC by default). Its Context carries job and
+   * scheduledAt, and post posts with the Idempotency-Key everyIdempotencyKey. The run counts in the store as the job's
+   * last run after the handler returns. It throws for an expression or a time zone it does not take (ScheduleError),
+   * a visibility other than unlisted, public, and local, and a name that another job has.
+   */
+  every(expr: string, handler: Handler, options: EveryOptions = {}): void {
+    const schedule = Schedule.parse(expr, options.timeZone ?? "");
+    const name = options.name === undefined || options.name === "" ? expr : options.name;
+    if (this.#every.some((j) => j.name === name)) throw new Error(`mybot: a scheduled job is named "${name}" already`);
+    const visibility = options.visibility ?? "unlisted";
+    if (!["unlisted", "public", "local"].includes(visibility)) {
+      throw new Error(`mybot: the scheduled job "${name}" cannot post with the visibility "${visibility}": use unlisted, public, or local`);
+    }
+    this.#every.push({ name, schedule, handler, catchUp: options.catchUp ?? "skip", visibility });
   }
 
   /** Adds middleware inside the default chain, in the order given. */
@@ -470,6 +497,8 @@ export class Bot {
     const dispatcher = new Dispatcher(this.#settings.concurrency, (job) => this.#process(stopHandlers.signal, job));
     this.#dispatcher = dispatcher;
     const pruning = this.#pruneLoop(runSignal);
+    await this.#submitDue(false);
+    const scheduling = Promise.all(this.#every.map((j) => this.#schedule(j, runSignal)));
 
     let failure: { error: unknown } | null = null;
     try {
@@ -480,8 +509,60 @@ export class Bot {
     }
     stopRun.abort();
     await pruning;
+    await scheduling;
     await this.#catchUpTask;
 
+    await this.#shutdown(dispatcher, stopHandlers);
+    if (failure !== null && !signal.aborted) throw failure.error;
+  }
+
+  /**
+   * Starts the bot, handles once what is due, and resolves, for a bot that a cron or a job runner such as Cloud Run
+   * jobs starts again and again (ADR-0094 §9): the notifications since the store's position, back to the catchUpLimit
+   * option, and for each scheduled job the newest of its past times after its last run, whatever its catchUp. It
+   * resolves when their handlers have returned. When signal aborts first, it shuts down as run does, and what did not
+   * finish is due again on the next run. It rejects with the errors of starting that run rejects with, and with that
+   * of reading the notifications.
+   */
+  async runOnce({ signal = new AbortController().signal }: { signal?: AbortSignal } = {}): Promise<void> {
+    if (this.#started) throw new AlreadyRunningError();
+    this.#started = true;
+
+    const { runtime } = await this.#start(signal);
+    this.#runtime = runtime;
+    await this.#prune();
+
+    const stopHandlers = new AbortController();
+    const dispatcher = new Dispatcher(this.#settings.concurrency, (job) => this.#process(stopHandlers.signal, job));
+    this.#dispatcher = dispatcher;
+
+    let failure: { error: unknown } | null = null;
+    try {
+      await this.#catchUp(signal);
+    } catch (error) {
+      failure = { error };
+    }
+    await this.#submitDue(true);
+    let onAbort: (() => void) | undefined;
+    await Promise.race([
+      dispatcher.idle(),
+      new Promise<void>((resolve) => {
+        onAbort = resolve;
+        if (signal.aborted) resolve();
+        else signal.addEventListener("abort", onAbort, { once: true });
+      }),
+    ]);
+    if (onAbort !== undefined) signal.removeEventListener("abort", onAbort);
+
+    await this.#shutdown(dispatcher, stopHandlers);
+    if (failure !== null && !signal.aborted) throw failure.error;
+  }
+
+  /**
+   * Stops the dispatcher, waits for the running handlers for the shutdownGrace option, and aborts the signals of those
+   * still running, which record nothing.
+   */
+  async #shutdown(dispatcher: Dispatcher, stopHandlers: AbortController): Promise<void> {
     dispatcher.stop();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const graceOver = await Promise.race([
@@ -498,8 +579,80 @@ export class Bot {
       this.#logger.warn("mybot: aborted the handlers still running after the grace period", { grace: this.#settings.shutdownGrace });
     }
     stopHandlers.abort();
+  }
 
-    if (failure !== null && !signal.aborted) throw failure.error;
+  /** The newest time of job at or before now and after its last run, null when there is none. */
+  async #due(job: EveryJob, now: number): Promise<number | null> {
+    let last: number | null;
+    try {
+      last = await this.store.lastRun(job.name);
+    } catch (error) {
+      throw new Error(`mybot: read the last run of "${job.name}" from the store`, { cause: error });
+    }
+    const at = job.schedule.prev(now);
+    if (at === null || (last !== null && at <= last)) return null;
+    return at;
+  }
+
+  /** Hands the jobs their due time: every job (runOnce), or those of catchUp "latest" (run). */
+  async #submitDue(all: boolean): Promise<void> {
+    const now = this.#now();
+    for (const job of this.#every) {
+      if (!all && job.catchUp !== "latest") continue;
+      try {
+        const at = await this.#due(job, now);
+        if (at !== null) this.#submitRun(job, at);
+      } catch (error) {
+        this.#logger.error("mybot: the scheduled job did not catch up", { job: job.name, error });
+      }
+    }
+  }
+
+  /** Hands the run at of job to the dispatcher; the runs of one job go one after the other. */
+  #submitRun(job: EveryJob, at: number): void {
+    this.#dispatcher?.submit({ every: job, at, sender: `\u0000every:${job.name}` });
+  }
+
+  /**
+   * Runs job at its times until signal aborts. A run that the clock reaches late, such as after the machine slept,
+   * runs once, and the times it passed are skipped.
+   */
+  async #schedule(job: EveryJob, signal: AbortSignal): Promise<void> {
+    let next = job.schedule.next(this.#now());
+    while (next !== null) {
+      try {
+        await this.#sleep(Math.min(next - this.#now(), maxTimeout), signal);
+      } catch {
+        return;
+      }
+      if (signal.aborted) return;
+      const now = this.#now();
+      // Woken early, as by the longest timeout or a clock of a test.
+      if (now < next) continue;
+      this.#submitRun(job, next);
+      next = job.schedule.next(Math.max(this.#now(), next));
+    }
+  }
+
+  /** Runs one time of a scheduled job and records it as the job's last run. */
+  async #runScheduled(signal: AbortSignal, job: Job & { every: EveryJob }): Promise<void> {
+    const runtime = this.#running();
+    const { every } = job;
+    try {
+      const last = await this.store.lastRun(every.name);
+      // Ran already.
+      if (last !== null && job.at <= last) return;
+      const ctx = new Context(runtime, job, signal);
+      try {
+        await chain(this.#chain(), every.handler)(ctx);
+      } catch (error) {
+        ctx.logger.error("mybot: the handler failed", { error });
+      }
+      if (this.#abandoned || signal.aborted) return;
+      await this.store.setLastRun(every.name, job.at);
+    } catch (error) {
+      this.#logger.error("mybot: record the run of the scheduled job", { job: every.name, error });
+    }
   }
 
   /** Receives the event stream until signal aborts or the server refuses it, catching up after every connection. */
@@ -607,6 +760,10 @@ export class Bot {
 
   /** Handles one job and records its notification processed. */
   async #process(signal: AbortSignal, job: Job): Promise<void> {
+    if (job.every !== undefined) {
+      await this.#runScheduled(signal, job);
+      return;
+    }
     const runtime = this.#running();
     const n = job.notification;
     try {
@@ -733,7 +890,7 @@ export class Bot {
   async #pruneLoop(signal: AbortSignal): Promise<void> {
     for (;;) {
       try {
-        await sleepSignal(hour, signal);
+        await this.#sleep(hour, signal);
       } catch {
         return;
       }

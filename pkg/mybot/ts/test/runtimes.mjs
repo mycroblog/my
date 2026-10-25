@@ -9,6 +9,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Bot, FileStore, plainText } from "../dist/index.js";
+import { Server } from "../dist/testing/index.js";
 import { staticToken } from "@mycroblog/mykit";
 
 const runtime = typeof globalThis.Deno === "object" ? `Deno ${globalThis.Deno.version.deno}` : `Node.js ${globalThis.process.version}`;
@@ -79,6 +80,17 @@ try {
   const state = JSON.parse(await readFile(path, "utf8"));
   check(typeof state.processed[notificationId] === "string" && state.position === notificationId, `the state file is ${JSON.stringify(state)}`);
   check(plainText("<p>a &amp; b</p>") === "a & b", "plainText");
+
+  // The scheduled jobs (croner and the time zones of Intl) and the fake server of @mycroblog/mybot/testing.
+  const srv = new Server();
+  srv.clock.set(Date.parse("2026-10-25T12:30:00Z"));
+  const scheduled = new Bot(srv.options());
+  scheduled.every("0 9 * * *", async (ctx) => {
+    await ctx.post("good morning");
+  }, { name: "morning", timeZone: "Asia/Tokyo" });
+  await scheduled.runOnce();
+  const key = srv.posted()[0]?.idempotencyKey;
+  check(key === "mybot:every:morning:2026-10-25T00:00:00Z", `the scheduled post has the Idempotency-Key ${String(key)}`);
   console.log(`${runtime}: @mycroblog/mybot loads and runs a bot`);
 } finally {
   await rm(dir, { recursive: true, force: true });
