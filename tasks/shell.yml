@@ -5,10 +5,15 @@ version: "3"
 
 tasks:
   check:
-    desc: Run the shell script checks (shellcheck)
-    deps: [lint]
+    desc: Run the shell script checks (shellcheck, the tests of the release scripts)
+    deps: [lint, test]
 
   lint:
     desc: Lint shell scripts with shellcheck
     cmds:
       - shellcheck scripts/*.sh
+
+  test:
+    desc: Test the scripts of release.yml that version the client libraries (scripts/release-libraries-test.sh)
+    cmds:
+      - scripts/release-libraries-test.sh

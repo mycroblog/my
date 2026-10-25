@@ -126,6 +126,8 @@ jobs:
             run: scripts/task.sh docs:lint
           - name: shell:lint
             run: scripts/task.sh shell:lint
+          - name: shell:test
+            run: scripts/task.sh shell:test
           - name: go:fmt-check
             run: scripts/task.sh go:fmt-check
           - name: go:licenses
