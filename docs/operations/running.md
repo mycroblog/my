@@ -250,6 +250,7 @@ my job delete <id> [<id>...] # 実行せずに消す
 - `/readyz` は要求のたびに DB を検査し、同時の要求は 1 回の検査にまとめる。
 - `/api/v1/instance/health` は、正常なら 200 と `{"status":"ok","checked_at":"<RFC 3339>"}`、障害なら 503 と `{"status":"unavailable","checked_at":...}` を返す（`Cache-Control: no-store`）。
   DB に触れるのは監視の頻度や要求の数によらず 1 プロセスで最大 1 分に 1 回で、アクセストークンもレート制限も見ない。外形監視はプローブ（`/readyz`）ではなくこちらに向ける。
+  監視サービスごとの設定、監視の間隔と費用、メンテナンス中の扱いは [外形監視の運用ガイド](monitoring.md)（英語）。
 - 3 つともアクセスログには Debug のレベルで出し、トレースのスパンを作らない。
 - readiness が満たされないときは 503 と RFC 9457 の `application/problem+json`（[ADR-0016](../adr/0016-client-api-style.md)）を返す。
   `title` は `Accept-Language` に合わせて翻訳され、内部の詳細は含めない。原因（接続エラー、足りないテーブル名）はログに出る。
