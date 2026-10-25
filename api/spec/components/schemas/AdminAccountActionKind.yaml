@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
   posts. `force_sensitive`: every attachment is shown as sensitive. `limit`: every post is

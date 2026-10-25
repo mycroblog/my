@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
   underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an

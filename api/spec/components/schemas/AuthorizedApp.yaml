@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An app the authenticated user authorized: the user's grants of one OAuth client that still
   work. The name, the website and the logo are what the app says about itself; `registration`,

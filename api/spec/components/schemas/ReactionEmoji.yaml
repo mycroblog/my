@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The emoji of a reaction: a Unicode emoji, or a custom emoji with its image. A custom
   emoji of another server is shown as it is and cannot be used to react from here.

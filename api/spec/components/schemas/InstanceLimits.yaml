@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Limits that clients check before sending a request.
 type: object
 required: [max_post_characters, require_media_description]

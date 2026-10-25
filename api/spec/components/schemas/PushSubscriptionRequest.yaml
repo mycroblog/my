@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A browser's push subscription and the notification types to push to it.
 type: object
 required: [endpoint, keys, alerts]

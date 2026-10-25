@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A local custom emoji that the user made (ADR-0070 §3).
 type: object
 required: [id, shortcode, enabled, visible_in_picker, aliases, created_at, updated_at]

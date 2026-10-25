@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a relay operation is refused. `url`: not an https URL of at most 2048 bytes.
   `exists`: a relay with the URL is registered. `domain_suspended`: a domain action

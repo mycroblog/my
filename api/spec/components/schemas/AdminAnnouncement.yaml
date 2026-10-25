@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An announcement with its Markdown text and its state.
 type: object
 required: [id, text, content, state, created_at, updated_at]

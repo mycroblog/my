@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The authenticated user's subscription that goes on, and whether they may subscribe.
 type: object

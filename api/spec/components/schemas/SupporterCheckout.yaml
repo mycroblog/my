@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The payment provider's hosted checkout of a subscription.
 type: object
 required: [subscription_id, redirect_url]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 #
 # The client API (ADR-0007, ADR-0016), split into one file per path item and per component (ADR-0066).
 # api/spec/ is the source of truth: `scripts/task.sh api:generate` bundles it into api/openapi.yaml, generates the Go

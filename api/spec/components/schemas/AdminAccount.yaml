@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An account as the moderators see it (FR-714). It never includes an email or IP address.
 type: object

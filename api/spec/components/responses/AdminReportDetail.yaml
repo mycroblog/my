@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The report, with its notes, its posts, and the history of its target.
 headers:
   Cache-Control:

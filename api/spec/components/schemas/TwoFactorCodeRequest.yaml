@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A code that confirms an operation on two-factor authentication.
 type: object
 required: [code]

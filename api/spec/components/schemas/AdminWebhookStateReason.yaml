@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who set `state` last. `admin`: a staff member, or the `my` command line. `gone`: the
   server disabled it after the endpoint answered 410 Gone. `failing`: the server disabled

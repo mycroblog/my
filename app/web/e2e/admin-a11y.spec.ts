@@ -35,7 +35,7 @@ const moderator = {
   ai_opt_out: false,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
-  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters"],
+  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps"],
 };
 
 /** The reported account: a long display name, local. */
@@ -253,6 +253,19 @@ const webhookDelivery: Schemas["AdminWebhookDelivery"] = {
   created_at: "2026-10-19T00:00:00Z",
 };
 
+/** A user-registered OAuth app with a long name, as GET /admin/oauth_clients lists it. */
+const oauthClient: Schemas["AdminOAuthClient"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000a2",
+  client_id: "e2e-client",
+  name: "A-very-long-named-app-for-testing-that-wraps-at-320-pixels",
+  registration: "user",
+  confidential: false,
+  scope: "read write",
+  owner_id: moderator.id,
+  disabled: false,
+  created_at: "2026-10-22T00:00:00Z",
+};
+
 /** A joined relay on a long domain that a domain action suspends, as GET /admin/relays lists it. */
 const relay: Schemas["AdminRelay"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e6",
@@ -436,6 +449,7 @@ async function moderatorServer(page: Page) {
     if (key === `GET /admin/webhooks/${webhook.id}`) return json(route, webhook);
     if (key === `GET /admin/webhooks/${webhook.id}/deliveries`) return json(route, { items: [webhookDelivery] });
     if (key === "GET /admin/relays") return json(route, { items: [relay] });
+    if (key === "GET /admin/oauth_clients") return json(route, { items: [oauthClient] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
@@ -619,6 +633,7 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
   "admin.announcements": { path: "/admin/announcements", ready: "the status page" },
   "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
+  "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
   "admin.settings": { path: "/admin/settings", ready: "my.example" },
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },

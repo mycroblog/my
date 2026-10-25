@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A change to a lower plan or to the monthly price that waits for the end of the period.
 type: object
 required: [plan_id, plan_name, interval, price, effective_at]

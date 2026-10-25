@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The authenticated user's subscription to a supporter plan. `price` is what it renews at,
   which may be lower than the plan's current price (a price change does not apply to the

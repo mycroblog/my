@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: An account that the viewer mutes, with the mute's settings.
 type: object
 required: [account, notifications]

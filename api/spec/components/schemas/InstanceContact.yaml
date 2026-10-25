@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How people reach the instance's operators (the instance settings `contact_account` and
   `contact_email`). Omitted when the instance has neither.

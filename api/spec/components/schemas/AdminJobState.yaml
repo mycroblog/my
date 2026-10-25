@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The state of a job. `queued`: it has not run yet and waits for its `run_at` or a worker.
   `running`: a worker holds it. `retrying`: it ran and waits to run again. `dead`: it

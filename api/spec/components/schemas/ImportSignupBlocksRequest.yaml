@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A list of values to block sign-ups by, all with the same settings.
 type: object
 required: [kind, text, severity]

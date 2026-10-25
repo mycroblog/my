@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A role that the authenticated user holds and that has a badge, with whether the user shows
   the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the

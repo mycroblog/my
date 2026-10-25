@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
   localized.

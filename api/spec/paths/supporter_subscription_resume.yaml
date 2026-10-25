@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 post:
   operationId: resumeOwnSupporterSubscription
   summary: Withdraw the cancellation of the authenticated user's subscription

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
   another server are those its server last reported. A poll whose author hides the votes of

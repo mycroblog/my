@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Whether to show the badge of the role on the authenticated user's profile.
 type: object
 required: [displayed]

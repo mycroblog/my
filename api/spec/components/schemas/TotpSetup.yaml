@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A new TOTP secret to add to an authenticator app.
 type: object
 required: [secret, uri, qr_code, setup_token, expires_at]

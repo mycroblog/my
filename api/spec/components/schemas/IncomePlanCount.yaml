@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
   the plan's role (active, canceling, or past due within the grace period). A retired plan

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
   email address, compared in lower case without the part of the local part from its first

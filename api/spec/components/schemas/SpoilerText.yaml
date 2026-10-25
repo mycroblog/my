@@ -1,3 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The content warning; omitted or empty for none. It counts toward `max_post_characters`.
 type: string

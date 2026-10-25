@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The OAuth apps that the authenticated user registered, oldest first; there are at most 25.
 type: object
 required: [items]

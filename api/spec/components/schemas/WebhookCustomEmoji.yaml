@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The emoji of a `custom_emoji.*` message: `AdminCustomEmoji` with the operation. A
   `custom_emoji.deleted` message presents the emoji as it was before the deletion.

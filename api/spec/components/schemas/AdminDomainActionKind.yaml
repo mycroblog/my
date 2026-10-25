@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
   timelines and its accounts reach only their followers. `reject_media`: its media are

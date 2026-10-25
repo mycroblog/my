@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The card of the first link in a status (ADR-0062): the title, description, and image
   that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server

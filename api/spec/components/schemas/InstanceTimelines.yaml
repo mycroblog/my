@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Who may read the public timelines the instance serves (FR-202): `local` is the instance
   setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance

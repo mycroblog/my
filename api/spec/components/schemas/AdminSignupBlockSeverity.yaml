@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   `reject`: the sign-up is refused. `require_approval`: the registration starts pending
   for a moderator, whatever the registration mode.

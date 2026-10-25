@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a `lapsed`, `expired`, or `revoked` subscription lost the plan's role; omitted in the
   other states. `lapsed`: no payment succeeded within 7 days after a payment failed, or the

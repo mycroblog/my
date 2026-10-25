@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
 required: [domain, name, version, source_url, registrations, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility]

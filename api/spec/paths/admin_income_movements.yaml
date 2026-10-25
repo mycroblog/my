@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 get:
   operationId: listIncomeMovements
   summary: List the money movements of the income

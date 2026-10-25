@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
   An emoji that is disabled or deleted, or whose images come from a domain whose media the

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The post of a `status.created` message, always `public` and local.
 type: object
 required: [id, uri, account_id, visibility, spoiler_text, sensitive, language, content, created_at]
