@@ -17,7 +17,8 @@
 //	posts, err := srv.WaitPosted(ctx, 1) // posts[0].Request.Text == "@alice pong"
 //
 // Server.Config gives the bot the server's Clock, which moves only when the test moves it (Clock.Advance), so that
-// a test runs the scheduled jobs (Every) at once. InjectMissed adds a notification that only the bot's catch-up
+// a test runs the scheduled jobs (Every) at once; it starts at the current time, or at the time of WithClockAt for a
+// test of fixed times, which Clock.Set cannot reach once they are past. InjectMissed adds a notification that only the bot's catch-up
 // finds, such as one that came while the bot was stopped; DropStreams ends the event streams, for the bot to connect
 // again and catch up, and Disconnect holds its connections until Reconnect, so that the notifications of Inject
 // meanwhile come by the catch-up alone. Like the server, Server posts once per Idempotency-Key.
