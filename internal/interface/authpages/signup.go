@@ -141,9 +141,6 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		h.signUpFailed(w, r, p, err)
 		return
 	}
-	if signedUp.MailError != nil {
-		h.o.Logger.ErrorContext(r.Context(), "send the verification email", slog.String("user", signedUp.User.ID), slog.Any("error", signedUp.MailError))
-	}
 	setSessionCookie(w, signedUp.Session)
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, PathSignIn, http.StatusSeeOther)

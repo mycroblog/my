@@ -5,7 +5,6 @@ package notification
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -154,23 +153,17 @@ type SupporterMailDeps struct {
 }
 
 // RegisterSupporterJobs registers the handler of JobSupporterEmail on reg. It sends nothing to a
-// user without a usable address; a failure to send is retried. The email of a failed payment
-// links to the supporter page of the web client, where the payment method is fixed; the others
-// link to the notifications.
+// user without a usable address; a permanent rejection of the email fails the job and any
+// other failure is retried (queue.MailResult). The email of a failed payment links to the
+// supporter page of the web client, where the payment method is fixed; the others link to the
+// notifications.
 func RegisterSupporterJobs(reg *queue.JobHandlerRegistry, d SupporterMailDeps) {
 	reg.Register(JobSupporterEmail, func(ctx context.Context, j queue.Job) queue.Result {
 		var job supporterEmail
 		if err := json.Unmarshal(j.Payload, &job); err != nil {
 			return queue.Fail(fmt.Errorf("notification: the payload of %s: %w", j.ID, err))
 		}
-		err := sendSupporterEmail(ctx, d, job)
-		if errors.Is(err, kernel.ErrInvalidMail) {
-			return queue.Fail(err)
-		}
-		if err != nil {
-			return queue.Retry(0, err)
-		}
-		return queue.Done()
+		return queue.MailResult(sendSupporterEmail(ctx, d, job))
 	})
 }
 

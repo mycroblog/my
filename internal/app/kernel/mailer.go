@@ -15,12 +15,18 @@ import (
 // mail/none logs messages instead of sending them, and mail/smtp sends them over SMTP. Every
 // adapter passes testkit.MailerContract.
 //
-// Send runs outside transactions (ADR-0003): callers commit first and send afterwards. A
-// message may carry a secret, such as the link of a verification email, so adapters never log
-// a message except mail/none, whose purpose is to show it to the operator.
+// Only job handlers call Send (ADR-0086 §1): a use case enqueues a job of its purpose in the
+// transaction of the fact that the email tells, and the handler builds the message and sends
+// it outside transactions (ADR-0003). A message may carry a secret, such as the link of a
+// verification email, so adapters never log a message except mail/none, whose purpose is to
+// show it to the operator, and their errors never contain the recipient, the body, or the
+// server's reply text: only the SMTP command, the reply code, and the enhanced status code.
 type Mailer interface {
 	// Send delivers m or fails. It fails with an error wrapping ErrInvalidMail when m does
-	// not pass ValidateMail.
+	// not pass ValidateMail, with one wrapping ErrRecipientRejected when the server refuses
+	// the recipient as an address that does not exist, and with one wrapping ErrMailRejected
+	// when the server refuses the message for good otherwise. Any other error is temporary:
+	// sending again later may succeed.
 	Send(ctx context.Context, m MailMessage) error
 }
 
@@ -35,6 +41,16 @@ type MailMessage struct {
 
 // ErrInvalidMail reports a message that ValidateMail rejects.
 var ErrInvalidMail = errors.New("invalid mail message")
+
+// ErrMailRejected reports that the mail server refused a message for good: an SMTP reply of
+// 5xx to RCPT TO or DATA, or a provider's rejection of the content. Sending it again fails the
+// same way.
+var ErrMailRejected = errors.New("mail rejected")
+
+// ErrRecipientRejected reports that the mail server refused the recipient as an address that
+// does not exist: an SMTP reply of 5xx to RCPT TO with an enhanced status code 5.1.x. It wraps
+// ErrMailRejected.
+var ErrRecipientRejected = fmt.Errorf("%w: recipient rejected", ErrMailRejected)
 
 // maxSubjectLength bounds the subject in bytes; longer subjects are an error, not cut.
 const maxSubjectLength = 998

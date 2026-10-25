@@ -68,7 +68,7 @@ jobs:
         id: go
       # As in ci.yml: build the packages once before the parallel Go steps.
       - name: Build the packages and the Go tools once
-        run: scripts/task.sh go:warm agentkit:warm
+        run: scripts/task.sh go:warm agentkit:warm mykit:warm
       - parallel:
           - name: go:lint
             uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -82,6 +82,14 @@ jobs:
             with:
               version: v${{ steps.go.outputs.golangci-lint }}
               working-directory: tools/agentkit
+              skip-cache: true
+              # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
+              args: --allow-serial-runners
+          - name: mykit:lint
+            uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+            with:
+              version: v${{ steps.go.outputs.golangci-lint }}
+              working-directory: pkg/mykit
               skip-cache: true
               # golangci-lint runs one instance at a time: wait for the other step's instead of failing.
               args: --allow-serial-runners
