@@ -87,6 +87,10 @@
     "defaultMessage": "‮⅄on ɐɹǝ uoʇ ɐʅʅoʍǝp ʇo po ʇɥıs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.gone": {
+    "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ ɥɐs ɔʅosǝp, ɐup ʇɥǝ ɹǝsonɹɔǝ ıs ƃouǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.import.in_progress": {
     "defaultMessage": "‮∀uoʇɥǝɹ ıɯdoɹʇ ıs ıu dɹoƃɹǝss. Mɐıʇ nuʇıʅ ıʇ ɟıuısɥǝs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -306,9 +306,11 @@ func (r recorder) recordWith(ctx context.Context, tx uow.Tx, a federation.Outbou
 	return r.enqueue(ctx, tx, a, p)
 }
 
-// insert gives a its ID and URI and inserts it in tx.
+// insert gives a its ID, unless it has one, and its URI, and inserts it in tx.
 func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) (federation.OutboundActivity, error) {
-	a.ID = r.d.IDs.NewID()
+	if a.ID == "" {
+		a.ID = r.d.IDs.NewID()
+	}
 	if a.ActivityURI == "" {
 		a.ActivityURI = federation.IRI(appcontent.ActivityURI(r.d.Host, a.ID))
 	}

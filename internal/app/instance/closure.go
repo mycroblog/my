@@ -152,6 +152,8 @@ func (s *Service) recordClosure(ctx context.Context, e instance.ClosureEvent) (i
 		action = appmoderation.AuditServiceClosureWithdrawn
 	case instance.ClosureEventClosed:
 		action = appmoderation.AuditServiceClosureClosed
+	case instance.ClosureEventDeliveryCompleted:
+		action = appmoderation.AuditServiceClosureDeliveryCompleted
 	default:
 		return instance.Closure{}, fmt.Errorf("record service closure: unsupported event %s", e.Kind)
 	}
@@ -199,6 +201,57 @@ func (e ClosureRecorded) Closes() bool { return e.Event.Kind == instance.Closure
 // the confirmation (the domain name) before calling it.
 func (s *Service) CloseService(ctx context.Context, byUserID string) (instance.Closure, error) {
 	return s.recordClosure(ctx, instance.ClosureEvent{Kind: instance.ClosureEventClosed, ByUserID: byUserID})
+}
+
+// Jobs of the closure of the service (ADR-0088 §3). The federation module runs them: it records
+// and fans out the closure's Delete of every local actor, and tells when their deliveries end.
+const (
+	// JobClosureFanOut records the Delete of one page of local accounts and passes them to the
+	// fan-out; the federation module enqueues the first page in the transaction of the closure.
+	JobClosureFanOut = "instance.closure_fanout"
+	// JobClosureCompletion is the periodic check that records delivery_completed once the
+	// closure's Deletes have all been delivered.
+	JobClosureCompletion = "instance.closure_completion"
+)
+
+// CompleteClosureDelivery records that the Delete of every local account has been delivered
+// (ADR-0088 §3), as the server's own change, and audits it in the same transaction. The periodic
+// check of the federation module calls it. It fails with an error wrapping
+// instance.ErrClosureTransition unless the server is closed.
+func (s *Service) CompleteClosureDelivery(ctx context.Context) (instance.Closure, error) {
+	return s.recordClosure(ctx, instance.ClosureEvent{Kind: instance.ClosureEventDeliveryCompleted})
+}
+
+// ClosureProgress is how far the closure's Deletes have gone (ADR-0088 §3): the local accounts
+// whose Delete is recorded, those Deletes whose fan-out has not ended, and their deliveries by
+// state (pending, succeeded, permanent_failure, skipped, dead).
+type ClosureProgress struct {
+	Accounts   int
+	FanOuts    int
+	Deliveries map[string]int
+}
+
+// ClosureDeliveries reads the progress of the closure's Deletes; the composition root implements
+// it over the federation module.
+type ClosureDeliveries interface {
+	ClosureProgress(ctx context.Context) (ClosureProgress, error)
+}
+
+// ClosureProgress returns how far the closure's Deletes have gone, and false while the server is
+// not closed or nothing reads the progress.
+func (s *Service) ClosureProgress(ctx context.Context) (ClosureProgress, bool, error) {
+	c, err := s.Closure(ctx)
+	if err != nil {
+		return ClosureProgress{}, false, err
+	}
+	if st := c.CurrentState(); s.d.ClosureDeliveries == nil || (st != instance.ClosureClosed && st != instance.ClosureDeliveryCompleted) {
+		return ClosureProgress{}, false, nil
+	}
+	p, err := s.d.ClosureDeliveries.ClosureProgress(ctx)
+	if err != nil {
+		return ClosureProgress{}, false, fmt.Errorf("service closure progress: %w", err)
+	}
+	return p, true, nil
 }
 
 // ClosureCounts counts what the closure of the service ends, for its checks (ADR-0088 §1). The

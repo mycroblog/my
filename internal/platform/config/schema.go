@@ -12,6 +12,7 @@ import (
 	"net/mail"
 	"net/netip"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -448,7 +449,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "none", inV0: true, doc: "Logs each message, including its links, instead of sending it; for development and instances without email."},
 			{value: "smtp", inV0: true, doc: "SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`)."},
-			{value: "ses", doc: "Amazon SES."},
+			{value: "ses", inV0: true, doc: "The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Mail = v },
 	},
@@ -485,6 +486,18 @@ var schema = []field{
 		doc:    "Password for SMTP AUTH PLAIN.",
 		secret: true,
 		set:    func(c *Config, v string) { c.SMTPPassword = v },
+	},
+	{
+		key:   "ses_region",
+		doc:   "AWS region of the SES endpoint of `mail = ses`, such as `eu-west-1`: the region where the identity of `mail_from` is verified. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`).",
+		check: checkAWSRegion,
+		set:   func(c *Config, v string) { c.SESRegion = v },
+	},
+	{
+		key:   "ses_configuration_set",
+		doc:   "Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.",
+		check: checkSESConfigurationSet,
+		set:   func(c *Config, v string) { c.SESConfigurationSet = v },
 	},
 	{
 		key: "captcha",
@@ -1235,6 +1248,29 @@ func checkKEK(v string) error {
 	}
 	if len(b) != kekSize {
 		return fmt.Errorf("must decode to %d bytes, got %d", kekSize, len(b))
+	}
+	return nil
+}
+
+// awsRegion matches the name of an AWS region, such as us-east-1 or us-gov-west-1.
+var awsRegion = regexp.MustCompile(`^[a-z]{2}(-[a-z]+)+-[0-9]+$`)
+
+// checkAWSRegion accepts the name of an AWS region.
+func checkAWSRegion(v string) error {
+	if !awsRegion.MatchString(v) {
+		return errors.New("must be an AWS region such as eu-west-1")
+	}
+	return nil
+}
+
+// sesConfigurationSet matches the name of an SES configuration set: at most 64 letters,
+// digits, hyphens, and underscores.
+var sesConfigurationSet = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// checkSESConfigurationSet accepts the name of an SES configuration set.
+func checkSESConfigurationSet(v string) error {
+	if !sesConfigurationSet.MatchString(v) {
+		return errors.New("must be at most 64 letters, digits, hyphens, and underscores")
 	}
 	return nil
 }

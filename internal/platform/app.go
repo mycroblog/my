@@ -189,6 +189,9 @@ type App struct {
 	// outside deliveries (docs/architecture/federation.md §7.3).
 	Deliverer      *federation.Deliverer
 	InstanceHealth *federation.Health
+	// ClosureDeletes records and fans out the Delete of every local actor once the service is
+	// closed, and tells when their deliveries end (ADR-0088 §3).
+	ClosureDeletes *federation.ClosureDeletes
 	// Inbox verifies and records the activities POSTed to the inboxes
 	// (docs/architecture/federation.md §3.1).
 	Inbox *federation.Inbox
@@ -353,7 +356,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpDeadJobPurger(cfg)
-	if a.Mailer, err = newMailer(cfg, a.Logger); err != nil {
+	if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
 		return nil, err
 	}
 	a.HTTPClient = opts.HTTPClient
@@ -435,7 +438,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	return a, nil
 }
 
-func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
+func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
 		return mailnone.New(logger), nil
@@ -444,6 +447,8 @@ func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 			Host: cfg.SMTPHost, Port: cfg.SMTPPort, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword,
 			From: cfg.MailFrom, HelloName: hostOnly(cfg.Host),
 		})
+	case "ses":
+		return newSESMailer(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}

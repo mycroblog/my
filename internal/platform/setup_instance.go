@@ -24,6 +24,8 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		Documents: markdown.New(),
 		// The checks before the closure of the service count over other modules.
 		ClosureCounts: closureCounts{a},
+		// The progress of the closure's Deletes is the federation module's, set up later.
+		ClosureDeliveries: closureDeliveries{a},
 	})
 }
 
@@ -38,7 +40,7 @@ func (m instanceMedia) CheckImage(ctx context.Context, mediaID string) error {
 }
 
 // closureCounts counts what the closure of the service ends (ADR-0088 §1) with the account,
-// supporters, and moderation modules. The modules set up later are read at call time.
+// supporters, moderation, and federation modules. The modules set up later are read at call time.
 type closureCounts struct{ a *App }
 
 func (c closureCounts) CountLocalUsers(ctx context.Context) (int, error) {
@@ -56,9 +58,14 @@ func (c closureCounts) LiveSubscriptionCount(ctx context.Context) (int, error) {
 	return c.a.Supporters.LiveSubscriptionCount(ctx)
 }
 
-// PendingMigrations counts no migration: the sending of Move and the jobs that move the
-// followers (ADR-0089) have no use case that counts them yet.
-func (c closureCounts) PendingMigrations(context.Context) (int, error) { return 0, nil }
+// PendingMigrations counts the Moves of local accounts that the federation module still sends
+// (ADR-0089).
+func (c closureCounts) PendingMigrations(ctx context.Context) (int, error) {
+	if c.a.ClosureDeletes == nil {
+		return 0, nil
+	}
+	return c.a.ClosureDeletes.PendingMoves(ctx)
+}
 
 func (c closureCounts) HeldAccounts(ctx context.Context) (int, error) {
 	ids, err := c.a.Moderation.HeldAccountIDs(ctx)

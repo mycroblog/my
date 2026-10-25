@@ -10,6 +10,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
+// apPrefix is the namespace of the ActivityPub ids and documents (ADR-0018).
+const apPrefix = "/ap/"
+
 // actorsPrefix is the path of local actor ids before the UUID (ADR-0018).
 const actorsPrefix = "/ap/actors/"
 

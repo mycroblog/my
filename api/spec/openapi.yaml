@@ -975,6 +975,10 @@ components:
       $ref: ./components/schemas/AdminServiceClosure.yaml
     AdminServiceClosureCheck:
       $ref: ./components/schemas/AdminServiceClosureCheck.yaml
+    AdminServiceClosureDeliveries:
+      $ref: ./components/schemas/AdminServiceClosureDeliveries.yaml
+    AdminServiceClosureProgress:
+      $ref: ./components/schemas/AdminServiceClosureProgress.yaml
     CloseServiceRequest:
       $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:
