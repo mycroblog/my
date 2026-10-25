@@ -55,3 +55,4 @@
   - 日付の変更は新しい `announced` で表し、`service_closure_heads.announcement_event_id` がそれを指します。取り消すと行が消え、その後の `announced` は新しい予告です。
   - `closes_at` に下限はありません。`export_until` は `closes_at` 以後で、指定が無ければ `closes_at` の 30 日後です。予告から `closes_at` までが 30 日より短いとき、管理 API と CLI は告知の期間が短いと警告します。
   - 状態はリクエストとジョブごとに読み、各入口は `instance.ClosureAllows(state, 操作)` で判定します。遷移はすべて監査ログ（`target_kind = instance`）に残ります。
+  - `delivery_completed` は、クローズの `Delete`（Actor）の配送がすべて終わったことを `federation` の定期ジョブが確かめて、サーバー自身の変更（`by_user_id` は NULL）として記録します（[federation.md §15](../../federation.md#15-サービスの終了)）。

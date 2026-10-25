@@ -7,15 +7,35 @@ import (
 
 	"github.com/mycroblog/my/internal/app/federation"
 	domainfederation "github.com/mycroblog/my/internal/domain/federation"
+	domaininstance "github.com/mycroblog/my/internal/domain/instance"
 )
 
 // federationModes reads the federation mode (FR-413, ADR-0076) from the instance setting
-// federation_mode, per request and per job, for every entry point of federation. It reads
-// a.Instance per call, so that it can be wired before the instance service is.
+// federation_mode, per request and per job, for every entry point of federation. A closed
+// server federates as off (ADR-0088 §2: no fetch, no ingest, no relay), whatever the setting;
+// the closure's own Deletes and the documents that a closed server still serves are decided by
+// the closure (federation.ClosureSettings, the ActivityPub handler). It reads a.Instance per
+// call, so that it can be wired before the instance service is.
 type federationModes struct{ a *App }
 
 // FederationMode implements federation.ModeSettings.
 func (m federationModes) FederationMode(ctx context.Context) (domainfederation.Mode, error) {
+	st, err := m.a.closureState(ctx)
+	if err != nil {
+		return "", err
+	}
+	if !domaininstance.ClosureAllows(st, domaininstance.ClosureFederate) {
+		return domainfederation.ModeOff, nil
+	}
+	return settingModes(m).FederationMode(ctx)
+}
+
+// settingModes reads the instance setting federation_mode as it is, for the ActivityPub handler,
+// which answers a closed server's requests by the closure before the mode.
+type settingModes struct{ a *App }
+
+// FederationMode implements federation.ModeSettings.
+func (m settingModes) FederationMode(ctx context.Context) (domainfederation.Mode, error) {
 	v, err := m.a.Instance.FederationMode(ctx)
 	return domainfederation.Mode(v), err
 }

@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+#
+# golangci-lint v2 configuration of pkg/mybot, a module of its own (the version is pinned in .tool-versions).
+# The linters follow pkg/mykit/.golangci.yml; the repository's depguard architecture rules are about the server and
+# do not apply here.
+version: "2"
+
+run:
+  modules-download-mode: readonly
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - forbidigo
+    - gocritic
+    - gosec
+    - misspell
+    - nolintlint
+    - revive
+    - unconvert
+  settings:
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^http\.(DefaultClient|Get|Head|Post|PostForm)$
+          pkg: ^net/http$
+          msg: send requests through the *http.Client that the caller configures (ADR-0093 §7)
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/mycroblog/my/pkg
+  exclusions:
+    generated: lax

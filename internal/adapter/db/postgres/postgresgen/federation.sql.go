@@ -12,6 +12,95 @@ import (
 	"time"
 )
 
+const countClosureDeletes = `-- name: CountClosureDeletes :one
+SELECT COUNT(*) FROM closure_deletes
+`
+
+func (q *Queries) CountClosureDeletes(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countClosureDeletes)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countClosureDeliveries = `-- name: CountClosureDeliveries :many
+SELECT
+  COALESCE((SELECT a.outcome FROM delivery_attempts a WHERE a.delivery_id = d.id ORDER BY a.id DESC LIMIT 1), '')::text AS outcome,
+  ((SELECT COUNT(*) FROM delivery_attempts a WHERE a.delivery_id = d.id) >= $1::bigint)::boolean AS exhausted,
+  COUNT(*) AS deliveries
+FROM closure_deletes c JOIN deliveries d ON d.outbound_activity_id = c.outbound_activity_id
+GROUP BY 1, 2
+`
+
+type CountClosureDeliveriesRow struct {
+	Outcome    string
+	Exhausted  bool
+	Deliveries int64
+}
+
+// CountClosureDeliveries counts the deliveries of the closure's Deletes by their latest outcome
+// (” before the first attempt) and whether they used up @max_attempts.
+func (q *Queries) CountClosureDeliveries(ctx context.Context, maxAttempts int64) ([]CountClosureDeliveriesRow, error) {
+	rows, err := q.db.Query(ctx, countClosureDeliveries, maxAttempts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountClosureDeliveriesRow{}
+	for rows.Next() {
+		var i CountClosureDeliveriesRow
+		if err := rows.Scan(&i.Outcome, &i.Exhausted, &i.Deliveries); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countPendingMoveSends = `-- name: CountPendingMoveSends :one
+SELECT COUNT(*) FROM outbound_activities o
+WHERE o.object_type = 'move' AND o.created_at >= $1 AND (
+  NOT EXISTS (SELECT 1 FROM outbound_fanout_completions f WHERE f.outbound_activity_id = o.id)
+  OR EXISTS (
+    SELECT 1 FROM deliveries d
+    WHERE d.outbound_activity_id = o.id
+      AND COALESCE((SELECT a.outcome FROM delivery_attempts a WHERE a.delivery_id = d.id ORDER BY a.id DESC LIMIT 1), 'retryable_failure') = 'retryable_failure'
+      AND (SELECT COUNT(*) FROM delivery_attempts a WHERE a.delivery_id = d.id) < $2::bigint
+  )
+)
+`
+
+type CountPendingMoveSendsParams struct {
+	Since       time.Time
+	MaxAttempts int64
+}
+
+// CountPendingMoveSends counts the Moves recorded since @since whose fan-out has not ended or
+// that have a delivery still to be attempted: none yet, or a retryable failure with attempts
+// left of @max_attempts.
+func (q *Queries) CountPendingMoveSends(ctx context.Context, arg CountPendingMoveSendsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPendingMoveSends, arg.Since, arg.MaxAttempts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUnfinishedClosureFanOuts = `-- name: CountUnfinishedClosureFanOuts :one
+SELECT COUNT(*) FROM closure_deletes c
+WHERE NOT EXISTS (SELECT 1 FROM outbound_fanout_completions f WHERE f.outbound_activity_id = c.outbound_activity_id)
+`
+
+// CountUnfinishedClosureFanOuts counts the closure's Deletes whose fan-out has not ended.
+func (q *Queries) CountUnfinishedClosureFanOuts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnfinishedClosureFanOuts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteDeliveryAttemptsBefore = `-- name: DeleteDeliveryAttemptsBefore :execrows
 DELETE FROM delivery_attempts
 WHERE id IN (
@@ -306,6 +395,28 @@ func (q *Queries) HasRemoteObjectTombstone(ctx context.Context, uri string) (boo
 	return exists, err
 }
 
+const insertClosureDelete = `-- name: InsertClosureDelete :execrows
+INSERT INTO closure_deletes (account_id, outbound_activity_id, recorded_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (account_id) DO NOTHING
+`
+
+type InsertClosureDeleteParams struct {
+	AccountID          string
+	OutboundActivityID string
+	RecordedAt         time.Time
+}
+
+// InsertClosureDelete records the closure's Delete of an account once; zero rows means it was
+// already there.
+func (q *Queries) InsertClosureDelete(ctx context.Context, arg InsertClosureDeleteParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertClosureDelete, arg.AccountID, arg.OutboundActivityID, arg.RecordedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertDelivery = `-- name: InsertDelivery :execrows
 INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES ($1, $2, $3, $4, $5)
@@ -460,6 +571,24 @@ func (q *Queries) InsertOutboundActivityDocument(ctx context.Context, arg Insert
 	return result.RowsAffected(), nil
 }
 
+const insertOutboundFanOutCompletion = `-- name: InsertOutboundFanOutCompletion :exec
+INSERT INTO outbound_fanout_completions (outbound_activity_id, completed_at)
+VALUES ($1, $2)
+ON CONFLICT (outbound_activity_id) DO NOTHING
+`
+
+type InsertOutboundFanOutCompletionParams struct {
+	OutboundActivityID string
+	CompletedAt        time.Time
+}
+
+// InsertOutboundFanOutCompletion records once that the fan-out of an activity enqueued its last
+// batch.
+func (q *Queries) InsertOutboundFanOutCompletion(ctx context.Context, arg InsertOutboundFanOutCompletionParams) error {
+	_, err := q.db.Exec(ctx, insertOutboundFanOutCompletion, arg.OutboundActivityID, arg.CompletedAt)
+	return err
+}
+
 const insertReceivedActivity = `-- name: InsertReceivedActivity :execrows
 
 INSERT INTO received_activities (activity_uri, actor_uri, type, signature_scheme, trust, received_at)
@@ -580,6 +709,30 @@ func (q *Queries) InsertRemoteObjectTombstone(ctx context.Context, arg InsertRem
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const listClosureDeleteAccounts = `-- name: ListClosureDeleteAccounts :many
+SELECT account_id FROM closure_deletes WHERE account_id = ANY($1::uuid[]) ORDER BY account_id
+`
+
+func (q *Queries) ListClosureDeleteAccounts(ctx context.Context, accountIds []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listClosureDeleteAccounts, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listDeliveriesOfOutboundActivity = `-- name: ListDeliveriesOfOutboundActivity :many

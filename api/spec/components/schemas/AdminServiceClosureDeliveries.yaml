@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+description: The deliveries of the closure's `Delete`s by state.
+type: object
+required: [pending, succeeded, permanent_failure, skipped, dead]
+properties:
+  pending:
+    description: Not attempted yet, or failed and attempted again later.
+    type: integer
+    minimum: 0
+  succeeded:
+    description: Accepted by the inbox.
+    type: integer
+    minimum: 0
+  permanent_failure:
+    description: Refused for good.
+    type: integer
+    minimum: 0
+  skipped:
+    description: Not sent, because the domain was suspended or the server unavailable.
+    type: integer
+    minimum: 0
+  dead:
+    description: Used up their attempts; an operator may requeue their dead jobs.
+    type: integer
+    minimum: 0

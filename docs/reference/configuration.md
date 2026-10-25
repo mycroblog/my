@@ -85,6 +85,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`smtp_port`](#smtp_port) | `MY_SMTP_PORT` | `587` | no | no |
 | [`smtp_username`](#smtp_username) | `MY_SMTP_USERNAME` | none | no | no |
 | [`smtp_password`](#smtp_password) | `MY_SMTP_PASSWORD` | none | no | yes |
+| [`ses_region`](#ses_region) | `MY_SES_REGION` | none | no | no |
+| [`ses_configuration_set`](#ses_configuration_set) | `MY_SES_CONFIGURATION_SET` | none | no | no |
 | [`captcha`](#captcha) | `MY_CAPTCHA` | `none` | no | no |
 | [`captcha_site_key`](#captcha_site_key) | `MY_CAPTCHA_SITE_KEY` | none | when `captcha` is not `none` | no |
 | [`captcha_secret_key`](#captcha_secret_key) | `MY_CAPTCHA_SECRET_KEY` | none | when `captcha` is not `none` | yes |
@@ -548,7 +550,7 @@ Mailer adapter for verification emails (FR-002). With `none`, no email reaches u
 | --- | --- | --- |
 | `none` | yes | Logs each message, including its links, instead of sending it; for development and instances without email. |
 | `smtp` | yes | SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`). |
-| `ses` | not in v0 | Amazon SES. |
+| `ses` | yes | The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
 
 ### `mail_from`
 
@@ -587,6 +589,22 @@ User name for SMTP AUTH PLAIN, sent only after STARTTLS. Leave it empty for a se
 Password for SMTP AUTH PLAIN.
 
 - Environment variable: `MY_SMTP_PASSWORD` or `MY_SMTP_PASSWORD_FILE`
+- Default: none
+- Required: no
+
+### `ses_region`
+
+AWS region of the SES endpoint of `mail = ses`, such as `eu-west-1`: the region where the identity of `mail_from` is verified. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`).
+
+- Environment variable: `MY_SES_REGION`
+- Default: none
+- Required: no
+
+### `ses_configuration_set`
+
+Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.
+
+- Environment variable: `MY_SES_CONFIGURATION_SET`
 - Default: none
 - Required: no
 

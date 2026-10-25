@@ -4,7 +4,8 @@ get:
   summary: Read the service closure
   description: |
     The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-    and whether its notice is short. Needs the `manage_service_closure` permission.
+    and whether its notice is short; once the server is closed, the progress of the closure's
+    `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:read"]

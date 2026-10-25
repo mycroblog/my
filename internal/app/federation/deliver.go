@@ -107,6 +107,9 @@ type DeliverDeps struct {
 	// Modes reads the federation mode when each delivery runs (ADR-0076); nil federates both
 	// ways.
 	Modes ModeSettings
+	// Closure reads the service closure when each delivery runs (ADR-0088 §2); nil never
+	// closes.
+	Closure ClosureSettings
 	// Breaker is the process's circuit breaker; nil means a new one.
 	Breaker *CircuitBreaker
 	Clock   kernel.Clock
@@ -381,7 +384,14 @@ func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a feder
 
 // sends reports whether the federation mode at the time lets act go out (federation.Sends). The
 // Update of an actor tells its suspension by its stored document, which is marked suspended.
+// While the service closure delivers its Deletes, it alone decides (federation.ClosureSends).
 func (d *Deliverer) sends(ctx context.Context, act federation.OutboundActivity) (bool, error) {
+	switch closing, err := closureRetracts(ctx, d.d.Closure); {
+	case err != nil:
+		return false, err
+	case closing:
+		return federation.ClosureSends(act), nil
+	}
 	mode, err := currentMode(ctx, d.d.Modes)
 	if err != nil {
 		return false, err
