@@ -107,8 +107,22 @@ func currentClosure(ctx context.Context, q *sqlitegen.Queries) (instance.Closure
 		return instance.Closure{}, notFound(err, appinstance.ErrNotFound, "service closure")
 	}
 	return instance.Closure{
-		State:       instance.ClosureState(row.State),
+		State: instance.ClosureState(row.State), AnnouncementID: row.AnnouncementEventID,
 		Schedule:    instance.ClosureSchedule{ClosesAt: fromMillis(row.ClosesAt), ExportUntil: fromMillis(row.ExportUntil), Message: row.Message},
 		AnnouncedAt: fromMillis(row.AnnouncedAt), ChangedAt: fromMillis(row.ChangedAt),
+	}, nil
+}
+
+// FindClosureEvent implements appinstance.ClosureRepository.
+func (r *InstanceRepository) FindClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error) {
+	row, err := r.db.reader().GetServiceClosureEvent(ctx, id)
+	if err != nil {
+		return instance.ClosureEvent{}, notFound(err, appinstance.ErrNotFound, "service closure event")
+	}
+	return instance.ClosureEvent{
+		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ByUserID.String, OccurredAt: fromMillis(row.OccurredAt),
+		Schedule: instance.ClosureSchedule{
+			ClosesAt: fromNullTime(row.ClosesAt), ExportUntil: fromNullTime(row.ExportUntil), Message: row.Message.String,
+		},
 	}, nil
 }

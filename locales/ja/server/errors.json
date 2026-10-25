@@ -3,6 +3,14 @@
     "defaultMessage": "現在、あなたのアカウントはアプリを使えません。",
     "description": "API error title for HTTP 403 when the access token is valid but its user cannot use the app: the registration is pending or rejected, the email address is unconfirmed, or the account is deactivated or deleted."
   },
+  "errors.aliases.invalid": {
+    "defaultMessage": "そのハンドルや URL のアカウントは別名にできません。ほかのアカウントのハンドルか URL を入力してください。",
+    "description": "API error title for HTTP 422 when the handle or URL given as an alias (an account the user moves from) leads to no account, to something that is not an account, or to the user's own account."
+  },
+  "errors.aliases.too_many": {
+    "defaultMessage": "別名の数の上限に達しています。先にどれかの別名を削除してください。",
+    "description": "API error title for HTTP 422 when the user adds another alias beyond the limit of aliases."
+  },
   "errors.appeal.already_appealed": {
     "defaultMessage": "この処分にはすでに異議を申し立てています。",
     "description": "API error title for HTTP 422 when the user appeals a moderation action on their account a second time; an action is appealed once."
@@ -514,6 +522,14 @@
   "errors.domain_mutes.too_many": {
     "defaultMessage": "ミュートできるドメインの数の上限に達しています。先にどれかのミュートを解除してください。",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
+  },
+  "errors.service_closing": {
+    "defaultMessage": "このサーバーは終了が予告されています。",
+    "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
+  },
+  "errors.service_closing_detail": {
+    "defaultMessage": "終了の予告の間は、新しい登録とサポーターの加入を受け付けません。",
+    "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
   },
   "errors.account_moved": {
     "defaultMessage": "このアカウントは移転しました。",

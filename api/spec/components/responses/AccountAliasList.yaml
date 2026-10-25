@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The aliases of the user.
+headers:
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/AccountAliasList.yaml

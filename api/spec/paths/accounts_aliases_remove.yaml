@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: removeAccountAlias
+  summary: Remove an alias of the authenticated user
+  description: |
+    Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+    profile change does. Removing an alias that the user does not have changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/RemoveAccountAliasRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AccountAliasList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

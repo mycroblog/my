@@ -39,6 +39,14 @@
     "defaultMessage": "A new report awaits the moderators of {instance}",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.admin_service_closure_due.body": {
+    "defaultMessage": "The closing date of {instance} has passed. The server does not close by itself: close it in the administration screens or with my admin closure close.",
+    "description": "Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is."
+  },
+  "mail.admin_service_closure_due.subject": {
+    "defaultMessage": "The closing date of {instance} has passed",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_sign_up.body": {
     "defaultMessage": "A new user signed up on {instance} and awaits approval.",
     "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
@@ -146,6 +154,18 @@
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "Your supporter plan on {instance} was retired",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_service_closure.body": {
+    "defaultMessage": "The administrators of {instance} announced that the server closes, which cancels your subscription to the supporter plan “{plan}”.",
+    "description": "First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
+  },
+  "mail.supporter_service_closure.detail": {
+    "defaultMessage": "Your subscription will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.",
+    "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
     "defaultMessage": "Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}",

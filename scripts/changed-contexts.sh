@@ -14,6 +14,7 @@
 #   docs    Markdown lint and the ADR numbers                   (docs:check)
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
+#   mail    tools/mail, the MJML layout of the HTML emails       (mail:check)
 #   api     the OpenAPI spec and the code generated from it      (api:check)
 #   ui      app/ui (@my/ui)                                      (ui:check, the story tests)
 #   web     app/web and the workspace-wide client checks         (web:check)
@@ -29,7 +30,7 @@
 # and web), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
-ALL=(docs go i18n api ui web docker shell schema agentkit mykit)
+ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit)
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -92,6 +93,16 @@ classify() {
     # The spec; its dependents (go, web) are added below.
     api/*)
       select_contexts api
+      return
+      ;;
+    # The npm license check, which the web and mail contexts run on their own packages too.
+    tools/i18n/src/licenses.ts)
+      select_contexts i18n web mail
+      return
+      ;;
+    # The email layout; the Go template it compiles to is the go context's (internal/*), checked by mail:gen-check.
+    tools/mail/*)
+      select_contexts mail
       return
       ;;
     # The catalogs and their tools: the Go accessors (go, added below as i18n's dependent) and the web client, which
@@ -181,6 +192,13 @@ classify() {
     # web:tokens fails when the token list generated from app/ui/src/theme.css is stale.
     app/* | scripts/playwright-image-check.sh | scripts/web-icons.sh | internal/domain/instance/theme_tokens.gen.go)
       select_contexts web
+      known=1
+      ;;
+  esac
+  case "$path" in
+    # mail:gen-check fails when the email layout compiled from tools/mail/frame.mjml, with the colors of the token list, is stale.
+    internal/app/kernel/mail_frame.gen.html | internal/domain/instance/theme_tokens.gen.go)
+      select_contexts mail
       known=1
       ;;
   esac

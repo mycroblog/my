@@ -74,6 +74,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"NotifiesModerators", notificationModerators},
 		{"NotifiesModeratorsOfLimitedMoves", notificationLimitedMoves},
 		{"NotifiesAppeals", notificationAppeals},
+		{"NotifiesTheServiceClosure", notificationServiceClosure},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newNotificationEnv(t, newHarness)) })

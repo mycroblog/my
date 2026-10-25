@@ -616,6 +616,7 @@ func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler)
 		}
 		return s.RunCommand(ctx, p, key)
 	})
+	s.registerClosureJobs(h)
 	h.Register(JobDeadlines, func(ctx context.Context, _ queue.Job) queue.Result {
 		if err := s.QueueDeadlines(ctx); err != nil {
 			return queue.Retry(0, err)

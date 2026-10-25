@@ -55,8 +55,11 @@ func instanceHasNoClosure(t *testing.T, e *instanceEnv) {
 func instanceAnnouncesClosure(t *testing.T, e *instanceEnv) {
 	closes := e.clock.Now().Add(60 * 24 * time.Hour).Truncate(time.Millisecond)
 	first := e.announceClosure(t, closes, time.Time{}, "Thank you for everything.")
+	if first.AnnouncementID == "" {
+		t.Fatalf("AnnounceClosure = %+v without the announcement's ID", first)
+	}
 	want := instance.Closure{
-		State: instance.ClosureAnnounced, AnnouncedAt: e.clock.Now(), ChangedAt: e.clock.Now(),
+		State: instance.ClosureAnnounced, AnnouncementID: first.AnnouncementID, AnnouncedAt: e.clock.Now(), ChangedAt: e.clock.Now(),
 		Schedule: instance.ClosureSchedule{ClosesAt: closes, ExportUntil: closes.Add(instance.DefaultClosureExportPeriod), Message: "Thank you for everything."},
 	}
 	if got := e.closure(t); got != want || first != want || got.ShortNotice() {
@@ -67,14 +70,31 @@ func instanceAnnouncesClosure(t *testing.T, e *instanceEnv) {
 	sooner, until := e.clock.Now().Add(10*24*time.Hour).Truncate(time.Millisecond), closes
 	second := e.announceClosure(t, sooner, until, "")
 	if second.Schedule.ClosesAt != sooner || second.Schedule.ExportUntil != until || second.Schedule.Message != "" ||
-		second.AnnouncedAt != e.clock.Now() || !second.ShortNotice() {
+		second.AnnouncedAt != e.clock.Now() || !second.ShortNotice() || second.AnnouncementID == first.AnnouncementID {
 		t.Errorf("Closure after the change of the dates = %+v", second)
+	}
+	// Each event reads back with its schedule (the notifications tell of them).
+	ev, err := e.service.ClosureEvent(t.Context(), first.AnnouncementID)
+	if err != nil || ev.Kind != instance.ClosureEventAnnounced || ev.Schedule != want.Schedule || ev.ByUserID != ruleModerator {
+		t.Errorf("ClosureEvent(first) = %+v, %v", ev, err)
+	}
+	if _, err := e.service.ClosureEvent(t.Context(), "01a14495-0000-7000-8000-000000000000"); !errors.Is(err, appinstance.ErrNotFound) {
+		t.Errorf("ClosureEvent(unknown) = %v, want ErrNotFound", err)
+	}
+	if at, ok, err := e.service.AnnouncementInEffect(t.Context(), second.AnnouncementID); err != nil || !ok || !at.Equal(sooner) {
+		t.Errorf("AnnouncementInEffect(second) = %v, %v, %v", at, ok, err)
+	}
+	if _, ok, err := e.service.AnnouncementInEffect(t.Context(), first.AnnouncementID); err != nil || ok {
+		t.Errorf("AnnouncementInEffect(first, changed) = %v, %v", ok, err)
 	}
 
 	e.clock.Advance(time.Second)
 	withdrawn, err := e.service.WithdrawClosure(t.Context(), "")
 	if err != nil || withdrawn != (instance.Closure{}) || e.closure(t) != (instance.Closure{}) {
 		t.Errorf("WithdrawClosure = %+v, %v; Closure = %+v", withdrawn, err, e.closure(t))
+	}
+	if _, ok, err := e.service.AnnouncementInEffect(t.Context(), second.AnnouncementID); err != nil || ok {
+		t.Errorf("AnnouncementInEffect after the withdrawal = %v, %v", ok, err)
 	}
 	// An announcement after the withdrawal is a new announcement.
 	again := e.announceClosure(t, closes, time.Time{}, "")

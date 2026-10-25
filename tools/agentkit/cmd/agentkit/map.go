@@ -11,7 +11,7 @@ import (
 )
 
 // checkContexts are the contexts of scripts/changed-contexts.sh.
-var checkContexts = []string{"docs", "go", "i18n", "api", "ui", "web", "docker", "shell", "schema", "agentkit", "mykit"}
+var checkContexts = []string{"docs", "go", "i18n", "mail", "api", "ui", "web", "docker", "shell", "schema", "agentkit", "mykit"}
 
 func runMap(r *repo.Repo, args []string) error {
 	if len(args) == 0 {

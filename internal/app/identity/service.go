@@ -80,6 +80,9 @@ type Deps struct {
 	// setting). SignUp calls it once per sign-up, so a change applies to the next one. Nil
 	// means identity.RegistrationClosed.
 	RegistrationMode func(ctx context.Context) (identity.RegistrationMode, error)
+	// Closure stops the approval of pending registrations from the announcement of the service
+	// closure on (ADR-0088 §2); nil never stops it.
+	Closure ServiceClosure
 	// IndexableDefault returns whether new accounts are indexable (the indexable_default
 	// setting, FR-412, ADR-0057); nil makes them not indexable.
 	IndexableDefault func(ctx context.Context) (bool, error)

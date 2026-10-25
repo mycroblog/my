@@ -68,6 +68,11 @@ type Context struct {
 	Command string
 	// Args is the text after the command's name, with the spaces around it trimmed.
 	Args string
+	// Job is the name of the scheduled job (Every) that the Context runs, "" for an event.
+	Job string
+	// ScheduledAt is the time of the run of the scheduled job, which may be earlier than now for a run that
+	// catches up; the zero time for an event.
+	ScheduledAt time.Time
 
 	bot *Bot
 	// source is the ID that the idempotency keys of the replies derive from.
@@ -75,6 +80,9 @@ type Context struct {
 	// sender is the key of Account for the reply limits and the order of processing.
 	sender  string
 	replies int
+	// every is the scheduled job of the run, and posted reports its Post.
+	every  *everyJob
+	posted bool
 	// budgeted makes the helpers wait for the send budget (the SendBudget middleware).
 	budgeted bool
 }
@@ -89,10 +97,13 @@ func (c *Context) API() *mykit.API { return c.bot.api }
 // Logger is the logger of the bot, with the event's attributes.
 func (c *Context) Logger() *slog.Logger {
 	l := c.bot.logger
-	if c.Notification != nil {
+	switch {
+	case c.Notification != nil:
 		l = l.With("notification", c.Notification.Id, "type", string(c.Notification.Type))
-	} else if c.Status != nil {
+	case c.Status != nil:
 		l = l.With("status", c.Status.Id)
+	case c.Job != "":
+		l = l.With("job", c.Job, "scheduled_at", c.ScheduledAt)
 	}
 	return l
 }

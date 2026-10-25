@@ -37,7 +37,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		// The health endpoint of the uptime monitors (ADR-0085 §1).
 		ServerHealth:  newHealthCache(a.readyCheck, a.Clock),
 		SendsEmail:    sendsEmail(cfg),
-		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
+		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, InstanceThumbnail: a.instanceThumbnail,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, Push: a.Push,
@@ -60,7 +60,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		OwnAccount: a.Identity, Exports: a.Exports, Imports: a.Imports,
 		// The moves of local accounts check their targets as received Moves do (ADR-0089).
 		LocalMoves: federation.NewLocalMoves(federation.LocalMovesDeps{
-			Accounts: a.Accounts, Targets: a.RemoteActors,
+			Accounts: a.Accounts, Targets: a.RemoteActors, Aliases: a.Accounts,
 			Domains: a.ModerationPolicy, Suspensions: a.ModerationPolicy, Limits: a.ModerationPolicy,
 		}),
 		MoveConfirmations: a.Identity,
@@ -70,7 +70,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		// The instance settings, and the invites with the registration page they open (#624).
 		Settings: a.Instance, Invites: a.Identity, OAuthClients: a.Identity, SignUpPath: authpages.PathSignUp,
 		// The instance theme (ADR-0059) and the URLs of its stylesheets, which the web handler serves.
-		Themes: a.Instance, Closures: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
+		Themes: a.Instance, Closures: a.Instance, ClosureEvents: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
 		// The custom emoji of the picker and their administration (ADR-0051).
 		CustomEmojis:        a.CustomEmojis,
 		CustomEmojiRequests: a.CustomEmojis,

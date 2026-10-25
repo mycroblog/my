@@ -39,7 +39,9 @@ func (a *App) setUpSupporters(ctx context.Context, cfg *config.Config, repo supp
 			return a.Instance.HasDocument(ctx, domaininstance.TextCommerceDisclosure)
 		},
 		Income: financeIncome{a},
-		Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
+		// The announcement of the service closure stops new subscriptions (ADR-0088 §2).
+		Closure: a.Instance,
+		Outbox:  outbox, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
 	})
 	a.Supporters.RegisterProjectors(a.Projectors)
 	a.Supporters.RegisterJobs(a.Handlers, a.Scheduler)

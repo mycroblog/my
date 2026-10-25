@@ -91,6 +91,10 @@ description: |
     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
     server whose closure is not announced or whose `closes_at` has not come
     (`POST /admin/closure/close`).
+  - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+    stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+    registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+    (`POST /supporter/checkout`).
   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
@@ -101,6 +105,10 @@ description: |
     this problem; signing in and resetting a password stay available outside the client API.
   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
     allowed. Unmute one first.
+  - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
+    account's actor, or to the user itself.
+  - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
+    allowed (5). Remove one first.
   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
     only its subscriptions grant and revoke it, and its permissions and position change from
     the plan (`PATCH /admin/supporter_plans/{id}`). Its badge changes as any role's.

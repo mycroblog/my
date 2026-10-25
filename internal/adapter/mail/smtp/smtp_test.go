@@ -11,6 +11,7 @@ import (
 	"errors"
 	"io"
 	"mime"
+	"mime/multipart"
 	"mime/quotedprintable"
 	"net"
 	"net/http"
@@ -163,8 +164,7 @@ func (s *server) record(data []byte) {
 	if err != nil {
 		s.t.Errorf("decode subject %q: %v", m.Header.Get("Subject"), err)
 	}
-	if m.Header.Get("Content-Transfer-Encoding") != "quoted-printable" || m.Header.Get("Content-Type") != "text/plain; charset=utf-8" ||
-		m.Header.Get("Message-Id") == "" || m.Header.Get("Date") == "" {
+	if m.Header.Get("Message-Id") == "" || m.Header.Get("Date") == "" {
 		s.t.Errorf("headers = %v", m.Header)
 	}
 	// ReadDotBytes returns the message with "\n" line ends.
@@ -178,17 +178,52 @@ func (s *server) record(data []byte) {
 		s.t.Errorf("parse From %q: %v", m.Header.Get("From"), err)
 		return
 	}
-	body, err := io.ReadAll(quotedprintable.NewReader(m.Body))
-	if err != nil {
-		s.t.Errorf("decode body: %v", err)
+	delivered := kernel.MailMessage{To: m.Header.Get("To"), FromName: from.Name, ReplyTo: m.Header.Get("Reply-To"), Subject: subject}
+	mediaType, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
+	switch {
+	case err != nil:
+		s.t.Errorf("Content-Type %q: %v", m.Header.Get("Content-Type"), err)
+	case mediaType == "multipart/alternative":
+		// The plain text first and the HTML last, the order of preference (RFC 2046 §5.1.4).
+		r := multipart.NewReader(m.Body, params["boundary"])
+		for i, want := range []string{"text/plain; charset=utf-8", "text/html; charset=utf-8"} {
+			p, err := r.NextRawPart()
+			if err != nil {
+				s.t.Errorf("part %d: %v", i, err)
+				return
+			}
+			if p.Header.Get("Content-Type") != want || p.Header.Get("Content-Transfer-Encoding") != "quoted-printable" {
+				s.t.Errorf("part %d headers = %v, want %s", i, p.Header, want)
+			}
+			body := s.decode(p)
+			if i == 0 {
+				delivered.Text = body
+			} else {
+				delivered.HTML = body
+			}
+		}
+		if _, err := r.NextRawPart(); !errors.Is(err, io.EOF) {
+			s.t.Errorf("a third part: %v", err)
+		}
+	default:
+		if m.Header.Get("Content-Type") != "text/plain; charset=utf-8" || m.Header.Get("Content-Transfer-Encoding") != "quoted-printable" {
+			s.t.Errorf("headers = %v", m.Header)
+		}
+		delivered.Text = s.decode(m.Body)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.delivered = append(s.delivered, kernel.MailMessage{
-		To: m.Header.Get("To"), FromName: from.Name, ReplyTo: m.Header.Get("Reply-To"), Subject: subject,
-		Text: strings.ReplaceAll(string(body), "\r\n", "\n"),
-	})
+	s.delivered = append(s.delivered, delivered)
 	s.headers = append(s.headers, m.Header)
+}
+
+// decode returns the quoted-printable body r with "\n" line ends.
+func (s *server) decode(r io.Reader) string {
+	body, err := io.ReadAll(quotedprintable.NewReader(r))
+	if err != nil {
+		s.t.Errorf("decode body: %v", err)
+	}
+	return strings.ReplaceAll(string(body), "\r\n", "\n")
 }
 
 func (s *server) messages() []kernel.MailMessage {
@@ -317,6 +352,30 @@ func TestEnvelopeHeaders(t *testing.T) {
 	if first.Get("List-Unsubscribe") != "<https://social.example/mail/unsubscribe?token=x>" ||
 		first.Get("List-Unsubscribe-Post") != "List-Unsubscribe=One-Click" {
 		t.Errorf("List-Unsubscribe headers = %v", first)
+	}
+}
+
+func TestSendsTextAndHTMLAsAlternatives(t *testing.T) {
+	s, tc := newServer(t, true)
+	m := newMailer(t, s, tc)
+	html := "<!doctype html>\n<html lang=\"ja\" dir=\"ltr\"><body><p>ようこそ。" + strings.Repeat("長い行。", 200) + "</p></body></html>\n"
+	if err := m.Send(t.Context(), kernel.MailMessage{
+		Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "ようこそ。\n", HTML: html,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := s.messages()
+	if len(got) != 1 {
+		t.Fatalf("delivered %d messages, want 1", len(got))
+	}
+	if got[0].Text != "ようこそ。\n" || got[0].HTML != html {
+		t.Errorf("delivered text %q and HTML %q", got[0].Text, got[0].HTML)
+	}
+	s.mu.Lock()
+	h := s.headers[0]
+	s.mu.Unlock()
+	if mediaType, _, _ := mime.ParseMediaType(h.Get("Content-Type")); mediaType != "multipart/alternative" || h.Get("Content-Transfer-Encoding") != "" {
+		t.Errorf("Content-Type = %q, Content-Transfer-Encoding = %q", h.Get("Content-Type"), h.Get("Content-Transfer-Encoding"))
 	}
 }
 

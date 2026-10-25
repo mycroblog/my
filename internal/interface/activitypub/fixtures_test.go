@@ -178,6 +178,16 @@ func profileImages(_ context.Context, refs []appcontent.ImageRef) (map[appconten
 	return out, nil
 }
 
+// fixtureAliases gives alice the alias of the account she moved from (ADR-0089).
+type fixtureAliases struct{}
+
+func (fixtureAliases) Aliases(_ context.Context, accountID string) ([]account.Alias, error) {
+	if accountID != aliceID {
+		return nil, nil
+	}
+	return []account.Alias{{AccountID: aliceID, URI: "https://old.example/users/alice", AddedAt: created}}, nil
+}
+
 // problem is the stand-in for the platform's problem writer: one fixed body per status.
 func problem(w http.ResponseWriter, _ *http.Request, status int) {
 	w.Header().Set("Content-Type", "application/problem+json")
@@ -217,7 +227,7 @@ func newServer(t *testing.T, accountDomain string) *server {
 			}, nil
 		},
 		Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Inbox: s.inbox, Problem: problem,
-		Suspensions: s.suspended, Images: profileImages, Moves: s.moves,
+		Suspensions: s.suspended, Images: profileImages, Aliases: fixtureAliases{}, Moves: s.moves,
 	}).Register(s.mux)
 	return s
 }

@@ -318,6 +318,8 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 		draft.Subject, draft.Paragraphs = l.ServerMailAdminCustomEmojiRequestSubject(name), []string{l.ServerMailAdminCustomEmojiRequestBody(name)}
 	case notification.TypeAdminAccountMoved:
 		draft.Subject, draft.Paragraphs = l.ServerMailAdminAccountMovedSubject(name), []string{l.ServerMailAdminAccountMovedBody(name)}
+	case notification.TypeAdminServiceClosureDue:
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminServiceClosureDueSubject(name), []string{l.ServerMailAdminServiceClosureDueBody(name)}
 	default:
 		return nil
 	}

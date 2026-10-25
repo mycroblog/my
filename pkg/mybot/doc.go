@@ -25,12 +25,20 @@
 //
 // Receiving: Run verifies the account (verifyCredentials) and opens the event stream; after every connection,
 // the first and each reconnection, it reads the notifications (listNotifications) back to the position in the
-// Store, or to Config.CatchUpLimit (24 hours), and handles those it missed. Every notification is recorded in the
+// Store, or to Config.CatchUpLimit (24 hours by default, zero turns it off), and handles those it missed. Every notification is recorded in the
 // Store after its handler returns (at least once), and one recorded before is skipped. Mode Polling reads the
 // notifications every minute instead. The new posts of the home timeline (OnStatus) come from the event stream
 // alone and are not caught up.
 //
-// State: the Store keeps the processed notifications (for 7 days), the position, and the rotated refresh token.
+// Scheduled jobs: Every runs a handler at the times of a cron expression of five fields (minute hour day month
+// weekday; numbers, ranges a-b, steps */n, and lists a,b) in an IANA time zone, UTC by default. The times missed
+// while the bot was stopped are skipped, or with CatchUp Latest the newest of them runs once at the start. The
+// Context's Post posts with the visibility unlisted (public and local on request) and the Idempotency-Key
+// mybot:every:<name>:<time>, so that one time posts once. RunOnce handles what is due, the notifications and the
+// scheduled jobs, once and returns, for a bot that a cron starts. Config.Clock replaces the clock in tests.
+//
+// State: the Store keeps the processed notifications (for 7 days), the position, the last runs of the scheduled
+// jobs, and the rotated refresh token.
 // The default is a FileStore at ./mybot-state.json; MemoryStore is for tests.
 //
 // Handlers: OnMention, OnCommand, OnFollow, OnFollowRequest, OnReaction, OnFavourite, OnBoost, OnQuote,

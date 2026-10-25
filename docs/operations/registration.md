@@ -10,7 +10,7 @@
 画面は JavaScript なしで動き、ログイン画面と同じく CSRF トークンとクロスオリジン要求の拒否で守られます（ADR-0030）。
 ボット対策に CAPTCHA を選んだときは、登録とログインの画面にそのウィジェットを出し、JavaScript が要ります（[CAPTCHA](captcha.md)）。
 
-登録モードはインスタンス設定 `registration_mode` で、CLI か Web クライアントの「サーバーの設定」（`/admin/settings`）で選びます（[インスタンス設定](instance-settings.md)）。変更は次の登録から効きます。
+登録モードはインスタンス設定 `registration_mode` で、CLI か Web クライアントの「サーバーの設定」（`/admin/settings`）で選びます（[インスタンス設定](instance-settings.md)）。変更は次の登録から効きます。サービスの終了を予告している間とクローズの後は、設定の値にかかわらず `closed` として扱います（[管理 CLI](admin-cli.md#サービスの終了の予告)）。
 
 ```sh
 my instance set registration_mode invite
@@ -39,6 +39,7 @@ my instance set registration_mode invite
 ## メール確認
 
 設定 `mail`（[設定リファレンス](../reference/configuration.md#mail)）で送信方法を選びます。
+SMTP の設定例・DNS の設定・送信の失敗の見方は [メールの送信](email.md) にあります。
 
 - `mail = smtp`: 登録時に確認メールを送ります。リンクの有効期限は 24 時間で、1 回だけ使えます。
   リンクを開くと確認ボタンの画面になり、ボタンを押すと確認済みになります（メールのリンクを先読みするスキャナーでトークンを消費しないため）。
