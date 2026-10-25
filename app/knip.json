@@ -21,8 +21,8 @@
       "ignoreDependencies": ["openapi-typescript"]
     },
     "../pkg/mybot/ts": {
-      "entry": ["src/**/*.test.ts"],
-      "project": ["src/**/*.ts"],
+      "entry": ["src/**/*.test.ts", "examples/*/main.ts", "examples/**/*.test.ts"],
+      "project": ["src/**/*.ts", "examples/**/*.ts"],
       "ignore": ["test/runtimes.mjs"]
     }
   }
