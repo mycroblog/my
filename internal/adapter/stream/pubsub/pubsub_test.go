@@ -148,12 +148,14 @@ func newBroker(t *testing.T, addr string) broker {
 	return b
 }
 
-// options returns the client options of a server at addr, without credentials.
+// options returns the client options of a server at addr, without credentials. One connection
+// per client instead of the default pool of up to four keeps the tests' loopback ports few.
 func options(addr string) []option.ClientOption {
 	return []option.ClientOption{
 		option.WithEndpoint(addr),
 		option.WithoutAuthentication(),
 		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		option.WithGRPCConnectionPool(1),
 	}
 }
 
