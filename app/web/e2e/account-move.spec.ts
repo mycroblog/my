@@ -155,4 +155,26 @@ test.describe("moving the account", () => {
     expect(api.cancellations).toEqual(["cancel"]);
     await expect(main.getByRole("textbox")).toBeVisible();
   });
+
+  // The error under the password goes when the field loses the focus; a pointer press on the button must still send
+  // (web-client/16-look-states-and-wording.md G23).
+  test("moves with a pointer after an attempt without the password", async ({ page }) => {
+    const api = await userServer(page);
+    await page.goto("/settings/move");
+    await page.getByRole("main").getByRole("textbox").fill("@carol@a-rather-long-server-name-for-the-new-account.example");
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("alertdialog");
+    const password = dialog.locator('input[type="password"]');
+    const move = dialog.getByRole("button").last();
+
+    await move.click();
+    await expect(password).toHaveAttribute("aria-invalid", "true");
+    await expect(password).toBeFocused();
+    expect(api.moves).toEqual([]);
+
+    await password.fill("secret");
+    await move.click();
+    await expect(dialog).toBeHidden();
+    expect(api.moves).toEqual([`${target.id} secret`]);
+  });
 });

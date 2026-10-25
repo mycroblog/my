@@ -47,9 +47,29 @@ export type ButtonProps = RACButtonProps & VariantProps<typeof button>;
  * A button (React Aria Button): pressed with a pointer, Enter or Space. Its accessible name is its
  * children, or `aria-label` when they are only an icon. While `isPending` it ignores presses but keeps
  * its focus.
+ *
+ * A submit button takes the focus when a pointer press ends rather than when it starts
+ * (web-client/16-look-states-and-wording.md G23). A field that loses the focus commits its validation (React Aria's
+ * native validation updates its error on blur), so moving the focus at the start of the press would let a field
+ * above drop its error and move the button from under the pointer before it is released, which loses the press and
+ * the submission.
  */
 export function Button({ variant, size, className, ...props }: ButtonProps) {
-  return <RACButton {...props} className={composeRenderProps(className, (className) => button({ variant, size, className }))} />;
+  const submitProps: Partial<RACButtonProps> =
+    props.type === "submit" && props.preventFocusOnPress === undefined
+      ? {
+          preventFocusOnPress: true,
+          onPress: (event) => {
+            // The focus the browser would have moved on pointer down, now that the press is over. Enter and Space on the
+            // button already have it there, and Enter in a field (the form's implicit submission, a `virtual` click)
+            // keeps it in the field. The form submits after this, in the click's default action.
+            const pointer = event.pointerType === "mouse" || event.pointerType === "touch" || event.pointerType === "pen";
+            if (pointer && event.target instanceof HTMLElement) event.target.focus();
+            props.onPress?.(event);
+          },
+        }
+      : {};
+  return <RACButton {...props} {...submitProps} className={composeRenderProps(className, (className) => button({ variant, size, className }))} />;
 }
 
 export type ButtonLinkProps = RACLinkProps & VariantProps<typeof button>;
