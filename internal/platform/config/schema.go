@@ -94,7 +94,7 @@ func Keys() []string {
 var schema = []field{
 	{
 		key:      "host",
-		doc:      "Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/` (ADR-0018). A port is allowed for local development. Recorded in the database on first start and must not change afterwards.",
+		doc:      "Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards.",
 		required: true,
 		check:    checkDomain,
 		set:      func(c *Config, v string) { c.Host = v },
@@ -102,26 +102,26 @@ var schema = []field{
 	{
 		key:    "account_domain",
 		defDoc: "value of `host`",
-		doc:    "Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host` (ADR-0018). Recorded in the database on first start and must not change afterwards.",
+		doc:    "Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards.",
 		check:  checkDomain,
 		set:    func(c *Config, v string) { c.AccountDomain = v },
 	},
 	{
 		key:   "source_url",
-		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 (ADR-0011) requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).",
+		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).",
 		def:   DefaultSourceURL,
 		check: checkSourceURL,
 		set:   func(c *Config, v string) { c.SourceURL = v },
 	},
 	{
 		key:   "status_page_url",
-		doc:   "Address of the instance's status page, an absolute `https` URL on a service apart from the server (ADR-0085 §6). Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page (ADR-0084), which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.",
+		doc:   "Address of the instance's status page, an absolute `https` URL on a service apart from the server. Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page, which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.",
 		check: checkStatusPageURL,
 		set:   func(c *Config, v string) { c.StatusPageURL = v },
 	},
 	{
 		key: "maintenance",
-		doc: "Starts `my serve` in the maintenance mode (ADR-0084), also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying (docs/operations/maintenance.md).",
+		doc: "Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying (docs/operations/maintenance.md).",
 		def: "false",
 		choices: []choice{
 			{value: "false", inV0: true, doc: "Normal operation."},
@@ -163,7 +163,7 @@ var schema = []field{
 	{
 		key:    "web_origin",
 		defDoc: "`https://{host}`",
-		doc:    "Origin (`scheme://host[:port]`) of the web client. The client API allows only this origin by CORS (ADR-0019 §4). Set it when the web client is served from another origin, for example a development server at `http://localhost:5173`. An origin on `host` is where the server itself serves the web client, and the client served there calls the API at it: set `http://localhost:8080` (with `host` = `localhost:8080`) to run the server over plain HTTP on localhost, where the sign-in screens, the OAuth issuer, the client API, the links to the instance's pages in its responses, media URLs, and email and invite links are all on `http://localhost:8080`. ActivityPub ids stay under `https://{host}/` in every setup.",
+		doc:    "Origin (`scheme://host[:port]`) of the web client. The client API allows only this origin by CORS. Set it when the web client is served from another origin, for example a development server at `http://localhost:5173`. An origin on `host` is where the server itself serves the web client, and the client served there calls the API at it: set `http://localhost:8080` (with `host` = `localhost:8080`) to run the server over plain HTTP on localhost, where the sign-in screens, the OAuth issuer, the client API, the links to the instance's pages in its responses, media URLs, and email and invite links are all on `http://localhost:8080`. ActivityPub ids stay under `https://{host}/` in every setup.",
 		check:  checkOrigin,
 		set:    func(c *Config, v string) { c.WebOrigin = v },
 	},
@@ -187,7 +187,7 @@ var schema = []field{
 	},
 	{
 		key:   "trusted_proxies",
-		doc:   "Reverse proxies and load balancers in front of the server whose forwarding header (`trusted_proxy_header`) tells the client IP, as comma-separated CIDRs or addresses such as `10.0.0.0/8, 2001:db8::/32, 192.0.2.10` (ADR-0019 §5). The client IP keys the rate limits of sign-in, registration, the client API, and the inbox. When the connection's peer is in this list, the client IP is the rightmost address of the header that is not in it; otherwise the header is ignored and the client IP is the peer. Empty trusts no one: behind a proxy every request then shares the proxy's limits. List only addresses that nothing but your proxies can connect from, and only proxies that append to the header rather than pass a client's value through (docs/architecture/deployment-targets.md).",
+		doc:   "Reverse proxies and load balancers in front of the server whose forwarding header (`trusted_proxy_header`) tells the client IP, as comma-separated CIDRs or addresses such as `10.0.0.0/8, 2001:db8::/32, 192.0.2.10`. The client IP keys the rate limits of sign-in, registration, the client API, and the inbox. When the connection's peer is in this list, the client IP is the rightmost address of the header that is not in it; otherwise the header is ignored and the client IP is the peer. Empty trusts no one: behind a proxy every request then shares the proxy's limits. List only addresses that nothing but your proxies can connect from, and only proxies that append to the header rather than pass a client's value through.",
 		check: checkTrustedProxies,
 		set:   func(c *Config, v string) { c.TrustedProxies = parseTrustedProxies(v) },
 	},
@@ -203,7 +203,7 @@ var schema = []field{
 	},
 	{
 		key: "db",
-		doc: "Database adapter (ADR-0003). The adapter is never inferred from `database_url`.",
+		doc: "Database adapter. The adapter is never inferred from `database_url`.",
 		def: "sqlite",
 		choices: []choice{
 			{value: "sqlite", inV0: true, doc: "Local SQLite file (`modernc.org/sqlite`). The build tag `no_sqlite` leaves it out."},
@@ -221,7 +221,7 @@ var schema = []field{
 	},
 	{
 		key: "queue",
-		doc: "Job queue adapter (ADR-0004).",
+		doc: "Job queue adapter.",
 		def: "db",
 		choices: []choice{
 			{value: "db", inV0: true, doc: "Queue table in the database."},
@@ -233,7 +233,7 @@ var schema = []field{
 	},
 	{
 		key: "blob",
-		doc: "Blob storage adapter for media (ADR-0005).",
+		doc: "Blob storage adapter for media.",
 		def: "fs",
 		choices: []choice{
 			{value: "fs", inV0: true, doc: "Local file system."},
@@ -244,7 +244,7 @@ var schema = []field{
 	},
 	{
 		key: "media",
-		doc: "Media processor adapter (ADR-0005).",
+		doc: "Media processor adapter.",
 		def: "native",
 		choices: []choice{
 			{value: "native", inV0: true, doc: "Pure Go image processing."},
@@ -263,83 +263,83 @@ var schema = []field{
 	{
 		key:    "media_origin",
 		defDoc: "the server's own origin (`https://{host}`)",
-		doc:    "Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/` (ADR-0005). It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).",
+		doc:    "Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/`. It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).",
 		check:  checkMediaOrigin,
 		set:    func(c *Config, v string) { c.MediaOrigin = v },
 	},
 	{
 		key:   "media_max_image_bytes",
-		doc:   "Largest accepted image upload in bytes (ADR-0019 §8).",
+		doc:   "Largest accepted image upload in bytes.",
 		def:   strconv.Itoa(16 << 20),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.MediaMaxImageBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key:   "media_max_image_side",
-		doc:   "Largest accepted image width and height in pixels, read from the file's header before decoding (ADR-0019 §8).",
+		doc:   "Largest accepted image width and height in pixels, read from the file's header before decoding.",
 		def:   "8192",
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.MediaMaxImageSide, _ = strconv.Atoi(v) },
 	},
 	{
 		key:   "media_max_image_pixels",
-		doc:   "Largest accepted image area (width × height, and for an animated GIF the frames together), read from the file's header before decoding (ADR-0019 §8). The default is 33 MP (7680 × 4320).",
+		doc:   "Largest accepted image area (width × height, and for an animated GIF the frames together), read from the file's header before decoding. The default is 33 MP (7680 × 4320).",
 		def:   strconv.Itoa(7680 * 4320),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.MediaMaxImagePixels, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key:   "media_unattached_ttl",
-		doc:   "How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it (FR-803), as a Go duration such as `24h`.",
+		doc:   "How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it, as a Go duration such as `24h`.",
 		def:   "24h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.MediaUnattachedTTL, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "media_max_av_bytes",
-		doc:   "Largest accepted video or audio upload in bytes (ADR-0019 §8, ADR-0054 §6). The file is held in memory while it is checked and remuxed, so this also bounds the memory of one upload.",
+		doc:   "Largest accepted video or audio upload in bytes. The file is held in memory while it is checked and remuxed, so this also bounds the memory of one upload.",
 		def:   strconv.Itoa(100 << 20),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.MediaMaxAVBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key:   "media_max_video_duration",
-		doc:   "Longest accepted video upload (ADR-0054 §6), as a Go duration such as `5m`.",
+		doc:   "Longest accepted video upload, as a Go duration such as `5m`.",
 		def:   "5m",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.MediaMaxVideoDuration, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "media_max_audio_duration",
-		doc:   "Longest accepted audio upload (ADR-0054 §6), as a Go duration such as `10m`.",
+		doc:   "Longest accepted audio upload, as a Go duration such as `10m`.",
 		def:   "10m",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.MediaMaxAudioDuration, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "custom_emoji_max_bytes",
-		doc:   "Largest image in bytes that a local custom emoji may be registered with (ADR-0051 §2); the image must also be a PNG, a GIF, or a WebP of at most 1,024 pixels on a side. The default is Mastodon's limit. GoToSocial does not fetch remote emoji larger than 100 KiB by default.",
+		doc:   "Largest image in bytes that a local custom emoji may be registered with; the image must also be a PNG, a GIF, or a WebP of at most 1,024 pixels on a side. The default is Mastodon's limit. GoToSocial does not fetch remote emoji larger than 100 KiB by default.",
 		def:   strconv.Itoa(256 << 10),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.CustomEmojiMaxBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key:   "remote_custom_emoji_max_bytes",
-		doc:   "Largest image in bytes of a remote custom emoji that the media proxy serves (ADR-0051 §2); the proxy answers 404 for a larger one, and for one that is not a PNG, a GIF, or a WebP.",
+		doc:   "Largest image in bytes of a remote custom emoji that the media proxy serves; the proxy answers 404 for a larger one, and for one that is not a PNG, a GIF, or a WebP.",
 		def:   strconv.Itoa(1 << 20),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.RemoteCustomEmojiMaxBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key:   "remote_media_cache_max_bytes",
-		doc:   "Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all` (FR-409). The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit (FR-803).",
+		doc:   "Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all`. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit.",
 		def:   strconv.Itoa(1 << 30),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.RemoteMediaCacheMaxBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
 		key: "kv",
-		doc: "Key-value store adapter for caches and rate limits (ADR-0003, ADR-0019 §5).",
+		doc: "Key-value store adapter for caches and rate limits.",
 		def: "db",
 		choices: []choice{
 			{value: "db", inV0: true, doc: "Table in the database."},
@@ -371,7 +371,7 @@ var schema = []field{
 	},
 	{
 		key: "stream",
-		doc: "Broker that carries the signals of the real-time updates (`GET /api/v1/streaming`) between processes (ADR-0050). It is never inferred from the other settings. With `hub`, a stream receives only the changes made in its own process, so run one process with `role = all`; a process with another role warns at start. The other brokers reach every process of the instance, and a process connects to them only while it has open streams (docs/architecture/deployment-targets.md).",
+		doc: "Broker that carries the signals of the real-time updates (`GET /api/v1/streaming`) between processes. It is never inferred from the other settings. With `hub`, a stream receives only the changes made in its own process, so run one process with `role = all`; a process with another role warns at start. The other brokers reach every process of the instance, and a process connects to them only while it has open streams.",
 		def: "hub",
 		choices: []choice{
 			{value: "hub", inV0: true, doc: "In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process)."},
@@ -419,7 +419,7 @@ var schema = []field{
 	},
 	{
 		key: "key_manager",
-		doc: "Key manager adapter that encrypts actor private keys (ADR-0019 §6).",
+		doc: "Key manager adapter that encrypts actor private keys.",
 		def: "local",
 		choices: []choice{
 			{value: "local", inV0: true, doc: "Uses the key-encryption key from `kek`."},
@@ -430,7 +430,7 @@ var schema = []field{
 	},
 	{
 		key:          "kek",
-		doc:          "Key-encryption key for actor private keys: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`. Back it up separately from the database; losing it loses every actor key (ADR-0019 §6, docs/operations/key-management.md).",
+		doc:          "Key-encryption key for actor private keys: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
 		secret:       true,
 		requiredWhen: "when `key_manager = local`",
 		check:        checkKEK,
@@ -452,7 +452,7 @@ var schema = []field{
 	},
 	{
 		key: "mail",
-		doc: "Mailer adapter for verification emails (FR-002). With `none`, no email reaches users, so an unverified address does not keep a user out and sign-ups in the `open` registration mode wait for a moderator's approval instead.",
+		doc: "Mailer adapter for verification emails. With `none`, no email reaches users, so an unverified address does not keep a user out and sign-ups in the `open` registration mode wait for a moderator's approval instead.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "Logs each message, including its links, instead of sending it; for development and instances without email."},
@@ -463,7 +463,7 @@ var schema = []field{
 	},
 	{
 		key:          "mail_from",
-		doc:          "Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: \"<instance name>\" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set (ADR-0086 §3).",
+		doc:          "Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: \"<instance name>\" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set.",
 		requiredWhen: "when `mail` is not `none`",
 		check:        checkBareAddress,
 		set:          func(c *Config, v string) { c.MailFrom = v },
@@ -510,13 +510,13 @@ var schema = []field{
 	{
 		key: "ses_sns_topic_arn",
 		doc: "ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). " +
-			"Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions (ADR-0086 §5); empty answers `404` there.",
+			"Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions; empty answers `404` there.",
 		check: checkSESSNSTopicARN,
 		set:   func(c *Config, v string) { c.SESSNSTopicARN = v },
 	},
 	{
 		key: "captcha",
-		doc: "CAPTCHA service that the sign-in and registration forms check (ADR-0042). The service receives the visitor's IP address, browser details, and cookies, and the two pages load its script; say so in the instance's privacy policy. Only `none` keeps every request on this server.",
+		doc: "CAPTCHA service that the sign-in and registration forms check. The service receives the visitor's IP address, browser details, and cookies, and the two pages load its script; say so in the instance's privacy policy. Only `none` keeps every request on this server.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No CAPTCHA; nothing is sent to a third party."},
@@ -535,7 +535,7 @@ var schema = []field{
 	},
 	{
 		key:          "captcha_secret_key",
-		doc:          "Secret key of the `captcha` service, which the server sends with each token to the service's siteverify API. The server does not try the key at start: a key that the service refuses is logged as an error on the first check, and until it is fixed registrations are refused and sign-ins skip the CAPTCHA (ADR-0042 §4).",
+		doc:          "Secret key of the `captcha` service, which the server sends with each token to the service's siteverify API. The server does not try the key at start: a key that the service refuses is logged as an error on the first check, and until it is fixed registrations are refused and sign-ins skip the CAPTCHA.",
 		secret:       true,
 		requiredWhen: "when `captcha` is not `none`",
 		check:        checkNotBlank,
@@ -543,7 +543,7 @@ var schema = []field{
 	},
 	{
 		key:    "vapid_private_key",
-		doc:    "VAPID private key of the server's Web Push notifications (FR-206, RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key (docs/operations/key-management.md).",
+		doc:    "VAPID private key of the server's Web Push notifications (RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key (docs/operations/key-management.md).",
 		secret: true,
 		check: func(v string) error {
 			_, err := webpush.ParsePrivateKey(v)
@@ -553,7 +553,7 @@ var schema = []field{
 	},
 	{
 		key: "profile",
-		doc: "Whether this is a production instance. Settings that weaken a security default for development, such as `http_allow_private_networks`, are refused in the `production` profile (ADR-0019).",
+		doc: "Whether this is a production instance. Settings that weaken a security default for development, such as `http_allow_private_networks`, are refused in the `production` profile.",
 		def: "production",
 		choices: []choice{
 			{value: "production", inV0: true, doc: "A production instance."},
@@ -563,7 +563,7 @@ var schema = []field{
 	},
 	{
 		key: "http_allow_private_networks",
-		doc: "Lets outbound HTTP (federation, media, link previews) reach loopback, private, and other non-public addresses and host names, over plain `http` and on any port. For development and tests against local servers only: the server logs a warning at start, and the `production` profile refuses it (ADR-0019 §1).",
+		doc: "Lets outbound HTTP (federation, media, link previews) reach loopback, private, and other non-public addresses and host names, over plain `http` and on any port. For development and tests against local servers only: the server logs a warning at start, and the `production` profile refuses it.",
 		def: "false",
 		choices: []choice{
 			{value: "false", inV0: true, doc: "Only public `https` destinations on ports 443 and 80."},
@@ -573,7 +573,7 @@ var schema = []field{
 	},
 	{
 		key:   "webhook_allowed_destinations",
-		doc:   "Destinations on loopback or a private network that the instance's webhooks may reach (ADR-0060), such as an automation tool on the same host or in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `n8n.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the webhooks alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.",
+		doc:   "Destinations on loopback or a private network that the instance's webhooks may reach, such as an automation tool on the same host or in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `n8n.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the webhooks alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.",
 		check: checkWebhookDestinations,
 		set: func(c *Config, v string) {
 			c.WebhookAllowedHosts, c.WebhookAllowedPrefixes = parseWebhookDestinations(v)
@@ -581,34 +581,34 @@ var schema = []field{
 	},
 	{
 		key:   "remote_status_retention",
-		doc:   "How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it (ADR-0034, FR-803). A Go duration such as `2160h` (90 days).",
+		doc:   "How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).",
 		def:   "2160h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.RemoteStatusRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "remote_status_max_retention",
-		doc:   "The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted (ADR-0034). A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.",
+		doc:   "The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.RemoteStatusMaxRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "relay_status_retention",
-		doc:   "How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it (ADR-0061). A Go duration such as `168h` (7 days).",
+		doc:   "How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it. A Go duration such as `168h` (7 days).",
 		def:   "168h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.RelayStatusRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "relay_ingest_hourly_limit",
-		doc:   "How many activities each relay may bring in per hour (ADR-0061). The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.",
+		doc:   "How many activities each relay may bring in per hour. The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.",
 		def:   "1000",
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.RelayIngestHourlyLimit, _ = strconv.Atoi(v) },
 	},
 	{
 		key:   "billing_sources",
-		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours (ADR-0068, FR-904), comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.",
+		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.",
 		check: checkBillingSources,
 		set: func(c *Config, v string) {
 			for s := range strings.SplitSeq(v, ",") {
@@ -618,7 +618,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_aws_max_requests_per_day",
-		doc:   "How many billed AWS Cost Explorer requests (one per page, $0.01 each) the imports of `billing_sources = aws` may make per UTC day, counting the scheduled imports, their retries, and the imports that an administrator starts (ADR-0068 §4). An import with none left calls nothing and is recorded as `request_cap`; the next day's import tries again.",
+		doc:   "How many billed AWS Cost Explorer requests (one per page, $0.01 each) the imports of `billing_sources = aws` may make per UTC day, counting the scheduled imports, their retries, and the imports that an administrator starts. An import with none left calls nothing and is recorded as `request_cap`; the next day's import tries again.",
 		def:   strconv.Itoa(defaultBillingAWSRequestsPerDay),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.BillingAWSMaxRequestsPerDay, _ = strconv.Atoi(v) },
@@ -632,7 +632,7 @@ var schema = []field{
 	},
 	{
 		key: "billing_aws_metric",
-		doc: "Cost Explorer metric that the imports of `billing_sources = aws` record (ADR-0068 §6).",
+		doc: "Cost Explorer metric that the imports of `billing_sources = aws` record.",
 		def: "NetUnblendedCost",
 		choices: []choice{
 			{value: "NetUnblendedCost", inV0: true, doc: "The cost after the discounts (Savings Plans, Reserved Instances, private pricing), the closest to the invoice."},
@@ -642,7 +642,7 @@ var schema = []field{
 	},
 	{
 		key: "billing_aws_filter",
-		doc: "Which costs of the AWS account the imports of `billing_sources = aws` take (ADR-0068 §6). The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter (docs/operations/billing-import.md).",
+		doc: "Which costs of the AWS account the imports of `billing_sources = aws` take. The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter (docs/operations/billing-import.md).",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "Every cost that the credentials can see: the account's own, or, from the management account of an organization, every member account's."},
@@ -673,13 +673,13 @@ var schema = []field{
 	},
 	{
 		key:   "billing_aws_role_arn",
-		doc:   "ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys (ADR-0068 §8). The role trusts the identity provider `accounts.google.com` for the service account (docs/operations/billing-import.md). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).",
+		doc:   "ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys. The role trusts the identity provider `accounts.google.com` for the service account (docs/operations/billing-import.md). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).",
 		check: checkBillingAWSRoleARN,
 		set:   func(c *Config, v string) { c.BillingAWSRoleARN = v },
 	},
 	{
 		key: "billing_gcp_method",
-		doc: "How the imports of `billing_sources = gcp` read the Google Cloud usage charges (ADR-0068 §7). The billing months are the invoice months of Cloud Billing, US Pacific calendar months; a month is final from the 5th of the next month on (Pacific time).",
+		doc: "How the imports of `billing_sources = gcp` read the Google Cloud usage charges. The billing months are the invoice months of Cloud Billing, US Pacific calendar months; a month is final from the 5th of the next month on (Pacific time).",
 		def: "bigquery",
 		choices: []choice{
 			{value: "bigquery", inV0: true, doc: "Sum the standard usage cost export of Cloud Billing to BigQuery (`billing_gcp_table`) with one query a day, within the free tier of BigQuery (docs/operations/billing-import.md)."},
@@ -720,7 +720,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_gcp_max_bytes_billed",
-		doc:   "The `maximumBytesBilled` of each BigQuery query of `billing_gcp_method = bigquery`, in bytes: a query that would bill more fails as `bytes_cap` and bills nothing (ADR-0068 §4). The default, 1 GiB, keeps a query a day well within the free tier of 1 TiB a month, which the billing account shares with its other uses; BigQuery bills at least 10 MB a query.",
+		doc:   "The `maximumBytesBilled` of each BigQuery query of `billing_gcp_method = bigquery`, in bytes: a query that would bill more fails as `bytes_cap` and bills nothing. The default, 1 GiB, keeps a query a day well within the free tier of 1 TiB a month, which the billing account shares with its other uses; BigQuery bills at least 10 MB a query.",
 		def:   strconv.FormatInt(defaultBillingGCPMaxBytesBilled, 10),
 		check: checkPositiveInt64,
 		set:   func(c *Config, v string) { c.BillingGCPMaxBytesBilled, _ = strconv.ParseInt(v, 10, 64) },
@@ -734,18 +734,18 @@ var schema = []field{
 	},
 	{
 		key: "payments_provider",
-		doc: "The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page, ADR-0099), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.",
+		doc: "The payment provider of the supporters: local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No payments: the webhook endpoint and the reconciliation do not run."},
 			{value: "stripe", inV0: true, doc: "Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out."},
-			{value: "payjp", inV0: true, doc: "PAY.JP on its API v1 (ADR-0099): plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out."},
+			{value: "payjp", inV0: true, doc: "PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.PaymentsProvider = v },
 	},
 	{
 		key:          "payments_stripe_secret_key",
-		doc:          "The API key of the Stripe account of `payments_provider = stripe` (ADR-0074 §5): a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
+		doc:          "The API key of the Stripe account of `payments_provider = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
 		secret:       true,
 		requiredWhen: "when `payments_provider = stripe`",
 		check:        checkStripeSecretKey,
@@ -753,7 +753,7 @@ var schema = []field{
 	},
 	{
 		key:          "payments_stripe_webhook_secret",
-		doc:          "The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments/webhooks/stripe` that the operator registers on Stripe's dashboard, or of `stripe listen` for local tests (ADR-0074 §3). While a secret is rolled, Stripe signs with the old and the new one, so one is enough.",
+		doc:          "The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments/webhooks/stripe` that the operator registers on Stripe's dashboard, or of `stripe listen` for local tests. While a secret is rolled, Stripe signs with the old and the new one, so one is enough.",
 		secret:       true,
 		requiredWhen: "when `payments_provider = stripe`",
 		check:        checkStripeWebhookSecret,
@@ -761,7 +761,7 @@ var schema = []field{
 	},
 	{
 		key:          "payments_payjp_secret_key",
-		doc:          "The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp` (ADR-0099 §7). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.",
+		doc:          "The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.",
 		secret:       true,
 		requiredWhen: "when `payments_provider = payjp`",
 		check:        checkPayjpSecretKey,
@@ -769,14 +769,14 @@ var schema = []field{
 	},
 	{
 		key:          "payments_payjp_public_key",
-		doc:          "The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js (ADR-0099 §3, §7).",
+		doc:          "The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.",
 		requiredWhen: "when `payments_provider = payjp`",
 		check:        checkPayjpPublicKey,
 		set:          func(c *Config, v string) { c.PaymentsPayjpPublicKey = v },
 	},
 	{
 		key:          "payments_payjp_webhook_token",
-		doc:          "The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp` (ADR-0099 §4). Test and live mode have different tokens.",
+		doc:          "The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp`. Test and live mode have different tokens.",
 		secret:       true,
 		requiredWhen: "when `payments_provider = payjp`",
 		check:        checkPayjpWebhookToken,
@@ -784,49 +784,49 @@ var schema = []field{
 	},
 	{
 		key:   "payments_reconcile_interval",
-		doc:   "How often the reconciliation with `payments_provider` runs (ADR-0074 §4): it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.",
+		doc:   "How often the reconciliation with `payments_provider` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.",
 		def:   "6h",
 		check: checkReconcileInterval,
 		set:   func(c *Config, v string) { c.PaymentsReconcileInterval, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "payments_reconcile_max_requests",
-		doc:   "How many requests one reconciliation sends to `payments_provider` (ADR-0074 §4), a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.",
+		doc:   "How many requests one reconciliation sends to `payments_provider`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.",
 		def:   strconv.Itoa(supporters.DefaultReconcileMaxRequests),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
 	},
 	{
 		key:   "dead_job_retention",
-		doc:   "How long a dead job (a job that failed for good or used up its attempts, ADR-0004) is kept after it failed, for an operator to inspect and requeue it; the hourly purge then deletes it (FR-803). A Go duration such as `720h` (30 days).",
+		doc:   "How long a dead job (a job that failed for good or used up its attempts) is kept after it failed, for an operator to inspect and requeue it; the hourly purge then deletes it. A Go duration such as `720h` (30 days).",
 		def:   "720h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DeadJobRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "job_attempt_retention",
-		doc:   "How long the record of a job's run that did not succeed (a retry, or the run that made it a dead job; ADR-0064) is kept after the run, for the queue dashboard of the admin screen; the hourly purge then deletes it. Successful runs are not recorded. A Go duration such as `720h` (30 days).",
+		doc:   "How long the record of a job's run that did not succeed (a retry, or the run that made it a dead job) is kept after the run, for the queue dashboard of the admin screen; the hourly purge then deletes it. Successful runs are not recorded. A Go duration such as `720h` (30 days).",
 		def:   "720h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.JobAttemptRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "dynamic_client_unredeemed_ttl",
-		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`; ADR-0090 §1) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. A Go duration such as `24h`.",
+		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. A Go duration such as `24h`.",
 		def:   "24h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DynamicClientUnredeemedTTL, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "dynamic_client_idle_ttl",
-		doc:   "How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it (ADR-0090 §1). Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).",
+		doc:   "How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it. Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).",
 		def:   "2160h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DynamicClientIdleTTL, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "oauth_client_rate_limits",
-		doc:   "Caps on the client API requests of OAuth clients (ADR-0090 §7), for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.",
+		doc:   "Caps on the client API requests of OAuth clients, for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.",
 		check: checkClientRateLimits,
 		set: func(c *Config, v string) {
 			c.OAuthClientRateLimits, _ = parseClientRateLimits(v)
@@ -834,7 +834,7 @@ var schema = []field{
 	},
 	{
 		key: "metrics_exporter",
-		doc: "Where the service metrics go (ADR-0055 §2): the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.",
+		doc: "Where the service metrics go: the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No metrics; measuring costs next to nothing. On Cloud Run the platform's metrics and log-based metrics stand in for them."},
@@ -870,7 +870,7 @@ var schema = []field{
 	},
 	{
 		key: "traces_exporter",
-		doc: "Where the distributed traces go (ADR-0063): the spans of the HTTP requests, the job runs (each the root of a new trace linked to the request that enqueued it), the transactions and queries, the deliveries, and the outbound requests. Span attributes never carry an account, a URL or a path, a client IP, a User-Agent, an SQL text, or an error message; the outbound requests carry the destination's host name. No outbound request carries a `traceparent`, and an incoming `traceparent` is taken only from `trusted_proxies`.",
+		doc: "Where the distributed traces go: the spans of the HTTP requests, the job runs (each the root of a new trace linked to the request that enqueued it), the transactions and queries, the deliveries, and the outbound requests. Span attributes never carry an account, a URL or a path, a client IP, a User-Agent, an SQL text, or an error message; the outbound requests carry the destination's host name. No outbound request carries a `traceparent`, and an incoming `traceparent` is taken only from `trusted_proxies`.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No spans; tracing costs next to nothing. The log lines still carry `trace_id` and `span_id` of a `traceparent` from `trusted_proxies`, which correlates them with the platform's traces (Cloud Run)."},
