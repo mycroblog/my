@@ -52,6 +52,27 @@ var ErrMailRejected = errors.New("mail rejected")
 // ErrMailRejected.
 var ErrRecipientRejected = fmt.Errorf("%w: recipient rejected", ErrMailRejected)
 
+// StatusError is an error of a Mailer that carries the enhanced status code (RFC 3463) of the
+// server's reply, such as 5.1.1, which the record of a rejected recipient keeps (ADR-0086 §5).
+type StatusError struct {
+	// Status is the enhanced status code.
+	Status string
+	Err    error
+}
+
+func (e *StatusError) Error() string { return e.Err.Error() }
+func (e *StatusError) Unwrap() error { return e.Err }
+
+// EnhancedStatus returns the enhanced status code of the first StatusError in err's chain, ""
+// without one.
+func EnhancedStatus(err error) string {
+	var se *StatusError
+	if errors.As(err, &se) {
+		return se.Status
+	}
+	return ""
+}
+
 // maxSubjectLength bounds the subject in bytes; longer subjects are an error, not cut.
 const maxSubjectLength = 998
 

@@ -111,6 +111,26 @@ INSERT INTO user_primary_emails (user_id, email_address_id, address_normalized)
 SELECT e.user_id, e.id, e.address_normalized FROM user_email_addresses e
 WHERE NOT EXISTS (SELECT 1 FROM user_email_addresses o WHERE o.user_id = e.user_id AND o.id < e.id);
 
+-- name: DeleteAllEmailSuppressions :exec
+DELETE FROM email_suppressions;
+
+-- The rule of email_suppressions (data-model 4.1): of the failures of an address after its last
+-- lift, the earliest hard bounce, or the earliest complaint when there is no hard bounce.
+-- name: RebuildEmailSuppressions :exec
+INSERT INTO email_suppressions (email_address_id, kind, failure_id)
+SELECT f.email_address_id, f.kind, f.id FROM email_delivery_failures f
+WHERE NOT EXISTS (
+    SELECT 1 FROM email_suppression_lifts l1 WHERE l1.email_address_id = f.email_address_id AND l1.lifted_at >= f.occurred_at)
+  AND (f.kind = 'hard_bounce' OR NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures h WHERE h.email_address_id = f.email_address_id AND h.kind = 'hard_bounce'
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l2 WHERE l2.email_address_id = h.email_address_id AND l2.lifted_at >= h.occurred_at)))
+  AND NOT EXISTS (
+    SELECT 1 FROM email_delivery_failures o WHERE o.email_address_id = f.email_address_id AND o.kind = f.kind
+      AND (o.occurred_at < f.occurred_at OR (o.occurred_at = f.occurred_at AND o.id < f.id))
+      AND NOT EXISTS (
+        SELECT 1 FROM email_suppression_lifts l3 WHERE l3.email_address_id = o.email_address_id AND l3.lifted_at >= o.occurred_at));
+
 -- Content -------------------------------------------------------------------------------------
 
 -- name: DeleteAllStatusSensitivityOverrides :exec

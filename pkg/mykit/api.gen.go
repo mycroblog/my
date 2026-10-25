@@ -322,6 +322,7 @@ const (
 	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
+	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
 	AdminAuditActionOauthClientDisabled             AdminAuditAction = "oauth_client_disabled"
@@ -439,6 +440,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainActionLifted:
 		return true
 	case AdminAuditActionDomainStatusesRefetchQueued:
+		return true
+	case AdminAuditActionEmailSuppressionLifted:
 		return true
 	case AdminAuditActionInviteCreated:
 		return true
@@ -1631,6 +1634,24 @@ func (e DomainBlockSeverity) Valid() bool {
 	case DomainBlockSeveritySilence:
 		return true
 	case DomainBlockSeveritySuspend:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EmailSuppressionKind.
+const (
+	EmailSuppressionKindComplaint  EmailSuppressionKind = "complaint"
+	EmailSuppressionKindHardBounce EmailSuppressionKind = "hard_bounce"
+)
+
+// Valid indicates whether the value is a known member of the EmailSuppressionKind enum.
+func (e EmailSuppressionKind) Valid() bool {
+	switch e {
+	case EmailSuppressionKindComplaint:
+		return true
+	case EmailSuppressionKindHardBounce:
 		return true
 	default:
 		return false
@@ -3550,6 +3571,11 @@ type AdminAccountDetail struct {
 	// Actions The newest 20 actions on the account, newest first.
 	Actions []AdminAccountAction `json:"actions"`
 
+	// EmailSuppression The suppression of the primary email address of a local account; omitted when it
+	// is not suppressed. A moderator lifts it with
+	// `POST /admin/accounts/{id}/email_suppression/lift`.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
+
 	// EmailVerified Whether the primary email address of a local account is verified; omitted when
 	// it has none.
 	EmailVerified *bool `json:"email_verified,omitempty"`
@@ -3779,7 +3805,8 @@ type AdminAppealPage struct {
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
-// a new password for the account's user). On a `domain`:
+// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+// suppression of the primary email address of the account's user). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
@@ -3846,7 +3873,8 @@ type AdminAuditEntry struct {
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
-	// a new password for the account's user). On a `domain`:
+	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
+	// suppression of the primary email address of the account's user). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
@@ -6684,6 +6712,21 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
+// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
+// email) stops every email but the verification email that the user asks for; verifying the
+// address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
+// notification and announcement emails only.
+type EmailSuppression struct {
+	Kind EmailSuppressionKind `json:"kind"`
+
+	// Since When the failure that started the suppression happened.
+	Since time.Time `json:"since"`
+}
+
+// EmailSuppressionKind defines model for EmailSuppression.Kind.
+type EmailSuppressionKind string
+
 // EnableTotpRequest The setup to enroll and a code of the app that shows it has the secret.
 type EnableTotpRequest struct {
 	// Code The six-digit code that the app shows now.
@@ -8407,6 +8450,11 @@ type Preferences struct {
 	// `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
 	// primary address. Off for a new user.
 	EmailModeratorNotifications bool `json:"email_moderator_notifications"`
+
+	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
+	// After a `hard_bounce`, the user asks for the verification email again to show that the
+	// address works.
+	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale string `json:"locale"`
@@ -12701,6 +12749,18 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/accounts/{id}/actions (the `CreateAccountAction` operationId).
 	CreateAccountAction(ctx context.Context, id AdminAccountId, body CreateAccountActionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+	//
+	// Lets the server send email again to the primary address of a local account's user, which
+	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `manage_accounts` permission.
+	//
+	// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+	LiftAdminAccountEmailSuppression(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 	//
@@ -17127,6 +17187,28 @@ func (c *Client) CreateAccountActionWithBody(ctx context.Context, id AdminAccoun
 // Corresponds with POST /admin/accounts/{id}/actions (the `CreateAccountAction` operationId).
 func (c *Client) CreateAccountAction(ctx context.Context, id AdminAccountId, body CreateAccountActionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateAccountActionRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
+//
+// Lets the server send email again to the primary address of a local account's user, which
+// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `manage_accounts` permission.
+//
+// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+func (c *Client) LiftAdminAccountEmailSuppression(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLiftAdminAccountEmailSuppressionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -25197,6 +25279,40 @@ func NewCreateAccountActionRequestWithBody(server string, id AdminAccountId, con
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLiftAdminAccountEmailSuppressionRequest constructs an http.Request for the LiftAdminAccountEmailSuppression method
+func NewLiftAdminAccountEmailSuppressionRequest(server string, id AdminAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/accounts/%s/email_suppression/lift", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -36112,6 +36228,20 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/accounts/{id}/actions (the `CreateAccountAction` operationId).
 	CreateAccountActionWithResponse(ctx context.Context, id AdminAccountId, body CreateAccountActionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAccountActionResponse, error)
 
+	// LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
+	//
+	// Lets the server send email again to the primary address of a local account's user, which
+	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `manage_accounts` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+	LiftAdminAccountEmailSuppressionWithResponse(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*LiftAdminAccountEmailSuppressionResponse, error)
+
 	// IssueAdminAccountPasswordResetLinkWithResponse Issue a password reset link for a local account
 	//
 	// Issues a link that sets a new password for a local account's user, for an
@@ -41727,6 +41857,57 @@ func (r CreateAccountActionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CreateAccountActionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// LiftAdminAccountEmailSuppressionResponseDefaultHeaders the declared response headers of an HTTP default response for LiftAdminAccountEmailSuppression
+type LiftAdminAccountEmailSuppressionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type LiftAdminAccountEmailSuppressionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *LiftAdminAccountEmailSuppressionResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r LiftAdminAccountEmailSuppressionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r LiftAdminAccountEmailSuppressionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LiftAdminAccountEmailSuppressionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LiftAdminAccountEmailSuppressionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LiftAdminAccountEmailSuppressionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58036,6 +58217,26 @@ func (c *ClientWithResponses) CreateAccountActionWithResponse(ctx context.Contex
 	return ParseCreateAccountActionResponse(rsp)
 }
 
+// LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
+//
+// Lets the server send email again to the primary address of a local account's user, which
+// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
+// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `manage_accounts` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
+func (c *ClientWithResponses) LiftAdminAccountEmailSuppressionWithResponse(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*LiftAdminAccountEmailSuppressionResponse, error) {
+	rsp, err := c.LiftAdminAccountEmailSuppression(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLiftAdminAccountEmailSuppressionResponse(rsp)
+}
+
 // IssueAdminAccountPasswordResetLinkWithResponse Issue a password reset link for a local account
 //
 // Issues a link that sets a new password for a local account's user, for an
@@ -65788,6 +65989,69 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 		response.Headers200 = &headers
 	case true:
 		var headers CreateAccountActionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseLiftAdminAccountEmailSuppressionResponse parses an HTTP response from a LiftAdminAccountEmailSuppressionWithResponse call
+func ParseLiftAdminAccountEmailSuppressionResponse(rsp *http.Response) (*LiftAdminAccountEmailSuppressionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LiftAdminAccountEmailSuppressionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers LiftAdminAccountEmailSuppressionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
