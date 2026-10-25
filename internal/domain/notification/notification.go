@@ -17,8 +17,9 @@ type Type string
 // relationships_severed from the moderation events, custom_emoji_request_decided from the
 // custom emoji requests (ADR-0070 §9), and supporter_payment_failed,
 // supporter_subscription_ended, and supporter_plan_retired from the supporter subscriptions
-// (ADR-0072 §16). admin_report, admin_sign_up, admin_appeal,
-// admin_webhook_disabled, and admin_custom_emoji_request go to the staff whose roles grant the
+// (ADR-0072 §16), and account_moved from the migration of the follows of a moved account
+// (ADR-0089). admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled,
+// admin_custom_emoji_request, and admin_account_moved go to the staff whose roles grant the
 // permission they need (ModeratorPermission).
 const (
 	TypeFollow         Type = "follow"
@@ -60,7 +61,41 @@ const (
 	// TypeSupporterPlanRetired tells a subscriber that their plan was retired and their
 	// subscription ends with its period (ADR-0072 §16).
 	TypeSupporterPlanRetired Type = "supporter_plan_retired"
+	// TypeAccountMoved tells a local account that an account it followed moved (ADR-0089):
+	// SourceAccountID is the moved account, AccountMoveID the move, and AccountMoveOutcome what
+	// became of the recipient's follow.
+	TypeAccountMoved Type = "account_moved"
+	// TypeAdminAccountMoved tells the holders of manage_accounts that an account that moderation
+	// limits moved, and that the target does not inherit the limit (ADR-0089).
+	TypeAdminAccountMoved Type = "admin_account_moved"
 )
+
+// MoveOutcome is what became of a follow of an account that moved (notifications.account_move_outcome).
+type MoveOutcome string
+
+// Move outcomes. With MoveFollowed and MoveRequested the recipient follows the target instead
+// of the moved account; with the others the recipient still follows the moved account.
+const (
+	// MoveFollowed: the recipient follows the target.
+	MoveFollowed MoveOutcome = "followed"
+	// MoveRequested: the recipient's follow of the target awaits its approval.
+	MoveRequested MoveOutcome = "requested"
+	// MoveBlocking: the recipient blocks the target.
+	MoveBlocking MoveOutcome = "blocking"
+	// MoveBlockedBy: the target blocks the recipient.
+	MoveBlockedBy MoveOutcome = "blocked_by"
+	// MoveDomainMuted: the recipient mutes the domain of the target.
+	MoveDomainMuted MoveOutcome = "domain_muted"
+)
+
+// Valid reports whether o is a known move outcome.
+func (o MoveOutcome) Valid() bool {
+	switch o {
+	case MoveFollowed, MoveRequested, MoveBlocking, MoveBlockedBy, MoveDomainMuted:
+		return true
+	}
+	return false
+}
 
 // Types are every notification type, in a stable order.
 var Types = []Type{
@@ -69,6 +104,7 @@ var Types = []Type{
 	TypeRelationshipsSevered,
 	TypeAppealDecided, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeCustomEmojiRequestDecided,
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
+	TypeAccountMoved, TypeAdminAccountMoved,
 }
 
 // Valid reports whether t is a known notification type.
@@ -78,7 +114,8 @@ func (t Type) Valid() bool {
 		TypeReaction, TypeQuote, TypePollClosed, TypeModerationNotice, TypeReportResolved, TypeAdminReport, TypeAdminSignUp,
 		TypeRelationshipsSevered, TypeAppealDecided, TypeAdminAppeal, TypeAdminWebhookDisabled,
 		TypeAdminCustomEmojiRequest, TypeCustomEmojiRequestDecided,
-		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired:
+		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
+		TypeAccountMoved, TypeAdminAccountMoved:
 		return true
 	}
 	return false
@@ -113,8 +150,13 @@ type Notification struct {
 	// custom emoji (custom_emojis.id), exactly one of them; both "" for the other types.
 	ReactionEmoji         string
 	ReactionCustomEmojiID string
-	DedupeKey             string
-	CreatedAt             time.Time
+	// AccountMoveID is the move of an account_moved or an admin_account_moved, "" for the other
+	// types; AccountMoveOutcome is what became of the recipient's follow, for an account_moved
+	// only.
+	AccountMoveID      string
+	AccountMoveOutcome MoveOutcome
+	DedupeKey          string
+	CreatedAt          time.Time
 }
 
 var (
@@ -158,8 +200,15 @@ func (n Notification) Validate() error {
 		(n.ReactionEmoji != "" && n.ReactionCustomEmojiID != "") {
 		return errors.New("notification: a reaction, and only it, names one emoji")
 	}
+	moves := n.Type == TypeAccountMoved || n.Type == TypeAdminAccountMoved
+	if moves != (n.AccountMoveID != "") || (n.Type == TypeAccountMoved) != (n.AccountMoveOutcome != "") ||
+		(n.AccountMoveOutcome != "" && !n.AccountMoveOutcome.Valid()) ||
+		(n.Type == TypeAccountMoved && n.SourceAccountID == "") {
+		return errors.New("notification: an account_moved or an admin_account_moved, and only they, name a move, and an account_moved has the moved account and an outcome")
+	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
+		n.Type == TypeAdminAccountMoved && n.SourceAccountID != "",
 		n.Type == TypeAdminAppeal && n.SourceAccountID != "",
 		n.Type == TypeAdminWebhookDisabled && n.SourceAccountID != "",
 		n.Type == TypeAdminCustomEmojiRequest && n.SourceAccountID != "",
@@ -244,14 +293,14 @@ const (
 
 // ModeratorPermission returns the permission that the recipient of a notification of type t
 // needs, when they get it and while they read it, and whether t needs one: admin_report needs
-// manage_reports, admin_sign_up and admin_appeal manage_accounts, admin_webhook_disabled
+// manage_reports, admin_sign_up, admin_appeal, and admin_account_moved manage_accounts, admin_webhook_disabled
 // manage_webhooks, and admin_custom_emoji_request manage_custom_emojis. The other types need
 // none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
 	case TypeAdminReport:
 		return PermissionManageReports, true
-	case TypeAdminSignUp, TypeAdminAppeal:
+	case TypeAdminSignUp, TypeAdminAppeal, TypeAdminAccountMoved:
 		return PermissionManageAccounts, true
 	case TypeAdminWebhookDisabled:
 		return PermissionManageWebhooks, true
@@ -303,6 +352,13 @@ func AdminCustomEmojiRequestKey(requestID string) string {
 func CustomEmojiRequestDecidedKey(requestID string) string {
 	return string(TypeCustomEmojiRequestDecided) + ":" + requestID
 }
+
+// AccountMovedKey is the dedupe key of an account_moved notification: one per move, so that
+// running the migration of the follows again does not notify again.
+func AccountMovedKey(moveID string) string { return string(TypeAccountMoved) + ":" + moveID }
+
+// AdminAccountMovedKey is the dedupe key of an admin_account_moved notification: one per move.
+func AdminAccountMovedKey(moveID string) string { return string(TypeAdminAccountMoved) + ":" + moveID }
 
 // AdminAppealKey is the dedupe key of an admin_appeal notification: one per appeal.
 func AdminAppealKey(appealID string) string { return string(TypeAdminAppeal) + ":" + appealID }

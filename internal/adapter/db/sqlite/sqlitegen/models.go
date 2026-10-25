@@ -58,6 +58,22 @@ type AccountLifecycleState struct {
 	DeletionDueAt sql.NullInt64
 }
 
+type AccountMove struct {
+	ID              string
+	AccountID       string
+	TargetAccountID string
+	InitiatedBy     string
+	ActivityUri     sql.NullString
+	OccurredAt      int64
+}
+
+type AccountMoveState struct {
+	AccountID       string
+	MoveID          string
+	TargetAccountID string
+	Since           int64
+}
+
 type AccountPostCounter struct {
 	AccountID     string
 	StatusesCount int64
@@ -577,6 +593,8 @@ type Notification struct {
 	SupporterSubscriptionID sql.NullString
 	ReactionEmoji           sql.NullString
 	ReactionCustomEmojiID   sql.NullString
+	AccountMoveID           sql.NullString
+	AccountMoveOutcome      sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

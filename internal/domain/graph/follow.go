@@ -99,6 +99,9 @@ const (
 	TerminatedBlocked           TerminationReason = "blocked"
 	TerminatedAccountDeleted    TerminationReason = "account_deleted"
 	TerminatedModeration        TerminationReason = "moderation"
+	// TerminatedMoved is the follow of an account that moved, which the follower follows the
+	// target of instead (ADR-0089).
+	TerminatedMoved TerminationReason = "moved"
 )
 
 // Termination is the event that a pending or active follow ended.

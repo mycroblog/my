@@ -311,3 +311,37 @@ func (r *GraphRepository) FindBlock(ctx context.Context, id string) (graph.Block
 	}
 	return blockFrom(row), nil
 }
+
+// ListBlockers implements graph.Repository.
+func (r *GraphRepository) ListBlockers(ctx context.Context, blockedAccountID, after string, limit int) ([]graph.BlockEdge, error) {
+	n, err := toInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListBlockersPage(ctx, postgresgen.ListBlockersPageParams{
+		AccountID: blockedAccountID, After: toNullString(after), PageLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list blockers")
+	}
+	return blockEdgesFrom(rows), nil
+}
+
+// ListMuters implements graph.Repository.
+func (r *GraphRepository) ListMuters(ctx context.Context, targetAccountID string, now time.Time, after string, limit int) ([]graph.Mute, error) {
+	n, err := toInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListActiveMutersPage(ctx, postgresgen.ListActiveMutersPageParams{
+		TargetAccountID: targetAccountID, Now: now, After: toNullString(after), PageLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list muters")
+	}
+	out := make([]graph.Mute, len(rows))
+	for i, row := range rows {
+		out[i] = muteFrom(row)
+	}
+	return out, nil
+}

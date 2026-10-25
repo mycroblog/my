@@ -1,4 +1,12 @@
 {
+  "mail.admin_account_moved.body": {
+    "defaultMessage": "‮∀u ɐɔɔonuʇ ʇɥɐʇ ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ʅıɯıʇ ɯoʌǝp ʇo ɐuoʇɥǝɹ ɐɔɔonuʇ. ⊥ɥǝ ɐɔɔonuʇ ıʇ ɯoʌǝp ʇo poǝs uoʇ ƃǝʇ ʇɥǝ ʅıɯıʇ.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ıʇ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_account_moved.subject": {
+    "defaultMessage": "‮∀u ɐɔɔonuʇ ʅıɯıʇǝp ou {instance} ɯoʌǝp ʇo ɐuoʇɥǝɹ ɐɔɔonuʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_appeal.body": {
     "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɐddǝɐʅǝp ɐ ɯopǝɹɐʇıou ɐɔʇıou, ɐup ʇɥǝ ɐddǝɐʅ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs.\n\nOdǝu ʎonɹ uoʇıɟıɔɐʇıous ʇo ɹǝʌıǝʍ ıʇ:\n\n{url}\n\n⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

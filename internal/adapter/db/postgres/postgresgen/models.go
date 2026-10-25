@@ -60,6 +60,22 @@ type AccountLifecycleState struct {
 	DeletionDueAt *time.Time
 }
 
+type AccountMove struct {
+	ID              string
+	AccountID       string
+	TargetAccountID string
+	InitiatedBy     string
+	ActivityUri     *string
+	OccurredAt      time.Time
+}
+
+type AccountMoveState struct {
+	AccountID       string
+	MoveID          string
+	TargetAccountID string
+	Since           time.Time
+}
+
 type AccountPostCounter struct {
 	AccountID     string
 	StatusesCount int64
@@ -579,6 +595,8 @@ type Notification struct {
 	SupporterSubscriptionID *string
 	ReactionEmoji           *string
 	ReactionCustomEmojiID   *string
+	AccountMoveID           *string
+	AccountMoveOutcome      *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

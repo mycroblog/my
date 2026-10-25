@@ -70,7 +70,7 @@ func (e LifecycleEventRecorded) ClosesLocalAccount() bool {
 // RegisterProjectors registers the account module's synchronous projectors (data-model §9):
 // account_handles from local accounts and the handle checks of remote actors,
 // account_profile_heads from profile revisions, account_lifecycle_states from lifecycle events,
-// and remote_account_heads from the fetches of remote actors. Each projector applies the same rule as
+// remote_account_heads from the fetches of remote actors, and account_move_states from moves. Each projector applies the same rule as
 // RebuildProjections, so updating incrementally and rebuilding agree.
 func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventLocalAccountCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -105,6 +105,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventHandleChecked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return applyHandleCheck(ctx, tx, repo, e.(HandleChecked).Verification)
 	})
+	registerMoveProjector(r, repo)
 }
 
 // applyHandleCheck makes account_handles follow the newest handle check of a remote actor: a
@@ -144,6 +145,7 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) 
 		{"account_profile_heads", func(tx uow.Tx) error { return rebuildProfileHeads(ctx, tx, repo) }},
 		{"account_lifecycle_states", func(tx uow.Tx) error { return rebuildLifecycleStates(ctx, tx, repo) }},
 		{"remote_account_heads", func(tx uow.Tx) error { return rebuildRemoteHeads(ctx, tx, repo) }},
+		{"account_move_states", func(tx uow.Tx) error { return rebuildMoveStates(ctx, tx, repo) }},
 	}
 	for _, s := range steps {
 		if err := u.Tx(ctx, s.fn); err != nil {

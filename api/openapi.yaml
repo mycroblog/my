@@ -8473,6 +8473,13 @@ components:
           description: The number of accounts that the account actively follows; present where `followers_count` is.
           type: integer
           minimum: 0
+        moved:
+          description: |
+            The account that the account moved to (ADR-0089), when it moved: clients show that it
+            moved, with a link to this one. Present on the account's own endpoints, where
+            `followers_count` is, and without a `moved` of its own (moves are not followed in
+            chains).
+          $ref: '#/components/schemas/Account'
     AccountBadge:
       description: |
         A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -8491,6 +8498,30 @@ components:
           type: string
         color:
           $ref: '#/components/schemas/BadgeColor'
+    AccountMove:
+      description: |
+        The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
+        `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+        its posts stay where they are.
+      type: object
+      properties:
+        target:
+          description: The account that the moved account moved to; omitted when it is gone.
+          $ref: '#/components/schemas/Account'
+        outcome:
+          description: |
+            What became of the user's follow of the moved account, for an `account_moved` only:
+            `followed`, the user follows `target` instead; `requested`, the user's follow of
+            `target` awaits its approval instead; and the user still follows the moved account
+            when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
+            the user mutes the server of `target` (`domain_muted`).
+          type: string
+          enum:
+            - followed
+            - requested
+            - blocking
+            - blocked_by
+            - domain_muted
     AccountFieldSource:
       description: A metadata field of a profile as the user typed it.
       type: object
@@ -14188,6 +14219,8 @@ components:
           $ref: '#/components/schemas/SupporterSubscription'
         relationship_severance:
           $ref: '#/components/schemas/RelationshipSeverance'
+        account_move:
+          $ref: '#/components/schemas/AccountMove'
         reaction:
           description: The emoji of a `reaction`; omitted for the other types.
           $ref: '#/components/schemas/ReactionEmoji'
@@ -14264,6 +14297,11 @@ components:
         (the administrators retired the plan; the subscription ends with its period). Each is
         sent once per change of the subscription. A client must not lead from them to
         subscribing or paying where it offers no way to subscribe.
+        `account_moved` tells that an account that the user followed (`account`) moved to another
+        one; its `account_move` carries the target and what became of the user's follow. It is
+        sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
+        account that the moderators limit moved, and the target does not get the limit; its
+        `account_move` carries the target, and it has no `account`.
       type: string
       enum:
         - follow
@@ -14288,6 +14326,8 @@ components:
         - supporter_payment_failed
         - supporter_subscription_ended
         - supporter_plan_retired
+        - account_moved
+        - admin_account_moved
     OAuthApp:
       description: |
         An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
