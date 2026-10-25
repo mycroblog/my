@@ -4927,7 +4927,8 @@ export interface paths {
         /**
          * Read the service closure
          * @description The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-         *     and whether its notice is short. Needs the `manage_service_closure` permission.
+         *     and whether its notice is short; once the server is closed, the progress of the closure's
+         *     `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
          */
         get: operations["getAdminServiceClosure"];
         put?: never;
@@ -7257,6 +7258,7 @@ export interface components {
              *     time to export their data and move their accounts. A short notice is allowed.
              */
             short_notice: boolean;
+            progress?: components["schemas"]["AdminServiceClosureProgress"];
         };
         /**
          * @description What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
@@ -7282,6 +7284,31 @@ export interface components {
              *     their records with the CLI before discarding the data of the closed server.
              */
             retention_holds: number;
+        };
+        /** @description The deliveries of the closure's `Delete`s by state. */
+        AdminServiceClosureDeliveries: {
+            /** @description Not attempted yet, or failed and attempted again later. */
+            pending: number;
+            /** @description Accepted by the inbox. */
+            succeeded: number;
+            /** @description Refused for good. */
+            permanent_failure: number;
+            /** @description Not sent, because the domain was suspended or the server unavailable. */
+            skipped: number;
+            /** @description Used up their attempts; an operator may requeue their dead jobs. */
+            dead: number;
+        };
+        /**
+         * @description How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+         *     /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
+         *     `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
+         */
+        AdminServiceClosureProgress: {
+            /** @description The local accounts whose `Delete` is recorded. */
+            accounts: number;
+            /** @description The recorded `Delete`s whose inboxes are still being computed. */
+            fanouts_pending: number;
+            deliveries: components["schemas"]["AdminServiceClosureDeliveries"];
         };
         /** @description The confirmation of the closure of the server. */
         CloseServiceRequest: {

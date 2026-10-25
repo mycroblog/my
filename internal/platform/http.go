@@ -163,6 +163,8 @@ func (a *App) writeStatusProblem(w http.ResponseWriter, r *http.Request, status 
 		title = l.ServerErrorsForbidden()
 	case http.StatusNotFound:
 		title = l.ServerErrorsNotFound()
+	case http.StatusGone:
+		title = l.ServerErrorsGone()
 	case http.StatusRequestEntityTooLarge:
 		title = l.ServerErrorsRequestTooLarge()
 	case http.StatusUnsupportedMediaType:

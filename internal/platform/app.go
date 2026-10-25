@@ -189,6 +189,9 @@ type App struct {
 	// outside deliveries (docs/architecture/federation.md §7.3).
 	Deliverer      *federation.Deliverer
 	InstanceHealth *federation.Health
+	// ClosureDeletes records and fans out the Delete of every local actor once the service is
+	// closed, and tells when their deliveries end (ADR-0088 §3).
+	ClosureDeletes *federation.ClosureDeletes
 	// Inbox verifies and records the activities POSTed to the inboxes
 	// (docs/architecture/federation.md §3.1).
 	Inbox *federation.Inbox

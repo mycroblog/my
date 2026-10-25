@@ -112,6 +112,56 @@ VALUES (@id, @delivery_id, @outcome, @signature_scheme, @http_status, @error, @a
 SELECT id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at FROM delivery_attempts
 WHERE delivery_id = sqlc.arg(delivery_id)::uuid ORDER BY id;
 
+-- InsertOutboundFanOutCompletion records once that the fan-out of an activity enqueued its last
+-- batch.
+-- name: InsertOutboundFanOutCompletion :exec
+INSERT INTO outbound_fanout_completions (outbound_activity_id, completed_at)
+VALUES (@outbound_activity_id, @completed_at)
+ON CONFLICT (outbound_activity_id) DO NOTHING;
+
+-- InsertClosureDelete records the closure's Delete of an account once; zero rows means it was
+-- already there.
+-- name: InsertClosureDelete :execrows
+INSERT INTO closure_deletes (account_id, outbound_activity_id, recorded_at)
+VALUES (@account_id, @outbound_activity_id, @recorded_at)
+ON CONFLICT (account_id) DO NOTHING;
+
+-- name: ListClosureDeleteAccounts :many
+SELECT account_id FROM closure_deletes WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id;
+
+-- name: CountClosureDeletes :one
+SELECT COUNT(*) FROM closure_deletes;
+
+-- CountUnfinishedClosureFanOuts counts the closure's Deletes whose fan-out has not ended.
+-- name: CountUnfinishedClosureFanOuts :one
+SELECT COUNT(*) FROM closure_deletes c
+WHERE NOT EXISTS (SELECT 1 FROM outbound_fanout_completions f WHERE f.outbound_activity_id = c.outbound_activity_id);
+
+-- CountClosureDeliveries counts the deliveries of the closure's Deletes by their latest outcome
+-- ('' before the first attempt) and whether they used up @max_attempts.
+-- name: CountClosureDeliveries :many
+SELECT
+  COALESCE((SELECT a.outcome FROM delivery_attempts a WHERE a.delivery_id = d.id ORDER BY a.id DESC LIMIT 1), '')::text AS outcome,
+  ((SELECT COUNT(*) FROM delivery_attempts a WHERE a.delivery_id = d.id) >= sqlc.arg(max_attempts)::bigint)::boolean AS exhausted,
+  COUNT(*) AS deliveries
+FROM closure_deletes c JOIN deliveries d ON d.outbound_activity_id = c.outbound_activity_id
+GROUP BY 1, 2;
+
+-- CountPendingMoveSends counts the Moves recorded since @since whose fan-out has not ended or
+-- that have a delivery still to be attempted: none yet, or a retryable failure with attempts
+-- left of @max_attempts.
+-- name: CountPendingMoveSends :one
+SELECT COUNT(*) FROM outbound_activities o
+WHERE o.object_type = 'move' AND o.created_at >= @since AND (
+  NOT EXISTS (SELECT 1 FROM outbound_fanout_completions f WHERE f.outbound_activity_id = o.id)
+  OR EXISTS (
+    SELECT 1 FROM deliveries d
+    WHERE d.outbound_activity_id = o.id
+      AND COALESCE((SELECT a.outcome FROM delivery_attempts a WHERE a.delivery_id = d.id ORDER BY a.id DESC LIMIT 1), 'retryable_failure') = 'retryable_failure'
+      AND (SELECT COUNT(*) FROM delivery_attempts a WHERE a.delivery_id = d.id) < sqlc.arg(max_attempts)::bigint
+  )
+);
+
 -- DeleteDeliveryAttemptsBefore removes at most @batch_limit attempts made before
 -- @attempted_before; @id_before (the UUIDv7 floor of @attempted_before) bounds the scan of the
 -- primary key.
