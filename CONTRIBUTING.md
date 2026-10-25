@@ -77,7 +77,7 @@ range WSL gave Linux, outgoing connections (`git`, `gh`, ...) time out.
 3. Run the checks of the contexts you touched (`scripts/task.sh go:check`, ...) or `scripts/task.sh check:changed`,
    then commit (Conventional Commits, in English). Run the full `scripts/task.sh check` when you change shared
    configuration.
-4. Open a pull request from the template.
+4. Open a pull request from the template, with its Documentation section filled (see [Documentation](#documentation)).
 5. When its CI is green, a maintainer or the orchestrator (the role that runs agents in parallel and merges their pull
    requests) adds it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge`. `main` only receives
    merges from the merge queue.
@@ -254,6 +254,12 @@ mark an ADR `Accepted`.
 - Every document describes the present state. Write why something changed in the commit message and the pull request.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`
   resolve; [docs/lint.yaml](docs/lint.yaml) lists the files each rule covers.
+- A change keeps the user and operator documents that describe it true. The `userdocs` of
+  [tools/agentkit/context-map.yaml](tools/agentkit/context-map.yaml) say which documents describe which paths, and
+  `scripts/agentkit.sh docs impact` lists those of your change. Update each one the change makes wrong; the
+  **Documentation** section of the pull request lists every one as `changed` or as `no change — <reason>`, and the
+  pull request's check fails otherwise. Every command of `my`, metric, webhook event type, build tag, and task appears
+  in its document (`scripts/task.sh agentkit:inventory`).
 
 ## Language
 

@@ -1,16 +1,21 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # The map from the repository's paths to what governs them: the document sections an agent reads before
-# changing them (docs), the `scripts/task.sh check` contexts they need (checks), whether parallel work must treat them as
-# shared files (shared, docs/agents/workflow.md §9), and short notes printed in every context pack.
+# changing them (docs), the user and operator documents that describe them and change with them (userdocs), the
+# `scripts/task.sh check` contexts they need (checks), whether parallel work must treat them as shared files (shared,
+# docs/agents/workflow.md §9), and short notes printed in every context pack.
 #
 # `agentkit ctx` and `agentkit map show <path>` read it. `agentkit map check` (agentkit:check, CI) fails when
 # a tracked file matches no entry and no ignore pattern, when a directory matching a strict pattern is not
-# named literally by some entry, or when a docs reference names a missing file or heading.
-# When you add a directory, a module, an adapter, or a feature, add or extend its entry in the same change.
+# named literally by some entry, when a docs or userdocs reference names a missing file or heading, or when a
+# document of userdocs.cover is the userdocs of no entry. `agentkit docs impact` lists the userdocs of the changed
+# paths, which a pull request changes or explains (AGENTS.md#documentation).
+# When you add a directory, a module, an adapter, or a feature, add or extend its entry in the same change; when
+# you add a user or operator document, name it in the userdocs of the entries whose paths it describes. Keep
+# userdocs precise: a document belongs to the paths whose change can make it wrong, not to every path it mentions.
 #
 # Patterns: `*` matches within one path segment, `**` any number of segments.
-# Docs: <path> or <path>#<anchor>, the anchor as GitHub generates it (agentkit outline <path> prints them).
+# Docs and userdocs: <path> or <path>#<anchor>, the anchor as GitHub generates it (agentkit outline <path> prints them).
 
 ignore:
   - "**/*.gen.go"
@@ -36,6 +41,23 @@ strict:
   - "app/web/src/lib/*"
   - "pkg/testkit/*"
 
+userdocs:
+  # The user and operator documents: each is the userdocs of some entry.
+  cover:
+    - "docs/operations/*.md"
+    - "docs/reference/*.md"
+  # Changed paths that no document describes, which `agentkit docs impact` passes over: tests, their fixtures and
+  # stories, and the test-only deployments.
+  skip:
+    - "**/*_test.go"
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.stories.tsx"
+    - "**/testdata/**"
+    - "**/e2e/**"
+    - "pkg/testkit/**"
+    - "deploy/docker/federation-live/**"
+
 entries:
   # --- Repository-wide ------------------------------------------------------------------------------
   - name: repo-meta
@@ -50,6 +72,14 @@ entries:
     notes:
       - "Taskfile.yml, tasks/, workflows and scripts/changed-contexts.sh select every check context: run `scripts/task.sh check`."
       - "Each job of .github/workflows/ci.yml runs its checks as parallel steps, each calling one area task (ADR-0083): a new check in a `<context>:check` task also needs a step, or `docs:ci-coverage` fails."
+  - name: tasks
+    paths: ["Taskfile.yml", "tasks/**"]
+    userdocs: ["docs/reference/commands.md"]
+    notes:
+      - "Every task with a desc appears in docs/reference/commands.md (`agentkit docs inventory`)."
+  - name: release
+    paths: [".github/workflows/release.yml", ".github/workflows/slow-suite.yml", "scripts/release-libraries.sh"]
+    userdocs: ["docs/operations/releasing.md"]
 
   # --- Documents --------------------------------------------------------------------------------------
   - name: adr
@@ -89,7 +119,7 @@ entries:
     docs: ["AGENTS.md#documentation", "AGENTS.md#hard-rules"]
     checks: [docs]
     notes:
-      - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs: explain the behaviour itself. A file still in docs/lint.yaml's pending lists is converted whole, and removed from the lists, when you add or rewrite a section of it."
+      - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs: explain the behaviour itself. A new file is linked from docs/README.md and named in the userdocs of the entries whose paths it describes."
   - name: reference-docs
     paths: ["docs/reference/**"]
     docs: ["docs/reference/build-tags.md", "AGENTS.md#documentation"]
@@ -98,11 +128,11 @@ entries:
       - "docs/reference/configuration.md is generated: `scripts/task.sh go:config-docs`."
       - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation)."
   - name: doc-rules
-    paths: ["docs/lint.yaml", "tools/agentkit/internal/docslint/**"]
+    paths: ["docs/lint.yaml", "tools/agentkit/internal/docslint/**", "tools/agentkit/internal/docsync/**"]
     docs: ["AGENTS.md#documentation", "tools/agentkit/README.md#documentation-rules"]
     checks: [docs, agentkit]
     notes:
-      - "docs/lint.yaml says which files each rule of `agentkit docs lint` (scripts/task.sh docs:rules) covers; its pending lists only shrink."
+      - "docs/lint.yaml says which files each rule of `agentkit docs lint` (scripts/task.sh docs:rules) covers, and what `agentkit docs inventory` (scripts/task.sh agentkit:inventory) excludes; its pending and exclude lists only shrink."
 
   # --- Server: shared rules ---------------------------------------------------------------------------
   - name: go-server
@@ -127,6 +157,7 @@ entries:
   - name: mail-templates
     paths: ["tools/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
+    userdocs: ["docs/operations/email.md#the-html-version"]
     checks: [mail, go]
     notes:
       - "Edit tools/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
@@ -137,17 +168,55 @@ entries:
     checks: [go, docker]
     notes:
       - "A change to the config schema regenerates docs/reference/configuration.md (`scripts/task.sh go:config-docs`)."
+  - name: config-schema
+    paths: ["internal/platform/config/schema.go", "internal/platform/config/reference.go", "internal/platform/config/retired.go"]
+    userdocs: ["docs/reference/configuration.md"]
+    notes:
+      - "docs/reference/configuration.md is generated from the schema: `scripts/task.sh go:config-docs` (go:test fails when it is stale)."
+  - name: config-readiness
+    paths: ["internal/platform/config/readiness.go", "cmd/my/config.go", "cmd/my/configerror.go"]
+    userdocs: ["docs/operations/production-checklist.md", "docs/operations/key-management.md#web-push-vapid-key"]
+  - name: build-tags
+    paths: ["internal/platform/adapters*.go", "internal/platform/config/adapters*.go", "scripts/go-build-tags.sh"]
+    docs: ["docs/reference/build-tags.md"]
+    userdocs: ["docs/reference/build-tags.md"]
+  - name: server-process
+    paths: ["cmd/my/main.go", "cmd/my/serve.go", "cmd/my/job.go", "internal/platform/serve.go", "internal/platform/http.go", "internal/platform/log.go", "internal/platform/health.go"]
+    userdocs: ["docs/operations/running.md", "docs/operations/monitoring.md#which-url-to-monitor"]
+  - name: telemetry
+    paths: ["internal/platform/telemetry.go", "internal/platform/tracing.go", "internal/app/metrics/**", "internal/adapter/telemetry/**", "internal/app/queue/metrics.go", "internal/app/federation/metrics.go", "internal/interface/clientapi/streaming.go"]
+    docs: ["docs/operations/running.md#metrics"]
+    userdocs: ["docs/operations/running.md#metrics", "docs/operations/alerts.md"]
+    notes:
+      - "Every metric (kernel.Instrument) is listed in docs/operations/running.md#metrics (`agentkit docs inventory`); a renamed metric or label also updates deploy/monitoring and docs/operations/alerts.md."
+  - name: cli-admin
+    paths: ["cmd/my/admin.go", "cmd/my/role.go", "cmd/my/audit.go"]
+    userdocs: ["docs/operations/admin-cli.md"]
+  - name: cli-moderation
+    paths: ["cmd/my/account_actions.go", "cmd/my/appeal.go", "cmd/my/moderation.go", "cmd/my/domain_block.go", "cmd/my/refetch.go", "cmd/my/retention.go", "cmd/my/two_factor.go"]
+    userdocs: ["docs/operations/moderation.md"]
+  - name: cli-registration
+    paths: ["cmd/my/registration.go", "cmd/my/signup_block.go", "cmd/my/password_reset.go"]
+    userdocs: ["docs/operations/registration.md", "docs/operations/moderation.md"]
+  - name: cli-instance
+    paths: ["cmd/my/instance*.go", "cmd/my/emoji*.go", "cmd/my/federation.go"]
+    userdocs: ["docs/operations/instance-settings.md"]
+  - name: cli-closure
+    paths: ["cmd/my/closure.go"]
+    userdocs: ["docs/operations/service-closure.md", "docs/operations/admin-cli.md#announcing-the-end-of-the-service"]
 
   # --- Server: modules (internal/domain/<m>, internal/app/<m>) ----------------------------------------
   - name: module-identity
     paths: ["internal/domain/identity/**", "internal/app/identity/**"]
     docs: ["docs/architecture/data-model/04-tables/01-identity.md#41-identity", "docs/operations/registration.md"]
+    userdocs: ["docs/operations/registration.md"]
   - name: module-account
     paths: ["internal/domain/account/**", "internal/app/account/**"]
     docs: ["docs/architecture/data-model/04-tables/02-account.md#42-account", "docs/architecture/data-model/05-states-and-policies.md#5-状態とポリシー"]
   - name: module-moderation
     paths: ["internal/domain/moderation/**", "internal/app/moderation/**"]
     docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
+    userdocs: ["docs/operations/moderation.md"]
   - name: module-content
     paths: ["internal/domain/content/**", "internal/app/content/**"]
     docs: ["docs/architecture/data-model/04-tables/04-content.md#44-content", "docs/architecture/visibility.md"]
@@ -183,15 +252,18 @@ entries:
   - name: module-instance
     paths: ["internal/domain/instance/**", "internal/app/instance/**"]
     docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md", "docs/adr/0088-service-shutdown-modes.md"]
+    userdocs: ["docs/operations/instance-settings.md", "docs/operations/service-closure.md"]
   - name: module-webhook
     paths: ["internal/domain/webhook/**", "internal/app/webhook/**"]
     docs: ["docs/architecture/data-model/04-tables/11-webhook.md#411-webhook", "docs/reference/webhooks.md"]
+    userdocs: ["docs/reference/webhooks.md", "docs/operations/webhooks.md"]
   - name: module-finance
     paths: ["internal/domain/finance/**", "internal/app/finance/**"]
     docs: ["docs/architecture/data-model/04-tables/12-finance.md#412-finance", "docs/adr/0067-finance-cost-records.md", "docs/adr/0068-billing-import.md", "docs/adr/0073-income-records-and-publication.md"]
   - name: module-supporters
-    paths: ["internal/domain/supporters/**", "internal/app/supporters/**"]
+    paths: ["internal/domain/supporters/**", "internal/app/supporters/**", "cmd/my/supporters.go"]
     docs: ["docs/architecture/data-model/04-tables/13-supporters.md#413-supporters", "docs/adr/0072-supporter-plans-and-roles.md", "docs/operations/supporters.md"]
+    userdocs: ["docs/operations/supporters.md"]
   - name: app-infrastructure
     paths: ["internal/app/kernel/**", "internal/app/uow/**", "internal/app/queue/**", "internal/app/stream/**", "internal/app/projection/**", "internal/app/dbupgrade/**", "internal/app/blob/**", "internal/app/media/**", "internal/app/metrics/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
@@ -200,8 +272,17 @@ entries:
   - name: data-upgrade
     paths: ["internal/app/dbupgrade/**", "internal/platform/setup_dbupgrade.go", "cmd/my/db.go", "cmd/my/db_test.go", "internal/adapter/db/*/data_upgrade*.go"]
     docs: ["docs/adr/0087-schema-changes-after-launch.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有"]
+    userdocs: ["docs/operations/database.md#upgrading", "docs/operations/releasing.md"]
     notes:
       - "A data upgrade step keeps its key once released, is idempotent, and works in small transactions without external I/O; after its contract it stays registered with Run nil."
+  - name: projections
+    paths: ["internal/app/projection/**", "internal/platform/projections.go", "cmd/my/projection.go"]
+    docs: ["docs/architecture/data-model/09-projection-rebuild.md"]
+    userdocs: ["docs/operations/database.md#checking-and-rebuilding-projections"]
+  - name: relays
+    paths: ["internal/app/federation/relays.go", "internal/platform/relays.go", "cmd/my/relay.go"]
+    docs: ["docs/operations/relays.md"]
+    userdocs: ["docs/operations/relays.md"]
 
   # --- Server: adapters ---------------------------------------------------------------------------------
   - name: adapter-db
@@ -214,9 +295,13 @@ entries:
   - name: adapter-media
     paths: ["internal/adapter/blob/**", "internal/adapter/media/**"]
     docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md"]
+    userdocs: ["docs/operations/cdn.md"]
   - name: adapter-federation
     paths: ["internal/adapter/httpsig/**", "internal/adapter/jsonld/**", "internal/adapter/htmlsanitizer/**", "internal/adapter/keymanager/**"]
     docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
+  - name: key-management
+    paths: ["internal/adapter/keymanager/**"]
+    userdocs: ["docs/operations/key-management.md"]
   - name: adapter-http
     paths: ["internal/adapter/httpclient/**"]
     docs: ["docs/adr/0019-security-baseline.md"]
@@ -225,18 +310,29 @@ entries:
   - name: adapter-user-facing
     paths: ["internal/adapter/captcha/**", "internal/adapter/webauthn/**", "internal/adapter/webpush/**", "internal/adapter/markdown/**", "internal/adapter/system/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/operations/captcha.md"]
+  - name: captcha
+    paths: ["internal/adapter/captcha/**"]
+    userdocs: ["docs/operations/captcha.md"]
   - name: adapter-mail
     paths: ["internal/adapter/mail/**"]
     docs: ["docs/adr/0086-email-delivery.md#6-mailses", "docs/operations/email.md"]
+    userdocs: ["docs/operations/email.md"]
     notes:
       - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
       - "mail/smtp also runs on Mailpit containers (mailpit_test.go and internal/platform/mailpit_test.go through pkg/testkit/mailpittest), only with TEST_MAIL=container: `scripts/task.sh go:test-mail` (CI job mail-integration in the slow suite). The development Mailpit is deploy/docker/mailpit with scripts/mailpit-cert.sh; its image pin matches mailpittest.DefaultImage."
   - name: adapter-billing
     paths: ["internal/adapter/billing/**"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
+    userdocs: ["docs/operations/billing-import.md"]
   - name: adapter-payment
     paths: ["internal/adapter/payment/**"]
     docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0099-payjp-payment-adapter.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
+  - name: payment-stripe
+    paths: ["internal/adapter/payment/stripe/**"]
+    userdocs: ["docs/operations/payments-stripe.md"]
+  - name: payment-payjp
+    paths: ["internal/adapter/payment/payjp/**"]
+    userdocs: ["docs/operations/payments-payjp.md"]
 
   # --- Server: interfaces -------------------------------------------------------------------------------
   - name: client-api
@@ -249,12 +345,16 @@ entries:
   - name: oauth
     paths: ["internal/interface/oauth/**", "internal/interface/authpages/**"]
     docs: ["docs/architecture/client-api.md#4-認可oauth-20", "docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
+  - name: third-party-apps
+    paths: ["internal/interface/oauth/**", "internal/domain/identity/oauth.go", "internal/interface/clientapi/ratelimit.go"]
+    userdocs: ["docs/reference/third-party-apps.md"]
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
   - name: maintenance
     paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go", "cmd/my/maintenance*.go", "cmd/my/closure_export*.go"]
     docs: ["docs/adr/0084-maintenance-mode.md#decision決定", "docs/adr/0085-uptime-monitoring-status-page.md#4-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
+    userdocs: ["docs/operations/maintenance.md", "docs/operations/service-closure.md#6-switching-to-the-static-page", "docs/operations/monitoring.md#telling-the-maintenance-mode-from-an-outage", "docs/operations/admin-cli.md#exporting-the-maintenance-page"]
     notes:
       - "internal/interface/maintenance depends only on the standard library and internal/i18n; the maintenance mode opens no adapter (platform.NewMaintenanceApp never calls NewApp)."
       - "The maintenance responses (ADR-0084 §3), `my maintenance export`, and the static closure page of `my admin closure export-html` (ADR-0088 §6, maintenance.RenderClosure) render the same template (templates/page.html)."
@@ -262,11 +362,18 @@ entries:
   - name: mail-events
     paths: ["internal/interface/mailevents/**", "internal/platform/setup_mailevents.go"]
     docs: ["docs/adr/0086-email-delivery.md#5-バウンス苦情", "docs/operations/email.md"]
+    userdocs: ["docs/operations/email.md#receive-ses-notifications-sns"]
     notes:
       - "POST /mail/events/ses exists only with ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
+  - name: link-previews
+    paths: ["internal/interface/web/preview.go", "internal/interface/web/preview_image.go", "internal/interface/web/shell.go"]
+    userdocs: ["docs/operations/link-previews.md"]
+  - name: crawlers
+    paths: ["internal/interface/web/crawlers.go", "internal/platform/crawlers.go"]
+    userdocs: ["docs/operations/crawlers.md"]
 
   # --- Schema and queries -------------------------------------------------------------------------------
   - name: schema
@@ -392,9 +499,13 @@ entries:
     paths: ["deploy/**", "Dockerfile"]
     docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
     checks: [docker]
+  - name: docker-compose
+    paths: ["deploy/docker/compose.yaml", "Dockerfile"]
+    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
   - name: monitoring
     paths: ["deploy/monitoring/**", "docs/operations/alerts.md"]
     docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md"]
+    userdocs: ["docs/operations/alerts.md"]
     checks: [docker, docs]
     notes:
       - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them."

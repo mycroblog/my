@@ -70,6 +70,15 @@ func runPR(r *repo.Repo, args []string) error {
 		fs.StringVar(&o.Decisions, "decisions", "", "decisions and assumptions (default: None)")
 		fs.StringVar(&o.Footer, "footer", "", "last line of the description, such as an attribution line")
 		fs.BoolVar(&o.Confirm, "confirm", false, "check the docs and no-secrets items of the checklist")
+		o.DocReasons = map[string]string{}
+		fs.Func("doc-reason", "'<path>=<reason>': why a document that describes the changed paths needs no change (repeatable)", func(v string) error {
+			p, reason, ok := strings.Cut(v, "=")
+			if !ok || strings.TrimSpace(p) == "" || strings.TrimSpace(reason) == "" {
+				return fmt.Errorf("want <path>=<reason>, got %q", v)
+			}
+			o.DocReasons[strings.TrimSpace(p)] = strings.TrimSpace(reason)
+			return nil
+		})
 		fs.BoolVar(&o.Draft, "draft", false, "open as a draft")
 		fs.BoolVar(&o.NoPush, "no-push", false, "do not push first")
 		if _, err := parse(fs, args[1:]); err != nil {

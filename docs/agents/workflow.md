@@ -41,6 +41,10 @@ git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/1
 - Keep the change scoped to the issue, but apply the boy scout rule ([ADR-0024](../adr/0024-boy-scout-rule.md)):
   fix broken things you find in a separate commit and list them in the PR description; file an issue for anything you cannot fix safely.
 - Update docs that the change makes stale (ADR open questions, architecture overview, i18n catalogs).
+- Keep the user and operator documents true ([AGENTS.md](../../AGENTS.md#documentation)): the context pack lists the
+  `userdocs` of the areas the issue touches. Update each one the change makes wrong (a new or changed command, setting,
+  metric, webhook event, or behaviour), in English, in the same PR. A new user-visible name goes into its document
+  (`agentkit docs inventory`); a new document goes into `docs/README.md` and the `userdocs` of its entries.
 - Spikes ([ADR-0022](../adr/0022-spike-outputs-outside-repository.md)):
   - Push throwaway code to a `spike/<N>-<slug>` branch only. Never open a PR to merge it.
   - Post the findings report as a comment on the issue, linking the code by commit permalink.
@@ -55,7 +59,9 @@ scripts/task.sh go:check       # or one context: docs:check, go:check, i18n:chec
 scripts/task.sh check          # every context, when the change touches shared configuration
 ```
 
-Must pass. The pull request's `check` runs only the preflight (formatting, licenses, image versions, tokens); the
+Must pass. `agentkit check` also lists the documents that describe the changed paths but are not changed
+(`agentkit docs impact`): update each, or note why it stays true for the PR (§6).
+The pull request's `check` runs only the preflight (formatting, licenses, image versions, tokens); the
 compile, type, lint, and test checks of the changed contexts run in the merge queue, so the local run is what keeps a
 broken PR out of the queue. To run the full check on the PR itself (to look into a failure in the queue, or to check
 an outside contributor's PR early), add the label `ci:full`.
@@ -102,8 +108,13 @@ EOF
 ```
 
 - Comment on the issue with the PR link. Do not merge or queue it yourself; the orchestrator or the decider queues it (§7).
-  `scripts/agentkit.sh pr open [--summary-file f] [--decisions text] [--confirm]` pushes, fills the template from the issue
-  and the commits, and comments the link on the issue.
+  `scripts/agentkit.sh pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm]` pushes,
+  fills the template from the issue and the commits, and comments the link on the issue.
+- The **Documentation** section of the description has one line per document of `agentkit docs impact`: `- <path>: changed`,
+  or `- <path>: no change — <reason>` with a reason of three words or more (say what the document covers and why the
+  change leaves it true). `pr open` writes it from `--doc-reason` and refuses to open the PR while a document has neither;
+  the preflight step `docs:pr-impact` checks it on the PR. After editing the description, rerun the failed job
+  (`gh run rerun <run> --failed`), since an edit does not start CI.
 - Wait for the PR's CI and fix failures until it is green: run `scripts/agentkit.sh pr wait <PR>` in the background. It
   prints one line when CI passes, or the failing lines of the failed jobs, and exits 3 when the PR conflicts.
 

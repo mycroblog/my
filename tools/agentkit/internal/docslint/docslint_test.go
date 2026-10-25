@@ -143,6 +143,23 @@ func TestExclude(t *testing.T) {
 	}
 }
 
+func TestIndex(t *testing.T) {
+	c := &Config{}
+	c.Index.File = "docs/README.md"
+	c.Index.Files = []string{"docs/operations/*.md", "docs/reference/*.md"}
+	got := lint(t, c, map[string]string{
+		"docs/README.md":             "- [Running](operations/running.md)\n- [Email](./operations/email.md#smtp)\n",
+		"docs/operations/running.md": "# Running\n",
+		"docs/operations/email.md":   "# Email\n\n## SMTP\n",
+		"docs/operations/alerts.md":  "# Alerts\n",
+		"docs/agents/workflow.md":    "# Workflow\n",
+	})
+	want := []string{"docs/operations/alerts.md:0:index"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("findings = %v, want %v", got, want)
+	}
+}
+
 func TestPending(t *testing.T) {
 	c := &Config{English: []string{"docs/operations/**"}, Operator: []string{"docs/operations/**"}}
 	c.Pending.Japanese = []string{"docs/operations/ja.md", "docs/operations/en.md", "docs/operations/gone.md", "README.md"}

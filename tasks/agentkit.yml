@@ -22,8 +22,8 @@ tasks:
       - go test -run '^$' ./...
 
   check:
-    desc: Check tools/agentkit (tidy, vet, lint, tests, dependencies) and that its context map covers every path
-    deps: [mod-check, vet, lint, test, deps-check, map-check]
+    desc: Check tools/agentkit (tidy, vet, lint, tests, dependencies), that its context map covers every path, and that the documents mention every user-visible name
+    deps: [mod-check, vet, lint, test, deps-check, map-check, inventory]
 
   mod-check:
     desc: Fail if tools/agentkit/go.mod and go.sum are not tidy
@@ -56,7 +56,14 @@ tasks:
       - scripts/agentkit-deps-check.sh
 
   map-check:
-    desc: Fail when tools/agentkit/context-map.yaml does not cover every path
+    desc: Fail when tools/agentkit/context-map.yaml does not cover every path, or a user or operator document is the userdocs of no entry
     deps: [build]
     cmds:
       - bin/agentkit map check
+
+  # In agentkit:check, which every change selects: a change of the code alone can add a name that no document mentions.
+  inventory:
+    desc: Fail when a command of my, a metric, a webhook event type, a build tag, or a listed task is in no document (agentkit docs inventory, docs/lint.yaml)
+    deps: [build]
+    cmds:
+      - bin/agentkit docs inventory
