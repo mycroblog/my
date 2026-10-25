@@ -167,6 +167,9 @@ DELETE FROM registration_applications WHERE user_id = sqlc.arg(user_id);
 -- name: EraseRegistrationState :exec
 DELETE FROM user_registration_states WHERE user_id = sqlc.arg(user_id);
 
+-- name: EraseServiceClosureEmails :exec
+DELETE FROM service_closure_emails WHERE user_id = sqlc.arg(user_id);
+
 -- content: the account's statuses and its interactions --------------------------------------------
 
 -- ListAuthorStatusesToErase returns, in ID order after @after, up to @lim statuses of the author

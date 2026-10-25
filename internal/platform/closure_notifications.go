@@ -9,6 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 )
 
 // setUpClosureNotifications registers the service closure notifications (ADR-0088 §1, §2): the
@@ -58,4 +60,26 @@ func (r closureRecipients) LocalUserAccountIDs(ctx context.Context, after string
 		}
 	}
 	return out, next, nil
+}
+
+// closureView returns the state of the service closure as the identity module's closure emails
+// read it.
+func (a *App) closureView(ctx context.Context) (domainidentity.ServiceClosureView, error) {
+	c, err := a.Instance.Closure(ctx)
+	if err != nil {
+		return domainidentity.ServiceClosureView{}, err
+	}
+	v := domainidentity.ServiceClosureView{
+		AnnouncementID: c.AnnouncementID, ClosesAt: c.Schedule.ClosesAt, ExportUntil: c.Schedule.ExportUntil,
+		Message: c.Schedule.Message, AnnouncedAt: c.AnnouncedAt,
+	}
+	switch c.CurrentState() {
+	case instance.ClosureAnnounced:
+		v.Stage = domainidentity.ClosureStageAnnounced
+	case instance.ClosureClosed, instance.ClosureDeliveryCompleted:
+		v.Stage = domainidentity.ClosureStageClosed
+	default:
+		v = domainidentity.ServiceClosureView{}
+	}
+	return v, nil
 }

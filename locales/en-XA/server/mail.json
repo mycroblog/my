@@ -119,6 +119,86 @@
     "defaultMessage": "[Ẏǿǿŭŭ ɠḗḗŧ ŧħīş ḗḗḿȧȧīŀ ƀḗḗƈȧȧŭŭşḗḗ ẏǿǿŭŭ şŭŭƀşƈřīƀḗḗ, ǿǿř şŭŭƀşƈřīƀḗḗḓ, ŧǿǿ ȧȧ şŭŭƥƥǿǿřŧḗḗř ƥŀȧȧƞ ǿǿƞ {instance}.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.service_closure.action_export": {
+    "defaultMessage": "[Ḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.export": {
+    "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞ şīɠƞ īƞ ȧȧƞḓ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ ŭŭƞŧīŀ {exportUntil}. Ȧƒŧḗḗř ŧħȧȧŧ, ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ḓḗḗŀḗḗŧḗḗ ŧħḗḗ şḗḗřṽḗḗř'ş ḓȧȧŧȧȧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.message": {
+    "defaultMessage": "[Ḿḗḗşşȧȧɠḗḗ ƒřǿǿḿ ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş: {message}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.move": {
+    "defaultMessage": "[Ɓḗḗƒǿǿřḗḗ ŧħḗḗ ƈŀǿǿşīƞɠ ḓȧȧŧḗḗ, ẏǿǿŭŭ ƈȧȧƞ ȧȧŀşǿǿ ḿǿǿṽḗḗ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ȧȧƞǿǿŧħḗḗř şḗḗřṽḗḗř īƞ ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ şḗḗŧŧīƞɠş, şǿǿ ŧħȧȧŧ ẏǿǿŭŭř ƒǿǿŀŀǿǿẇḗḗřş ƒǿǿŀŀǿǿẇ ẏǿǿŭŭ ŧħḗḗřḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure.reason": {
+    "defaultMessage": "[Ẏǿǿŭŭ ɠḗḗŧ ŧħīş ḗḗḿȧȧīŀ ƀḗḗƈȧȧŭŭşḗḗ ŧħīş ȧȧḓḓřḗḗşş ƀḗḗŀǿǿƞɠş ŧǿǿ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ǿǿƞ {instance}, ẇħǿǿşḗḗ ƈŀǿǿşŭŭřḗḗ ȧȧƒƒḗḗƈŧş ẏǿǿŭŭř ḓȧȧŧȧȧ. Ŧħḗḗşḗḗ ḗḗḿȧȧīŀş ƈȧȧƞƞǿǿŧ ƀḗḗ ŧŭŭřƞḗḗḓ ǿǿƒƒ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_announced.body": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} ȧȧƞƞǿǿŭŭƞƈḗḗḓ ŧħȧȧŧ ŧħḗḗ şḗḗřṽḗḗř ƈŀǿǿşḗḗş ǿǿƞ {closesAt}. Ƒřǿǿḿ ŧħḗḗƞ ǿǿƞ, ẏǿǿŭŭ ƈȧȧƞ ǿǿƞŀẏ şīɠƞ īƞ ŧǿǿ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_announced.subject": {
+    "defaultMessage": "[{instance} ƈŀǿǿşḗḗş ǿǿƞ {closesAt}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.body": {
+    "defaultMessage": "[{instance} ħȧȧş ƈŀǿǿşḗḗḓ. Ŭƞŧīŀ {exportUntil}, ẏǿǿŭŭ ƈȧȧƞ şŧīŀŀ şīɠƞ īƞ ȧȧƞḓ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ; ƞǿǿŧħīƞɠ ḗḗŀşḗḗ ẇǿǿřķş ȧȧƞẏ ḿǿǿřḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.detail": {
+    "defaultMessage": "[Ȧƒŧḗḗř ŧħȧȧŧ, ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ḓḗḗŀḗḗŧḗḗ ŧħḗḗ şḗḗřṽḗḗř'ş ḓȧȧŧȧȧ, ȧȧƞḓ īŧ ƈȧȧƞƞǿǿŧ ƀḗḗ řḗḗƈǿǿṽḗḗřḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_closed.subject": {
+    "defaultMessage": "[{instance} ħȧȧş ƈŀǿǿşḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_day_before.body": {
+    "defaultMessage": "[{instance} ƈŀǿǿşḗḗş ẇīŧħīƞ ȧȧ ḓȧȧẏ, ǿǿƞ {closesAt}. Ŧħīş īş ŧħḗḗ ŀȧȧşŧ řḗḗḿīƞḓḗḗř ƀḗḗƒǿǿřḗḗ ŧħḗḗ ƈŀǿǿşīƞɠ ḓȧȧŧḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_day_before.subject": {
+    "defaultMessage": "[{instance} ƈŀǿǿşḗḗş ẇīŧħīƞ ȧȧ ḓȧȧẏ, ǿǿƞ {closesAt}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_export_week_before.body": {
+    "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ ƒřǿǿḿ {instance} ŭŭƞŧīŀ {exportUntil}, ȧȧ ẇḗḗḗḗķ ƒřǿǿḿ ƞǿǿẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_export_week_before.subject": {
+    "defaultMessage": "[Ǿƞḗḗ ẇḗḗḗḗķ ŀḗḗƒŧ ŧǿǿ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ ƒřǿǿḿ {instance}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_rescheduled.body": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} ƈħȧȧƞɠḗḗḓ ŧħḗḗ ḓȧȧŧḗḗş ǿǿƒ īŧş ƈŀǿǿşŭŭřḗḗ: ŧħḗḗ şḗḗřṽḗḗř ƞǿǿẇ ƈŀǿǿşḗḗş ǿǿƞ {closesAt}.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_rescheduled.subject": {
+    "defaultMessage": "[{instance} ƞǿǿẇ ƈŀǿǿşḗḗş ǿǿƞ {closesAt}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_week_before.body": {
+    "defaultMessage": "[{instance} ƈŀǿǿşḗḗş īƞ ȧȧ ẇḗḗḗḗķ, ǿǿƞ {closesAt}. Ḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ ƀḗḗƒǿǿřḗḗ ẏǿǿŭŭ ŀǿǿşḗḗ ȧȧƈƈḗḗşş ŧǿǿ īŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_week_before.subject": {
+    "defaultMessage": "[Ǿƞḗḗ ẇḗḗḗḗķ ŭŭƞŧīŀ {instance} ƈŀǿǿşḗḗş ǿǿƞ {closesAt}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_withdrawn.body": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} ẇīŧħḓřḗḗẇ ŧħḗḗ ȧȧƞƞǿǿŭŭƞƈḗḗḓ ƈŀǿǿşŭŭřḗḗ. Ŧħḗḗ şḗḗřṽḗḗř ɠǿǿḗḗş ǿǿƞ ȧȧş ƀḗḗƒǿǿřḗḗ, ȧȧƞḓ ẏǿǿŭŭ ḓǿǿ ƞǿǿŧ ƞḗḗḗḗḓ ŧǿǿ ḓǿǿ ȧȧƞẏŧħīƞɠ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "[{instance} īş ƞǿǿŧ ƈŀǿǿşīƞɠ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.signature.contact": {
     "defaultMessage": "[Ƈǿǿƞŧȧȧƈŧ: {email}]",
     "description": "Generated from en by tools/i18n; do not edit."

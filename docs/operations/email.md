@@ -13,9 +13,17 @@
 | 取引（`transactional`） | メールアドレスの確認 | `identity.verification_email` | できない |
 | 取引 | パスワードのリセット | `identity.password_reset_email` | できない |
 | 取引 | パスワードの変更・削除の通知 | `identity.password_notice_email` | できない |
+| 取引 | サービスの終了（予告・日付の変更・取り消し・閉鎖日の 7 日前と前日・クローズ・持ち出しの期限の 7 日前） | `identity.closure_email` | できない |
 | 通知（`notification`） | モデレーターへの通知（利用者設定 `email_moderator_notifications`） | `notification.moderator_email` | できる |
 
 サポーターの通知のメール（`notification.supporter_email`）も同じジョブのキューで送ります。
+
+サービスの終了のメール（[ADR-0088](../adr/0088-service-shutdown-modes.md) §2）は、主たるアドレスの確認が済んだ全利用者へ送ります。
+見落とすとデータを失うので取引のメールとして送り、配信停止のリンクを付けず、苦情でも止めません（ハードバウンスでは止まります）。
+予告・日付の変更・取り消し・クローズは、その記録と同じトランザクションで `identity.closure_email_fanout` を積みます。
+閉鎖日の 7 日前と前日、持ち出しの期限の 7 日前は、1 時間ごとの `identity.closure_email_reminders` が送る時点を決めます。予告の時点で過ぎていた時点の分は送りません（予告のメールが日付を伝えるため）。
+展開のジョブは利用者ごとに `service_closure_emails` の行を記録し、記録できた利用者にだけ `identity.closure_email` を積むので、ジョブが何度動いても同じメールは 1 人に 1 回です。
+送る前に、そのメールがまだ有効か（取り消された予告や、変更前の日付のメールではないか）を確かめます。
 
 メールの送り方は設定 `mail` で選びます。
 

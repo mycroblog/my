@@ -50,6 +50,8 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 			return domainidentity.RegistrationMode(mode), err
 		},
 		Closure: a.Instance,
+		// The service closure emails read the state of the closure per job (ADR-0088 §2).
+		ClosureView: a.closureView,
 		// A client_id that is an https URL is a Client ID Metadata Document, fetched through the
 		// SSRF guard while the instance setting accepts them (ADR-0090 §1).
 		HTTP: a.HTTPClient,
@@ -85,6 +87,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		EmailDelivery: sendsEmail(cfg),
 		Messages:      a.Messages,
 		BaseURL:       cfg.ServerOrigin(),
+		WebOrigin:     cfg.WebOrigin,
 		MailSite:      a.mailSite,
 	})
 	// The dynamically registered clients that nobody uses are deleted (ADR-0090 §1).
@@ -93,6 +96,8 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 	// The start of the notice period of the service closure rejects the pending registrations.
 	a.Identity.RegisterClosureProjectors(a.Projectors)
 	a.Identity.RegisterClosureJobs(a.Handlers)
+	// Every user with a verified address hears of the service closure by email (ADR-0088 §2).
+	a.Identity.RegisterClosureEmails(a.Projectors, a.Handlers, a.Scheduler)
 	a.AccountAdmin = identity.NewAccountAdmin(identity.AccountAdminDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Restrictions: a.AccountPolicy,
 		Clock: a.Clock, IDs: a.IDs,

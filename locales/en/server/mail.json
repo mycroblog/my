@@ -119,6 +119,86 @@
     "defaultMessage": "You get this email because you subscribe, or subscribed, to a supporter plan on {instance}.",
     "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.service_closure.action_export": {
+    "defaultMessage": "Export your data",
+    "description": "Label of the button of a service closure email that opens the page where the user exports their data."
+  },
+  "mail.service_closure.export": {
+    "defaultMessage": "You can sign in and export your data until {exportUntil}. After that, the administrators delete the server's data.",
+    "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure.message": {
+    "defaultMessage": "Message from the administrators: {message}",
+    "description": "Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language."
+  },
+  "mail.service_closure.move": {
+    "defaultMessage": "Before the closing date, you can also move your account to another server in the account settings, so that your followers follow you there.",
+    "description": "Paragraph of a service closure email during the notice: the user may move their account (ActivityPub Move) to another server before the closing date."
+  },
+  "mail.service_closure.reason": {
+    "defaultMessage": "You get this email because this address belongs to your account on {instance}, whose closure affects your data. These emails cannot be turned off.",
+    "description": "Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_announced.body": {
+    "defaultMessage": "The administrators of {instance} announced that the server closes on {closesAt}. From then on, you can only sign in to export your data.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_announced.subject": {
+    "defaultMessage": "{instance} closes on {closesAt}",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.body": {
+    "defaultMessage": "{instance} has closed. Until {exportUntil}, you can still sign in and export your data; nothing else works any more.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_closed.detail": {
+    "defaultMessage": "After that, the administrators delete the server's data, and it cannot be recovered.",
+    "description": "Second paragraph of the email of the closed server: what happens after the deadline of the export."
+  },
+  "mail.service_closure_closed.subject": {
+    "defaultMessage": "{instance} has closed",
+    "description": "Subject of the email of the service closure to every user with a verified address: the server has closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_day_before.body": {
+    "defaultMessage": "{instance} closes within a day, on {closesAt}. This is the last reminder before the closing date.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_day_before.subject": {
+    "defaultMessage": "{instance} closes within a day, on {closesAt}",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.body": {
+    "defaultMessage": "You can export your data from {instance} until {exportUntil}, a week from now.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_export_week_before.subject": {
+    "defaultMessage": "One week left to export your data from {instance}",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_rescheduled.body": {
+    "defaultMessage": "The administrators of {instance} changed the dates of its closure: the server now closes on {closesAt}.",
+    "description": "First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_rescheduled.subject": {
+    "defaultMessage": "{instance} now closes on {closesAt}",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.body": {
+    "defaultMessage": "{instance} closes in a week, on {closesAt}. Export your data before you lose access to it.",
+    "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_week_before.subject": {
+    "defaultMessage": "One week until {instance} closes on {closesAt}",
+    "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
+  },
+  "mail.service_closure_withdrawn.body": {
+    "defaultMessage": "The administrators of {instance} withdrew the announced closure. The server goes on as before, and you do not need to do anything.",
+    "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "{instance} is not closing",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.signature.contact": {
     "defaultMessage": "Contact: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
