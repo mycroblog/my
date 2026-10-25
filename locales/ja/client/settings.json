@@ -371,6 +371,10 @@
     "defaultMessage": "設定の項目",
     "description": "Heading of the list of links to the pages of the settings."
   },
+  "settings.menu.status_page": {
+    "defaultMessage": "サーバーの状態",
+    "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
+  },
   "settings.moderator_notifications.email": {
     "defaultMessage": "メールでも受け取る",
     "description": "Label of the switch that also sends the moderator notifications by email."

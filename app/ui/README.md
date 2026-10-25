@@ -292,7 +292,8 @@ The kit gives every region of data the same four states
 - `OfflineBanner` is rendered once for the whole session, empty while `isOffline` is false, so that going offline is
   announced (a live region announces only changes made after it is in the page). It sticks to the top edge
   (`position: sticky`) and pads itself for `env(safe-area-inset-top)`, so the app renders it before any element that
-  already pads for that inset.
+  already pads for that inset. Its `action` (a link to the server's status page) follows the message outside the live
+  region, so that only the message is announced.
 
 ## Server themes
 

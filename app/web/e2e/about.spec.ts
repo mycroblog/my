@@ -25,6 +25,9 @@ const domainActions: DomainAction[] = [
   },
 ];
 
+/** The instance's status page, on another site (FR-810). */
+const statusPageUrl = "https://status.my.example/";
+
 /** Plays the instance and its moderated domains (or the status that the visibility setting answers) for a visitor without a session. */
 async function serveInstance(page: Page, origin: string, domains: { status: 200 } | { status: 401 | 404 }): Promise<void> {
   const instance: Instance = {
@@ -51,6 +54,7 @@ async function serveInstance(page: Page, origin: string, domains: { status: 200 
     ],
     terms_url: `${origin}/about/terms`,
     privacy_policy_url: `${origin}/about/privacy`,
+    status_page_url: statusPageUrl,
   };
   await page.route("**/api/v1/instance", (route) => route.fulfill({ json: instance }));
   await page.route("**/api/v1/instance/domain_actions*", (route) =>
@@ -118,6 +122,11 @@ test.describe("the information page", () => {
         - region:
           - heading [level=2]
           - paragraph
+          - paragraph:
+            - link
+        - region:
+          - heading [level=2]
+          - paragraph
           - list:
             - listitem:
               - link
@@ -128,6 +137,13 @@ test.describe("the information page", () => {
             - listitem:
               - link
     `);
+  });
+
+  test("links to the server's status page, which opens in a new tab (FR-810)", async ({ page }) => {
+    const link = page.getByRole("main").locator(`a[href="${statusPageUrl}"]`);
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   test("links to the license notices of what the web app bundles, which open as plain text", async ({ page }) => {
@@ -150,8 +166,8 @@ test("the information page of a server that lists the servers it moderates to no
   await page.goto("/about");
   const main = page.getByRole("main");
   await expect(main.getByRole("region").getByRole("navigation")).toBeVisible();
-  // The description, the rules, the documents, the statement to crawlers, the source code, and the licenses.
-  await expect(main.getByRole("region")).toHaveCount(6);
+  // The description, the rules, the documents, the statement to crawlers, the status page, the source code, and the licenses.
+  await expect(main.getByRole("region")).toHaveCount(7);
   await expect(main.locator("li", { hasText: "spam.example" })).toHaveCount(0);
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);

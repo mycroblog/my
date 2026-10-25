@@ -61,6 +61,9 @@ const post: Status = {
   reactions: [],
 };
 
+/** The instance's status page, on another site (FR-810), which the offline bar links to. */
+const statusPageUrl = "https://status.my.example/";
+
 const instance: Instance = {
   domain: "my.example",
   name: "my example",
@@ -78,6 +81,7 @@ const instance: Instance = {
   supporters_enabled: false,
   supporter_list_visibility: "off",
   rules: [],
+  status_page_url: statusPageUrl,
 };
 
 /** Whether the spec has taken the network away. */
@@ -148,6 +152,29 @@ test("shows the offline bar while offline and announces it", async ({ page, cont
   await setOffline(context, false);
   await expect(offlineBar(page)).toHaveCount(0);
   await expect(region).toBeEmpty();
+});
+
+test("the offline bar links to the server's status page read while online (FR-810)", async ({ page, context, makeAxeBuilder }) => {
+  const link = page.locator(`a[href="${statusPageUrl}"]`);
+  await expect(link).toHaveCount(0);
+
+  await setOffline(context, true);
+  await expect(offlineBar(page)).toBeVisible();
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  // After the message, outside its live region: what is announced is the message alone.
+  await expect(offlineBar(page).locator("a")).toHaveCount(0);
+  await expect(offlineBar(page).locator("xpath=..")).toMatchAriaSnapshot(`
+    - status:
+      - paragraph: ${JSON.stringify(message("shell.offline"))}
+    - link
+  `);
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+
+  await setOffline(context, false);
+  await expect(link).toHaveCount(0);
 });
 
 test("a page opened offline says why it cannot load, and loads back online", async ({ page, context, hasTouch }) => {

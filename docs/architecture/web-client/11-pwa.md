@@ -27,6 +27,9 @@ Web App Manifest と HTML は Go が返すので、プラグインはどちら�
     残した投稿がなければ「サインイン」を出す。サーバーがセッションはないと答えたら、残した投稿を消してサインインへ送る（§10「サインインが要る画面」）。
   - オフラインの間（`useIsOffline`、§9）、ホームはフィードの上に「オフラインです。〜時点の投稿を表示しています」を読み込んだ時刻とともに出す。オフラインになったことは外枠の帯が読み上げるので、これはライブリージョンにしない。
   - 外枠は Service Worker が事前にキャッシュしたものを使う。メディアは公開の画像のキャッシュにあれば表示される。
+- **ステータスページの URL**（FR-810、[ADR-0085](../../adr/0085-uptime-monitoring-status-page.md) §6、`lib/statusPage.ts` の `useStatusPageUrl`）: サーバーが答えないときは `GET /instance` を読めないので、ホームのタイムラインと同じくアプリが残す。
+  `GET /instance` が答えるたびに、その `status_page_url` を localStorage の `my:instance:status-page`（インスタンスの設定で、利用者のデータではない）に書き、無ければ消す。
+  `GET /instance` が答えるまでと読めないときは残した URL を使う。オフラインの帯（§9）・情報ページ（`/about` の「サーバーの状態」）・設定のメニューの下のリンクがこれを読み、URL が無ければ出さない。
 - **Web Push**（FR-206）: 設定の「表示と投稿」の「プッシュ通知」（`features/settings` の `usePushNotifications`）で、この端末で受け取るかと通知の種類を選ぶ。インスタンスが `push_server_key` を返さないときは区画を出さない。
   - 有効にするとき（スイッチの操作の中）だけ `Notification.requestPermission()` で許可を求め、Service Worker の登録の `PushManager.subscribe`（`userVisibleOnly`、`applicationServerKey` はサーバーの鍵）で購読し、`PUT /push/subscription` で種類と一緒に登録する。
     別の鍵で作った購読が残っていれば解除してから購読し直す。種類を変えると登録し直し、無効にすると `DELETE /push/subscription` とブラウザの購読の解除を行う。
