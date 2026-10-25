@@ -1,21 +1,24 @@
 ## 10. API クライアントと認証
 
 API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱う（ADR-0029、ADR-0030）。機能はこれを作り直さない。
+トークンの付与と 401 の後の更新・問題の詳細の解釈・ストリーミングの読み取りと再接続は、公開の API クライアントライブラリ `@mycroblog/mykit`（`pkg/mykit/ts`、[ADR-0093](../../adr/0093-api-client-library-mykit.md) §3）に任せ、
+`app/web` には文言の整形（`client*` のメッセージ）・`lib/network` と `lib/maintenance` への報告・openapi-react-query との接続を残す。
+`app/web` はワークスペースの依存（`workspace:*`）として `@mycroblog/mykit` のソースを読む（`tsconfig` の `customConditions` の `@mycroblog/source` と、同じファイルを指す Vite の `resolve.alias`）。Web クライアントのための変更は、ライブラリの公開の API の変更になる。
 
-- **型**（S9）: openapi-typescript が、`api/spec/` をまとめた `api/openapi.yaml`（`scripts/task.sh api:generate` が作る）から `lib/api/schema.gen.ts` を生成する。
-  生成物はコミットせず（ADR-0081）、型を読むタスクが先に `scripts/task.sh api:generate-ts` で作る。
-  機能は API の型を自分の `features/<x>/api` から export して使う（`lib/api` を直接 import できるのは `features/*/api` と `lib/` だけ。S1）。
-- **クライアント**（`lib/api/client.ts`）: openapi-fetch のクライアントと、その上の openapi-react-query のクライアントを 1 つずつ作る（`Api` の `fetch` と `query`）。
+- **型**（S9）: `@mycroblog/mykit` の `components`（`import type { components } from "@mycroblog/mykit"`）を使う。openapi-typescript が、`api/spec/` をまとめた `api/openapi.yaml`（`scripts/task.sh api:generate` が作る）から `pkg/mykit/ts/src/schema.gen.ts` を生成し、コミットする。
+  機能は API の型を自分の `features/<x>/api` から export して使う（`lib/api` と `@mycroblog/mykit` の値を import できるのは `features/*/api` と `lib/` だけ。ほかは `@mycroblog/mykit` の型だけを import できる。S1）。
+- **クライアント**（`lib/api/client.ts`）: `@mycroblog/mykit` の `createClient` の openapi-fetch のクライアントと、その上の openapi-react-query のクライアントを 1 つずつ作り（`Api` の `fetch` と `query`）、同じオリジン・トークン・ロケールでストリームを開く `stream` を添える。
   機能は `features/<x>/api` で `api.query.queryOptions(...)` から `queryOptions` を作る。キーは `[method, path, params]` になる。
   書き込みは、`features/<x>/api` が `api.fetch` で作る `mutationKey` / `mutationFn` を TanStack Query の `useMutation` に渡す。
   openapi-react-query のフック（`api.query.useQuery` / `api.query.useMutation` など）は呼ばない（`restrict/syntax`）。オブジェクトから読むフックは描画ごとに同じ関数だと示せないので、React Compiler が呼んだフックごと最適化を諦め、`vite build` が失敗する（R4、[Don't dynamically use Hooks](https://react.dev/reference/rules/react-calls-components-and-hooks#dont-dynamically-use-hooks)）。
   ページを `next_cursor` でたどる一覧（タイムライン）は、openapi-react-query に無限クエリの `queryOptions` がないので、TanStack Query の `infiniteQueryOptions` で `api.fetch` を呼んで作る。
   キーは同じ形の末尾に `"pages"` を足したもの（`["get", "/timelines/local", "pages"]`）にし、同じ操作の普通のクエリと重ならないようにする（`features/timeline/api`）。
-  - 表示のロケール（§9）を要求ごとに `Accept-Language` で送り、サーバーが problem の `title` / `detail` をそのロケールで返すようにする。
-  - ミドルウェアが、セッションのアクセストークンを `Authorization: Bearer` で付ける。最初の要求は、起動時のセッションの再開（`session.restore()`）を待ってから送る。
-  - トークンを付けた要求が 401 になったら、トークンを 1 度だけ更新し、要求の写しを新しいトークンで送り直す。2 度目の 401 はそのまま失敗にする。
-  - 失敗した応答は `lib/errors.ts` の `ApiError`（RFC 9457 の problem そのものに `message` を足したもの）に、通信の失敗は `NetworkError` にして投げる。
-    どちらも `message` がローカライズ済みで、そのまま表示できる（`NetworkError` は、ブラウザがオフラインならそう言う文言になる。§9 のオフライン）。応答が届いたか届かなかったかは `lib/network.ts` に伝える。problem でない本文（プロキシの HTML など）は、クライアントのカタログの文言（`client:api.error.status`）にする。
+  - 表示のロケール（§9）を要求ごとに `Accept-Language` で送り（`mykit` の `acceptLanguage` に、要求ごとに読む関数を渡す）、サーバーが problem の `title` / `detail` をそのロケールで返すようにする。
+  - セッション（`lib/auth/session.ts`）が `mykit` の `TokenSource`（`getAccessToken()` と `refresh(refused)`）になり、`mykit` がそのアクセストークンを `Authorization: Bearer` で付ける。最初の要求は、起動時のセッションの再開（`session.restore()`）を待ってから送る（`getAccessToken()` が待つ）。
+  - トークンを付けた要求が 401 になったら、`mykit` がセッションの `refresh` でトークンを 1 度だけ更新し、要求の写しを新しいトークンで送り直す。2 度目の 401 はそのまま失敗にする。
+  - `mykit` の 429・503 の再試行は切る（`retry: { disabled: true }`）。レート制限とメンテナンスは画面が出す（§9）。投稿の `Idempotency-Key` は投稿フォームが下書きごとに付け（§12）、`mykit` はそれを保つ。
+  - `app/web` のミドルウェアが、失敗した応答を `lib/errors.ts` の `ApiError`（`mykit` の `problemFromResponse` が読んだ RFC 9457 の problem に `message` を足したもの）に、通信の失敗（`mykit` の `NetworkError`）は `lib/errors.ts` の `NetworkError` にして投げる。`mykit` の `ProblemError` より先に投げるので、呼び出し側が受け取るのは `ApiError` だけになる。
+    どちらも `message` がローカライズ済みで、そのまま表示できる（`NetworkError` は、ブラウザがオフラインならそう言う文言になる。§9 のオフライン）。応答が届いたか届かなかったかは `lib/network.ts` に伝える。problem でない本文（プロキシの HTML など）と `title` のない problem は、クライアントのカタログの文言（`client:api.error.status`）にする。
     生成された型は失敗をすべて problem と呼ぶので、表示する文言は `errorMessage(error)` で取る。
   - メンテナンスの Problem（`503`、`type: /api/v1/problems/maintenance`、ADR-0084 §3）は `MaintenanceError`（`ApiError` の一種）にし、`lib/maintenance.ts` に知らせる。その後の 2xx の応答も知らせ、メンテナンスの終わりにする（§9 のメンテナンス）。
     この 503 は 401 ではないのでトークンを更新しない。401 の後の更新が OAuth の端点でこの 503 に当たったときも、トークンを捨てずに `MaintenanceError` を投げる。
@@ -39,9 +42,12 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
     失敗（拒否・`state` の不一致・交換の失敗・通信の失敗）は、そのルートの `errorComponent` が理由とやり直しのリンクを出す。
   - 戻り先（`return_to`）は、1 つの `/` で始まるパスだけを受け付ける（`//example.com` や `javascript:` は捨てる）。
 - **リアルタイム更新**（`lib/sse`、S10、FR-207）: レイアウトの `useLiveUpdates`（`routes/-layout`）が、サインイン中だけ `lib/sse` の `useEventStream` で `GET /streaming` を 1 本開く。
-  `EventSource` はヘッダを送れないので、API クライアントの `fetch`（`parseAs: "stream"`）で読む。トークンの付与と 401 のあとの 1 度の更新は、ほかの要求と同じミドルウェアが行う。
-  本文は `lib/sse/parse.ts` が HTML Standard の手順で解釈する（`id` と `retry` は使わない）。
-  - ストリームが終わったら約 1 秒後に、失敗したら失敗のたびに倍の間隔（最大 1 分、後半の半分にばらす）で接続し直す。セッションが終わるか外枠が消えると、Effect の後始末が要求を中止する。
+  `useEventStream` は `Api` の `stream`（`mykit` の `runStream`）を呼ぶ。`EventSource` はヘッダを送れないので、`mykit` が `fetch` の本文を HTML Standard の手順で読む（`id` と `retry` は使わず、`Last-Event-ID` を送らない）。
+  トークンはセッションから取り、401 のあとに 1 度だけ更新する。更新がサーバーに届かないときとメンテナンスに当たったときは、通信の失敗として接続し直す。
+  ストリームの `fetch` も、応答が届いたか（`lib/network.ts`）とメンテナンスの Problem（`lib/maintenance.ts`）を、ほかの要求と同じく知らせる。
+  - ストリームが終わったら約 1 秒後に、失敗したら失敗のたびに倍の間隔（最大 1 分、後半の半分にばらす）で接続し直す。429（`too-many-streams`）と 503 の後は `Retry-After` に従う。60 秒（サーバーの 30 秒ごとのハートビートの 2 回分）何も届かなければ切って接続し直す。
+    サーバーが要求をずっと断るとき（更新しても治らない 401、スコープの足りない 403 など、408・429 以外の 4xx）は接続し直さずにやめ、次にセッションが変わるまで開かない。セッションが終わるか外枠が消えると、Effect の後始末が要求を中止する。
+  - `mykit` が知らないイベントを「未知のイベント」（`type: "unknown"`）として渡すので、`useEventStream` はそれを捨てる。
   - サーバーは何も再送しないので、2 本目以降のストリームが開いたら、ホームの最初のページを読み直して新着を数え、未読数を読み直し、通知の一覧を古いことにする（再取得はしない）。
   - `update` は、まず Query のキャッシュの別の項目（`features/timeline/api/newStatuses.ts`）に待たせる。表示中のホームがそれをどう出すかは、利用者の設定 `timeline_auto_insert`（`GET /preferences`、既定は偽。設定の「表示と投稿」の `Switch` で選び、変えたとたんに保存する）で決まる（Y7、[ADR-0077](../../adr/0077-timeline-auto-insert.md)）。
     - 偽のとき: ホームの `NewItemsButton` が、読み込み済みの投稿にないものの数を出し、押されたら最初のページの先頭に差し込んで見出しにフォーカスを移す。

@@ -17,7 +17,7 @@ function newStatus(n: number): Status {
   return { ...timelineStatusFixture, id, uri: `https://my.example/ap/statuses/${id}`, url: `https://my.example/@bob/status/${id}`, content: `<p>New post ${String(n)}</p>` };
 }
 
-/** The reconnect waits about a second after a stream ends (lib/sse/stream.ts). */
+/** The reconnect waits about a second after a stream ends (@mycroblog/mykit runStream). */
 const reconnectTimeout = { timeout: 3_000 };
 
 async function openHome() {

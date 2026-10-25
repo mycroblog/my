@@ -3,7 +3,7 @@
 // its paging and keys, and the empty state. `vite preview` has no client API, so the spec answers the
 // timeline operations itself with pages shaped like api/openapi.yaml's StatusPage.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, imageVariants, servedImage, test } from "./fixtures";
 
 type Status = components["schemas"]["Status"];

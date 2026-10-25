@@ -5,7 +5,7 @@
 // whose `reason` says which. Every change is recorded in the audit log.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { refreshAuditLog } from "../../moderation";
 

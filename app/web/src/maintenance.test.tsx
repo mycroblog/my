@@ -34,8 +34,12 @@ beforeEach(() => {
 describe("the maintenance screen", () => {
   test("replaces the page with what the server says, with its heading focused, and keeps the session", async () => {
     server.use(resumableSession());
-    const { session, api } = await renderApp({ path: "/local" });
+    const { session, api, locale } = await renderApp({ path: "/local" });
     await screen.findByRole("feed", { name: "Local timeline" });
+    // The user's preferences have set the time zone the maintenance's end is shown in.
+    await waitFor(() => {
+      expect(locale.getSnapshot().timeZone).toBe("UTC");
+    });
     server.use(maintenanceMode);
     underMaintenance = true;
     members = { message: "Upgrading the database.", until: "2026-10-25T12:00:00Z", status_page_url: "https://status.my.example/" };

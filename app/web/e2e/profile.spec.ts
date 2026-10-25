@@ -5,7 +5,7 @@
 // `page.route`, as a signed-in user's server would. Names change with the locale, so elements are found by
 // role and position.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, expectTabWhollyVisible, imageVariants, localeDir, servedImage, test } from "./fixtures";
 
 type Account = components["schemas"]["Account"];

@@ -5,7 +5,7 @@
 import { infiniteQueryOptions, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { forPost, type LikeSlot, updateCachedStatuses, withLikeSlot, withLikeSlotFrom, withRelation, withRelationFrom } from "./cache";
 
 /** A status (post or boost), as the client API returns it. */

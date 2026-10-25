@@ -5,7 +5,7 @@
 // `page.route`, shaped like api/openapi.yaml. Names change with the locale, so the navigation item is
 // found by its address and the feed by the page heading.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, openFromNavigation, test } from "./fixtures";
 
 type Account = components["schemas"]["Account"];

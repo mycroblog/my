@@ -8,7 +8,7 @@
 // by plan as an infinite query) and the user's choice to be on it (GET / PUT /preferences/supporter_listing).
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 type Schemas = components["schemas"];

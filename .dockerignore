@@ -15,13 +15,14 @@ internal/interface/web/dist/*
 !app/
 app/**/node_modules
 app/**/dist
+pkg/mykit/ts/node_modules
+pkg/mykit/ts/dist
 !tools/i18n/
 tools/i18n/node_modules
 # The generated files that are not committed (ADR-0081): the web stage generates its own.
 locales/en-XA/client*
 locales/ar-XB/client*
 tools/i18n/src/runtime/messages.gen.ts
-app/web/src/lib/api/schema.gen.ts
 app/web/src/routeTree.gen.ts
 app/ui/src/themeTokens.gen.ts
 !schema/

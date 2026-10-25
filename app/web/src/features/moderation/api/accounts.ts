@@ -8,7 +8,7 @@
 import { type InfiniteData, infiniteQueryOptions, type Query, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { isPostListQuery } from "../../../lib/query";
 import { pageQuery, refreshAuditLog } from "./staff";
 import { type AccountAction, accountActionsQueryOptions, refreshReportLists } from "./reports";

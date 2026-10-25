@@ -57,6 +57,9 @@ try {
 the extension members in `problem`, and the response `headers`. **Branch on `type` and `status`, never on `title` or
 `detail`**, which the server localizes from `Accept-Language`. An aborted request rejects with the reason of its signal.
 
+Middleware of your own that turns an error answer into an error type of yours before the `ProblemError` can read the
+problem with `problemFromResponse(response)`.
+
 ## Getting a token and saving it
 
 mykit never stores tokens. The flow with PKCE, and a `RefreshingTokenSource` whose `onTokens` callback saves the

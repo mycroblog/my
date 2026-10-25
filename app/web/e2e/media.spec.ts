@@ -4,7 +4,7 @@
 // their cells with the browser's controls, never by themselves. `vite preview` has no API, so the spec answers the
 // token refresh, the client API, and the media files with `page.route`, as a signed-in user's server would.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, imageVariants, test } from "./fixtures";
 
 type Account = components["schemas"]["Account"];

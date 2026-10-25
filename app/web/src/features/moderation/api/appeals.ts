@@ -8,7 +8,7 @@
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { refreshAdminAccount, refreshPublicAccount } from "./accounts";
 import { pageQuery, refreshAuditLog } from "./staff";
 

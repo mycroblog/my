@@ -5,11 +5,14 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, searchForWorkspaceRoot } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { clientCatalogs } from "./vite-plugins/client-catalogs.ts";
 import { bundledLicenses } from "./vite-plugins/licenses.ts";
 import { reactCompiler } from "./vite-plugins/react-compiler.ts";
+
+/** The source of @mycroblog/mykit (pkg/mykit/ts/src), outside the client workspace. */
+const mykitSource = fileURLToPath(new URL("../../pkg/mykit/ts/src", import.meta.url));
 
 /** The shared message catalogs at the repository root (ADR-0009). */
 const localesDir = fileURLToPath(new URL("../../locales", import.meta.url));
@@ -45,8 +48,14 @@ export default defineConfig({
     },
   },
   resolve: {
-    // Zod without eval, for every importer of "zod" in the app and its dependencies (src/lib/zod.ts).
-    alias: [{ find: /^zod$/, replacement: fileURLToPath(new URL("src/lib/zod.ts", import.meta.url)) }],
+    alias: [
+      // Zod without eval, for every importer of "zod" in the app and its dependencies (src/lib/zod.ts).
+      { find: /^zod$/, replacement: fileURLToPath(new URL("src/lib/zod.ts", import.meta.url)) },
+      // The source of the workspace package @mycroblog/mykit (pkg/mykit/ts), the file its `@mycroblog/source` export
+      // condition names (ADR-0093 §1), as tsconfig.app.json's customConditions resolve it for tsc. An alias rather
+      // than resolve.conditions, which would replace the conditions Vitest resolves Node.js packages with.
+      { find: /^@mycroblog\/mykit$/, replacement: `${mykitSource}/index.ts` },
+    ],
   },
   server: {
     // `my serve -dev-vite-origin http://localhost:5173` loads the client from here (CONTRIBUTING.md),
@@ -54,6 +63,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     origin: "http://localhost:5173",
+    // The client workspace (app/), and the source of @mycroblog/mykit outside it.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), mykitSource] },
   },
   plugins: [
     // File-based routes from src/routes into src/routeTree.gen.ts, which is not committed (ADR-0081);

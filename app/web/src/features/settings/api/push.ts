@@ -3,7 +3,7 @@
 // server sends the chosen kinds of notifications to.
 import { type QueryClient, queryOptions } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 type Schemas = components["schemas"];

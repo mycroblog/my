@@ -3,7 +3,7 @@
 // replaces the cached one (web-client/README.md S1).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 export type AccountAlias = components["schemas"]["AccountAlias"];

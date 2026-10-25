@@ -4,7 +4,7 @@
 // the answer of the operation only, so the screen shows them once.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 export type OAuthApp = components["schemas"]["OAuthApp"];

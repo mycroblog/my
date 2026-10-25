@@ -52,7 +52,6 @@ storybook-static/
 # Generated files only the TypeScript clients read (ADR-0081): the tasks that read them generate them first
 # (`scripts/task.sh generate` makes them all, for an editor). The generated files Go reads are committed.
 /tools/i18n/src/runtime/messages.gen.ts
-/app/web/src/lib/api/schema.gen.ts
 /app/web/src/routeTree.gen.ts
 /app/ui/src/themeTokens.gen.ts
 /locales/en-XA/client*/

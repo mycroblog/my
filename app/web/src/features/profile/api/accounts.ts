@@ -6,7 +6,7 @@ import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import { isPostListQuery } from "../../../lib/query";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 /** An account, as the client API returns it; its own endpoints add the follow counts. */
 export type Account = components["schemas"]["Account"];

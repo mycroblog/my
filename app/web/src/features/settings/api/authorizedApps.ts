@@ -3,7 +3,7 @@
 // user out of every browser, so the caller signs this one out instead of fetching the list again.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 export type AuthorizedApp = components["schemas"]["AuthorizedApp"];

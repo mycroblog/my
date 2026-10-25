@@ -45,28 +45,10 @@ tasks:
       - pkg/mykit/api.gen.go
       - internal/interface/clientapi/security.gen.go
       - pkg/mykit/ts/src/schema.gen.ts
-      - app/web/src/lib/api/schema.gen.ts
     env:
       REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"
     cmds:
       - scripts/generate.sh
-
-  # The tasks of tasks/web.yml that read the types depend on this. It reads the committed bundle, so a change
-  # to api/spec reaches the types after api:generate.
-  generate-ts:
-    desc: Generate the web client's TypeScript types from the committed bundle api/openapi.yaml
-    deps: [":web:install"]
-    run: once
-    sources:
-      - api/openapi.yaml
-      - scripts/generate.sh
-      - app/bun.lock
-    generates:
-      - app/web/src/lib/api/schema.gen.ts
-    env:
-      REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"
-    cmds:
-      - scripts/generate.sh --ts
 
   generate-check:
     desc: Fail if the committed bundle, Go client API code (the server's and pkg/mykit's), or @mycroblog/mykit types are stale

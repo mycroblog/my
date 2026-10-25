@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The renditions of a media file, as @my/ui's Picture chooses among them (ADR-0054 §1, §5). The types have the
 // shape of Picture's ImageSources; lib does not import the kit (web-client/README.md A1–A3).
-import type { components } from "./api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 type ImageCandidate = { url: string; width?: number | undefined };
 type ImageSources = { still: readonly ImageCandidate[]; animated?: readonly ImageCandidate[] | undefined };

@@ -1,35 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The client API client (ADR-0029): openapi-fetch typed by the types that openapi-typescript generates
-// from api/openapi.yaml (schema.gen.ts, `scripts/task.sh api:generate`), and openapi-react-query on top of it for the
-// `queryOptions` of features/<x>/api (web-client/README.md S1). Its middleware
+// The client API client (ADR-0029, ADR-0093 §3): the client of @mycroblog/mykit, typed by the types it generates from
+// api/openapi.yaml, and openapi-react-query on top of it for the `queryOptions` of features/<x>/api
+// (web-client/README.md S1). mykit sends the session's access token as a Bearer token, and after a 401 refreshes it
+// once through the session (a TokenSource) and sends the request again; it sends the locale the app is displayed in
+// as Accept-Language, read for every request, as the user can change it while the page is open, so that the server
+// localizes its problems too. The app does not let it retry a 429 or a 503: the app shows them (the rate limit, the
+// maintenance) instead.
 //
-// - sends the access token as a Bearer token, and after a 401 refreshes it once and sends the request again;
-// - turns every response with an error status into an ApiError and every network failure into a
-//   NetworkError, with a localized message (errors.ts);
+// The middleware of the app on top of it
+//
+// - turns every response with an error status into an ApiError and every network failure into a NetworkError, with a
+//   localized message (errors.ts);
 // - tells lib/network whether the server answered, which decides whether the app is offline (web-client/16-look-states-and-wording.md G17);
 // - tells lib/maintenance when the server answers with its maintenance problem (a MaintenanceError, ADR-0084 §3), and
 //   when it answers again after that. The 503 of the maintenance is no failure of the session: it never discards the
 //   token, counts as a failed refresh, or signs out, on a request or on the refresh after a 401.
 //
-// The client sends the locale the app is displayed in as Accept-Language, so that the server localizes its
-// problems too; it reads the locale for every request, as the user can change it while the page is open.
-import createFetchClient, { type Client, type Middleware } from "openapi-fetch";
+// `stream` opens the event stream (lib/sse) with the same origin, token, and locale.
+import { createClient, type Api as MykitApi, NetworkError as MykitNetworkError, type paths, runStream, type StreamOptions, type TokenSource } from "@mycroblog/mykit";
+import type { Middleware } from "openapi-fetch";
 import createQueryClient, { type OpenapiQueryClient } from "openapi-react-query";
 import type { Session } from "../auth/session";
 import type { AppLocale } from "../locale";
-import { apiErrorFromResponse, MaintenanceError, NetworkError } from "../errors";
+import { apiErrorFromResponse, MaintenanceError, maintenanceFromResponse, NetworkError } from "../errors";
 import type { Maintenance } from "../maintenance";
 import { isBrowserOffline, reportNetworkFailure, reportResponse } from "../network";
-import type { paths } from "./schema.gen";
 
-/** The base path of the client API, `servers[0].url` in api/openapi.yaml. */
-const apiBasePath = "/api/v1";
+/** What the app's stream gives runStream: everything but the connection, which the Api holds. */
+type EventStreamOptions = Pick<StreamOptions, "signal" | "onOpen" | "onEvent" | "onError">;
 
 export type Api = {
-  /** The openapi-fetch client, for loaders and mutations. */
-  fetch: Client<paths>;
+  /** The openapi-fetch client of @mycroblog/mykit, for loaders and mutations. */
+  fetch: MykitApi;
   /** The openapi-react-query client, for `queryOptions` and `useMutation`. */
   query: OpenapiQueryClient<paths>;
+  /**
+   * Keeps GET /streaming open until `signal` aborts, reconnecting after every end or failure (mykit's runStream).
+   * It rejects only when the server refuses the stream for good (a 4xx other than 408 and 429).
+   */
+  stream: (options: EventStreamOptions) => Promise<void>;
 };
 
 export type CreateApiOptions = {
@@ -43,77 +52,33 @@ export type CreateApiOptions = {
 };
 
 export function createApi({ apiOrigin, session, locale, maintenance }: CreateApiOptions): Api {
-  const fetch = createFetchClient<paths>({ baseUrl: new URL(apiBasePath, apiOrigin).href });
-  // onResponse runs in the reverse order of registration: the retry after a refresh comes first, and
-  // only its final response becomes an error.
-  fetch.use(localeMiddleware(locale), errorMiddleware(locale, maintenance), authMiddleware(session, locale, maintenance));
-  return { fetch, query: createQueryClient(fetch) };
-}
-
-/** The Bearer token of a request, or null. */
-function bearerToken(request: Request): string | null {
-  const authorization = request.headers.get("Authorization");
-  return authorization?.startsWith("Bearer ") === true ? authorization.slice("Bearer ".length) : null;
-}
-
-/**
- * Authenticates requests with the session's access token. A request waits for the session to resume
- * first, so that the first requests of a page carry the token too. After a 401 to a request that carried
- * a token, it refreshes the token once (the session serializes refreshes across tabs) and sends a copy of
- * the request with the new one; a second 401 stands. A refresh that meets the maintenance keeps the token and throws
- * the MaintenanceError.
- */
-function authMiddleware(session: Session, locale: Pick<AppLocale, "t">, maintenance: Maintenance): Middleware {
-  /** Unsent copies of the authenticated requests in flight, by request ID: a body can be read only once. */
-  const copies = new Map<string, Request>();
+  const acceptLanguage = () => locale.locale;
+  const fetch = createClient({ server: apiOrigin, tokenSource: session, acceptLanguage, retry: { disabled: true } });
+  fetch.use(errorMiddleware(locale, maintenance));
   return {
-    async onRequest({ request, id }) {
-      if (session.status === "unknown") await session.restore();
-      const token = session.accessToken;
-      if (token === null) return undefined;
-      request.headers.set("Authorization", `Bearer ${token}`);
-      copies.set(id, request.clone());
-      return request;
-    },
-    async onResponse({ request, response, id, options }) {
-      const copy = copies.get(id);
-      copies.delete(id);
-      if (response.status !== 401 || copy === undefined) return undefined;
-      try {
-        const token = await session.refresh(bearerToken(request));
-        if (token === null) return undefined;
-        copy.headers.set("Authorization", `Bearer ${token}`);
-        return await options.fetch(copy);
-      } catch (error) {
-        // An error thrown here skips the onError of every middleware, so it is reported and localized here.
-        if (error instanceof MaintenanceError) {
-          maintenance.report(error);
-          throw error;
-        }
-        throw new NetworkError(locale.t("client:api.error.network"), { cause: error });
-      }
-    },
-    onError({ id }) {
-      copies.delete(id);
-      return undefined;
-    },
+    fetch,
+    query: createQueryClient(fetch),
+    stream: (options) =>
+      runStream({
+        ...options,
+        server: apiOrigin,
+        tokenSource: streamTokenSource(session, apiOrigin),
+        acceptLanguage,
+        fetch: reportingFetch(maintenance),
+      }),
   };
 }
 
-/** Sends the locale the app is displayed in at the time of the request. */
-function localeMiddleware(locale: Pick<AppLocale, "locale">): Middleware {
-  return {
-    onRequest({ request }) {
-      request.headers.set("Accept-Language", locale.locale);
-      return request;
-    },
-  };
+/** Whether `error` is the abort of a request (TanStack Query cancelling a query, or a stream that was closed). */
+function isAbort(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 /**
  * Throws an ApiError for every response with an error status, and turns network failures into a NetworkError, whose
  * message says that the app is offline when the browser has no network. The maintenance problem is reported to
- * `maintenance`, and so is the first answer after it.
+ * `maintenance`, and so is the first answer after it. It sees the answer after mykit's refresh, and throws before
+ * mykit's own ProblemError.
  */
 function errorMiddleware(locale: Pick<AppLocale, "t">, maintenance: Maintenance): Middleware {
   return {
@@ -129,9 +94,56 @@ function errorMiddleware(locale: Pick<AppLocale, "t">, maintenance: Maintenance)
     },
     onError({ error }) {
       // An aborted request (TanStack Query cancelling a query) stays an AbortError.
-      if (error instanceof DOMException && error.name === "AbortError") return undefined;
+      if (isAbort(error)) return undefined;
+      // The refresh after a 401 met the maintenance: the token stays.
+      if (error instanceof MaintenanceError) {
+        maintenance.report(error);
+        return error;
+      }
       reportNetworkFailure();
       return new NetworkError(locale.t(isBrowserOffline() ? "client:api.error.offline" : "client:api.error.network"), { cause: error });
     },
+  };
+}
+
+/**
+ * The session as the TokenSource of the stream. A refresh that cannot reach the server, or meets the maintenance, is a
+ * mykit NetworkError there, which the stream recovers from by connecting again later, as from any other network failure.
+ */
+function streamTokenSource(session: Session, apiOrigin: string): TokenSource {
+  return {
+    getAccessToken: () => session.getAccessToken(),
+    async refresh(refused) {
+      try {
+        return await session.refresh(refused);
+      } catch (error) {
+        if (error instanceof NetworkError || error instanceof MaintenanceError) throw new MykitNetworkError("POST", new URL("/oauth/token/refresh", apiOrigin).href, error);
+        throw error;
+      }
+    },
+  };
+}
+
+/**
+ * The fetch of the stream, which tells lib/network and lib/maintenance what it met, as errorMiddleware does for the
+ * other requests.
+ */
+function reportingFetch(maintenance: Maintenance): (request: Request) => Promise<Response> {
+  return async (request) => {
+    let response: Response;
+    try {
+      response = await globalThis.fetch(request);
+    } catch (error) {
+      if (!isAbort(error) && !request.signal.aborted) reportNetworkFailure();
+      throw error;
+    }
+    reportResponse();
+    if (response.ok) {
+      maintenance.answered();
+    } else {
+      const underMaintenance = await maintenanceFromResponse(response);
+      if (underMaintenance !== null) maintenance.report(underMaintenance);
+    }
+    return response;
   };
 }

@@ -6,7 +6,7 @@
 // ADR-0070 §5), for the holders of view_finance, with the lines of the items as far as the instance settings show.
 import { queryOptions } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 
 type Schemas = components["schemas"];

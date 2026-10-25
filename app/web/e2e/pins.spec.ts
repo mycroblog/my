@@ -4,7 +4,7 @@
 // API, so the spec answers the token refresh and the client API with `page.route`, as a signed-in user's
 // server would. Names come from the project's catalog, so the spec finds the same elements in every locale.
 import type { Page } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 

@@ -2,7 +2,7 @@
 // The user's own account (FR-008): the archives of the user's data, and deleting the account (web-client/README.md S1).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { confirmWithPasskey } from "./passkeys";
 

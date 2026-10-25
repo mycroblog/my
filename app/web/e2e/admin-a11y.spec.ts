@@ -9,7 +9,7 @@
 // page.route; names change with the locale, so the structure is checked by role and by what the server sends.
 import { readdirSync } from "node:fs";
 import type { Locator, Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
 
 type Schemas = components["schemas"];

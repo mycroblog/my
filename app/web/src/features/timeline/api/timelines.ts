@@ -8,7 +8,7 @@
 import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 /** A status (post or boost), as the client API returns it. */
 export type Status = components["schemas"]["Status"];

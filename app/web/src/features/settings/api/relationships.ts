@@ -5,7 +5,7 @@
 // Their keys start like the client's own ([method, path]), so invalidating ["get", path] reaches them.
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 import { refreshRelationship } from "../../profile";
 
 type Schemas = components["schemas"];

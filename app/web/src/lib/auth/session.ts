@@ -13,6 +13,10 @@
 // The server's maintenance mode answers the OAuth endpoints with the 503 of the maintenance problem (ADR-0084 §3). The
 // session survives it: a refresh that meets it keeps the token and the cookie, throws the MaintenanceError, and says
 // nothing to the other tabs, as when the server cannot be reached.
+//
+// The session is the TokenSource of the API client (@mycroblog/mykit, ADR-0093 §5): mykit asks it for the access
+// token of every request and, after a 401, for a refresh.
+import type { TokenSource } from "@mycroblog/mykit";
 import { maintenanceFromResponse, NetworkError } from "../errors";
 import type { Maintenance } from "../maintenance";
 
@@ -111,7 +115,7 @@ function localLocks(): Locks {
   };
 }
 
-export class Session {
+export class Session implements TokenSource {
   readonly #apiOrigin: string;
   readonly #locks: Locks;
   readonly #channel: Channel | null;
@@ -142,6 +146,15 @@ export class Session {
 
   get status(): SessionStatus {
     return this.#status;
+  }
+
+  /**
+   * The access token for a request, or null when there is none (TokenSource). A request waits for the session to
+   * resume first, so that the first requests of a page carry the token too.
+   */
+  async getAccessToken(): Promise<string | null> {
+    if (this.#status === "unknown") await this.restore();
+    return this.#accessToken;
   }
 
   /**

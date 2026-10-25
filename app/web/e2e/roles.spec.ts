@@ -5,7 +5,7 @@
 // each step passing axe without scrolling sideways. `vite preview` has no API, so the test plays the server with
 // page.route; names change with the locale, so the structure is checked by role and by the role keys.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Schemas = components["schemas"];

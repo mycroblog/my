@@ -5,7 +5,7 @@
 // administrator with page.route; names change with the locale, so the structure is checked by role, by the names in
 // the project's locale catalog and by what the server sends.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 

@@ -7,7 +7,7 @@
 // a signed-in moderator with page.route; names change with the locale, so the structure is checked by role and by
 // what the server sends (names, handles, addresses).
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { readCatalog } from "./catalog.ts";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 

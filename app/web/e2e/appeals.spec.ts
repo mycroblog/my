@@ -5,7 +5,7 @@
 // sideways. `vite preview` has no API, so each test plays the server of a signed-in moderator with page.route;
 // names change with the locale, so the structure is checked by role and by what the server sends.
 import type { Page, Route } from "@playwright/test";
-import type { components } from "../src/lib/api/schema.gen.ts";
+import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 type Schemas = components["schemas"];

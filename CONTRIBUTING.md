@@ -13,7 +13,7 @@ scripts/task.sh generate   # エディタの型検査のため、コミットし
 scripts/task.sh check
 ```
 
-TypeScript だけが読む生成物（`app/web/src/routeTree.gen.ts`・`app/web/src/lib/api/schema.gen.ts`・`tools/i18n/src/runtime/messages.gen.ts`・
+TypeScript だけが読む生成物（`app/web/src/routeTree.gen.ts`・`tools/i18n/src/runtime/messages.gen.ts`・
 `app/ui/src/themeTokens.gen.ts`・`client` の疑似ロケール）はコミットしません（[ADR-0081](docs/adr/0081-generated-files-policy.md)）。
 それらを読むタスク（型検査・lint・ビルド・テスト・開発サーバー）は生成を先に回すので、clone の直後でもそのまま動きます。
 エディタはタスクを通さないので、clone のあとに一度 `scripts/task.sh generate` を回します。入力が変わっていない生成は飛びます。

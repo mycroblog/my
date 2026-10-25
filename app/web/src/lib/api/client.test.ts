@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The API client's middleware against MSW: the Bearer token, the one refresh and retry after a 401, and
-// errors turned into localized ApiError / NetworkError objects, and the server's maintenance, which keeps the session.
+// The API client on @mycroblog/mykit against MSW: the session's Bearer token, the one refresh and retry after a 401,
+// errors turned into localized ApiError / NetworkError objects, the server's maintenance, which keeps the session, and
+// the event stream with the same token and reports.
+import { onlineManager } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test } from "vitest";
 import { apiBase, oauthError, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
-import { instanceFixture, viewerFixture } from "../../test/fixtures";
+import { instanceFixture, timelineStatusFixture, viewerFixture } from "../../test/fixtures";
+import { eventStreamResponse } from "../../test/msw/streaming";
 import { server } from "../../test/msw/server";
 import { Session } from "../auth/session";
 import { ApiError, MaintenanceError, NetworkError, rateLimitedUntil } from "../errors";
 import { loadI18n } from "../i18n";
 import { AppLocale } from "../locale";
 import { Maintenance } from "../maintenance";
-import { createApi } from "./client";
+import { type Api, createApi } from "./client";
 
 const apiOrigin = window.location.origin;
 const sessions: Session[] = [];
@@ -284,5 +287,120 @@ describe("the server's maintenance", () => {
     expect(failure).toBeInstanceOf(ApiError);
     expect(failure).not.toBeInstanceOf(MaintenanceError);
     expect(maintenance.current).toBeNull();
+  });
+});
+
+test("leaves a 429 to the app instead of retrying it", async () => {
+  let requests = 0;
+  server.use(
+    http.get(`${apiBase}/instance`, () => {
+      requests++;
+      return problem(429, "about:blank", "Too many requests.", { headers: { "Retry-After": "1" } });
+    }),
+  );
+  const { api } = await setUp();
+
+  await expect(api.fetch.GET("/instance")).rejects.toMatchObject({ name: "ApiError", status: 429 });
+  expect(requests).toBe(1);
+});
+
+test("keeps the caller's Idempotency-Key", async () => {
+  let key: string | null = null;
+  server.use(
+    http.post(oauthPaths.refresh, () => tokenResponse("access-1")),
+    http.post(`${apiBase}/statuses`, ({ request }) => {
+      key = request.headers.get("Idempotency-Key");
+      return HttpResponse.json(timelineStatusFixture);
+    }),
+  );
+  const { api } = await setUp();
+
+  await api.fetch.POST("/statuses", { params: { header: { "Idempotency-Key": "draft-1" } }, body: { text: "Hello", visibility: "public" } });
+
+  expect(key).toBe("draft-1");
+});
+
+describe("the event stream", () => {
+  type Seen = { opens: boolean[]; events: unknown[]; errors: unknown[]; online: boolean[] };
+
+  /** Runs the stream of `api` until `until` holds for what it delivered, then closes it. */
+  async function streamUntil(api: Api, until: (seen: Seen) => boolean): Promise<Seen> {
+    const controller = new AbortController();
+    const seen: Seen = { opens: [], events: [], errors: [], online: [] };
+    await new Promise<void>((resolve, reject) => {
+      const check = () => {
+        if (until(seen)) resolve();
+      };
+      api
+        .stream({
+          signal: controller.signal,
+          onOpen: (reconnected) => {
+            seen.opens.push(reconnected);
+            check();
+          },
+          onEvent: (event) => {
+            seen.events.push(event);
+            check();
+          },
+          onError: (error) => {
+            seen.errors.push(error);
+            seen.online.push(onlineManager.isOnline());
+            check();
+          },
+        })
+        .then(() => {
+          reject(new Error("the stream ended"));
+        }, reject);
+    });
+    controller.abort();
+    return seen;
+  }
+
+  test("sends the session's token, refreshes it once after a 401, and passes on the events it reads", async () => {
+    let refreshes = 0;
+    const authorizations: (string | null)[] = [];
+    server.use(
+      http.post(oauthPaths.refresh, () => {
+        refreshes++;
+        return tokenResponse(`access-${String(refreshes)}`);
+      }),
+      http.get(`${apiBase}/streaming`, ({ request }) => {
+        authorizations.push(request.headers.get("Authorization"));
+        if (request.headers.get("Authorization") !== "Bearer access-2") return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+        const { response, stream } = eventStreamResponse();
+        stream.send("something_new", { id: "x" });
+        stream.send("update", timelineStatusFixture);
+        return response;
+      }),
+    );
+    const { api } = await setUp();
+
+    const seen = await streamUntil(api, ({ events }) => events.length >= 2);
+
+    expect(authorizations).toEqual(["Bearer access-1", "Bearer access-2"]);
+    expect(seen.opens).toEqual([false]);
+    expect(seen.events).toEqual([
+      { type: "unknown", event: "something_new", data: '{"id":"x"}' },
+      { type: "update", status: timelineStatusFixture },
+    ]);
+  });
+
+  test("reports a network failure as offline and the maintenance, and connects again after each", async () => {
+    let attempts = 0;
+    server.use(
+      http.post(oauthPaths.refresh, () => tokenResponse("access-1")),
+      http.get(`${apiBase}/streaming`, () => {
+        attempts++;
+        return attempts === 1 ? HttpResponse.error() : maintenanceResponse({}, "0");
+      }),
+    );
+    const { api, maintenance } = await setUp();
+
+    const seen = await streamUntil(api, ({ errors }) => errors.length >= 2);
+
+    // Offline after the network failure, online again once the server answered.
+    expect(seen.online).toEqual([false, true]);
+    expect(maintenance.current).toBeInstanceOf(MaintenanceError);
+    expect(attempts).toBe(2);
   });
 });

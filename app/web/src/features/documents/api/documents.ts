@@ -3,7 +3,7 @@
 // `privacy_policy_url` lead to the pages of its terms of service and privacy policy, and the documents themselves
 // (GET /instance/documents/{kind}), which the pages at `/about/terms`, `/about/privacy` and `/about/commerce` show.
 import type { Api } from "../../../lib/api/client";
-import type { components } from "../../../lib/api/schema.gen";
+import type { components } from "@mycroblog/mykit";
 
 /** The instance, for the links to its documents. */
 export function instanceQueryOptions(api: Api) {

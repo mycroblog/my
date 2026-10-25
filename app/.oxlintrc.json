@@ -34,7 +34,6 @@
     "**/dist/",
     "**/storybook-static/",
     "web/src/routeTree.gen.ts",
-    "web/src/lib/api/schema.gen.ts",
     "oxlint/violations/"
   ],
   // The workspace root has no react dependency to detect the version from (react-x). Paths are relative to app/,
@@ -592,6 +591,11 @@
               {
                 "name": "openapi-react-query",
                 "message": "Server data goes through TanStack Query: only features/<x>/api and lib/ use the API client (web-client/README.md S1)."
+              },
+              {
+                "name": "@mycroblog/mykit",
+                "allowTypeImports": true,
+                "message": "Server data goes through TanStack Query: only features/<x>/api and lib/ use the API client; elsewhere import only its types (web-client/README.md S1)."
               }
             ],
             "patterns": [
@@ -917,6 +921,11 @@
               {
                 "name": "openapi-react-query",
                 "message": "Server data goes through TanStack Query: only features/<x>/api and lib/ use the API client (web-client/README.md S1)."
+              },
+              {
+                "name": "@mycroblog/mykit",
+                "allowTypeImports": true,
+                "message": "Server data goes through TanStack Query: only features/<x>/api and lib/ use the API client; elsewhere import only its types (web-client/README.md S1)."
               }
             ],
             "patterns": [

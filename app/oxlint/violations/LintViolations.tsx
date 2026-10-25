@@ -12,6 +12,8 @@ import { tv } from "tailwind-variants"; // expect: restrict(classes) A4
 import { useComposeForm } from "../../compose/hooks/useComposeForm"; // expect: boundaries(dependencies) A3
 import { Route as IndexRoute } from "../../../routes/index"; // expect: boundaries(dependencies) A1
 import { client } from "../../../lib/api/client"; // expect: eslint(no-restricted-imports) S1
+import { createClient } from "@mycroblog/mykit"; // expect: eslint(no-restricted-imports) S1
+import type { components } from "@mycroblog/mykit";
 
 let renders = 0;
 const CountContext = createContext(0);
@@ -118,12 +120,13 @@ export function Provided() {
 Provided.defaultProps = {}; // expect: restrict(syntax)
 
 // S1
-export function useStatus(id: string) {
+export function useStatus(id: components["schemas"]["Status"]["id"]) {
   const queryClient = useQueryClient();
   queryClient.setQueryData(["status", id], null); // expect: restrict(feature) @tanstack/query(prefer-query-options)
   void fetch("/api"); // expect: eslint(no-restricted-globals)
   void window.fetch("/api"); // expect: eslint(no-restricted-properties)
   void client;
+  void createClient;
   return useQuery({ queryKey: ["status"], queryFn: () => id }); // expect: @tanstack/query(exhaustive-deps) @tanstack/query(prefer-query-options)
 }
 

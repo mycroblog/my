@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The errors of the API client. Every failed response becomes an ApiError that carries its RFC 9457
-// problem document; a request that never got a response becomes a NetworkError. Both have a localized
-// `message` that the UI can show as it is (web-client/README.md E2): the server localizes `title` and `detail`
-// from the Accept-Language the client sends, and the client's own catalog covers the rest.
+// problem document, as @mycroblog/mykit reads it; a request that never got a response becomes a NetworkError. Both
+// have a localized `message` that the UI can show as it is (web-client/README.md E2): the server localizes `title`
+// and `detail` from the Accept-Language the client sends, and the client's own catalog covers the rest.
+import { problemFromResponse, type components } from "@mycroblog/mykit";
 import type { Translate } from "./i18n";
-import type { components } from "./api/schema.gen";
 
 /** An RFC 9457 problem document (the `Problem` schema of api/openapi.yaml). */
 export type Problem = components["schemas"]["Problem"];
@@ -166,19 +166,18 @@ function isProblem(value: unknown): value is Problem {
 }
 
 /**
- * The ApiError of a response with an error status. A body that is not a problem document (a proxy's
- * HTML page, say) becomes an `about:blank` problem titled from the client's catalog. The maintenance problem becomes
- * a MaintenanceError.
+ * The ApiError of a response with an error status, whose problem document @mycroblog/mykit reads. A body that is not a
+ * problem document (a proxy's HTML page, say) becomes an `about:blank` problem titled from the client's catalog, and
+ * so does a problem without a title. The maintenance problem becomes a MaintenanceError.
  */
 export async function apiErrorFromResponse(response: Response, t: Translate): Promise<ApiError> {
   const options = { retryAt: retryAfterTime(response.headers.get("Retry-After"), Date.now()) };
-  if (mediaType(response) === "application/problem+json") {
-    try {
-      const body: unknown = await response.json();
-      if (isProblem(body)) return isMaintenance(body, response.status) ? new MaintenanceError(body, options) : new ApiError(body, options);
-    } catch {
-      // Not JSON after all; described by its status below.
-    }
+  const fallbackTitle = () => t("client:api.error.status", { status: String(response.status) });
+  if (mediaType(response) !== "application/problem+json") {
+    await response.body?.cancel().catch(() => undefined);
+    return new ApiError({ type: "about:blank", title: fallbackTitle(), status: response.status }, options);
   }
-  return new ApiError({ type: "about:blank", title: t("client:api.error.status", { status: String(response.status) }), status: response.status }, options);
+  const { problem } = await problemFromResponse(response);
+  const document = problem.title === "" ? { ...problem, title: fallbackTitle() } : problem;
+  return isMaintenance(document, response.status) ? new MaintenanceError(document, options) : new ApiError(document, options);
 }
