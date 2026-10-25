@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "//": "The build of the npm package: ESM JavaScript and type declarations in dist/ (the build script). It reads @mycroblog/mykit from its build, as a user does, so mykit is built first (mykit:mybot-ts-build).",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "customConditions": [],
+    "rootDir": "src",
+    "outDir": "dist"
+  }
+}

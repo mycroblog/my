@@ -2,9 +2,10 @@
 #
 # pkg/mykit and pkg/mybot, the MIT-licensed client libraries of the client API (ADR-0093, ADR-0094; the mykit context
 # of scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts, and
-# the Go module pkg/mybot, the bot library on top of mykit. The Go modules are modules of their own, so the root
-# module's `./...`, depguard, and go:check never see them: these tasks check them (the mybot-* tasks pkg/mybot).
-# The npm package is a package of the client workspace (app/package.json), checked here by the ts-* tasks.
+# the Go module pkg/mybot and the npm package @mycroblog/mybot in pkg/mybot/ts, the bot library on top of mykit. The
+# Go modules are modules of their own, so the root module's `./...`, depguard, and go:check never see them: these
+# tasks check them (the mybot-* tasks pkg/mybot). The npm packages are packages of the client workspace
+# (app/package.json), checked here by the ts-* and mybot-ts-* tasks.
 # api:generate writes their generated code (pkg/mykit/api.gen.go, pkg/mykit/ts/src/schema.gen.ts).
 version: "3"
 
@@ -15,10 +16,10 @@ vars:
 
 tasks:
   check:
-    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go checks of pkg/mybot
+    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go and TS checks of pkg/mybot
     # The license scope check (MIT in pkg/mykit and pkg/mybot) belongs to the api context, which a change of pkg/mykit alone does not
-    # select.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, ":api:license-scope"]
+    # select. mybot-ts-runtimes is left out: it needs Node.js 22 and Deno, which the repo job of CI installs for it.
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, mybot-ts-typecheck, mybot-ts-lint, mybot-ts-knip, mybot-ts-test, mybot-ts-build, mybot-ts-licenses, ":api:license-scope"]
 
   warm:
     desc: Download the modules and build the packages and test binaries of pkg/mykit and pkg/mybot once, so that their checks a CI job runs in parallel read the build cache
@@ -100,6 +101,8 @@ tasks:
 
   ts-build:
     desc: Build @mycroblog/mykit into pkg/mykit/ts/dist (ESM JavaScript and type declarations)
+    # Once, so that check and mybot-ts-build, which builds mybot on top of it, do not rewrite dist/ at the same time.
+    run: once
     deps: [":web:install"]
     dir: pkg/mykit/ts
     cmds:
@@ -111,6 +114,56 @@ tasks:
     dir: tools/i18n
     cmds:
       - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mykit/ts
+
+  mybot-ts-typecheck:
+    desc: Type-check @mycroblog/mybot with tsc (the library without Node.js types, and its tests), reading @mycroblog/mykit from its sources
+    deps: [":web:install"]
+    dir: pkg/mybot/ts
+    cmds:
+      - bun run typecheck
+
+  mybot-ts-lint:
+    desc: Run Oxlint on @mycroblog/mybot (pkg/mybot/ts/.oxlintrc.json, which forbids static imports of Node.js built-in modules in the library)
+    deps: [":web:install"]
+    dir: pkg/mybot/ts
+    cmds:
+      - bun run lint
+
+  mybot-ts-knip:
+    desc: Find unused files, exports, and dependencies of @mycroblog/mybot with knip (its workspace of app/knip.json)
+    deps: [":web:install"]
+    dir: app
+    cmds:
+      - bun run knip --workspace ../pkg/mybot/ts
+
+  mybot-ts-test:
+    desc: Run the @mycroblog/mybot unit tests with bun test, reading @mycroblog/mykit from its sources
+    deps: [":web:install"]
+    dir: pkg/mybot/ts
+    cmds:
+      - bun run test
+
+  mybot-ts-build:
+    desc: Build @mycroblog/mykit and then @mycroblog/mybot into their dist/ (ESM JavaScript and type declarations), mybot reading mykit's build as its users do
+    deps: [":web:install"]
+    cmds:
+      - task: ts-build
+      - cd pkg/mybot/ts && bun run build
+
+  mybot-ts-licenses:
+    desc: Fail on licenses outside the permissive allowlist among the npm packages that @mycroblog/mybot depends on at run time (@mycroblog/mykit and its own)
+    deps: [":web:install", ":i18n:install"]
+    dir: tools/i18n
+    cmds:
+      - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mybot/ts
+
+  mybot-ts-runtimes:
+    desc: Load the build of @mycroblog/mybot on Node.js and Deno and run a bot on each (pkg/mybot/ts/test/runtimes.mjs); needs node and deno on PATH, which the repo job of CI installs (Node.js 22, the oldest supported)
+    deps: [mybot-ts-build]
+    dir: pkg/mybot/ts
+    cmds:
+      - node test/runtimes.mjs
+      - deno run --no-lock --allow-read --allow-write --allow-env test/runtimes.mjs
 
   mybot-mod-check:
     desc: Fail if pkg/mybot/go.mod and go.sum are not tidy

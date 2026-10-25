@@ -19,6 +19,10 @@
       "entry": ["src/**/*.test.ts"],
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["openapi-typescript"]
+    },
+    "../pkg/mybot/ts": {
+      "entry": ["src/**/*.test.ts", "test/*.mjs"],
+      "project": ["src/**/*.ts", "test/*.mjs"]
     }
   }
 }

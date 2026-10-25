@@ -271,6 +271,7 @@ entries:
     notes:
       - "pkg/mybot is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`) that requires pkg/mykit alone, replaced with ../mykit, and never the server module; the mykit context checks it (`scripts/task.sh mykit:check`, the mybot-* tasks)."
       - "What mykit lacks (stream reconnection, token rotation, retries) goes into mykit, never into mybot (ADR-0094 §2); mybot holds the receiving (catch-up, dedupe, Store), handlers, middleware, manners, and the send budget."
+      - "@mycroblog/mybot (pkg/mybot/ts) is the MIT npm package of the same library, a package of the client workspace that depends on @mycroblog/mykit alone (`workspace:*`): ESM only, no static Node.js built-in import in src/ (FileStore loads node:fs/promises dynamically, for Node.js, Bun, and Deno); its names, options, defaults, idempotency keys, and state file match the Go library, and a difference goes into its README. `scripts/task.sh mykit:check` runs its mybot-ts-* tasks; `mykit:mybot-ts-runtimes` (Node.js 22 and Deno) runs in CI."
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace
