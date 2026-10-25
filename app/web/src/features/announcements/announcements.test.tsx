@@ -58,11 +58,14 @@ describe("the announcements above the home timeline", () => {
 
     await user.click(within(first ?? region).getByRole("button", { name: "Mark as read" }));
 
+    // The heading loses its "Unread" and takes the focus in separate renders, so wait for each.
+    await waitFor(() => {
+      expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(/^Announcement of Oct 21, 2026$/u);
+    });
     await waitFor(() => {
       expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveFocus();
     });
     expect(reads).toEqual([maintenance.id]);
-    expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(/^Announcement of Oct 21, 2026$/u);
     expect(screen.getByRole("region", { name: "Announcements" })).toBeInTheDocument();
   });
 
