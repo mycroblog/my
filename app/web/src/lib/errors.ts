@@ -43,6 +43,9 @@ export class ApiError extends Error implements Problem {
   }
 }
 
+/** The problem type of the 403 for every operation that the closed server refuses (ADR-0088 §2). */
+const serviceClosedType = "/api/v1/problems/service-closed";
+
 /** The problem type of the server's maintenance mode (ADR-0084 §3): a 503 to every operation, with Retry-After. */
 const maintenanceProblemType = "/api/v1/problems/maintenance";
 
@@ -138,12 +141,13 @@ export class NetworkError extends Error {
  * (`network`), the server refused the viewer (`forbidden`, 403) or found nothing (`not-found`, 404), the
  * server failed otherwise (`server`), or the error did not come from the API at all (`unexpected`).
  */
-export type ErrorKind = "network" | "server" | "not-found" | "forbidden" | "unexpected";
+export type ErrorKind = "network" | "server" | "not-found" | "forbidden" | "closed" | "unexpected";
 
 /** Classifies an error of the API client by what the user can make of it. */
 export function errorKind(error: unknown): ErrorKind {
   if (error instanceof NetworkError) return "network";
   if (!(error instanceof ApiError)) return "unexpected";
+  if (error.type === serviceClosedType) return "closed";
   if (error.status === 403) return "forbidden";
   if (error.status === 404) return "not-found";
   return "server";

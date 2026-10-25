@@ -44,3 +44,6 @@ const serverPathPrefixes = ["/api", "/oauth", "/auth", "/.well-known", "/nodeinf
 export function isServerPath(pathname: string): boolean {
   return serverPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
+
+/** The page of the user's data archives, where the closure notice sends people to take their data away (FR-808). */
+export const dataExportPath = "/settings/account";
