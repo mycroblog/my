@@ -86,7 +86,7 @@ and remove the stack when done:
 
 ```sh
 set -a; . .tmp/federation-live/scenarios.env; set +a
-go test -tags federationlive -count=1 -v ./deploy/docker/federation-live
+go test -tags federationlive -count=1 -timeout 45m -v ./deploy/docker/federation-live
 docker compose -p my-federation-live down -v
 ```
 
