@@ -17,17 +17,17 @@ func Reference() string {
 
 # Configuration reference
 
-The server reads each setting from these sources, highest precedence first (ADR-0010):
+The server reads each setting from these sources, highest precedence first:
 
 1. The environment variable ` + "`" + EnvPrefix + "<KEY>`" + ` (the key in upper case).
 2. The TOML file named by ` + "`" + EnvConfigFile + "`" + ` (or ` + "`my config check -config <path>`" + `), with the keys below at the top level.
 3. The default.
 
 Secrets are read only from the environment: either the variable itself or ` + "`<NAME>_FILE`" + `, the path of a file that holds the value
-(trailing newlines are removed), for Docker and Kubernetes secrets (ADR-0019 §6). Setting a secret in the TOML file is an error.
+(trailing newlines are removed), for Docker and Kubernetes secrets. Setting a secret in the TOML file is an error.
 
 Adapters are always selected by an explicit key; nothing is inferred from a URL scheme.
-Values marked "not in v0" are decided in an ADR but not shipped in v0, and are rejected.
+Values marked "not in v0" are planned but not shipped in v0, and are rejected.
 A binary built with a build tag that leaves an adapter out rejects the values that select it ([build tags](build-tags.md)).
 
 ` + "`my config check`" + ` validates the configuration and lists every problem at once; the server refuses to start on any of them.
@@ -50,7 +50,7 @@ The settings on this page configure the deployment: what a process runs, which a
 These values are fixed for the life of a process and change only with a restart.
 The policies of the instance that administrators change while it runs (registration mode, maximum post length,
 default locale, which timelines are enabled) and its localized texts (name, descriptions, terms, privacy policy)
-are instance settings instead: they are stored in the database with every change kept as a revision (data-model §4.9),
+are instance settings instead: they are stored in the database with every change kept as a revision,
 and are changed with ` + "`my instance set`" + ` ([instance settings](../operations/instance-settings.md)).
 
 The two never share a key, so neither overrides the other: no environment variable or config file key sets an

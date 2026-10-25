@@ -1,6 +1,6 @@
 # Webhook reference
 
-What an endpoint of the instance's webhooks receives ([ADR-0060](../adr/0060-instance-webhooks.md), FR-722):
+What an endpoint of the instance's webhooks receives:
 the requests, their signature, the events, and how failures are retried.
 Setting up a webhook is in [the operations guide](../operations/webhooks.md).
 
@@ -30,7 +30,7 @@ The body is:
 - `data` is what the admin API (`/api/v1/admin/...`) answers for the object of the event, as it is when the event happens:
   the server presents it with the same code as the admin API, in the transaction of the event. Its schema for each type is in
   the table below and in `api/openapi.yaml`, where `WebhookMessage` describes the body. A field without a value is left out.
-- v0 keeps no version of the body: `data` follows the admin API of `/api/v1`, which v0 may change (ADR-0012).
+- v0 keeps no version of the body: `data` follows the admin API of `/api/v1`, which may change in a v0 minor release.
 
 The secret is `whsec_` and the base64 of 32 random bytes, as the Standard Webhooks libraries take it. It is shown once, when the
 webhook is set up or its secret rotated. Verify with one of
@@ -86,7 +86,7 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 
 ## Destinations
 
-The server sends through its SSRF guard (ADR-0019 §1): the URL must be `https` (or `http`) on a public address. A destination on
+The server sends through its SSRF guard, the same one as federation: the URL must be `https` (or `http`) on a public address. A destination on
 loopback or a private network, such as an automation tool on the same host or in the same VPC, is reached only when the operator
 lists it in `webhook_allowed_destinations` ([configuration reference](configuration.md#webhook_allowed_destinations)); such a
 destination may also use plain `http` and any port. An attempt to a destination the guard refuses fails with the outcome

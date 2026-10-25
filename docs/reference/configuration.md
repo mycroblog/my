@@ -2,17 +2,17 @@
 
 # Configuration reference
 
-The server reads each setting from these sources, highest precedence first (ADR-0010):
+The server reads each setting from these sources, highest precedence first:
 
 1. The environment variable `MY_<KEY>` (the key in upper case).
 2. The TOML file named by `MY_CONFIG` (or `my config check -config <path>`), with the keys below at the top level.
 3. The default.
 
 Secrets are read only from the environment: either the variable itself or `<NAME>_FILE`, the path of a file that holds the value
-(trailing newlines are removed), for Docker and Kubernetes secrets (ADR-0019 §6). Setting a secret in the TOML file is an error.
+(trailing newlines are removed), for Docker and Kubernetes secrets. Setting a secret in the TOML file is an error.
 
 Adapters are always selected by an explicit key; nothing is inferred from a URL scheme.
-Values marked "not in v0" are decided in an ADR but not shipped in v0, and are rejected.
+Values marked "not in v0" are planned but not shipped in v0, and are rejected.
 A binary built with a build tag that leaves an adapter out rejects the values that select it ([build tags](build-tags.md)).
 
 `my config check` validates the configuration and lists every problem at once; the server refuses to start on any of them.
@@ -35,7 +35,7 @@ The settings on this page configure the deployment: what a process runs, which a
 These values are fixed for the life of a process and change only with a restart.
 The policies of the instance that administrators change while it runs (registration mode, maximum post length,
 default locale, which timelines are enabled) and its localized texts (name, descriptions, terms, privacy policy)
-are instance settings instead: they are stored in the database with every change kept as a revision (data-model §4.9),
+are instance settings instead: they are stored in the database with every change kept as a revision,
 and are changed with `my instance set` ([instance settings](../operations/instance-settings.md)).
 
 The two never share a key, so neither overrides the other: no environment variable or config file key sets an
@@ -150,7 +150,7 @@ An instance setting that has never been set reads as its default, which is defin
 
 ### `host`
 
-Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/` (ADR-0018). A port is allowed for local development. Recorded in the database on first start and must not change afterwards.
+Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards.
 
 - Environment variable: `MY_HOST`
 - Default: none
@@ -158,7 +158,7 @@ Domain that serves the instance. Every ActivityPub `id` is under `https://{host}
 
 ### `account_domain`
 
-Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host` (ADR-0018). Recorded in the database on first start and must not change afterwards.
+Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards.
 
 - Environment variable: `MY_ACCOUNT_DOMAIN`
 - Default: value of `host`
@@ -166,7 +166,7 @@ Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it 
 
 ### `source_url`
 
-Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 (ADR-0011) requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).
+Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).
 
 - Environment variable: `MY_SOURCE_URL`
 - Default: `https://github.com/mycroblog/my`
@@ -174,7 +174,7 @@ Where users get the source code of the running server, as an `https` URL or a `m
 
 ### `status_page_url`
 
-Address of the instance's status page, an absolute `https` URL on a service apart from the server (ADR-0085 §6). Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page (ADR-0084), which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.
+Address of the instance's status page, an absolute `https` URL on a service apart from the server. Empty means none. `GET /instance`, the sign-in screen, and the server-rendered error pages link to it, and so does the maintenance page, which is why it is a setting rather than an instance setting in the database: the link must show while the database is out of reach.
 
 - Environment variable: `MY_STATUS_PAGE_URL`
 - Default: none
@@ -182,7 +182,7 @@ Address of the instance's status page, an absolute `https` URL on a service apar
 
 ### `maintenance`
 
-Starts `my serve` in the maintenance mode (ADR-0084), also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{"status":"maintenance"}`. Switch it by redeploying (docs/operations/maintenance.md).
+Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{"status":"maintenance"}`. Switch it by redeploying (docs/operations/maintenance.md).
 
 - Environment variable: `MY_MAINTENANCE`
 - Default: `false`
@@ -227,7 +227,7 @@ Seconds of the `Retry-After` of the maintenance responses when `maintenance_unti
 
 ### `web_origin`
 
-Origin (`scheme://host[:port]`) of the web client. The client API allows only this origin by CORS (ADR-0019 §4). Set it when the web client is served from another origin, for example a development server at `http://localhost:5173`. An origin on `host` is where the server itself serves the web client, and the client served there calls the API at it: set `http://localhost:8080` (with `host` = `localhost:8080`) to run the server over plain HTTP on localhost, where the sign-in screens, the OAuth issuer, the client API, the links to the instance's pages in its responses, media URLs, and email and invite links are all on `http://localhost:8080`. ActivityPub ids stay under `https://{host}/` in every setup.
+Origin (`scheme://host[:port]`) of the web client. The client API allows only this origin by CORS. Set it when the web client is served from another origin, for example a development server at `http://localhost:5173`. An origin on `host` is where the server itself serves the web client, and the client served there calls the API at it: set `http://localhost:8080` (with `host` = `localhost:8080`) to run the server over plain HTTP on localhost, where the sign-in screens, the OAuth issuer, the client API, the links to the instance's pages in its responses, media URLs, and email and invite links are all on `http://localhost:8080`. ActivityPub ids stay under `https://{host}/` in every setup.
 
 - Environment variable: `MY_WEB_ORIGIN`
 - Default: `https://{host}`
@@ -257,7 +257,7 @@ TCP address the HTTP server listens on, as `host:port`.
 
 ### `trusted_proxies`
 
-Reverse proxies and load balancers in front of the server whose forwarding header (`trusted_proxy_header`) tells the client IP, as comma-separated CIDRs or addresses such as `10.0.0.0/8, 2001:db8::/32, 192.0.2.10` (ADR-0019 §5). The client IP keys the rate limits of sign-in, registration, the client API, and the inbox. When the connection's peer is in this list, the client IP is the rightmost address of the header that is not in it; otherwise the header is ignored and the client IP is the peer. Empty trusts no one: behind a proxy every request then shares the proxy's limits. List only addresses that nothing but your proxies can connect from, and only proxies that append to the header rather than pass a client's value through (docs/architecture/deployment-targets.md).
+Reverse proxies and load balancers in front of the server whose forwarding header (`trusted_proxy_header`) tells the client IP, as comma-separated CIDRs or addresses such as `10.0.0.0/8, 2001:db8::/32, 192.0.2.10`. The client IP keys the rate limits of sign-in, registration, the client API, and the inbox. When the connection's peer is in this list, the client IP is the rightmost address of the header that is not in it; otherwise the header is ignored and the client IP is the peer. Empty trusts no one: behind a proxy every request then shares the proxy's limits. List only addresses that nothing but your proxies can connect from, and only proxies that append to the header rather than pass a client's value through.
 
 - Environment variable: `MY_TRUSTED_PROXIES`
 - Default: none
@@ -278,7 +278,7 @@ Forwarding header that the `trusted_proxies` append the client IP to. Only this 
 
 ### `db`
 
-Database adapter (ADR-0003). The adapter is never inferred from `database_url`.
+Database adapter. The adapter is never inferred from `database_url`.
 
 - Environment variable: `MY_DB`
 - Default: `sqlite`
@@ -300,7 +300,7 @@ Connection string passed to the `db` adapter, in that adapter's format.
 
 ### `queue`
 
-Job queue adapter (ADR-0004).
+Job queue adapter.
 
 - Environment variable: `MY_QUEUE`
 - Default: `db`
@@ -315,7 +315,7 @@ Job queue adapter (ADR-0004).
 
 ### `blob`
 
-Blob storage adapter for media (ADR-0005).
+Blob storage adapter for media.
 
 - Environment variable: `MY_BLOB`
 - Default: `fs`
@@ -329,7 +329,7 @@ Blob storage adapter for media (ADR-0005).
 
 ### `media`
 
-Media processor adapter (ADR-0005).
+Media processor adapter.
 
 - Environment variable: `MY_MEDIA`
 - Default: `native`
@@ -351,7 +351,7 @@ Directory of the `fs` blob store, relative to the working directory or absolute.
 
 ### `media_origin`
 
-Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/` (ADR-0005). It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).
+Origin (`scheme://host[:port]`, no path) at which the media files are served, for a CDN in front of the server's `/media/`. It is the origin of the URLs of the local media files (`/media/...`) and of the remote media proxy (`/media/proxy/...`) in the client API, ActivityPub and link previews, and the web client's Content-Security-Policy allows images and media from it. `https` is required; `http` is accepted only for a loopback host (`localhost`, `127.0.0.1`, `[::1]`). Unset, the media is served from the server's own origin. The URLs are built when they are read, so a change applies to the media that already exists. ActivityPub ids never use it (docs/operations/cdn.md).
 
 - Environment variable: `MY_MEDIA_ORIGIN`
 - Default: the server's own origin (`https://{host}`)
@@ -359,7 +359,7 @@ Origin (`scheme://host[:port]`, no path) at which the media files are served, fo
 
 ### `media_max_image_bytes`
 
-Largest accepted image upload in bytes (ADR-0019 §8).
+Largest accepted image upload in bytes.
 
 - Environment variable: `MY_MEDIA_MAX_IMAGE_BYTES`
 - Default: `16777216`
@@ -367,7 +367,7 @@ Largest accepted image upload in bytes (ADR-0019 §8).
 
 ### `media_max_image_side`
 
-Largest accepted image width and height in pixels, read from the file's header before decoding (ADR-0019 §8).
+Largest accepted image width and height in pixels, read from the file's header before decoding.
 
 - Environment variable: `MY_MEDIA_MAX_IMAGE_SIDE`
 - Default: `8192`
@@ -375,7 +375,7 @@ Largest accepted image width and height in pixels, read from the file's header b
 
 ### `media_max_image_pixels`
 
-Largest accepted image area (width × height, and for an animated GIF the frames together), read from the file's header before decoding (ADR-0019 §8). The default is 33 MP (7680 × 4320).
+Largest accepted image area (width × height, and for an animated GIF the frames together), read from the file's header before decoding. The default is 33 MP (7680 × 4320).
 
 - Environment variable: `MY_MEDIA_MAX_IMAGE_PIXELS`
 - Default: `33177600`
@@ -383,7 +383,7 @@ Largest accepted image area (width × height, and for an animated GIF the frames
 
 ### `media_unattached_ttl`
 
-How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it (FR-803), as a Go duration such as `24h`.
+How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it, as a Go duration such as `24h`.
 
 - Environment variable: `MY_MEDIA_UNATTACHED_TTL`
 - Default: `24h`
@@ -391,7 +391,7 @@ How long an upload may stay unattached to any post or profile before the hourly 
 
 ### `media_max_av_bytes`
 
-Largest accepted video or audio upload in bytes (ADR-0019 §8, ADR-0054 §6). The file is held in memory while it is checked and remuxed, so this also bounds the memory of one upload.
+Largest accepted video or audio upload in bytes. The file is held in memory while it is checked and remuxed, so this also bounds the memory of one upload.
 
 - Environment variable: `MY_MEDIA_MAX_AV_BYTES`
 - Default: `104857600`
@@ -399,7 +399,7 @@ Largest accepted video or audio upload in bytes (ADR-0019 §8, ADR-0054 §6). Th
 
 ### `media_max_video_duration`
 
-Longest accepted video upload (ADR-0054 §6), as a Go duration such as `5m`.
+Longest accepted video upload, as a Go duration such as `5m`.
 
 - Environment variable: `MY_MEDIA_MAX_VIDEO_DURATION`
 - Default: `5m`
@@ -407,7 +407,7 @@ Longest accepted video upload (ADR-0054 §6), as a Go duration such as `5m`.
 
 ### `media_max_audio_duration`
 
-Longest accepted audio upload (ADR-0054 §6), as a Go duration such as `10m`.
+Longest accepted audio upload, as a Go duration such as `10m`.
 
 - Environment variable: `MY_MEDIA_MAX_AUDIO_DURATION`
 - Default: `10m`
@@ -415,7 +415,7 @@ Longest accepted audio upload (ADR-0054 §6), as a Go duration such as `10m`.
 
 ### `custom_emoji_max_bytes`
 
-Largest image in bytes that a local custom emoji may be registered with (ADR-0051 §2); the image must also be a PNG, a GIF, or a WebP of at most 1,024 pixels on a side. The default is Mastodon's limit. GoToSocial does not fetch remote emoji larger than 100 KiB by default.
+Largest image in bytes that a local custom emoji may be registered with; the image must also be a PNG, a GIF, or a WebP of at most 1,024 pixels on a side. The default is Mastodon's limit. GoToSocial does not fetch remote emoji larger than 100 KiB by default.
 
 - Environment variable: `MY_CUSTOM_EMOJI_MAX_BYTES`
 - Default: `262144`
@@ -423,7 +423,7 @@ Largest image in bytes that a local custom emoji may be registered with (ADR-005
 
 ### `remote_custom_emoji_max_bytes`
 
-Largest image in bytes of a remote custom emoji that the media proxy serves (ADR-0051 §2); the proxy answers 404 for a larger one, and for one that is not a PNG, a GIF, or a WebP.
+Largest image in bytes of a remote custom emoji that the media proxy serves; the proxy answers 404 for a larger one, and for one that is not a PNG, a GIF, or a WebP.
 
 - Environment variable: `MY_REMOTE_CUSTOM_EMOJI_MAX_BYTES`
 - Default: `1048576`
@@ -431,7 +431,7 @@ Largest image in bytes of a remote custom emoji that the media proxy serves (ADR
 
 ### `remote_media_cache_max_bytes`
 
-Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all` (FR-409). The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit (FR-803).
+Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all`. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit.
 
 - Environment variable: `MY_REMOTE_MEDIA_CACHE_MAX_BYTES`
 - Default: `1073741824`
@@ -439,7 +439,7 @@ Size limit in bytes of the copies of remote media that the media proxy keeps whe
 
 ### `kv`
 
-Key-value store adapter for caches and rate limits (ADR-0003, ADR-0019 §5).
+Key-value store adapter for caches and rate limits.
 
 - Environment variable: `MY_KV`
 - Default: `db`
@@ -477,7 +477,7 @@ Prefix of every key that this server writes to `valkey_url`, so that several ins
 
 ### `stream`
 
-Broker that carries the signals of the real-time updates (`GET /api/v1/streaming`) between processes (ADR-0050). It is never inferred from the other settings. With `hub`, a stream receives only the changes made in its own process, so run one process with `role = all`; a process with another role warns at start. The other brokers reach every process of the instance, and a process connects to them only while it has open streams (docs/architecture/deployment-targets.md).
+Broker that carries the signals of the real-time updates (`GET /api/v1/streaming`) between processes. It is never inferred from the other settings. With `hub`, a stream receives only the changes made in its own process, so run one process with `role = all`; a process with another role warns at start. The other brokers reach every process of the instance, and a process connects to them only while it has open streams.
 
 - Environment variable: `MY_STREAM`
 - Default: `hub`
@@ -533,7 +533,7 @@ Start of the IDs of the per-process subscriptions of `stream = pubsub`, `{prefix
 
 ### `key_manager`
 
-Key manager adapter that encrypts actor private keys (ADR-0019 §6).
+Key manager adapter that encrypts actor private keys.
 
 - Environment variable: `MY_KEY_MANAGER`
 - Default: `local`
@@ -547,7 +547,7 @@ Key manager adapter that encrypts actor private keys (ADR-0019 §6).
 
 ### `kek`
 
-Key-encryption key for actor private keys: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`. Back it up separately from the database; losing it loses every actor key (ADR-0019 §6, docs/operations/key-management.md).
+Key-encryption key for actor private keys: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).
 
 - Environment variable: `MY_KEK` or `MY_KEK_FILE`
 - Default: none
@@ -563,7 +563,7 @@ Previous key-encryption keys, comma-separated, each in the format of `kek`. They
 
 ### `mail`
 
-Mailer adapter for verification emails (FR-002). With `none`, no email reaches users, so an unverified address does not keep a user out and sign-ups in the `open` registration mode wait for a moderator's approval instead.
+Mailer adapter for verification emails. With `none`, no email reaches users, so an unverified address does not keep a user out and sign-ups in the `open` registration mode wait for a moderator's approval instead.
 
 - Environment variable: `MY_MAIL`
 - Default: `none`
@@ -577,7 +577,7 @@ Mailer adapter for verification emails (FR-002). With `none`, no email reaches u
 
 ### `mail_from`
 
-Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: "<instance name>" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set (ADR-0086 §3).
+Sender address of emails, as a bare address such as `noreply@social.example`. Emails name the instance as the sender (`From: "<instance name>" <mail_from>`), take their `Message-ID` domain from it, and send replies to the instance setting `contact_email` when it is set.
 
 - Environment variable: `MY_MAIL_FROM`
 - Default: none
@@ -633,7 +633,7 @@ Name of the SES configuration set that `mail = ses` applies to every message, fo
 
 ### `ses_sns_topic_arn`
 
-ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions (ADR-0086 §5); empty answers `404` there.
+ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions; empty answers `404` there.
 
 - Environment variable: `MY_SES_SNS_TOPIC_ARN`
 - Default: none
@@ -641,7 +641,7 @@ ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:
 
 ### `captcha`
 
-CAPTCHA service that the sign-in and registration forms check (ADR-0042). The service receives the visitor's IP address, browser details, and cookies, and the two pages load its script; say so in the instance's privacy policy. Only `none` keeps every request on this server.
+CAPTCHA service that the sign-in and registration forms check. The service receives the visitor's IP address, browser details, and cookies, and the two pages load its script; say so in the instance's privacy policy. Only `none` keeps every request on this server.
 
 - Environment variable: `MY_CAPTCHA`
 - Default: `none`
@@ -664,7 +664,7 @@ Public site key of the `captcha` service, which the widget on the forms carries.
 
 ### `captcha_secret_key`
 
-Secret key of the `captcha` service, which the server sends with each token to the service's siteverify API. The server does not try the key at start: a key that the service refuses is logged as an error on the first check, and until it is fixed registrations are refused and sign-ins skip the CAPTCHA (ADR-0042 §4).
+Secret key of the `captcha` service, which the server sends with each token to the service's siteverify API. The server does not try the key at start: a key that the service refuses is logged as an error on the first check, and until it is fixed registrations are refused and sign-ins skip the CAPTCHA.
 
 - Environment variable: `MY_CAPTCHA_SECRET_KEY` or `MY_CAPTCHA_SECRET_KEY_FILE`
 - Default: none
@@ -672,7 +672,7 @@ Secret key of the `captcha` service, which the server sends with each token to t
 
 ### `vapid_private_key`
 
-VAPID private key of the server's Web Push notifications (FR-206, RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key (docs/operations/key-management.md).
+VAPID private key of the server's Web Push notifications (RFC 8292): a P-256 private key, 32 bytes in base64url. Generate one with `my config vapid-key`. Without it, the server sends no Web Push and clients do not offer it. Changing it ends every subscription, since browsers subscribe with its public key (docs/operations/key-management.md).
 
 - Environment variable: `MY_VAPID_PRIVATE_KEY` or `MY_VAPID_PRIVATE_KEY_FILE`
 - Default: none
@@ -680,7 +680,7 @@ VAPID private key of the server's Web Push notifications (FR-206, RFC 8292): a P
 
 ### `profile`
 
-Whether this is a production instance. Settings that weaken a security default for development, such as `http_allow_private_networks`, are refused in the `production` profile (ADR-0019).
+Whether this is a production instance. Settings that weaken a security default for development, such as `http_allow_private_networks`, are refused in the `production` profile.
 
 - Environment variable: `MY_PROFILE`
 - Default: `production`
@@ -693,7 +693,7 @@ Whether this is a production instance. Settings that weaken a security default f
 
 ### `http_allow_private_networks`
 
-Lets outbound HTTP (federation, media, link previews) reach loopback, private, and other non-public addresses and host names, over plain `http` and on any port. For development and tests against local servers only: the server logs a warning at start, and the `production` profile refuses it (ADR-0019 §1).
+Lets outbound HTTP (federation, media, link previews) reach loopback, private, and other non-public addresses and host names, over plain `http` and on any port. For development and tests against local servers only: the server logs a warning at start, and the `production` profile refuses it.
 
 - Environment variable: `MY_HTTP_ALLOW_PRIVATE_NETWORKS`
 - Default: `false`
@@ -706,7 +706,7 @@ Lets outbound HTTP (federation, media, link previews) reach loopback, private, a
 
 ### `webhook_allowed_destinations`
 
-Destinations on loopback or a private network that the instance's webhooks may reach (ADR-0060), such as an automation tool on the same host or in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `n8n.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the webhooks alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.
+Destinations on loopback or a private network that the instance's webhooks may reach, such as an automation tool on the same host or in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `n8n.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the webhooks alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.
 
 - Environment variable: `MY_WEBHOOK_ALLOWED_DESTINATIONS`
 - Default: none
@@ -714,7 +714,7 @@ Destinations on loopback or a private network that the instance's webhooks may r
 
 ### `remote_status_retention`
 
-How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it (ADR-0034, FR-803). A Go duration such as `2160h` (90 days).
+How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).
 
 - Environment variable: `MY_REMOTE_STATUS_RETENTION`
 - Default: `2160h`
@@ -722,7 +722,7 @@ How long a remote post is kept after its publication when nothing on this instan
 
 ### `remote_status_max_retention`
 
-The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted (ADR-0034). A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.
+The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.
 
 - Environment variable: `MY_REMOTE_STATUS_MAX_RETENTION`
 - Default: none
@@ -730,7 +730,7 @@ The longest a remote post is kept after its publication, even when this instance
 
 ### `relay_status_retention`
 
-How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it (ADR-0061). A Go duration such as `168h` (7 days).
+How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it. A Go duration such as `168h` (7 days).
 
 - Environment variable: `MY_RELAY_STATUS_RETENTION`
 - Default: `168h`
@@ -738,7 +738,7 @@ How long a remote post that only a relay brought in is kept after its publicatio
 
 ### `relay_ingest_hourly_limit`
 
-How many activities each relay may bring in per hour (ADR-0061). The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.
+How many activities each relay may bring in per hour. The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.
 
 - Environment variable: `MY_RELAY_INGEST_HOURLY_LIMIT`
 - Default: `1000`
@@ -746,7 +746,7 @@ How many activities each relay may bring in per hour (ADR-0061). The ones over i
 
 ### `billing_sources`
 
-Cloud providers whose usage charges are imported into the instance's costs every 24 hours (ADR-0068, FR-904), comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.
+Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.
 
 - Environment variable: `MY_BILLING_SOURCES`
 - Default: none
@@ -754,7 +754,7 @@ Cloud providers whose usage charges are imported into the instance's costs every
 
 ### `billing_aws_max_requests_per_day`
 
-How many billed AWS Cost Explorer requests (one per page, $0.01 each) the imports of `billing_sources = aws` may make per UTC day, counting the scheduled imports, their retries, and the imports that an administrator starts (ADR-0068 §4). An import with none left calls nothing and is recorded as `request_cap`; the next day's import tries again.
+How many billed AWS Cost Explorer requests (one per page, $0.01 each) the imports of `billing_sources = aws` may make per UTC day, counting the scheduled imports, their retries, and the imports that an administrator starts. An import with none left calls nothing and is recorded as `request_cap`; the next day's import tries again.
 
 - Environment variable: `MY_BILLING_AWS_MAX_REQUESTS_PER_DAY`
 - Default: `4`
@@ -770,7 +770,7 @@ How many billed AWS Cost Explorer requests the imports may make per UTC calendar
 
 ### `billing_aws_metric`
 
-Cost Explorer metric that the imports of `billing_sources = aws` record (ADR-0068 §6).
+Cost Explorer metric that the imports of `billing_sources = aws` record.
 
 - Environment variable: `MY_BILLING_AWS_METRIC`
 - Default: `NetUnblendedCost`
@@ -783,7 +783,7 @@ Cost Explorer metric that the imports of `billing_sources = aws` record (ADR-006
 
 ### `billing_aws_filter`
 
-Which costs of the AWS account the imports of `billing_sources = aws` take (ADR-0068 §6). The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter (docs/operations/billing-import.md).
+Which costs of the AWS account the imports of `billing_sources = aws` take. The most accurate is an AWS account that serves this instance alone, with `none`: the taxes and the support fees carry no tag and may fall out of a tag filter (docs/operations/billing-import.md).
 
 - Environment variable: `MY_BILLING_AWS_FILTER`
 - Default: `none`
@@ -813,7 +813,7 @@ The 12-digit IDs of the member accounts of `billing_aws_filter = linked_account`
 
 ### `billing_aws_role_arn`
 
-ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys (ADR-0068 §8). The role trusts the identity provider `accounts.google.com` for the service account (docs/operations/billing-import.md). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).
+ARN of an IAM role that the imports of `billing_sources = aws` assume with the Google ID token of the instance's service account (`AssumeRoleWithWebIdentity`, audience: this ARN), for a server on Google Cloud (Cloud Run) without AWS keys. The role trusts the identity provider `accounts.google.com` for the service account (docs/operations/billing-import.md). Empty uses the AWS SDK's default chain (the execution role, `AWS_ACCESS_KEY_ID`, the shared files).
 
 - Environment variable: `MY_BILLING_AWS_ROLE_ARN`
 - Default: none
@@ -821,7 +821,7 @@ ARN of an IAM role that the imports of `billing_sources = aws` assume with the G
 
 ### `billing_gcp_method`
 
-How the imports of `billing_sources = gcp` read the Google Cloud usage charges (ADR-0068 §7). The billing months are the invoice months of Cloud Billing, US Pacific calendar months; a month is final from the 5th of the next month on (Pacific time).
+How the imports of `billing_sources = gcp` read the Google Cloud usage charges. The billing months are the invoice months of Cloud Billing, US Pacific calendar months; a month is final from the 5th of the next month on (Pacific time).
 
 - Environment variable: `MY_BILLING_GCP_METHOD`
 - Default: `bigquery`
@@ -866,7 +866,7 @@ A label `key=value`, such as `app=my`, whose resources' costs the imports of `bi
 
 ### `billing_gcp_max_bytes_billed`
 
-The `maximumBytesBilled` of each BigQuery query of `billing_gcp_method = bigquery`, in bytes: a query that would bill more fails as `bytes_cap` and bills nothing (ADR-0068 §4). The default, 1 GiB, keeps a query a day well within the free tier of 1 TiB a month, which the billing account shares with its other uses; BigQuery bills at least 10 MB a query.
+The `maximumBytesBilled` of each BigQuery query of `billing_gcp_method = bigquery`, in bytes: a query that would bill more fails as `bytes_cap` and bills nothing. The default, 1 GiB, keeps a query a day well within the free tier of 1 TiB a month, which the billing account shares with its other uses; BigQuery bills at least 10 MB a query.
 
 - Environment variable: `MY_BILLING_GCP_MAX_BYTES_BILLED`
 - Default: `1073741824`
@@ -882,7 +882,7 @@ The pull subscription of the Pub/Sub topic of a monthly Cloud Billing budget tha
 
 ### `payments_provider`
 
-The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page, ADR-0099), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.
+The payment provider of the supporters: local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.
 
 - Environment variable: `MY_PAYMENTS_PROVIDER`
 - Default: `none`
@@ -892,11 +892,11 @@ The payment provider of the supporters (ADR-0072, ADR-0074, FR-910): local users
 | --- | --- | --- |
 | `none` | yes | No payments: the webhook endpoint and the reconciliation do not run. |
 | `stripe` | yes | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
-| `payjp` | yes | PAY.JP on its API v1 (ADR-0099): plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
+| `payjp` | yes | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
 
 ### `payments_stripe_secret_key`
 
-The API key of the Stripe account of `payments_provider = stripe` (ADR-0074 §5): a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).
+The API key of the Stripe account of `payments_provider = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).
 
 - Environment variable: `MY_PAYMENTS_STRIPE_SECRET_KEY` or `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`
 - Default: none
@@ -904,7 +904,7 @@ The API key of the Stripe account of `payments_provider = stripe` (ADR-0074 §5)
 
 ### `payments_stripe_webhook_secret`
 
-The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments/webhooks/stripe` that the operator registers on Stripe's dashboard, or of `stripe listen` for local tests (ADR-0074 §3). While a secret is rolled, Stripe signs with the old and the new one, so one is enough.
+The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments/webhooks/stripe` that the operator registers on Stripe's dashboard, or of `stripe listen` for local tests. While a secret is rolled, Stripe signs with the old and the new one, so one is enough.
 
 - Environment variable: `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` or `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET_FILE`
 - Default: none
@@ -912,7 +912,7 @@ The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments
 
 ### `payments_payjp_secret_key`
 
-The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp` (ADR-0099 §7). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.
+The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.
 
 - Environment variable: `MY_PAYMENTS_PAYJP_SECRET_KEY` or `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`
 - Default: none
@@ -920,7 +920,7 @@ The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_prov
 
 ### `payments_payjp_public_key`
 
-The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js (ADR-0099 §3, §7).
+The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.
 
 - Environment variable: `MY_PAYMENTS_PAYJP_PUBLIC_KEY`
 - Default: none
@@ -928,7 +928,7 @@ The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_prov
 
 ### `payments_payjp_webhook_token`
 
-The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp` (ADR-0099 §4). Test and live mode have different tokens.
+The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp`. Test and live mode have different tokens.
 
 - Environment variable: `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` or `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN_FILE`
 - Default: none
@@ -936,7 +936,7 @@ The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payj
 
 ### `payments_reconcile_interval`
 
-How often the reconciliation with `payments_provider` runs (ADR-0074 §4): it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.
+How often the reconciliation with `payments_provider` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_INTERVAL`
 - Default: `6h`
@@ -944,7 +944,7 @@ How often the reconciliation with `payments_provider` runs (ADR-0074 §4): it re
 
 ### `payments_reconcile_max_requests`
 
-How many requests one reconciliation sends to `payments_provider` (ADR-0074 §4), a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.
+How many requests one reconciliation sends to `payments_provider`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
@@ -952,7 +952,7 @@ How many requests one reconciliation sends to `payments_provider` (ADR-0074 §4)
 
 ### `dead_job_retention`
 
-How long a dead job (a job that failed for good or used up its attempts, ADR-0004) is kept after it failed, for an operator to inspect and requeue it; the hourly purge then deletes it (FR-803). A Go duration such as `720h` (30 days).
+How long a dead job (a job that failed for good or used up its attempts) is kept after it failed, for an operator to inspect and requeue it; the hourly purge then deletes it. A Go duration such as `720h` (30 days).
 
 - Environment variable: `MY_DEAD_JOB_RETENTION`
 - Default: `720h`
@@ -960,7 +960,7 @@ How long a dead job (a job that failed for good or used up its attempts, ADR-000
 
 ### `job_attempt_retention`
 
-How long the record of a job's run that did not succeed (a retry, or the run that made it a dead job; ADR-0064) is kept after the run, for the queue dashboard of the admin screen; the hourly purge then deletes it. Successful runs are not recorded. A Go duration such as `720h` (30 days).
+How long the record of a job's run that did not succeed (a retry, or the run that made it a dead job) is kept after the run, for the queue dashboard of the admin screen; the hourly purge then deletes it. Successful runs are not recorded. A Go duration such as `720h` (30 days).
 
 - Environment variable: `MY_JOB_ATTEMPT_RETENTION`
 - Default: `720h`
@@ -968,7 +968,7 @@ How long the record of a job's run that did not succeed (a retry, or the run tha
 
 ### `dynamic_client_unredeemed_ttl`
 
-How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`; ADR-0090 §1) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. A Go duration such as `24h`.
+How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. A Go duration such as `24h`.
 
 - Environment variable: `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL`
 - Default: `24h`
@@ -976,7 +976,7 @@ How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`
 
 ### `dynamic_client_idle_ttl`
 
-How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it (ADR-0090 §1). Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).
+How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it. Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).
 
 - Environment variable: `MY_DYNAMIC_CLIENT_IDLE_TTL`
 - Default: `2160h`
@@ -984,7 +984,7 @@ How long a dynamically registered OAuth client without a usable token may go unu
 
 ### `oauth_client_rate_limits`
 
-Caps on the client API requests of OAuth clients (ADR-0090 §7), for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.
+Caps on the client API requests of OAuth clients, for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.
 
 - Environment variable: `MY_OAUTH_CLIENT_RATE_LIMITS`
 - Default: none
@@ -992,7 +992,7 @@ Caps on the client API requests of OAuth clients (ADR-0090 §7), for an administ
 
 ### `metrics_exporter`
 
-Where the service metrics go (ADR-0055 §2): the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.
+Where the service metrics go: the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.
 
 - Environment variable: `MY_METRICS_EXPORTER`
 - Default: `none`
@@ -1031,7 +1031,7 @@ Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-se
 
 ### `traces_exporter`
 
-Where the distributed traces go (ADR-0063): the spans of the HTTP requests, the job runs (each the root of a new trace linked to the request that enqueued it), the transactions and queries, the deliveries, and the outbound requests. Span attributes never carry an account, a URL or a path, a client IP, a User-Agent, an SQL text, or an error message; the outbound requests carry the destination's host name. No outbound request carries a `traceparent`, and an incoming `traceparent` is taken only from `trusted_proxies`.
+Where the distributed traces go: the spans of the HTTP requests, the job runs (each the root of a new trace linked to the request that enqueued it), the transactions and queries, the deliveries, and the outbound requests. Span attributes never carry an account, a URL or a path, a client IP, a User-Agent, an SQL text, or an error message; the outbound requests carry the destination's host name. No outbound request carries a `traceparent`, and an incoming `traceparent` is taken only from `trusted_proxies`.
 
 - Environment variable: `MY_TRACES_EXPORTER`
 - Default: `none`

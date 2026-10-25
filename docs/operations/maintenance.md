@@ -1,7 +1,6 @@
 # Maintenance
 
 How to take the server down for work on the database, the KV, or the queue, and what to show while it is down.
-The design is [ADR-0084](../adr/0084-maintenance-mode.md); the requirements are FR-805 and FR-806 ([functional requirements](../requirements/01-functional.md)).
 
 There are two tools:
 
@@ -36,7 +35,7 @@ The page and the problem show:
 | `maintenance_server_name` | The server's name. The host name when unset (the instance's own name is in the database) |
 | `maintenance_message` | A notice in plain text, at most 2,000 characters, the same in every locale |
 | `maintenance_until` | When the work is expected to end (RFC 3339). The page shows it in UTC; the web client in the user's time zone |
-| `status_page_url` | A link to the status page ([ADR-0085](../adr/0085-uptime-monitoring-status-page.md)) |
+| `status_page_url` | A link to the status page ([Monitoring](monitoring.md#a-status-page)) |
 
 The `maintenance_*` settings may stay set during normal operation: they are used only while `maintenance` is true.
 The words of the page follow `Accept-Language` (English otherwise).
@@ -48,14 +47,14 @@ keeps the user signed in, and retries after `Retry-After`.
 
 Keep a maintenance **within a few hours**. Other servers retry their deliveries on `503`, but none of them reads `Retry-After`,
 and when their retries run out the activities sent meanwhile are lost for this server.
-The shortest retry window among the major implementations is about a day (Akkoma about 1 day, Misskey about 1.5 days, Mastodon about 2–3 days, Pleroma about 7 days;
-the sources are in [ADR-0084 §3](../adr/0084-maintenance-mode.md#3-応答の表)).
+The shortest retry window among the major implementations is about a day (Akkoma about 1 day, Misskey about 1.5 days, Mastodon about 2–3 days, Pleroma about 7 days,
+from their retry schedules).
 Search engines treat a short `503` as a temporary outage, but Google advises against serving `503` for `robots.txt` for more than a day or two.
-A stop longer than a day or two is not a maintenance: close the service instead ([ADR-0088](../adr/0088-service-shutdown-modes.md)).
+A stop longer than a day or two is not a maintenance: close the service instead ([Closing the service](service-closure.md)).
 
 ## Steps
 
-1. **Announce it.** Post the window on the status page (`status_page_url`) and as an instance-wide announcement (FR-726) a while ahead.
+1. **Announce it.** Post the window on the status page (`status_page_url`) and as an announcement (Administration → Announcements) a while ahead.
    Set `maintenance_message` and `maintenance_until` in the deployment's configuration, and refresh the exported pages
    (`my maintenance export`) if the front end serves them.
 2. **Stop the push queues** (Cloud Tasks, SQS with Lambda) — see [below](#push-queues). Otherwise every delivery during the window
@@ -211,5 +210,5 @@ metadata:
 ## Monitoring during the maintenance
 
 - `/healthz` and `/readyz` stay `200` with `{"status":"maintenance"}`: load balancers and Kubernetes keep the instances.
-- `/api/v1/instance/health` answers `503` with `{"status":"maintenance"}` ([ADR-0085](../adr/0085-uptime-monitoring-status-page.md)).
+- `/api/v1/instance/health` answers `503` with `{"status":"maintenance"}` ([Monitoring](monitoring.md)).
   Uptime monitors see the server as down unless they match the body or have a maintenance window; pause them or set the window.

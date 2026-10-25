@@ -1,13 +1,12 @@
 # Building apps for this server
 
 A guide for developers of third-party apps: clients, bots, integrations, and command-line tools that use the client API
-(`/api/v1`) of an instance on behalf of its users. The decisions behind it are in
-[ADR-0090](../adr/0090-third-party-oauth-apps.md); the operations of the API are in its OpenAPI document
+(`/api/v1`) of an instance on behalf of its users. The operations of the API are in its OpenAPI document
 (see [Stability of the API](#stability-of-the-api)).
 
 ## Mastodon client libraries do not work as they are
 
-The client API is this project's own ([ADR-0007](../adr/0007-client-api.md)). It is **not** the Mastodon client API:
+The client API is this project's own. It is **not** the Mastodon client API:
 
 - There is no `POST /api/v1/apps`, and no other Mastodon endpoint. A client library for Mastodon, or for a server that copies its API,
   cannot register itself, authorize, or call this server.
@@ -173,7 +172,7 @@ The numbers belong to the server and the operator, so read them from the respons
 
 ## Stability of the API
 
-From the v0 release, `/api/v1` keeps these promises ([ADR-0090](../adr/0090-third-party-oauth-apps.md) §8):
+From the v0 release, `/api/v1` keeps these promises:
 
 - **Additions are not breaking**: new fields, operations, scopes, and enum values can appear at any time. Ignore what you do not know.
 - **Breaking changes are announced first.** Removing or renaming something, changing a type, making a field required, or changing the meaning of a scope is allowed in v0,

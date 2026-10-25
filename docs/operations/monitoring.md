@@ -1,8 +1,7 @@
 # Monitoring the server from outside
 
 A guide for operators. It shows how to point an uptime monitor at the server, how to keep the monitoring from raising the running cost,
-and how to tell the maintenance mode from an outage. The decisions are in [ADR-0085](../adr/0085-uptime-monitoring-status-page.md)
-(and [ADR-0084](../adr/0084-maintenance-mode.md) for the maintenance mode); the probe paths are in
+and how to tell the maintenance mode ([Maintenance](maintenance.md)) from an outage. The probe paths are in
 [the health check section of the running guide](running.md#health-checks).
 
 Third-party facts below carry the date they were confirmed and their source. Services change their plans and screens; check the linked page before relying on a limit.
@@ -38,8 +37,8 @@ so a monitor that polls more often than every 60 s sees the same `checked_at` an
   Neon suspends a compute after 5 minutes without activity; the Free plan cannot turn this off
   (confirmed 2026-10-25, [Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)).
   As a rule of thumb, an interval of 5 minutes or more lets an idle database stop between checks, and each check wakes it for the check plus the idle time.
-  A federated server receives deliveries from other servers around the clock, so its database is awake for much of the day anyway
-  ([deployment targets](../architecture/deployment-targets.md)); the extra cost is limited to the quiet hours.
+  A federated server receives deliveries from other servers around the clock, so its database is awake for much of the day anyway;
+  the extra cost is limited to the quiet hours.
 - **Prefer a cheaper split if idle cost matters most.** Monitor `/healthz` (it never touches the database) at a short interval, and the database-backed
   `/api/v1/instance/health` at a long one (15 minutes or more). `/healthz` answers `200` during the maintenance mode too, so match `"status":"ok"` in the body.
 - **The requests themselves are small.** One check every 5 minutes is about 8,640 requests a month, every minute about 43,200. That fits in the free tier of AWS Lambda
@@ -65,7 +64,7 @@ All of these check the same thing: `GET https://<your-host>/api/v1/instance/heal
 | UptimeRobot | Keyword | The body contains `"status":"ok"` | Not in Free (Solo and above) | 2026-10-25, [pricing](https://uptimerobot.com/pricing.md) |
 | Better Stack | HTTP status, or Keyword | `2xx`, or the body contains `"status":"ok"` | Unverified | 2026-10-25 |
 | Gatus | Endpoint conditions | `[STATUS] == 200` and `[BODY].status == ok` | `maintenance` in the config | 2026-10-25, [README](https://github.com/TwiN/gatus) |
-| Uptime Kuma | HTTP(s) - Keyword, or JSON Query | The body contains `"status":"ok"`, or `status` is `ok` | Built in | 2026-10-23, ADR-0085 §5 |
+| Uptime Kuma | HTTP(s) - Keyword, or JSON Query | The body contains `"status":"ok"`, or `status` is `ok` | Built in | 2026-10-23, [README](https://github.com/louislam/uptime-kuma) |
 | Upptime | `sites` in `.upptimerc.yml` | `200` and the body contains `"status":"ok"` | None | 2026-10-25, [Configuration](https://upptime.js.org/docs/configuration/) |
 
 ### UptimeRobot
@@ -82,8 +81,7 @@ Two forms work (confirmed 2026-10-25, [Uptime monitor](https://betterstack.com/d
 - An **HTTP status** monitor: it treats a `2xx` answer as up, so `200` is up and `503` (unavailable or maintenance) opens an incident.
 - A **Keyword** monitor: "Alert us when" is "URL doesn't contain keyword", keyword `"status":"ok"`. The match is case-insensitive.
 
-The check frequency and the maintenance windows of the Free plan are unverified: the official pages do not state them for the Free plan
-(open question in ADR-0085). The free tier's counts (10 monitors and heartbeats together, one status page) are from the [pricing page](https://betterstack.com/pricing), confirmed 2026-10-23.
+The check frequency and the maintenance windows of the Free plan are unverified: the official pages do not state them for the Free plan. The free tier's counts (10 monitors and heartbeats together, one status page) are from the [pricing page](https://betterstack.com/pricing), confirmed 2026-10-23.
 
 ### Gatus
 

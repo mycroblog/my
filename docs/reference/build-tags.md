@@ -1,8 +1,7 @@
 # Build tags
 
 The server binary `cmd/my` holds every adapter by default. A build tag leaves an adapter, and the client library,
-driver, or cloud SDK that only it needs, out of the binary, to make it smaller and to shrink what an attacker can reach
-(NFR-PORT-4, [ADR-0010](../adr/0010-configuration-and-packaging.md)).
+driver, or cloud SDK that only it needs, out of the binary, to make it smaller and to shrink what an attacker can reach.
 The adapters that need nothing beyond the standard library and the packages the rest of the server already uses
 (`queue = inline`, `kv = memory`, `blob = fs`, `mail = smtp`, `metrics_exporter = emf`, and the like) have no tag.
 
@@ -42,7 +41,7 @@ db (MY_DB): "postgres" is not in this build: the build tag no_postgres left its 
 
 ## Checks
 
-`scripts/task.sh go:build-tags` (part of `scripts/task.sh go:check` and, in CI, of the slow suite that gates releases, [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md); [ADR-0015](../adr/0015-testing-strategy.md) Build matrix)
+`scripts/task.sh go:build-tags` (part of `scripts/task.sh go:check` and, in CI, of the slow suite that gates releases)
 runs, for each of these representative sets of tags, `CGO_ENABLED=0 go build` and `go vet` on every package,
 and fails when `cmd/my` still depends on a package that a tag of the set leaves out:
 

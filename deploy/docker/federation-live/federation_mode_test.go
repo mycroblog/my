@@ -34,7 +34,7 @@ const modeUser = "otto"
 //
 //   - inbound: otto follows the peer user and the peer accepts, although otto's actor is the minimal
 //     document (no name, no icon, no collections); the peer's posts reach otto. The scenario logs
-//     how the peer shows otto and whether it looked otto up through WebFinger (ADR-0076, 要検証).
+//     how the peer shows otto and whether it looked otto up through WebFinger (ADR-0076 leaves it to be verified).
 //     The peer user's follow of otto is rejected and does not stay pending on either side.
 //   - outbound: the peer user's follow of otto is accepted and otto's posts reach the peer; the
 //     peer's posts, and its reply and favourite of otto's post, reach the inbox (2xx) and are

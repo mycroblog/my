@@ -4,7 +4,8 @@
 # (scripts/task.sh docs:rules). Every Markdown file not skipped is also checked for relative links and #anchors
 # that resolve.
 #
-# Patterns: `*` matches within one path segment, `**` any number of segments.
+# Patterns: `*` matches within one path segment, `**` any number of segments; a pattern that starts with `!`
+# takes the files it matches out of its list.
 
 # Files no rule reads.
 skip:
@@ -36,17 +37,12 @@ operator:
   - "README.md"
   - "docs/operations/**"
   - "docs/reference/**"
+  # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
+  - "!docs/reference/commands.md"
 
 # Files that do not follow a rule yet. Never add a file: write a new file to the rules. When you add or rewrite a
 # section of a listed file, convert the whole file and remove it here; the check fails while a listed file already
 # follows the rule.
 pending:
-  japanese:
-  design-links:
-    - docs/operations/maintenance.md
-    - docs/operations/monitoring.md
-    - docs/reference/build-tags.md
-    - docs/reference/commands.md
-    - docs/reference/configuration.md
-    - docs/reference/third-party-apps.md
-    - docs/reference/webhooks.md
+  japanese: []
+  design-links: []
