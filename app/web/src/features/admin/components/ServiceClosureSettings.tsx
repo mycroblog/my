@@ -8,7 +8,7 @@
 // alert dialog (ConfirmDialog, WAI-ARIA APG alert dialog; NFR-MOD-7). Once closed, the screen shows the progress of the
 // deliveries, read again every few seconds. What a change did stays on the page in a StatusMessage; a failure
 // stays in the form or the dialog that ran it (role="alert", web-client/README.md E2).
-import { Button, Callout, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, DialogTrigger, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField } from "@my/ui";
+import { Button, Callout, ConfirmDialog, DescriptionItem, DescriptionList, DialogTrigger, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField } from "@my/ui";
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -295,8 +295,8 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
       </DetailSection>
       <DetailSection title={t("client:admin.closure.progress.title")}>
         <Stack gap="4">
-        <Callout>{t(completed ? "client:admin.closure.progress.completed" : "client:admin.closure.progress.running")}</Callout>
-        {closure.progress === undefined ? <Hint size="inherit">{t("client:admin.closure.progress.none")}</Hint> : <Progress progress={closure.progress} />}
+          <Callout>{t(completed ? "client:admin.closure.progress.completed" : "client:admin.closure.progress.running")}</Callout>
+          {closure.progress === undefined ? <Hint size="inherit">{t("client:admin.closure.progress.none")}</Hint> : <Progress progress={closure.progress} />}
         </Stack>
       </DetailSection>
     </>
@@ -309,18 +309,20 @@ function Progress({ progress }: { progress: AdminServiceClosureProgress }) {
   const count = (value: number) => intl.formatNumber(value);
   const { deliveries } = progress;
   return (
-    <Cluster gap="8" align="start">
-      <DescriptionList>
+    // Stacked rather than side by side: a description list is its own size container, so it has no width of its
+    // own to give a flex row and would shrink to nothing there.
+    <Stack gap="4">
+      <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.closure.progress.accounts")}>{count(progress.accounts)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.fanouts_pending")}>{count(progress.fanouts_pending)}</DescriptionItem>
       </DescriptionList>
-      <DescriptionList>
+      <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.closure.progress.pending")}>{count(deliveries.pending)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.succeeded")}>{count(deliveries.succeeded)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.permanent_failure")}>{count(deliveries.permanent_failure)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.skipped")}>{count(deliveries.skipped)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.dead")}>{count(deliveries.dead)}</DescriptionItem>
       </DescriptionList>
-    </Cluster>
+    </Stack>
   );
 }
