@@ -35,6 +35,9 @@ mirrored では範囲を広げてはいけません。WSL が Linux に割り当
 - 依存関係の既知の脆弱性は GitHub の Dependabot Alerts で検知し、版更新の PR は Dependabot が作ります（`.github/dependabot.yml`、ADR-0046）。
 - Docker Compose 構成のスモークテスト（イメージのビルド、スキーマ適用、管理者作成、WebFinger・Actor・NodeInfo の確認）は Docker が必要なため `scripts/task.sh check` には含めず、`scripts/task.sh docker:smoke` で実行します（CI では Docker の構成・`cmd/`・`internal/platform/` を変える PR と nightly で実行。linux/arm64 のイメージのビルドは Docker の構成を変える PR と nightly）。
 - Mastodon・GoToSocial・Misskey とのライブの相互運用テストは `scripts/task.sh check` に含めず、`scripts/task.sh docker:federation-live` で実行します（CI では nightly。手順は [deploy/docker/federation-live/README.md](deploy/docker/federation-live/README.md)）。
+- ライセンスは AGPL-3.0-only ですが、`api/spec/`・`api/openapi.yaml`・`pkg/mykit/`・`pkg/mybot/` は MIT です（ADR-0093 §2）。
+  これらのファイルの SPDX ヘッダは `SPDX-License-Identifier: MIT`、それ以外の新しいソースは `AGPL-3.0-only` で、`scripts/task.sh api:license-scope`（`api:check` に含む）が検査します。
+  MIT の範囲の依存は MIT・Apache-2.0・BSD・ISC などの寛容なライセンスに限ります（GPL 系は入れません）。
 - 依存ライブラリのライセンスは AGPL-3.0 と両立するもの（`Taskfile.yml` の `GO_ALLOWED_LICENSES`。`tools/i18n` と `app/` の npm パッケージも同じ一覧で検査）に限ります。
   増やす場合は PR で理由を説明してください。
 

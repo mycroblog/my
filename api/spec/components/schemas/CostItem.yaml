@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A cost of the instance that is not canceled (ADR-0067 §2), with its current label and end
   and every price revision. Never published: the public totals carry no item.

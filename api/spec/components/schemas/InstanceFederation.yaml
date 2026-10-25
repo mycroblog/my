@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   How the instance federates with other servers (FR-413), so that clients offer only the
   operations on remote accounts and posts that can work.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The badge of a role (ADR-0071), which its holders may show on their profile. The label is
   the staff's own text, the same in every locale: clients show it as user content

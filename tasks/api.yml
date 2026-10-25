@@ -21,7 +21,7 @@ tasks:
 
   check:
     desc: Check and lint the client API spec and fail on a stale bundle or generated Go code, in parallel
-    deps: [spec-check, lint, generate-check]
+    deps: [spec-check, license-scope, lint, generate-check]
 
   generate:
     desc: Bundle api/spec into api/openapi.yaml and regenerate the client API code from it (scripts/generate.sh)
@@ -76,6 +76,11 @@ tasks:
     deps: [warm]
     cmds:
       - "{{.REDOCLY}} lint --config api/redocly.yaml api/spec/openapi.yaml"
+
+  license-scope:
+    desc: Fail if an SPDX identifier is outside the license scope, MIT for api/spec, api/openapi.yaml, pkg/mykit and pkg/mybot and AGPL-3.0-only elsewhere (scripts/license-scope-check.sh)
+    cmds:
+      - scripts/license-scope-check.sh
 
   spec-check:
     desc: Fail if api/spec/openapi.yaml does not list every file of api/spec (scripts/api-spec-check.sh)

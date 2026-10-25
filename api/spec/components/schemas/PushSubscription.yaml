@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The Web Push subscription of a grant.
 type: object
 required: [id, endpoint, alerts, server_key]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The moving renditions of an animation, absent for a still image: animated WebP for
   `small` and `medium`, and a GIF for `large`.

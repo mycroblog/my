@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
   `quoted_status` has no `quote` of its own, and clients link to it instead.

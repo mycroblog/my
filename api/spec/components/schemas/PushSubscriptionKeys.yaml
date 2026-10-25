@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The keys of a browser's push subscription (RFC 8291 §3), in base64url.
 type: object
 required: [p256dh, auth]

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The state of the imports of a billing source (ADR-0068 §9).
 type: object
 required: [source, provider, time_zone, method, requests_today, requests_this_month, bytes_billed_this_month, months]

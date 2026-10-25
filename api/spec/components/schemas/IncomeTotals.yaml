@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The income totals over the periods from the one that holds `from` to the one that holds
   `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan

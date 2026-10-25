@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A report of an account to the moderators (FR-701).
 type: object
 required: [id, category, comment, forwarded, filed_at, state, state_changed_at, reporter_account_id, target_account_id, status_ids, rule_ids]

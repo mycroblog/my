@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The supporter program (ADR-0072 §2). It is disabled by default; enabling it needs a
   payment provider in the deployment's configuration (`configured_provider`) and a server

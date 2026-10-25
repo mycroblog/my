@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The focal point that previews keep in view when they crop the image, from -1.0 (left,
   bottom) to 1.0 (right, top) on each axis; (0, 0) is the center.

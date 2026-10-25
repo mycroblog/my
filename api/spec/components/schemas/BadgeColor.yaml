@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
   for its background and its text, which keep their contrast in the light and the dark theme.

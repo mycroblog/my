@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
   member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used

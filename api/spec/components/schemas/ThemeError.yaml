@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
   `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme

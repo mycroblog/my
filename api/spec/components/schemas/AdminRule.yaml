@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
   citing it.

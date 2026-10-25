@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The pagination of a collection page; collection responses embed it with allOf.
 type: object
 properties:

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The apps the authenticated user authorized, one per client, most recently used first.
 type: object
 required: [items]

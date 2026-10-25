@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The kind of an audited operation, each on one kind of target. On an `account`:
   `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,

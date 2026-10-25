@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: What the moderators had about the target of a report.
 type: object
 required: [reports_count, actions_count]

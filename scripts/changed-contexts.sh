@@ -148,7 +148,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    internal/interface/clientapi/* | app/web/src/lib/api/* | scripts/generate.sh | scripts/api-spec-check.sh)
+    internal/interface/clientapi/* | app/web/src/lib/api/* | scripts/generate.sh | scripts/api-spec-check.sh | scripts/license-scope-check.sh)
       select_contexts api
       known=1
       ;;

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The income totals as the administrators see them over the periods from the one that holds
   `from` to the one that holds `to`, oldest first, with the number of members of each

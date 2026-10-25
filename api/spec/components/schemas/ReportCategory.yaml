@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
   is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:

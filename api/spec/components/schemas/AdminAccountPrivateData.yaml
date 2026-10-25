@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The email address and the IP addresses of a local account (FR-714). Showing them is
   recorded in the audit log.

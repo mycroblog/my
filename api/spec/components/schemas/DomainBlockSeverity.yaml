@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
   `silence`: Mastodon's name of the action `limit`. `noop`: no action but the rejections.

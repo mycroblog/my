@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The number of jobs of one type in one state.
 type: object
 required: [state, type, count]

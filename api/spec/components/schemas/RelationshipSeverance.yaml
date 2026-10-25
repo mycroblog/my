@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The follows that a `relationships_severed` tells of: the user lost them when the
   moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote

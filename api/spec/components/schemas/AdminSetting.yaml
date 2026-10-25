@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   An instance setting: its value and what it accepts. Every value is a string in its
   canonical form, whatever its kind.

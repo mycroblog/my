@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A custom emoji request as the administrators review it, with the requester.
 allOf:
   - $ref: ./CustomEmojiRequest.yaml

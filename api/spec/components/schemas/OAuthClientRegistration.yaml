@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
   server's own clients, `user` a client that a signed-in user registered, `metadata_document` a

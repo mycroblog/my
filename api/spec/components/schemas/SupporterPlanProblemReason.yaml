@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   Why a supporter plan is refused. `name`, `description`, `monthly_price`, `currency`,
   `annual_discount_percent`, `emoji_limit`, `rank`, `visibility`: the value breaks its rule

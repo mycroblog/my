@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The state of a custom emoji request: `pending` until an administrator decides it, then
   `approved` or `rejected`; `withdrawn` by the requester before that; or `lapsed`, a request

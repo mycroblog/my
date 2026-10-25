@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 post:
   operationId: revealAdminAccount
   summary: Show the email address and the IP addresses of a local account

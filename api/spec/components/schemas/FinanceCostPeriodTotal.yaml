@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A week, month, or year of the totals, as in `CostPeriodTotal`, with the item lines of the
   period: empty unless the instance shows the names or the memos of the items, and sorted by

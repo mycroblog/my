@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
   and `dark` for a color token, `value` for the others.

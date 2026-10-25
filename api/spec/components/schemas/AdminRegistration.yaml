@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: A user's registration as the moderators review it (FR-721).
 type: object
 required: [user_id, state, since, email, email_verified, submitted_at]

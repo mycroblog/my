@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The problem of a supporter plan that breaks a rule (422,
   `/api/v1/problems/invalid-supporter-plan`); `reason` says which.

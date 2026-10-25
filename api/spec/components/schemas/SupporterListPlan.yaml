@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A plan of the supporter list. The name is written by the administrators in any language;
   render it with `dir="auto"`.

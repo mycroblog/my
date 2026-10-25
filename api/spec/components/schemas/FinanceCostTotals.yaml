@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The totals of the instance's costs as the holders of `view_finance` read them over the
   periods from the one that holds `from` to the one that holds `to`, oldest first, and the

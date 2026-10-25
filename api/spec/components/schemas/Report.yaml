@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A report that the user filed. It never names the reporter, and tells only whether the
   moderators resolved it, never how.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   A QR code as an SVG path: draw `path` filled in a `size` × `size` view box (the quiet
   zone of four modules included) on a light background.
