@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -104,7 +105,7 @@ func (rec *streamRecorder) options(cancel context.CancelFunc, stopAt int) Stream
 	}
 }
 
-func runStream(t *testing.T, api *API, opts StreamOptions, ctx context.Context) error {
+func runStream(ctx context.Context, t *testing.T, api *API, opts StreamOptions) error {
 	t.Helper()
 	done := make(chan error, 1)
 	go func() { done <- api.Stream(ctx, opts) }()
@@ -135,7 +136,7 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var rec streamRecorder
-	if err := runStream(t, api, rec.options(cancel, 1), ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, rec.options(cancel, 1)); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 
@@ -184,7 +185,7 @@ func TestStreamReconnectsWhenHeartbeatsStop(t *testing.T) {
 	var rec streamRecorder
 	opts := rec.options(cancel, 1)
 	opts.HeartbeatTimeout = 50 * time.Millisecond
-	if err := runStream(t, api, opts, ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, opts); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 	if !slices.Equal(rec.opens, []bool{false, true}) {
@@ -197,7 +198,7 @@ func TestStreamReconnectsWhenHeartbeatsStop(t *testing.T) {
 
 func TestStreamKeepsAStreamWithHeartbeats(t *testing.T) {
 	// Heartbeats more often than the timeout keep the stream, which then ends normally.
-	srv := newStreamServer(t, func(w http.ResponseWriter, r *http.Request) {
+	srv := newStreamServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		f := w.(http.Flusher)
 		_, _ = io.WriteString(w, ": connected\n\n")
@@ -215,7 +216,7 @@ func TestStreamKeepsAStreamWithHeartbeats(t *testing.T) {
 	var rec streamRecorder
 	opts := rec.options(cancel, 1)
 	opts.HeartbeatTimeout = 300 * time.Millisecond
-	if err := runStream(t, api, opts, ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, opts); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 	if len(rec.errs) != 0 || len(rec.events) != 1 {
@@ -234,7 +235,7 @@ func TestStreamWaitsForRetryAfter(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var rec streamRecorder
-	if err := runStream(t, api, rec.options(cancel, 0), ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, rec.options(cancel, 0)); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 	if len(*waits) != 3 || (*waits)[0] != 7*time.Second || (*waits)[1] != 5*time.Second {
@@ -263,7 +264,7 @@ type refreshingSource struct {
 func (s *refreshingSource) Token(context.Context) (*Token, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return &Token{AccessToken: "a" + string(rune('0'+s.n))}, nil
+	return &Token{AccessToken: "a" + strconv.Itoa(s.n)}, nil
 }
 
 func (s *refreshingSource) Refresh(context.Context, *Token) (*Token, error) {
@@ -271,7 +272,7 @@ func (s *refreshingSource) Refresh(context.Context, *Token) (*Token, error) {
 	defer s.mu.Unlock()
 	s.n++
 	s.refreshes++
-	return &Token{AccessToken: "a" + string(rune('0'+s.n))}, nil
+	return &Token{AccessToken: "a" + strconv.Itoa(s.n)}, nil
 }
 
 func TestStreamRefreshesTheTokenOnceAfterA401(t *testing.T) {
@@ -287,7 +288,7 @@ func TestStreamRefreshesTheTokenOnceAfterA401(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var rec streamRecorder
-	if err := runStream(t, api, rec.options(cancel, 0), ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, rec.options(cancel, 0)); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 	if source.refreshes != 1 || len(rec.errs) != 0 {
@@ -299,7 +300,7 @@ func TestStreamStopsWhenRefusedForGood(t *testing.T) {
 	srv := newStreamServer(t, refusal(http.StatusForbidden, "/api/v1/problems/insufficient-scope", ""))
 	api, waits := newTestAPI(t, srv.Server, Config{TokenSource: StaticToken("a0")})
 	var rec streamRecorder
-	err := runStream(t, api, rec.options(func() {}, 0), context.Background())
+	err := runStream(context.Background(), t, api, rec.options(func() {}, 0))
 	var p *Problem
 	if !errors.As(err, &p) || p.Status != http.StatusForbidden {
 		t.Fatalf("Stream = %v, want the 403 problem", err)
@@ -318,7 +319,7 @@ func TestStreamRetriesAnAnswerThatIsNoEventStream(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var rec streamRecorder
-	if err := runStream(t, api, rec.options(cancel, 0), ctx); !errors.Is(err, context.Canceled) {
+	if err := runStream(ctx, t, api, rec.options(cancel, 0)); !errors.Is(err, context.Canceled) {
 		t.Fatalf("Stream = %v, want context.Canceled", err)
 	}
 	if len(rec.errs) != 1 || !errors.Is(rec.errs[0], errNotEventStream) || !slices.Equal(rec.opens, []bool{false}) {
