@@ -168,9 +168,6 @@ type SignedUp struct {
 	State identity.RegistrationState
 	// Session signs the browser in as the new user.
 	Session SignedIn
-	// MailError is why the verification email could not be sent, or nil. The user is
-	// registered either way and can ask for the email again (ResendVerificationEmail).
-	MailError error
 }
 
 // SignUp registers a user from the registration page according to the registration mode
@@ -183,9 +180,10 @@ type SignedUp struct {
 //
 // In one transaction it writes the user, password, primary email address, preferences, local
 // account, application, the system's decision, the registration state, the invite's
-// redemption, the email verification token, the registration's origin, and a session with its
-// origin, and emits RegistrationPending when the registration awaits a moderator; then it sends
-// the verification email. The invite's redemption takes the next sequence number, so concurrent sign-ups never
+// redemption, the job that sends the verification email (JobVerificationEmail), the
+// registration's origin, and a session with its origin, and emits RegistrationPending when the
+// registration awaits a moderator. The result does not tell whether the email went out: a user
+// whose email does not arrive asks for it again (ResendVerificationEmail). The invite's redemption takes the next sequence number, so concurrent sign-ups never
 // redeem an invite more than its maximum uses.
 //
 // It fails with ErrRegistrationClosed, ErrSignUpRefused, ErrInviteRequired, ErrInvalidInvite, ErrEmailTaken,
@@ -285,7 +283,7 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 		}
 		state.State = identity.RegistrationApproved
 	}
-	verification := s.prepareVerification(p.user.ID, email.ID, now)
+	verification := s.verificationRequest(p.user.ID, email.ID, now)
 	session, err := s.prepareSession(ctx, p.user.ID, in.IP, in.UserAgent, in.CurrentToken, now)
 	if err != nil {
 		return SignedUp{}, err
@@ -330,7 +328,7 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 			return err
 		}
 		if verification != nil {
-			if err := repo.InsertUserToken(ctx, tx, verification.token); err != nil {
+			if err := s.enqueueVerification(ctx, tx, *verification); err != nil {
 				return err
 			}
 		}
@@ -344,11 +342,7 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 	if err != nil {
 		return SignedUp{}, err
 	}
-	out := SignedUp{Registration: p.registration(), State: state.State, Session: session.signedIn()}
-	if verification != nil {
-		out.MailError = s.sendVerification(ctx, in.Email, p.prefs.Locale, verification.secret)
-	}
-	return out, nil
+	return SignedUp{Registration: p.registration(), State: state.State, Session: session.signedIn()}, nil
 }
 
 // redeemInvite records the next use of an invite, failing with ErrInvalidInvite when it is
@@ -385,44 +379,6 @@ func (s *Service) registrationMode(ctx context.Context) (identity.RegistrationMo
 // RegistrationMode returns the instance's registration mode; an unknown mode reads as closed.
 func (s *Service) RegistrationMode(ctx context.Context) (identity.RegistrationMode, error) {
 	return s.registrationMode(ctx)
-}
-
-// verification is an email verification token prepared before its transaction.
-type verification struct {
-	secret string
-	token  identity.UserToken
-}
-
-// prepareVerification returns a new email verification token, or nil when there is no mailer
-// to send it.
-func (s *Service) prepareVerification(userID, emailID string, now time.Time) *verification {
-	if s.d.Mailer == nil {
-		return nil
-	}
-	secret, hash := NewToken(EmailVerificationTokenPrefix)
-	return &verification{secret: secret, token: identity.UserToken{
-		ID: s.d.IDs.NewID(), UserID: userID, Purpose: identity.PurposeEmailVerification, EmailAddressID: emailID,
-		TokenHash: hash, ExpiresAt: now.Add(EmailVerificationTTL), IssuedAt: now,
-	}}
-}
-
-// sendVerification sends the verification email with the link that carries secret, worded in
-// locale. The error never contains the secret.
-func (s *Service) sendVerification(ctx context.Context, to, locale, secret string) error {
-	m, err := s.mailContext(ctx, locale)
-	if err != nil {
-		return err
-	}
-	link := s.link(PathVerifyEmail, secret)
-	err = s.d.Mailer.Send(ctx, kernel.MailMessage{
-		To:      to,
-		Subject: m.l.ServerMailVerifyEmailSubject(m.name),
-		Text:    m.l.ServerMailVerifyEmailBody(m.host, int(EmailVerificationTTL/time.Hour), m.name, link),
-	})
-	if err != nil {
-		return fmt.Errorf("identity: send the verification email: %w", err)
-	}
-	return nil
 }
 
 // mailContext is what an email to a user names: the localizer of the user's locale, the
@@ -495,8 +451,8 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) (userID string,
 	return t.UserID, nil
 }
 
-// ResendVerificationEmail sends a user a new verification email for their primary address.
-// Earlier links keep working until they expire. It fails with ErrAlreadyVerified when the
+// ResendVerificationEmail enqueues a new verification email for a user's primary address
+// (JobVerificationEmail). Earlier links keep working until they expire. It fails with ErrAlreadyVerified when the
 // address is verified, with ErrNotFound when the user has no primary address, and with a
 // *kernel.RateLimitedError after VerificationEmailLimit.
 func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) error {
@@ -520,15 +476,8 @@ func (s *Service) ResendVerificationEmail(ctx context.Context, userID string) er
 	if !d.Allowed {
 		return &kernel.RateLimitedError{RetryAfter: d.RetryAfter}
 	}
-	prefs, err := s.d.Repository.FindPreferences(ctx, userID)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return err
-	}
-	v := s.prepareVerification(userID, email.ID, s.d.Clock.Now())
-	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertUserToken(ctx, tx, v.token) }); err != nil {
-		return err
-	}
-	return s.sendVerification(ctx, email.Address, prefs.Locale, v.secret)
+	v := s.verificationRequest(userID, email.ID, s.d.Clock.Now())
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.enqueueVerification(ctx, tx, *v) })
 }
 
 // Access is what a user may do, from their registration state, email verification, and

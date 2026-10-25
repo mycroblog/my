@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+#
+# The OpenAPI Overlay that oapi-codegen applies to api/openapi.yaml before it generates api.gen.go
+# (oapi-codegen.yaml). It changes only what the client generates, never the spec the server uses.
+overlay: 1.0.0
+info:
+  title: mykit
+  version: 1.0.0
+actions:
+  # A problem document may carry extension members (RFC 9457 §3.2), such as `reason` or the `message` and `until`
+  # of the maintenance problem: keep them in Problem.AdditionalProperties.
+  - target: $.components.schemas.Problem
+    update:
+      additionalProperties: true
