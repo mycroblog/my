@@ -227,7 +227,14 @@ export function TextAreaMirror({ textareaRef, text, caret, caretRef, highlights 
     observer?.observe(control);
     const fonts = "fonts" in doc ? doc.fonts : null;
     fonts?.addEventListener("loadingdone", sync);
+    // Fonts already loading when this mounts may finish without a loadingdone for this mirror, and a style that settles
+    // after the first copy (a metric tied to the font) changes no size the observer sees: copy once more when they are ready.
+    let disposed = false;
+    void fonts?.ready.then(() => {
+      if (!disposed) sync();
+    });
     return () => {
+      disposed = true;
       control.removeEventListener("scroll", onScroll);
       doc.removeEventListener("selectionchange", onSelectionChange);
       observer?.disconnect();

@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/account"
-	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/supporters"
@@ -184,9 +183,13 @@ type StartedCheckout struct {
 // makes a new checkout of the same subscription. It fails with ErrDisabled or
 // ErrProviderMismatch when the program takes no subscriptions, with an *IneligibleError, with
 // ErrPlanUnavailable for a plan that takes no subscriptions (ErrNotFound for an unknown one),
-// and with ErrLiveSubscription when the user has a subscription that is not pending.
+// with ErrLiveSubscription when the user has a subscription that is not pending, and with
+// ErrServiceClosing from the announcement of the service closure on (ADR-0088 §2).
 func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedCheckout, error) {
 	if err := s.accepting(ctx); err != nil {
+		return StartedCheckout{}, err
+	}
+	if err := s.subscribingAllowed(ctx); err != nil {
 		return StartedCheckout{}, err
 	}
 	if !in.Interval.Valid() {
@@ -487,17 +490,12 @@ func (s *Service) CancelByStaff(ctx context.Context, id, byUserID string) error 
 // (ADR-0072 §10) and to the closure of the service (ADR-0088 §2): the deletion of a local
 // account, done or scheduled by a ban, ends its live subscription here at once (the role and the
 // listing go) and cancels it at the provider without a refund; a suspension cancels it at the end
-// of the period (S1), its role staying until then; the closure of the server ends every live
-// subscription as a deletion does, with the reason service_closed. Each runs in the transaction
-// of its event; the provider's command runs after it.
+// of the period (S1), its role staying until then; the start of the notice period of the closure
+// enqueues JobClosureNotice, and the closure of the server ends every live subscription as a
+// deletion does, with the reason service_closed. Each runs in the transaction of its event; the
+// provider's command runs after it.
 func (s *Service) RegisterProjectors(r *uow.Projectors) {
-	r.Register(appinstance.EventClosureRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev := e.(appinstance.ClosureRecorded)
-		if !ev.Closes() {
-			return nil
-		}
-		return s.cancelForClosure(ctx, tx, ev.Event.ID)
-	})
+	s.registerClosureProjectors(r)
 	r.Register(account.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(account.LifecycleEventRecorded)
 		if !ev.ClosesLocalAccount() {

@@ -38,6 +38,12 @@ const reviewed: Record<string, string> = {
   // @babel/helper-compilation-targets); none of it is bundled into the client. The FSF lists
   // CC BY 4.0 as compatible with GPLv3, and so with AGPLv3.
   "caniuse-lite@1.0.30001814": "CC-BY-4.0",
+  // The same data, in the version that MJML pulls in through cssnano (tools/mail; compiles the email layout at
+  // development time, never shipped).
+  "caniuse-lite@1.0.30001815": "CC-BY-4.0",
+  // The CSS selector parser of juice, MJML's CSS inliner (tools/mail; development time only). Its license field is
+  // "MIT (http://mootools.net/license.txt)", the MIT license with a link to its text.
+  "slick@1.12.2": "MIT (http://mootools.net/license.txt)",
   // Glob matcher that the lint's ESLint plugins pull in through their peers eslint and
   // @typescript-eslint/typescript-estree (app/ lint only; never bundled into the client). The Blue
   // Oak Model License 1.0.0 is an OSI-approved permissive license with only a notice condition, so it

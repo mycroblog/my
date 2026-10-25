@@ -307,6 +307,14 @@
     "defaultMessage": "‮⊥ɥǝ sǝɹʌǝɹ ɥɐs ɔʅosǝp. ⅄on ɔɐu sʇıʅʅ sıƃu ıu ɐup ǝxdoɹʇ ʎonɹ pɐʇɐ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.service_closing": {
+    "defaultMessage": "‮⊥ɥǝ ɔʅosnɹǝ oɟ ʇɥıs sǝɹʌǝɹ ıs ɐuuonuɔǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closing_detail": {
+    "defaultMessage": "‮Nǝʍ ɹǝƃısʇɹɐʇıous ɐup snddoɹʇǝɹ snqsɔɹıdʇıous sʇod ʍɥıʅǝ ʇɥǝ ɔʅosnɹǝ ıs ɐuuonuɔǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.service_closure.state": {
     "defaultMessage": "‮⊥ɥǝ sǝɹʌıɔǝ ɔʅosnɹǝ poǝs uoʇ ɐʅʅoʍ ʇɥɐʇ ıu ıʇs ɔnɹɹǝuʇ sʇɐʇǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

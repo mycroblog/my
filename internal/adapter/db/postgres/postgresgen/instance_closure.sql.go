@@ -22,7 +22,7 @@ func (q *Queries) DeleteServiceClosureHead(ctx context.Context) error {
 }
 
 const getCurrentServiceClosure = `-- name: GetCurrentServiceClosure :one
-SELECT h.state, e.occurred_at AS changed_at, a.occurred_at AS announced_at, s.closes_at, s.export_until, s.message
+SELECT h.state, h.announcement_event_id, e.occurred_at AS changed_at, a.occurred_at AS announced_at, s.closes_at, s.export_until, s.message
 FROM service_closure_heads h
 JOIN service_closure_events e ON e.id = h.event_id
 JOIN service_closure_events a ON a.id = h.announcement_event_id
@@ -31,12 +31,13 @@ WHERE h.id = 1
 `
 
 type GetCurrentServiceClosureRow struct {
-	State       string
-	ChangedAt   time.Time
-	AnnouncedAt time.Time
-	ClosesAt    time.Time
-	ExportUntil time.Time
-	Message     string
+	State               string
+	AnnouncementEventID string
+	ChangedAt           time.Time
+	AnnouncedAt         time.Time
+	ClosesAt            time.Time
+	ExportUntil         time.Time
+	Message             string
 }
 
 func (q *Queries) GetCurrentServiceClosure(ctx context.Context) (GetCurrentServiceClosureRow, error) {
@@ -44,8 +45,41 @@ func (q *Queries) GetCurrentServiceClosure(ctx context.Context) (GetCurrentServi
 	var i GetCurrentServiceClosureRow
 	err := row.Scan(
 		&i.State,
+		&i.AnnouncementEventID,
 		&i.ChangedAt,
 		&i.AnnouncedAt,
+		&i.ClosesAt,
+		&i.ExportUntil,
+		&i.Message,
+	)
+	return i, err
+}
+
+const getServiceClosureEvent = `-- name: GetServiceClosureEvent :one
+SELECT e.id, e.kind, e.by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
+FROM service_closure_events e
+LEFT JOIN service_closure_schedules s ON s.event_id = e.id
+WHERE e.id = $1
+`
+
+type GetServiceClosureEventRow struct {
+	ID          string
+	Kind        string
+	ByUserID    *string
+	OccurredAt  time.Time
+	ClosesAt    *time.Time
+	ExportUntil *time.Time
+	Message     *string
+}
+
+func (q *Queries) GetServiceClosureEvent(ctx context.Context, id string) (GetServiceClosureEventRow, error) {
+	row := q.db.QueryRow(ctx, getServiceClosureEvent, id)
+	var i GetServiceClosureEventRow
+	err := row.Scan(
+		&i.ID,
+		&i.Kind,
+		&i.ByUserID,
+		&i.OccurredAt,
 		&i.ClosesAt,
 		&i.ExportUntil,
 		&i.Message,

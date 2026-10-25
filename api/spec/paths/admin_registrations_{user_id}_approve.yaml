@@ -5,8 +5,10 @@ post:
   description: |
     Approves a pending registration, so that its user can sign in, with an optional note
     for the moderators; the decision is audited. Deciding a decided registration changes
-    nothing and keeps its decision. A user without a registration is a 404. Needs the
-    `manage_accounts` permission.
+    nothing and keeps its decision. A user without a registration is a 404. From the
+    announcement of the closure of the service on, a pending registration is not approved: a
+    409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
+    the `manage_accounts` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

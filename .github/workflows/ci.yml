@@ -87,7 +87,7 @@ jobs:
           }
           echo "full=$FULL" >> "$GITHUB_OUTPUT"
           touches ui ui
-          touches server go schema api i18n
+          touches server go schema api i18n mail
           touches client ui web api i18n
           touches lint-go go
           # tools/agentkit is a Go module of its own outside the go context.
@@ -103,8 +103,9 @@ jobs:
 
   preflight:
     # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile and Playwright image versions, the design
-    # tokens, and the CSS 100vh check. A pull request's own files or lockfiles decide each of them, so stacking pull
-    # requests in the merge queue cannot break them and the queue does not run them again.
+    # tokens, the CSS 100vh check, and the types of the email layout's compiler (tools/mail). A pull request's own
+    # files or lockfiles decide each of them, so stacking pull requests in the merge queue cannot break them and the
+    # queue does not run them again.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -119,7 +120,7 @@ jobs:
         with:
           node: "false"
       - name: Install the Bun packages
-        run: scripts/task.sh web:install i18n:install
+        run: scripts/task.sh web:install i18n:install mail:install
       - parallel:
           - name: docs:lint
             run: scripts/task.sh docs:lint
@@ -137,6 +138,10 @@ jobs:
             run: scripts/task.sh mykit:licenses
           - name: mykit:ts-licenses
             run: scripts/task.sh mykit:ts-licenses
+          - name: mail:licenses
+            run: scripts/task.sh mail:licenses
+          - name: mail:typecheck
+            run: scripts/task.sh mail:typecheck
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           - name: web:playwright-image-check
@@ -256,6 +261,10 @@ jobs:
       # once: fetch it before them.
       - name: Fetch the Redocly CLI once
         run: scripts/task.sh api:warm
+      # mail:gen-check compiles the email layout with the token colors of the merged main: a pull request that changes
+      # the tokens and one that changes the layout can each be fresh alone (ADR-0081).
+      - name: Install the email layout's packages
+        run: scripts/task.sh mail:install
       - name: Wait for Atlas and PostgreSQL
         wait: db
       # golangci-lint runs on pull requests and the build tags in the slow suite (ADR-0079).
@@ -280,6 +289,8 @@ jobs:
             run: scripts/task.sh api:spec-check
           - name: api:license-scope
             run: scripts/task.sh api:license-scope
+          - name: mail:gen-check
+            run: scripts/task.sh mail:gen-check
 
   server-test:
     # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0041); the slow suite runs them
