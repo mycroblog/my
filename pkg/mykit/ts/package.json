@@ -22,7 +22,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.lib.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.lib.tsbuildinfo && tsc -p tsconfig.test.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.test.tsbuildinfo",
+    "typecheck": "tsc -p tsconfig.lib.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.lib.tsbuildinfo && tsc -p tsconfig.test.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.test.tsbuildinfo && tsc -p tsconfig.examples.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.examples.tsbuildinfo",
     "lint": "oxlint",
     "test": "bun test",
     "build": "rm -rf dist && tsc -p tsconfig.build.json"

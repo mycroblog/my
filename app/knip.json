@@ -16,8 +16,8 @@
       "ignoreDependencies": ["openapi-typescript"]
     },
     "../pkg/mykit/ts": {
-      "entry": ["src/**/*.test.ts"],
-      "project": ["src/**/*.ts"],
+      "entry": ["src/**/*.test.ts", "examples/*.ts"],
+      "project": ["src/**/*.ts", "examples/*.ts"],
       "ignoreDependencies": ["openapi-typescript"]
     }
   }
