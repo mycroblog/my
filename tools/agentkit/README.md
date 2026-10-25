@@ -47,6 +47,23 @@ issue touches. When you add a directory, module, adapter, or feature, add or ext
 pattern has no entry naming it, or when a document reference does not resolve ([ADR-0003](docs/adr/0003-context-map.md)).
 `map show <path>` prints the entries of a path.
 
+## Documentation rules
+
+`docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the rules of
+[AGENTS.md "Documentation"](../../AGENTS.md#documentation) that a machine can check:
+
+- every relative link of a Markdown file (inline, reference, `href`/`src`) points at a file or directory of the
+  repository, and its `#anchor` at a heading (GitHub's slugs, Japanese headings and repeated headings included) or an
+  `<a id>` of a Markdown target;
+- the English-only files have no Japanese (kana, kanji, CJK punctuation, full-width forms) outside code spans, code
+  blocks, and link destinations; a line with `docs-lint: allow-japanese` in a comment, or the line after one, may;
+- the files for users and operators neither link to `docs/adr/`, `docs/requirements/`, `docs/architecture/`, or the
+  repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code.
+
+[docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
+follow a rule yet. A pending entry fails the check once its file follows the rule (or is gone), so the lists only
+shrink.
+
 ## Claude Code hooks
 
 `.claude/settings.json` runs `scripts/agentkit-hook.sh` ([ADR-0004](docs/adr/0004-claude-code-hooks.md)): at session
@@ -72,7 +89,8 @@ a change to see what it saved.
 - `internal/gh` talks to GitHub through `gh` and caches issues and merged pull requests (with their changed files) in
   the same database.
 - `internal/kb` answers `find` / `show` / `outline` / `refs` / `trace`; `internal/pack` builds `ctx`; `internal/ops`
-  runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures.
+  runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures; `internal/docslint`
+  checks the documentation rules.
 
 ## Developing
 

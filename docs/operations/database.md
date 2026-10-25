@@ -4,7 +4,7 @@ How operators create the database, upgrade it to a new release, and, on developm
 
 The schema lives in `schema/<dialect>/` (one file per module) and is applied with Atlas Community Edition, not with a `my` command.
 The server binary does not embed Atlas: Atlas and the schema ship in a separate image (the `schema` target of the `Dockerfile`).
-`my serve` never applies the schema. Started on a database without it, the server answers `503` on `/readyz` (see [Running the server](running.md)).
+`my serve` never applies the schema. Started on a database without it, the server answers `503` on `/readyz` (see [Start the server](running.md#start-the-server)).
 
 Data that a schema change has to carry over (a column split in two, a value moved to a new table) is rewritten by the server image's
 own `my db upgrade`, which runs once per release after the schema is applied. The full order is in [Upgrading](#upgrading).

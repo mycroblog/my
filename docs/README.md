@@ -1,58 +1,58 @@
-# ドキュメント目次
+# Documentation
 
-## 要件
+## Operation
 
-- [ビジョンとスコープ](requirements/00-vision.md)
-- [機能要件（v0）](requirements/01-functional.md)
-- [非機能要件](requirements/02-non-functional.md)
-- [用語集](requirements/03-glossary.md)
-
-## 設計
-
-- [アーキテクチャ概要（基礎設計）](architecture/overview.md)
-- [論理データモデル](architecture/data-model/README.md)
-- [公開範囲の閲覧判定（canView）](architecture/visibility.md)
-- [連合の設計（ActivityPub S2S）](architecture/federation.md)
-- [デプロイターゲットと低コスト構成](architecture/deployment-targets.md)
-- [Web クライアントの設計規約](architecture/web-client/README.md)
-- [ADR 一覧](adr/README.md)
-
-## リファレンス
-
-- [設定リファレンス](reference/configuration.md)（設定スキーマから生成）
-- [ビルドタグ](reference/build-tags.md)（アダプタをバイナリから外すタグと、その検査）
-- [コマンド](reference/commands.md)（go-task のタスクと、固定しているツールチェーン）
-- [webhook リファレンス](reference/webhooks.md)（受け手が受け取るヘッダ・署名・イベント・本文）
-- [サードパーティのアプリの開発者向けの手引き（英語）](reference/third-party-apps.md)（アプリの登録・認可の流れ・スコープ・レート制限・API の安定性）
-
-## 運用
-
-- [管理者とロール](operations/admin-cli.md)
-- [インスタンス設定](operations/instance-settings.md)
-- [利用者登録（登録モード・招待・承認・メール確認）](operations/registration.md)
-- [メールの送信（SMTP の設定・SPF/DKIM/DMARC・失敗と抑止の見方・配信停止）](operations/email.md)
-- [ボット対策の CAPTCHA（Turnstile / hCaptcha / reCAPTCHA）](operations/captcha.md)
-- [ドメイン単位の処分と通報の対応](operations/moderation.md)
-- [鍵暗号化鍵（KEK）の管理](operations/key-management.md)
-- [DB の初期化と作り直し](operations/database.md)
-- [サーバーの起動・停止とヘルスチェック](operations/running.md)
-- [メディア配信に CDN を置く（media_origin・オリジンプル・キャッシュと削除）](operations/cdn.md)
+- [Administrators and roles](operations/admin-cli.md)
+- [Instance settings](operations/instance-settings.md)
+- [Registration (registration modes, invitations, approval, email verification)](operations/registration.md)
+- [Sending email (SMTP settings, SPF/DKIM/DMARC, failures and suppressions, unsubscribing)](operations/email.md)
+- [CAPTCHA against bots (Turnstile / hCaptcha / reCAPTCHA)](operations/captcha.md)
+- [Domain blocks and handling reports](operations/moderation.md)
+- [Managing the key encryption key (KEK)](operations/key-management.md)
+- [Database: initializing, upgrading, and recreating](operations/database.md)
+- [Running the server: starting, stopping, and health checks](operations/running.md)
+- [Serving media through a CDN (media_origin, origin pull, caching and purging)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
-- [サービスの終了（予告・クローズ・静的な閉鎖のページ・データの破棄）](operations/service-closure.md)
-- [外形監視とステータスページ（UptimeRobot・Better Stack・Gatus・Uptime Kuma・Upptime）](operations/monitoring.md)
-- [リンクプレビュー（OGP / X Card / fediverse:creator）](operations/link-previews.md)
-- [検索エンジンと AI クローラー（robots.txt・noindex・AI の拒否の表明）](operations/crawlers.md)
-- [サーバー単位の webhook](operations/webhooks.md)
-- [連合リレー](operations/relays.md)
-- [リリースの手順](operations/releasing.md)
-- [クラウドの利用料金の取り込み（AWS Cost Explorer、Google Cloud の BigQuery への export）](operations/billing-import.md)
-- [サポーターの決済（Stripe）](operations/payments-stripe.md)
-- [サポーターの決済（PAY.JP）](operations/payments-payjp.md)
-- [サポーター（課金のプラン）](operations/supporters.md)
+- [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
+- [External monitoring and status pages (UptimeRobot, Better Stack, Gatus, Uptime Kuma, Upptime)](operations/monitoring.md)
+- [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)
+- [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
+- [Server webhooks](operations/webhooks.md)
+- [Federation relays](operations/relays.md)
+- [Releasing](operations/releasing.md)
+- [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export)](operations/billing-import.md)
+- [Supporter payments with Stripe](operations/payments-stripe.md)
+- [Supporter payments with PAY.JP](operations/payments-payjp.md)
+- [Supporters (paid plans)](operations/supporters.md)
 
-## 開発プロセス
+## Reference
 
-- [コントリビュートの手引き](../CONTRIBUTING.md)
-- [エージェント向け指示](../AGENTS.md)
-- [Issue 作業手順（playbook）](agents/workflow.md)
-- [ADR の書き方（playbook）](agents/writing-adrs.md)
+- [Configuration reference](reference/configuration.md) (generated from the configuration schema)
+- [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and how they are checked)
+- [Commands](reference/commands.md) (the go-task tasks and the pinned toolchain)
+- [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
+- [Building third-party apps](reference/third-party-apps.md) (registering an app, the authorization flow, scopes,
+  rate limits, API stability)
+
+## Contributing
+
+- [Contributing guide](../CONTRIBUTING.md)
+- [Instructions for coding agents](../AGENTS.md)
+- [Working on an issue (playbook)](agents/workflow.md)
+- [Writing an ADR (playbook)](agents/writing-adrs.md)
+
+## Design (in Japanese)
+
+The requirements, the architecture, and the decision records are written in Japanese during v0.
+
+- [Vision and scope](requirements/00-vision.md)
+- [Functional requirements (v0)](requirements/01-functional.md)
+- [Non-functional requirements](requirements/02-non-functional.md)
+- [Glossary](requirements/03-glossary.md)
+- [Architecture overview](architecture/overview.md)
+- [Logical data model](architecture/data-model/README.md)
+- [Visibility checks (canView)](architecture/visibility.md)
+- [Federation design (ActivityPub server-to-server)](architecture/federation.md)
+- [Deployment targets and low-cost setups](architecture/deployment-targets.md)
+- [Web client conventions](architecture/web-client/README.md)
+- [Architecture Decision Records](adr/README.md)

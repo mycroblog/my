@@ -1,142 +1,142 @@
-# サポーターの決済（PAY.JP）
+# Supporter payments with PAY.JP
 
-運営者向けの手順です。決定は [ADR-0099](../adr/0099-payjp-payment-adapter.md)（PAY.JP の adapter）、[ADR-0074](../adr/0074-payment-provider-port.md)（ポート・webhook・照合）、[ADR-0072](../adr/0072-supporter-plans-and-roles.md)（プラン・加入・ロール）、[ADR-0073](../adr/0073-income-records-and-publication.md)（収入の記録）で、設定のキーは [設定リファレンス](../reference/configuration.md#payments_provider) です。
+A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments_provider). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 
-設定 `payments_provider = payjp` にすると、ローカルの利用者がこのサーバーの決済のページで月払い・年払いのプランに加入し、支払いの状態に合わせてプランのロールが付け外しされます（FR-910・FR-911）。
-課金を有効にすることとプランの作成は、管理者が管理画面で行います。この設定は、サーバーが PAY.JP と話せるようにするだけです。
+With `payments_provider = payjp`, local users subscribe to monthly or yearly plans on this server's payment page, and the plan's role is granted and removed as the payment state changes.
+An administrator enables the program and creates plans in the administration. This setting only lets the server talk to PAY.JP.
 
-1 つのサーバーで有効にできる事業者は 1 つだけです。Stripe から PAY.JP に（その逆も）切り替えるときは、既存の加入者に新しい事業者で再加入してもらいます。
+One server can use only one provider. To switch from Stripe to PAY.JP (or the reverse), ask the existing subscribers to subscribe again with the new provider.
 
-## サーバーが PAY.JP で行うこと
+## What the server does at PAY.JP
 
-PAY.JP には API v1 と v2 があります。v2 には定期課金の API がまだないので、サーバーは **API v1** の定期課金（Plan・Subscription）を使います。v1 にはホスト型の決済画面と顧客ポータルがないので、その代わりのページをこのサーバーが出します。
+PAY.JP has API v1 and v2. v2 has no recurring-billing API yet, so the server uses the recurring billing of **API v1** (Plan and Subscription). v1 has neither a hosted payment page nor a customer portal, so this server serves pages in their place.
 
-- **プラン**: 価格ごとに ID が `my_<プランの ID>_<month|year>_<金額>` の Plan を作ります（`metadata.my_plan_id`）。PAY.JP の Plan は金額を変えられないので、金額を変えると新しい Plan を作り、古い Plan は削除せずに `metadata.my_archived=1` を付けます。古い Plan の加入はその金額のまま更新されます。
-  管理画面でこれらの Plan を編集・削除しないでください。通貨は日本円だけで、金額は 50〜9,999,999 円です。
-- **加入**: 利用者のブラウザを、このサーバーの決済のページ（`/payments/pages/payjp/checkout`）へ移します。ページは payjp.js のカードの入力欄（PAY.JP の iframe）を出し、トークンを作るときに 3D セキュアの本人認証を行います（iframe 型）。
-  サーバーは 3D セキュアが済んだトークン（`three_d_secure_status` が `verified` か `attempted`）だけを受け、顧客（初回は ID `my_<こちらの加入の ID>`）にカードを既定のカードとして足し、`metadata.my_subscription_id` にこちらの加入の ID を入れた定期課金を作ります。作成のときに最初の課金が行われます。
-  ページの URL は、サーバーが署名した状態を持つ短命の URL（作成の時刻から 1〜2 時間）です。
-- **カードと支払いの履歴のページ**（Stripe の顧客ポータルの代わり）: 加入者は自分の加入の画面から `/payments/pages/payjp/portal` を開き、カードの変更と直近の支払いの確認ができます（URL は 1 時間で切れます）。
-  カードを変更すると、支払いに失敗して止まっている加入を再開し、その場で課金します。解約とプランの変更は、このサーバーの加入の画面で行います。
-- **支払いの失敗**: PAY.JP は更新の課金に失敗した定期課金を停止（`paused`）し、**再試行しません**。サーバーは停止を支払いの遅れとみなし、停止の時刻から 7 日の猶予の間はロールを残します。その間に加入者がカードを変更すれば再開し、変更しなければ 7 日でロールが外れます（PAY.JP の側は停止のまま課金しません）。
-- **プランの変更**: 上げる変更は、今の期間の残りの差額を日割りで都度の課金にし（50 円未満なら課金しない）、プランを差し替えて次の課金を期間の終わりに新しいプランの全額で行います（期間の始まりは動きません）。差額の課金が断られたら変更しません。
-  下げる変更と年払いから月払いへの変更は、`next_cycle_plan` で期間の終わりに切り替えます。
-- **状態の取り直し**: webhook は合図として受け、サーバーが PAY.JP の API から定期課金とお金の動きを取り直して状態を決めます。
-  加えて `payments_reconcile_interval` ごとの照合が、イベントの一覧・お金の動き・全定期課金の見回しを読み、webhook の取りこぼしを直します。
-- **収入**: 支払いごとに、総額・手数料（charge の `fee_rate` から計算し、1 円未満は切り捨て）・net を記録します。返金とチャージバックは、返った手数料を負の手数料として記録します。
-  区間（Term）が締まって取引明細（Statement）ができたら、明細の手数料とサーバーの計算の差を手数料の動き（ID は取引明細の ID）として記録し、区間の手数料の合計を明細に合わせます。
-  明細はアカウント全体の手数料なので、**このサーバー専用の PAY.JP のアカウントを使ってください**。
-- **日付**: 収入の日付は日本時間で数えます。
+- **Plans**: For each price the server creates a Plan whose ID is `my_<plan ID>_<month|year>_<amount>` (`metadata.my_plan_id`). A PAY.JP Plan cannot change its amount, so changing the amount creates a new Plan, and the old Plan is not deleted but gets `metadata.my_archived=1`. Subscriptions on the old Plan renew at its amount.
+  Do not edit or delete these Plans in the administration of PAY.JP. The only currency is the Japanese yen, and amounts are 50 to 9,999,999 yen.
+- **Subscribing**: The server sends the user's browser to its own payment page (`/payments/pages/payjp/checkout`). The page shows the card fields of payjp.js (PAY.JP's iframe) and runs 3-D Secure authentication when it creates the token (the iframe type).
+  The server accepts only a token whose 3-D Secure has completed (`three_d_secure_status` is `verified` or `attempted`), adds the card to the customer as the default card (for the first time with the ID `my_<the server's subscription ID>`), and creates a subscription with the server's subscription ID in `metadata.my_subscription_id`. The first charge happens when the subscription is created.
+  The page URL is short-lived and carries a state signed by the server (valid for 1 to 2 hours from creation).
+- **The card and payment history page** (in place of Stripe's customer portal): From their subscription screen, a subscriber opens `/payments/pages/payjp/portal` to change the card and check recent payments (the URL expires in one hour).
+  Changing the card resumes a subscription stopped by a failed payment and charges at once. Cancelling and changing plans are done on this server's subscription screen.
+- **Payment failure**: PAY.JP pauses (`paused`) a subscription whose renewal charge failed, and **does not retry**. The server treats the pause as a late payment and keeps the role for a grace period of 7 days from the time of the pause. If the subscriber changes the card in that time, the subscription resumes; if not, the role is removed after 7 days (on the PAY.JP side the subscription stays paused and is not charged).
+- **Plan changes**: An upgrade charges the difference for the rest of the current period, prorated, as a one-time charge (no charge under 50 yen), replaces the plan, and charges the new plan's full amount at the end of the period (the start of the period does not move). If the charge for the difference is declined, the plan does not change.
+  A downgrade, and a change from yearly to monthly, switch at the end of the period with `next_cycle_plan`.
+- **Reading state back**: The server treats a webhook as a signal and reads the subscription and the money movements back from the PAY.JP API to decide the state.
+  In addition, a reconciliation every `payments_reconcile_interval` reads the event list, the money movements, and a sweep of all subscriptions, and repairs any webhook the server missed.
+- **Income**: For each payment the server records the gross amount, the fee (computed from the charge's `fee_rate`, rounding down below one yen), and the net. A refund and a chargeback record the returned fee as a negative fee.
+  When a term closes and a statement is issued, the difference between the statement's fee and the server's computation is recorded as a fee movement (its ID is the statement's ID), so that the term's fee total matches the statement.
+  A statement covers the fees of the whole account, so **use a PAY.JP account dedicated to this server**.
+- **Dates**: Income dates are counted in Japan time.
 
-サーバーが送る要求は、1 秒に 20 件（テストのモードでは 2 件）までに抑えます。PAY.JP のレート制限（秘密鍵の要求はライブで 1 秒 30 件、テストで 2 件）の内で、`429` が返ったら 1 秒から倍々に待って 3 回まで送り直します。
-テストのモードでは 1 回の照合が遅くなります（上限の 1,000 要求で 8 分ほど）。続きのジョブが引き継ぐので、そのままで構いません。
+The server sends at most 20 requests per second (2 in test mode). That stays within PAY.JP's rate limit (for secret-key requests, 30 per second in live mode and 2 in test mode). On `429` the server waits 1 second, doubling each time, and retries up to 3 times.
+In test mode a single reconciliation is slow (about 8 minutes at the limit of 1,000 requests). A continuation job takes over, so no action is needed.
 
-## カード情報と PCI DSS
+## Card data and PCI DSS
 
-カード番号・有効期限・セキュリティコードは、payjp.js が出す PAY.JP の iframe の中だけで入力されます。このサーバーのページとスクリプトはそれに触れず、サーバーが受けるのは payjp.js が作ったトークンの ID と、3D セキュアに要るカードの名義とメールアドレスだけです。
-サーバーが保存するのは PAY.JP のオブジェクトの ID（`cus_`・`sub_`・`ch_`・Plan の ID・イベントの ID）と金額・期間・状態だけで、カードの番号・下 4 桁・有効期限は保存しません（カードのページは下 4 桁と有効期限を PAY.JP から読んで表示するだけです）。webhook の本文と PAY.JP の応答はログにも DB にも残しません。
+Card numbers, expiry dates, and security codes are entered only inside PAY.JP's iframe, which payjp.js shows. This server's page and script never touch them. The server receives only the token ID that payjp.js created and the cardholder name and email address that 3-D Secure needs.
+The server stores only PAY.JP object IDs (`cus_`, `sub_`, `ch_`, Plan IDs, event IDs), amounts, periods, and states. It does not store card numbers, last four digits, or expiry dates (the card page only reads the last four digits and the expiry date from PAY.JP and shows them). Webhook bodies and PAY.JP responses are kept in neither the logs nor the database.
 
-決済のページはこのサーバーのオリジンに載るので、PCI DSS v4 の決済のページのスクリプトの管理（要件 6.4.3）と改ざんの検知（要件 11.6.1）を意識した作りにしています。
+The payment page is served from this server's origin, so it is built with PCI DSS v4's management of payment-page scripts (requirement 6.4.3) and detection of tampering (requirement 11.6.1) in mind.
 
-- ページが読むスクリプトは `https://js.pay.jp/v2/pay.js` と、ページに埋めたノンス付きの小さなスクリプトだけです。Web クライアントの bundle も解析や広告のスクリプトも載せません。
-- ページには専用の Content-Security-Policy（`script-src` はノンスと `https://js.pay.jp` だけ、`frame-src` は `https://js.pay.jp` と `https://api.pay.jp`、`form-action 'self'`、`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store`、`X-Content-Type-Options: nosniff` を常に付けます。CSP を変える設定はありません。
-- テンプレートとスクリプトはサーバーのバイナリに埋め込まれていて、実行時に変えられません。フォームの送信は同じオリジンからだけ受け付けます。
+- The page loads only `https://js.pay.jp/v2/pay.js` and a small script with a nonce that is embedded in the page. It carries neither the web client's bundle nor any analytics or advertising script.
+- The page always carries its own Content-Security-Policy (`script-src` only the nonce and `https://js.pay.jp`, `frame-src` only `https://js.pay.jp` and `https://api.pay.jp`, `form-action 'self'`, `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `Cache-Control: no-store`, and `X-Content-Type-Options: nosniff`. No setting changes the CSP.
+- The template and the script are embedded in the server's binary and cannot be changed at run time. Form submissions are accepted only from the same origin.
 
-このため運営者の範囲は、決済の入力を PAY.JP の iframe に任せる販売者の SAQ A 相当になる見込みです。適用される範囲と自己問診の種類は、運営者が PAY.JP の案内とカード会社の求めに沿って確かめてください。
-確かめるときは、次の点を記録に残すとよいでしょう: 決済のページの URL（`/payments/pages/payjp/checkout` と `/portal`）、ページが読むスクリプトの一覧（上の 2 つ）、ページの CSP、サーバーへの通信が TLS であること（リバースプロキシの設定）。
+As a result, the operator's scope is expected to be that of a merchant who leaves payment entry to PAY.JP's iframe (SAQ A). Check the scope that applies and the type of self-assessment questionnaire against PAY.JP's guidance and your card brands' requirements.
+When you do, it helps to keep a record of these points: the payment page URLs (`/payments/pages/payjp/checkout` and `/portal`), the list of scripts the page loads (the two above), the page's CSP, and that traffic to the server uses TLS (the reverse proxy's configuration).
 
-## 1. PAY.JP のアカウントを用意する
+## 1. Prepare the PAY.JP account
 
-1. PAY.JP のアカウントを作り、テストのモードで始めます。ライブで課金するには本番申請と審査が要ります。
-2. 管理画面の「API 設定 → 3D セキュア」を確かめます。サーバーはトークンを作るたびに 3D セキュアを求めるので、「全てのトークン作成に 3D セキュアを必須とする」にしても構いません。
-3. 特定商取引法の表記のページは、このサーバーの管理画面で設定します（ADR-0072 §13）。
+1. Create a PAY.JP account and start in test mode. Charging in live mode needs a production application and a review.
+2. Check "API settings > 3-D Secure" in the PAY.JP dashboard. The server asks for 3-D Secure each time it creates a token, so you may also choose to require 3-D Secure for all token creation.
+3. The page of the commerce disclosure is set in this server's administration (see [supporters.md](supporters.md)).
 
-## 2. 鍵と webhook のトークン
+## 2. Keys and the webhook token
 
-管理画面の「API」で、次の 2 つの鍵を確かめます。鍵の接頭辞でモードが決まり、テストの鍵では実際の課金が起きません。2 つの鍵は同じモードでなければなりません。
+Under "API" in the PAY.JP dashboard, check these two keys. The prefix of a key sets the mode, and test keys charge nothing. Both keys must be in the same mode.
 
-| 鍵 | 例 | 使い道 |
+| Key | Example | Use |
 | --- | --- | --- |
-| 秘密鍵 | `sk_test_…` / `sk_live_…` | サーバーが API を呼ぶ。ページの URL の署名の鍵の元にもなる |
-| 公開鍵 | `pk_test_…` / `pk_live_…` | 決済とカードのページの payjp.js |
+| Secret key | `sk_test_...` / `sk_live_...` | The server calls the API with it. It is also the source of the key that signs page URLs |
+| Public key | `pk_test_...` / `pk_live_...` | payjp.js on the payment and card pages |
 
-秘密鍵は環境変数 `MY_PAYMENTS_PAYJP_SECRET_KEY`（またはファイルの場所を `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`）で渡します。設定ファイルには書けません（[ADR-0010](../adr/0010-configuration-and-packaging.md)）。
-秘密鍵が漏れたら、管理画面で再発行し、新しい鍵で再デプロイします。再デプロイの前に開いていた決済とカードのページの URL は使えなくなります。
+Pass the secret key in the environment variable `MY_PAYMENTS_PAYJP_SECRET_KEY` (or the path of a file in `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`). It cannot be written in the configuration file.
+If the secret key leaks, reissue it in the dashboard and redeploy with the new key. The URLs of payment and card pages that were open before the redeploy stop working.
 
-## 3. webhook を登録する
+## 3. Register the webhook
 
-管理画面の「設定 → Webhook」で、送信先を追加します。テストのモードとライブのモードで別々に登録します。
+Under "Settings > Webhook" in the PAY.JP dashboard, add a destination. Register test mode and live mode separately.
 
-- URL: `https://<サーバーのドメイン>/payments/webhooks/payjp`
-- モード: 鍵と同じモード
+- URL: `https://<server domain>/payments/webhooks/payjp`
+- Mode: the same as the keys
 
-PAY.JP の webhook は、アカウントの**発信元トークン**（`whook_…`、ヘッダー `X-Payjp-Webhook-Token`）で送り主を示します。管理画面に表示されるトークンを、環境変数 `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN`（または `_FILE`）で渡します。
-受け口はトークンを定数時間で比べ、テストのイベントをライブの鍵で受けたとき（その逆も）は `400` で拒みます。署名と時刻はないので、トークンを知る者は通知を送れますが、サーバーは通知の中身で状態を書かず、PAY.JP から取り直すだけです。
+A PAY.JP webhook identifies its sender with the account's **origin token** (`whook_...`, in the header `X-Payjp-Webhook-Token`). Pass the token shown in the dashboard in the environment variable `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` (or `_FILE`).
+The endpoint compares the token in constant time, and rejects a test event received with a live key (and the reverse) with `400`. There is no signature or timestamp, so anyone who knows the token can send a notification, but the server never writes state from the contents of a notification; it only reads the state back from PAY.JP.
 
-サーバーが使うイベントは次のとおりです（ほかの種類は受けても記録しません）。
+The server uses these events (other types are accepted but not recorded).
 
-- `subscription.created`・`subscription.updated`・`subscription.deleted`・`subscription.paused`・`subscription.resumed`・`subscription.canceled`・`subscription.renewed`
-- `charge.succeeded`・`charge.failed`・`charge.refunded`
+- `subscription.created`, `subscription.updated`, `subscription.deleted`, `subscription.paused`, `subscription.resumed`, `subscription.canceled`, `subscription.renewed`
+- `charge.succeeded`, `charge.failed`, `charge.refunded`
 - `dispute.created`
 - `statement.created`
 
-PAY.JP の再送は 3 分おきに最大 3 回だけで、それを過ぎた通知は管理画面から送り直すまで届きません。取りこぼしは照合が直すので、**`payments_reconcile_interval` を 1 時間にすることを勧めます**。
-事業者の状態（モード、最後に webhook を受けた時刻、最後の照合の結果）は、管理画面の `/admin/supporters` の「決済の事業者」の区画で見られます（ADR-0074 §4）。
+PAY.JP resends a notification only every 3 minutes, at most 3 times, and a notification past that does not arrive until you resend it from the dashboard. The reconciliation repairs what was missed, so **setting `payments_reconcile_interval` to 1 hour is recommended**.
+The state of the provider (the mode, when the last webhook arrived, and the result of the last reconciliation) is shown in the "Payment provider" section of `/admin/supporters` in the administration.
 
-## 4. サーバーの設定
+## 4. Configure the server
 
 ```sh
 MY_PAYMENTS_PROVIDER=payjp
 MY_PAYMENTS_PAYJP_SECRET_KEY=sk_test_...
 MY_PAYMENTS_PAYJP_PUBLIC_KEY=pk_test_...
 MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN=whook_...
-# 勧める照合の周期（15m〜168h、既定 6h）と、1 回の照合が送る要求の上限（既定 1000）
+# The recommended reconciliation interval (15m to 168h, default 6h) and the most requests one reconciliation sends (default 1000)
 MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` で設定を確かめられます。build tag `no_payments_payjp` で build したバイナリは `payments_provider = payjp` を拒みます（[ビルドタグ](../reference/build-tags.md)）。
+`my config check` verifies the configuration. A binary built with the build tag `no_payments_payjp` refuses `payments_provider = payjp` (see [build-tags.md](../reference/build-tags.md)).
 
-## 5. テストのモードで試す
+## 5. Try it in test mode
 
-まずテストの鍵で動かします。テストのモードとライブのモードでは、Plan・顧客・定期課金・webhook・トークンが別々です。ライブに移るときは、ライブのモードで webhook を登録し、ライブの鍵とトークンに差し替えて再デプロイします。プランの Plan はライブのアカウントに改めて作られます。
+Start with test keys. Test mode and live mode have separate Plans, customers, subscriptions, webhooks, and tokens. To go live, register the webhook in live mode, replace the keys and the token with the live ones, and redeploy. The plans' Plans are created anew in the live account.
 
-テスト用のカード（[PAY.JP の文書](https://pay.jp/docs/testcard)）:
+Test cards ([PAY.JP documentation](https://pay.jp/docs/testcard)):
 
-| 番号 | 動き |
+| Number | Behavior |
 | --- | --- |
-| `4242 4242 4242 4242` | 成功 |
-| `4000 0000 0008 0319` | カードの登録はできるが、課金で断られる（申し込みの失敗、カードの変更での再開の失敗） |
-| `4000 0000 0000 4012` | カードの登録はできるが、課金で有効期限切れになる |
-| `4000 0000 0000 0002` | カードの登録（トークンの作成）で断られる |
+| `4242 4242 4242 4242` | Succeeds |
+| `4000 0000 0008 0319` | The card can be registered but the charge is declined (a failed subscription, and a failed resume after a card change) |
+| `4000 0000 0000 4012` | The card can be registered but the charge fails as expired |
+| `4000 0000 0000 0002` | Registering the card (creating the token) is declined |
 
-有効期限は未来の日付、セキュリティコードと名義は任意です。テストのモードの 3D セキュアは、PAY.JP のテスト用の認証画面で結果を選べます。
+Use a future expiry date; the security code and the name are arbitrary. In test mode, PAY.JP's test authentication screen for 3-D Secure lets you choose the result.
 
-更新を早く試すには、PAY.JP の管理画面か API で定期課金の `trial_end` を数分後にします（PAY.JP がテストの用途として案内している方法です）。その時刻に更新の課金が行われます。
-支払いの失敗と猶予を試すには、加入した後にカードのページで断られるカード（`4000 0000 0008 0319`）に変えてから更新させます。
+To try a renewal quickly, set the subscription's `trial_end` a few minutes ahead in the PAY.JP dashboard or API (PAY.JP documents this method for testing). The renewal charge happens at that time.
+To try a payment failure and the grace period, subscribe, change the card on the card page to the card that is declined (`4000 0000 0008 0319`), and then let the subscription renew.
 
-## 6. ローカルで試す
+## 6. Try it locally
 
-PAY.JP の webhook は公開の URL に届くので、手元のサーバーで受けるにはトンネル（cloudflared・ngrok など）でポートを公開し、その URL をテストのモードの送信先に登録します。
-payjp-cli の `payjp listen --forward-to http://localhost:8080/payments/webhooks/payjp` でも転送できる見込みですが、v1 のイベントを転送できるかは確かめていません（ADR-0099 の要検証）。
+PAY.JP webhooks go to a public URL, so to receive them on a server on your machine, expose the port through a tunnel (cloudflared, ngrok, and the like) and register that URL as a test-mode destination.
+`payjp listen --forward-to http://localhost:8080/payments/webhooks/payjp` of payjp-cli is expected to forward events as well, but whether it can forward v1 events has not been verified.
 
-決済とカードのページは、このサーバーのオリジンで開きます（`http://localhost:8080` のままでも動きますが、payjp.js と 3D セキュアの動きはブラウザの設定によって変わります）。
+Open the payment and card pages on this server's origin (they also work on `http://localhost:8080`, but the behavior of payjp.js and 3-D Secure varies with the browser's settings).
 
-## 7. 運用
+## 7. Operation
 
-- 照合の失敗の種類が `permission` なら、秘密鍵の誤りです。
-- 返金は PAY.JP の管理画面で行います。全額の返金とチャージバックはロールを外して定期課金をすぐ削除し、一部の返金ではロールを外しません（ADR-0072）。
-- **チャージバックの取り消し**（チャージバックキャンセル）は、PAY.JP がイベントも API も出さないので自動では記録されません。取り消しがあったら、`finance` の収入の画面で取り消しの額を記録してください。ロールは自動では戻りません。
-- **PAY.JP の有料プランの利用料と振込の手数料**は、収入から引きません。費用（FR-901）として `finance` に記録してください。
-- 照合が要求の上限に当たる回が多ければ、`payments_reconcile_max_requests` を上げるか `payments_reconcile_interval` を延ばします。
+- A reconciliation failure of kind `permission` means a wrong secret key.
+- Refunds are handled in the PAY.JP dashboard. A full refund and a chargeback remove the role and delete the subscription at once, and a partial refund does not remove the role.
+- **A chargeback cancellation** is not recorded automatically, because PAY.JP emits neither an event nor an API for it. When one happens, record the cancelled amount on the income screen of the costs page (`finance`). The role is not restored automatically.
+- **PAY.JP's paid-plan fees and transfer fees** are not subtracted from the income. Record them as costs in `finance`.
+- When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
 
-## 要検証の事項
+## Items to verify
 
-次の事項は PAY.JP の文書から決めた動きで、テストのモードで確かめます（#1310）。
+The following behaviors come from PAY.JP's documentation and are to be confirmed in test mode.
 
-- 手数料の 1 円未満の扱いと、返金・チャージバックで返る手数料の計算。
-- `dispute.created` のイベントの本文の形。
-- イベントの一覧が遡れる期間。
-- Plan の削除が既存の定期課金に効くか（サーバーは削除しません）と、Plan の ID の長さの上限。
-- payjp.js の iframe 型の 3D セキュアに要る CSP のオリジン。
-- payjp-cli が v1 のイベントを転送できるか。
+- How fees below one yen are handled, and how the fee returned by a refund or a chargeback is computed.
+- The shape of the body of the `dispute.created` event.
+- How far back the event list reaches.
+- Whether deleting a Plan affects existing subscriptions (the server never deletes one), and the maximum length of a Plan ID.
+- The CSP origins that the iframe type of payjp.js needs for 3-D Secure.
+- Whether payjp-cli can forward v1 events.
