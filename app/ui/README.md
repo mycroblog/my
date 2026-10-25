@@ -349,7 +349,7 @@ string through props or children.
 
 | Component | Wraps | Variants and extras |
 | --- | --- | --- |
-| `Button` | `Button` | `variant`: `primary` / `secondary` (default) / `ghost` / `danger`; `size`: `sm` / `md` (default); `isPending` |
+| `Button` | `Button` | `variant`: `primary` / `secondary` (default) / `ghost` / `danger`; `size`: `sm` / `md` (default); `isPending`. With `type="submit"`, a pointer press moves the focus to it when the press ends, not when it starts (web-client G23) |
 | `Link` | `Link` | `variant`: `inline` (default, underlined in running text) / `standalone` |
 | `TextField` | `TextField` + `Input` | `label`, `description`, `errorMessage`, `placeholder`; `grow` takes the room left in a row; `highlights` (below) |
 | `TextArea` | `TextField` + `TextArea` | as `TextField`, plus `rows` and the character count below |

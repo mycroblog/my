@@ -9,13 +9,14 @@
 // deliveries, read again every few seconds. What a change did stays on the page in a StatusMessage; a failure
 // stays in the form or the dialog that ran it (role="alert", web-client/README.md E2).
 import { Button, Callout, ConfirmDialog, DescriptionItem, DescriptionList, DialogTrigger, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField } from "@my/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { DateTime, DetailSection, RequirePermission } from "../../moderation";
 import { characterCount } from "../hooks/languages";
 import { type AdminServiceClosure, type AdminServiceClosureProgress, closureMessageLimit, shortNoticeDays } from "../api/closure";
 import {
+  isServerDomain,
   useAdminClosure,
   useAnnounceForm,
   useCloseService,
@@ -239,7 +240,6 @@ function CloseService({ due, closesAt, onDone }: { due: boolean; closesAt: strin
   const t = useT();
   const intl = useIntl();
   const action = useCloseService(onDone);
-  const domainFieldRef = useRef<HTMLDivElement>(null);
   return (
     <Stack gap="2">
       {!due && closesAt !== undefined && (
@@ -262,28 +262,21 @@ function CloseService({ due, closesAt, onDone }: { due: boolean; closesAt: strin
             isPending={action.isPending}
             {...(action.error !== undefined && { errorMessage: t("client:admin.closure.close_failed", { reason: action.error }) })}
             onConfirm={(close) => {
-              void action.close().then((result) => {
-                if (result === "closed") close();
-                // Like the browser's own validation, a domain that does not match takes the focus back to its field.
-                if (result === "mismatch") domainFieldRef.current?.querySelector("input")?.focus();
+              void action.close().then((closed) => {
+                if (closed) close();
               });
             }}
           >
-            {/* Checked when confirming rather than by the field's own validation, whose error would go on blur (useCloseService). */}
-            <div ref={domainFieldRef}>
-              <TextField
-                label={t("client:admin.closure.close.domain")}
-                description={t("client:admin.closure.close.domain.description", { domain: action.domain })}
-                value={action.typed}
-                onChange={action.changeTyped}
-                isRequired
-                validationBehavior="aria"
-                isInvalid={action.mismatch}
-                errorMessage={t("client:admin.closure.close.domain.mismatch")}
-                autoComplete="off"
-                dir="ltr"
-              />
-            </div>
+            <TextField
+              label={t("client:admin.closure.close.domain")}
+              description={t("client:admin.closure.close.domain.description", { domain: action.domain })}
+              value={action.typed}
+              onChange={action.changeTyped}
+              isRequired
+              autoComplete="off"
+              dir="ltr"
+              validate={(value) => (isServerDomain(value, action.domain) ? null : t("client:admin.closure.close.domain.mismatch"))}
+            />
           </ConfirmDialog>
         </DialogTrigger>
       </div>

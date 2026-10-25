@@ -56,6 +56,60 @@ describe("Button", () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it("as a submit button, takes the focus when a pointer press ends, not when it starts (G23)", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const onPress = vi.fn();
+    render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <input aria-label="Reason" />
+        <Button type="submit" onPress={onPress}>
+          Send
+        </Button>
+      </form>,
+    );
+    const field = screen.getByRole("textbox", { name: "Reason" });
+    const button = screen.getByRole("button", { name: "Send" });
+    await user.click(field);
+
+    // A field that kept the focus through the press does not commit its validation under the pointer.
+    await user.pointer({ keys: "[MouseLeft>]", target: button });
+    expect(field).toHaveFocus();
+    await user.pointer({ keys: "[/MouseLeft]", target: button });
+    expect(button).toHaveFocus();
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    // Enter and Space already have the focus on it.
+    await user.keyboard("{Enter}");
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+
+    // Enter in the field submits the form and leaves the focus in the field.
+    await user.click(field);
+    await user.keyboard("{Enter}");
+    expect(onSubmit).toHaveBeenCalledTimes(3);
+    expect(field).toHaveFocus();
+  });
+
+  it("leaves the focus of other buttons to the browser", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <input aria-label="Reason" />
+        <Button>Cancel</Button>
+      </>,
+    );
+    await user.click(screen.getByRole("textbox", { name: "Reason" }));
+    const button = screen.getByRole("button", { name: "Cancel" });
+    await user.pointer({ keys: "[MouseLeft>]", target: button });
+    expect(button).toHaveFocus();
+  });
+
   it("merges className into the recipe, the later class winning", () => {
     render(
       <Button variant="primary" className="px-8">

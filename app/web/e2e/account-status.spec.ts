@@ -207,4 +207,26 @@ test.describe("account status", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
+
+  // The error under the text goes when the text loses the focus; a pointer press on the button must still send
+  // (web-client/16-look-states-and-wording.md G23).
+  test("sends the appeal with a pointer after an empty attempt", async ({ page }) => {
+    const appeals = await userServer(page);
+    await page.goto("/settings/account-status");
+    const suspended = page.getByRole("main").getByRole("article", { name: suspendLabel });
+    await suspended.getByRole("button").click();
+    const dialog = page.getByRole("alertdialog");
+    const text = dialog.getByRole("textbox");
+    const send = dialog.getByRole("button").last();
+
+    await send.click();
+    await expect(text).toHaveAttribute("aria-invalid", "true");
+    await expect(text).toBeFocused();
+    expect(appeals).toEqual([]);
+
+    await text.fill("I did not post spam.");
+    await send.click();
+    await expect(dialog).toBeHidden();
+    expect(appeals).toEqual(["0192f0c4-7a8e-7000-8000-0000000007a1 I did not post spam."]);
+  });
 });
