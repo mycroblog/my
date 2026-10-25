@@ -22,6 +22,8 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/account"
+	"github.com/mycroblog/my/internal/domain/federation"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/activitypub"
 )
 
@@ -196,11 +198,17 @@ type server struct {
 	suspended fakeSuspensions
 	// moves are the targets that local accounts moved to, by account ID.
 	moves fakeMoves
+	// mode is the federation mode, and closure the state of the service closure.
+	mode    federation.Mode
+	closure instance.ClosureState
 }
 
 func newServer(t *testing.T, accountDomain string) *server {
 	t.Helper()
-	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}, inbox: &fakeInbox{}, suspended: fakeSuspensions{}}
+	s := &server{
+		mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}, inbox: &fakeInbox{}, suspended: fakeSuspensions{},
+		mode: federation.ModeBoth, closure: instance.ClosureNone,
+	}
 	s.moves = fakeMoves{accounts: s.accounts, targets: map[string]string{}}
 	activitypub.New(activitypub.Options{
 		Host: host, AccountDomain: accountDomain, SoftwareVersion: "0.1.0", SourceURL: "https://github.com/mycroblog/my",
@@ -218,9 +226,16 @@ func newServer(t *testing.T, accountDomain string) *server {
 		},
 		Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Inbox: s.inbox, Problem: problem,
 		Suspensions: s.suspended, Images: profileImages, Moves: s.moves,
+		Modes:   serverModes{s},
+		Closure: func(context.Context) (instance.ClosureState, error) { return s.closure, nil },
 	}).Register(s.mux)
 	return s
 }
+
+// serverModes reads the federation mode of a server.
+type serverModes struct{ s *server }
+
+func (m serverModes) FederationMode(context.Context) (federation.Mode, error) { return m.s.mode, nil }
 
 // get serves one GET request with an optional Accept header.
 func (s *server) get(t *testing.T, target, accept string) *httptest.ResponseRecorder {

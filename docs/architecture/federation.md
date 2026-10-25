@@ -572,6 +572,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 連合の向きが `publish` を通さないとき、投稿・`/activity`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
+クローズしたサーバー（[§15](#15-サービスの終了)）では、これらの GET は連合の向きによらず `410 Gone` と `Tombstone`（`id` は要求された URI）です。ローカルの Actor は配送の間だけ凍結と同じ最小の文書を返します。
+
 - 移転したローカルの Actor（`account_move_states` に行がある。ADR-0089）の文書は、移転を記録したトランザクションの後から取り消しまで、`movedTo`（移転先の Actor の `id`。`@context` の `as:movedTo`）を持ちます。Misskey は `Move` を受けると Actor を取り直し、この `movedTo` で移転を処理するので、`Move` より先に GET が返します。最小の文書（Authorized Fetch の署名なし、連合の向きが `inbound`）にも載せます。`inbound` でも `Move` を送るためです（§14.1）。エクスポートの Actor の文書も同じです。
 
 - `GET /ap/objects/{uuid}`（`/activity` を含む）は、署名から閲覧者（署名者のドメイン）を決め、`content.CanView`（`ContextObjectFetch`）を通します。権限が無いときと存在しないときは同じ 404 です（ADR-0018）。削除済みは、削除の前に閲覧できた相手にだけ `410 Gone` と `Tombstone` を返し、それ以外には 404 を返します（[ActivityPub §6.4](https://www.w3.org/TR/activitypub/#delete-activity-outbox)）。
@@ -732,6 +734,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - `inbound` の `follow_in` の「断る」は、受けた `Follow` に `Reject` を返すことです。承認待ちを作りません。この `Reject` は対応するフォローの行が無いので、`outbound_activities.object_type = 'refusal'` として記録して配送します（[data-model §4.9](data-model/README.md)）。
 - `retract` は、`inbound` に狭めたあとも、それまでに外へ出したものを消せるように通します。宛先は元の配送（`deliveries`）とその時点のフォロワーだけで、共有 inbox やリレーのフェーズは付けません。
 - ドメインの処分（§11）はモードと独立に効きます。モードが通しても、処分が止めるものは止まります。
+- サービスのクローズ（[§15](#15-サービスの終了)）はモードより先に判定します。クローズの後は、モードが `off` / `inbound` でもクローズの `Delete`（Actor）を送り、それ以外はモードが `both` でも通しません（ADR-0088 §2。ADR-0076 の「`off` は何も通さない」への例外）。
 
 ### 14.2 入口ごとの振る舞い
 
@@ -777,3 +780,44 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
   - `off` の間の削除は外に伝わりません。
 - 関係を切るには、CLI `my admin federation sever --direction in|out|both` を使います（[運用手順](../operations/instance-settings.md)）。ローカルのアカウントと外のアカウントのあいだの承認待ちと有効なフォローを `follow_terminations`（`reason = moderation`、ADR-0036）で終わらせ、そのときのモードが送るときだけ `Reject`（`in`）・`Undo`（`out`）を記録します。モードの変更が自動で呼ぶことはありません。
 - モードの変更は `instance_setting_revisions` に記録し、監査ログ（ADR-0037）に `target_kind = setting` で残します。
+
+## 15. サービスの終了
+
+[ADR-0088](../adr/0088-service-shutdown-modes.md) §2・§3（FR-809）の連合の側の実装です。状態（`none` / `announced` / `closed` / `delivery_completed`）は `instance` モジュールが持ち（[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）、リクエストとジョブごとに読みます。各入口は `instance.ClosureAllows(state, 操作)` に聞くだけで、状態の値では分岐しません。
+
+### 15.1 判定
+
+- クローズ（`closed`）の後は、`instance.ClosureFederate` が通らないので、合成ルート（`internal/platform`）が連合の各入口へ渡すモードを `off` にします。外の取得・取り込み・リレー・メディアプロキシは止まり、積まれていた展開と配送は実行時に `skipped` です。
+- 例外はクローズの `Delete`（Actor）だけで、`appfederation.ClosureSettings`（`retract` が通り `federate` が通らない状態）を読む展開と配送が、`federation.ClosureSends`（ローカルの Actor の `Delete`）で判定します。宛先は承認済みのフォロワーと既知の shared inbox で（§7.2）、モードによらず shared inbox のフェーズも通ります。ドメインの処分と `unavailable` のドメインの除外はいつもどおり効きます。
+- `delivery_completed` の後は、クローズの `Delete` も送りません。
+
+### 15.2 クローズの配送
+
+- `closed` を記録したトランザクションで、projector がジョブ `instance.closure_fanout` を outbox に積みます（`appfederation.ClosureDeletes`）。
+- ジョブはローカルのアカウントを ID 順に 100 件ずつ読み、インスタンス Actor と削除済みを除いて（凍結中は含む）、1 つのトランザクションで、アカウントごとに `closure_deletes` の行と `Delete`（Actor）の `outbound_activities` を記録し、その展開（§7.2）と次のページを積みます。ライフサイクル（`account_lifecycle_events`）は変えず、投稿ごとの `Delete` は送りません。
+- 1 巡目は移転していないアカウント、2 巡目は移転済みのアカウント（`account_move_states` に行がある。ADR-0089）です。移転済みの `Delete` は最後のフェーズにまとまり、それまでの間、移転済みの Actor の GET は `movedTo` を返し続けます。
+- 次のページは、前のページまでの `Delete` の展開がすべて終わり（`outbound_fanout_completions`）、終わっていない配送が 10,000 件以下になってから進みます。条件を満たさないページは、1 分後の同じページのジョブを積み直して待ちます。
+- `closure_deletes` はアカウントごとに 1 行なので、ページを再実行しても `Delete` は増えません。
+- 展開は、ローカルの Actor の `Delete` と `Move` の最後のバッチ（と、送らずに終えた展開）で `outbound_fanout_completions` を記録します（`federation.RecordsFanOutEnd`）。
+
+### 15.3 完了と進捗
+
+- 10 分ごとの定期ジョブ `instance.closure_completion` が、クローズの配送中に次をすべて確かめたら、`delivery_completed` を記録します（監査ログの `service_closure_delivery_completed`、操作した人はサーバー自身）。
+  - 対象のローカルのアカウントすべてに `closure_deletes` がある
+  - どの `Delete` も展開が終わっている
+  - どの配送も終わっている: 最後の試行が `succeeded` / `permanent_failure` / `skipped`、または `retryable_failure` で試行を使い切った（dead job。9 回）
+- 進捗（`GET /api/v1/admin/closure` の `progress`、`my admin closure status`）は、`Delete` を記録したアカウント数、展開の残り、配送の状態ごとの件数（`pending`・`succeeded`・`permanent_failure`・`skipped`・`dead`）です。
+- クローズの前の点検（`my admin closure check`）の「終わっていない移転」は、配送の試行の保持期間（30 日）の中に記録した `Move` のうち、展開が終わっていないか、まだ試行する配送があるものの数です。
+
+### 15.4 入口
+
+| 入口 | クローズ（配送中） | 配送の完了 |
+| --- | --- | --- |
+| inbox（共有・Actor ごと） | 署名の検証より前に `410` | `410` |
+| ローカルの Actor の GET | 凍結と同じ最小の文書（空のプロフィール・`suspended: true`・鍵・移転済みは `movedTo`）を、だれにでも `private, no-store` で返す | `410` と `Tombstone` |
+| インスタンス Actor の GET | 文書全体を返す | `410` と `Tombstone` |
+| 投稿・`/activity`・コレクション・カスタム絵文字・引用の承認の GET | `410` と `Tombstone` | 同左 |
+| WebFinger・host-meta・`/@{username}` の ActivityPub の要求 | `410` | 同左 |
+| NodeInfo | 答える（`metadata.serviceClosure` に状態） | 同左 |
+
+- 配送中に鍵を返し続けるのは、`Delete` の署名を検証するために鍵を取り直す受信側のためです（GoToSocial は鍵の取得が `410` だと `Delete` を処理しない）。

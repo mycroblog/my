@@ -1306,6 +1306,13 @@ func (l *Localizer) ServerErrorsForbidden() string {
 	return l.format("server:errors.forbidden", nil)
 }
 
+// ServerErrorsGone formats "server:errors.gone". Error title for HTTP 410 from the federation endpoints of a server that has closed (ADR-0088).
+//
+//	en: This server has closed, and the resource is gone.
+func (l *Localizer) ServerErrorsGone() string {
+	return l.format("server:errors.gone", nil)
+}
+
 // ServerErrorsImportInProgress formats "server:errors.import.in_progress". API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out.
 //
 //	en: Another import is in progress. Wait until it finishes.

@@ -14,6 +14,7 @@ import (
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/federation"
+	"github.com/mycroblog/my/internal/domain/instance"
 )
 
 // instanceActorUsername is the preferredUsername and WebFinger username of the instance actor:
@@ -117,6 +118,29 @@ func (h *Handler) actor(w http.ResponseWriter, r *http.Request) {
 	h.writeJSONCache(w, r, typeActivityJSON, acc.cache(true), doc)
 }
 
+// closedActor serves GET /ap/actors/{id} while the service closure delivers its Deletes
+// (ADR-0088 §2): a local user's document is the suspended one (ADR-0036: an empty profile marked
+// suspended, with its key and the movedTo of an actor that moved), so that the receivers of its
+// Delete can verify it and follow its move, to every requester, whatever the federation mode;
+// the instance actor's document is served whole.
+func (h *Handler) closedActor(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Vary", "Accept")
+	a, _, err := h.lookupActor(r, r.PathValue("id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	doc, err := h.actorDocument(r.Context(), a)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	if a.Account.ActorType != account.ActorApplication {
+		doc = doc.Suspend()
+	}
+	h.writeJSONCache(w, r, typeActivityJSON, cachePrivate, doc)
+}
+
 // lookupID finds the visible local actor with an id from a URI.
 func (h *Handler) lookupID(r *http.Request, id string) (appaccount.Actor, error) {
 	if !kernel.ValidID(id) {
@@ -171,7 +195,7 @@ func (h *Handler) profilePage(w http.ResponseWriter, r *http.Request) {
 		h.html(w, r)
 		return
 	}
-	h.gate(federation.FlowIdentify, h.profileRedirect)(w, r)
+	h.closure(instance.ClosureFederate, h.gate(federation.FlowIdentify, h.profileRedirect), nil)(w, r)
 }
 
 // profileRedirect redirects an ActivityPub request for the profile page /@{username} to the

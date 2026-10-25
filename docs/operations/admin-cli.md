@@ -82,6 +82,9 @@ my admin closure close -confirm-domain social.example       # 自動化: 質問�
 - `close` は、予告がないときと閉鎖日の前には何も聞かずに断ります（終了コード 1）。`y` 以外の答えと、サーバーのドメイン（設定の `host`、大文字と小文字は区別しない）と違う入力でも、何も変えずに終了コード 1 で終わります。
 - クローズは監査ログに `service_closure_closed` で残り、同じトランザクションで、続いているサポーターの加入をすべて終え（理由 `service_closed`）、決済事業者のサブスクリプションをすぐ解約するジョブ（`CancelNow`）を積みます。
 - クローズの後、client API は、自分のアカウントと設定の読み取り・エクスポート（`/exports`、`/csv_exports`）・セッション（`/authorized_apps`）・`GET /instance` と、クローズの状態とジョブのキューの管理の操作だけを通し、ほかは `403`（`/api/v1/problems/service-closed`）で断ります。ストリームは止まり、Web Push は送りません。サインインとパスワードの再設定はできます。
+- クローズの後、ワーカーが全ローカルアカウントの `Delete`（Actor）を 100 件ずつ連合先へ配送します（移転済みのアカウントは最後。[federation.md §15](../architecture/federation.md#15-サービスの終了)）。`federation_mode` が `off` / `inbound` でも送り、凍結したドメインには送りません。
+  `my admin closure status`（と `GET /api/v1/admin/closure` の `progress`）は、`Delete` を記録したアカウント数・展開の残り・配送の状態ごとの件数（`pending`・`succeeded`・`permanent_failure`・`skipped`・`dead`）を示します。配送の間はワーカーを止めないでください。
+  すべての配送が終わると、10 分ごとの確認が `delivery_completed` を記録し（監査ログの `service_closure_delivery_completed`）、ローカルの Actor も `410` になります。`dead` の配送は自動では再実行しません（`my job retry` で再実行できます）。
 
 ## Exporting the maintenance page
 

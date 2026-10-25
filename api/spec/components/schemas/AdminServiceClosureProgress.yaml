@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: |
+  How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+  /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
+  `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
+type: object
+required: [accounts, fanouts_pending, deliveries]
+properties:
+  accounts:
+    description: The local accounts whose `Delete` is recorded.
+    type: integer
+    minimum: 0
+  fanouts_pending:
+    description: The recorded `Delete`s whose inboxes are still being computed.
+    type: integer
+    minimum: 0
+  deliveries:
+    $ref: ./AdminServiceClosureDeliveries.yaml

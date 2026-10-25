@@ -79,6 +79,10 @@
     "defaultMessage": "[Ẏǿǿŭŭ ȧȧřḗḗ ƞǿǿŧ ȧȧŀŀǿǿẇḗḗḓ ŧǿǿ ḓǿǿ ŧħīş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.gone": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ, ȧȧƞḓ ŧħḗḗ řḗḗşǿǿŭŭřƈḗḗ īş ɠǿǿƞḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.import.in_progress": {
     "defaultMessage": "[Ȧƞǿǿŧħḗḗř īḿƥǿǿřŧ īş īƞ ƥřǿǿɠřḗḗşş. Ẇȧȧīŧ ŭŭƞŧīŀ īŧ ƒīƞīşħḗḗş.]",
     "description": "Generated from en by tools/i18n; do not edit."

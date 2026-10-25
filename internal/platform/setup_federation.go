@@ -43,6 +43,7 @@ func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) qu
 		Clock:   a.Clock, Logger: a.Logger,
 	})
 	a.QuoteHandlers.RegisterProjectors(a.Projectors)
+	a.setUpClosureDeletes(cfg, repo, outbox)
 	return outbox
 }
 
@@ -83,8 +84,9 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 		Domains: a.ModerationPolicy,
 		Clock:   a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain, Logger: a.Logger,
 		Suspensions: a.ModerationPolicy,
-		// The federation mode decides what goes out when each batch runs (ADR-0076).
-		Modes: federationModes{a},
+		// The federation mode decides what goes out when each batch runs (ADR-0076), and the
+		// service closure before it (ADR-0088 §2).
+		Modes: federationModes{a}, Closure: closureSettings{a},
 	})
 	a.FanOut.RegisterJobs(a.Handlers)
 }

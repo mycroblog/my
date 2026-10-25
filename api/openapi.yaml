@@ -6755,7 +6755,8 @@ paths:
       summary: Read the service closure
       description: |
         The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-        and whether its notice is short. Needs the `manage_service_closure` permission.
+        and whether its notice is short; once the server is closed, the progress of the closure's
+        `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
       tags:
         - admin-server
       security:
@@ -11016,6 +11017,8 @@ components:
             `closes_at`, which the admin screen and the CLI warn about: the users may not have the
             time to export their data and move their accounts. A short notice is allowed.
           type: boolean
+        progress:
+          $ref: '#/components/schemas/AdminServiceClosureProgress'
     AdminServiceClosureCheck:
       description: |
         What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
@@ -11058,6 +11061,57 @@ components:
             their records with the CLI before discarding the data of the closed server.
           type: integer
           minimum: 0
+    AdminServiceClosureDeliveries:
+      description: The deliveries of the closure's `Delete`s by state.
+      type: object
+      required:
+        - pending
+        - succeeded
+        - permanent_failure
+        - skipped
+        - dead
+      properties:
+        pending:
+          description: Not attempted yet, or failed and attempted again later.
+          type: integer
+          minimum: 0
+        succeeded:
+          description: Accepted by the inbox.
+          type: integer
+          minimum: 0
+        permanent_failure:
+          description: Refused for good.
+          type: integer
+          minimum: 0
+        skipped:
+          description: Not sent, because the domain was suspended or the server unavailable.
+          type: integer
+          minimum: 0
+        dead:
+          description: Used up their attempts; an operator may requeue their dead jobs.
+          type: integer
+          minimum: 0
+    AdminServiceClosureProgress:
+      description: |
+        How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+        /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
+        `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
+      type: object
+      required:
+        - accounts
+        - fanouts_pending
+        - deliveries
+      properties:
+        accounts:
+          description: The local accounts whose `Delete` is recorded.
+          type: integer
+          minimum: 0
+        fanouts_pending:
+          description: The recorded `Delete`s whose inboxes are still being computed.
+          type: integer
+          minimum: 0
+        deliveries:
+          $ref: '#/components/schemas/AdminServiceClosureDeliveries'
     CloseServiceRequest:
       description: The confirmation of the closure of the server.
       type: object

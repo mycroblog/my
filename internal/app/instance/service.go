@@ -33,6 +33,8 @@ type Deps struct {
 	Documents DocumentRenderer
 	// ClosureCounts counts what the closure of the service ends, for its checks; nil counts 0.
 	ClosureCounts ClosureCounts
+	// ClosureDeliveries reads the progress of the closure's Deletes; nil reads none.
+	ClosureDeliveries ClosureDeliveries
 }
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to

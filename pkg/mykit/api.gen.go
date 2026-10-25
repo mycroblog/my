@@ -4893,6 +4893,11 @@ type AdminServiceClosure struct {
 	// Message The operator's message to the users; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
+	// Progress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+	// /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
+	// `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
+	Progress *AdminServiceClosureProgress `json:"progress,omitempty"`
+
 	// ShortNotice Whether the announcement gives the users less than 30 days from `announced_at` to
 	// `closes_at`, which the admin screen and the CLI warn about: the users may not have the
 	// time to export their data and move their accounts. A short notice is allowed.
@@ -4931,6 +4936,38 @@ type AdminServiceClosureCheck struct {
 	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
 	// their records with the CLI before discarding the data of the closed server.
 	RetentionHolds int `json:"retention_holds"`
+}
+
+// AdminServiceClosureDeliveries The deliveries of the closure's `Delete`s by state.
+type AdminServiceClosureDeliveries struct {
+	// Dead Used up their attempts; an operator may requeue their dead jobs.
+	Dead int `json:"dead"`
+
+	// Pending Not attempted yet, or failed and attempted again later.
+	Pending int `json:"pending"`
+
+	// PermanentFailure Refused for good.
+	PermanentFailure int `json:"permanent_failure"`
+
+	// Skipped Not sent, because the domain was suspended or the server unavailable.
+	Skipped int `json:"skipped"`
+
+	// Succeeded Accepted by the inbox.
+	Succeeded int `json:"succeeded"`
+}
+
+// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+// /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
+// `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
+type AdminServiceClosureProgress struct {
+	// Accounts The local accounts whose `Delete` is recorded.
+	Accounts int `json:"accounts"`
+
+	// Deliveries The deliveries of the closure's `Delete`s by state.
+	Deliveries AdminServiceClosureDeliveries `json:"deliveries"`
+
+	// FanoutsPending The recorded `Delete`s whose inboxes are still being computed.
+	FanoutsPending int `json:"fanouts_pending"`
 }
 
 // AdminSetting An instance setting: its value and what it accepts. Every value is a string in its
@@ -13155,7 +13192,8 @@ type ClientInterface interface {
 	// GetAdminServiceClosure Read the service closure
 	//
 	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-	// and whether its notice is short. Needs the `manage_service_closure` permission.
+	// and whether its notice is short; once the server is closed, the progress of the closure's
+	// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
 	//
 	// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
 	GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -17955,7 +17993,8 @@ func (c *Client) RunBillingImport(ctx context.Context, source BillingSourceName,
 // GetAdminServiceClosure Read the service closure
 //
 // The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-// and whether its notice is short. Needs the `manage_service_closure` permission.
+// and whether its notice is short; once the server is closed, the progress of the closure's
+// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
 //
 // Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
 func (c *Client) GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -36912,7 +36951,8 @@ type ClientWithResponsesInterface interface {
 	// GetAdminServiceClosureWithResponse Read the service closure
 	//
 	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-	// and whether its notice is short. Needs the `manage_service_closure` permission.
+	// and whether its notice is short; once the server is closed, the progress of the closure's
+	// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -59246,7 +59286,8 @@ func (c *ClientWithResponses) RunBillingImportWithResponse(ctx context.Context, 
 // GetAdminServiceClosureWithResponse Read the service closure
 //
 // The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
-// and whether its notice is short. Needs the `manage_service_closure` permission.
+// and whether its notice is short; once the server is closed, the progress of the closure's
+// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //

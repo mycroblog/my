@@ -62,6 +62,8 @@ type FanOutDeps struct {
 	Relays RelayInboxes
 	// Modes reads the federation mode when each batch runs (ADR-0076); nil federates both ways.
 	Modes ModeSettings
+	// Closure reads the service closure when each batch runs (ADR-0088 §2); nil never closes.
+	Closure ClosureSettings
 	// Moves reads the moves of local accounts: the movedTo of the Updates of their actors and the
 	// Moves they send (ADR-0089); nil means that no account moved, and fails the Moves.
 	Moves MoveReader
@@ -97,6 +99,12 @@ type FanOutDeps struct {
 // even when the mode is widened later. A retraction in a mode that does not publish goes only to
 // the inboxes of the original delivery and to the followers at the time, never to every known
 // shared inbox.
+//
+// The service closure comes before the mode (ADR-0088 §2, federation.ClosureSends): once the
+// server is closed, only the Delete of a local actor goes out, to its followers and every known
+// shared inbox whatever the mode, and everything else is skipped. The end of the fan-out of a
+// Delete of an actor and of a Move is recorded with its last batch (federation.RecordsFanOutEnd),
+// and when it is skipped or its object is gone, so that the closure can wait for it.
 //
 // Running a batch again inserts no delivery twice and enqueues no JobDeliver twice: the
 // deliveries are unique per (activity, inbox), and only new rows get a job.
@@ -144,6 +152,9 @@ func (f *FanOut) handle(ctx context.Context, j queue.Job) queue.Result {
 		return queue.Done()
 	case errors.Is(err, errGone), errors.Is(err, ErrFederationRestricted):
 		f.d.Logger.InfoContext(ctx, "outbound activity not fanned out", slog.String("outbound_activity_id", p.OutboundActivityID), slog.Any("reason", err))
+		if err := f.ended(ctx, p.OutboundActivityID); err != nil {
+			return queue.Retry(0, err)
+		}
 		return queue.Done()
 	case errors.Is(err, ErrNotFound), errors.Is(err, federation.ErrInvalidOutbound):
 		return queue.Fail(err)
@@ -167,12 +178,12 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	if err != nil {
 		return err
 	}
-	mode, err := currentMode(ctx, f.d.Modes)
+	sends, adds, why, err := f.sends(ctx, act, subj)
 	if err != nil {
 		return err
 	}
-	if !federation.Sends(mode, act, subj.retracting()) {
-		return fmt.Errorf("%w: %s %s skipped in mode %s", ErrFederationRestricted, act.Type, act.ID, mode)
+	if !sends {
+		return fmt.Errorf("%w: %s %s skipped %s", ErrFederationRestricted, act.Type, act.ID, why)
 	}
 	phases := subj.phases()
 	idx := slices.Index(phases, phase(p.Phase))
@@ -193,7 +204,7 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	// of one activity agree on its phases whatever the mode was when each ran; it finds no one.
 	var targets []target
 	var next string
-	if !phases[idx].adds() || federation.AddsRecipients(mode, act, subj.retracting()) {
+	if !phases[idx].adds() || adds {
 		if targets, next, err = f.batch(ctx, act, subj, phases[idx], p.After); err != nil {
 			return err
 		}
@@ -249,11 +260,50 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 		}
 		if nextJob != nil {
 			jobs = append(jobs, *nextJob)
+		} else if federation.RecordsFanOutEnd(act) {
+			if err := f.d.Repository.InsertFanOutCompletion(ctx, tx, act.ID, now); err != nil {
+				return err
+			}
 		}
 		if len(jobs) == 0 {
 			return nil
 		}
 		return f.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+	})
+}
+
+// sends reports whether act goes out when the batch runs, and whether it may reach recipients
+// that what it takes back never went to (federation.AddsRecipients); why tells a skipped one.
+// While the service closure delivers its Deletes, it alone decides (federation.ClosureSends);
+// otherwise the federation mode does.
+func (f *FanOut) sends(ctx context.Context, act federation.OutboundActivity, subj subject) (sends, adds bool, why string, err error) {
+	closing, err := closureRetracts(ctx, f.d.Closure)
+	if err != nil {
+		return false, false, "", err
+	}
+	if closing {
+		ok := federation.ClosureSends(act)
+		return ok, ok, "while the service is closed", nil
+	}
+	mode, err := currentMode(ctx, f.d.Modes)
+	if err != nil {
+		return false, false, "", err
+	}
+	return federation.Sends(mode, act, subj.retracting()), federation.AddsRecipients(mode, act, subj.retracting()), "in mode " + string(mode), nil
+}
+
+// ended records that the fan-out of the activity id ended without its last batch: it was
+// skipped, or its object is gone (federation.RecordsFanOutEnd).
+func (f *FanOut) ended(ctx context.Context, id string) error {
+	act, err := f.d.Repository.FindOutboundActivity(ctx, id)
+	if errors.Is(err, ErrNotFound) {
+		return nil
+	}
+	if err != nil || !federation.RecordsFanOutEnd(act) {
+		return err
+	}
+	return f.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return f.d.Repository.InsertFanOutCompletion(ctx, tx, act.ID, f.d.Clock.Now())
 	})
 }
 
