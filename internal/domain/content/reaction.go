@@ -78,7 +78,7 @@ var emojiForms = sync.OnceValue(func() map[string]string {
 	for _, line := range lines {
 		var b strings.Builder
 		for _, f := range strings.Fields(line) {
-			r, err := strconv.ParseUint(f, 16, 32)
+			r, err := strconv.ParseUint(f, 16, 21) // a code point fits in 21 bits
 			if err != nil {
 				panic("content: malformed emoji table: " + line)
 			}
