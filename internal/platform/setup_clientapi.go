@@ -31,7 +31,7 @@ func clientLimits(caps map[string]int64) func(string) (kernel.Limit, bool) {
 
 // setUpClientAPI registers the client API on every module, and makes the data of the webhook
 // messages the admin API's representation (ADR-0060). It comes after every module it serves.
-func (a *App) setUpClientAPI(cfg *config.Config, version string) {
+func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit kernel.Limit) {
 	api := clientapi.New(clientapi.Options{
 		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: cfg.SourceURL, StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
 		// The health endpoint of the uptime monitors (ADR-0085 §1).
@@ -89,7 +89,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		Supporters: a.Supporters, OwnSupporters: a.Supporters, CommerceDisclosurePath: web.PathAboutCommerceDisclosure,
 		// The payment provider's state and the reconciliation by hand (ADR-0074 §4).
 		Payments:    a.paymentsAPI(),
-		RateLimiter: a.RateLimiter, ClientLimit: clientLimits(cfg.OAuthClientRateLimits),
+		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(cfg.OAuthClientRateLimits),
 		Locales: a.Locales, RequestID: RequestID, Logger: a.Logger, Meter: a.Meter,
 	})
 	api.Register(clientAPIRouter{a})

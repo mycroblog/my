@@ -22,6 +22,8 @@ const pages: readonly { href: string; label: ClientMessageKey; permission?: Perm
   { href: "/settings/mutes", label: "client:settings.mutes.title" },
   { href: "/settings/domain-mutes", label: "client:settings.domain_mutes.title" },
   { href: "/settings/import-export", label: "client:settings.import_export.title" },
+  { href: "/settings/aliases", label: "client:account_move.aliases.title" },
+  { href: "/settings/move", label: "client:account_move.move.title" },
   { href: "/settings/custom-emojis", label: "client:custom_emojis.title", permission: "create_custom_emojis" },
   { href: "/settings/authorized-apps", label: "client:settings.authorized_apps.title" },
   { href: "/settings/apps", label: "client:settings.apps.title" },

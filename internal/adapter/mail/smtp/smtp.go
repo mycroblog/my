@@ -3,8 +3,9 @@
 // Package smtp implements the mailer port over SMTP with the standard library's net/smtp
 // (mail = smtp). It always upgrades the connection with STARTTLS and verifies the server's
 // certificate before it authenticates or sends anything, and refuses servers that do not offer
-// STARTTLS. A message with an HTML body is multipart/alternative with a text/plain and a
-// text/html part, one without is text/plain; every body is UTF-8, quoted-printable encoded.
+// STARTTLS. The message is the one that package message assembles: multipart/alternative
+// with a text/plain and a text/html part when it has an HTML body, text/plain otherwise, with
+// the addresses in 7-bit ASCII, since the mailer does not ask for SMTPUTF8.
 //
 // A reply of 5xx to RCPT TO with an enhanced status code 5.1.x (RFC 3463: the address does
 // not exist) fails with kernel.ErrRecipientRejected, any other 5xx to RCPT TO or DATA with
@@ -15,27 +16,20 @@
 package smtp
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
-	"maps"
-	"mime"
-	"mime/multipart"
-	"mime/quotedprintable"
 	"net"
 	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
-	"uuid"
 
+	"github.com/mycroblog/my/internal/adapter/mail/internal/message"
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
@@ -77,6 +71,11 @@ func New(o Options) (*Mailer, error) {
 	if a, err := mail.ParseAddress(o.From); err != nil || a.Name != "" || a.Address != o.From {
 		return nil, errors.New("smtp: the sender must be a bare address")
 	}
+	from, err := message.ASCIIAddress(o.From)
+	if err != nil {
+		return nil, fmt.Errorf("smtp: the sender: %w", err)
+	}
+	o.From = from
 	if o.HelloName == "" {
 		o.HelloName = "localhost"
 	}
@@ -94,7 +93,7 @@ func (m *Mailer) Send(ctx context.Context, msg kernel.MailMessage) error {
 	if err := kernel.ValidateMail(msg); err != nil {
 		return err
 	}
-	body, err := m.compose(msg, time.Now())
+	body, to, err := message.Compose(m.o.From, msg, time.Now())
 	if err != nil {
 		return err
 	}
@@ -114,7 +113,7 @@ func (m *Mailer) Send(ctx context.Context, msg kernel.MailMessage) error {
 		return fmt.Errorf("smtp: greeting from %s: %w", addr, err)
 	}
 	defer func() { _ = c.Close() }()
-	if err := m.dialogue(c, msg.To, body); err != nil {
+	if err := m.dialogue(c, to, body); err != nil {
 		return fmt.Errorf("smtp: %s: %w", addr, err)
 	}
 	return nil
@@ -184,71 +183,3 @@ func reply(command string, err error) error {
 	}
 	return &kernel.StatusError{Status: status, Err: out}
 }
-
-// compose returns the message in RFC 5322 form with CRLF line ends, multipart/alternative when
-// it has an HTML body. From carries the server's
-// name as its display name (RFC 2047), Reply-To the contact address when there is one,
-// Message-ID a UUIDv7 at the domain of the sender, and Auto-Submitted marks every message as
-// sent by a program so that auto-responders do not answer it (RFC 3834).
-func (m *Mailer) compose(msg kernel.MailMessage, now time.Time) ([]byte, error) {
-	domain := m.o.From[strings.LastIndexByte(m.o.From, '@')+1:]
-	var b bytes.Buffer
-	header := func(name, value string) { b.WriteString(name + ": " + value + "\r\n") }
-	header("From", fold((&mail.Address{Name: msg.FromName, Address: m.o.From}).String()))
-	header("To", msg.To)
-	if msg.ReplyTo != "" {
-		header("Reply-To", msg.ReplyTo)
-	}
-	header("Subject", fold(mime.QEncoding.Encode("utf-8", msg.Subject)))
-	header("Date", now.Format(time.RFC1123Z))
-	header("Message-ID", "<"+uuid.NewV7().String()+"@"+domain+">")
-	header("MIME-Version", "1.0")
-	header("Auto-Submitted", "auto-generated")
-	for _, name := range slices.Sorted(maps.Keys(msg.Headers)) {
-		header(name, msg.Headers[name])
-	}
-	if msg.HTML == "" {
-		header("Content-Type", "text/plain; charset=utf-8")
-		header("Content-Transfer-Encoding", "quoted-printable")
-		b.WriteString("\r\n")
-		if err := writeQuotedPrintable(&b, msg.Text); err != nil {
-			return nil, err
-		}
-		return b.Bytes(), nil
-	}
-	// The text and the HTML version of the same content, the preferred last (RFC 2046 §5.1.4).
-	parts := multipart.NewWriter(&b)
-	header("Content-Type", mime.FormatMediaType("multipart/alternative", map[string]string{"boundary": parts.Boundary()}))
-	b.WriteString("\r\n")
-	for _, part := range []struct{ contentType, body string }{
-		{"text/plain; charset=utf-8", msg.Text},
-		{"text/html; charset=utf-8", msg.HTML},
-	} {
-		w, err := parts.CreatePart(textproto.MIMEHeader{
-			"Content-Type": {part.contentType}, "Content-Transfer-Encoding": {"quoted-printable"},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if err := writeQuotedPrintable(w, part.body); err != nil {
-			return nil, err
-		}
-	}
-	if err := parts.Close(); err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
-}
-
-// writeQuotedPrintable writes body to w quoted-printable encoded, with CRLF line ends.
-func writeQuotedPrintable(w io.Writer, body string) error {
-	qp := quotedprintable.NewWriter(w)
-	if _, err := qp.Write([]byte(strings.ReplaceAll(body, "\r\n", "\n"))); err != nil {
-		return err
-	}
-	return qp.Close()
-}
-
-// fold breaks a header value between its encoded words (RFC 2047) so that no header line
-// exceeds the SMTP line limit.
-func fold(value string) string { return strings.ReplaceAll(value, "?= =?", "?=\r\n =?") }

@@ -34,6 +34,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 - [17. 通報](17-reports.md)
 - [18. アカウントの状態と異議申し立て](18-account-status-and-appeals.md)
 - [19. インポートとエクスポート](19-import-and-export.md)
+- [20. 別名とアカウントの移転](20-account-move.md)
 
 ## 1. React の基本
 

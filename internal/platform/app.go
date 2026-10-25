@@ -293,6 +293,10 @@ type AppOptions struct {
 	// the fake adapter of internal/adapter/payment/fake.
 	PaymentProvider supporters.PaymentProvider
 	SupporterSync   supporters.Syncer
+	// ClientAPIAccountLimit, when its Max is set, replaces the client API's per-account rate
+	// limit (clientapi.AccountLimit). Tests only, to reach the limit in a few requests and a
+	// short window (pkg/mykit/integration).
+	ClientAPIAccountLimit kernel.Limit
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -356,7 +360,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpDeadJobPurger(cfg)
-	if a.Mailer, err = newMailer(cfg, a.Logger); err != nil {
+	if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
 		return nil, err
 	}
 	a.HTTPClient = opts.HTTPClient
@@ -433,12 +437,12 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpMediaHTTP()
-	a.setUpClientAPI(cfg, opts.Version)
+	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
 	return a, nil
 }
 
-func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
+func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
 		return mailnone.New(logger), nil
@@ -447,6 +451,8 @@ func newMailer(cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 			Host: cfg.SMTPHost, Port: cfg.SMTPPort, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword,
 			From: cfg.MailFrom, HelloName: hostOnly(cfg.Host),
 		})
+	case "ses":
+		return newSESMailer(ctx, cfg)
 	default:
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}

@@ -70,3 +70,7 @@ export {
   supporterSubscriptionsQueryOptions,
 } from "./api/supporters";
 export { SupporterSettings } from "./components/SupporterSettings";
+// The service closure: announcing it, changing and withdrawing the announcement, checking and confirming the closing,
+// and the progress of its deliveries (ADR-0088), for manage_service_closure.
+export { adminClosureCheckQueryOptions, adminClosureQueryOptions } from "./api/closure";
+export { ServiceClosureSettings } from "./components/ServiceClosureSettings";

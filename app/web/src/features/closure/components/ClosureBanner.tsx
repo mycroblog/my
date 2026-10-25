@@ -9,7 +9,7 @@ import { useIntl } from "react-intl";
 import { hasClosed, isAnnounced, useClosure } from "../../../lib/closure";
 import { useT } from "../../../lib/i18n";
 import { useInstanceName } from "../../../lib/instanceName";
-import { dataExportPath } from "../../../lib/paths";
+import { accountMovePath, dataExportPath } from "../../../lib/paths";
 import { useViewer } from "../../session";
 
 /** The format of the dates of the notice. */
@@ -27,9 +27,14 @@ export function ClosureBanner() {
         label={t("client:closure.label")}
         headline={t("client:closure.announced.headline", { instance, date: intl.formatDate(closure.closes_at, dateFormat) })}
         actions={
-          <Link href={dataExportPath} variant="standalone">
-            {t("client:closure.announced.export")}
-          </Link>
+          <>
+            <Link href={dataExportPath} variant="standalone">
+              {t("client:closure.announced.export")}
+            </Link>
+            <Link href={accountMovePath} variant="standalone">
+              {t("client:account_move.closure.move")}
+            </Link>
+          </>
         }
       >
         <p>{t("client:closure.announced.export_until", { date: intl.formatDate(closure.export_until, dateFormat) })}</p>

@@ -101,6 +101,9 @@ type Config struct {
 	SMTPPort     int
 	SMTPUsername string
 	SMTPPassword string
+	// SESRegion and SESConfigurationSet configure mail = ses.
+	SESRegion           string
+	SESConfigurationSet string
 	// Captcha is the CAPTCHA service, or "none"; the keys configure it (ADR-0042).
 	Captcha          string
 	CaptchaSiteKey   string
@@ -251,6 +254,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int("smtp_port", c.SMTPPort),
 		slog.String("smtp_username", c.SMTPUsername),
 		slog.String("smtp_password", redact(c.SMTPPassword != "")),
+		slog.String("ses_region", c.SESRegion),
+		slog.String("ses_configuration_set", c.SESConfigurationSet),
 		slog.String("captcha", c.Captcha),
 		slog.String("captcha_site_key", c.CaptchaSiteKey),
 		slog.String("captcha_secret_key", redact(c.CaptchaSecretKey != "")),
