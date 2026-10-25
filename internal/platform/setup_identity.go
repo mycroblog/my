@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/queue"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -20,6 +21,11 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 	}
 	identity.RegisterModerationProjectors(a.Projectors, repo, a.Accounts, a.Clock)
 	identity.RegisterLifecycleProjectors(a.Projectors, repo, a.Accounts, a.Clock)
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue; its jobs are enqueued after the commit.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
 	a.Identity = identity.NewService(identity.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Passwords: identity.NewPasswordHasher(identity.DefaultArgon2Params, 0), Accounts: a.Accounts,
@@ -66,7 +72,8 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 			s, err := a.Instance.Settings(ctx)
 			return s.UserAppRegistration(), err
 		},
-		Mailer: a.Mailer,
+		// The use cases enqueue their emails, and only the jobs' handlers send them (ADR-0086 §1).
+		Mailer: a.Mailer, Outbox: outbox,
 		// The registration page screens sign-ups against the sign-up block list (FR-719).
 		SignupBlocks: a.Moderation,
 		// mail = none delivers nothing, so a moderator's approval stands in for verification (FR-002).
@@ -79,6 +86,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 	})
 	// The dynamically registered clients that nobody uses are deleted (ADR-0090 §1).
 	a.Identity.RegisterClientJobs(a.Handlers, a.Scheduler)
+	a.Identity.RegisterMailJobs(a.Handlers)
 	a.AccountAdmin = identity.NewAccountAdmin(identity.AccountAdminDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Restrictions: a.AccountPolicy,
 		Clock: a.Clock, IDs: a.IDs,

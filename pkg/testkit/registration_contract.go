@@ -69,13 +69,9 @@ type registration struct {
 func (e *accountEnv) registration(mode identity.RegistrationMode, requireVerification bool) registration {
 	m := &Mailer{}
 	return registration{
-		Service: appidentity.NewService(appidentity.Deps{
-			UnitOfWork: e.h.UnitOfWork, Repository: e.h.Identity, Clock: e.clock, IDs: e.ids, Passwords: e.hasher,
-			Accounts: e.accounts, RateLimiter: e.limiter,
-			RegistrationMode:         func(context.Context) (identity.RegistrationMode, error) { return mode, nil },
-			Mailer:                   m,
-			RequireEmailVerification: requireVerification,
-			BaseURL:                  "https://" + contractHost,
+		Service: e.newIdentityWith(func(d *appidentity.Deps) {
+			d.RegistrationMode = func(context.Context) (identity.RegistrationMode, error) { return mode, nil }
+			d.Mailer, d.RequireEmailVerification = m, requireVerification
 		}),
 		mailer: m,
 	}
@@ -134,8 +130,8 @@ func registrationOpen(t *testing.T, e *accountEnv) {
 	in := signUpInput("alice")
 	in.Reason, in.InviteCode = "ignored outside approval mode", "IGNORED"
 	got := r.signUp(t, in)
-	if got.State != identity.RegistrationApproved || got.MailError != nil {
-		t.Fatalf("SignUp = state %s, mail error %v; want approved and sent", got.State, got.MailError)
+	if got.State != identity.RegistrationApproved {
+		t.Fatalf("SignUp = state %s, want approved", got.State)
 	}
 	app, err := e.h.Identity.FindRegistrationApplication(t.Context(), got.User.ID)
 	if err != nil || app.Reason != "" || app.InviteID != "" || !app.SubmittedAt.Equal(got.User.CreatedAt) {

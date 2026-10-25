@@ -184,9 +184,7 @@ func (s *Service) RemovePassword(ctx context.Context, in RemovePasswordInput) er
 	if err := s.confirmPasskey(ctx, PasswordRemovalLimit, in.UserID, in.Passkey); err != nil {
 		return err
 	}
-	removed := false
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		removed = false
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		repo := s.d.Repository
 		if err := repo.LockSignInMethods(ctx, tx, in.UserID); err != nil {
 			return err
@@ -212,14 +210,6 @@ func (s *Service) RemovePassword(ctx context.Context, in RemovePasswordInput) er
 		if err := s.endOtherSessions(ctx, tx, in.UserID, in.KeepFamilyID, now); err != nil {
 			return err
 		}
-		removed = true
-		return nil
+		return s.enqueuePasswordNotice(ctx, tx, in.UserID, passwordRemoved, cred.ID)
 	})
-	if err != nil {
-		return err
-	}
-	if removed {
-		s.notifyPassword(ctx, in.UserID, passwordRemoved)
-	}
-	return nil
 }
