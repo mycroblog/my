@@ -9,7 +9,9 @@
 #
 # The integration tests (integration-vet, integration-test) live in pkg/mykit/integration, a test module that is never
 # published and joins the server module and pkg/mykit by `replace`: the Go client drives a server that
-# internal/platform/platformtest runs in the test process (ADR-0093 §8). They are part of this check, so they run in
+# internal/platform/platformtest runs in the test process (ADR-0093 §8). Those of pkg/mybot (mybot-integration-vet,
+# mybot-integration-test) live in pkg/mybot/integration, of the same shape: an echo bot against that server, and the
+# fake server of pkg/mybot/mybottest against the spec (ADR-0094 §10). They are part of this check, so they run in
 # `check:changed` and in the merge queue's `check` (the repo job of ci.yml) whenever the mykit context is selected:
 # a change of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
 # internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
@@ -17,9 +19,10 @@
 version: "3"
 
 vars:
-  # The integration module requires the server module's dependencies at the versions its go.mod lists. GOFLAGS
+  # The integration modules require the server module's dependencies at the versions their go.mod lists. GOFLAGS
   # -mod=mod lets a dependency update of the root go.mod (Dependabot) raise them instead of failing the build until
-  # pkg/mykit/integration/go.mod is tidied too; commit the go.mod and go.sum that a run updates.
+  # pkg/mykit/integration/go.mod and pkg/mybot/integration/go.mod are tidied too; commit the go.mod and go.sum that a
+  # run updates.
   INTEGRATION_GOFLAGS: -mod=mod
   # Permissive licenses only (ADR-0093 §2): the library's dependencies reach its users, so no copyleft license,
   # not even one compatible with AGPL-3.0 such as the GPL or MPL-2.0.
@@ -30,15 +33,15 @@ tasks:
     desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go checks of pkg/mybot
     # The license scope check (MIT in pkg/mykit and pkg/mybot) belongs to the api context, which a change of pkg/mykit alone does not
     # select.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, ":api:license-scope"]
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, mybot-integration-vet, mybot-integration-test, ":api:license-scope"]
 
   warm:
-    desc: Download the modules and build the packages and test binaries of pkg/mykit, its integration tests (with the server's packages), and pkg/mybot once, so that their checks a CI job runs in parallel read the build cache
+    desc: Download the modules and build the packages and test binaries of pkg/mykit and pkg/mybot and of the integration tests (with the server's packages) once, so that their checks a CI job runs in parallel read the build cache
     cmds:
       - for: [pkg/mykit, pkg/mybot]
         cmd: cd {{.ITEM}} && go mod download && go build ./... && go test -run '^$' ./...
-      - cmd: GOFLAGS={{.INTEGRATION_GOFLAGS}} go test -run '^$' ./...
-        dir: pkg/mykit/integration
+      - for: [pkg/mykit/integration, pkg/mybot/integration]
+        cmd: cd {{.ITEM}} && GOFLAGS={{.INTEGRATION_GOFLAGS}} go test -run '^$' ./...
 
   mod-check:
     desc: Fail if pkg/mykit/go.mod and go.sum are not tidy
@@ -185,3 +188,19 @@ tasks:
     dir: pkg/mybot
     cmds:
       - go tool -modfile=../../tools/go.mod go-licenses check --allowed_licenses={{.MYKIT_ALLOWED_LICENSES}} ./...
+
+  mybot-integration-vet:
+    desc: Run go vet on the integration tests of pkg/mybot (pkg/mybot/integration)
+    dir: pkg/mybot/integration
+    env:
+      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
+    cmds:
+      - go vet ./...
+
+  mybot-integration-test:
+    desc: Run the integration tests of pkg/mybot - an echo bot against a server in the test process, and the fake server of mybottest against the spec (pkg/mybot/integration)
+    dir: pkg/mybot/integration
+    env:
+      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
+    cmds:
+      - go test ./...

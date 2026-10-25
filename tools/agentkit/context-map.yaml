@@ -292,6 +292,8 @@ entries:
       - "pkg/mybot is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`) that requires pkg/mykit alone, replaced with ../mykit, and never the server module; the mykit context checks it (`scripts/task.sh mykit:check`, the mybot-* tasks)."
       - "What mykit lacks (stream reconnection, token rotation, retries) goes into mykit, never into mybot (ADR-0094 §2); mybot holds the receiving (catch-up, dedupe, Store), handlers, middleware, manners, and the send budget."
       - "Every parses its five-field cron expressions in pkg/mybot itself (schedule.go, no dependency; ADR-0094 §5); pkg/mybot/testdata/cron.json holds the accepted and refused expressions and their times, shared with the TypeScript mybot so that both take the same range."
+      - "pkg/mybot/mybottest is the fake server for the authors' tests (ADR-0094 §10): it answers only the operations that mybot calls, with the types of api/openapi.yaml; a new call of mybot needs its operation there, and pkg/mybot/integration checks the fake against the spec."
+      - "pkg/mybot/integration is an unpublished test module (MIT headers) that joins the server, pkg/mykit, and pkg/mybot by `replace`; an echo bot runs against internal/platform/platformtest across a cut stream and a restart, and the fake of mybottest is checked with internal/interface/clientapi/apitest. Run `scripts/task.sh mykit:mybot-integration-test`."
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace

@@ -54,5 +54,9 @@
 // event again posts nothing twice, and writes wait for a client-side budget (60 posts an hour, 60 other writes a
 // minute) and for the server's rate limit.
 //
+// Tests: the package mybottest is a fake server of the operations that a bot calls, for the tests of a bot's
+// handlers without a server: it sends the bot notifications (Inject), returns what the bot posted (Posted), and
+// moves the clock of its scheduled jobs.
+//
 // The library is MIT-licensed, apart from the AGPL-3.0 server.
 package mybot
