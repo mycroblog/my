@@ -27,6 +27,8 @@ WORKDIR /src
 COPY app/package.json app/bun.lock app/bunfig.toml app/
 COPY app/ui/package.json app/ui/
 COPY app/web/package.json app/web/
+# @mycroblog/mykit, a workspace package outside app/ that app/web depends on (ADR-0093 §1).
+COPY pkg/mykit/ts/package.json pkg/mykit/ts/
 COPY tools/i18n/package.json tools/i18n/bun.lock tools/i18n/bunfig.toml tools/i18n/
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     cd app && bun install --frozen-lockfile \
@@ -34,6 +36,7 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
 COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
 COPY app/ app/
+COPY pkg/mykit/ts/ pkg/mykit/ts/
 RUN cd tools/i18n && bun run src/gen.ts --ts \
     && cd ../../app/ui && bun run scripts/theme-tokens.ts --ts \
     && cd .. && bun run build
