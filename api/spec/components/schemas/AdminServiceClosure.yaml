@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: The service closure as its administrators see it (ADR-0088 §1).
 type: object
 required: [state, short_notice]

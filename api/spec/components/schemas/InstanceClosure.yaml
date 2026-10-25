@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: MIT
 description: |
   The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
   the server closes; absent when none is announced. Clients show it on every screen with the
