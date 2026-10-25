@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
@@ -78,9 +79,14 @@ func TestSignUpScreens(t *testing.T) {
 		t.Errorf("open sign-up status page:\n%s", body)
 	}
 
-	// The verification email went to the log and only there: the access log has no token.
+	// The verification email went to the log from its job, and only there: the access log and
+	// the job's log have no token.
 	logs := s.logs.String()
 	m := loggedLink.FindStringSubmatch(logs)
+	for deadline := time.Now().Add(10 * time.Second); m == nil && time.Now().Before(deadline); m = loggedLink.FindStringSubmatch(logs) {
+		time.Sleep(20 * time.Millisecond)
+		logs = s.logs.String()
+	}
 	if m == nil || !strings.Contains(logs, "mail not sent (mail = none)") {
 		t.Fatalf("no verification link in the log:\n%s", logs)
 	}
