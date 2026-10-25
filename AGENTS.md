@@ -86,7 +86,8 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   config keys and internal interfaces may still change in v0.x with release notes, and the client API follows [ADR-0090](docs/adr/0090-third-party-oauth-apps.md) §8.
   ActivityPub wire formats and federated URIs must always stay spec-compliant.
 - Do not add Mastodon *client* API compatibility code ([ADR-0007](docs/adr/0007-client-api.md)). Federation with Mastodon servers is still required.
-- Language: design docs (ADR, requirements) in Japanese during v0; code, identifiers, code comments, commit messages, and PR titles in English.
+- Language: design docs in Japanese during v0, every other document in English ([Documentation](#documentation));
+  code, identifiers, code comments, commit messages, and PR titles in English.
 - Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`; `!` for breaking).
 - License is AGPL-3.0-only ([ADR-0011](docs/adr/0011-license.md)). New source files start with `SPDX-License-Identifier: AGPL-3.0-only`;
   only add dependencies with AGPL-compatible licenses.
@@ -96,6 +97,22 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 - Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a feature branch
   (branches are deleted on merge). Before merge, link the PR instead.
 - Do not commit secrets, `.env` files, or credentials. Do not run destructive commands against remote resources.
+
+## Documentation
+
+- **English only, no Japanese copy**: documents for users, operators, and contributors — `README.md`, `CONTRIBUTING.md`,
+  `docs/README.md`, `docs/operations/`, `docs/reference/`, `docs/agents/`, `schema/README.md`, the comments of `deploy/`,
+  and the issue and PR templates. Write English prose, not a translation; UI terms match `locales/en`.
+  Japanese is fine inside code (an example of a `ja` string).
+- **Japanese during v0**: design documents — `docs/adr/`, `docs/requirements/`, `docs/architecture/`.
+- **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`, and
+  user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
+  GitHub issues and PRs (`ADR-0001`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
+  Contributor documents may cite the ADR a rule comes from.
+- `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules and that relative links and
+  their `#anchors` resolve. [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet
+  converted; that list only shrinks — when you add or rewrite a section of a listed file, convert the whole file and
+  remove it from the list.
 
 ## Design rules
 

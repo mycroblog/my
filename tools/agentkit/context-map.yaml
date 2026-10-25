@@ -40,7 +40,7 @@ entries:
   # --- Repository-wide ------------------------------------------------------------------------------
   - name: repo-meta
     paths: ["*.md", "LICENSE", ".editorconfig", ".gitattributes", ".gitignore", ".dockerignore", ".markdownlint-cli2.jsonc", ".tool-versions"]
-    docs: ["AGENTS.md#hard-rules"]
+    docs: ["AGENTS.md#hard-rules", "AGENTS.md#documentation"]
     checks: [docs]
   - name: build-and-ci
     paths: ["Taskfile.yml", "tasks/**", ".github/**", "scripts/**", ".claude/**"]
@@ -80,18 +80,29 @@ entries:
       - "Documents describe the present (ADR-0021): no history, no changelog wording."
   - name: agent-docs
     paths: ["docs/agents/**"]
-    docs: ["docs/adr/0014-task-management-and-agent-workflow.md"]
+    docs: ["docs/adr/0014-task-management-and-agent-workflow.md", "AGENTS.md#documentation"]
     checks: [docs]
+    notes:
+      - "Written in English (AGENTS.md#documentation)."
   - name: operations-docs
     paths: ["docs/operations/**"]
-    docs: ["AGENTS.md#hard-rules"]
+    docs: ["AGENTS.md#documentation", "AGENTS.md#hard-rules"]
     checks: [docs]
+    notes:
+      - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs: explain the behaviour itself. A file still in docs/lint.yaml's pending lists is converted whole, and removed from the lists, when you add or rewrite a section of it."
   - name: reference-docs
     paths: ["docs/reference/**"]
-    docs: ["docs/reference/build-tags.md"]
+    docs: ["docs/reference/build-tags.md", "AGENTS.md#documentation"]
     checks: [docs, go]
     notes:
       - "docs/reference/configuration.md is generated: `scripts/task.sh go:config-docs`."
+      - "English only, and no links to or citations of ADRs, docs/requirements, docs/architecture, or issues and PRs (AGENTS.md#documentation)."
+  - name: doc-rules
+    paths: ["docs/lint.yaml", "tools/agentkit/internal/docslint/**"]
+    docs: ["AGENTS.md#documentation", "tools/agentkit/README.md#documentation-rules"]
+    checks: [docs, agentkit]
+    notes:
+      - "docs/lint.yaml says which files each rule of `agentkit docs lint` (scripts/task.sh docs:rules) covers; its pending lists only shrink."
 
   # --- Server: shared rules ---------------------------------------------------------------------------
   - name: go-server

@@ -13,17 +13,17 @@ body:
   - type: textarea
     id: question
     attributes:
-      label: Question to decide / 決めること
+      label: Question to decide
     validations:
       required: true
   - type: textarea
     id: options
     attributes:
-      label: Options and recommendation / 選択肢と推奨
+      label: Options and recommendation
       description: Keep it to ~5 lines; details live in the ADR.
     validations:
       required: true
   - type: textarea
     id: blocking
     attributes:
-      label: Blocked work / この決定を待っている作業
+      label: Blocked work

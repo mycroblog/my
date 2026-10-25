@@ -2,7 +2,7 @@
 #
 # Development override of compose.yaml: adds Mailpit (mailpit/compose.yaml) and points `my serve` at it with
 # mail = smtp, so that the server's emails (verification, password reset, notifications) appear in Mailpit's web UI on
-# http://127.0.0.1:8025 instead of reaching anyone (docs/operations/email.md, "開発環境"). Never use it in production.
+# http://127.0.0.1:8025 instead of reaching anyone (docs/operations/email.md, development setup). Never use it in production.
 #
 #   scripts/mailpit-cert.sh
 #   docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
