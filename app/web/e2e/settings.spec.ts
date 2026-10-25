@@ -43,13 +43,13 @@ function json(route: Route, body: unknown, status = 200) {
  * What the played server is like beyond the defaults: the viewer's permissions, whether it sends email, and
  * whether the viewer has chosen their time zone (UTC) yet.
  */
-type ServerOptions = { permissions?: string[]; sendsEmail?: boolean; timeZoneChosen?: boolean };
+type ServerOptions = { permissions?: string[]; sendsEmail?: boolean; timeZoneChosen?: boolean; emailSuppression?: { kind: string; since: string } };
 
 /**
  * Plays the server of a signed-in user whose preferences start in `locale`: the refresh endpoint resumes the
  * session, and the preferences remember their changes (across reloads too). Returns the changes the app sent.
  */
-async function signedInServer(page: Page, locale: string, { permissions = [], sendsEmail = true, timeZoneChosen = true }: ServerOptions = {}) {
+async function signedInServer(page: Page, locale: string, { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression }: ServerOptions = {}) {
   let preferences = {
     locale,
     time_zone: "UTC",
@@ -58,6 +58,7 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
     default_post_language: "und",
     require_media_description: false,
     email_moderator_notifications: false,
+    ...(emailSuppression === undefined ? {} : { email_suppression: emailSuppression }),
     timeline_auto_insert: false,
     timeline_languages: [] as string[],
   };
@@ -616,6 +617,26 @@ test.describe("post defaults", () => {
     await page.reload();
     await expect(page.getByRole("main").getByRole("button", { name: message("settings.default_post_language.label") })).toContainText(japanese);
     await expect(page.getByRole("main").getByRole("switch", { name: message("settings.require_media_description.label") })).toBeChecked();
+  });
+});
+
+test.describe("email suppression", () => {
+  test("says that emails do not reach the address, and what to do", async ({ page, makeAxeBuilder }) => {
+    await signedInServer(page, projectLocale(), { emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    await page.goto("/settings/preferences");
+    const section = page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true });
+    await expect(section).toBeVisible();
+    await expect(section).toContainText(message("settings.email_suppression.hard_bounce"));
+    await expect(section).toContainText(message("settings.email_suppression.hard_bounce.action"));
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("shows nothing while emails reach the address", async ({ page }) => {
+    await signedInServer(page, projectLocale());
+    await page.goto("/settings/preferences");
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true })).toHaveCount(0);
   });
 });
 

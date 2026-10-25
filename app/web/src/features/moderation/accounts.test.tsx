@@ -526,6 +526,44 @@ describe("an account's admin page", () => {
     expect(requests.filter((request) => request.includes("two_factor"))).toEqual([`POST /admin/accounts/${bobDetail.id}/two_factor/disable`]);
   });
 
+  test("shows the email suppression of a local account and lifts it after its confirmation, keeping focus in its region", async () => {
+    const requests = recordAccountRequests();
+    let detail: Detail = { ...bobDetail, email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } };
+    server.use(
+      operatorHandler(["manage_accounts", "manage_reports", "view_audit"]),
+      http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(detail)),
+      http.post(`${apiBase}/admin/accounts/:id/email_suppression/lift`, () => {
+        const { email_suppression: _, ...lifted } = detail;
+        detail = lifted;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+
+    const region = await screen.findByRole("region", { name: "Email delivery" });
+    expect(within(region).getByText(/an email to it bounced/)).toBeInTheDocument();
+    expect(within(region).getByText(/^Since /)).toBeInTheDocument();
+    await user.click(within(region).getByRole("button", { name: "Lift the suppression" }));
+    const dialog = await screen.findByRole("alertdialog", { name: `Lift the email suppression of ${isolated("@bob")}?` });
+    await user.click(within(dialog).getByRole("button", { name: "Lift the suppression" }));
+
+    expect(await within(region).findByRole("status")).toHaveTextContent(`Lifted the email suppression of ${isolated("@bob")}.`);
+    expect(within(region).queryByRole("button", { name: "Lift the suppression" })).not.toBeInTheDocument();
+    expect(within(region).queryByText(/an email to it bounced/)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(region).getByRole("heading", { level: 2 })).toHaveFocus();
+    });
+    expect(requests.filter((request) => request.includes("email_suppression"))).toEqual([`POST /admin/accounts/${bobDetail.id}/email_suppression/lift`]);
+  });
+
+  test("an account without an email suppression shows no such region", async () => {
+    accountServer(bobDetail);
+    await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+
+    expect(await screen.findByRole("region", { name: "Two-factor authentication" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Email delivery" })).not.toBeInTheDocument();
+  });
+
   test("a moderator sees the two-factor authentication but cannot remove it", async () => {
     accountServer({ ...bobDetail, two_factor_enabled: true });
     await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
