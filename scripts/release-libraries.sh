@@ -12,13 +12,18 @@
 #   scripts/release-libraries.sh npm-dist-tag VERSION        Print the npm dist-tag of VERSION: `next` for a
 #                                                           pre-release, `latest` for a release.
 #   scripts/release-libraries.sh go-tags VERSION             Print the Go tags of the libraries, one per line.
+#   scripts/release-libraries.sh go-mod VERSION GO_MOD       Make GO_MOD (pkg/mybot/go.mod) require pkg/mykit at
+#                                                           VERSION, the tag of the same release, in place of its
+#                                                           placeholder; its `replace` with ../mykit stays, and the
+#                                                           module's users ignore it.
 #   scripts/release-libraries.sh notes VERSION               Print the libraries' section of the release notes.
 #
 # VERSION is the release's version, vX.Y.Z or vX.Y.Z-<pre-release> (release.yml's input).
 set -euo pipefail
 
 # The Go modules of the libraries, as pkg/<name>.
-GO_LIBRARIES=(pkg/mykit)
+GO_LIBRARIES=(pkg/mykit pkg/mybot)
+MYKIT_MODULE=github.com/mycroblog/my/pkg/mykit
 
 die() {
   echo "release-libraries: $*" >&2
@@ -77,6 +82,16 @@ cmd_go_tags() {
   done
 }
 
+cmd_go_mod() {
+  [ $# -eq 2 ] || die "usage: go-mod VERSION GO_MOD"
+  local gomod="$2" required
+  npm_version "$1" > /dev/null
+  [ -f "$gomod" ] || die "no such file: $gomod"
+  required="$(go mod edit -json "$gomod" | jq -r --arg m "$MYKIT_MODULE" '[.Require // [] | .[] | select(.Path == $m)] | length')"
+  [ "$required" = 1 ] || die "$gomod does not require $MYKIT_MODULE"
+  go mod edit -require="$MYKIT_MODULE@$1" "$gomod"
+}
+
 cmd_notes() {
   [ $# -eq 1 ] || die "usage: notes VERSION"
   local version tag
@@ -92,16 +107,28 @@ The client library of the client API, released with this version of the server
 - npm: \`npm install @mycroblog/mykit@$version\` (dist-tag \`$tag\`, with provenance)
 
 <!-- The breaking changes of the hand-written layer (the commits marked with \`!\`) and the deprecations of the generated client (ADR-0093 §8), or "None". -->
+
+## mybot
+
+The bot library on top of mykit, released with the same version
+([pkg/mybot](https://github.com/mycroblog/my/tree/pkg/mybot/$1/pkg/mybot), MIT).
+Its npm package depends on \`@mycroblog/mykit@$version\` exactly.
+
+- Go: \`go get github.com/mycroblog/my/pkg/mybot@$1\`
+- npm: \`npm install @mycroblog/mybot@$version\` (dist-tag \`$tag\`, with provenance)
+
+<!-- The breaking changes of mybot (the commits marked with \`!\`; ADR-0094 §1), or "None". -->
 EOF
 }
 
-[ $# -ge 1 ] || die "usage: $0 npm-version|npm-dist-tag|go-tags|notes ..."
+[ $# -ge 1 ] || die "usage: $0 npm-version|npm-dist-tag|go-tags|go-mod|notes ..."
 command="$1"
 shift
 case "$command" in
   npm-version) cmd_npm_version "$@" ;;
   npm-dist-tag) cmd_npm_dist_tag "$@" ;;
   go-tags) cmd_go_tags "$@" ;;
+  go-mod) cmd_go_mod "$@" ;;
   notes) cmd_notes "$@" ;;
   *) die "unknown command: $command" ;;
 esac

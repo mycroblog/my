@@ -5,10 +5,12 @@ name: Release
 # (github.sha) and, only when every job of the suite passed, tags the commit and creates a draft GitHub Release.
 # The decider reviews the draft and publishes it. docs/operations/releasing.md describes the procedure.
 #
-# The client libraries are released with the server at the same version (ADR-0093 §8): the release job tags the Go
-# module pkg/mykit as pkg/mykit/vX.Y.Z at the same commit, and the npm job publishes @mycroblog/mykit as X.Y.Z with
-# npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the dist-tag `next`.
-# scripts/release-libraries.sh holds the steps that version them.
+# The client libraries are released with the server at the same version (ADR-0093 §8, ADR-0094 §1): the release job
+# tags the Go module pkg/mykit as pkg/mykit/vX.Y.Z at the same commit, and pkg/mybot as pkg/mybot/vX.Y.Z at a commit
+# made on top of it whose pkg/mybot/go.mod requires pkg/mykit vX.Y.Z (on main it requires a placeholder replaced by
+# ../mykit). The npm job publishes @mycroblog/mykit and then @mycroblog/mybot, which depends on @mycroblog/mykit X.Y.Z
+# exactly, as X.Y.Z with npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the
+# dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
 # gate can be tried on a branch without making a release of it.
@@ -49,7 +51,7 @@ jobs:
             echo "::error::$REF is not main: release it as a pre-release version (vX.Y.Z-<pre-release>)."
             exit 1
           fi
-          for tag in "$VERSION" "pkg/mykit/$VERSION"; do
+          for tag in "$VERSION" "pkg/mykit/$VERSION" "pkg/mybot/$VERSION"; do
             if gh api "repos/$GH_REPO/git/ref/tags/$tag" > /dev/null 2>&1; then
               echo "::error::The tag $tag already exists."
               exit 1
@@ -76,6 +78,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # For `go mod edit` (scripts/release-libraries.sh go-mod); no module or build cache is needed.
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .tool-versions
+          cache: false
       - name: Tag the commit and the libraries, and create a draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,11 +103,27 @@ jobs:
             echo "::error::A release named $VERSION already exists."
             exit 1
           fi
-          # A draft release makes no tag until it is published: create the tags first, at the tested commit. The Go
-          # proxy takes a library's version from its tag (pkg/mykit/vX.Y.Z), so nothing else publishes the Go modules.
+          # pkg/mybot's tag needs a go.mod that requires pkg/mykit at this release's tag, which main cannot hold
+          # before the tag exists: make a commit on top of the tested one that changes only pkg/mybot/go.mod (its
+          # `replace` stays and is ignored by the module's users) and tag that. It is on no branch; the tag keeps it.
+          scripts/release-libraries.sh go-mod "$VERSION" pkg/mybot/go.mod
+          blob="$(jq -n --rawfile c pkg/mybot/go.mod '{content: $c, encoding: "utf-8"}' |
+            gh api "repos/$GH_REPO/git/blobs" --input - -q .sha)"
+          tree="$(gh api "repos/$GH_REPO/git/commits/$SHA" -q .tree.sha)"
+          tree="$(jq -n --arg base "$tree" --arg blob "$blob" \
+            '{base_tree: $base, tree: [{path: "pkg/mybot/go.mod", mode: "100644", type: "blob", sha: $blob}]}' |
+            gh api "repos/$GH_REPO/git/trees" --input - -q .sha)"
+          mybot="$(jq -n --arg tree "$tree" --arg parent "$SHA" --arg v "$VERSION" \
+            '{message: "chore(release): pkg/mybot \($v) requires pkg/mykit \($v)", tree: $tree, parents: [$parent]}' |
+            gh api "repos/$GH_REPO/git/commits" --input - -q .sha)"
+          # A draft release makes no tag until it is published: create the tags first, the server's and pkg/mykit's at
+          # the tested commit. The Go proxy takes a library's version from its tag, so nothing else publishes the Go
+          # modules.
           for tag in "$VERSION" "${libraries[@]}"; do
-            gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$SHA" > /dev/null
-            echo "Tagged $tag at $SHA." >> "$GITHUB_STEP_SUMMARY"
+            at="$SHA"
+            if [ "$tag" = "pkg/mybot/$VERSION" ]; then at="$mybot"; fi
+            gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$at" > /dev/null
+            echo "Tagged $tag at $at." >> "$GITHUB_STEP_SUMMARY"
           done
           prerelease=()
           if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
@@ -151,25 +175,30 @@ jobs:
       - name: Install the packages
         working-directory: app
         run: bun install --frozen-lockfile
-      - name: Build @mycroblog/mykit
-        working-directory: pkg/mykit/ts
-        run: bun run build
-      # After the build: npm publishes package.json as it is, with the release's version.
-      - name: Set the version
+      # mybot is built on mykit's build, as its users read it.
+      - name: Build @mycroblog/mykit and @mycroblog/mybot
+        run: |
+          (cd pkg/mykit/ts && bun run build)
+          (cd pkg/mybot/ts && bun run build)
+      # After the build: npm publishes package.json as it is, with the release's version, and mybot's dependency on
+      # @mycroblog/mykit (workspace:* in the repository) pinned to the same version.
+      - name: Set the versions
         env:
           VERSION: ${{ inputs.version }}
-        run: scripts/release-libraries.sh npm-version "$VERSION" pkg/mykit/ts
-      - name: Publish @mycroblog/mykit
-        working-directory: pkg/mykit/ts
+        run: scripts/release-libraries.sh npm-version "$VERSION" pkg/mykit/ts pkg/mybot/ts
+      - name: Publish @mycroblog/mykit and @mycroblog/mybot
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          name="$(jq -r .name package.json)"
-          version="$(jq -r .version package.json)"
-          tag="$(../../../scripts/release-libraries.sh npm-dist-tag "$VERSION")"
-          if [ "$(npm view "$name@$version" version 2> /dev/null)" = "$version" ]; then
-            echo "$name@$version is already on the registry." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          npm publish --provenance --access public --tag "$tag"
-          echo "Published $name@$version (dist-tag $tag) with provenance." >> "$GITHUB_STEP_SUMMARY"
+          tag="$(scripts/release-libraries.sh npm-dist-tag "$VERSION")"
+          # mykit first: mybot depends on that version of it.
+          for dir in pkg/mykit/ts pkg/mybot/ts; do
+            name="$(jq -r .name "$dir/package.json")"
+            version="$(jq -r .version "$dir/package.json")"
+            if [ "$(npm view "$name@$version" version 2> /dev/null)" = "$version" ]; then
+              echo "$name@$version is already on the registry." >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            (cd "$dir" && npm publish --provenance --access public --tag "$tag")
+            echo "Published $name@$version (dist-tag $tag) with provenance." >> "$GITHUB_STEP_SUMMARY"
+          done
