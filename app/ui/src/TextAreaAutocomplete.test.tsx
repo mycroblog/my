@@ -82,7 +82,7 @@ beforeEach(() => {
       disconnect() {}
     },
   );
-  Object.defineProperty(document, "fonts", { configurable: true, value: new EventTarget() });
+  Object.defineProperty(document, "fonts", { configurable: true, value: Object.assign(new EventTarget(), { ready: Promise.resolve() }) });
 });
 
 afterEach(() => {
