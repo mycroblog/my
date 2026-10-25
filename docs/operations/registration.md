@@ -1,146 +1,147 @@
-# 利用者登録（登録モード・招待・承認・メール確認）
+# User registration (registration modes, invites, approval, email confirmation)
 
-運営者向けの手順です。要件は FR-001・FR-002（[機能要件](../requirements/01-functional.md)）、テーブルは [データモデル §4.1](../architecture/data-model/04-tables/01-identity.md#41-identity)、
-トークンとレート制限は [ADR-0019 §4・§5](../adr/0019-security-baseline.md) です。
+This guide is for operators.
 
-## 登録画面
+## The sign-up page
 
-利用者は `https://<host>/auth/sign_up` で、ユーザー名・メールアドレス・パスワードを入力して登録します。
-登録すると、そのブラウザーはそのままログインした状態になります。
-画面は JavaScript なしで動き、ログイン画面と同じく CSRF トークンとクロスオリジン要求の拒否で守られます（ADR-0030）。
-ボット対策に CAPTCHA を選んだときは、登録とログインの画面にそのウィジェットを出し、JavaScript が要ります（[CAPTCHA](captcha.md)）。
+Users register at `https://<host>/auth/sign_up` with a username, an email address and a password.
+After registering, that browser is signed in right away.
+The page works without JavaScript and, like the sign-in page, is protected by a CSRF token and by rejecting cross-origin requests.
+When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
 
-登録モードはインスタンス設定 `registration_mode` で、CLI か Web クライアントの「サーバーの設定」（`/admin/settings`）で選びます（[インスタンス設定](instance-settings.md)）。変更は次の登録から効きます。サービスの終了を予告している間とクローズの後は、設定の値にかかわらず `closed` として扱います（[管理 CLI](admin-cli.md#サービスの終了の予告)）。
+The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client under "Server settings" (`/admin/settings`) ([instance settings](instance-settings.md)). A change applies from the next registration.
+While the server announces its closure and after it closes, registration is treated as `closed` whatever the setting says ([admin CLI](admin-cli.md#サービスの終了の予告)).
 
 ```sh
 my instance set registration_mode invite
 ```
 
-| モード | 画面 | 登録直後の状態 |
+| Mode | Page | State right after registering |
 | --- | --- | --- |
-| `open` | 誰でも登録できる | 承認済み。ただし `mail = none` ではモデレーターの承認待ち（下記） |
-| `approval`（既定） | 「参加したい理由」（任意、1000 文字まで）も尋ねる | 承認待ち |
-| `invite` | 招待コードが必須 | 承認済み |
-| `closed` | 受け付けない旨だけを表示する | — |
+| `open` | Anyone can register | Approved, except with `mail = none`, where it waits for a moderator's approval (see below) |
+| `approval` (default) | Also asks "Why do you want to join?" (optional, up to 1,000 characters) | Waiting for approval |
+| `invite` | An invite code is required | Approved |
+| `closed` | Only says that registration is not accepted | None |
 
-- 同じネットワーク（IP アドレス。IPv6 は `/64`）からの登録は 30 分に 5 回までです。超えると `429` と `Retry-After` を返します。
-- ユーザー名・メールアドレスが使われていれば、その項目にエラーを表示し、何も書き込みません（招待も消費しません）。
-- 登録とログインのたびに、接続元の IP アドレス（ログインでは User-Agent も）を記録します。記録は 180 日（インスタンス設定 `retention_session_origins`・`retention_registration_origins`、90 日以上）で自動的に消えます。保全中のアカウントの記録は残ります（[ADR-0038](../adr/0038-moderation-personal-data-retention.md)、[記録の保持期間と保全](moderation.md#記録の保持期間と保全)）。
-  プライバシーポリシーにはこの保持期間を書いてください。
+- Registrations from the same network (IP address; `/64` for IPv6) are limited to 5 per 30 minutes. Beyond that the server returns `429` with `Retry-After`.
+- If the username or the email address is taken, the page shows an error on that field and writes nothing (an invite is not consumed either).
+- On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days
+  (the instance settings `retention_session_origins` and `retention_registration_origins`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
+  State this retention period in your privacy policy.
 
-## アプリを使えるようになる条件
+## When a user can use the app
 
-承認待ち・却下された利用者や、メールアドレスを確認していない利用者も、ログイン画面にはログインできます。
-ログイン後は、何を待っているか（モデレーターの承認・メールアドレスの確認）、または登録が承認されなかったことを表示し、元の画面には進みません。
-アプリ（クライアント API の OAuth 認可とトークン発行）を使えるのは、承認済みで、メール確認が必要な構成ではメールアドレスを確認済みの利用者だけです。
+Users who are waiting for approval, were rejected, or have not confirmed their email address can still sign in on the sign-in page.
+After signing in, they see what they are waiting for (a moderator's approval, or confirmation of the email address), or that their registration was not approved, and they cannot go further.
+Only approved users can use the app (the OAuth authorization and token issuance of the client API), and on setups that require email confirmation, only those who have confirmed their email address.
 
-`my admin create` で作った管理者は承認済み・確認済みとして扱います。
+An administrator created with `my admin create` counts as approved and confirmed.
 
-## メール確認
+## Email confirmation
 
-設定 `mail`（[設定リファレンス](../reference/configuration.md#mail)）で送信方法を選びます。
-SMTP の設定例・DNS の設定・送信の失敗の見方は [メールの送信](email.md) にあります。
+The setting `mail` ([configuration reference](../reference/configuration.md#mail)) selects how mail is sent.
+SMTP examples, DNS setup and how to read delivery failures are in [sending email](email.md).
 
-- `mail = smtp`: 登録時に確認メールを送ります。リンクの有効期限は 24 時間で、1 回だけ使えます。
-  リンクを開くと確認ボタンの画面になり、ボタンを押すと確認済みになります（メールのリンクを先読みするスキャナーでトークンを消費しないため）。
-  利用者はログイン後の画面から 1 時間に 3 回まで再送できます。
-  SMTP サーバーへの接続は必ず STARTTLS で暗号化し、証明書を検証してから認証・送信します。STARTTLS を提供しないサーバーには送りません。
-- `mail = none`（既定）: メールを送らず、本文（確認リンクを含む）をサーバーのログに `mail not sent (mail = none)` として出します。
-  利用者にメールが届かないので、メール確認の代わりにモデレーターの承認を求めます（FR-002）。
-  このため `open` モードの登録も承認待ちで始まり、メールアドレスが未確認でもアプリの利用は妨げません。
+- `mail = smtp`: the server sends a confirmation mail on registration. The link is valid for 24 hours and works once.
+  Opening the link shows a page with a confirm button, and the address is confirmed when the user presses it (so that scanners that prefetch links in mail do not consume the token).
+  After signing in, the user can have the mail sent again up to 3 times an hour.
+  The connection to the SMTP server is always encrypted with STARTTLS, and the server verifies the certificate before authenticating and sending. It never sends to a server that does not offer STARTTLS.
+- `mail = none` (default): the server sends no mail and writes the body (including the confirmation link) to the server log as `mail not sent (mail = none)`.
+  Because mail never reaches the user, the server asks for a moderator's approval instead of email confirmation.
+  So a registration in `open` mode also starts as waiting for approval, and an unconfirmed email address does not block use of the app.
 
-確認トークンはこのログ行のほかには記録しません（アクセスログはクエリ文字列を記録しません）。DB にはトークンの SHA-256 だけを保存します。
+The confirmation token is recorded nowhere except this log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
 
-## パスワードのリセットと変更
+## Password reset and change
 
-- `mail = smtp`: ログインの画面の「パスワードを忘れたとき」でメールアドレスを入れると、そのアドレスを主アドレスにする利用者に、新しいパスワードを設定するリンクを送ります。
-  画面の答えはアカウントの有無で変わりません。リンクは 1 時間・1 回だけ使え、その後にパスワードがほかの方法で変わると使えなくなります。
-  要求は接続元の IP アドレスごとに 30 分に 5 回まで、メールは 1 つのアドレスに 1 時間に 3 通までです（それを超えた要求は何も送らず、同じ答えを返します）。CAPTCHA を有効にしていれば、このフォームでも検証します。
-- `mail = none`: 画面はリンクを送れないことと、管理者に頼むことを伝えます。管理者は管理画面のアカウントのページか `my admin account password-reset-link @alice` でリンクを発行して本人に渡します（[モデレーション](moderation.md)）。
-- 利用者はログインしたまま、設定の「パスワード」で現在のパスワードを入れて変えられます（間違いは利用者ごとに 1 時間 5 回まで）。
-- リセットでも変更でも、新しいパスワードはその利用者のほかのセッションとアプリのトークンを失効させます（設定からの変更では、変更したアプリだけが残ります）。パスキーと二要素認証は残ります。
-  `mail = smtp` では、変更したことを本人にメールで知らせます。
+- `mail = smtp`: when a user enters an email address under "Forgot your password?" on the sign-in page, the server sends a link for setting a new password to the user whose primary address it is.
+  The page's answer is the same whether or not an account exists. The link is valid for 1 hour and works once, and it stops working if the password changes by another route in the meantime.
+  Requests are limited to 5 per 30 minutes per client IP address, and mail to 3 per hour per address (a request over a limit sends nothing and gets the same answer). When CAPTCHA is enabled, this form is verified too.
+- `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
+- A signed-in user can change the password under "Password" in settings by entering the current password (wrong entries are limited to 5 per hour per user).
+- A reset or a change revokes the user's other sessions and app tokens (a change from settings keeps only the app that made the change). Passkeys and two-factor authentication stay.
+  With `mail = smtp`, the server also emails the user to say the password changed.
 
-## 招待コード
+## Invite codes
 
 ```sh
-my invite create                          # 1 回だけ使え、7 日で期限切れになる招待
+my invite create                          # single use, expires in 7 days
 my invite create -max-uses 10 -expires-in 72h
-my invite create -max-uses 0 -expires-in 0  # 回数・期限の制限なし
-my invite list                            # 新しい順。状態は usable / revoked / expired / used up
+my invite create -max-uses 0 -expires-in 0  # no limit on uses or time
+my invite list                            # newest first; states: usable / revoked / expired / used up
 my invite revoke <code>
 ```
 
-- `create` はコード（16 文字）と、コードを入力済みの登録画面のリンク（`https://<host>/auth/sign_up?invite=<code>`）を表示します。
-- コードは大文字小文字・空白・ハイフンを区別せずに照合します。
-- 同時に登録されても、使用回数の上限を超えて使われることはありません（`invite_redemptions` の一意制約）。
-- 取り消したコード・期限切れのコード・使い切ったコードは、どれも同じエラー（使えない招待）になります。
-- 招待は CLI のほか、Web クライアントのモデレーションの画面（「招待」、`/moderation/invites`）とクライアント API
-  （`GET` / `POST /api/v1/admin/invites`・`POST /api/v1/admin/invites/{id}/revoke`）で作成・一覧・失効できます。どちらもロールの権限 `manage_invites` が要ります
-  （組み込みの `moderator` は持たないので、任せるときはその権限を持つロールを作って与えます）。
-  画面は作成した招待のコードと登録画面のリンクを出し、使える招待のリンクをコピーできます。登録モードが `invite` でないときは、招待では誰も登録できないことを画面に出します。
-- 招待の作成と失効は、画面・API・CLI のどれからでも監査ログ（`invite_created`・`invite_revoked`）に残ります。対象の名前はコードの先頭 4 文字（`ABCD…`）で、コード全体は監査ログに写しません。
-  失効済みの招待をもう一度失効しても何も変わらないので、記録しません。
+- `create` prints the code (16 characters) and the link to the sign-up page with the code filled in (`https://<host>/auth/sign_up?invite=<code>`).
+- Codes are matched ignoring case, spaces and hyphens.
+- Even when several people register at once, a code is never used beyond its limit (a unique constraint on `invite_redemptions`).
+- A revoked, expired or used-up code all give the same error (an unusable invite).
+- Besides the CLI, you can create, list and revoke invites in the web client's Moderation screens ("Invites", `/moderation/invites`) and through the client API
+  (`GET` / `POST /api/v1/admin/invites` and `POST /api/v1/admin/invites/{id}/revoke`). Both need the role permission `manage_invites`
+  (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
+  The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite. When the registration mode is not `invite`, the screen says that nobody can register with an invite.
+- Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
+  Revoking an already revoked invite changes nothing, so it is not recorded.
 
-## 承認と却下
+## Approving and rejecting
 
 ```sh
-my registration list                      # 承認待ち（待ちが長い順）。理由・メール確認の有無も表示する
+my registration list                      # waiting for approval (longest wait first); shows the reason and whether the email is confirmed
 my registration list -state rejected
 my registration approve alice
 my registration reject -note "spam" bob
 ```
 
-- 引数はローカルアカウントのユーザー名です（先頭の `@` は省けます）。
-- 決定できるのは承認待ちの登録だけです。決定済みの登録や、登録画面を通らずに作られた利用者（`my admin create`）に対しては、何も変更せずに終了コード 1 で終わります。
-- 終了コード 2 は引数の誤りです。
+- The argument is the username of a local account (the leading `@` may be omitted).
+- Only registrations that are waiting for approval can be decided. For a decided registration, or a user created without the sign-up page (`my admin create`), the command changes nothing and exits with code 1.
+- Exit code 2 means a wrong argument.
 
-管理画面（クライアント API）からも同じ決定ができます。どれも `manage_accounts` 権限が要ります。
+The same decisions can be made from the admin screens (the client API). All of them need the `manage_accounts` permission.
 
-| 操作 | 内容 |
+| Operation | What it does |
 | --- | --- |
-| `GET /api/v1/admin/registrations` | 承認待ちの登録（待ちが長い順）。登録の理由・メールアドレスと確認の有無・ローカルアカウントを返す |
-| `POST /api/v1/admin/registrations/{user_id}/approve` | 承認する。本文 `{"note": "..."}` は省ける |
-| `POST /api/v1/admin/registrations/{user_id}/reject` | 却下する。本文は `approve` と同じ |
+| `GET /api/v1/admin/registrations` | Registrations waiting for approval (longest wait first). Returns the reason for joining, the email address and whether it is confirmed, and the local account |
+| `POST /api/v1/admin/registrations/{user_id}/approve` | Approves. The body `{"note": "..."}` is optional |
+| `POST /api/v1/admin/registrations/{user_id}/reject` | Rejects. The body is the same as for `approve` |
 
-- CLI と同じユースケースで、決定を `registration_decisions` と監査ログ（`registration_approved`・`registration_rejected`）に記録します。CLI の決定の操作者は `cli`、API の決定の操作者は決めたモデレーターです。
-- 決定済みの登録をもう一度決定しても何も変わらず、今の状態を返します（同時に決定しても、決定は 1 つだけです）。登録画面を通らずに作られた利用者は 404 です。
+- This is the same use case as the CLI, and it records the decision in `registration_decisions` and the audit log (`registration_approved`, `registration_rejected`). The actor of a CLI decision is `cli`; the actor of an API decision is the moderator who decided.
+- Deciding an already decided registration changes nothing and returns the current state (if two people decide at once, only one decision is recorded). A user created without the sign-up page gives 404.
 
-## 登録の拒否リスト
+## Sign-up blocks
 
-メールアドレスのドメイン・メールアドレス・IP の範囲で、登録画面からの登録を拒否するか承認制に切り替えます（FR-719）。
+Blocks reject registrations from the sign-up page, or switch them to approval, by email domain, email address or IP range.
 
 ```sh
-my admin signup-block add -kind email_domain spam.example          # サブドメインにも効く。U-label も可
+my admin signup-block add -kind email_domain spam.example          # also applies to subdomains; a U-label works too
 my admin signup-block add -kind ip_range -severity require_approval -duration 720h 192.0.2.0/24
-my admin signup-block add -kind email_hash spammer@example.com     # アドレスはハッシュだけを残す
+my admin signup-block add -kind email_hash spammer@example.com     # only a hash of the address is kept
 my admin signup-block list -active
 my admin signup-block lift <block id>
 ```
 
-- `-severity reject`（既定）に当たる登録は受け付けず、`require_approval` に当たる登録は登録モードに関わらず承認待ちで始まります。複数に当たれば強いほうが効きます。登録画面は拒否の理由を示しません。
-- `email_hash` は小文字にし、ローカル部の最初の `+` 以降を除いたアドレスで照合します。IP の範囲は登録元の IP（`registration_origins` と同じ値）で照合し、IP の分からない登録には効きません。
-- 期限切れ・解除済みの拒否は効きません。追加と解除は監査ログ（`signup_block_added`・`signup_block_lifted`）に残ります。
-- ローカルアカウントの BAN で `-block-email`（API は `block_email: true`）を付けると、その利用者のメールアドレスの `email_hash` の拒否を同時に作ります。
+- A registration that matches a block with `-severity reject` (the default) is refused, and one that matches `require_approval` starts as waiting for approval whatever the registration mode is. When several match, the stronger one applies. The sign-up page does not show the reason for a rejection.
+- `email_hash` is matched against the address in lower case, without the part of the local part from the first `+`. An IP range is matched against the registration IP (the same value as `registration_origins`) and never applies to a registration whose IP is unknown.
+- Expired and lifted blocks have no effect. Adding and lifting are recorded in the audit log (`signup_block_added`, `signup_block_lifted`).
+- When you ban a local account with `-block-email` (`block_email: true` in the API), the server also creates an `email_hash` block for that user's email address.
 
-使い捨てメールのサービスのドメインのように数千件ある一覧は、`import` でファイル（`-` で標準入力）からまとめて足します。すべての値に同じ種類・強さ・コメント・期間が付きます。
+For a list of thousands of entries, such as the domains of disposable email services, add them in bulk with `import` from a file (`-` for standard input). Every value gets the same kind, severity, comment and duration.
 
 ```sh
 my admin signup-block import -kind email_domain -comment "disposable email" disposable.txt
 ```
 
-- 一覧は 1 行に 1 つの値（`add` の `<value>` と同じ形）か、最初の列を値とする CSV の行です。空行と `#` で始まる行は読み飛ばします。1 回に 10,000 件までです。
-- 足せた件数と、足さなかった行の番号・値・理由を表示します。理由は `invalid`（その種類の値として正しくない）、`duplicate`（同じ一覧の前の行と正規形が同じ）、`already_blocked`（同じ種類・値で、同じかより強い拒否が効いている）です。
-- 足した拒否は 1 件ずつ `add` と同じく監査ログ（`signup_block_added`）に残り、1 件ずつ解除できます。
-- 数百件ずつのトランザクションで書くので、途中で失敗しても、それまでに足した分は残ります。同じ一覧をもう一度読み込めば、残りだけが足されます。
-- 一覧はこのソフトウェアに同梱せず、URL からの定期的な取り込みもしません。公開の一覧（GitHub の disposable-email-domains など）の取得と更新は運営者が行い、更新した一覧をもう一度読み込みます。
+- The list has one value per line (the same form as `<value>` of `add`), or CSV rows whose first column is the value. Blank lines and lines that start with `#` are skipped. One import takes up to 10,000 entries.
+- The command prints how many were added and, for each row it did not add, the line number, the value and the reason. The reason is `invalid` (not a valid value of that kind), `duplicate` (the same normal form as an earlier row of the same list) or `already_blocked` (a block of the same kind and value that is equally or more severe is in effect).
+- Each added block is recorded in the audit log (`signup_block_added`) as with `add`, and can be lifted one by one.
+- The import writes in transactions of a few hundred, so if it fails midway, what was added before stays. Importing the same list again adds only the rest.
+- The software ships no list and does not fetch one from a URL periodically. You fetch and update public lists (such as disposable-email-domains on GitHub) yourself and import the updated list again.
 
-管理画面（クライアント API）からも同じ操作ができます。どれも `manage_accounts` 権限が要ります。
+The same operations are available from the admin screens (the client API). All of them need the `manage_accounts` permission.
 
-| 操作 | 内容 |
+| Operation | What it does |
 | --- | --- |
-| `GET /api/v1/admin/signup_blocks` | 拒否の一覧（新しい順）。`kind`・`active` で絞り込める |
-| `POST /api/v1/admin/signup_blocks` | 拒否を追加する。本文は `kind`・`value`・`severity`・`comment`・`expires_in`（秒） |
-| `POST /api/v1/admin/signup_blocks/import` | 一覧からまとめて追加する。本文は `kind`・`text`（一覧）・`severity`・`comment`・`expires_in`。応答は足した件数 `added` と足さなかった行 `skipped`（`line`・`value`・`reason`） |
-| `GET /api/v1/admin/signup_blocks/{id}` | 拒否を 1 件返す |
-| `POST /api/v1/admin/signup_blocks/{id}/lift` | 拒否を解除する。解除済みなら何も変えない |
+| `GET /api/v1/admin/signup_blocks` | Lists blocks (newest first). Filter with `kind` and `active` |
+| `POST /api/v1/admin/signup_blocks` | Adds a block. The body has `kind`, `value`, `severity`, `comment` and `expires_in` (seconds) |
+| `POST /api/v1/admin/signup_blocks/import` | Adds blocks from a list. The body has `kind`, `text` (the list), `severity`, `comment` and `expires_in`. The response has `added`, the number added, and `skipped`, the rows not added (`line`, `value`, `reason`) |
+| `GET /api/v1/admin/signup_blocks/{id}` | Returns one block |
+| `POST /api/v1/admin/signup_blocks/{id}/lift` | Lifts a block. A block already lifted stays as it is |

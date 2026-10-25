@@ -1,58 +1,58 @@
-# アカウント・ドメインへの処分と通報の対応
+# Account and domain actions, and handling reports
 
-運営者・モデレーター向けの手順です。要件は FR-701〜FR-703・FR-707・FR-714・FR-718（[機能要件](../requirements/01-functional.md)）、
-テーブルは [データモデル §4.3](../architecture/data-model/04-tables/03-moderation.md#43-moderation)、連合への効き方は [federation.md §11](../architecture/federation.md#11-モデレーションとの連携) です。
+This guide is for operators and moderators.
 
-アカウントの管理（管理 API だけ）を除き、どれも管理 API（`/api/v1/admin/...`、スコープ `admin:read` / `admin:write`）と CLI（`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`）で行えます。
-管理 API はロールの権限を要します。アカウントの管理と処分と異議申し立ては `manage_accounts`、ドメイン単位の処分は `manage_domains`、通報は `manage_reports` です。
-CLI はサーバーと同じ設定（`-config` か環境変数）で DB に直接つなぎ、操作者の利用者を記録しません（`issued_by_user_id` などは NULL、[監査ログ](#監査ログ)の操作者は `cli`）。
+Everything here except account management (admin API only) can be done through the admin API (`/api/v1/admin/...`, scopes `admin:read` / `admin:write`) and the CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
+The admin API requires role permissions: account management, actions and appeals need `manage_accounts`, domain actions need `manage_domains`, and reports need `manage_reports`.
+The CLI connects to the DB directly with the same configuration as the server (`-config` or environment variables) and does not record which user operated it (`issued_by_user_id` and similar fields are NULL, and the actor in the [audit log](#audit-log) is `cli`).
 
-## Web クライアントのモデレーションとサーバー管理
+## Moderation and server administration in the web client
 
-Web クライアントは、スタッフの画面を 2 つに分けます（[ADR-0058](../adr/0058-moderation-admin-separation.md)）。
-ナビゲーションには、ロールが各区分の権限のどれかを持つ人にだけ「モデレーション」と「管理」が出ます。どの画面も、権限のない人には理由だけを出し、サーバーも要求を断ります。
+The web client splits the staff screens in two.
+The navigation shows "Moderation" and "Administration" only to people whose role has at least one permission of that group. Every screen shows only a reason to people without the permission, and the server rejects their requests too.
 
-| 区分 | 権限 | 画面 |
+| Group | Permissions | Screens |
 | --- | --- | --- |
-| モデレーション（`/moderation`） | `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit` | 通報（`/moderation/reports`）・異議申し立て（`/moderation/appeals`）・アカウント（`/moderation/accounts`）・登録の審査（`/moderation/registrations`）・登録の拒否リスト（`/moderation/signup-blocks`）・招待（`/moderation/invites`）・ドメインへの処分（`/moderation/domain-actions`）・連合先（`/moderation/instances`）・監査ログ（`/moderation/audit-log`） |
-| サーバー管理（`/admin`） | `manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`・`manage_service_closure` | サーバーの設定（`/admin/settings`）・ルール（`/admin/rules`）・規約とポリシー（`/admin/documents`）・ジョブのキューと失敗したジョブ（`/admin/jobs`）・カスタム絵文字（`/admin/custom-emojis`）・お知らせ（`/admin/announcements`）・Webhook（`/admin/webhooks`）・費用と利用料金の取り込み（`/admin/finance`、`manage_finance`）。`manage_login_recovery`（ログインの回復: 二要素認証の解除とパスワードリセットのリンクの発行）はアカウントのページ（`/moderation/accounts/{id}`、`manage_accounts` も要る）の区画に出ます |
+| Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Reports (`/moderation/reports`), Appeals (`/moderation/appeals`), Accounts (`/moderation/accounts`), Registrations (`/moderation/registrations`), Sign-up blocks (`/moderation/signup-blocks`), Invites (`/moderation/invites`), Domain actions (`/moderation/domain-actions`), Remote servers (`/moderation/instances`), Audit log (`/moderation/audit-log`) |
+| Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), costs and billing import (`/admin/finance`, `manage_finance`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) appears in a section of the account page (`/moderation/accounts/{id}`, which also needs `manage_accounts`) |
 
-- 「モデレーション」のバッジは、未解決の通報・承認待ちの登録・審査待ちの異議申し立ての合計です（[モデレーターへの通知と未対応の件数](#モデレーターへの通知と未対応の件数)）。「管理」には件数を出しません。
-- 組み込みの `moderator` は `manage_reports`・`manage_accounts`・`view_audit` だけを持ち、「管理」は出ません。ドメインへの処分と連合先の画面（`manage_domains`）も出ないので、
-  モデレーターに任せるときは、その権限を持つロールを作って与えます（[ロールの付与と剥奪](admin-cli.md#ロールの付与と剥奪)）。
-- 管理 API の経路は区分によらず `/api/v1/admin/...` のままで、スコープも `admin:read` / `admin:write` の 1 組です。区分は API リファレンスのタグ（`admin-moderation`・`admin-server`）で分かれます。
-- 権限には 3 つめの区分「利用者の機能」（`view_finance`）があり、スタッフの画面の外にあります（[ADR-0070](../adr/0070-permission-split-emoji-finance.md)）。これだけを持つ人には「モデレーション」も「管理」も出ず、`view_finance` を持つ人のナビゲーションには設定の後に「会計」（`/finance`）が出ます。
-  API は利用者の名前空間（`GET /api/v1/finance/cost_totals`・`GET /api/v1/finance/income_totals`、スコープ `read:finance`）で、`admin:*` のスコープを要しません。見せる範囲は[インスタンス設定](instance-settings.md)の `finance_viewer_*` で決めます。
+- The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
+- The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
+  so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#ロールの付与と剥奪)).
+- The admin API paths stay `/api/v1/admin/...` whatever the group, and the scopes are the same pair `admin:read` / `admin:write`. The groups are separated by tags in the API reference (`admin-moderation`, `admin-server`).
+- There is a third group of permissions, "user features" (`view_finance`), which lives outside the staff screens. Someone who has only this permission sees neither "Moderation" nor "Administration",
+  and for someone with `view_finance` the navigation shows "Finances" (`/finance`) after Settings.
+  Its API is in the user namespace (`GET /api/v1/finance/cost_totals` and `GET /api/v1/finance/income_totals`, scope `read:finance`) and needs no `admin:*` scope. What it shows is set by `finance_viewer_*` in the [instance settings](instance-settings.md).
 
-## アカウントへの処分
+## Account actions
 
-処分は記録したトランザクションで制限の投影（`account_restrictions`）に反映され、次の要求から効きます（[データモデル §5.2](../architecture/data-model/05-states-and-policies.md#52-処分の種類と制限能力の剥奪)）。
+An action is applied to the restriction projection (`account_restrictions`) in the transaction that records it, and takes effect from the next request.
 
-| 種類 | ローカルのアカウントへの効果 |
+| Kind | Effect on a local account |
 | --- | --- |
-| `warn` | 制限はない（本人に知らせるだけ） |
-| `force_sensitive` | 添付をすべてセンシティブとして表示する |
-| `limit` | 投稿（過去の投稿を含む）をフォロワー限定として扱い、公開タイムラインに出さない |
-| `restrict_posting` | 投稿・返信・ブースト・編集を禁止する |
-| `restrict_interaction` | フォロー・お気に入り・ブースト・返信を禁止する |
-| `disable_login` | アプリと API の利用を禁止し、有効なセッションとトークンを失効させる（ログイン画面では処分を確かめられる） |
-| `suspend` | 上の制限をすべて課し、プロフィールと投稿を本人以外に見せない |
-| `ban` | `suspend` と同じ制限を課し、30 日後にアカウントを削除する。解除できない（その 30 日のあいだの異議申し立てを覆したときだけ取り消される） |
-| `delete_statuses` | 指定した投稿を削除する。本人にも見えなくなり、連合先には本人の削除と同じ `Delete` を送る |
-| `mark_statuses_sensitive` | 指定した投稿の添付をセンシティブとして表示する |
+| `warn` | No restriction (only informs the user) |
+| `force_sensitive` | Shows all attachments as sensitive |
+| `limit` | Treats posts (including past ones) as followers-only and keeps them off the public timelines |
+| `restrict_posting` | Forbids posting, replying, boosting and editing |
+| `restrict_interaction` | Forbids following, favoriting, boosting and replying |
+| `disable_login` | Forbids use of the app and the API, and revokes active sessions and tokens (the sign-in page still lets the user see the action) |
+| `suspend` | Applies all the restrictions above, and hides the profile and posts from everyone but the user |
+| `ban` | Applies the same restrictions as `suspend` and deletes the account after 30 days. It cannot be lifted (it is canceled only when an appeal made during those 30 days is overturned) |
+| `delete_statuses` | Deletes the given posts. They become invisible even to the user, and the server sends other servers the same `Delete` as when the user deletes them |
+| `mark_statuses_sensitive` | Shows the attachments of the given posts as sensitive |
 
-リモートのアカウントには `limit`・`suspend`・`force_sensitive` だけを出せます（ほかの種類は管理 API では `422`、CLI では失敗）。
-効果はこのサーバーの中だけで、相手のサーバーに送るのは `suspend` で切ったフォローの `Reject` / `Undo` だけです（[ADR-0036](../adr/0036-moderation-federation-propagation.md)）。
+For a remote account you can issue only `limit`, `suspend` and `force_sensitive` (any other kind gives `422` in the admin API and fails in the CLI).
+The effect is local to this server. The only things sent to the other server are the `Reject` / `Undo` of follows cut by `suspend`.
 
-| 種類 | リモートのアカウントへの効果 |
+| Kind | Effect on a remote account |
 | --- | --- |
-| `force_sensitive` | 添付をすべてセンシティブとして表示する |
-| `limit` | 投稿（過去の投稿を含む）をフォロワー限定として扱い、公開タイムラインに出さず、フォローしていない利用者への通知を作らない |
-| `suspend` | そのアカウントからの受信を捨て、プロフィールと投稿を見せない。ローカルの利用者とのフォローを両方向とも（フォローリクエストも）切り、相手のサーバーにそのアカウントのフォローの `Reject` と利用者のフォローの `Undo` を送る。解除すると表示が戻り、また受信する（凍結中に捨てた受信と切ったフォローは戻らない） |
+| `force_sensitive` | Shows all attachments as sensitive |
+| `limit` | Treats posts (including past ones) as followers-only, keeps them off the public timelines, and creates no notifications for users who do not follow the account |
+| `suspend` | Drops everything received from the account and hides its profile and posts. Cuts follows between the account and local users in both directions (follow requests too), and sends the other server a `Reject` of the account's follows and an `Undo` of the users' follows. Lifting it brings back the display and the server receives from the account again (what was dropped and the follows that were cut during the suspension do not come back) |
 
-- `notify_target`（`-no-notify`）は、リモートのアカウントには意味がありません（通知は届かない）。
-- `suspend` でフォローを失ったローカルの利用者には、失ったフォロワーとフォローの数を伝える通知（`relationships_severed`）が 1 件ずつ届きます（[切れたフォロー](#切れたフォロー)）。
-- 発行と解除は、ローカルのアカウントへの処分と同じく[監査ログ](#監査ログ)に残ります。
+- `notify_target` (`-no-notify`) has no meaning for a remote account (no notification reaches it).
+- A local user who lost follows to a `suspend` gets one notification (`relationships_severed`) that tells how many followers and follows were lost ([severed follows](#severed-follows)).
+- Issuing and lifting are recorded in the [audit log](#audit-log), as with actions on local accounts.
 
 ```sh
 my admin account action issue -kind suspend -category spam -public-reason "spam" -duration 720h @alice
@@ -63,34 +63,35 @@ my admin account action list -active @alice
 my admin account action lift -reason "appealed" <action id>
 ```
 
-管理 API では `POST /api/v1/admin/accounts/{id}/actions`（本文は `kind`・`reason_category`・`public_reason`・`private_note`・`report_id`・`notify_target`・`expires_in` 秒・`status_ids`）、
-`GET /api/v1/admin/accounts/{id}/actions`（`active` で絞り込み）、`GET /api/v1/admin/account_actions/{id}`、`POST .../{id}/lift`（本文 `{"reason": "..."}` は省略可）です。
+In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind`, `reason_category`, `public_reason`, `private_note`, `report_id`, `notify_target`, `expires_in` in seconds and `status_ids`),
+`GET /api/v1/admin/accounts/{id}/actions` (filter with `active`), `GET /api/v1/admin/account_actions/{id}`, and `POST .../{id}/lift` (the body `{"reason": "..."}` is optional).
 
-- アカウントは CLI では `@username`（ローカル）、`@username@domain`（リモート）かアカウント ID で、管理 API ではアカウント ID で指定します。
-- 複数の処分は重なります（制限の和集合）。解除はその処分の制限だけを消し、期限付きの処分は期限で自然に終わります（一覧では `expired`）。
-- `disable_login`・`suspend`・`ban` が失効させたセッションとトークンは、解除しても戻りません。本人はもう一度ログインします。
-- ローカルのアカウントの `suspend` と `ban` は、フォロワーのサーバーと既知のサーバーに、プロフィールを空にして凍結を示す Actor の `Update` を送ります（Mastodon では「凍結」と表示される）。
-  解除と期限切れでは元のプロフィールの `Update` を送ります。期限切れは 5 分ごとのジョブが送るので、期限から最大 5 分遅れます（[federation.md §11.1](../architecture/federation.md#111-処分の伝播)）。
-- `delete_statuses` と `mark_statuses_sensitive` は、対象のアカウントの削除されていない投稿を 1〜100 件、`-status`（`status_ids`）で指定します。期限は付けられません。
-  `delete_statuses` を解除しても消した投稿は戻りません。`mark_statuses_sensitive` を解除すると元の表示に戻ります。
-- `ban` は期限を付けられず、解除もできません。取り消せるのは、削除までの 30 日のあいだに本人が申し立てた異議を覆したときだけです（[異議申し立て](#異議申し立て)）。迷うときは期限付きの `suspend` を使います。
-  処分から 30 日後に、1 時間ごとのジョブがアカウントを削除します（アカウントと投稿が表示から消え、連合先に `Delete` を送ります）。
-- `report_id`（`-report`）は、対象のアカウントの通報だけを指定できます。未解決の通報は、処分と同時に `actioned` で解決されます（監査ログにも解決が残ります）。解決済みの通報は変わりません。
-- `public_reason` は本人に見せる理由、`private_note` はモデレーターだけのメモです。`notify_target`（既定は真、CLI では `-no-notify` で偽）は本人に知らせるかどうかです。
+- Name an account with `@username` (local), `@username@domain` (remote) or the account ID in the CLI, and with the account ID in the admin API.
+- Several actions stack (the union of their restrictions). Lifting removes only that action's restrictions, and an action with an end time ends by itself at that time (shown as `expired` in lists).
+- Sessions and tokens that `disable_login`, `suspend` and `ban` revoked do not come back when you lift the action. The user signs in again.
+- A `suspend` or `ban` of a local account sends an Actor `Update` with an emptied profile to the followers' servers and to known servers to show the suspension (Mastodon shows it as "suspended").
+  Lifting and expiry send an `Update` with the original profile. Expiry is sent by a job that runs every 5 minutes, so it can be up to 5 minutes late.
+- `delete_statuses` and `mark_statuses_sensitive` take 1 to 100 undeleted posts of the target account through `-status` (`status_ids`). They cannot have an end time.
+  Lifting `delete_statuses` does not bring back the deleted posts. Lifting `mark_statuses_sensitive` restores the original display.
+- A `ban` cannot have an end time and cannot be lifted. It is canceled only when an appeal the user made during the 30 days before deletion is overturned ([appeals](#appeals)). When in doubt, use a `suspend` with an end time.
+  Thirty days after the action, a job that runs every hour deletes the account (the account and posts disappear from view, and the server sends a `Delete` to other servers).
+- `report_id` (`-report`) can name only a report about the target account. An open report is resolved as `actioned` together with the action (the resolution is also in the audit log). A resolved report does not change.
+- `public_reason` is the reason shown to the user and `private_note` is a note for moderators only. `notify_target` (true by default; false with `-no-notify` in the CLI) decides whether the user is informed.
 
-### 本人に見えるもの
+### What the user sees
 
-- `notify_target` が真の処分は、本人に通知（`moderation_notice`）として届きます。通知には処分の種類・理由のカテゴリ・`public_reason`・期限・状態が入り、種類とカテゴリは本人の UI 言語の表示名でも返ります。
-- 本人は `GET /api/v1/moderation/actions`（スコープ `read:accounts`、`active` で絞り込み）で自分への処分を新しい順に確かめられます。`notify_target` が偽の処分も、解除・期限切れの処分も並びます。
-- `private_note`・通報・処分した人・解除の理由は、本人には一切見せません。
-- 本人は自分への処分に、処分ごとに 1 回、異議を申し立てられます（[異議申し立て](#異議申し立て)）。処分の一覧と通知の処分には、申し立てられるか（`appealable`）・期限（`appeal_deadline`）・申し立てとその結果（`appeal`）が入ります。
-- `disable_login`・`suspend`・`ban` を受けた本人は、アプリと API を使えませんが、ログイン画面（`/auth/sign_in`）にはログインでき、効いている `disable_login` / `suspend` / `ban` の種類・理由・期限（`ban` はアカウントが削除されるまでの日数）を確かめ、その画面から異議を申し立てられます（[異議申し立て](#異議申し立て)）。認可（`/oauth/authorize`）はこの画面を `403` で返し、トークンを発行しません。
-  `ban` を受けた本人がログインできるのはアカウントが削除されるまでで、削除はそのセッションも失効させます。本人が自分で削除を予約したアカウントと無効にしたアカウントは、ログイン画面にもログインできません。
+- An action with `notify_target` true reaches the user as a notification (`moderation_notice`). It carries the kind, the reason category, `public_reason`, the end time and the state. The kind and the category also come back as display names in the user's UI language.
+- The user can check the actions against them with `GET /api/v1/moderation/actions` (scope `read:accounts`, filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
+- `private_note`, the report, who took the action and the reason for lifting are never shown to the user.
+- A user can appeal each action once ([appeals](#appeals)). The action list and the action in a notification include whether it can be appealed (`appealable`), the deadline (`appeal_deadline`), and the appeal and its outcome (`appeal`).
+- A user under `disable_login`, `suspend` or `ban` cannot use the app or the API but can still sign in on the sign-in page (`/auth/sign_in`). There they see the kind, the reason and the end time of the action in effect
+  (for `ban`, the number of days until the account is deleted), and they can appeal from that page ([appeals](#appeals)). The authorization endpoint (`/oauth/authorize`) answers with `403` and issues no token.
+  A user under `ban` can sign in until the account is deleted, and the deletion revokes that session too. A user whose own deletion is scheduled, and an account that has been disabled, cannot sign in even on the sign-in page.
 
-### 異議申し立て
+### Appeals
 
-ローカルの利用者は、自分への処分に異議を申し立てられます（FR-707、[ADR-0038](../adr/0038-moderation-personal-data-retention.md)）。
-モデレーターはそれを審査し、維持（`uphold`）するか覆す（`overturn`）かを決めます。
+A local user can appeal an action against them.
+A moderator reviews the appeal and either upholds it (`uphold`) or overturns it (`overturn`).
 
 ```sh
 my admin appeal list -state pending
@@ -98,60 +99,61 @@ my admin appeal uphold -reason "The posts were spam." <appeal id>
 my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 ```
 
-本人は `POST /api/v1/moderation/actions/{id}/appeal`（スコープ `write:accounts`、本文 `{"text": "..."}`）で申し立てます。
-アクセストークンを得られない `disable_login` / `suspend` / `ban` の本人は、ログイン画面の処分ごとのフォーム（`POST /auth/appeal`）から申し立てます。
-画面は、申し立てられる処分にはフォームと期限を、申し立て済みの処分にはその内容と結果を、期限切れの処分や申し立てられない処分にはその理由を示し、断った申し立てには理由を示します。
-管理 API では `GET /api/v1/admin/appeals`（`state` で絞り込み）、`GET .../{id}`、`POST .../{id}/uphold`・`POST .../{id}/overturn`（本文 `{"public_reason": "..."}` は省略可）で、権限 `manage_accounts` を要します。
+The user appeals with `POST /api/v1/moderation/actions/{id}/appeal` (scope `write:accounts`, body `{"text": "..."}`).
+A user under `disable_login`, `suspend` or `ban` cannot get an access token and appeals through the per-action form on the sign-in page (`POST /auth/appeal`).
+The page shows the form and the deadline for an action that can be appealed, the content and outcome for an action already appealed, and the reason for an action whose deadline has passed or that cannot be appealed. For a rejected appeal it shows the reason.
+In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{id}`, and `POST .../{id}/uphold` and `POST .../{id}/overturn` (the body `{"public_reason": "..."}` is optional). They need the `manage_accounts` permission.
 
-- 申し立ては処分 1 件につき 1 回、本文は 1〜2,000 文字です。期限は処分からインスタンス設定 `appeal_window` の日数（既定 180 日、20〜365 日、[インスタンス設定](instance-settings.md)）です。
-  期限を過ぎた処分と 2 回目の申し立ては `422`（`/api/v1/problems/appeal-window-closed`・`/api/v1/problems/already-appealed`）です。
-- `ban` には、アカウントが削除されるまで（処分から 30 日、`appeal_window` が短ければその期限まで）申し立てられます。削除済みのアカウントの `ban` は `422`（`/api/v1/problems/not-appealable`）です。解除済み・期限切れの処分にも、期限内なら申し立てられます。
-- 申し立てると、`manage_accounts` を持つ人に通知（`admin_appeal`）が届きます。審査すると、本人に通知（`appeal_decided`）が届き、本人は結果と `public_reason` を見られます。審査した人は見えません。
-- 覆すと、同じトランザクションで処分を解除します（`lift` と同じ効果。解除の理由は空）。`delete_statuses` を覆しても消した投稿は戻りません。審査までに解除済みの処分は、そのままです。
-- `ban` を覆すと、予定されていたアカウントの削除も同じトランザクションで取り消し（監査ログは `account_deletion_cancelled`）、凍結が終わって連合先にも元のプロフィールの `Update` を送ります。失効したセッションとトークンは戻らないので、本人はもう一度ログインします。審査までにアカウントが削除されていれば、覆せません（`422`、`/api/v1/problems/not-appealable`。維持はできる）。
-- 審査は 1 回です。同じ結果でもう一度審査しても何も変わらず、反対の結果は `409`（`/api/v1/problems/appeal-decided`）です。
+- An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
+  An action past the deadline and a second appeal give `422` (`/api/v1/problems/appeal-window-closed` and `/api/v1/problems/already-appealed`).
+- A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
+- When a user appeals, people with `manage_accounts` get a notification (`admin_appeal`). When it is reviewed, the user gets a notification (`appeal_decided`) and can see the outcome and `public_reason`. The reviewer is not shown.
+- Overturning lifts the action in the same transaction (the same effect as `lift`, with an empty lift reason). Overturning `delete_statuses` does not bring back the deleted posts. An action already lifted before the review stays as it is.
+- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_cancelled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
+  If the account was deleted before the review, it cannot be overturned (`422`, `/api/v1/problems/not-appealable`; upholding is still possible).
+- A review happens once. Reviewing again with the same outcome changes nothing, and the opposite outcome gives `409` (`/api/v1/problems/appeal-decided`).
 
-## アカウントの管理
+## Account management
 
-アカウントの検索・詳細・IP アドレスとメールアドレスの表示は管理 API で行い、権限 `manage_accounts` を要します（FR-714）。
+Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
 
-- `GET /api/v1/admin/accounts` は、ローカルとリモートのアカウントを新しい順に返します（インスタンス Actor は除く）。
-  ユーザー名の前方一致（`username`）・ドメイン（`domain`）・ローカルかリモートか（`origin`）・状態（`state`）と、ローカルのアカウントのメールアドレス（`email`）・メールのドメイン（`email_domain`）・登録かログインに使った IP アドレス（`ip`）で絞り込めます。
-  `email`・`email_domain`・`ip` は 1 つだけ指定できます。一覧には IP アドレスとメールアドレスを含めません。
-- 状態は次のうち最初に当てはまるものです: `deleted`（削除）、`suspended`（`suspend`・`ban`）、`disabled`（`disable_login`）、`rejected`・`pending`（登録審査）、`limited`（`limit`）、`active`。
-  状態と制限（`restrictions`）はアカウント自身への処分だけから決まり、ドメイン単位の処分は含みません。
-- `GET /api/v1/admin/accounts/{id}` は、状態・制限と、ローカルのアカウントでは登録の申請と審査・メールの確認・ロール、新しい順に 20 件までの処分と通報を返します。
-- `POST /api/v1/admin/accounts/{id}/reveal` は、ローカルのアカウントのメールアドレス、登録とログイン（新しい順に 20 件）の IP アドレスと User-Agent、同じ IP アドレスを使ったほかのアカウント（IP アドレスごとに 20 件まで）を返します。
-  呼ぶたびに監査ログに `revealed_private_data` を記録し、記録できたときだけ返します。IP アドレスは保持期間（既定 180 日）を過ぎると消えるので、それより前のログイン元は表示できません。
-- `GET /api/v1/admin/accounts/{id}` の `two_factor_enabled` は、ローカルのアカウントの利用者が二要素認証（TOTP、FR-005）を使っているかを示します。
-  認証アプリとリカバリーコードを両方なくした利用者は、`POST /api/v1/admin/accounts/{id}/two_factor/disable` で二要素認証を外すとパスワードだけでログインできます。
-  外せるのは権限 `manage_login_recovery` を持つ利用者で、既定では組み込みの管理者のロールだけが持ちます（モデレーターは状態を見られますが、外せません。ADR-0058 のサーバー管理）。
-  外すと監査ログに `two_factor_disabled` を記録します。本人であることは、メールなど別の経路で確かめてから外してください。
-  ほかに管理者のいない管理者自身がなくしたときは、運営者が CLI の `my admin account disable-two-factor @alice` で外します（監査ログの操作者は CLI）。
-- パスワードを忘れた利用者は、メールを送るサーバーではログインの画面の「パスワードを忘れたとき」から、新しいパスワードを設定するリンクをメールで受け取ります（FR-002）。
-  メールを送らないサーバー（`mail = none`）や、メールが届かない利用者には、管理者がリンクを発行して渡します。
-  管理画面ではアカウントのページの「パスワードのリセット」（`POST /api/v1/admin/accounts/{id}/password_reset_link`）で発行します。
-  発行できるのは二要素認証の解除と同じ権限 `manage_login_recovery` を持つ利用者で、既定では組み込みの管理者のロールだけが持ちます（リンクを持つ人はアカウントに入れるので、モデレーターの `manage_accounts` では発行できません。ADR-0058 のサーバー管理）。
-  発行したリンクはその場で一度だけ表示し、コピーできます。サーバーはリンクのハッシュしか保存しないので、あとから見ることはできません。必要ならもう一度発行します。
-  管理者のいないときや管理画面を使えないときは、運営者が CLI の `my admin account password-reset-link @alice` で発行します（監査ログの操作者は CLI）。
-  リンクは 1 時間・1 回だけ使え、その後にパスワードがほかの方法で変わると使えなくなります。どちらで発行しても監査ログに `password_reset_link_issued` を記録します。
-  リンクを持つ人は誰でもパスワードを設定できるので、本人であることをメールなど別の経路で確かめてから、本人にだけ渡してください。
-  新しいパスワードを設定すると、その利用者のすべてのセッションとアプリのトークンが失効します。パスキーと二要素認証はそのまま残ります。
-- `GET /api/v1/admin/accounts/{id}` の `email_suppression` は、ローカルのアカウントの主アドレスへの送信を止めていることを示します（ADR-0086 §5）。
-  `hard_bounce`（宛先が存在しない）は確認のメールを除くすべてのメールを、`complaint`（迷惑メールとしての報告）は通知と告知のメールだけを止めます。パスワードのリセットのメールも止まるので、必要なら上のリンクを発行して渡します。
-  利用者が確認のメールを求めてアドレスを確認し直すと、ハードバウンスの抑止は解けます。
-  利用者がメールボックスを直したなど、送ってよいと確かめたときは、`POST /api/v1/admin/accounts/{id}/email_suppression/lift`（権限 `manage_accounts`）で解除します。監査ログに `email_suppression_lifted` を記録します。
-- 検索は 1 ページを埋めるのに 400 アカウントまで読みます。条件に合うアカウントが少ないと、短いページや空のページにも `next_cursor` が付くので、続けて読みます。
+- `GET /api/v1/admin/accounts` returns local and remote accounts, newest first (the instance Actor is excluded).
+  You can filter by username prefix (`username`), domain (`domain`), local or remote (`origin`), state (`state`), and, for local accounts, email address (`email`), email domain (`email_domain`) and the IP address used to register or sign in (`ip`).
+  You can give only one of `email`, `email_domain` and `ip`. The list does not include IP addresses or email addresses.
+- The state is the first that applies from this list: `deleted`, `suspended` (`suspend`, `ban`), `disabled` (`disable_login`), `rejected` and `pending` (registration review), `limited` (`limit`), `active`.
+  The state and the restrictions (`restrictions`) come only from actions against the account itself and do not include domain actions.
+- `GET /api/v1/admin/accounts/{id}` returns the state and restrictions and, for a local account, the registration application and review, the email confirmation, the roles, and up to 20 actions and reports, newest first.
+- `POST /api/v1/admin/accounts/{id}/reveal` returns a local account's email address, the IP addresses and User-Agents of registration and sign-ins (20 entries, newest first), and other accounts that used the same IP address (up to 20 per IP address).
+  Every call records `revealed_private_data` in the audit log, and the data is returned only if the record could be written. IP addresses are removed after the retention period (180 days by default), so sign-in origins older than that cannot be shown.
+- `two_factor_enabled` in `GET /api/v1/admin/accounts/{id}` shows whether the user of a local account uses two-factor authentication (TOTP).
+  A user who lost both the authenticator app and the recovery codes can sign in with the password alone once you remove two-factor authentication with `POST /api/v1/admin/accounts/{id}/two_factor/disable`.
+  Only users with the permission `manage_login_recovery` can do this, and by default only the built-in administrator role has it (moderators can see the state but cannot remove it; it belongs to server administration).
+  Removal records `two_factor_disabled` in the audit log. Verify that the person is the account's owner by another route, such as email, before you remove it.
+  When an administrator with no other administrator lost it, the operator removes it with the CLI command `my admin account disable-two-factor @alice` (the audit log actor is the CLI).
+- On a server that sends mail, a user who forgot the password gets an emailed link for setting a new one from "Forgot your password?" on the sign-in page.
+  For a server that does not send mail (`mail = none`), or a user the mail does not reach, an administrator issues the link and hands it over.
+  In the admin screens, issue it with "Password reset" on the account page (`POST /api/v1/admin/accounts/{id}/password_reset_link`).
+  Only users with the same permission as removing two-factor authentication, `manage_login_recovery`, can issue it, and by default only the built-in administrator role has it (whoever holds the link can get into the account, so a moderator's `manage_accounts` is not enough).
+  The issued link is shown once on the spot and can be copied. The server stores only a hash of the link, so you cannot see it later; issue it again if you need to.
+  When no administrator is available or the admin screens are not, the operator issues it with the CLI command `my admin account password-reset-link @alice` (the audit log actor is the CLI).
+  The link works for 1 hour and once, and stops working if the password changes by another route afterwards. Either way of issuing records `password_reset_link_issued` in the audit log.
+  Anyone who holds the link can set the password, so verify the person by another route such as email and give the link only to them.
+  Setting the new password revokes all of the user's sessions and app tokens. Passkeys and two-factor authentication stay.
+- `email_suppression` in `GET /api/v1/admin/accounts/{id}` shows that sending to the primary address of a local account is stopped.
+  A `hard_bounce` (the destination does not exist) stops all mail except the confirmation mail, and a `complaint` (reported as spam) stops only notification and announcement mail. Password-reset mail stops too, so issue the link above and hand it over if needed.
+  When the user asks for a confirmation mail and confirms the address again, the hard-bounce suppression is lifted.
+  When you have verified that sending is fine, for example because the user fixed the mailbox, lift it with `POST /api/v1/admin/accounts/{id}/email_suppression/lift` (permission `manage_accounts`). It records `email_suppression_lifted` in the audit log.
+- A search reads up to 400 accounts to fill one page. When few accounts match, even a short or empty page can carry `next_cursor`, so keep reading.
 
-## ドメイン単位の処分
+## Domain actions
 
-| 種類 | 効果 |
+| Kind | Effect |
 | --- | --- |
-| `suspend` | 配送・取得・受信をすべて止める（受信は署名の検証より前に `403`）。既存のアカウントと投稿はタイムラインやプロフィールから隠れる。ローカルの利用者とそのドメインのアカウントのフォローを両方向とも切る（相手には何も送らない） |
-| `limit` | 投稿を公開タイムライン・検索に出さず、フォローしていない利用者への通知を作らない |
-| `reject_media` | メディアを取得しない |
-| `reject_reports` | そのドメインからの通報（`Flag`）を捨てる |
-| `force_sensitive` | メディアをセンシティブとして表示する |
+| `suspend` | Stops all delivery, fetching and receiving (receiving gets `403` before the signature is verified). Existing accounts and posts are hidden from timelines and profiles. Cuts follows between local users and the domain's accounts in both directions (nothing is sent to the other side) |
+| `limit` | Keeps posts off the public timelines and search, and creates no notifications for users who do not follow the account |
+| `reject_media` | Does not fetch media |
+| `reject_reports` | Drops reports (`Flag`) from the domain |
+| `force_sensitive` | Shows media as sensitive |
 
 ```sh
 my admin domain issue -kind suspend -public-comment "spam" spam.example
@@ -160,94 +162,94 @@ my admin domain list -active
 my admin domain lift <action id>
 ```
 
-管理 API では `POST /api/v1/admin/domain_actions`（本文は `domain`・`kind`・`public_comment`・`private_note`・`obfuscate`・`expires_in` 秒）、
-`GET /api/v1/admin/domain_actions`（`domain`・`active` で絞り込み）、`GET .../{id}`、`POST .../{id}/lift` です。
+In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` and `expires_in` in seconds),
+`GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, and `POST .../{id}/lift`.
 
-- ドメインは IDNA の A-label（小文字、末尾のドットなし）に正規化して記録します。`例え.jp` と `xn--r8jz45g.jp` は同じドメインです。
-- 処分はサブドメインにも効きます（`spam.example` の処分は `a.spam.example` にも効く）。
-- 処分は記録したトランザクションで制限の投影（`domain_restrictions`）とタイムラインの制限に反映され、次の配送・取得・受信から効きます。
-- 期限（`-duration` / `expires_in`）を付けた処分は期限で自然に終わります。期限切れは「解除」ではないので、一覧では `expired` と表示します。
-- 解除はその処分の制限だけを消します。同じドメインへの別の処分は残ります。解除済みの処分をもう一度解除しても何も変わりません。
-- 一覧は新しい順で、`-active`（`active=true`）を付けると効いているものだけを出します。
+- Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
+- An action also applies to subdomains (an action on `spam.example` applies to `a.spam.example` too).
+- An action is applied to the restriction projection (`domain_restrictions`) and to the timeline restrictions in the transaction that records it, and takes effect from the next delivery, fetch or receipt.
+- An action with an end time (`-duration` / `expires_in`) ends by itself at that time. Expiry is not a "lift", so lists show it as `expired`.
+- Lifting removes only that action's restrictions. Other actions on the same domain stay. Lifting an already lifted action changes nothing.
+- Lists are newest first, and `-active` (`active=true`) shows only the actions in effect.
 
-### Mastodon の CSV でのインポートとエクスポート
+### Importing and exporting Mastodon CSV
 
-ドメインへの処分の一覧を、Mastodon のドメインブロックの CSV（`#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`）で受け渡しできます（FR-706）。
-Mastodon がエクスポートした CSV をインポートでき、このサーバーがエクスポートした CSV は Mastodon でインポートできます。
+You can pass the list of domain actions to and from Mastodon in the CSV format of Mastodon's domain blocks (`#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`).
+You can import a CSV that Mastodon exported, and Mastodon can import a CSV that this server exported.
 
 ```sh
 my admin domain export > domain_blocks.csv
-my admin domain import domain_blocks.csv                       # 何をするかを表示するだけ
+my admin domain import domain_blocks.csv                       # only shows what it would do
 my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
-管理 API では `GET /api/v1/admin/domain_actions/export`（`text/csv`）、`POST .../import/preview`（本文は `csv`）、`POST .../import`（本文は選んだ行の `blocks` と `private_note`）です。
-Web クライアントでは、ドメインへの処分の画面（`/moderation/domain-actions`）の「CSV のインポート」と「CSV のエクスポート」で行います。
+In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
+In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
 
-| CSV の行 | このサーバーの処分 |
+| CSV row | Action on this server |
 | --- | --- |
-| `#severity` が `suspend`（空のときも） | `suspend` |
-| `#severity` が `silence` | `limit` |
-| `#severity` が `noop` | なし |
-| `#reject_media` / `#reject_reports` が真 | それぞれ `reject_media` / `reject_reports` を足す |
+| `#severity` is `suspend` (or empty) | `suspend` |
+| `#severity` is `silence` | `limit` |
+| `#severity` is `noop` | None |
+| `#reject_media` / `#reject_reports` is true | Adds `reject_media` / `reject_reports` respectively |
 
-- インポートは 2 段階です。まずプレビューで行ごとに出す処分を確かめ、残す行を選んでからインポートします（CLI は `-apply` を付けるまで何も変えず、`-only` で行のドメインを選びます）。
-- そのドメインか親ドメインに同じ種類の有効な処分がある行は、その種類を出しません（すべてあれば「適用済み」）。同じドメインの 2 行目・不正な行・何も出さない行（`noop` だけ）も飛ばします。同じ CSV をもう一度インポートしても処分は増えません。
-- `#domain` の見出しのない CSV は、1 行に 1 つのドメインの一覧として、すべて `suspend` にします（Mastodon と同じ）。1 回に 5,000 行までです。
-- インポートした処分は「解除するまで」で、行の公開コメントと伏せ字、指定した非公開のメモを持ちます。1 件ずつ出した処分と同じく監査ログに載ります（操作者は API ならその人、CLI なら `cli`）。
-- エクスポートは効いている処分を、ドメインごとに 1 行にします。`suspend` があれば `suspend`、`limit` があれば `silence`、どちらもなければ `noop` です。Mastodon のドメインブロックにない `force_sensitive` だけのドメインは出しません。非公開のメモと期限は出しません。
+- An import has two steps. First check in the preview which actions each row would issue, choose the rows to keep, and then import (the CLI changes nothing until you add `-apply`, and `-only` chooses rows by domain).
+- A row whose domain or a parent domain already has an action of the same kind in effect does not issue that kind (if every kind is already there, it is "already applied"). A second row for the same domain, an invalid row and a row that would issue nothing (`noop` only) are skipped too. Importing the same CSV again does not add actions.
+- A CSV without a `#domain` header is read as a list with one domain per line, and every domain gets `suspend` (the same as Mastodon). One import takes up to 5,000 rows.
+- Imported actions last "until lifted" and carry the row's public comment and obfuscation and the private note you gave. They appear in the audit log like actions issued one by one (the actor is the person for the API and `cli` for the CLI).
+- An export writes one row per domain for the actions in effect. A domain with a `suspend` gets `suspend`, one with a `limit` gets `silence`, and one with neither gets `noop`. A domain with only `force_sensitive`, which Mastodon's domain blocks do not have, is not exported. Private notes and end times are not exported.
 
-### 切れたフォロー
+### Severed follows
 
-ドメインの `suspend` とリモートのアカウントの `suspend` は、ローカルの利用者と凍結したアカウントのフォローを両方向とも切ります（FR-717）。
+A domain `suspend` and a remote account `suspend` cut follows between local users and the suspended accounts in both directions.
 
-- ドメインの `suspend` は、記録した後のジョブ（`moderation.sever_domain`）がローカルの利用者 1 人ずつ切ります。ジョブが終わるまでは、フォローが一覧に残ります。サブドメインのアカウントも切ります。
-- リモートのアカウントの `suspend` は、処分を記録したトランザクションで切ります。すでに凍結中のアカウントへの 2 つ目の `suspend` は何も切りません。
-- 承認済みのフォローを失った利用者ごとに 1 件、失ったフォロワーとフォローの数を伝える通知（`relationships_severed`）が届きます。フォローリクエストだけを失った利用者には届きません。
-- 処分を解除しても、切ったフォローは戻りません。利用者はフォローし直します。
-- 同じ処分を処理し直しても（ジョブの再実行など）、切れた関係の記録と通知は増えません。
+- For a domain `suspend`, a job (`moderation.sever_domain`) that runs after the action is recorded cuts them one local user at a time. Until the job finishes, the follows still show in lists. Accounts on subdomains are cut too.
+- For a remote account `suspend`, the follows are cut in the transaction that records the action. A second `suspend` of an account already suspended cuts nothing.
+- Each user who lost approved follows gets one notification (`relationships_severed`) that tells how many followers and follows were lost. A user who lost only follow requests gets none.
+- Lifting the action does not bring back the cut follows. Users follow again.
+- Processing the same action again (for example when a job re-runs) adds no more severed-relationship records or notifications.
 
-### 処分したドメインの公開
+### Publishing the domains you act on
 
-効いている `limit` と `suspend` の処分は、`GET /api/v1/instance/domain_actions` で公開できます（FR-718）。
-誰に見せるかはインスタンス設定 `domain_actions_visibility`（`none` / `users` / `all`、既定 `none`）で、
-公開コメントを誰に見せるかは `domain_actions_rationale_visibility`（同じ値、既定 `none`）で決めます（[インスタンス設定](instance-settings.md)）。
+You can publish the `limit` and `suspend` actions in effect through `GET /api/v1/instance/domain_actions`.
+The instance setting `domain_actions_visibility` (`none` / `users` / `all`, default `none`) decides who sees the list, and
+`domain_actions_rationale_visibility` (the same values, default `none`) decides who sees the public comments ([instance settings](instance-settings.md)).
 
 ```sh
 my instance set domain_actions_visibility users
 my instance set domain_actions_rationale_visibility users
 ```
 
-- `none` では `404`、`users` ではアクセストークンの無い要求に `401` を返します。
-- 処分ごとに 1 項目で、新しい順です。ドメイン・ドメインの SHA-256（16 進）・種類と、見せてよい相手には公開コメントを返します。非公開のメモは返しません。
-- `-obfuscate`（`obfuscate`）を付けた処分は、ドメインの中ほど半分の文字（ドット以外）を `*` に置き換えて公開します（`bad.example` → `bad.*****le`）。
-  知っているドメインの SHA-256 と比べれば、伏せたドメインかどうかを確かめられます。
-- `reject_media`・`reject_reports`・`force_sensitive` の処分と、解除・期限切れの処分は公開しません。
-- Web クライアントのインスタンスの情報ページ（`https://<host>/about`）は、この一覧を同じ設定に従って出します。`none` では一覧の区画を出さず、`users` ではサインインしていない人に、ログインした利用者だけが見られることを出します。
+- With `none` the API returns `404`, and with `users` it returns `401` to a request without an access token.
+- There is one entry per action, newest first. An entry has the domain, the SHA-256 of the domain (hex) and the kind, and the public comment for people allowed to see it. Private notes are never returned.
+- For an action with `-obfuscate` (`obfuscate`), the middle half of the domain's characters (other than dots) is replaced with `*` (`bad.example` becomes `bad.*****le`).
+  Anyone can compare the SHA-256 of a domain they know to check whether it is an obfuscated one.
+- `reject_media`, `reject_reports` and `force_sensitive` actions, and lifted or expired actions, are not published.
+- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `none` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
 
-## リモートの投稿の取り直し
+## Refetching remote posts
 
-保存したリモートの投稿を、相手のサーバーから取り直せます（FR-407、[federation.md §6.4](../architecture/federation.md#64-投稿の取り直し)）。
-取り直しは、管理 API・CLI・Web クライアントから頼んだときだけ行い、定期的には行いません。
+You can refetch stored remote posts from the other server.
+A refetch happens only when you ask for it through the admin API, the CLI or the web client, never periodically.
 
 ```sh
-my admin refetch status <投稿の ID か URI>
+my admin refetch status <post ID or URI>
 my admin refetch account @bob@remote.example
 my admin refetch domain remote.example
 ```
 
-管理 API では `POST /api/v1/admin/statuses/{id}/refetch`・`POST /api/v1/admin/accounts/{id}/refetch_statuses`・`POST /api/v1/admin/instances/{domain}/refetch_statuses` で、権限 `manage_domains` を要します。
-Web クライアントでは、アカウントの画面（`/moderation/accounts/{id}`、リモートのアカウント）と連合先の画面（`/moderation/instances/{domain}`）の「投稿を取り直す」で行います。
+In the admin API: `POST /api/v1/admin/statuses/{id}/refetch`, `POST /api/v1/admin/accounts/{id}/refetch_statuses` and `POST /api/v1/admin/instances/{domain}/refetch_statuses`. They need the `manage_domains` permission.
+In the web client, use "Refetch posts" on the account screen (`/moderation/accounts/{id}`, remote accounts) and the remote server screen (`/moderation/instances/{domain}`).
 
-- 投稿は、受け取った `Update` と同じく扱います。新しい版があれば版を足し、投票の票数を更新し、変わっていなければ何もしません。相手が 410 Gone か `Tombstone` を返した投稿は削除します。取得できない投稿（404 を含む）はそのまま残します。
-- アカウントは、削除されていない保存済みの投稿の新しいものから 1,000 件までを、100 件ずつ 1 分おきに取り直します。
-- ドメインは、そのドメインのアカウントの新しいものから、アカウントごとに新しい投稿 20 件まで、合わせて 1,000 件までを、5 アカウントずつ 1 分おきに取り直します。
-- ドメインへの `suspend` があるドメインと、配送の失敗で `unavailable` のドメインからは取得しません。同じ URI の取得の失敗は 1 時間覚えているので、その間は取り直しても取得しません。
-- 頼んだことは監査ログに `status_refetch_queued`・`account_statuses_refetch_queued`・`domain_statuses_refetch_queued` として残ります。
+- A post is handled like a received `Update`. If there is a newer version, the server adds a version; it updates poll vote counts; and it does nothing if nothing changed. A post for which the other server returns 410 Gone or a `Tombstone` is deleted. A post that cannot be fetched (404 included) is left as it is.
+- For an account, the server refetches up to 1,000 of its newest undeleted stored posts, 100 at a time, one minute apart.
+- For a domain, the server refetches from the newest accounts of the domain, up to the 20 newest posts per account and up to 1,000 posts in all, 5 accounts at a time, one minute apart.
+- It does not fetch from a domain with a `suspend`, or from a domain that is `unavailable` because deliveries failed. A failed fetch of the same URI is remembered for 1 hour, and a refetch in that time does not fetch it.
+- Your request is recorded in the audit log as `status_refetch_queued`, `account_statuses_refetch_queued` or `domain_statuses_refetch_queued`.
 
-## 通報
+## Reports
 
-他のサーバーから受信した通報（`Flag`）は、未解決（`open`）として通報の一覧に入ります。
+Reports (`Flag`) received from other servers enter the report list as open (`open`).
 
 ```sh
 my admin report list -state open
@@ -255,77 +257,77 @@ my admin report show <report id>
 my admin report assign <report id> <username>
 my admin report unassign <report id>
 my admin report resolve -outcome dismissed <report id>
-my admin report note <report id> "以前の通報と同じ相手"
+my admin report note <report id> "Same person as an earlier report"
 my admin report reopen <report id>
 ```
 
-管理 API では `GET /api/v1/admin/reports`（`state` で絞り込み）、`GET .../{id}`、`POST .../{id}/assign_to_self`、`POST .../{id}/unassign`、
-`POST .../{id}/resolve`（本文 `{"outcome": "actioned" | "dismissed"}`）、`POST .../{id}/notes`（本文 `{"body": "..."}`）、`POST .../{id}/reopen` です。
+In the admin API: `GET /api/v1/admin/reports` (filter with `state`), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
+`POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`) and `POST .../{id}/reopen`.
 
-- 担当（`assign`）は、ロールが `manage_reports` を持つローカルの利用者にだけ割り当てられます。管理 API では自分を担当にします。
-- 解決（`resolve`）の結果は、対象に処分をした `actioned` か、処分の必要がなかった `dismissed` です。解決済みの通報をもう一度解決しても結果は変わりません。
-- 通報から処分を出す（処分の `report_id` / `-report`）と、その通報は同じ操作で `actioned` として解決されます。
-- メモ（`note`）はモデレーターだけが見る内部メモで、2,000 文字までです。対象にも通報者にも見せません。編集・削除はできません。
-- 再開（`reopen`）は、解決済みの通報を `open` に戻します（担当は残ります）。未解決の通報は再開できません（管理 API では `409`）。
-- 通報の詳細（`show`・`GET .../{id}`）は、メモを古い順に、対象のほかの通報の数と対象への処分の数（解除・期限切れを含む）とともに返します。一覧はメモを返しません。
-- 担当・解決・再開・メモはイベント（`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`）として残り、現在の状態は `report_states` が持ちます。
-- ローカルの通報者には、最初の解決で通知（`report_resolved`）が届きます。再開してもう一度解決しても、通知は増えません。
-  通報者は自分の通報を `GET /api/v1/reports` で一覧でき、未解決か解決済みかだけが見えます。解決の結果・処分の内容・対象への理由・担当は見えません（FR-711）。
+- An assignment (`assign`) can go only to a local user whose role has `manage_reports`. In the admin API you assign yourself.
+- The outcome of a resolution (`resolve`) is `actioned` (an action was taken against the target) or `dismissed` (no action was needed). Resolving a resolved report again does not change the outcome.
+- When you issue an action from a report (`report_id` / `-report` of the action), the report is resolved as `actioned` in the same operation.
+- A note (`note`) is an internal note that only moderators see, up to 2,000 characters. It is shown neither to the target nor to the reporter. It cannot be edited or deleted.
+- Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
+- The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
+- Assignments, resolutions, reopenings and notes are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`), and `report_states` holds the current state.
+- A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
+  A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
 
-## モデレーターへの通知と未対応の件数
+## Notifications for moderators and the pending counts
 
-新しい通報と承認待ちの登録と異議申し立ては、権限を持つ利用者にアプリ内の通知で届きます（FR-712）。
+New reports, registrations waiting for approval and appeals reach people with the permission as in-app notifications.
 
-| 通知 | 届くとき | 届く人 |
+| Notification | When it arrives | Who gets it |
 | --- | --- | --- |
-| `admin_report` | 通報の対象に、ほかの未解決の通報が無いとき（同じアカウントへの 2 件目以降の通報では届かない） | ロールが `manage_reports` を持つ人。通報者と通報の対象は除く |
-| `admin_sign_up` | 登録が承認待ちで始まったとき（承認制、またはメールを送れない構成の `open`） | ロールが `manage_accounts` を持つ人 |
-| `admin_appeal` | 処分に異議が申し立てられたとき | ロールが `manage_accounts` を持つ人。申し立てた本人は除く |
-| `admin_custom_emoji_request` | カスタム絵文字の作成か画像の差し替えが申請されたとき（[ADR-0070](../adr/0070-permission-split-emoji-finance.md)） | ロールが `manage_custom_emojis` を持つ人。申請者は除く |
+| `admin_report` | When the report's target has no other open report (a second or later report about the same account does not notify) | People whose role has `manage_reports`, except the reporter and the report's target |
+| `admin_sign_up` | When a registration starts as waiting for approval (approval mode, or `open` on a setup that cannot send mail) | People whose role has `manage_accounts` |
+| `admin_appeal` | When an appeal is made against an action | People whose role has `manage_accounts`, except the person who appealed |
+| `admin_custom_emoji_request` | When creating a custom emoji or replacing its image is requested | People whose role has `manage_custom_emojis`, except the requester |
 
-- 届く人は、通知を作るときの権限で決まります。後から権限を失った人の一覧と未読数からは、その種類の通知が消えます。権限を戻せばまた見えます。
-- 利用者設定 `email_moderator_notifications`（`PATCH /api/v1/preferences`、既定は無効）を有効にした人には、同じ通知をメールでも送ります。
-  Web クライアントでは、設定の「表示と投稿」の「モデレーターへの通知」で切り替えます。この区画は通知が届く権限を持つ人にだけ出ます。
-  メールは通知を記録したトランザクションでジョブを積み、コミット後にジョブが送ります。送る時点で権限か設定を失っていれば送りません。
-  メールは通知の種類と通知の画面へのリンクだけを書き、通報やアカウントの中身は書きません。`mail = none` ではメールを送りません。
-  そのとき `GET /api/v1/instance` の `sends_email` は `false` になり、Web クライアントは切り替えの代わりにその理由を出します。
+- Who receives a notification is decided by their permission when the notification is created. A person who later loses the permission no longer sees that kind in their list and unread count. If the permission comes back, they see it again.
+- People who turn on the user preference `email_moderator_notifications` (`PATCH /api/v1/preferences`, off by default) also get the same notifications by email.
+  In the web client, switch it under "Moderator notifications" in "Preferences" in settings. This section is shown only to people who have a permission that sends such notifications.
+  The server enqueues a job in the transaction that records the notification, and the job sends the mail after the commit. If the person has lost the permission or the preference by the time of sending, nothing is sent.
+  The mail contains only the kind of notification and a link to the notifications screen, and none of the contents of the report or the account. With `mail = none`, no mail is sent.
+  In that case `sends_email` in `GET /api/v1/instance` is `false`, and the web client shows the reason instead of the switch.
 
-`GET /api/v1/admin/counts` は、未解決の通報の数（`open_reports`、`manage_reports` が要る）と、承認待ちの登録の数（`pending_registrations`）と審査待ちの異議申し立ての数（`pending_appeals`）を返します（どちらも `manage_accounts` が要る）。
-権限の無い項目は返しません。
+`GET /api/v1/admin/counts` returns the number of open reports (`open_reports`, needs `manage_reports`), the number of registrations waiting for approval (`pending_registrations`) and the number of appeals waiting for review (`pending_appeals`) (both need `manage_accounts`).
+Items you lack the permission for are not returned.
 
-## 監査ログ
+## Audit log
 
-モデレーターと管理者の操作は、操作と同じトランザクションで監査ログ（`audit_log_entries`）に 1 行ずつ記録されます（FR-704、[ADR-0037](../adr/0037-audit-log.md)）。
-失敗した操作と、何も変えなかった操作（解除済みの処分の解除、解決済みの通報の解決、同じ担当への割り当て、廃止済みのルールの廃止、位置の変わらない移動、持っているロールの付与、持っていないロールの剥奪）は記録しません。
+Operations by moderators and administrators are recorded one row each in the audit log (`audit_log_entries`) in the same transaction as the operation.
+Failed operations and operations that changed nothing are not recorded: lifting an already lifted action, resolving a resolved report, assigning to the same assignee, retiring an already retired rule, moving to the same position, granting a role the user already has, and revoking a role the user does not have.
 
-| 対象の種類 | 操作 |
+| Target kind | Operations |
 | --- | --- |
-| `account` | `account_action_issued`・`account_action_lifted`（アカウントへの処分の発行・解除）・`account_deletion_cancelled`（`ban` の異議申し立てを覆したことによる削除の取り消し）・`revealed_private_data`（IP アドレスとメールアドレスの表示）・`two_factor_disabled`（二要素認証の解除）・`password_reset_link_issued`（パスワードリセットのリンクの発行）・`email_suppression_lifted`（メールの抑止の解除）・`account_moved`（制限中のローカルのアカウントの、ローカルのアカウントへの移転。制限は移転先に引き継がないので、移転先に付けるかを決める）・`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
-| `status` | `status_refetch_queued`（リモートの投稿の取り直し。対象の名前は投稿の URI） |
-| `domain` | `domain_action_issued`・`domain_action_lifted`（ドメイン単位の処分の発行・解除）・`domain_statuses_refetch_queued`（ドメインのアカウントの投稿の取り直し） |
-| `report` | `report_assigned`・`report_unassigned`・`report_resolved`・`report_reopened`・`report_note_added`（通報の担当・担当の解除・解決・再開・メモ） |
-| `user` | `registration_approved`・`registration_rejected`（登録審査） |
-| `setting` | `setting_changed`（インスタンス設定）・`text_changed`（インスタンスの文章） |
-| `rule` | `rule_added`・`rule_revised`・`rule_moved`・`rule_retired`（インスタンスのルール） |
-| `role` | `role_granted`・`role_revoked`（利用者へのロールの付与・剥奪）・`role_created`・`role_updated`・`role_deleted`（ロールの作成・変更・削除） |
-| `appeal` | `appeal_upheld`・`appeal_overturned`（異議申し立ての審査。覆したときは処分の `account_action_lifted`、`ban` なら `account_deletion_cancelled` も記録する） |
-| `signup_block` | `signup_block_added`・`signup_block_lifted`（登録の拒否の追加・解除） |
-| `custom_emoji` | `custom_emoji_created`・`custom_emoji_image_replaced`・`custom_emoji_copied`・`custom_emoji_updated`・`custom_emoji_enabled`・`custom_emoji_disabled`・`custom_emoji_deleted`（カスタム絵文字の登録・画像の差し替え・ほかのサーバーの絵文字の複製・変更・有効化・無効化・削除） |
-| `webhook` | `webhook_created`・`webhook_updated`・`webhook_deleted`・`webhook_enabled`・`webhook_disabled`・`webhook_secret_rotated`（webhook の設定・変更・削除・有効化・無効化・秘密の作り直し） |
-| `announcement` | `announcement_created`・`announcement_updated`・`announcement_published`・`announcement_withdrawn`（お知らせの作成・変更・公開・取り下げ） |
-| `invite` | `invite_created`・`invite_revoked`（招待の作成・失効。対象の名前はコードの先頭 4 文字） |
-| `billing_source` | `billing_import_queued`（利用料金の取り込みを手で始めた。対象の名前は事業者の名前） |
-| `cost_item` | `cost_item_created`・`cost_item_relabeled`・`cost_item_price_revised`・`cost_item_end_changed`・`cost_item_canceled`（費用の登録・名前などの変更・金額の改定・終了日の変更・取り消し。対象の名前は項目の名前） |
-| `supporter_program` | `supporter_program_enabled`・`supporter_program_disabled`（課金の有効化・無効化。対象の名前は決済の事業者の名前） |
-| `supporter_plan` | `supporter_plan_created`・`supporter_plan_revised`・`supporter_plan_retired`（サポーターのプランの作成・変更・廃止。対象の名前はプランの名前） |
-| `supporter_subscription` | `supporter_subscription_canceled`（管理者による加入の解約。対象の名前はプランの名前と利用者のハンドル） |
-| `custom_emoji_request` | `custom_emoji_request_submitted`・`custom_emoji_request_withdrawn`・`custom_emoji_request_approved`・`custom_emoji_request_rejected`（カスタム絵文字の申請・取り下げ・承認・却下。対象の名前は `:shortcode:`） |
-| `payment_provider` | `payment_reconcile_queued`（決済の事業者との照合を手で始めた。対象の名前は事業者の名前） |
-| `oauth_client` | `oauth_client_disabled`・`oauth_client_enabled`（OAuth のクライアントの無効化と取り消し。無効化は全トークンを失効させる。対象の名前はクライアントの名前と `client_id`） |
-| `oauth_client_host` | `oauth_client_host_denied`・`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否と取り消し。拒否はそのホストのクライアントのトークンを失効させる。対象の名前はホスト） |
-| `instance` | `service_closure_announced`・`service_closure_withdrawn`・`service_closure_closed`・`service_closure_delivery_completed`（サービスの終了の予告・日付の変更、予告の取り消し、クローズ、クローズの配送の完了。対象の名前は `service_closure`） |
+| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_cancelled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
+| `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
+| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts) |
+| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
+| `user` | `registration_approved`, `registration_rejected` (registration review) |
+| `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
+| `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (instance rules) |
+| `role` | `role_granted`, `role_revoked` (granting and revoking a role for a user), `role_created`, `role_updated`, `role_deleted` (creating, changing and deleting a role) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_cancelled` for a `ban`) |
+| `signup_block` | `signup_block_added`, `signup_block_lifted` (adding and lifting a sign-up block) |
+| `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
+| `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |
+| `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (creating, changing, publishing and withdrawing an announcement) |
+| `invite` | `invite_created`, `invite_revoked` (creating and revoking an invite; the target name is the first 4 characters of the code) |
+| `billing_source` | `billing_import_queued` (a billing import was started by hand; the target name is the provider's name) |
+| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_canceled` (registering a cost, changing its name and the like, revising its amount, changing its end date, and canceling it; the target name is the item's name) |
+| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (enabling and disabling billing; the target name is the payment provider's name) |
+| `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (creating, changing and retiring a supporter plan; the target name is the plan's name) |
+| `supporter_subscription` | `supporter_subscription_canceled` (an administrator canceled a subscription; the target name is the plan's name and the user's handle) |
+| `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (submitting, withdrawing, approving and rejecting a custom emoji request; the target name is the `:shortcode:`) |
+| `payment_provider` | `payment_reconcile_queued` (reconciliation with the payment provider was started by hand; the target name is the provider's name) |
+| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (disabling and revoking an OAuth client; disabling revokes all its tokens; the target name is the client's name and `client_id`) |
+| `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
+| `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
 
-一覧は、対象が今もあるかを示します。保持期間を過ぎて消えたアカウント・通報・異議申し立て・登録の拒否と、削除されたロール・カスタム絵文字・webhook は、記録時の名前だけを出し、画面へのリンクを出しません。
+The list shows whether the target still exists. Accounts, reports, appeals and sign-up blocks that disappeared after their retention period, and deleted roles, custom emoji and webhooks, show only the name at the time of recording and no link to a screen.
 
 ```sh
 my admin audit list
@@ -333,40 +335,40 @@ my admin audit list -actor alice -action domain_action_issued
 my admin audit list -target-kind domain -target-id spam.example
 ```
 
-管理 API では `GET /api/v1/admin/audit_log`（`actor_account_id`・`action`・`target_kind`・`target_id` で絞り込み）で、権限 `view_audit` を要します。
+In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`, `action`, `target_kind` and `target_id`). It needs the `view_audit` permission.
 
-- 1 行は操作者（`user` ならその利用者、CLI なら `cli`）・操作・対象の種類と ID・対象の表示名・元の記録の ID・日時です。
-  対象の ID は、アカウント・通報・異議申し立て・利用者・ルール・ロール・登録の拒否の ID、ドメイン単位の処分ではドメイン、設定と文章ではキーです。
-- 対象の表示名（`@alice`・`@bob@example.com`・ドメイン・設定のキー・ルールの文。文章はキー、ロールはキーと利用者のハンドル、登録の拒否は種類と値）は記録したときの写しなので、対象が消えた後も読めます。
-  API の各行は対象が今もあるか（`target_exists`）も返し、消えたアカウント・通報・異議申し立て・登録の拒否では `false` です。Web の監査ログは、消えた対象をリンクにせず表示名だけを出します。
-- 理由とメモの本文は写しません。元の記録（処分・担当・解決・再開・メモ・審査・設定やルールの版）の ID から引きます。
-- 一覧は新しい順のキーセットページングです（CLI は `-before <entry id>`）。
-- 監査ログを更新・削除する API と CLI はありません。古い行は[保持期間](#記録の保持期間と保全)を過ぎると消えます。
+- A row is the actor (the user for `user`, or `cli` for the CLI), the operation, the target kind and ID, the target's display name, the ID of the original record, and the time.
+  The target ID is the ID of the account, report, appeal, user, rule, role or sign-up block; for a domain action it is the domain; for settings and texts it is the key.
+- The target's display name (`@alice`, `@bob@example.com`, a domain, a setting key, the text of a rule; for a text its key, for a role its key and the user's handle, for a sign-up block its kind and value) is a copy taken at recording time, so it is still readable after the target is gone.
+  Each API row also returns whether the target still exists (`target_exists`), which is `false` for accounts, reports, appeals and sign-up blocks that are gone. The web audit log shows only the display name, without a link, for a target that is gone.
+- The text of reasons and notes is not copied. Look it up through the ID of the original record (the action, assignment, resolution, reopening, note, review, or the version of a setting or rule).
+- The list is newest first with keyset paging (`-before <entry id>` in the CLI).
+- There is no API or CLI to update or delete the audit log. Old rows are removed after the [retention period](#record-retention-and-holds).
 
-## 記録の保持期間と保全
+## Record retention and holds
 
-モデレーションの記録は、種類ごとの保持期間を過ぎると、1 時間ごとのジョブ（`moderation.purge_records` と `identity.purge_origins`）が消します（[ADR-0038](../adr/0038-moderation-personal-data-retention.md)、[データモデル §8](../architecture/data-model/08-deletion-and-purge.md#8-削除と消去)）。
-期間はインスタンス設定で変えられますが、下限より短くはできません（[インスタンス設定](instance-settings.md)）。変えた期間は次の回から効きます。
+After the retention period for each kind of record, hourly jobs (`moderation.purge_records` and `identity.purge_origins`) remove moderation records.
+You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run.
 
-| 記録 | 設定 | 既定 | 下限 | 起点 |
+| Record | Setting | Default | Lower limit | Starts from |
 | --- | --- | --- | --- | --- |
-| ログイン元の IP アドレスと User-Agent | `retention_session_origins` | 180 日 | 90 日 | ログイン |
-| 登録元の IP アドレス | `retention_registration_origins` | 180 日 | 90 日 | 登録 |
-| 通報（コメント・対象の投稿・メモ・担当・解決・再開） | `retention_reports` | 365 日 | 180 日 | 最後の解決 |
-| アカウントへの処分（理由・メモ・対象の投稿・解除）と異議申し立て | `retention_moderation_actions` | 365 日 | 180 日 | 処分の終わり |
-| 監査ログ | `retention_audit_log` | 730 日 | 365 日 | 記録 |
-| 登録の拒否 | なし（変えられない） | 30 日 | — | 解除と期限切れの早い方 |
+| Sign-in IP address and User-Agent | `retention_session_origins` | 180 days | 90 days | The sign-in |
+| Registration IP address | `retention_registration_origins` | 180 days | 90 days | The registration |
+| Reports (comment, target posts, notes, assignments, resolutions, reopenings) | `retention_reports` | 365 days | 180 days | The last resolution |
+| Actions against accounts (reason, note, target posts, lifting) and appeals | `retention_moderation_actions` | 365 days | 180 days | The end of the action |
+| Audit log | `retention_audit_log` | 730 days | 365 days | The record |
+| Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
 
-- 未解決の通報は消えません。処分が参照する通報（処分の `report_id`）は、その処分が消えるまで残ります。
-- 処分の終わりは、解除と期限切れの早い方です。異議が申し立てられた処分は、審査がそれより後ならその審査の時刻で、審査待ちの間は消えません。
-  `warn` と `delete_statuses` は効果が続かないので、出した時刻が終わりです。期限のない処分（`ban`、期限なしの `suspend` など）は、解除されるまで消えません。
-- 通報と処分が指す投稿は、作者が削除していても、その通報・処分が消えるまで消去ジョブが添付のメディアごと物理削除しません（表示からは消えます）。リモートの投稿は、保持期間（設定 `remote_status_max_retention` を含む）を過ぎても残ります。
-- 解除も期限も無い登録の拒否は、効いている間ずっと残ります。
-- 1 回のジョブが消すのは、種類ごとに上限のある件数です（処分・通報・登録の拒否は 100 件ずつ 20 回、監査ログは 1,000 行ずつ 20 回）。残りは次の回が消します。
+- Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
+- The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.
+  `warn` and `delete_statuses` have no lasting effect, so the end is the time they were issued. An action without an end (a `ban`, a `suspend` without an end time, and so on) is not removed until it is lifted.
+- Posts that a report or an action points to are not physically deleted by the purge job, with their attached media, until that report or action is removed, even if the author deleted them (they disappear from view). Remote posts also stay beyond the retention period (including the setting `remote_status_max_retention`).
+- A sign-up block that has neither a lift nor an end time stays as long as it is in effect.
+- One job run removes only a capped number of rows per kind (100 at a time, 20 times, for actions, reports and sign-up blocks; 1,000 rows at a time, 20 times, for the audit log). The next run removes the rest.
 
-### 保全
+### Holds
 
-裁判所の消去禁止命令（情報流通プラットフォーム対処法 16 条）や、開示請求の対応中には、アカウント単位で消去を止められます。
+While a court order forbids erasure (Japan's Information Distribution Platform Act, Article 16) or a disclosure request is being handled, you can stop erasure per account.
 
 ```sh
 my admin retention hold -reason "court order 2026-123" @alice
@@ -374,21 +376,21 @@ my admin retention list -account @alice
 my admin retention release <hold id>
 ```
 
-- 保全のあるアカウントの、処分と異議申し立て・そのアカウントの通報とそのアカウントが出した通報・それらの監査ログ・ログイン元と登録元の IP アドレス・投稿は、保持期間を過ぎても消えません。
-  そのアカウントの BAN から作った登録の拒否も、解除・期限切れから 30 日を過ぎても消えません。
-- 1 つのアカウントに複数の保全を置けます。すべてを解除すると、期間を過ぎた記録が次の回に消えます。解除済みの保全をもう一度解除しても何も変わりません。
-- 保全とその解除は CLI だけで行い、記録の操作者は CLI です。
-- 削除したアカウント（`ban` の期日を過ぎたものと、本人が削除したもの）のデータは、削除から 7 日後に 1 時間ごとのジョブ `account.erase_deleted` が消します（[データモデル §8](../architecture/data-model/08-deletion-and-purge.md#8-削除と消去)）。
-  保全のあるアカウントは消しません。通報と処分が指す投稿は、その記録が消えるまで残ります。アカウントの URI・ユーザー名と処分の記録は残ります。
+- For an account under a hold, its actions and appeals, the reports about it and the reports it made, the audit logs of those, the sign-in and registration IP addresses, and its posts are not removed after the retention period.
+  A sign-up block created from that account's ban is also kept past 30 days after lifting or expiry.
+- You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
+- Holds and their release are done only with the CLI, and the actor in the record is the CLI.
+- The data of a deleted account (one whose `ban` reached its date, or one the user deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`.
+  An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
 
-### 開示請求への書き出し
+### Exporting for disclosure requests
 
-開示請求（GDPR 15 条・個人情報保護法 33 条）には、アカウントのモデレーションの記録をすべて JSON で書き出して応じます。
+For a disclosure request (GDPR Article 15, Japan's Act on the Protection of Personal Information Article 33), respond by exporting all of an account's moderation records as JSON.
 
 ```sh
 my admin account export-moderation @alice > alice-moderation.json
 ```
 
-- 書き出すのは、そのアカウントへの処分（非公開のメモ・解除・異議申し立てと審査を含む）、そのアカウントの通報（コメント・対象の投稿・引用したルール・モデレーターのメモ・担当・解決・再開）、そのアカウントが出した通報（未解決か解決済みかだけ）、それらの監査ログです。
-- 通報者の身元（通報したアカウントと、受信した通報の URI・転送元のサーバー）は書き出しません。通報のコメントに通報者を特定できることが書かれていないかは、渡す前に確かめてください。
-- モデレーターは利用者 ID で書き出します。書き出しの対応中に記録が消えないよう、先に保全を置いてください。
+- The export contains the actions against the account (including private notes, lifting, appeals and reviews), the reports about the account (comment, target posts, rules cited, moderators' notes, assignments, resolutions, reopenings), the reports the account made (only whether each is open or resolved), and the audit logs of those.
+- The identity of reporters (the reporting account, and the URI and the origin server of a received report) is not exported. Before you hand the export over, check that a report's comment does not say anything that identifies the reporter.
+- A moderator is exported by user ID. Place a hold first so that records are not removed while you handle the request.

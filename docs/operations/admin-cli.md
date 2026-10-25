@@ -43,7 +43,7 @@ my admin role revoke alice moderator
 ```
 
 - 権限はモデレーション（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）とサーバー管理（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs`・`manage_login_recovery`・`manage_custom_emojis`・`manage_webhooks`・`manage_announcements`・`manage_finance`・`manage_oauth_apps`・`manage_service_closure`）と利用者の機能（`view_finance`・`create_custom_emojis`）の区分を持ち、
-  `list` は区分ごとの列（`MODERATION`・`SERVER`・`MEMBER`）に出します。Web クライアントは区分ごとに「モデレーション」と「管理」を出し、利用者の機能はどちらにも数えません（[ADR-0058](../adr/0058-moderation-admin-separation.md)、[ADR-0070](../adr/0070-permission-split-emoji-finance.md)、[モデレーション](moderation.md#web-クライアントのモデレーションとサーバー管理)）。
+  `list` は区分ごとの列（`MODERATION`・`SERVER`・`MEMBER`）に出します。Web クライアントは区分ごとに「モデレーション」と「管理」を出し、利用者の機能はどちらにも数えません（[ADR-0058](../adr/0058-moderation-admin-separation.md)、[ADR-0070](../adr/0070-permission-split-emoji-finance.md)、[モデレーション](moderation.md#moderation-and-server-administration-in-the-web-client)）。
 - 変更は利用者の次の要求から効きます。モデレーター向けの通知は、通知を作るときに権限を持つ人に届きます。
 - 付与と剥奪は監査ログに `role_granted`・`role_revoked`（対象の種類 `role`）で残ります。CLI の操作者は `cli` です（`my admin audit list -target-kind role`）。
 - 持っているロールの付与と持っていないロールの剥奪は何も変えず、記録もしません。
@@ -102,7 +102,7 @@ my admin closure export-html -out ./closure -lang ja,en  # ロケールと index
 
 - 出力: ロケールごとの `<dir>/<locale>.html` と、全ロケールを順に並べた `<dir>/index.html`（`my maintenance export` と同じテンプレート。サーバー名・閉鎖日・予告の運営者のメッセージ・`status_page_url`）、
   前段の設定例 `nginx.conf`・`Caddyfile`・`cloudfront-function.js`（`/ap/*`・`/inbox`・WebFinger・host-meta・NodeInfo・`/@*` は `410`、ほかは閉鎖のページ）。
-- サーバーがクローズしていないと断ります（終了コード 1）。`delivery_completed` の前は警告を出して書き出します。前段の切り替えは [サービスの終了 §6](service-closure.md#6-静的なページへの切り替え) です。
+- サーバーがクローズしていないと断ります（終了コード 1）。`delivery_completed` の前は警告を出して書き出します。前段の切り替えは [サービスの終了 §6](service-closure.md#6-switching-to-the-static-page) です。
 
 ## Exporting the maintenance page
 

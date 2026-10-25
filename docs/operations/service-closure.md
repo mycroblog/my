@@ -1,137 +1,135 @@
-# サービスの終了
+# Closing the service
 
-運営者向けの手順です。サーバーの運営をやめるときに、利用者がデータを持ち出せるようにし、連合先に残ったアカウントを消してから、
-サーバーを止めて静的な閉鎖のページに切り替えるまでを順に書きます。
-決定は [ADR-0088](../adr/0088-service-shutdown-modes.md)、要件は FR-808・FR-809（[機能要件](../requirements/01-functional.md)）、
-連合の振る舞いは [federation.md §15](../architecture/federation.md#15-サービスの終了)、各コマンドの詳しい説明は
-[管理者とロール](admin-cli.md#サービスの終了の予告) です。
+This guide is for operators. It covers, in order, what to do when you stop running the server: let users take their data out, delete the accounts that remain on other servers,
+then stop the server and switch to a static closure page.
+Each command is described in more detail in [administrators and roles](admin-cli.md#サービスの終了の予告).
 
-## 流れ
+## The sequence
 
 ```text
-予告 ──告知の期間──▶ 閉鎖日 ──クローズ──▶ 配送の完了 ──持ち出しの期限──▶ 静的なページ ──▶ DB・Blob・バックアップの破棄
+Announce ──notice period──▶ Closing date ──Close──▶ Delivery complete ──export deadline──▶ Static page ──▶ Discard DB, blobs and backups
 ```
 
-| 段階 | サーバー | 運営者がすること |
+| Stage | Server | What the operator does |
 | --- | --- | --- |
-| 1. 予告 | いつもどおり動く。登録・招待・サポーターの新しい加入は止まる | `my admin closure announce`、ステータスページへの掲出 |
-| 2. 告知の期間 | いつもどおり動く。利用者はエクスポートと移転ができる | 年払いのサポーターの返金、移転と保全の確認 |
-| 3. クローズ（閉鎖日の後） | 利用者はサインインとエクスポートだけ。全アカウントの `Delete` を配送する | `my admin closure check` と `close` |
-| 4. 配送の完了 | `delivery_completed` を記録し、ローカルの Actor も `410` | `my admin closure status` で確かめる。ワーカーを止めない |
-| 5. 持ち出しの期限まで | クローズのままエクスポートを提供する | 保全の記録の書き出し |
-| 6. 静的なページ | 止める | `my admin closure export-html`、前段の切り替え、`my serve` の停止 |
-| 7. 破棄 | — | DB・Blob・バックアップの破棄。ドメインはおよそ 1 年持ち続ける |
+| 1. Announce | Runs as usual. Sign-ups, invites and new supporter subscriptions stop | `my admin closure announce`, post a notice on the status page |
+| 2. Notice period | Runs as usual. Users can export their data and move to another server | Refund annual supporters, check migrations and retention holds |
+| 3. Close (after the closing date) | Users can only sign in and export. The server delivers a `Delete` for every account | `my admin closure check` and `close` |
+| 4. Delivery complete | Records `delivery_completed`; local Actors also return `410` | Confirm with `my admin closure status`. Do not stop the workers |
+| 5. Until the export deadline | Stays closed and keeps offering the export | Export the records under retention holds |
+| 6. Static page | Stopped | `my admin closure export-html`, switch the front end, stop `my serve` |
+| 7. Discard | None | Discard the DB, blobs and backups. Keep the domain for about a year |
 
-どの段階でも、メンテナンスモード（[Maintenance](maintenance.md)）を重ねて使えます。メンテナンスの間は、エクスポートも `Delete` の配送も止まります。
+You can combine any stage with maintenance mode ([Maintenance](maintenance.md)). During maintenance, exports and the delivery of `Delete` activities stop.
 
-## 1. 予告
+## 1. Announce
 
-閉鎖日（`-closes-at`）とデータの持ち出しの期限（`-export-until`、省くと閉鎖日の 30 日後）を決めて予告します。
+Decide the closing date (`-closes-at`) and the deadline for taking data out (`-export-until`, 30 days after the closing date if omitted), then announce them.
 
 ```sh
-my admin closure announce -closes-at 2027-01-31T15:00:00Z -message "ご利用ありがとうございました。"
+my admin closure announce -closes-at 2027-01-31T15:00:00Z -message "Thank you for being here."
 my admin closure status
 ```
 
-- 閉鎖日に下限はありませんが、予告から閉鎖日までが 30 日より短いと警告が出ます。利用者がエクスポートと移転をする時間を取ってください。
-- 日付を変えるときは `announce` をもう一度、取りやめるときは `my admin closure withdraw` を実行します。どちらも全利用者に通知 `service_closure` が届きます。
-- 予告の開始で、登録の実効値が `closed` になり、審査待ちの申請は却下され、続いているサポーターの加入はすべて期間の終わりで解約されます（加入者には通知とメール）。
-  取り消しても、却下と解約は戻りません。
-- 通知はジョブで作るので、ワーカーを止めないでください。
-- ステータスページ（[ADR-0085](../adr/0085-uptime-monitoring-status-page.md)、[外形監視とステータスページ](monitoring.md)）に、閉鎖日・持ち出しの期限・エクスポートと移転の方法を掲出します。
-  サーバーが止まった後もステータスページは残るので、閉鎖の後に訪れた人への案内にもなります。
+- There is no lower bound on the closing date, but a warning appears when the time from the announcement to the closing date is shorter than 30 days. Leave users time to export and move.
+- To change the date, run `announce` again; to call it off, run `my admin closure withdraw`. Either one sends every user a `service_closure` notification.
+- Once announced, the effective registration mode becomes `closed`, pending applications are rejected, and every continuing supporter subscription is canceled at the end of its period (subscribers get a notification and an email).
+  Withdrawing the announcement does not undo the rejections and cancellations.
+- Notifications are created by jobs, so do not stop the workers.
+- On the status page ([monitoring and the status page](monitoring.md)), post the closing date, the export deadline, and how to export and move.
+  The status page outlives the server, so it also guides people who visit after the closure.
 
-## 2. 告知の期間
+## 2. Notice period
 
-- 利用者は、設定の画面からデータのエクスポート（FR-008 と CSV）と、ほかのサーバーへの移転（`Move`、[ADR-0089](../adr/0089-account-migration-move.md)）ができます。
-  全画面の帯と通知が、閉鎖日・持ち出しの期限・その画面への導線を示します。
-- **年払いのサポーター**: 予告で加入は期間の終わりに解約されますが、期間の終わりが閉鎖日より後の加入は、使えない期間の分も支払われています。
-  サーバーは返金しないので、返金は決済事業者の画面（Stripe ならダッシュボードの支払いの画面、PAY.JP なら管理画面の支払いの画面）で、加入者ごとに行います（[サポーターの決済（Stripe）](payments-stripe.md)・[サポーターの決済（PAY.JP）](payments-payjp.md)）。
-- 閉鎖日を過ぎると、`manage_service_closure` を持つ人に通知 `admin_service_closure_due` が届きます。サーバーは自動ではクローズしません。
+- Users can export their data (the data export and the CSV files) and move to another server (`Move`) from the settings screen.
+  A banner on every screen and a notification show the closing date, the export deadline and the way to that screen.
+- **Annual supporters**: the announcement cancels subscriptions at the end of the period, but for a subscription whose period ends after the closing date, the time it cannot be used has already been paid for.
+  The server does not refund, so refund each subscriber in the payment provider's screen (in Stripe, the payments screen of the dashboard; in PAY.JP, the payments screen of the admin console) ([supporter payments (Stripe)](payments-stripe.md), [supporter payments (PAY.JP)](payments-payjp.md)).
+- After the closing date passes, people with `manage_service_closure` get an `admin_service_closure_due` notification. The server does not close by itself.
 
-## 3. クローズ
+## 3. Close
 
-閉鎖日を過ぎたら、クローズの前に点検します。
+Once the closing date has passed, run the checks before you close.
 
 ```sh
 my admin closure check
 ```
 
-- **終わっていない移転**があると警告が出ます。移転が終わるのを待ってからクローズしてください。クローズの後は `Move` を始められません。
-- **保全（`retention_holds`、[ADR-0038](../adr/0038-moderation-personal-data-retention.md)）**のあるアカウントがあると警告が出ます。
-  保全の義務はサーバーを閉じても消えないので、保全の対象の記録を書き出して、サーバーの外に保管してください（保全の一覧は `my admin retention list`）。
+- **Unfinished migrations** produce a warning. Wait for them to finish before you close, because after closing nobody can start a `Move`.
+- **Retention holds (`retention_holds`)** on any account produce a warning.
+  The duty behind a hold does not end when you close the server, so export the records under a hold and store them outside the server (list the holds with `my admin retention list`).
 
   ```sh
   my admin account export-moderation @alice > alice-moderation.json
   ```
 
-点検を終えたらクローズします。取り消せません。`y` とドメイン名の入力で確かめます（自動化には `-confirm-domain`）。
+When the checks are done, close. This cannot be undone. Confirm by typing `y` and the domain name (use `-confirm-domain` in automation).
 
 ```sh
 my admin closure close
 ```
 
-クローズの後、利用者はサインインしてデータのエクスポートだけができます。残っていたサポーターの加入はすぐに解約され、
-全ローカルアカウントの `Delete`（Actor）が連合先へ配送されます（`federation_mode` が `off` / `inbound` でも送ります）。
-inbox と、投稿・コレクションの GET は `410 Gone` になります。
+After closing, users can only sign in and export their data. The remaining supporter subscriptions are canceled immediately,
+and a `Delete` (Actor) for every local account is delivered to other servers (even when `federation_mode` is `off` or `inbound`).
+The inbox and GETs of posts and collections return `410 Gone`.
 
-## 4. 配送の完了の確認
+## 4. Confirming that delivery is complete
 
-**`delivery_completed` になるまで、`my serve` とワーカー（`role` が `all` または `worker` のプロセス、push 型のキューなら Cloud Tasks のキューや SQS のイベントソース）を止めないでください。**
-`Delete` を配送するのはワーカーで、配送の間はローカルの Actor の文書と鍵を返し続けて、受け手が `Delete` の署名を検証できるようにしています。
-途中で止めると、連合先にアカウントが残ります。
+**Do not stop `my serve` and the workers (processes whose `role` is `all` or `worker`; with a push-style queue, the Cloud Tasks queue or the SQS event source) until the state is `delivery_completed`.**
+The workers deliver the `Delete` activities, and while they do, the server keeps returning the local Actor's document and key so that receivers can verify the signature of the `Delete`.
+If you stop early, the accounts remain on other servers.
 
 ```sh
 my admin closure status
 ```
 
-- `accounts with a Delete` が `Delete` を記録したアカウント数、`fan-outs pending` が展開の残り、`deliveries <state>` が配送の状態ごとの件数です。
-- 配送は既存の方針で再試行し（最大 9 回、約 4 日）、すべて終わると 10 分ごとの確認が `delivery_completed` を記録します（`state: delivery_completed`）。
-  その後はローカルの Actor とインスタンス Actor も `410` です。
-- `dead` になった配送は自動では再実行しません。再実行するときは `my job retry` を使います。
+- `accounts with a Delete` is the number of accounts for which a `Delete` was recorded, `fan-outs pending` is the fan-out work left, and `deliveries <state>` is the number of deliveries per state.
+- Deliveries are retried by the usual policy (up to 9 times over about 4 days). When all have finished, the check that runs every 10 minutes records `delivery_completed` (`state: delivery_completed`).
+  From then on the local Actors and the instance Actor also return `410`.
+- A delivery that became `dead` is not retried automatically. To retry it, use `my job retry`.
 
-## 5. 持ち出しの期限まで
+## 5. Until the export deadline
 
-配送の完了の後も、サーバーは `export_until` まではクローズのまま動き、利用者のエクスポートを提供します。
-サーバーは自分ではデータを消さないので、期限を過ぎても止めるまでは動き続けます。
-保全の記録の書き出し（§3）がまだなら、ここで済ませます。
+Even after delivery is complete, the server keeps running closed until `export_until` and keeps serving users' exports.
+The server never deletes data on its own, so it keeps running past the deadline until you stop it.
+If you have not yet exported the records under retention holds (§3), do it now.
 
-## 6. 静的なページへの切り替え
+## 6. Switching to the static page
 
-持ち出しの期限を過ぎたら、閉鎖のページを書き出します。**DB を読むので、`my serve` を止めて DB を破棄する前に実行します。**
+After the export deadline, export the closure page. **This reads the DB, so run it before you stop `my serve` and discard the DB.**
 
 ```sh
-my admin closure export-html -out ./closure             # 全ロケール。index.html はインスタンスの既定のロケールから
-my admin closure export-html -out ./closure -lang ja,en # ロケールと index.html の順を決める
+my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
+my admin closure export-html -out ./closure -lang ja,en # set the locales and the order in index.html
 ```
 
-- 書き出すもの:
-  - `<dir>/<locale>.html` と、全ロケールを順に並べた `<dir>/index.html`。メンテナンスのページ（`my maintenance export`）と同じテンプレートと CSS で、
-    サーバー名（`maintenance_server_name`、無ければインスタンスの名前、無ければホスト名）・閉鎖日・予告の運営者のメッセージ・ステータスページへのリンク（`status_page_url`）を示します。
-    インライン CSS だけで、スクリプトも外部の資源も持たず、CSP は `<meta>` に入っています。テーマの色の上書きは焼き込み、カスタム CSS は入れません。
-  - 前段の設定例 `nginx.conf`・`Caddyfile`・`cloudfront-function.js`。どれも、連合と発見の経路（`/ap/*`・`/inbox`・`/.well-known/webfinger`・
-    `/.well-known/host-meta`・`/.well-known/host-meta.json`・`/.well-known/nodeinfo`・`/nodeinfo/*`）とプロフィール（`/@*`）に本文なしの `410` を返し、
-    それ以外のパスに、`Accept-Language` の最初の言語のページ（無ければ `index.html`）を返します。
-- サーバーがクローズしていないと断ります（終了コード 1）。`delivery_completed` の前は、配送が続いていると警告を出します（書き出しはします）。
+- What it writes:
+  - `<dir>/<locale>.html`, and `<dir>/index.html`, which lists all locales in order. They use the same template and CSS as the maintenance page (`my maintenance export`) and show
+    the server name (`maintenance_server_name`, else the instance name, else the host name), the closing date, the operator's message from the announcement, and a link to the status page (`status_page_url`).
+    The CSS is inline only, there are no scripts or external resources, and the CSP is in a `<meta>` tag. Theme color overrides are baked in; custom CSS is not included.
+  - Front-end configuration examples `nginx.conf`, `Caddyfile` and `cloudfront-function.js`. Each returns `410` with no body for the federation and discovery paths (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
+    `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) and for profiles (`/@*`),
+    and for every other path returns the page of the first language in `Accept-Language` (or `index.html` if there is none).
+- The command refuses if the server has not closed (exit code 1). Before `delivery_completed`, it warns that deliveries continue (and still writes the files).
 
-前段を切り替えます。ページ（`*.html`）だけを公開の場所に置き、設定例のホスト名・ディレクトリ・証明書のパスを環境に合わせて直します。
+Switch the front end. Put only the pages (`*.html`) in the public location, and adjust the host name, directory and certificate paths in the example to your environment.
 
-| 前段 | 置き方 |
+| Front end | How to set it up |
 | --- | --- |
-| nginx | ページを `/srv/closure` に置き、`nginx.conf` を `http` ブロックから読み込む。ページも `410` で返す |
-| Caddy | ページを `/srv/closure` に置き、`Caddyfile` を使う。証明書は Caddy が取り、ページも `410` で返す |
-| CloudFront | ページを S3 のバケットの直下に置き、そのバケットを既定のキャッシュビヘイビアのオリジンにして、`cloudfront-function.js` をビューアリクエストの CloudFront Function（`cloudfront-js-2.0`）として関連付ける。キャッシュポリシーのキャッシュキーに `Accept-Language` を入れる。ページは `200` で返る（ビューアリクエストの関数はオリジンの応答の状態を変えられない） |
+| nginx | Put the pages in `/srv/closure` and include `nginx.conf` from the `http` block. The pages are also served with `410` |
+| Caddy | Put the pages in `/srv/closure` and use the `Caddyfile`. Caddy obtains the certificate, and the pages are also served with `410` |
+| CloudFront | Put the pages directly under an S3 bucket, make that bucket the origin of the default cache behavior, and associate `cloudfront-function.js` as a viewer-request CloudFront Function (`cloudfront-js-2.0`). Put `Accept-Language` in the cache key of the cache policy. The pages are served with `200` (a viewer-request function cannot change the status of the origin's response) |
 
-切り替えた後、`curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` が `410`、
-`curl -i https://social.example/` が閉鎖のページを返すことを確かめてから、`my serve` とワーカーを止めます。
-外形監視は、ヘルスチェックの監視を止めるか、閉鎖のページを見るものに替えます。
+After switching, check that `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` returns `410` and
+that `curl -i https://social.example/` returns the closure page. Then stop `my serve` and the workers.
+For uptime monitoring, either stop the health-check monitors or point them at the closure page.
 
-## 7. DB・Blob・バックアップの破棄
+## 7. Discarding the DB, blobs and backups
 
-止めた後、DB・Blob（メディアとエクスポートのファイル）・KV・キュー、それぞれのバックアップとスナップショットを破棄します。
-保全の対象の記録を書き出して保管したことを、破棄の前にもう一度確かめてください。破棄は取り消せません。
+After stopping, discard the DB, the blobs (media and export files), the KV store and the queues, together with their backups and snapshots.
+Before you discard anything, confirm once more that you exported and stored the records under retention holds. Discarding cannot be undone.
 
-**ドメインは手放さず、およそ 1 年は静的なページと `410` を返し続けます。** 連合先は `410` を見て取得と配送を止め、キャッシュを消していきます。
-URI は UUID（[ADR-0018](../adr/0018-federated-uris.md)）なので同じ `id` の Actor が作られる心配は小さいですが、
-ドメインを別の人が取ると、ハンドル（`acct:alice@social.example`）と表示用の URL が別の人のものになり、なりすましに使えます。
-ドメインと証明書の更新を続け、1 年を過ぎても、手放す前にもう一度考えてください。
+**Keep the domain, and keep serving the static page and `410` for about a year.** Other servers see the `410`, stop fetching and delivering, and clear their caches.
+Federated URIs use UUIDs, so there is little risk that an Actor with the same `id` is created again,
+but if someone else takes the domain, the handle (`acct:alice@social.example`) and the profile URLs become theirs and can be used to impersonate your users.
+Keep renewing the domain and certificate, and think again before you let go of the domain even after the year is over.
