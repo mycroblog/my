@@ -1,84 +1,119 @@
-# リリースの手順
+# Releasing
 
-リリースを作る人（決定者）向けの手順です。リリースは `release.yml` だけが作ります（[ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)）。
-`release.yml` は、指定したコミットで遅い検査（`slow-suite.yml`）を回し、すべて通ったときだけ、そのコミットにタグを打って GitHub Release を下書きで作り、
-クライアントライブラリ（[ライブラリ](#ライブラリmykit-と-mybot)）を同じ版で公開します。遅い検査の中身と、ほかにどこで回るかは [workflow.md の「What CI runs where」](../agents/workflow.md#what-ci-runs-where) にあります。
+How the decider cuts a release. Only `release.yml` creates releases. It runs the slow suite (`slow-suite.yml`) on the chosen commit and,
+only when every job passes, tags that commit, drafts a GitHub Release, and publishes the client libraries under the same version
+([Libraries](#libraries-mykit-and-mybot)). What the slow suite contains, and where else it runs, is in
+[What CI runs where](../agents/workflow.md#what-ci-runs-where).
 
-## 版
+## Versions
 
-- 版は `vX.Y.Z` か、プレリリースの `vX.Y.Z-<識別子>`（例: `v0.1.0-rc.1`）です。形が違う版は最初のジョブで落ちます。
-- `main` 以外のブランチからは、プレリリースの版だけを作れます。関門をブランチで試すためのもので、正式なリリースは `main` から作ります。
-- すでにタグがある版は最初のジョブで落ちます。遅い検査の後にも、タグと同じ名前のリリースがないことを確かめ直します。
+- A version is `vX.Y.Z`, or a prerelease `vX.Y.Z-<identifier>` (for example `v0.1.0-rc.1`). Any other form fails in the first job.
+- Branches other than `main` can only produce prereleases. They exist for trying the gate on a branch; real releases come from `main`.
+- A version that is already tagged fails in the first job. After the slow suite, the workflow checks again that no release with the tag's name exists.
+- Within a minor version, patch releases only add to the schema (or rebuild projection tables); removing data waits for a minor version.
+  Operators can upgrade from the same minor version and from the latest patch release of the previous minor version
+  ([Skipping releases](database.md#skipping-releases)).
 
-## 手順
+## Steps
 
-1. 最新の Nightly が通っていることを確かめる。落ちているなら、先に直す（[workflow.md §9](../agents/workflow.md#failures-on-main-orchestrator)）。
+1. Check that the latest Nightly passed. If it failed, fix it first ([Failures on main](../agents/workflow.md#failures-on-main-orchestrator)).
 
    ```sh
    gh run list -R mycroblog/my --workflow nightly.yml --limit 3
    ```
 
-2. `main` で `release.yml` を回す。回したときの `main` の先頭のコミットが、検査されタグを打たれるコミットになる。
+2. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
    ```sh
    gh workflow run release.yml -R mycroblog/my --ref main -f version=v0.1.0
    gh run list -R mycroblog/my --workflow release.yml --limit 1
    ```
 
-3. 終わるのを待つ。遅い検査（E2E の全体・連合・実 PostgreSQL・stream の契約・イメージ・CodeQL）は、各ジョブが並行して動いても時間がかかる。
-   ジョブ `release` は、遅い検査のジョブが 1 つでも落ちるか取り消されると動かず、タグも Release もできず、ライブラリも公開されない。
-   落ちたときは原因を直して `main` に入れ、同じ版でもう一度回す。
-   `release` が通った後にジョブ `npm` だけが落ちたときは、原因（多くは trusted publisher の登録）を直してその run の落ちたジョブを回し直す
-   （`gh run rerun <run-id> -R mycroblog/my --failed`）。すでに公開した版は飛ばす。
-4. 通ったら、下書きの Release（`gh release view v0.1.0 -R mycroblog/my`、または Releases の画面）を見て、自動で作られた変更の一覧を整え、
-   「mykit」と「mybot」の節（[ライブラリ](#ライブラリmykit-と-mybot)）と「API の変更」の節を書いて、公開する。プレリリースの版は、プレリリースとして下書きされる。
+3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, CodeQL) takes a while even with its jobs in parallel.
+   The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
+   On a failure, fix the cause on `main` and run the workflow again with the same version.
+   If only the `npm` job fails after `release` passed, fix the cause (usually the trusted publisher registration) and rerun the failed job of that run
+   (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
+4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page), tidy the generated list of changes,
+   write the sections that [Release notes](#release-notes) requires, and publish it. A prerelease is drafted as a prerelease.
 
-## API の変更
+## Release notes
 
-クライアント API（`/api/v1`）は追加を既定にし、破壊的変更は非推奨の印を付けて少なくとも 1 つの v0.x のマイナーリリースの間残してから行います
-（[ADR-0090](../adr/0090-third-party-oauth-apps.md) §8、仕組みは [client-api.md §2.6](../architecture/client-api.md#26-安定性と非推奨)）。
+Besides the generated list of changes, every Release has the sections below. Write "None" in a section that has nothing to say;
+an empty section and a missing one mean different things to an operator.
 
-- 下書きの Release には、自動で作られた変更の一覧に加えて「API の変更」の節を必ず置く。節には次を書く。
-  - 追加した操作・フィールド・スコープ
-  - この版で `deprecated: true` にした操作と、その `Deprecation` と `Sunset` の日付、代わりの操作
-  - この版で削除した操作・フィールド（前の版までに非推奨にしたものだけ）
-  - セキュリティの修正で猶予なしに変えたもの（理由とともに）
+### Upgrading
 
-  変更がなければ「なし」と書く。節を作るときは `api/openapi.yaml` の前の版からの差分と、`x-sunset` を持つ操作の一覧（`grep -n x-sunset api/openapi.yaml`）を見る。
-- 公開する前に、削除してよい操作を確かめる。操作を削除するには、その操作が前のマイナーリリース以前のリリースですでに `deprecated: true` で配られていて、
-  `Sunset` の日が過ぎていなければならない。同じマイナーリリースの中で非推奨にして削除してはならない。
-- `Sunset` の日は `Deprecation` の日より前にしない（生成器が検査する）。非推奨にするときは、次のマイナーリリースの予定より後の日にする。
+What an operator runs to upgrade to this release ([Upgrading](database.md#upgrading)):
 
-## ライブラリ（mykit と mybot）
+- The data upgrade steps that this release's `my db upgrade` runs, one line each with what it carries over and roughly how long it takes on a large instance.
+  "None" when the release has none; operators still run `my db upgrade -check` and `my db upgrade`, which then do nothing.
+- The projections that `my db upgrade` rebuilds.
+- The releases an operator must have upgraded through: always "the same minor version, or the latest `vX.(Y-1).Z`", and, when this release
+  removes data that an earlier release carried over, that release by name (it is what `my db upgrade -check` names when it stops).
+- Anything to do by hand before or after, such as a new required setting.
 
-クライアントライブラリ `mykit` とボット制作ライブラリ `mybot` は、サーバーと同じ版の番号で同じリリースに出します
-（[ADR-0093](../adr/0093-api-client-library-mykit.md) §8、[ADR-0094](../adr/0094-bot-library-mybot.md) §1）。
-版を付ける手順は `scripts/release-libraries.sh`（試験は `scripts/release-libraries-test.sh`、`scripts/task.sh shell:test`）にあります。
+To fill it, compare the data upgrade steps registered in `my` with those of the previous release, and run the schema's `--dry-run`
+from the previous release's database.
 
-- **Go のタグ**: ジョブ `release` が、サーバーのタグ `vX.Y.Z` と同じコミットに `pkg/mykit/vX.Y.Z` を打つ。Go のモジュールはタグを打つだけで公開になり、
-  proxy.golang.org が最初に求められたときに取り込む。タグがすでにあれば、最初のジョブで落ちる。
-  - `pkg/mybot/go.mod` は、`main` では `pkg/mykit` を仮の版で require して `../mykit` に置き換えている（同じコミットの `mykit` で作るため）。
-    利用者は `replace` を読まないので、ジョブ `release` は、検査したコミットの上に `pkg/mybot/go.mod` だけを `require github.com/mycroblog/my/pkg/mykit vX.Y.Z` に変えたコミットを
-    GitHub の API で作り、そこに `pkg/mybot/vX.Y.Z` を打つ（`scripts/release-libraries.sh go-mod`）。このコミットはどのブランチにも載らず、タグが持つ。
-- **npm の公開**: ジョブ `npm` が、`release` の後に `@mycroblog/mykit` と `@mycroblog/mybot` をビルドし、`package.json` の版をリリースの版（`v` を除いた `X.Y.Z`）にして、
-  `mykit`・`mybot` の順に公開する。
-  - `@mycroblog/mybot` の `dependencies` の `@mycroblog/mykit`（リポジトリでは `workspace:*`）は、公開の前に同じ版 `X.Y.Z` に固定する。`npm publish` は `workspace:` を書き換えないため。
-  - 認証は npm の trusted publishing（GitHub Actions の OIDC。ジョブの権限 `id-token: write`）で、npm のトークンは秘密にも置かない。
-    trusted publishing は npm CLI 11.5.1 以降・Node.js 22.14.0 以降が要り、ジョブは `.tool-versions` の Node.js とその npm を使って、版を確かめてから公開する。
-  - `npm publish --provenance` で来歴（provenance）を付ける。npm の画面のパッケージの版に、ビルドしたワークフローとコミットが出る。
-  - プレリリースの版（`vX.Y.Z-<識別子>`）は dist-tag `next` に、正式な版は `latest` に出す。`npm install @mycroblog/mykit` が入れるのは `latest` だけ。
-  - 同じ版がすでに registry にあれば、その公開を飛ばす（落ちたジョブの回し直しのため）。npm は一度使った版の番号を、取り消した後も使わせない。
-- **リリースノートの「mykit」と「mybot」の節**: ジョブ `release` が、下書きの Release の先頭に両方の節（Go と npm の入れ方）を置く。公開する前に、各節の末尾の注釈を置き換える。
-  - 「mykit」: 手書きの層（再試行・ページング・ストリーミング・トークン）の破壊的変更（Conventional Commits の `!` が付いたコミットから拾う。v0 の間は許す）と、
-    生成したクライアントの型や関数で、この版で `Deprecated` にしたものと消したもの（「API の変更」の節と同じ操作）
-  - 「mybot」: `mybot` の破壊的変更（`!` が付いたコミット。扱いは `mykit` と同じ）
+### Breaking changes
 
-  なければ「なし」と書く。
-- **最初の公開の前の作業（決定者、1 回だけ。[#1167](https://github.com/mycroblog/my/issues/1167)）**: npm の trusted publisher はパッケージの設定に登録するので、
-  パッケージがまだ registry にないうちは登録できない。
-  1. npm の組織 `mycroblog` を作り、決定者を所有者にする。
-  2. `@mycroblog/mykit` と `@mycroblog/mybot` の最初の版を手元から 1 度だけ公開する（2FA を使う。来歴は付かない）。
-     `mybot` は同じ版の `mykit` に依存するので `mykit` から出す。リポジトリの根で次を回し、`package.json` の変更は戻す。
+What stops working, or works differently, for an operator or a client that did nothing:
+
+- **Settings**: renamed or removed setting keys and environment variables, with their replacement (the server refuses to start with a retired key and names it),
+  and changed defaults.
+- **Client API**: removed operations and fields (see [API changes](#api-changes)), and changes made without the deprecation period for a security fix.
+- **Schema contract**: tables and columns removed from the schema (only in a minor version, and only after an earlier release carried their data over),
+  type changes, and new constraints that existing rows must satisfy. Name the release whose `my db upgrade` carried the data over.
+
+ActivityPub formats and federated identifiers (Actor and post URIs) never change in a release, so this section never lists them.
+
+### API changes
+
+The client API (`/api/v1`) grows by addition. A breaking change first marks the operation deprecated and keeps it for at least one v0.x minor release.
+
+- The section lists:
+  - added operations, fields, and scopes;
+  - operations marked `deprecated: true` in this release, with their `Deprecation` and `Sunset` dates and the operation that replaces them;
+  - operations and fields removed in this release (only those deprecated in an earlier release);
+  - anything changed without the deprecation period because of a security fix, with the reason.
+
+  To write it, read the difference of `api/openapi.yaml` from the previous release, and the operations that have an `x-sunset` (`grep -n x-sunset api/openapi.yaml`).
+- Before publishing, check what may be removed: an operation may be removed only if a release of an earlier minor version already shipped it with
+  `deprecated: true` and its `Sunset` date has passed. Never deprecate and remove an operation within the same minor version.
+- A `Sunset` date is never before its `Deprecation` date (the generator checks this). When deprecating, pick a date after the next planned minor release.
+
+### mykit and mybot
+
+The `release` job puts both sections, with how to install each from Go and npm, at the top of the draft. Before publishing, replace the note at the end of each:
+
+- **mykit**: breaking changes to the hand-written layer (retries, paging, streaming, tokens), taken from the commits marked `!` in Conventional Commits
+  (allowed during v0), and the types and functions of the generated client deprecated or removed in this release (the same operations as in [API changes](#api-changes)).
+- **mybot**: breaking changes to `mybot` (commits marked `!`, as for `mykit`).
+
+## Libraries (mykit and mybot)
+
+The client library `mykit` and the bot library `mybot` are released with the same version number in the same release as the server.
+`scripts/release-libraries.sh` sets the versions (tested by `scripts/release-libraries-test.sh`, run with `scripts/task.sh shell:test`).
+
+- **Go tags**: the `release` job tags `pkg/mykit/vX.Y.Z` on the same commit as the server's `vX.Y.Z`. A tag is all it takes to publish a Go module;
+  proxy.golang.org fetches it the first time someone asks for it. If the tag already exists, the first job fails.
+  - On `main`, `pkg/mybot/go.mod` requires `pkg/mykit` at a placeholder version and replaces it with `../mykit`, so that `mybot` builds with the `mykit` of the same commit.
+    Users never read `replace`, so the `release` job creates, through the GitHub API, a commit on top of the checked one that only changes `pkg/mybot/go.mod` to
+    `require github.com/mycroblog/my/pkg/mykit vX.Y.Z`, and tags it `pkg/mybot/vX.Y.Z` (`scripts/release-libraries.sh go-mod`).
+    That commit is on no branch; only the tag holds it.
+- **npm**: after `release`, the `npm` job builds `@mycroblog/mykit` and `@mycroblog/mybot`, sets the version in `package.json` to the release's (`X.Y.Z`, without the `v`),
+  and publishes `mykit` and then `mybot`.
+  - The `@mycroblog/mykit` dependency of `@mycroblog/mybot` (`workspace:*` in the repository) is pinned to the same `X.Y.Z` before publishing, because `npm publish` does not rewrite `workspace:`.
+  - Authentication is npm trusted publishing (GitHub Actions OIDC, with the job permission `id-token: write`); no npm token exists, not even as a secret.
+    Trusted publishing needs npm CLI 11.5.1 or later and Node.js 22.14.0 or later; the job uses the Node.js of `.tool-versions` and its npm, and checks their versions before publishing.
+  - `npm publish --provenance` attaches provenance: the package version's page on npm shows the workflow and the commit that built it.
+  - Prereleases (`vX.Y.Z-<identifier>`) go to the dist-tag `next`, releases to `latest`. `npm install @mycroblog/mykit` installs `latest` only.
+  - A version already in the registry is skipped, so a failed job can be rerun. npm never allows a version number again, even after it is unpublished.
+- **Before the first publication (the decider, once)**: npm registers a trusted publisher in a package's settings, so it cannot be registered before the package exists.
+  1. Create the npm organization `mycroblog` with the decider as owner.
+  2. Publish the first version of `@mycroblog/mykit` and `@mycroblog/mybot` once from a local machine (with 2FA; it has no provenance).
+     `mybot` depends on the same version of `mykit`, so publish `mykit` first. Run the following at the repository root and revert the changes to `package.json`.
 
      ```sh
      (cd app && bun install --frozen-lockfile)
@@ -90,25 +125,25 @@
      git checkout -- pkg/mykit/ts/package.json pkg/mybot/ts/package.json
      ```
 
-  3. 2 つのパッケージそれぞれで、npmjs.com のパッケージの Settings の「Trusted Publisher」で GitHub Actions を選び、
-     Organization or user `mycroblog`、Repository `my`、Workflow filename `release.yml` を登録する（Environment は空のまま）。
-  4. 同じ Settings の「Publishing access」を「Require two-factor authentication and disallow tokens」にする。trusted publishing は OIDC なので影響しない。
+  3. For each of the two packages, open Settings on npmjs.com, choose GitHub Actions under "Trusted Publisher", and register
+     Organization or user `mycroblog`, Repository `my`, and Workflow filename `release.yml` (leave Environment empty).
+  4. In the same Settings, set "Publishing access" to "Require two-factor authentication and disallow tokens". Trusted publishing uses OIDC and is not affected.
 
-  登録の前に `release.yml` を回すと、ジョブ `npm` が認証で落ちる。登録した後に、そのジョブだけを回し直せばよい。
+  If `release.yml` runs before the registration, the `npm` job fails to authenticate. Rerun just that job after registering.
 
-## 関門をブランチで試す
+## Trying the gate on a branch
 
-`release.yml` の変更は、プレリリースの版を使って、正式な版のタグを打たずにブランチで試せます。
+A change to `release.yml` can be tried on a branch with a prerelease version, without tagging a real version.
 
 ```sh
 gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-test.1
 ```
 
-- 遅い検査が落ちるブランチで回すと、`release` のジョブが skip され、タグができないことを確かめられる（`gh api repos/mycroblog/my/git/ref/tags/v0.0.0-test.1` が 404）。
-- 通るブランチで回すと、タグ（ブランチの先頭にサーバーと `pkg/mykit/v0.0.0-test.1`、その上のコミットに `pkg/mybot/v0.0.0-test.1`）と下書きの Release ができ、
-  `@mycroblog/mykit@0.0.0-test.1` と `@mycroblog/mybot@0.0.0-test.1` が dist-tag `next` に来歴付きで公開される。
-  `pkg/mybot/v0.0.0-test.1` の `pkg/mybot/go.mod` が `pkg/mykit v0.0.0-test.1` を require し、npm の `@mycroblog/mybot@0.0.0-test.1` が `@mycroblog/mykit` の `0.0.0-test.1` に依存し、
-  npm の版の画面に来歴があることを確かめたら、タグと Release を消す。
+- On a branch where the slow suite fails, the `release` job is skipped and no tag is created (`gh api repos/mycroblog/my/git/ref/tags/v0.0.0-test.1` answers 404).
+- On a branch where it passes, the tags (the server's and `pkg/mykit/v0.0.0-test.1` on the branch's head, `pkg/mybot/v0.0.0-test.1` on the commit above it) and a draft Release
+  are created, and `@mycroblog/mykit@0.0.0-test.1` and `@mycroblog/mybot@0.0.0-test.1` are published to the dist-tag `next` with provenance.
+  Check that `pkg/mybot/go.mod` at `pkg/mybot/v0.0.0-test.1` requires `pkg/mykit v0.0.0-test.1`, that `@mycroblog/mybot@0.0.0-test.1` on npm depends on
+  `@mycroblog/mykit` `0.0.0-test.1`, and that the version's page on npm shows the provenance; then delete the tags and the Release.
 
   ```sh
   gh release delete v0.0.0-test.1 -R mycroblog/my --cleanup-tag --yes
@@ -116,9 +151,10 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
   gh api -X DELETE repos/mycroblog/my/git/refs/tags/pkg/mybot/v0.0.0-test.1
   ```
 
-  npm に出た版は、72 時間のうちなら `npm unpublish @mycroblog/mybot@0.0.0-test.1`（`mykit` も同じ）で取り消せるが、その番号は二度と使えない。
-  proxy.golang.org がすでに取り込んだ Go の版は、タグを消しても残る。試す版の番号は、正式な版と重ならない `v0.0.0-test.N` にする。
+  A version published to npm can be withdrawn within 72 hours with `npm unpublish @mycroblog/mybot@0.0.0-test.1` (and the same for `mykit`), but its number can never be used again.
+  A Go version that proxy.golang.org already fetched stays there after the tag is deleted. Use `v0.0.0-test.N` numbers, which never collide with real versions.
 
-## 成果物
+## What a release produces
 
-今の `release.yml` が作るのは、タグ（サーバーとライブラリ）と下書きの Release と、npm のパッケージです。コンテナイメージの公開とリリースノートは、M5（[#30](https://github.com/mycroblog/my/issues/30)）が `release.yml` の `release` のジョブの後に足します。
+`release.yml` produces the tags (the server's and the libraries'), the draft Release, and the npm packages.
+Publishing the container images and generating the release notes are not part of it yet: the decider writes the notes' sections by hand.

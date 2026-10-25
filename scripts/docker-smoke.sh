@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Smoke test of deploy/docker/compose.yaml: build the images, start the stack (schema apply, then the server),
-# wait for readiness, create an admin, check WebFinger, the Actor, NodeInfo, and the embedded web client, and sign
-# in as the web client does over plain HTTP on localhost (README.md, "Quick start").
+# Smoke test of deploy/docker/compose.yaml: build the images, start the stack on an empty volume (my db upgrade -check,
+# schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
+# NodeInfo, and the embedded web client, and sign in as the web client does over plain HTTP on localhost
+# (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
+# one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
+# keeps the server stopped (docs/operations/database.md, "Upgrading").
 # Prints the logs on failure and always removes the stack and its volume.
 # Usage: scripts/docker-smoke.sh   (needs docker with compose, curl, jq, openssl)
 set -euo pipefail
@@ -38,16 +41,44 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"${compose[@]}" up -d --build
+wait_ready() {
+	echo "docker-smoke: waiting for $base/readyz" >&2
+	for i in $(seq 60); do
+		if curl -fsS "$base/readyz" >/dev/null 2>&1; then
+			return 0
+		fi
+		[[ $i -eq 60 ]] && fail "/readyz did not return 200 within 60 s"
+		sleep 1
+	done
+}
 
-echo "docker-smoke: waiting for $base/readyz" >&2
-for i in $(seq 60); do
-	if curl -fsS "$base/readyz" >/dev/null 2>&1; then
-		break
-	fi
-	[[ $i -eq 60 ]] && fail "/readyz did not return 200 within 60 s"
-	sleep 1
-done
+# The one-off services run in this order, each after the previous one exited with 0, and then the server starts.
+order=(upgrade-check schema upgrade my)
+check_order() {
+	local prev_end="" svc id state started
+	for svc in "${order[@]}"; do
+		id="$("${compose[@]}" ps -a -q "$svc")"
+		[[ -n "$id" ]] || fail "no container of the service $svc"
+		state="$(docker inspect -f '{{.State.Status}} {{.State.ExitCode}}' "$id")"
+		started="$(date -d "$(docker inspect -f '{{.State.StartedAt}}' "$id")" +%s%N)"
+		if [[ "$svc" == my ]]; then
+			[[ "$state" == "running 0" ]] || fail "the server is not running: $state"
+		else
+			[[ "$state" == "exited 0" ]] || fail "the one-off service $svc did not succeed: $state"
+		fi
+		[[ -z "$prev_end" || "$started" -ge "$prev_end" ]] || fail "$svc started before the service ahead of it ended"
+		prev_end="$(date -d "$(docker inspect -f '{{.State.FinishedAt}}' "$id")" +%s%N)"
+	done
+	local out
+	out="$("${compose[@]}" logs --no-color upgrade-check)"
+	[[ "$out" == *"ok: the database can be upgraded to this release"* ]] || fail "upgrade-check did not report ok: $out"
+	out="$("${compose[@]}" logs --no-color upgrade)"
+	[[ "$out" == *"ok: "*"data upgrade step"* ]] || fail "upgrade did not report ok: $out"
+}
+
+"${compose[@]}" up -d --build
+wait_ready
+check_order
 
 "${compose[@]}" exec -T my my version
 printf 'smoke-test-password\n' | "${compose[@]}" exec -T my my admin create -username alice -email alice@example.com
@@ -135,5 +166,28 @@ grep -q '__Host-my_rt' "$jar" || fail "the token endpoint set no refresh token c
 me="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/accounts/verify_credentials")"
 echo "$me" | jq -e '.username == "alice"' >/dev/null || fail "unexpected verify_credentials: $me"
 rm -f "$jar"
+
+# Start again on the same volume, as an upgrade to a new image does: the one-off services run again in order on the
+# existing database, and the server comes back ready with the account kept.
+echo "docker-smoke: starting again on the same volume" >&2
+"${compose[@]}" up -d --force-recreate
+wait_ready
+check_order
+curl -fsS "$base/.well-known/webfinger?resource=acct:alice@$MY_HOST" | jq -e --arg subject "acct:alice@$MY_HOST" '.subject == $subject' >/dev/null ||
+	fail "the account is gone after the second start"
+curl -fsS "$base/nodeinfo/2.1" | jq -e '.usage.users.total == 1' >/dev/null || fail "unexpected NodeInfo after the second start"
+
+# A failing one-off service keeps the server stopped: upgrade-check exits with 2 on an unknown flag here.
+echo "docker-smoke: checking that a failing upgrade-check keeps the server stopped" >&2
+"${compose[@]}" stop my >/dev/null
+failing="$(mktemp)"
+printf 'services:\n  upgrade-check:\n    command: [db, upgrade, -no-such-flag]\n' >"$failing"
+if "${compose[@]}" -f "$failing" up -d >/dev/null 2>&1; then
+	rm -f "$failing"
+	fail "docker compose up succeeded although upgrade-check failed"
+fi
+rm -f "$failing"
+state="$(docker inspect -f '{{.State.Status}}' "$("${compose[@]}" ps -a -q my)")"
+[[ "$state" != running ]] || fail "the server started although upgrade-check failed"
 
 echo "docker-smoke: ok ($actor_id)" >&2

@@ -1,20 +1,68 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Minimal self-hosted setup (ADR-0010): one `my serve` process with role = all on a SQLite file in a named volume.
-# The `schema` service applies schema/sqlite with Atlas Community Edition (ADR-0023) and exits; the server
-# starts only after it succeeds. Copy .env.example to .env and fill it in first (README.md, "Quick start").
+# Minimal self-hosted setup: one `my serve` process with role = all on a SQLite file in a named volume.
+# `docker compose up -d` runs three one-off services in this order before the server, each only after the previous
+# one succeeded, so a failure leaves the server stopped (docs/operations/database.md, "Upgrading"):
+#
+#   upgrade-check  my db upgrade -check: stops before the schema would drop data that is not carried over yet
+#   schema         atlas schema apply of schema/sqlite (Atlas Community Edition, in an image without my)
+#   upgrade        my db upgrade: runs the data upgrade steps of this release
+#
+# The same order initializes an empty volume and upgrades an existing one to a new MY_VERSION.
+# Copy .env.example to .env and fill it in first (README.md, "Quick start").
 #
 #   docker compose up -d --build
 #   docker compose exec -T my my admin create -username alice -email alice@example.com < password.txt
 
 name: my
 
+# The server image and its settings, shared by the server and the one-off my db services.
+x-app: &app
+  build:
+    context: ../..
+    target: app
+    args:
+      VERSION: ${MY_VERSION:-dev}
+  image: my:${MY_VERSION:-dev}
+  environment:
+    MY_HOST: ${MY_HOST:?set MY_HOST in .env}
+    # The origin browsers open: http://{MY_HOST} serves sign-in, the client API and media over plain HTTP on
+    # localhost; empty means https://{MY_HOST} behind a TLS-terminating reverse proxy. ActivityPub ids stay https.
+    MY_WEB_ORIGIN: ${MY_WEB_ORIGIN:-}
+    # Reverse proxies whose X-Forwarded-For tells the client IP for the rate limits; empty trusts none.
+    MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-}
+    MY_ROLE: all
+    MY_DB: sqlite
+    MY_DATABASE_URL: /data/my.db
+    # Uploaded and processed media, in the same volume as the database (back them up together).
+    MY_BLOB_FS_DIR: /data/blobs
+    # The KEK reaches the container as a Docker secret file, not as an environment variable.
+    MY_KEK_FILE: /run/secrets/my_kek
+    # The status page and the maintenance mode (docs/operations/maintenance.md): MY_MAINTENANCE=true answers every
+    # request with the maintenance page or problem until the service is recreated without it.
+    MY_STATUS_PAGE_URL: ${MY_STATUS_PAGE_URL:-}
+    MY_MAINTENANCE: ${MY_MAINTENANCE:-false}
+    MY_MAINTENANCE_MESSAGE: ${MY_MAINTENANCE_MESSAGE:-}
+    MY_MAINTENANCE_UNTIL: ${MY_MAINTENANCE_UNTIL:-}
+  secrets:
+    - my_kek
+  volumes:
+    - data:/data
+
 services:
+  upgrade-check:
+    <<: *app
+    command: [db, upgrade, -check]
+    restart: "no"
+
   schema:
     build:
       context: ../..
       target: schema
     image: my-schema:${MY_VERSION:-dev}
+    depends_on:
+      upgrade-check:
+        condition: service_completed_successfully
     command:
       - schema
       - apply
@@ -26,40 +74,19 @@ services:
       - data:/data
     restart: "no"
 
-  my:
-    build:
-      context: ../..
-      target: app
-      args:
-        VERSION: ${MY_VERSION:-dev}
-    image: my:${MY_VERSION:-dev}
+  upgrade:
+    <<: *app
     depends_on:
       schema:
         condition: service_completed_successfully
-    environment:
-      MY_HOST: ${MY_HOST:?set MY_HOST in .env}
-      # The origin browsers open: http://{MY_HOST} serves sign-in, the client API and media over plain HTTP on
-      # localhost; empty means https://{MY_HOST} behind a TLS-terminating reverse proxy. ActivityPub ids stay https.
-      MY_WEB_ORIGIN: ${MY_WEB_ORIGIN:-}
-      # Reverse proxies whose X-Forwarded-For tells the client IP for the rate limits; empty trusts none (ADR-0019 §5).
-      MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-}
-      MY_ROLE: all
-      MY_DB: sqlite
-      MY_DATABASE_URL: /data/my.db
-      # Uploaded and processed media, in the same volume as the database (back them up together).
-      MY_BLOB_FS_DIR: /data/blobs
-      # The KEK reaches the container as a Docker secret file, not as an environment variable (ADR-0019 §6).
-      MY_KEK_FILE: /run/secrets/my_kek
-      # The status page and the maintenance mode (docs/operations/maintenance.md): MY_MAINTENANCE=true answers every
-      # request with the maintenance page or problem until the service is recreated without it.
-      MY_STATUS_PAGE_URL: ${MY_STATUS_PAGE_URL:-}
-      MY_MAINTENANCE: ${MY_MAINTENANCE:-false}
-      MY_MAINTENANCE_MESSAGE: ${MY_MAINTENANCE_MESSAGE:-}
-      MY_MAINTENANCE_UNTIL: ${MY_MAINTENANCE_UNTIL:-}
-    secrets:
-      - my_kek
-    volumes:
-      - data:/data
+    command: [db, upgrade]
+    restart: "no"
+
+  my:
+    <<: *app
+    depends_on:
+      upgrade:
+        condition: service_completed_successfully
     ports:
       # Loopback only: federation needs HTTPS, so put a TLS-terminating reverse proxy in front.
       - "127.0.0.1:${MY_HTTP_PORT:-8080}:8080"
