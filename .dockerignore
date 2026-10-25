@@ -3,6 +3,9 @@
 !go.mod
 !go.sum
 !cmd/
+# The api package embeds the bundled client API document (GET /api/v1/openapi.yaml).
+!api/api.go
+!api/openapi.yaml
 !internal/
 # The Dockerfile mounts the web build it makes over this directory; a local build stays out.
 internal/interface/web/dist/*
