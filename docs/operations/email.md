@@ -125,6 +125,16 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 - **取引のメールは配信停止にできません**。確認・リセット・パスワードの変更の通知は、止めると安全に関わる知らせが届かなくなるためです。ヘッダも付きません。
 - 利用者は設定画面からも同じ設定を切り替えられます。
 
+## HTML の版
+
+すべてのメールは `multipart/alternative` で、同じ内容の `text/plain` と `text/html`（どちらも UTF-8）を持ちます（ADR-0086 §2）。`mail = none` のログに出るのはテキストの版だけです。
+
+- 外枠のレイアウトは 1 つで、段落・ボタン・署名（サーバー名・URL・連絡先・理由・配信停止のリンク）を持ちます。`<html lang dir>` は受信者のロケールから付き、`ar` などでは右から左に組みます。
+- 外部のフォント・画像・スタイルシートを読みません。色はデザイントークンの既定値で、明暗は `color-scheme` と `prefers-color-scheme` で切り替わります。管理者のテーマの上書きはメールに効きません。
+- リンクにするのは `https` の URL だけです。`web_origin` が `http://{host}` の開発環境のように URL が `http` のときは、ボタンや配信停止のリンクの代わりに URL を文字で出し、署名のサーバーの URL は省きます。
+- 外枠のソースは `tools/mail/frame.mjml` です。`scripts/task.sh mail:gen` が MJML（Bun）でコンパイルして Go の `html/template` の `internal/app/kernel/mail_frame.gen.html` を作り、これをコミットしてバイナリに埋め込みます。サーバーの実行時に JavaScript は動きません。
+  コミットした生成物が古いと、`scripts/task.sh mail:gen-check`（Merge Queue の `server-static`）が失敗します。
+
 ## 開発環境
 
 `mail = none`（既定）では送らずにログへ出すので、確認のリンクはログから取れます。ローカルの SMTP サーバー（Mailpit）を開発環境に入れる作業は [#1026](https://github.com/mycroblog/my/issues/1026) で進めています。
