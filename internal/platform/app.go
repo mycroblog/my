@@ -273,6 +273,10 @@ type AppOptions struct {
 	// HTTPClient sends every outbound request; nil builds the SSRF-guarded client from the
 	// configuration. Tests only, to reach other test servers by their public hosts.
 	HTTPClient kernel.HTTPClient
+	// Mailer, when set, sends the emails instead of the adapter that cfg.Mail selects, which
+	// still decides what the server sends. Tests only, to send with mail/smtp to a test server
+	// whose certificate the system roots do not hold (pkg/testkit/mailpittest).
+	Mailer kernel.Mailer
 	// StreamBus, when set, carries the signals of the streams between processes instead of the
 	// broker that cfg.Stream selects. Tests only, to share an in-memory broker between Apps.
 	StreamBus stream.Bus
@@ -360,8 +364,10 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpDeadJobPurger(cfg)
-	if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
-		return nil, err
+	if a.Mailer = opts.Mailer; a.Mailer == nil {
+		if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
+			return nil, err
+		}
 	}
 	a.HTTPClient = opts.HTTPClient
 	if a.HTTPClient == nil {

@@ -222,4 +222,31 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 
 ## 開発環境
 
-`mail = none`（既定）では送らずにログへ出すので、確認のリンクはログから取れます。ローカルの SMTP サーバー（Mailpit）を開発環境に入れる作業は [#1026](https://github.com/mycroblog/my/issues/1026) で進めています。
+`mail = none`（既定）では送らずにログへ出すので、確認のリンクはログから取れます。
+実際に送られるメール（ヘッダ・HTML の版・リンク）を見るときは、開発用の SMTP サーバー [Mailpit](https://mailpit.axllent.org/)（MIT）に `mail = smtp` で送ります。
+Mailpit は受けたメールを誰にも届けずに保持し、Web UI（`http://127.0.0.1:8025`）と REST API で見せます。
+
+- `mail = smtp` は STARTTLS と証明書の検証を省かないので、Mailpit は `scripts/mailpit-cert.sh` が作る開発用の CA の証明書（`mailpit`・`localhost`・`127.0.0.1` 向け、`.tmp/mailpit`）で STARTTLS を求め、`my serve` はその CA を `SSL_CERT_FILE` で信頼します。
+  `SSL_CERT_FILE` はシステムのルート証明書を置き換えるので、その `my serve` から外のサーバーへの HTTPS（連合など）は通りません。開発の確認だけに使います。
+- イメージ（`axllent/mailpit`）は、結合テストと同じものをタグとダイジェストで固定しています（`deploy/docker/mailpit/compose.yaml`）。
+
+Docker Compose の構成（[`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)）に足すときは、上書きの [`compose.mailpit.yaml`](../../deploy/docker/compose.mailpit.yaml) を重ねます。`my` の `mail` を `smtp` にし、宛先を Mailpit にします。
+
+```sh
+scripts/mailpit-cert.sh
+cd deploy/docker
+docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
+```
+
+手元で動かす `my serve` から送るときは、Mailpit だけを起動して（`scripts/task.sh docker:mailpit`、止めるのは `docker compose -f deploy/docker/mailpit/compose.yaml down`）、次の設定で起動します。
+
+```sh
+MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_SMTP_HOST=localhost MY_SMTP_PORT=1025 \
+  SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
+```
+
+どちらも、パスワードのリセットを求める（`/auth/forgot_password`）か、`open` モードで登録すると、メールが Mailpit の UI に届きます。UI で開いたメールのリンクを、ブラウザで開きます。
+
+`mail = smtp` の結合テストも Mailpit を相手にします（`scripts/task.sh go:test-mail`、Docker が要る）。`pkg/testkit/mailpittest` がテストごとにコンテナを起動し、
+アダプタが送ったメールのヘッダ・エンコード・本文と STARTTLS・認証の組み合わせを確かめ、登録の確認とパスワードのリセットを、Mailpit が受けたメールのリンクで通します。
+CI では遅い検査の組（`slow-suite.yml` の `mail-integration`、リリース前と夜間）で回り、PR と Merge Queue では SMTP サーバーのテスト内のスタンドインで同じアダプタを確かめます。

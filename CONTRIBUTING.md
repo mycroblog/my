@@ -72,7 +72,7 @@ CI（`.github/workflows/`）は、どこで何を検査するかを次のよう�
   Merge Queue で落ちた原因を PR で調べるときや、外からの貢献の PR を早めに確かめるときは、PR にラベル `ci:full` を付けます。
 - PR では Web の E2E は自動では回りません。Web クライアントに触れる PR は、手元で `scripts/task.sh web:e2e` を回すか、PR のブランチに対して
   `gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>`（全マトリクスは `-f matrix=full` を足す。Actions タブからも実行できる）で回します。
-- `slow-suite.yml`・`nightly.yml`・`web-e2e.yml`・`federation-live.yml`・`postgres-contract.yml`・`stream-contract.yml`・`codeql.yml` も
+- `slow-suite.yml`・`nightly.yml`・`web-e2e.yml`・`federation-live.yml`・`postgres-contract.yml`・`stream-contract.yml`・`mail-integration.yml`・`codeql.yml` も
   `workflow_dispatch` で手で回せます。
 
 ## スキーマの変更
@@ -173,6 +173,9 @@ scripts/task.sh go:sqlc-check  # 生成物が最新でなければ失敗（check
 - Google Cloud Pub/Sub のアダプタ（`stream/pubsub`）のテストは、既定ではプロセスの中の偽サーバー pstest で流すので、Docker は要りません。
   `scripts/task.sh go:test-stream`（`TEST_STREAM=container`）は Pub/Sub エミュレータのコンテナ（`TEST_PUBSUB_IMAGE` で変更可）を起動して同じコントラクトを流し、
   Docker がないと `TEST_PUBSUB_REQUIRED=1` なので失敗します。CI は nightly で流します。
+- `mail = smtp` の結合テスト（`internal/adapter/mail/smtp` と `internal/platform` の `Mailpit` を名に持つテスト）は、`pkg/testkit/mailpittest` が
+  テストごとに起動する Mailpit のコンテナ（`TEST_MAILPIT_IMAGE` で変更可）を相手にし、`TEST_MAIL=container` のときだけ流れます（`scripts/task.sh go:test-mail`）。
+  CI は nightly で流します。
 
 ## 設計判断
 

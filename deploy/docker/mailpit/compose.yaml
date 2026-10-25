@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Mailpit (https://mailpit.axllent.org/, MIT) for development: an SMTP server that keeps every message it receives and
+# shows them in a web UI, for mail = smtp without sending real email (docs/operations/email.md, "開発環境").
+# It offers STARTTLS with the certificate of scripts/mailpit-cert.sh and requires it, since mail = smtp refuses servers
+# without it, and needs no authentication. Start it alone for a `my serve` on the host (scripts/task.sh docker:mailpit),
+# or with the stack through ../compose.mailpit.yaml.
+#
+#   scripts/mailpit-cert.sh
+#   docker compose -f deploy/docker/mailpit/compose.yaml up -d
+#
+# SMTP on 127.0.0.1:1025, the web UI and the REST API on http://127.0.0.1:8025.
+
+name: my-mailpit
+
+services:
+  mailpit:
+    # The image of the integration tests (DefaultImage of pkg/testkit/mailpittest), pinned by tag and digest.
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    environment:
+      MP_SMTP_TLS_CERT: /certs/server.pem
+      MP_SMTP_TLS_KEY: /certs/server.key
+      MP_SMTP_REQUIRE_STARTTLS: "true"
+      MP_SMTP_DISABLE_RDNS: "true"
+      # Keep the latest messages only.
+      MP_MAX_MESSAGES: "500"
+    volumes:
+      - ${MAILPIT_CERTS:-../../../.tmp/mailpit}:/certs:ro
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped

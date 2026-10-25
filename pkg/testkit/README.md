@@ -31,6 +31,14 @@ name can be used again; `SetUnreachable` makes every call wait for its context. 
 nightly), or a running emulator at `TEST_AWS_ENDPOINT`; otherwise the test is skipped. `TEST_AWS_REQUIRED` makes a
 missing Docker fail the tests. The package's `TestMain` calls `os.Exit(awstest.Main(m))`.
 
+## Mailpit
+
+`mailpittest.New(t, opts)` (package `pkg/testkit/mailpittest`) starts a container of
+[Mailpit](https://mailpit.axllent.org/) (`axllent/mailpit`, pinned by tag and digest in `DefaultImage`) for the test,
+with STARTTLS on a certificate of a CA made for the test (`Server.TLSConfig` trusts it) and SMTP authentication as
+`opts` ask, and reads the messages it received over its REST API (`Messages`, `Message`, `Raw`, `WaitFor`). The tests
+run only with `TEST_MAIL=container` (`scripts/task.sh go:test-mail`, CI in the slow suite); otherwise they are skipped.
+
 ## A whole server in the test process
 
 testkit holds no server: it depends only on application ports and domain types, never on the composition root
