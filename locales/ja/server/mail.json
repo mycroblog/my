@@ -104,7 +104,7 @@
     "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.signature.contact": {
-    "defaultMessage": "連絡先: {email}",
+    "defaultMessage": "連絡先：{email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
   },
   "mail.supporter_payment_failed.action": {

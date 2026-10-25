@@ -115,7 +115,7 @@ func TestInstanceNameAndDomain(t *testing.T) {
 	}
 	if mail.Subject != "例のソーシャル のメールアドレスの確認" || !strings.HasPrefix(mail.Text, "例のソーシャル へようこそ。") ||
 		!strings.Contains(mail.Text, cfg.Host+" の登録にこのメールアドレスが使われた") ||
-		!strings.Contains(mail.Text, "\n-- \n例のソーシャル\nhttps://"+cfg.Host+"\n連絡先: admin@example.com\n") ||
+		!strings.Contains(mail.Text, "\n-- \n例のソーシャル\nhttps://"+cfg.Host+"\n連絡先：admin@example.com\n") ||
 		mail.FromName != "例のソーシャル" || mail.ReplyTo != "admin@example.com" {
 		t.Errorf("verification email = %+v, want the name and the domain", mail)
 	}
