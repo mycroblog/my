@@ -45,7 +45,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string) {
 		Streams: a.Streams, HomeEntries: a.Timeline,
 		Permissions: a.Identity, InstanceHealth: a.InstanceHealth, DeadJobs: a.DeadJobs,
 		Queue:      clientapi.QueueDashboard{Adapter: cfg.Queue, Inspector: a.JobInspector, Attempts: a.JobAttempts, Clock: a.Clock},
-		Moderation: a.Moderation, UserAccounts: a.Accounts, FiledReports: a.Moderation, Severances: a.Moderation,
+		Moderation: a.Moderation, UserAccounts: a.Accounts, FiledReports: a.Moderation, Severances: a.Moderation, Moves: a.Accounts,
 		AccountModeration: a.Moderation, ProfileRestrictions: a.AccountPolicy, OwnModeration: a.Moderation,
 		AccountAdmin: a.AccountAdmin, AccountReports: a.Moderation, PasswordResetLinks: a.Identity,
 		AuditLog: a.Moderation,

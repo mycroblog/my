@@ -141,6 +141,11 @@ func TestValidateModeratorNotifications(t *testing.T) {
 		{ID: idN, RecipientAccountID: idA, Type: TypeAdminSignUp, SubjectUserID: idU, DedupeKey: AdminSignUpKey(idU)},
 		{ID: idN, RecipientAccountID: idA, Type: TypeAdminAppeal, AppealID: idP, DedupeKey: AdminAppealKey(idP)},
 		{ID: idN, RecipientAccountID: idA, Type: TypeAppealDecided, AppealID: idP, DedupeKey: AppealDecidedKey(idP)},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminAccountMoved, AccountMoveID: idR, DedupeKey: AdminAccountMovedKey(idR)},
+		{
+			ID: idN, RecipientAccountID: idA, Type: TypeAccountMoved, SourceAccountID: idB, AccountMoveID: idR,
+			AccountMoveOutcome: MoveBlocking, DedupeKey: AccountMovedKey(idR),
+		},
 	} {
 		if err := n.Validate(); err != nil {
 			t.Errorf("Validate(%+v) = %v", n, err)
@@ -159,6 +164,13 @@ func TestValidateModeratorNotifications(t *testing.T) {
 		{ID: idN, RecipientAccountID: idA, Type: TypeCustomEmojiRequestDecided, DedupeKey: "k"},
 		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, CustomEmojiRequestID: idR, DedupeKey: "k"},
 		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, AppealID: idP, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAccountMoved, SourceAccountID: idB, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAccountMoved, SourceAccountID: idB, AccountMoveID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAccountMoved, AccountMoveID: idR, AccountMoveOutcome: MoveFollowed, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAccountMoved, SourceAccountID: idB, AccountMoveID: idR, AccountMoveOutcome: "lost", DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminAccountMoved, AccountMoveID: idR, SourceAccountID: idB, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminAccountMoved, AccountMoveID: idR, AccountMoveOutcome: MoveFollowed, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, AccountMoveID: idR, DedupeKey: "k"},
 	} {
 		if err := n.Validate(); err == nil {
 			t.Errorf("Validate(%+v) = nil, want an error", n)
@@ -171,11 +183,11 @@ func TestHiddenTypes(t *testing.T) {
 		granted []Permission
 		want    []Type
 	}{
-		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest}},
-		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest}},
+		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
+		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
 		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest}},
-		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest}},
-		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled}},
+		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
+		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved}},
 		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, "view_audit"}, nil},
 	} {
 		if got := HiddenTypes(tc.granted); !slices.Equal(got, tc.want) {

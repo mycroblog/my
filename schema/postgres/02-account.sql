@@ -126,6 +126,39 @@ CREATE TABLE account_lifecycle_states (
 );
 CREATE INDEX account_lifecycle_states_state_deletion_due_at ON account_lifecycle_states (state, deletion_due_at);
 
+-- Event: an account moved to another (ADR-0089, FR-414): a local account's own move (self) or a
+-- Move that a remote account's server sent and that passed its checks (remote, activity_uri is
+-- the Move). An account moves to one target once; the wait between the moves of one account is
+-- read from its newest row.
+CREATE TABLE account_moves (
+  id uuid NOT NULL PRIMARY KEY,
+  account_id uuid NOT NULL,
+  target_account_id uuid NOT NULL,
+  initiated_by text NOT NULL CHECK (initiated_by IN ('self', 'remote')),
+  activity_uri text,
+  occurred_at timestamptz NOT NULL,
+  CHECK (account_id <> target_account_id)
+);
+CREATE UNIQUE INDEX account_moves_account_id_target_account_id ON account_moves (account_id, target_account_id);
+CREATE INDEX account_moves_account_id_occurred_at ON account_moves (account_id, occurred_at DESC, id DESC);
+
+-- Event: a local account cancelled its move (ADR-0089). A move is cancelled at most once.
+CREATE TABLE account_move_cancellations (
+  move_id uuid NOT NULL PRIMARY KEY,
+  cancelled_at timestamptz NOT NULL
+);
+
+-- Projection of account_moves and account_move_cancellations: the move in force of an account,
+-- its newest move unless that is cancelled. An account without a row has not moved. It is an
+-- axis of its own, apart from account_lifecycle_states (ADR-0020 rule 2).
+CREATE TABLE account_move_states (
+  account_id uuid NOT NULL PRIMARY KEY,
+  move_id uuid NOT NULL,
+  target_account_id uuid NOT NULL,
+  since timestamptz NOT NULL
+);
+CREATE INDEX account_move_states_target_account_id ON account_move_states (target_account_id);
+
 -- Projection: the words that the prefix search of accounts matches (ADR-0092 §1, FR-119, FR-306),
 -- from the handles, the profile heads, the lifecycle states, and the suspensions of the
 -- moderation module. A username row is the normalized username, and for a remote account also

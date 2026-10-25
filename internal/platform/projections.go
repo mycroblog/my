@@ -65,7 +65,7 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 			},
 			{
 				Name: "account", Module: "account",
-				Tables: []string{"account_handles", "account_profile_heads", "account_lifecycle_states", "remote_account_heads"},
+				Tables: []string{"account_handles", "account_profile_heads", "account_lifecycle_states", "remote_account_heads", "account_move_states"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return account.RebuildProjections(ctx, u, r.accounts)
 				},

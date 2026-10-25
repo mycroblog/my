@@ -36,7 +36,7 @@ CREATE TABLE follow_rejections (
 -- Event: a pending or active follow ended.
 CREATE TABLE follow_terminations (
   follow_id TEXT NOT NULL PRIMARY KEY,
-  reason TEXT NOT NULL CHECK (reason IN ('unfollowed', 'removed_by_followee', 'blocked', 'account_deleted', 'moderation')),
+  reason TEXT NOT NULL CHECK (reason IN ('unfollowed', 'removed_by_followee', 'blocked', 'account_deleted', 'moderation', 'moved')),
   terminated_at INTEGER NOT NULL
 ) STRICT;
 

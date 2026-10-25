@@ -20,7 +20,8 @@ CREATE TABLE notifications (
     'moderation_notice',
     'report_resolved', 'admin_report', 'admin_sign_up', 'relationships_severed', 'appeal_decided',
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
-    'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired'
+    'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
+    'account_moved', 'admin_account_moved'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -43,6 +44,10 @@ CREATE TABLE notifications (
   -- reaction: the emoji, a Unicode emoji or the custom emoji (custom_emojis.id).
   reaction_emoji TEXT,
   reaction_custom_emoji_id TEXT,
+  -- account_moved, admin_account_moved: the account_moves row of the move.
+  account_move_id TEXT,
+  -- account_moved: what became of the recipient's follow of the moved account.
+  account_move_outcome TEXT CHECK (account_move_outcome IN ('followed', 'requested', 'blocking', 'blocked_by', 'domain_muted')),
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   -- nobody is notified of their own actions.
@@ -116,7 +121,8 @@ CREATE TABLE push_subscription_alerts (
     'moderation_notice',
     'report_resolved', 'admin_report', 'admin_sign_up', 'relationships_severed', 'appeal_decided',
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
-    'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired'
+    'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
+    'account_moved', 'admin_account_moved'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;

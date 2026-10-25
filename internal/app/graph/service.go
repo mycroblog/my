@@ -10,6 +10,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
@@ -53,6 +54,11 @@ type Deps struct {
 	// Interactions forbids following to the accounts that moderation restricts; nil restricts
 	// nobody.
 	Interactions InteractionPolicy
+	// Outbox enqueues the migration of the relationships of a moved account in the transaction
+	// of the move, and Jobs its later pages (JobMigrateFollows); with a nil Outbox no move is
+	// migrated, and with nil Jobs a migration runs all its pages in one job.
+	Outbox queue.Outbox
+	Jobs   queue.JobQueue
 }
 
 // Service runs the graph module's follow, block, and mute use cases: those of local accounts,

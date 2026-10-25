@@ -745,6 +745,8 @@ components:
       $ref: ./components/schemas/Account.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
+    AccountMove:
+      $ref: ./components/schemas/AccountMove.yaml
     AccountFieldSource:
       $ref: ./components/schemas/AccountFieldSource.yaml
     AccountPage:

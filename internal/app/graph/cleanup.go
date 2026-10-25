@@ -21,9 +21,11 @@ const (
 	cleanupMaxBatches = 20
 )
 
-// RegisterJobs registers the graph job handlers on reg and the cleanup schedule on sched.
+// RegisterJobs registers the graph job handlers on reg (the cleanup of mutes and the migration
+// of the relationships of moved accounts) and the cleanup schedule on sched.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobCleanupMutes, s.handleCleanup)
+	reg.Register(JobMigrateFollows, s.handleMigrate)
 	sched.Add(queue.Schedule{Name: JobCleanupMutes, Every: DefaultCleanupInterval, Job: queue.NewJob{Type: JobCleanupMutes}})
 }
 

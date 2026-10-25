@@ -51,6 +51,16 @@ WHERE blocker_account_id = sqlc.arg(account_id)
 ORDER BY block_id DESC
 LIMIT sqlc.arg(page_limit);
 
+-- ListBlockersPage pages the edges into a blocked account in block order; an empty after starts
+-- at the first.
+-- name: ListBlockersPage :many
+SELECT blocker_account_id, blocked_account_id, block_id
+FROM block_edges
+WHERE blocked_account_id = sqlc.arg(account_id)
+  AND block_id > CAST(sqlc.arg(after) AS TEXT)
+ORDER BY block_id
+LIMIT sqlc.arg(page_limit);
+
 -- name: UpsertMute :exec
 INSERT INTO mutes (account_id, target_account_id, hide_notifications, expires_at, created_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (account_id, target_account_id) DO UPDATE SET
@@ -92,6 +102,17 @@ WHERE account_id = sqlc.arg(account_id)
     OR created_at < sqlc.arg(before_created_at)
     OR (created_at = sqlc.arg(before_created_at) AND target_account_id < CAST(sqlc.arg(before_target_account_id) AS TEXT)))
 ORDER BY created_at DESC, target_account_id DESC
+LIMIT sqlc.arg(page_limit);
+
+-- ListActiveMutersPage pages the mutes of a target that have not expired at now, by the
+-- muting account; an empty after starts at the first.
+-- name: ListActiveMutersPage :many
+SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
+FROM mutes
+WHERE target_account_id = sqlc.arg(target_account_id)
+  AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
+  AND account_id > CAST(sqlc.arg(after) AS TEXT)
+ORDER BY account_id
 LIMIT sqlc.arg(page_limit);
 
 -- ListAllMutes returns every mute, expired ones included, ordered by account and target, as the
