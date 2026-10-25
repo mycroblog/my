@@ -35,7 +35,7 @@ const moderator = {
   ai_opt_out: false,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
-  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps"],
+  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps", "manage_service_closure"],
 };
 
 /** The reported account: a long display name, local. */
@@ -229,6 +229,26 @@ const roles: Schemas["AdminRole"][] = [
     badge: { label: "Weekend volunteer of the desk", color: "yellow" },
   },
 ];
+
+/** The announced closure of the service, with an operators' message of one long word, as GET /admin/closure shows it. */
+const announcedClosure: Schemas["AdminServiceClosure"] = {
+  state: "announced",
+  closes_at: "2099-01-01T00:00:00Z",
+  export_until: "2099-02-01T00:00:00Z",
+  message: `Thank you for the years${"-and-more".repeat(8)}`,
+  announced_at: "2026-10-20T00:00:00Z",
+  short_notice: false,
+};
+
+/** What closing would end, as GET /admin/closure/check shows it. */
+const closureCheck: Schemas["AdminServiceClosureCheck"] = {
+  local_accounts: 12,
+  delivery_inboxes: 340,
+  estimated_deletes: 4080,
+  live_supporter_subscriptions: 3,
+  pending_migrations: 2,
+  retention_holds: 1,
+};
 
 /** A published announcement with a long first line and a link, as GET /admin/announcements lists it. */
 const announcement: Schemas["AdminAnnouncement"] = {
@@ -446,6 +466,8 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/custom_emoji_requests") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: [webhook] });
     if (key === "GET /admin/announcements") return json(route, { items: [announcement] });
+    if (key === "GET /admin/closure") return json(route, announcedClosure);
+    if (key === "GET /admin/closure/check") return json(route, closureCheck);
     if (key === `GET /admin/webhooks/${webhook.id}`) return json(route, webhook);
     if (key === `GET /admin/webhooks/${webhook.id}/deliveries`) return json(route, { items: [webhookDelivery] });
     if (key === "GET /admin/relays") return json(route, { items: [relay] });
@@ -631,6 +653,7 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.jobs": { path: "/admin/jobs?state=dead", ready: deadJob.type },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
   "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
+  "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
   "admin.announcements": { path: "/admin/announcements", ready: "the status page" },
   "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
