@@ -474,6 +474,10 @@ paths:
     $ref: ./paths/admin_closure.yaml
   /admin/closure/announcement:
     $ref: ./paths/admin_closure_announcement.yaml
+  /admin/closure/check:
+    $ref: ./paths/admin_closure_check.yaml
+  /admin/closure/close:
+    $ref: ./paths/admin_closure_close.yaml
   /admin/oauth_clients:
     $ref: ./paths/admin_oauth_clients.yaml
   /admin/oauth_clients/{id}/disable:
@@ -708,6 +712,8 @@ components:
       $ref: ./components/responses/AdminTheme.yaml
     AdminServiceClosure:
       $ref: ./components/responses/AdminServiceClosure.yaml
+    AdminServiceClosureCheck:
+      $ref: ./components/responses/AdminServiceClosureCheck.yaml
     AdminWebhook:
       $ref: ./components/responses/AdminWebhook.yaml
     AdminWebhookDelivery:
@@ -951,6 +957,10 @@ components:
       $ref: ./components/schemas/AdminTheme.yaml
     AdminServiceClosure:
       $ref: ./components/schemas/AdminServiceClosure.yaml
+    AdminServiceClosureCheck:
+      $ref: ./components/schemas/AdminServiceClosureCheck.yaml
+    CloseServiceRequest:
+      $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:
       $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
     ServiceClosureState:

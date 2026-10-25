@@ -200,6 +200,12 @@ func (r *AccountRepository) ListKnownSharedInboxes(ctx context.Context, after st
 	return out, nil
 }
 
+// CountKnownSharedInboxes implements account.Repository.
+func (r *AccountRepository) CountKnownSharedInboxes(ctx context.Context) (int, error) {
+	n, err := r.db.reader().CountKnownSharedInboxes(ctx)
+	return int(n), wrap(err, "count known shared inboxes")
+}
+
 // LatestHandleVerification implements account.Repository.
 func (r *AccountRepository) LatestHandleVerification(ctx context.Context, tx uow.Tx, accountID string) (account.HandleVerification, error) {
 	q, err := queries(tx)

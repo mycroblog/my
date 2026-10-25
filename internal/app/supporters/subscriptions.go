@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/account"
+	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/supporters"
@@ -483,11 +484,20 @@ func (s *Service) CancelByStaff(ctx context.Context, id, byUserID string) error 
 }
 
 // RegisterProjectors subscribes the subscriptions to the accounts' lifecycle and suspensions
-// (ADR-0072 §10): the deletion of a local account, done or scheduled by a ban, ends its live
-// subscription here at once (the role and the listing go) and cancels it at the provider without
-// a refund; a suspension cancels it at the end of the period (S1), its role staying until then.
-// Both run in the transaction of the account's event; the provider's command runs after it.
+// (ADR-0072 §10) and to the closure of the service (ADR-0088 §2): the deletion of a local
+// account, done or scheduled by a ban, ends its live subscription here at once (the role and the
+// listing go) and cancels it at the provider without a refund; a suspension cancels it at the end
+// of the period (S1), its role staying until then; the closure of the server ends every live
+// subscription as a deletion does, with the reason service_closed. Each runs in the transaction
+// of its event; the provider's command runs after it.
 func (s *Service) RegisterProjectors(r *uow.Projectors) {
+	r.Register(appinstance.EventClosureRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appinstance.ClosureRecorded)
+		if !ev.Closes() {
+			return nil
+		}
+		return s.cancelForClosure(ctx, tx, ev.Event.ID)
+	})
 	r.Register(account.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(account.LifecycleEventRecorded)
 		if !ev.ClosesLocalAccount() {
@@ -520,6 +530,40 @@ func (s *Service) RegisterProjectors(r *uow.Projectors) {
 		}
 		return nil
 	})
+}
+
+// cancelForClosure ends inside tx every live subscription at once, with the reason
+// service_closed, and queues CancelNow at the provider for those linked to it (ADR-0088 §2). The
+// command's idempotency key names the closure event, so a retried transaction queues it once.
+func (s *Service) cancelForClosure(ctx context.Context, tx uow.Tx, closureEventID string) error {
+	ids, err := s.d.Repository.LiveSubscriptionIDs(ctx, tx)
+	if err != nil {
+		return err
+	}
+	now := s.now()
+	for _, id := range ids {
+		rec, err := s.d.Repository.LockSubscription(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if err := s.close(ctx, tx, rec, supporters.ReasonServiceClosed, now); err != nil {
+			return err
+		}
+		if rec.Link == "" {
+			continue
+		}
+		if err := s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, supporters.ReasonServiceClosed, "service_closed:"+closureEventID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// LiveSubscriptionCount counts the subscriptions that go on, for the checks before the closure
+// of the service (ADR-0088 §1).
+func (s *Service) LiveSubscriptionCount(ctx context.Context) (int, error) {
+	n, err := s.d.Repository.CountLiveSubscriptions(ctx, nil)
+	return int(n), err
 }
 
 // liveOfAccount returns inside tx the live subscription of a local account's user.
