@@ -47,6 +47,7 @@
 - [リリースの手順](operations/releasing.md)
 - [クラウドの利用料金の取り込み（AWS Cost Explorer、Google Cloud の BigQuery への export）](operations/billing-import.md)
 - [サポーターの決済（Stripe）](operations/payments-stripe.md)
+- [サポーターの決済（PAY.JP）](operations/payments-payjp.md)
 - [サポーター（課金のプラン）](operations/supporters.md)
 
 ## 開発プロセス
