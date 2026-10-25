@@ -399,6 +399,10 @@ func (f *fakeAPI) serveSubs(w http.ResponseWriter, r *http.Request, rest []strin
 			apiFail(w, http.StatusBadRequest, "already_worked")
 			return
 		}
+		if c := f.customers[s.Customer]; s.Status == subPaused && c != nil && declined(c) {
+			apiFail(w, http.StatusPaymentRequired, "card_declined")
+			return
+		}
 		s.Status, s.PausedAt = subActive, 0
 	default:
 		apiFail(w, http.StatusNotFound, "not_found")
@@ -413,6 +417,10 @@ func (f *fakeAPI) createSub(w http.ResponseWriter, r *http.Request) {
 	p, okp := f.plans[r.PostForm.Get("plan")]
 	if !ok || !okp || c.DefaultCard == "" {
 		apiFail(w, http.StatusBadRequest, "invalid_param")
+		return
+	}
+	if declined(c) {
+		apiFail(w, http.StatusPaymentRequired, "card_declined")
 		return
 	}
 	now := f.now()
@@ -603,4 +611,24 @@ func query(t *testing.T, raw string) url.Values {
 		t.Fatal(err)
 	}
 	return u.Query()
+}
+
+// declinedLast4 is the last four digits of the cards whose payments the fake declines.
+const declinedLast4 = "0002"
+
+// declined reports whether the fake declines the payments of a customer's default card.
+func declined(c *fakeCustomer) bool {
+	for _, k := range c.Cards.Data {
+		if k.ID == c.DefaultCard {
+			return k.Last4 == declinedLast4
+		}
+	}
+	return false
+}
+
+// addToken adds a token of a card with a 3-D Secure result.
+func (f *fakeAPI) addToken(id, last4, tds string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.tokens[id] = token{ID: id, Card: card{Brand: "Visa", Last4: last4, ExpMonth: 12, ExpYear: 2030, ThreeDSecureStatus: tds}}
 }

@@ -82,6 +82,8 @@ type PaymentsDeps struct {
 	// WebhookLimit defaults to WebhookIPLimit, and PageLimit to PageIPLimit.
 	WebhookLimit kernel.Limit
 	PageLimit    kernel.Limit
+	// PageEnv is what the pages of a PageServer render with.
+	PageEnv PageEnv
 	// ReconcileInterval defaults to DefaultReconcileInterval, and ReconcileMaxRequests to
 	// DefaultReconcileMaxRequests.
 	ReconcileInterval    time.Duration
@@ -145,7 +147,14 @@ func (p *Payments) Pages(ctx context.Context, provider, clientIP string) (PagesR
 			return PagesResult{RateLimited: true, RetryAfter: d.RetryAfter}, nil
 		}
 	}
-	return PagesResult{Handler: ps.Pages()}, nil
+	env := p.d.PageEnv
+	if env.Logger == nil {
+		env.Logger = p.d.Logger
+	}
+	if env.Stylesheet == nil {
+		env.Stylesheet = func() string { return "" }
+	}
+	return PagesResult{Handler: ps.Pages(env)}, nil
 }
 
 // WebhookRequest is a webhook delivery as the endpoint received it.

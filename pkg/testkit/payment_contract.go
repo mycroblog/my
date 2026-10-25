@@ -109,7 +109,7 @@ type pageWorld struct {
 	pages http.Handler
 }
 
-func (w pageWorld) Pages() http.Handler { return w.pages }
+func (w pageWorld) Pages(supporters.PageEnv) http.Handler { return w.pages }
 
 type paymentEnv struct {
 	h        PaymentHarness

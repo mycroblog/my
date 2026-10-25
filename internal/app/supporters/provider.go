@@ -5,8 +5,11 @@ package supporters
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // PaymentProvider is the port of the payment provider (ADR-0074 §1). Its types are of the
@@ -84,8 +87,20 @@ type PaymentProvider interface {
 // serves the adapter's own pages instead, under PagesPath of its Name, and StartCheckout and
 // PortalURL return URLs of them (ADR-0099 §1, §3).
 type PageServer interface {
-	// Pages handles the GET and POST requests under PagesPath(Name()), with their whole path.
-	Pages() http.Handler
+	// Pages returns the handler of the GET and POST requests under PagesPath(Name()), which
+	// see their whole path, rendered with env.
+	Pages(env PageEnv) http.Handler
+}
+
+// PageEnv is what the pages of a PageServer render with: the server's own pages' locales and
+// stylesheet (ADR-0009, ADR-0030).
+type PageEnv struct {
+	// Locales resolves the locale of a request.
+	Locales *i18n.Resolver
+	// Stylesheet returns the URL of the server pages' stylesheet; "" leaves the pages unstyled.
+	Stylesheet func() string
+	// Logger logs what a page could not do.
+	Logger *slog.Logger
 }
 
 // PagesPathPrefix is the path of the pages of a PageServer, followed by the provider's name.

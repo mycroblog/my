@@ -70,7 +70,8 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 		UnitOfWork: a.UnitOfWork, Repository: repo, Provider: prov, Syncer: sync, Outbox: outbox,
 		Clock: a.Clock, IDs: a.IDs, RateLimiter: a.RateLimiter,
 		ReconcileInterval: cfg.PaymentsReconcileInterval, ReconcileMaxRequests: cfg.PaymentsReconcileMaxRequests,
-		Logger: a.Logger,
+		PageEnv: supporters.PageEnv{Locales: a.Locales, Stylesheet: func() string { return a.webStylesheet }, Logger: a.Logger},
+		Logger:  a.Logger,
 	})
 	a.Payments.RegisterJobs(a.Handlers, a.Scheduler)
 	paymentshttp.New(paymentshttp.Options{Webhooks: a.Payments, Pages: a.Payments, Problem: a.writeStatusProblem, Logger: a.Logger}).

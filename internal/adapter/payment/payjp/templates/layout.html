@@ -1,0 +1,77 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>{{.Title}}</title>
+{{with .Stylesheet}}<link rel="stylesheet" href="{{.}}">
+{{end}}</head>
+<body>
+<main class="page">
+<div class="card">
+{{if .TestMode}}<p class="notice" role="status">{{.L.ServerPaymentsTestMode}}</p>
+{{end}}<h1 dir="auto">{{.Title}}</h1>
+{{template "content" .}}
+</div>
+</main>
+{{if .Form}}<script src="https://js.pay.jp/v2/pay.js" nonce="{{.Nonce}}"></script>
+<script nonce="{{.Nonce}}">
+(() => {
+  const form = document.getElementById("card-form");
+  const payjp = Payjp(form.dataset.publicKey, { threeDSecureWorkflow: "iframe" });
+  const card = payjp.elements().create("card");
+  card.mount("#card-element");
+  const error = document.getElementById("card-error");
+  const submit = form.querySelector("button[type=submit]");
+  form.addEventListener("submit", (event) => {
+    if (form.elements.token.value) return;
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    submit.disabled = true;
+    error.hidden = true;
+    payjp
+      .createToken(card, {
+        three_d_secure: true,
+        card: { name: form.elements.name.value, email: form.elements.email.value },
+      })
+      .then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        form.elements.token.value = r.id;
+        form.submit();
+      })
+      .catch((e) => {
+        error.textContent = (e && e.message) || form.dataset.failed;
+        error.hidden = false;
+        submit.disabled = false;
+      });
+  });
+})();
+</script>
+{{end}}</body>
+</html>
+{{end}}
+{{define "card_form"}}<form id="card-form" class="form" method="post" action="{{.Form.Action}}" data-public-key="{{.Form.PublicKey}}" data-failed="{{.L.ServerPaymentsErrorForm}}">
+<input type="hidden" name="s" value="{{.Form.State}}">
+<input type="hidden" name="token" value="">
+<div class="field">
+<label for="card-email">{{.L.ServerPaymentsEmail}}</label>
+<input id="card-email" name="email" type="email" value="{{.Form.Email}}" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required>
+</div>
+<div class="field">
+<label for="card-name">{{.L.ServerPaymentsName}}</label>
+<input id="card-name" name="name" type="text" value="{{.Form.Name}}" autocomplete="cc-name" autocapitalize="characters" spellcheck="false" minlength="2" maxlength="45" pattern="[A-Za-z0-9 .\-]+" aria-describedby="card-name-hint" required>
+<p id="card-name-hint" class="hint">{{.L.ServerPaymentsNameHint}}</p>
+</div>
+<div class="field">
+<span id="card-label">{{.L.ServerPaymentsCard}}</span>
+<div id="card-element" role="group" aria-labelledby="card-label" aria-describedby="card-note"></div>
+<p id="card-note" class="hint">{{.L.ServerPaymentsCardNote}}</p>
+</div>
+<p id="card-error" class="alert" role="alert"{{if not .Error}} hidden{{end}}>{{.Error}}</p>
+<div class="actions">
+<button class="button" type="submit">{{.Form.Submit}}</button>
+</div>
+</form>
+{{end}}
