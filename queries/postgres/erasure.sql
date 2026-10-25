@@ -50,6 +50,9 @@ DELETE FROM account_key_revocations WHERE account_key_id IN (
 -- name: EraseKeys :exec
 DELETE FROM account_keys WHERE account_id = sqlc.arg(account_id);
 
+-- name: EraseAliases :exec
+DELETE FROM account_aliases WHERE account_id = sqlc.arg(account_id);
+
 -- name: InsertAccountErasure :exec
 INSERT INTO account_erasures (account_id, erased_at) VALUES (sqlc.arg(account_id), sqlc.arg(erased_at))
 ON CONFLICT (account_id) DO NOTHING;

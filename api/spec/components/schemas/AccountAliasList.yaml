@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The aliases of the user, oldest first; at most 5.
+type: object
+required: [aliases]
+properties:
+  aliases:
+    type: array
+    maxItems: 5
+    items:
+      $ref: ./AccountAlias.yaml

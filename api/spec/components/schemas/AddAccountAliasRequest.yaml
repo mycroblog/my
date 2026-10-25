@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: The account to add as an alias.
+type: object
+required: [acct]
+properties:
+  acct:
+    description: |
+      The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
+      URL of the account's actor or profile page.
+    type: string
+    minLength: 1
+    maxLength: 2048

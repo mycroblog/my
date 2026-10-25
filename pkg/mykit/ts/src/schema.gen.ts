@@ -393,6 +393,64 @@ export interface paths {
         patch: operations["updateAccountCredentials"];
         trace?: never;
     };
+    "/accounts/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the authenticated user's aliases
+         * @description The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+         *     `alsoKnownAs`, oldest first.
+         */
+        get: operations["listAccountAliases"];
+        put?: never;
+        /**
+         * Add an alias to the authenticated user
+         * @description Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+         *     names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+         *     actor's `Update` goes to the user's followers as a profile change does. An alias alone
+         *     changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+         *     `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+         *     limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+         *
+         *     A handle or URL that leads to no account, the URL of something that is not an actor, the
+         *     instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+         *     account that the instance does not know while it takes nothing in from other servers
+         *     (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+         *     is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+         *     changes nothing.
+         */
+        post: operations["addAccountAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/aliases/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove an alias of the authenticated user
+         * @description Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+         *     profile change does. Removing an alias that the user does not have changes nothing.
+         */
+        post: operations["removeAccountAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences": {
         parameters: {
             query?: never;
@@ -5758,6 +5816,28 @@ export interface components {
             moved?: components["schemas"]["Account"];
         };
         /**
+         * @description An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+         *     `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
+         */
+        AccountAlias: {
+            /** @description The ActivityPub id of the alias's actor. */
+            uri: string;
+            /**
+             * @description The handle of the alias, `username` for a local account and `username@domain` for a
+             *     remote one; omitted when the instance does not know the account or its handle.
+             */
+            acct?: string;
+            /**
+             * Format: date-time
+             * @description When the user added the alias.
+             */
+            created_at: string;
+        };
+        /** @description The aliases of the user, oldest first; at most 5. */
+        AccountAliasList: {
+            aliases: components["schemas"]["AccountAlias"][];
+        };
+        /**
          * @description A badge that the account shows on its profile (ADR-0071): the badge of a role that the
          *     account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
          *     never translated.
@@ -5817,6 +5897,14 @@ export interface components {
              *     including when a fetch started in the last day.
              */
             remote_fetch_started?: boolean;
+        };
+        /** @description The account to add as an alias. */
+        AddAccountAliasRequest: {
+            /**
+             * @description The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
+             *     URL of the account's actor or profile page.
+             */
+            acct: string;
         };
         /** @description An account as the moderators see it (FR-714). It never includes an email or IP address. */
         AdminAccount: {
@@ -9806,6 +9894,10 @@ export interface components {
          *       this problem; signing in and resetting a password stay available outside the client API.
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
+         *     - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
+         *       account's actor, or to the user itself.
+         *     - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
+         *       allowed (5). Remove one first.
          *     - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
          *       only its subscriptions grant and revoke it, and its permissions and position change from
          *       the plan (`PATCH /admin/supporter_plans/{id}`). Its badge changes as any role's.
@@ -10066,6 +10158,11 @@ export interface components {
          * @enum {string}
          */
         RelayState: "pending" | "accepted" | "rejected" | "left";
+        /** @description The alias to remove. */
+        RemoveAccountAliasRequest: {
+            /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
+            uri: string;
+        };
         /** @description The passkey that confirms the removal of the user's password. */
         RemovePasswordRequest: {
             passkey: components["schemas"]["PasskeyAssertion"];
@@ -10910,6 +11007,16 @@ export interface components {
         };
     };
     responses: {
+        /** @description The aliases of the user. */
+        AccountAliasList: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AccountAliasList"];
+            };
+        };
         /** @description A page of accounts. */
         AccountPage: {
             headers: {
@@ -11854,6 +11961,53 @@ export interface operations {
                     "application/json": components["schemas"]["CredentialAccount"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountAliases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AccountAliasList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addAccountAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAccountAliasRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AccountAliasList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeAccountAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveAccountAliasRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AccountAliasList"];
             default: components["responses"]["Problem"];
         };
     };

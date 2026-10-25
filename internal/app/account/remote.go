@@ -24,6 +24,7 @@ type (
 	RemoteHead = account.RemoteHead
 	Move       = account.Move
 	MoveState  = account.MoveState
+	Alias      = account.Alias
 )
 
 // MoveInitiatedBySelf is the initiator of a local account's own move; see
