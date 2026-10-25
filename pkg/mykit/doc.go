@@ -8,7 +8,8 @@
 // that follow Retry-After; and errors: an answer with a status of 400 or more is a *Problem (RFC 9457), a
 // request without an answer a *NetworkError. All iterates a paginated collection, UploadMedia uploads a file
 // from an io.Reader, and NewCodeVerifier, CodeChallenge, and OAuthConfig.Exchange do the PKCE part of the
-// authorization code flow.
+// authorization code flow. API.Stream reads the event stream of GET /streaming and connects again whenever it
+// ends; the server replays nothing, so read the timelines and the notifications again on every reconnection.
 //
 // The library is MIT-licensed, apart from the AGPL-3.0 server.
 package mykit

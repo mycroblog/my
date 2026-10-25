@@ -235,6 +235,7 @@ func (r *IdentityRepository) InsertUserToken(ctx context.Context, tx uow.Tx, t i
 	err = q.InsertUserToken(ctx, postgresgen.InsertUserTokenParams{
 		ID: t.ID, UserID: t.UserID, Purpose: string(t.Purpose), EmailAddressID: toNullString(t.EmailAddressID),
 		TokenHash: t.TokenHash, ExpiresAt: t.ExpiresAt, IssuedAt: t.IssuedAt,
+		UnsubscribeCategory: toNullString(string(t.UnsubscribeCategory)),
 	})
 	return wrap(err, "insert user token")
 }
@@ -248,6 +249,7 @@ func (r *IdentityRepository) FindUserTokenByHash(ctx context.Context, hash []byt
 	return identity.UserToken{
 		ID: row.ID, UserID: row.UserID, Purpose: identity.TokenPurpose(row.Purpose), EmailAddressID: fromNullString(row.EmailAddressID),
 		TokenHash: row.TokenHash, ExpiresAt: utc(row.ExpiresAt), IssuedAt: utc(row.IssuedAt),
+		UnsubscribeCategory: identity.UnsubscribeCategory(fromNullString(row.UnsubscribeCategory)),
 	}, nil
 }
 

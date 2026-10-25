@@ -508,6 +508,48 @@ func (l *Localizer) ServerAuthLinkNewTab() string {
 	return l.format("server:auth.link.new_tab", nil)
 }
 
+// ServerAuthMailUnsubscribeDoneModeratorNotifications formats "server:auth.mail_unsubscribe.done_moderator_notifications". Body of the page after an unsubscribe link stopped the moderator notification emails.
+//
+//	en: You no longer get moderator notifications by email. You can turn them back on in your preferences.
+func (l *Localizer) ServerAuthMailUnsubscribeDoneModeratorNotifications() string {
+	return l.format("server:auth.mail_unsubscribe.done_moderator_notifications", nil)
+}
+
+// ServerAuthMailUnsubscribeDoneTitle formats "server:auth.mail_unsubscribe.done_title". Title and heading of the page after an unsubscribe link stopped its emails.
+//
+//	en: Emails stopped
+func (l *Localizer) ServerAuthMailUnsubscribeDoneTitle() string {
+	return l.format("server:auth.mail_unsubscribe.done_title", nil)
+}
+
+// ServerAuthMailUnsubscribeInvalid formats "server:auth.mail_unsubscribe.invalid". Error when an unsubscribe link is unknown or expired. Must not say which.
+//
+//	en: This link is not valid. It may have expired. You can stop the emails in your preferences.
+func (l *Localizer) ServerAuthMailUnsubscribeInvalid() string {
+	return l.format("server:auth.mail_unsubscribe.invalid", nil)
+}
+
+// ServerAuthMailUnsubscribePromptModeratorNotifications formats "server:auth.mail_unsubscribe.prompt_moderator_notifications". Text above the button that stops the moderator notification emails, on the page of their unsubscribe link.
+//
+//	en: Stop getting moderator notifications by email? They still appear in the app.
+func (l *Localizer) ServerAuthMailUnsubscribePromptModeratorNotifications() string {
+	return l.format("server:auth.mail_unsubscribe.prompt_moderator_notifications", nil)
+}
+
+// ServerAuthMailUnsubscribeSubmit formats "server:auth.mail_unsubscribe.submit". Button that stops the emails of an unsubscribe link.
+//
+//	en: Stop these emails
+func (l *Localizer) ServerAuthMailUnsubscribeSubmit() string {
+	return l.format("server:auth.mail_unsubscribe.submit", nil)
+}
+
+// ServerAuthMailUnsubscribeTitle formats "server:auth.mail_unsubscribe.title". Title and heading of the page that the unsubscribe link of a notification email opens.
+//
+//	en: Stop emails
+func (l *Localizer) ServerAuthMailUnsubscribeTitle() string {
+	return l.format("server:auth.mail_unsubscribe.title", nil)
+}
+
 // ServerAuthResetPasswordDone formats "server:auth.reset_password.done". Body of the page after a new password was set from a reset link.
 //
 //	en: Your password is changed, and every session that used the old one is signed out. Sign in with the new password.
@@ -2277,6 +2319,13 @@ func (l *Localizer) ServerMailReasonSupporter(instance string) string {
 //	en: Contact: {email}
 func (l *Localizer) ServerMailSignatureContact(email string) string {
 	return l.format("server:mail.signature.contact", map[string]any{"email": email})
+}
+
+// ServerMailSignatureUnsubscribe formats "server:mail.signature.unsubscribe". Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link.
+//
+//	en: Stop these emails: {url}
+func (l *Localizer) ServerMailSignatureUnsubscribe(url string) string {
+	return l.format("server:mail.signature.unsubscribe", map[string]any{"url": url})
 }
 
 // ServerMailSupporterPaymentFailedAction formats "server:mail.supporter_payment_failed.action". Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed.

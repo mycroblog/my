@@ -78,7 +78,7 @@ function middleware(acceptLanguage: ClientOptions["acceptLanguage"]): Middleware
 }
 
 /** Reads the server's origin: an absolute http or https URL without a path, query, or fragment. */
-function parseOrigin(server: string): string {
+export function parseOrigin(server: string): string {
   if (server === "") throw new Error("mykit: server is empty");
   let u: URL;
   try {

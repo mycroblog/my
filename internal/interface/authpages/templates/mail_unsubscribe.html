@@ -1,0 +1,10 @@
+{{define "content"}}
+<h1>{{.L.ServerAuthMailUnsubscribeTitle}}</h1>
+<p>{{.Unsubscribe.Prompt}}</p>
+<form class="form" method="post" action="/mail/unsubscribe?token={{.Token}}">
+<input type="hidden" name="List-Unsubscribe" value="One-Click">
+<div class="actions">
+<button class="button" type="submit">{{.L.ServerAuthMailUnsubscribeSubmit}}</button>
+</div>
+</form>
+{{end}}

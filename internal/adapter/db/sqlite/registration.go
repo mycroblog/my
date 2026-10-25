@@ -214,6 +214,7 @@ func (r *IdentityRepository) InsertUserToken(ctx context.Context, tx uow.Tx, t i
 	err = q.InsertUserToken(ctx, sqlitegen.InsertUserTokenParams{
 		ID: t.ID, UserID: t.UserID, Purpose: string(t.Purpose), EmailAddressID: toNullString(t.EmailAddressID),
 		TokenHash: t.TokenHash, ExpiresAt: toMillis(t.ExpiresAt), IssuedAt: toMillis(t.IssuedAt),
+		UnsubscribeCategory: toNullString(string(t.UnsubscribeCategory)),
 	})
 	return wrap(err, "insert user token")
 }
@@ -227,6 +228,7 @@ func (r *IdentityRepository) FindUserTokenByHash(ctx context.Context, hash []byt
 	return identity.UserToken{
 		ID: row.ID, UserID: row.UserID, Purpose: identity.TokenPurpose(row.Purpose), EmailAddressID: row.EmailAddressID.String,
 		TokenHash: row.TokenHash, ExpiresAt: fromMillis(row.ExpiresAt), IssuedAt: fromMillis(row.IssuedAt),
+		UnsubscribeCategory: identity.UnsubscribeCategory(row.UnsubscribeCategory.String),
 	}, nil
 }
 

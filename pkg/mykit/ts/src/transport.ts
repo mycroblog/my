@@ -101,21 +101,27 @@ async function discard(response: Response): Promise<void> {
  */
 function retryDelay(retryAfter: string | null, n: number, limit: number, now: number): number | null {
   if (retryAfter !== null && retryAfter !== "") {
-    let ms = 1000;
-    if (/^\d+$/.test(retryAfter.trim())) {
-      ms = Number(retryAfter.trim()) * 1000;
-    } else {
-      const at = Date.parse(retryAfter);
-      if (!Number.isNaN(at)) ms = Math.max(at - now, 0);
-    }
+    const ms = parseRetryAfter(retryAfter, now) ?? 1000;
     return ms <= limit ? ms : null;
   }
   const base = 1000 * 2 ** Math.min(n, 10);
   return Math.min(base + Math.random() * (base / 2), limit);
 }
 
+/**
+ * Reads a Retry-After header, in seconds or an HTTP date, as the wait from now in milliseconds; null when it is absent
+ * or unreadable.
+ */
+export function parseRetryAfter(retryAfter: string | null, now: number): number | null {
+  const value = retryAfter?.trim() ?? "";
+  if (/^\d+$/.test(value)) return Number(value) * 1000;
+  if (value === "") return null;
+  const at = Date.parse(value);
+  return Number.isNaN(at) ? null : Math.max(at - now, 0);
+}
+
 /** Waits for ms, or rejects with the reason of signal when it aborts first. */
-function sleepSignal(ms: number, signal: AbortSignal): Promise<void> {
+export function sleepSignal(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(signal.reason as Error);
