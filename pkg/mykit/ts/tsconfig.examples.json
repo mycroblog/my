@@ -1,0 +1,12 @@
+{
+  "extends": "../../../app/tsconfig.base.json",
+  "//": "The examples of the README, which import the package by its name, as a user does.",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "paths": { "@mycroblog/mykit": ["./src/index.ts"] }
+  },
+  "include": ["examples"]
+}

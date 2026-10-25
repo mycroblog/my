@@ -1,5 +1,5 @@
 {
   "//": "Solution file: tsc checks the referenced projects one by one (the typecheck script), and tsgolint (Oxlint's type-aware rules, ADR-0049) finds each file's project from here.",
   "files": [],
-  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.test.json" }]
+  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.test.json" }, { "path": "./tsconfig.examples.json" }]
 }
