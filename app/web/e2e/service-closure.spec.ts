@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The closure of the service in every width × locale project (FR-808, FR-809, ADR-0088 §2): while it is announced, the notice
-// at the top of the sign-in page and the information page shows the dates, the operators' message and a link to the
-// export that the keyboard reaches; once the server has closed, signing in gives the closed screen alone, where the
-// archives of the data can be asked for. `vite preview` has no API, so each test plays the server with page.route.
+// at the top of the sign-in page and the information page shows the dates, the operators' message and the links to the
+// export and to the move of the account, which the keyboard reaches; once the server has closed, signing in gives the
+// closed screen alone, where the archives of the data can be asked for. `vite preview` has no API, so each test plays the server with page.route.
 // Texts come from the project's catalog.
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
@@ -81,19 +81,24 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
 
 test.describe("the announced closure", () => {
   for (const path of ["/login", "/about"]) {
-    test(`shows its notice on ${path}, and the keyboard reaches the export`, async ({ page, makeAxeBuilder }) => {
+    test(`shows its notice on ${path}, and the keyboard reaches the export and the move`, async ({ page, makeAxeBuilder }) => {
       await server(page, "announced", { signedIn: false });
       await page.goto(path);
       const notice = page.getByRole("region", { name: message("closure.label"), exact: true });
       await expect(notice).toBeVisible();
       await expect(notice).toContainText(operatorMessage);
-      await expect(notice.getByRole("link", { name: message("closure.announced.export"), exact: true })).toHaveAttribute("href", "/settings/account");
-      // The link is in the tab order (after the skip link, if the page has one).
+      const exportLink = notice.getByRole("link", { name: message("closure.announced.export"), exact: true });
+      const moveLink = notice.getByRole("link", { name: message("account_move.closure.move"), exact: true });
+      await expect(exportLink).toHaveAttribute("href", "/settings/account");
+      await expect(moveLink).toHaveAttribute("href", "/settings/move");
+      // The links are in the tab order (after the skip link, if the page has one), the export first and the move next.
       for (let tabs = 0; tabs < 5; tabs += 1) {
         await page.keyboard.press("Tab");
-        if (await notice.getByRole("link").evaluate((link) => link === document.activeElement)) break;
+        if (await exportLink.evaluate((link) => link === document.activeElement)) break;
       }
-      await expect(notice.getByRole("link")).toBeFocused();
+      await expect(exportLink).toBeFocused();
+      await page.keyboard.press("Tab");
+      await expect(moveLink).toBeFocused();
       await expectNoAxeViolations(makeAxeBuilder);
       await expectNoHorizontalScroll(page);
     });
