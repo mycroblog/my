@@ -94,6 +94,7 @@
 | `account_moves` | イベント | `id`, `account_id`（移転元）, `target_account_id`, `initiated_by`（`enum(self, remote)`）, `activity_uri`（NULL 可。受けた `Move`）, `occurred_at` | 一意 `(account_id, target_account_id)`、インデックス `(account_id, occurred_at DESC, id DESC)`、`CHECK (account_id <> target_account_id)` |
 | `account_move_cancellations` | イベント | `move_id`（PK）, `cancelled_at` | ローカルの移転だけ |
 | `account_move_states` | 投影 | `account_id`（PK）, `move_id`, `target_account_id`, `since` | インデックス `(target_account_id)` |
+| `account_aliases` | 現在値 | `account_id`, `alias_uri`, `added_at` | PK `(account_id, alias_uri)`。ローカルのアカウントだけ。1 アカウント 5 件まで（`account.MaxAliases`） |
 
 - **移転はライフサイクルと直交する軸** です（ADR-0020 規約 2）。移転済みでも `account_lifecycle_states` は変わりません。
 - リモートのアカウントの移転は、検証を通った `Move` を `account.Service.RecordRemoteMove` が `initiated_by = remote` で記録します（[federation.md §3.4](../../federation.md)）。同じ移転先への 2 度目の `Move` は一意制約で何も記録せず、別の移転先への `Move` は最新の行の `occurred_at` から 7 日（`account.RemoteMoveInterval`）以内なら記録しません（待ち時間は状態の列を持たず、読み取りのときに判定します）。
@@ -102,3 +103,6 @@
 - 記録は同じトランザクションでドメインイベント `account.moved` を出し、projector が `account_move_states` をその移転に向けます。`moderation` が移転元を `limit` しているかを運び（`SourceLimited`）、`notification` がモデレーターに知らせます。`graph` はこのイベントからジョブ `graph.migrate_follows` を積みます（§4.5）。
 - 投影はアカウントごとの最新の移転（`occurred_at`、`id` の順）で、それが取り消されていれば行を作りません（`account.MoveStates`）。取り消しは行を消します。
 - 移転先は client API のアカウントの表現の `moved`（アカウント自身のエンドポイント）に出します（`account.Service.MoveState`）。
+- `account_aliases` は、ローカルの利用者が移転元として設定した別名（FR-009）で、ローカルの Actor の `alsoKnownAs` に出します。`alias_uri` は Actor の `id` です。client API がハンドルか URL を WebFinger と Actor の取得で解決してから（トランザクションの外）、`account.Service.AddAlias` が足します。自分自身（`account.ErrSelfAlias`）・インスタンス Actor・削除済みのアカウントは別名にできず、6 件目は `account.ErrTooManyAliases` で断ります。すでにある別名を足しても、無い別名を消しても何も変えません。
+- 別名の追加と削除は、同じトランザクションでドメインイベント `account.aliases_changed` を出し、`federation` が連合の向きが `publish` を通すときだけ Actor の `Update` を積みます（[federation.md §7.1](../../federation.md)）。別名だけでは何も起きず、移転を受け入れる表明でしかありません。外からローカルのアカウントへの `Move` は、そのアカウントの別名に移転元があるときだけ通します（`account.Service.HasAlias`）。
+- リモートの Actor の `alsoKnownAs` は保存せず、移転の検証のときに取り直した文書で確かめます。アカウントの消去（§8）は `account_aliases` の行も消します。

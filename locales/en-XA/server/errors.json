@@ -11,6 +11,14 @@
     "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ŭŭşḗḗ ŧħḗḗ ȧȧƥƥ řīɠħŧ ƞǿǿẇ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.aliases.invalid": {
+    "defaultMessage": "[Ŧħȧȧŧ ħȧȧƞḓŀḗḗ ǿǿř ŬŘĿ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧƞ ȧȧŀīȧȧş. Ḗƞŧḗḗř ŧħḗḗ ħȧȧƞḓŀḗḗ ǿǿř ŬŘĿ ǿǿƒ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.aliases.too_many": {
+    "defaultMessage": "[Ẏǿǿŭŭ ȧȧŀřḗḗȧȧḓẏ ħȧȧṽḗḗ ŧħḗḗ ḿǿǿşŧ ȧȧŀīȧȧşḗḗş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗḿǿǿṽḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.appeal.already_appealed": {
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ ȧȧƥƥḗḗȧȧŀḗḗḓ ŧħīş ȧȧƈŧīǿǿƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -301,6 +309,14 @@
   },
   "errors.service_closed_detail": {
     "defaultMessage": "[Ŧħḗḗ şḗḗřṽḗḗř ħȧȧş ƈŀǿǿşḗḗḓ. Ẏǿǿŭŭ ƈȧȧƞ şŧīŀŀ şīɠƞ īƞ ȧȧƞḓ ḗḗẋƥǿǿřŧ ẏǿǿŭŭř ḓȧȧŧȧȧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closing": {
+    "defaultMessage": "[Ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ǿǿƒ ŧħīş şḗḗřṽḗḗř īş ȧȧƞƞǿǿŭŭƞƈḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.service_closing_detail": {
+    "defaultMessage": "[Ƞḗḗẇ řḗḗɠīşŧřȧȧŧīǿǿƞş ȧȧƞḓ şŭŭƥƥǿǿřŧḗḗř şŭŭƀşƈřīƥŧīǿǿƞş şŧǿǿƥ ẇħīŀḗḗ ŧħḗḗ ƈŀǿǿşŭŭřḗḗ īş ȧȧƞƞǿǿŭŭƞƈḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.service_closure.state": {

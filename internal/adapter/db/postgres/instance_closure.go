@@ -107,8 +107,22 @@ func currentClosure(ctx context.Context, q *postgresgen.Queries) (instance.Closu
 		return instance.Closure{}, notFound(err, appinstance.ErrNotFound, "service closure")
 	}
 	return instance.Closure{
-		State:       instance.ClosureState(row.State),
+		State: instance.ClosureState(row.State), AnnouncementID: row.AnnouncementEventID,
 		Schedule:    instance.ClosureSchedule{ClosesAt: utc(row.ClosesAt), ExportUntil: utc(row.ExportUntil), Message: row.Message},
 		AnnouncedAt: utc(row.AnnouncedAt), ChangedAt: utc(row.ChangedAt),
+	}, nil
+}
+
+// FindClosureEvent implements appinstance.ClosureRepository.
+func (r *InstanceRepository) FindClosureEvent(ctx context.Context, id string) (instance.ClosureEvent, error) {
+	row, err := r.db.reader().GetServiceClosureEvent(ctx, id)
+	if err != nil {
+		return instance.ClosureEvent{}, notFound(err, appinstance.ErrNotFound, "service closure event")
+	}
+	return instance.ClosureEvent{
+		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: fromNullString(row.ByUserID), OccurredAt: utc(row.OccurredAt),
+		Schedule: instance.ClosureSchedule{
+			ClosesAt: fromNullTime(row.ClosesAt), ExportUntil: fromNullTime(row.ExportUntil), Message: fromNullString(row.Message),
+		},
 	}, nil
 }

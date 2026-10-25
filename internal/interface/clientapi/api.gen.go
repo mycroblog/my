@@ -2144,6 +2144,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
+	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
 	NotificationTypeAdminWebhookDisabled       NotificationType = "admin_webhook_disabled"
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
@@ -2160,8 +2161,10 @@ const (
 	NotificationTypeReaction                   NotificationType = "reaction"
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
+	NotificationTypeServiceClosure             NotificationType = "service_closure"
 	NotificationTypeSupporterPaymentFailed     NotificationType = "supporter_payment_failed"
 	NotificationTypeSupporterPlanRetired       NotificationType = "supporter_plan_retired"
+	NotificationTypeSupporterServiceClosure    NotificationType = "supporter_service_closure"
 	NotificationTypeSupporterSubscriptionEnded NotificationType = "supporter_subscription_ended"
 )
 
@@ -2177,6 +2180,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminCustomEmojiRequest:
 		return true
 	case NotificationTypeAdminReport:
+		return true
+	case NotificationTypeAdminServiceClosureDue:
 		return true
 	case NotificationTypeAdminSignUp:
 		return true
@@ -2210,9 +2215,13 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeReportResolved:
 		return true
+	case NotificationTypeServiceClosure:
+		return true
 	case NotificationTypeSupporterPaymentFailed:
 		return true
 	case NotificationTypeSupporterPlanRetired:
+		return true
+	case NotificationTypeSupporterServiceClosure:
 		return true
 	case NotificationTypeSupporterSubscriptionEnded:
 		return true
@@ -2734,6 +2743,27 @@ func (e ServerHealthStatus) Valid() bool {
 	case ServerHealthStatusOk:
 		return true
 	case ServerHealthStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceClosureNoticeChange.
+const (
+	ServiceClosureNoticeChangeAnnounced   ServiceClosureNoticeChange = "announced"
+	ServiceClosureNoticeChangeRescheduled ServiceClosureNoticeChange = "rescheduled"
+	ServiceClosureNoticeChangeWithdrawn   ServiceClosureNoticeChange = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the ServiceClosureNoticeChange enum.
+func (e ServiceClosureNoticeChange) Valid() bool {
+	switch e {
+	case ServiceClosureNoticeChangeAnnounced:
+		return true
+	case ServiceClosureNoticeChangeRescheduled:
+		return true
+	case ServiceClosureNoticeChangeWithdrawn:
 		return true
 	default:
 		return false
@@ -3357,6 +3387,25 @@ type Account struct {
 	Username string `json:"username"`
 }
 
+// AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+// `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
+type AccountAlias struct {
+	// Acct The handle of the alias, `username` for a local account and `username@domain` for a
+	// remote one; omitted when the instance does not know the account or its handle.
+	Acct *string `json:"acct,omitempty"`
+
+	// CreatedAt When the user added the alias.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Uri The ActivityPub id of the alias's actor.
+	Uri string `json:"uri"`
+}
+
+// AccountAliasList The aliases of the user, oldest first; at most 5.
+type AccountAliasList struct {
+	Aliases []AccountAlias `json:"aliases"`
+}
+
 // AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
 // account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
 // never translated.
@@ -3443,6 +3492,13 @@ type AccountStatusPage struct {
 	// first page again a few seconds later to see what it stored. Absent otherwise,
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
+}
+
+// AddAccountAliasRequest The account to add as an alias.
+type AddAccountAliasRequest struct {
+	// Acct The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
+	// URL of the account's actor or profile page.
+	Acct string `json:"acct"`
 }
 
 // AdminAccount An account as the moderators see it (FR-714). It never includes an email or IP address.
@@ -7324,12 +7380,16 @@ type InstanceLimits struct {
 // InstanceRegistrations How people sign up on the instance.
 type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-	// approval), `invite` (only with an invite), or `closed` (nobody).
+	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+	// the instance setting says.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-// approval), `invite` (only with an invite), or `closed` (nobody).
+// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+// the instance setting says.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
@@ -7892,6 +7952,14 @@ type Notification struct {
 	// ReportId The report that an `admin_report` is about.
 	ReportId *Id `json:"report_id,omitempty"`
 
+	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+	// tells of the closure of the service (ADR-0088). `change` is what the event of a
+	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+	// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+	// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+	// notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
+
 	// Status The post that the notification is about, as the user sees it; omitted when the user
 	// may not see it.
 	Status *Status `json:"status,omitempty"`
@@ -7942,7 +8010,13 @@ type Notification struct {
 	// one; its `account_move` carries the target and what became of the user's follow. It is
 	// sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
 	// account that the moderators limit moved, and the target does not get the limit; its
-	// `account_move` carries the target, and it has no `account`.
+	// `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+	// local user when the closure of the service is announced, when its dates change, and when the
+	// announcement is withdrawn; `admin_service_closure_due` goes to the users with
+	// `manage_service_closure` once the closing date of the announcement in effect has passed, to
+	// close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+	// their supporter subscription at the end of its period, with its `supporter_subscription`.
+	// Their `service_closure` says what they tell of, and they have no `account`.
 	Type NotificationType `json:"type"`
 }
 
@@ -8014,7 +8088,13 @@ type NotificationPage struct {
 // one; its `account_move` carries the target and what became of the user's follow. It is
 // sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
 // account that the moderators limit moved, and the target does not get the limit; its
-// `account_move` carries the target, and it has no `account`.
+// `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+// local user when the closure of the service is announced, when its dates change, and when the
+// announcement is withdrawn; `admin_service_closure_due` goes to the users with
+// `manage_service_closure` once the closing date of the announcement in effect has passed, to
+// close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+// their supporter subscription at the end of its period, with its `supporter_subscription`.
+// Their `service_closure` says what they tell of, and they have no `account`.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -8590,6 +8670,10 @@ type PreviewDomainBlockImportRequest struct {
 //     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
 //     server whose closure is not announced or whose `closes_at` has not come
 //     (`POST /admin/closure/close`).
+//   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+//     stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+//     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+//     (`POST /supporter/checkout`).
 //   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
@@ -8600,6 +8684,10 @@ type PreviewDomainBlockImportRequest struct {
 //     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
+//   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
+//     account's actor, or to the user itself.
+//   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
+//     allowed (5). Remove one first.
 //   - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
 //     only its subscriptions grant and revoke it, and its permissions and position change from
 //     the plan (`PATCH /admin/supporter_plans/{id}`). Its badge changes as any role's.
@@ -8891,6 +8979,12 @@ type RelayProtocol string
 // instance sent the `Undo` of its `Follow`.
 type RelayState string
 
+// RemoveAccountAliasRequest The alias to remove.
+type RemoveAccountAliasRequest struct {
+	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
+	Uri string `json:"uri"`
+}
+
 // RemovePasswordRequest The passkey that confirms the removal of the user's password.
 type RemovePasswordRequest struct {
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
@@ -9032,6 +9126,25 @@ type ServerHealth struct {
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
 // schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
 type ServerHealthStatus string
+
+// ServiceClosureNotice What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+// tells of the closure of the service (ADR-0088). `change` is what the event of a
+// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+// notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+type ServiceClosureNotice struct {
+	Change *ServiceClosureNoticeChange `json:"change,omitempty"`
+
+	// ClosesAt When the server closes.
+	ClosesAt *time.Time `json:"closes_at,omitempty"`
+
+	// ExportUntil Until when the users may still sign in and export their data.
+	ExportUntil *time.Time `json:"export_until,omitempty"`
+}
+
+// ServiceClosureNoticeChange defines model for ServiceClosureNotice.Change.
+type ServiceClosureNoticeChange string
 
 // ServiceClosureState Where the server is in its closure (ADR-0088 §1):
 //
@@ -10886,6 +10999,12 @@ type GetHashtagTimelineParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
+type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
+
+// RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
+type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
+
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
@@ -11125,6 +11244,15 @@ type DisableTotpJSONRequestBody = TwoFactorCodeRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListAccountAliases List the authenticated user's aliases
+	// (GET /accounts/aliases)
+	ListAccountAliases(w http.ResponseWriter, r *http.Request)
+	// AddAccountAlias Add an alias to the authenticated user
+	// (POST /accounts/aliases)
+	AddAccountAlias(w http.ResponseWriter, r *http.Request)
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	// (POST /accounts/aliases/remove)
+	RemoveAccountAlias(w http.ResponseWriter, r *http.Request)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
@@ -11942,6 +12070,48 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListAccountAliases operation middleware
+func (siw *ServerInterfaceWrapper) ListAccountAliases(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAccountAliases(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddAccountAlias operation middleware
+func (siw *ServerInterfaceWrapper) AddAccountAlias(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddAccountAlias(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveAccountAlias operation middleware
+func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveAccountAlias(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // DeleteOwnAccount operation middleware
 func (siw *ServerInterfaceWrapper) DeleteOwnAccount(w http.ResponseWriter, r *http.Request) {
@@ -19795,6 +19965,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/supporters", wrapper.ListInstanceSupporters)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/verify_credentials", wrapper.VerifyAccountCredentials)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/update_credentials", wrapper.UpdateAccountCredentials)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/aliases", wrapper.ListAccountAliases)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/aliases", wrapper.AddAccountAlias)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/aliases/remove", wrapper.RemoveAccountAlias)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences", wrapper.GetPreferences)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences", wrapper.UpdatePreferences)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/auto_delete", wrapper.GetAutoDeletePolicy)
@@ -20049,6 +20222,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}/cancel", wrapper.CancelSupporterSubscription)
 
 	return m
+}
+
+type AccountAliasListResponseHeaders struct {
+	CacheControl *string
+}
+type AccountAliasListJSONResponse struct {
+	Body AccountAliasList
+
+	Headers AccountAliasListResponseHeaders
 }
 
 type AccountPageResponseHeaders struct {
@@ -20427,6 +20609,170 @@ type WebhookProblemApplicationProblemPlusJSONResponse struct {
 	Body WebhookProblem
 
 	Headers WebhookProblemResponseHeaders
+}
+
+type ListAccountAliasesRequestObject struct {
+}
+
+type ListAccountAliasesResponseObject interface {
+	VisitListAccountAliasesResponse(w http.ResponseWriter) error
+}
+
+type ListAccountAliases200JSONResponse struct{ AccountAliasListJSONResponse }
+
+func (response ListAccountAliases200JSONResponse) VisitListAccountAliasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountAliasesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAccountAliasesdefaultApplicationProblemPlusJSONResponse) VisitListAccountAliasesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAccountAliasRequestObject struct {
+	Body *AddAccountAliasJSONRequestBody
+}
+
+type AddAccountAliasResponseObject interface {
+	VisitAddAccountAliasResponse(w http.ResponseWriter) error
+}
+
+type AddAccountAlias200JSONResponse struct{ AccountAliasListJSONResponse }
+
+func (response AddAccountAlias200JSONResponse) VisitAddAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AddAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitAddAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAccountAliasRequestObject struct {
+	Body *RemoveAccountAliasJSONRequestBody
+}
+
+type RemoveAccountAliasResponseObject interface {
+	VisitRemoveAccountAliasResponse(w http.ResponseWriter) error
+}
+
+type RemoveAccountAlias200JSONResponse struct{ AccountAliasListJSONResponse }
+
+func (response RemoveAccountAlias200JSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DeleteOwnAccountRequestObject struct {
@@ -36422,6 +36768,15 @@ func (response SetUpTotpdefaultApplicationProblemPlusJSONResponse) VisitSetUpTot
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListAccountAliases List the authenticated user's aliases
+	// (GET /accounts/aliases)
+	ListAccountAliases(ctx context.Context, request ListAccountAliasesRequestObject) (ListAccountAliasesResponseObject, error)
+	// AddAccountAlias Add an alias to the authenticated user
+	// (POST /accounts/aliases)
+	AddAccountAlias(ctx context.Context, request AddAccountAliasRequestObject) (AddAccountAliasResponseObject, error)
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	// (POST /accounts/aliases/remove)
+	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
@@ -37268,6 +37623,92 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListAccountAliases operation middleware
+func (sh *strictHandler) ListAccountAliases(w http.ResponseWriter, r *http.Request) {
+	var request ListAccountAliasesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAccountAliases(ctx, request.(ListAccountAliasesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAccountAliases")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAccountAliasesResponseObject); ok {
+		if err := validResponse.VisitListAccountAliasesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddAccountAlias operation middleware
+func (sh *strictHandler) AddAccountAlias(w http.ResponseWriter, r *http.Request) {
+	var request AddAccountAliasRequestObject
+
+	var body AddAccountAliasJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddAccountAlias(ctx, request.(AddAccountAliasRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddAccountAlias")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddAccountAliasResponseObject); ok {
+		if err := validResponse.VisitAddAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveAccountAlias operation middleware
+func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Request) {
+	var request RemoveAccountAliasRequestObject
+
+	var body RemoveAccountAliasJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveAccountAlias(ctx, request.(RemoveAccountAliasRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveAccountAlias")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
+		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // DeleteOwnAccount operation middleware

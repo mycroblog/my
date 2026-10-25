@@ -654,7 +654,8 @@ type DecideInput struct {
 // identity.ErrInvalidNote for a note that identity.ValidateDecisionNote rejects, with
 // ErrNotFound when the user has no application, and with ErrNotPending when the registration is
 // already decided, also by a concurrent decision: a decided registration never changes again.
-// The decision is audited in its transaction (ADR-0037).
+// An approval fails with ErrServiceClosing from the announcement of the service closure on
+// (ADR-0088 §2). The decision is audited in its transaction (ADR-0037).
 func (s *Service) DecideRegistration(ctx context.Context, in DecideInput) (identity.RegistrationDecision, error) {
 	if in.Decision != identity.DecisionApproved && in.Decision != identity.DecisionRejected {
 		return identity.RegistrationDecision{}, fmt.Errorf("identity: unknown decision %q", in.Decision)
@@ -672,6 +673,11 @@ func (s *Service) DecideRegistration(ctx context.Context, in DecideInput) (ident
 	}
 	if st.State != identity.RegistrationPending {
 		return identity.RegistrationDecision{}, ErrNotPending
+	}
+	if in.Decision == identity.DecisionApproved {
+		if err := s.registrationAllowed(ctx); err != nil {
+			return identity.RegistrationDecision{}, err
+		}
 	}
 	now := s.d.Clock.Now()
 	d := identity.RegistrationDecision{

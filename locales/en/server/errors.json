@@ -3,6 +3,14 @@
     "defaultMessage": "Your account cannot use the app right now.",
     "description": "API error title for HTTP 403 when the access token is valid but its user cannot use the app: the registration is pending or rejected, the email address is unconfirmed, or the account is deactivated or deleted."
   },
+  "errors.aliases.invalid": {
+    "defaultMessage": "That handle or URL cannot be an alias. Enter the handle or URL of another account.",
+    "description": "API error title for HTTP 422 when the handle or URL given as an alias (an account the user moves from) leads to no account, to something that is not an account, or to the user's own account."
+  },
+  "errors.aliases.too_many": {
+    "defaultMessage": "You already have the most aliases allowed. Remove one first.",
+    "description": "API error title for HTTP 422 when the user adds another alias beyond the limit of aliases."
+  },
   "errors.appeal.already_appealed": {
     "defaultMessage": "You have already appealed this action.",
     "description": "API error title for HTTP 422 when the user appeals a moderation action on their account a second time; an action is appealed once."
@@ -518,6 +526,14 @@
   "errors.domain_mutes.too_many": {
     "defaultMessage": "You already mute the most domains allowed. Unmute one first.",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
+  },
+  "errors.service_closing": {
+    "defaultMessage": "The closure of this server is announced.",
+    "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
+  },
+  "errors.service_closing_detail": {
+    "defaultMessage": "New registrations and supporter subscriptions stop while the closure is announced.",
+    "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
   },
   "errors.account_moved": {
     "defaultMessage": "Your account has moved.",

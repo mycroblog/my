@@ -132,6 +132,8 @@ type pushJob struct {
 	StatusID        string            `json:"status_id,omitempty"`
 	ReportID        string            `json:"report_id,omitempty"`
 	AppealID        string            `json:"appeal_id,omitempty"`
+	// ServiceClosureChange is what a service_closure tells of.
+	ServiceClosureChange notification.ClosureChange `json:"service_closure_change,omitempty"`
 }
 
 // PushTTL is how long a push service keeps a message for a browser that is offline.
@@ -160,6 +162,7 @@ func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notifica
 		payload, err := json.Marshal(pushJob{
 			SubscriptionID: id, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
 			SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
+			ServiceClosureChange: n.ServiceClosureChange,
 		})
 		if err != nil {
 			return err
@@ -473,6 +476,19 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		p.Title, p.Path = l.ServerPushAccountMoved(name), "/@"+source.Acct
 	case notification.TypeAdminAccountMoved:
 		p.Title = l.ServerPushAdminAccountMoved(instance)
+	case notification.TypeServiceClosure:
+		switch job.ServiceClosureChange {
+		case notification.ClosureWithdrawn:
+			p.Title = l.ServerPushServiceClosureWithdrawn(instance)
+		case notification.ClosureRescheduled:
+			p.Title = l.ServerPushServiceClosureRescheduled(instance)
+		default:
+			p.Title = l.ServerPushServiceClosureAnnounced(instance)
+		}
+	case notification.TypeAdminServiceClosureDue:
+		p.Title = l.ServerPushAdminServiceClosureDue(instance)
+	case notification.TypeSupporterServiceClosure:
+		p.Title = l.ServerPushSupporterServiceClosure(instance)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

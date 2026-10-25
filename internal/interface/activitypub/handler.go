@@ -93,6 +93,8 @@ type Options struct {
 	// EmojiTags reads the custom emoji of local actors' profiles and serves the local custom
 	// emoji at their ids (ADR-0051 §3); nil serves none.
 	EmojiTags appfederation.EmojiTagReader
+	// Aliases reads the aliases of local actors (alsoKnownAs, ADR-0089); nil serves none.
+	Aliases appfederation.AliasReader
 	// Moves tells the actor that a local actor moved to, its movedTo (ADR-0089); nil serves none.
 	Moves appfederation.MoveReader
 	// Inbox receives the activities POSTed to the inboxes; nil serves no inbox.

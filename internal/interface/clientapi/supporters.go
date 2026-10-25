@@ -95,6 +95,8 @@ func (s *Server) ownSupporterProblem(ctx context.Context, err error) (problem, b
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeSupporterPlanUnavailable, l.ServerErrorsSupportersPlanUnavailable(), ""), true
 	case errors.Is(err, appsupporters.ErrSubscriptionState):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeSupporterSubscriptionState, l.ServerErrorsSupportersSubscriptionState(), ""), true
+	case errors.Is(err, appsupporters.ErrServiceClosing):
+		return s.serviceClosingProblem(ctx), true
 	case errors.Is(err, appsupporters.ErrSameChoice):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeSupporterSamePlan, l.ServerErrorsSupportersSamePlan(), ""), true
 	}

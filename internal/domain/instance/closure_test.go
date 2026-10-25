@@ -162,3 +162,16 @@ func TestClosureAllows(t *testing.T) {
 		t.Error("ClosureAllows of the empty or unknown state or operation")
 	}
 }
+
+func TestEffectiveRegistrationMode(t *testing.T) {
+	for _, mode := range []instance.RegistrationMode{instance.RegistrationOpen, instance.RegistrationApproval, instance.RegistrationInvite, instance.RegistrationClosed} {
+		if got := instance.EffectiveRegistrationMode(mode, instance.ClosureNone); got != mode {
+			t.Errorf("EffectiveRegistrationMode(%s, none) = %s, want the setting", mode, got)
+		}
+		for _, state := range []instance.ClosureState{instance.ClosureAnnounced, instance.ClosureClosed, instance.ClosureDeliveryCompleted} {
+			if got := instance.EffectiveRegistrationMode(mode, state); got != instance.RegistrationClosed {
+				t.Errorf("EffectiveRegistrationMode(%s, %s) = %s, want closed", mode, state, got)
+			}
+		}
+	}
+}

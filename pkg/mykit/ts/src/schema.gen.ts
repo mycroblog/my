@@ -393,6 +393,64 @@ export interface paths {
         patch: operations["updateAccountCredentials"];
         trace?: never;
     };
+    "/accounts/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the authenticated user's aliases
+         * @description The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+         *     `alsoKnownAs`, oldest first.
+         */
+        get: operations["listAccountAliases"];
+        put?: never;
+        /**
+         * Add an alias to the authenticated user
+         * @description Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+         *     names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
+         *     actor's `Update` goes to the user's followers as a profile change does. An alias alone
+         *     changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
+         *     `GET /accounts/lookup?resolve=true` resolves it: WebFinger and the fetch of the actor,
+         *     limited to 30 fetches per account every 5 minutes (429 with `Retry-After`).
+         *
+         *     A handle or URL that leads to no account, the URL of something that is not an actor, the
+         *     instance actor, and the user itself are a 422 `/api/v1/problems/invalid-alias`; so is an
+         *     account that the instance does not know while it takes nothing in from other servers
+         *     (`Instance.federation.mode` `off` or `outbound`). A user has at most 5 aliases; one more
+         *     is a 422 `/api/v1/problems/too-many-aliases`. Adding an alias that the user has already
+         *     changes nothing.
+         */
+        post: operations["addAccountAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/aliases/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove an alias of the authenticated user
+         * @description Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+         *     profile change does. Removing an alias that the user does not have changes nothing.
+         */
+        post: operations["removeAccountAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences": {
         parameters: {
             query?: never;
@@ -2687,7 +2745,8 @@ export interface paths {
          *     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
          *     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
          *     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
-         *     for an unknown plan and while the program is disabled.
+         *     for an unknown plan and while the program is disabled. From the announcement of the closure
+         *     of the service on, nobody subscribes: a 409 `/api/v1/problems/service-closing`.
          */
         post: operations["startSupporterCheckout"];
         delete?: never;
@@ -4552,8 +4611,10 @@ export interface paths {
          * Approve a registration
          * @description Approves a pending registration, so that its user can sign in, with an optional note
          *     for the moderators; the decision is audited. Deciding a decided registration changes
-         *     nothing and keeps its decision. A user without a registration is a 404. Needs the
-         *     `manage_accounts` permission.
+         *     nothing and keeps its decision. A user without a registration is a 404. From the
+         *     announcement of the closure of the service on, a pending registration is not approved: a
+         *     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
+         *     the `manage_accounts` permission.
          */
         post: operations["approveRegistration"];
         delete?: never;
@@ -5759,6 +5820,28 @@ export interface components {
             moved?: components["schemas"]["Account"];
         };
         /**
+         * @description An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+         *     `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
+         */
+        AccountAlias: {
+            /** @description The ActivityPub id of the alias's actor. */
+            uri: string;
+            /**
+             * @description The handle of the alias, `username` for a local account and `username@domain` for a
+             *     remote one; omitted when the instance does not know the account or its handle.
+             */
+            acct?: string;
+            /**
+             * Format: date-time
+             * @description When the user added the alias.
+             */
+            created_at: string;
+        };
+        /** @description The aliases of the user, oldest first; at most 5. */
+        AccountAliasList: {
+            aliases: components["schemas"]["AccountAlias"][];
+        };
+        /**
          * @description A badge that the account shows on its profile (ADR-0071): the badge of a role that the
          *     account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
          *     never translated.
@@ -5818,6 +5901,14 @@ export interface components {
              *     including when a fetch started in the last day.
              */
             remote_fetch_started?: boolean;
+        };
+        /** @description The account to add as an alias. */
+        AddAccountAliasRequest: {
+            /**
+             * @description The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
+             *     URL of the account's actor or profile page.
+             */
+            acct: string;
         };
         /** @description An account as the moderators see it (FR-714). It never includes an email or IP address. */
         AdminAccount: {
@@ -7251,6 +7342,28 @@ export interface components {
          * @enum {string}
          */
         ServiceClosureState: "none" | "announced" | "closed" | "delivery_completed";
+        /**
+         * @description What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
+         *     tells of the closure of the service (ADR-0088). `change` is what the event of a
+         *     `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
+         *     changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
+         *     for the other types. `closes_at` and `export_until` are the dates of the announcement that the
+         *     notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
+         */
+        ServiceClosureNotice: {
+            /** @enum {string} */
+            change?: "announced" | "rescheduled" | "withdrawn";
+            /**
+             * Format: date-time
+             * @description When the server closes.
+             */
+            closes_at?: string;
+            /**
+             * Format: date-time
+             * @description Until when the users may still sign in and export their data.
+             */
+            export_until?: string;
+        };
         /** @description A webhook endpoint (ADR-0060). Its secret is never shown again after it is made. */
         AdminWebhook: {
             id: components["schemas"]["Id"];
@@ -8684,7 +8797,9 @@ export interface components {
         InstanceRegistrations: {
             /**
              * @description Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
-             *     approval), `invite` (only with an invite), or `closed` (nobody).
+             *     approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
+             *     sign-ups follow: `closed` while the closure of the service is announced or done, whatever
+             *     the instance setting says.
              * @enum {string}
              */
             mode: "open" | "approval" | "invite" | "closed";
@@ -9192,6 +9307,7 @@ export interface components {
             supporter_subscription?: components["schemas"]["SupporterSubscription"];
             relationship_severance?: components["schemas"]["RelationshipSeverance"];
             account_move?: components["schemas"]["AccountMove"];
+            service_closure?: components["schemas"]["ServiceClosureNotice"];
             /** @description The emoji of a `reaction`; omitted for the other types. */
             reaction?: components["schemas"]["ReactionEmoji"];
         };
@@ -9255,10 +9371,16 @@ export interface components {
          *     one; its `account_move` carries the target and what became of the user's follow. It is
          *     sent once per move. `admin_account_moved` goes to the users with `manage_accounts`: an
          *     account that the moderators limit moved, and the target does not get the limit; its
-         *     `account_move` carries the target, and it has no `account`.
+         *     `account_move` carries the target, and it has no `account`. `service_closure` goes to every
+         *     local user when the closure of the service is announced, when its dates change, and when the
+         *     announcement is withdrawn; `admin_service_closure_due` goes to the users with
+         *     `manage_service_closure` once the closing date of the announcement in effect has passed, to
+         *     close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
+         *     their supporter subscription at the end of its period, with its `supporter_subscription`.
+         *     Their `service_closure` says what they tell of, and they have no `account`.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -9823,6 +9945,10 @@ export interface components {
          *       closure of a server that is closed already (`/admin/closure/announcement`), or closing a
          *       server whose closure is not announced or whose `closes_at` has not come
          *       (`POST /admin/closure/close`).
+         *     - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
+         *       stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+         *       registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+         *       (`POST /supporter/checkout`).
          *     - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
          *       server serves only the operations with which the users take their data away: their own
          *       account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
@@ -9833,6 +9959,10 @@ export interface components {
          *       this problem; signing in and resetting a password stay available outside the client API.
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
+         *     - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
+         *       account's actor, or to the user itself.
+         *     - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
+         *       allowed (5). Remove one first.
          *     - `/api/v1/problems/role-managed-by-plan` (409): the role is the role of a supporter plan:
          *       only its subscriptions grant and revoke it, and its permissions and position change from
          *       the plan (`PATCH /admin/supporter_plans/{id}`). Its badge changes as any role's.
@@ -10093,6 +10223,11 @@ export interface components {
          * @enum {string}
          */
         RelayState: "pending" | "accepted" | "rejected" | "left";
+        /** @description The alias to remove. */
+        RemoveAccountAliasRequest: {
+            /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
+            uri: string;
+        };
         /** @description The passkey that confirms the removal of the user's password. */
         RemovePasswordRequest: {
             passkey: components["schemas"]["PasskeyAssertion"];
@@ -10937,6 +11072,16 @@ export interface components {
         };
     };
     responses: {
+        /** @description The aliases of the user. */
+        AccountAliasList: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AccountAliasList"];
+            };
+        };
         /** @description A page of accounts. */
         AccountPage: {
             headers: {
@@ -11881,6 +12026,53 @@ export interface operations {
                     "application/json": components["schemas"]["CredentialAccount"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountAliases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AccountAliasList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addAccountAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAccountAliasRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AccountAliasList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeAccountAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveAccountAliasRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AccountAliasList"];
             default: components["responses"]["Problem"];
         };
     };

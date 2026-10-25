@@ -17,12 +17,14 @@ import (
 // the files that cannot be shown; (*appcontent.MediaService).Images is one.
 type ProfileImages func(ctx context.Context, refs []appcontent.ImageRef) (map[appcontent.ImageRef]appcontent.Image, error)
 
-// ActorImages are the avatar and header of an actor's document, nil when it has none, and the
-// Emoji tags of the custom emoji of its profile (LocalActorEmojis). MovedTo is the actor that the
-// actor moved to (LocalActorMovedTo), "" when it has not moved.
+// ActorImages are the avatar and header of an actor's document, nil when it has none, the
+// Emoji tags of the custom emoji of its profile (LocalActorEmojis), and its aliases
+// (LocalActorAliases). MovedTo is the actor that the actor moved to (LocalActorMovedTo), "" when
+// it has not moved.
 type ActorImages struct {
 	Icon, Image *federation.ImageDocument
 	Emojis      []federation.TagDocument
+	AlsoKnownAs []federation.IRI
 	MovedTo     federation.IRI
 }
 
@@ -53,6 +55,29 @@ func LocalActorMovedTo(ctx context.Context, moves MoveReader, a appaccount.Actor
 		return "", fmt.Errorf("federation: the target %s of the move of %s: %w", st.TargetAccountID, a.Account.ID, err)
 	}
 	return federation.IRI(t.Account.URI), nil
+}
+
+// AliasReader reads the aliases of a local account (ADR-0089); *appaccount.Service implements
+// it.
+type AliasReader interface {
+	Aliases(ctx context.Context, accountID string) ([]appaccount.Alias, error)
+}
+
+// LocalActorAliases returns the alsoKnownAs of a local actor: the actor ids of its aliases. A
+// nil aliases reads none.
+func LocalActorAliases(ctx context.Context, aliases AliasReader, a appaccount.Actor) ([]federation.IRI, error) {
+	if aliases == nil || a.Local == nil {
+		return nil, nil
+	}
+	list, err := aliases.Aliases(ctx, a.Account.ID)
+	if err != nil {
+		return nil, fmt.Errorf("federation: the aliases of %s: %w", a.Account.ID, err)
+	}
+	out := make([]federation.IRI, 0, len(list))
+	for _, al := range list {
+		out = append(out, federation.IRI(al.URI))
+	}
+	return out, nil
 }
 
 // EmojiTagReader returns the Emoji tags of the custom emoji with an ID in ids that can be shown;
@@ -131,8 +156,8 @@ func ProfileURL(host, username string) string { return "https://" + host + "/@" 
 // of its id (federation.md §10) and the object of the Update its profile revisions send
 // (§7.1). The instance actor's document is the minimal one that signs the instance's requests;
 // its preferredUsername is instanceUsername. images are the actor's avatar and header
-// (LocalActorImages), the Emoji tags of its profile (LocalActorEmojis), and the actor it moved to
-// (LocalActorMovedTo).
+// (LocalActorImages), the Emoji tags of its profile (LocalActorEmojis), its aliases
+// (LocalActorAliases), and the actor it moved to (LocalActorMovedTo).
 func LocalActorDocument(host string, a appaccount.Actor, instanceUsername string, images ActorImages) federation.ActorDocument {
 	id := federation.IRI(a.Account.URI)
 	doc := federation.ActorDocument{
@@ -166,6 +191,9 @@ func LocalActorDocument(host string, a appaccount.Actor, instanceUsername string
 	if a.Local != nil {
 		doc.PreferredUsername = a.Local.Username
 		doc.URL = ProfileURL(host, a.Local.Username)
+		if len(images.AlsoKnownAs) > 0 {
+			doc.AlsoKnownAs = images.AlsoKnownAs
+		}
 	}
 	if p := a.Profile; p != nil {
 		doc.Name, doc.Summary = &p.DisplayName, &p.NoteHTML

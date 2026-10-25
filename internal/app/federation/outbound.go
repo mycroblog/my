@@ -108,6 +108,9 @@ type RecorderDeps struct {
 	// Accounts tells local accounts from remote ones in the transaction, for the activities of
 	// follows; nil records none of them.
 	Accounts LocalityReader
+	// Modes reads the federation mode, for the activities that are recorded only when it
+	// publishes (the Update of an actor's aliases); nil is federation.DefaultMode.
+	Modes ModeSettings
 }
 
 // RegisterOutboundProjectors subscribes the federation module to the domain events of other
@@ -121,6 +124,8 @@ type RecorderDeps struct {
 //     A boost of a local status (Boost.Federates is false) is not recorded (ADR-0017).
 //   - account.profile_revised of a local profile (ProfileRevised.Federates): Update of the
 //     actor.
+//   - account.aliases_changed of a local account: Update of the actor, recorded only when the
+//     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor.
 //   - account.moved of a local account's own move: Update of the actor, which carries movedTo,
 //     and Move (ADR-0089); account.move_cancelled: Update of the actor, without movedTo.
@@ -218,6 +223,22 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		return rec.record(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityUpdate, ActorAccountID: ev.Revision.AccountID,
 			ObjectKind: federation.OutboundAccount, ObjectID: ev.Revision.AccountID, CreatedAt: ev.Revision.RevisedAt,
+		}, "")
+	})
+	r.Register(appaccount.EventAliasesChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appaccount.AliasesChanged)
+		if !ok {
+			return nil
+		}
+		switch publishes, err := modeAllows(ctx, d.Modes, federation.FlowPublish); {
+		case err != nil:
+			return err
+		case !publishes:
+			return nil
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityUpdate, ActorAccountID: ev.AccountID,
+			ObjectKind: federation.OutboundAccount, ObjectID: ev.AccountID, CreatedAt: ev.ChangedAt,
 		}, "")
 	})
 	r.Register(appaccount.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

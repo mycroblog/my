@@ -11,7 +11,8 @@ post:
     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
-    for an unknown plan and while the program is disabled.
+    for an unknown plan and while the program is disabled. From the announcement of the closure
+    of the service on, nobody subscribes: a 409 `/api/v1/problems/service-closing`.
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]

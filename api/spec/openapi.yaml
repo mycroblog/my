@@ -130,6 +130,10 @@ paths:
     $ref: ./paths/accounts_verify_credentials.yaml
   /accounts/update_credentials:
     $ref: ./paths/accounts_update_credentials.yaml
+  /accounts/aliases:
+    $ref: ./paths/accounts_aliases.yaml
+  /accounts/aliases/remove:
+    $ref: ./paths/accounts_aliases_remove.yaml
   /preferences:
     $ref: ./paths/preferences.yaml
   /preferences/auto_delete:
@@ -668,6 +672,8 @@ components:
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
+    AccountAliasList:
+      $ref: ./components/responses/AccountAliasList.yaml
     AccountPage:
       $ref: ./components/responses/AccountPage.yaml
     AccountProfile:
@@ -755,6 +761,10 @@ components:
       $ref: ./components/schemas/AIUsage.yaml
     Account:
       $ref: ./components/schemas/Account.yaml
+    AccountAlias:
+      $ref: ./components/schemas/AccountAlias.yaml
+    AccountAliasList:
+      $ref: ./components/schemas/AccountAliasList.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:
@@ -767,6 +777,8 @@ components:
       $ref: ./components/schemas/AccountSource.yaml
     AccountStatusPage:
       $ref: ./components/schemas/AccountStatusPage.yaml
+    AddAccountAliasRequest:
+      $ref: ./components/schemas/AddAccountAliasRequest.yaml
     AdminAccount:
       $ref: ./components/schemas/AdminAccount.yaml
     AdminAccountAction:
@@ -973,6 +985,8 @@ components:
       $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
     ServiceClosureState:
       $ref: ./components/schemas/ServiceClosureState.yaml
+    ServiceClosureNotice:
+      $ref: ./components/schemas/ServiceClosureNotice.yaml
     AdminWebhook:
       $ref: ./components/schemas/AdminWebhook.yaml
     AdminWebhookAttempt:
@@ -1383,6 +1397,8 @@ components:
       $ref: ./components/schemas/RelayProtocol.yaml
     RelayState:
       $ref: ./components/schemas/RelayState.yaml
+    RemoveAccountAliasRequest:
+      $ref: ./components/schemas/RemoveAccountAliasRequest.yaml
     RemovePasswordRequest:
       $ref: ./components/schemas/RemovePasswordRequest.yaml
     ReplaceCustomEmojiImageRequest:

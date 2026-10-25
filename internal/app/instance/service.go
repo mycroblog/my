@@ -92,13 +92,19 @@ func (s *Service) DefaultLocale(ctx context.Context) (string, error) {
 	return settings.DefaultLocale(), nil
 }
 
-// RegistrationMode returns the current value of the registration_mode setting.
+// RegistrationMode returns the registration mode that sign-ups follow: the value of the
+// registration_mode setting, or closed from the announcement of the service closure on
+// (instance.EffectiveRegistrationMode). The setting keeps its value.
 func (s *Service) RegistrationMode(ctx context.Context) (instance.RegistrationMode, error) {
 	settings, err := s.Settings(ctx)
 	if err != nil {
 		return "", err
 	}
-	return settings.RegistrationMode(), nil
+	c, err := s.Closure(ctx)
+	if err != nil {
+		return "", err
+	}
+	return instance.EffectiveRegistrationMode(settings.RegistrationMode(), c.CurrentState()), nil
 }
 
 // MaxStatusLength returns the current value of the max_status_length setting (FR-101).

@@ -113,6 +113,13 @@ entries:
     notes:
       - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0082); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
+  - name: mail-templates
+    paths: ["tools/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
+    docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
+    checks: [mail, go]
+    notes:
+      - "Edit tools/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
+      - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
   - name: platform
     paths: ["internal/platform/**", "cmd/my/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0010-configuration-and-packaging.md"]
@@ -145,11 +152,12 @@ entries:
     paths: ["internal/domain/graph/**", "internal/app/graph/**"]
     docs: ["docs/architecture/data-model/04-tables/05-graph.md#45-graph"]
   - name: account-move
-    paths: ["internal/domain/account/move*.go", "internal/app/account/move.go", "internal/app/graph/migrate.go", "internal/app/federation/move.go", "internal/app/federation/move_out.go", "internal/interface/clientapi/account_move.go", "pkg/testkit/account_move_contract.go", "pkg/testkit/account_move_out_contract.go"]
+    paths: ["internal/domain/account/move*.go", "internal/app/account/move.go", "internal/app/graph/migrate.go", "internal/app/federation/move.go", "internal/app/federation/move_out.go", "internal/interface/clientapi/account_move.go", "pkg/testkit/account_move_contract.go", "pkg/testkit/account_move_out_contract.go", "internal/domain/account/alias.go", "internal/app/account/alias.go", "internal/interface/clientapi/aliases.go", "pkg/testkit/account_alias_contract.go"]
     docs: ["docs/adr/0089-account-migration-move.md#decision決定", "docs/architecture/federation.md#34-アクティビティごとのハンドラ", "docs/architecture/federation.md#71-記録", "docs/architecture/data-model/04-tables/02-account.md#移転adr-0089"]
     notes:
       - "A Move is recorded by the account module (account.moved); the graph module migrates the local follows, blocks and mutes in graph.migrate_follows, idempotently."
       - "A local move is checked by federation.LocalMoves before account.RecordLocalMove; account.moved (self) queues the Update(Actor) with movedTo and the Move (flow retract), and a moved account is refused posting and following with 403 account-moved."
+      - "Aliases (account_aliases) are added by the client API after it resolves the handle or URL outside the transaction; account.aliases_changed records the Update of the actor only when the federation mode publishes."
   - name: module-timeline
     paths: ["internal/domain/timeline/**", "internal/app/timeline/**"]
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
