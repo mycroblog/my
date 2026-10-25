@@ -52,7 +52,60 @@ MY_SES_CONFIGURATION_SET=my-events    # 任意。イベントの送り先を持�
 
 `ses_configuration_set` を設定すると、すべてのメールにその構成セットを適用します。SES はメールの `Message-ID` と `Date` を自分の値で上書きします。
 送信時に SES が同期で宛先を拒むことはありません。アカウントの抑止リストに載ったアドレスへの送信も受け付けたうえで送られず、あとから通知（SNS）でバウンスとして届きます。
-SES の通知を SNS で受けてバウンスと苦情を記録する受け口は [#1104](https://github.com/mycroblog/my/issues/1104) で作っています。
+バウンスと苦情を記録するには、次の SES の通知を SNS で受ける設定をします。
+
+### SES の通知（SNS）を受ける
+
+SES のバウンスと苦情を SNS のトピックに出し、そのトピックの HTTPS の購読でサーバーの `POST /mail/events/ses` に届けます（ADR-0086 §5）。
+受け口は `ses_sns_topic_arn` を設定したときだけ開き、設定しなければ `404` を返します。
+
+1. SES のアイデンティティと同じリージョンに、SNS の標準トピックを作る。
+2. トピックの属性 `SignatureVersion` を `2`（SHA256withRSA）にする。既定の `1` の署名は受け付けず、`400` を返す。
+3. トピックのアクセスポリシーで、`ses.amazonaws.com` に自分のアカウントからの `SNS:Publish` を許可する（SES のコンソールでトピックを作ると付く）。
+4. SES の通知の送り先にトピックを指定する。次のどちらでもよい（サーバーは本文の `notificationType` と `eventType` の両方を読む）。
+   - アイデンティティの通知: `mail_from` のアイデンティティの「Bounce」と「Complaint」のフィードバックの通知を、このトピックにする。
+   - 構成セットのイベントの送り先: `ses_configuration_set` の構成セットに、イベントの種類 `BOUNCE` と `COMPLAINT` で、このトピックを送り先にする。
+5. `MY_SES_SNS_TOPIC_ARN` にトピックの ARN を設定し、`my config check` で確かめてから起動し直す。
+6. トピックに、プロトコル `https`、エンドポイント `https://<サーバーのホスト>/mail/events/ses` の購読を作る。**raw message delivery は有効にしない**（署名のない本文は拒否する）。
+
+```sh
+aws sns create-topic --region ap-northeast-1 --name my-ses-feedback
+aws sns set-topic-attributes --region ap-northeast-1 \
+  --topic-arn arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback \
+  --attribute-name SignatureVersion --attribute-value 2
+aws ses set-identity-notification-topic --region ap-northeast-1 --identity social.example \
+  --notification-type Bounce --sns-topic arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback
+aws ses set-identity-notification-topic --region ap-northeast-1 --identity social.example \
+  --notification-type Complaint --sns-topic arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback
+
+MY_SES_SNS_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback   # 起動し直してから次の購読を作る
+
+aws sns subscribe --region ap-northeast-1 \
+  --topic-arn arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback \
+  --protocol https --notification-endpoint https://social.example/mail/events/ses
+```
+
+サーバーは購読の確認（`SubscriptionConfirmation`）を受けると、その `SubscribeURL` を `GET` して購読を確認し、ログに `SNS subscription of the SES notifications confirmed` を出します。
+`aws sns list-subscriptions-by-topic` で購読が `PendingConfirmation` でなくなったことを確かめます。
+
+受け口は、メッセージを使う前に次をすべて確かめ、どれかが違えば `400` を返して何も記録しません。
+
+- `TopicArn` が `ses_sns_topic_arn` と一致する。
+- `SignatureVersion` が `2` で、署名が正しい。
+- 署名の証明書の URL（`SigningCertURL`）が `https` で、ホストがトピックのリージョンの `sns.<region>.amazonaws.com`。購読の確認の `SubscribeURL` も同じホストに限る。
+
+証明書は SSRF を防ぐ外向きの HTTP クライアントで取得し、KV に 24 時間キャッシュします。本文は 1 MiB まで読み、超えると `413` です。
+証明書が取得できない、購読の確認に失敗した、記録できなかったときは `503` を返し、SNS の再送に任せます。メンテナンスモードの間も `503` です。
+
+記録するのは次の通知です。宛先のアドレスを主アドレスと照合し（大文字と小文字は区別せず、Punycode のドメインは Unicode の形でも照合する）、一致しなければ何もしません。
+
+| 通知 | 記録 |
+| --- | --- |
+| バウンスで `bounceType` が `Permanent`（`General`・`NoEmail`・`Suppressed`・`OnAccountSuppressionList` などの副種別） | `hard_bounce` |
+| 苦情（`complaintFeedbackType` が `not-spam` のものを除く） | `complaint` |
+| バウンスで `Transient`・`Undetermined`、配達・送信などのほかの通知 | 記録しない（`200` を返す） |
+
+SES の `feedbackId` を記録の一意のキーにするので、SNS が同じ通知を何度送っても記録は 1 つです。
 
 ### Amazon SES（SMTP インタフェース）
 
@@ -125,7 +178,7 @@ SES で SPF の整合を取るには、独自の MAIL FROM ドメインを設定
 
 宛先のアドレスが存在しないと SMTP サーバーが答えたとき（`RCPT TO` への 5xx で拡張ステータスが `5.1.x`）、サーバーはそのアドレスをハードバウンスとして記録し、以後の送信を止めます（ADR-0086 §5）。
 `mail = smtp` で記録するのは、この送信時の拒否だけです。送信を受け付けたあとに返る非同期のバウンスや、苦情のフィードバックループは受けません。
-`mail = ses` の送信では SES が同期で宛先を拒まないので、送信時の記録はありません（SES の通知の受け口は [#1104](https://github.com/mycroblog/my/issues/1104)）。
+`mail = ses` の送信では SES が同期で宛先を拒まないので、送信時の記録はなく、恒久的なバウンスと苦情を SES の通知から記録します（[SES の通知（SNS）を受ける](#ses-の通知snsを受ける)）。
 
 | 種類 | 止めるメール |
 | --- | --- |
