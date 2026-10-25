@@ -429,6 +429,8 @@ The server does not alert on cost. Set a budget with alerts at the provider, whi
   cost import ([Importing cloud usage charges](billing-import.md)).
 
 The imported charges and the month-to-date estimate appear in Administration → Costs. Failed imports are recorded there and retried by the next daily import.
+Each failure also writes a `WARN` log line whose `msg` is `billing import failed`, with the `source` and the `error_kind`
+([the kinds and how to fix them](billing-import.md)); a log-based alert on it tells you before the month's figures go stale.
 
 ## Telling users about an incident
 
