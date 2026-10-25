@@ -207,8 +207,13 @@ entries:
     notes:
       - "Outbound HTTP that remote parties influence goes through the SSRF-guarded kernel.HTTPClient."
   - name: adapter-user-facing
-    paths: ["internal/adapter/mail/**", "internal/adapter/captcha/**", "internal/adapter/webauthn/**", "internal/adapter/webpush/**", "internal/adapter/markdown/**", "internal/adapter/system/**"]
+    paths: ["internal/adapter/captcha/**", "internal/adapter/webauthn/**", "internal/adapter/webpush/**", "internal/adapter/markdown/**", "internal/adapter/system/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/operations/captcha.md"]
+  - name: adapter-mail
+    paths: ["internal/adapter/mail/**"]
+    docs: ["docs/adr/0086-email-delivery.md#6-mailses", "docs/operations/email.md"]
+    notes:
+      - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
   - name: adapter-billing
     paths: ["internal/adapter/billing/**"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]

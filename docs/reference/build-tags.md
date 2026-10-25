@@ -12,6 +12,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, and the `LISTEN` / `NOTIFY` broker | `db = postgres`, `stream = postgres` |
 | `no_valkey` | The Valkey client (`valkey-go`): the key-value store and the broker on `valkey_url` | `kv = valkey`, `stream = valkey` |
 | `no_sns` | The Amazon SNS / SQS broker (AWS SDK) | `stream = sns` |
+| `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |
 | `no_pubsub` | The Google Cloud Pub/Sub broker; with `no_billing_gcp`, the Pub/Sub client library too | `stream = pubsub` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
@@ -26,7 +27,7 @@ a binary without a database adapter cannot start.
 Pass the tags, separated by commas, to the Go build, to `scripts/task.sh go:bin`, or to the container build:
 
 ```sh
-CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
+CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
 scripts/task.sh go:bin GO_TAGS=no_sqlite,no_valkey,no_pubsub
 scripts/task.sh docker:build GO_TAGS=no_sqlite,no_valkey,no_sns  # docker build --build-arg GO_TAGS=...
 ```
@@ -46,9 +47,9 @@ and fails when `cmd/my` still depends on a package that a tag of the set leaves 
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
-| `no_sqlite,no_valkey,no_pubsub,no_otel,no_billing_gcp` | AWS: PostgreSQL, the SNS broker, and the EMF metrics |
-| `no_sqlite,no_valkey,no_sns,no_billing_aws` | Google Cloud: PostgreSQL and the Pub/Sub broker |
+| `no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
+| `no_sqlite,no_valkey,no_pubsub,no_otel,no_billing_gcp` | AWS: PostgreSQL, the SNS broker, SES, and the EMF metrics |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_billing_aws` | Google Cloud: PostgreSQL and the Pub/Sub broker |
 
 `scripts/go-build-tags.sh SET...` checks other sets. The tests (`scripts/task.sh go:test`) run without tags, on every adapter.
 

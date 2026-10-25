@@ -3,16 +3,11 @@
 package smtp_test
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"io"
 	"mime"
-	"mime/multipart"
-	"mime/quotedprintable"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +17,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/mycroblog/my/internal/adapter/mail/internal/mailtest"
 	"github.com/mycroblog/my/internal/adapter/mail/smtp"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -155,75 +151,15 @@ func (s *server) handle(conn net.Conn) {
 }
 
 func (s *server) record(data []byte) {
-	m, err := mail.ReadMessage(bufio.NewReader(bytes.NewReader(data)))
+	delivered, header, err := mailtest.Parse(data)
 	if err != nil {
-		s.t.Errorf("ReadMessage: %v", err)
+		s.t.Errorf("delivered message: %v", err)
 		return
-	}
-	subject, err := new(mime.WordDecoder).DecodeHeader(m.Header.Get("Subject"))
-	if err != nil {
-		s.t.Errorf("decode subject %q: %v", m.Header.Get("Subject"), err)
-	}
-	if m.Header.Get("Message-Id") == "" || m.Header.Get("Date") == "" {
-		s.t.Errorf("headers = %v", m.Header)
-	}
-	// ReadDotBytes returns the message with "\n" line ends.
-	for line := range strings.Lines(string(data)) {
-		if len(line) > 998 {
-			s.t.Errorf("line of %d bytes", len(line))
-		}
-	}
-	from, err := mail.ParseAddress(m.Header.Get("From"))
-	if err != nil {
-		s.t.Errorf("parse From %q: %v", m.Header.Get("From"), err)
-		return
-	}
-	delivered := kernel.MailMessage{To: m.Header.Get("To"), FromName: from.Name, ReplyTo: m.Header.Get("Reply-To"), Subject: subject}
-	mediaType, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
-	switch {
-	case err != nil:
-		s.t.Errorf("Content-Type %q: %v", m.Header.Get("Content-Type"), err)
-	case mediaType == "multipart/alternative":
-		// The plain text first and the HTML last, the order of preference (RFC 2046 §5.1.4).
-		r := multipart.NewReader(m.Body, params["boundary"])
-		for i, want := range []string{"text/plain; charset=utf-8", "text/html; charset=utf-8"} {
-			p, err := r.NextRawPart()
-			if err != nil {
-				s.t.Errorf("part %d: %v", i, err)
-				return
-			}
-			if p.Header.Get("Content-Type") != want || p.Header.Get("Content-Transfer-Encoding") != "quoted-printable" {
-				s.t.Errorf("part %d headers = %v, want %s", i, p.Header, want)
-			}
-			body := s.decode(p)
-			if i == 0 {
-				delivered.Text = body
-			} else {
-				delivered.HTML = body
-			}
-		}
-		if _, err := r.NextRawPart(); !errors.Is(err, io.EOF) {
-			s.t.Errorf("a third part: %v", err)
-		}
-	default:
-		if m.Header.Get("Content-Type") != "text/plain; charset=utf-8" || m.Header.Get("Content-Transfer-Encoding") != "quoted-printable" {
-			s.t.Errorf("headers = %v", m.Header)
-		}
-		delivered.Text = s.decode(m.Body)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.delivered = append(s.delivered, delivered)
-	s.headers = append(s.headers, m.Header)
-}
-
-// decode returns the quoted-printable body r with "\n" line ends.
-func (s *server) decode(r io.Reader) string {
-	body, err := io.ReadAll(quotedprintable.NewReader(r))
-	if err != nil {
-		s.t.Errorf("decode body: %v", err)
-	}
-	return strings.ReplaceAll(string(body), "\r\n", "\n")
+	s.headers = append(s.headers, header)
 }
 
 func (s *server) messages() []kernel.MailMessage {
