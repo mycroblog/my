@@ -259,12 +259,13 @@ entries:
 
   # --- Client libraries -----------------------------------------------------------------------------------
   - name: mykit
-    paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh"]
+    paths: ["pkg/mykit/**", "scripts/mykit-mod-check.sh", "internal/platform/platformtest/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
     checks: [mykit]
     notes:
       - "pkg/mykit is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`): it never imports or requires the server module, and its dependencies are permissive only (`scripts/task.sh mykit:check`)."
       - "api.gen.go is generated from api/openapi.yaml by `scripts/task.sh api:generate` (pkg/mykit/oapi-codegen.yaml); the hand-written files hold only the cross-cutting layer (auth, errors, paging, retries, uploads), never per-endpoint helpers."
+      - "pkg/mykit/integration is an unpublished test module (MIT headers, as all of pkg/mykit) that joins the server and pkg/mykit by `replace`; its tests start the server with internal/platform/platformtest (which pkg/testkit may not import, ADR-0002) and drive it with the Go client only. Run `scripts/task.sh mykit:integration-test`."
   - name: mykit-ts
     paths: ["pkg/mykit/ts/**"]
     docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0029-api-code-generation.md"]

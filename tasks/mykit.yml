@@ -5,27 +5,43 @@
 # module is a module of its own, so the root module's `./...`, depguard, and go:check never see it: these tasks check
 # it. The npm package is a package of the client workspace (app/package.json), checked here by the ts-* tasks.
 # api:generate writes their generated code (pkg/mykit/api.gen.go, pkg/mykit/ts/src/schema.gen.ts).
+#
+# The integration tests (integration-vet, integration-test) live in pkg/mykit/integration, a test module that is never
+# published and joins the server module and pkg/mykit by `replace`: the Go client drives a server that
+# internal/platform/platformtest runs in the test process (ADR-0093 §8). They are part of this check, so they run in
+# `check:changed` and in the merge queue's `check` (the repo job of ci.yml) whenever the mykit context is selected:
+# a change of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
+# internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
+# to the slow suite (ADR-0079).
 version: "3"
 
 vars:
+  # The integration module requires the server module's dependencies at the versions its go.mod lists. GOFLAGS
+  # -mod=mod lets a dependency update of the root go.mod (Dependabot) raise them instead of failing the build until
+  # pkg/mykit/integration/go.mod is tidied too; commit the go.mod and go.sum that a run updates.
+  INTEGRATION_GOFLAGS: -mod=mod
   # Permissive licenses only (ADR-0093 §2): the library's dependencies reach its users, so no copyleft license,
   # not even one compatible with AGPL-3.0 such as the GPL or MPL-2.0.
   MYKIT_ALLOWED_LICENSES: 0BSD,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,Unlicense,Zlib
 
 tasks:
   check:
-    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses)
+    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses)
     # The license scope check (MIT in pkg/mykit) belongs to the api context, which a change of pkg/mykit alone does not
     # select.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, ":api:license-scope"]
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, ":api:license-scope"]
 
   warm:
-    desc: Download the modules and build the packages and test binaries of pkg/mykit once, so that its checks a CI job runs in parallel read the build cache
-    dir: pkg/mykit
+    desc: Download the modules and build the packages and test binaries of pkg/mykit and of its integration tests (with the server's packages) once, so that its checks a CI job runs in parallel read the build cache
     cmds:
-      - go mod download
-      - go build ./...
-      - go test -run '^$' ./...
+      - cmd: go mod download
+        dir: pkg/mykit
+      - cmd: go build ./...
+        dir: pkg/mykit
+      - cmd: go test -run '^$' ./...
+        dir: pkg/mykit
+      - cmd: GOFLAGS={{.INTEGRATION_GOFLAGS}} go test -run '^$' ./...
+        dir: pkg/mykit/integration
 
   mod-check:
     desc: Fail if pkg/mykit/go.mod and go.sum are not tidy
@@ -34,7 +50,7 @@ tasks:
       - go mod tidy -diff
 
   server-dep-check:
-    desc: Fail if pkg/mykit/go.mod requires or replaces the server module (scripts/mykit-mod-check.sh)
+    desc: Fail if pkg/mykit/go.mod requires or replaces the server module, or the root go.mod names pkg/mykit or its integration module (scripts/mykit-mod-check.sh)
     cmds:
       - scripts/mykit-mod-check.sh
 
@@ -54,6 +70,22 @@ tasks:
   test:
     desc: Run the pkg/mykit unit tests
     dir: pkg/mykit
+    cmds:
+      - go test ./...
+
+  integration-vet:
+    desc: Run go vet on the integration tests of pkg/mykit (pkg/mykit/integration)
+    dir: pkg/mykit/integration
+    env:
+      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
+    cmds:
+      - go vet ./...
+
+  integration-test:
+    desc: Run the integration tests of pkg/mykit - the Go client against a server in the test process (pkg/mykit/integration)
+    dir: pkg/mykit/integration
+    env:
+      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
     cmds:
       - go test ./...
 

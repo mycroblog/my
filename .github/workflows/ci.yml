@@ -378,8 +378,9 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the ADR numbers, and that every check of
-    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, and the
-    # npm package @mycroblog/mykit in pkg/mykit/ts when the mykit context changes (their licenses run in preflight).
+    # `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit, a Go module of its own, its
+    # integration tests, and the npm package @mycroblog/mykit in pkg/mykit/ts when the mykit context changes (their
+    # licenses run in preflight).
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -423,6 +424,14 @@ jobs:
           - name: mykit:test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:test
+          # The Go client against a server in the test process (pkg/mykit/integration, ADR-0093 §8): seconds once
+          # mykit:warm has built the server's packages, so they run here rather than in the slow suite.
+          - name: mykit:integration-test
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:integration-test
+          - name: mykit:integration-vet
+            if: needs.changes.outputs.mykit == 'true'
+            run: scripts/task.sh mykit:integration-vet
           - name: mykit:vet
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:vet
