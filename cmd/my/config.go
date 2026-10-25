@@ -48,7 +48,11 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 	if *maint {
 		load = config.LoadMaintenance
 	}
-	_, settings, err := load(config.Source{File: *file})
+	src := config.Source{File: *file}
+	_, settings, err := load(src)
+	for _, name := range config.UnknownEnv(src) {
+		_, _ = fmt.Fprintf(stderr, "warning: %s\n", unknownEnvMessage(name))
+	}
 	tw := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "KEY\tVALUE\tSOURCE")
 	for _, s := range settings {
@@ -69,6 +73,9 @@ func configUsage(w io.Writer) {
 
 check validates the configuration from the environment, the TOML file, and
 defaults, listing every problem at once. Exits 1 if the configuration is invalid.
+A renamed or removed setting is a problem that names its replacement. An
+environment variable that starts with MY_ but sets nothing is ignored with a
+warning.
 With -maintenance it checks only the settings that the maintenance mode reads
 (ADR-0084), leaving the adapters' settings unread.
 

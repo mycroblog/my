@@ -19,6 +19,12 @@ A binary built with a build tag that leaves an adapter out rejects the values th
 The problems are described in the language of the process locale (`LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG`; English for `C` or an unsupported language),
 followed by the technical detail in English.
 
+A setting that a release renamed or removed is one of those problems, in the config file and in the environment alike:
+the error names the new key, or tells why the setting was removed ([renamed and removed settings](#renamed-and-removed-settings)).
+An unknown key in the config file is an error too. An environment variable that starts with `MY_` but sets nothing
+is ignored with a warning, in the log of `my serve` and in the output of `my config check`, because the platform may add such variables:
+Kubernetes adds `MY_SERVICE_HOST`, `MY_PORT` and the like for a Service named `my`, and those are ignored without a warning.
+
 ## Configuration and instance settings
 
 The settings on this page configure the deployment: what a process runs, which adapters it uses, where they are, and its secrets.
@@ -1052,3 +1058,9 @@ When the spans of `traces_exporter = otlp` are sent.
 | --- | --- | --- |
 | `batch` | yes | In batches, every few seconds, in the background; for processes that keep running (self-hosted). |
 | `unit` | yes | Also at the end of every recorded HTTP request and job, before it returns, to a collector on the same host; for the platforms that throttle or freeze an idle instance (Cloud Run with request-based billing, AWS Lambda). A request that is not recorded sends nothing. |
+
+## Renamed and removed settings
+
+Using one of these keys, in the config file or as its environment variable (or `<NAME>_FILE`), stops the server with an error.
+
+None.
