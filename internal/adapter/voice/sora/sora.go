@@ -14,7 +14,8 @@
 // The role of a Sora connection (sendrecv or recvonly) cannot change: a listener connects
 // recvonly, and SetSpeaking always asks the client to connect again with a new grant. A
 // revoke and a mute block the audio of the session's connections at once with the channel's
-// forwarding filter, which the adapter owns.
+// forwarding filter, which the adapter owns and in whose metadata it keeps the two apart, so
+// that an Unmute never lifts a revoke.
 package sora
 
 import (
@@ -201,56 +202,96 @@ func (t *Transport) Grant(_ context.Context, room voice.RoomRef, s voice.Session
 }
 
 // SetSpeaking implements voice.Transport: the role of a connection does not change, so the
-// client always connects again with a new grant (ADR-0102 §3). A revoke first blocks the audio
-// of the session's connections, which stops it before the client connects recvonly; an allow
-// leaves the connections as they are, for the new one replaces them.
+// client always connects again with a new grant (ADR-0102 §3). A revoke blocks the audio of the
+// session's connections at once with the channel's forwarding filter; when the session is
+// already revoked, its sendrecv connections are disconnected, for a client that does not
+// connect again recvonly keeps none (JobMediaEvent and voice.sweep apply the role of every live
+// session again). An allow lifts the revoke, not a mute.
 func (t *Transport) SetSpeaking(ctx context.Context, room voice.RoomRef, s voice.Session, canSpeak bool) (bool, error) {
-	if !canSpeak {
-		if err := t.block(ctx, room, s, true); err != nil {
-			return false, err
+	err := t.change(ctx, room, func(st *filterState, conns []connection) []string {
+		if canSpeak {
+			st.Revoked = remove(st.Revoked, s.ID)
+			return nil
 		}
+		was := slices.Contains(st.Revoked, s.ID)
+		st.Revoked = add(st.Revoked, s.ID)
+		if !was {
+			return nil
+		}
+		var drop []string
+		for _, c := range conns {
+			if c.ClientID == s.ID && c.Role != roleRecvOnly {
+				drop = append(drop, c.ConnectionID)
+			}
+		}
+		return drop
+	})
+	if err != nil {
+		return false, err
 	}
 	return true, nil
 }
 
 // Mute implements voice.Transport: the channel's forwarding filter blocks the audio of the
-// session's connections. A session that is not connected has nothing to mute.
+// session's connections, and of those it connects later, until Unmute.
 func (t *Transport) Mute(ctx context.Context, room voice.RoomRef, s voice.Session) error {
-	return t.block(ctx, room, s, true)
+	return t.change(ctx, room, func(st *filterState, _ []connection) []string {
+		st.Muted = add(st.Muted, s.ID)
+		return nil
+	})
 }
 
-// Unmute implements voice.Transport: the channel's forwarding filter lets the audio of the
-// session's connections through again.
+// Unmute implements voice.Transport: it lifts the mute of the session; the audio of a session
+// whose permission to speak was revoked stays blocked.
 func (t *Transport) Unmute(ctx context.Context, room voice.RoomRef, s voice.Session) error {
-	return t.block(ctx, room, s, false)
+	return t.change(ctx, room, func(st *filterState, _ []connection) []string {
+		st.Muted = remove(st.Muted, s.ID)
+		return nil
+	})
+}
+
+func add(ids []string, id string) []string {
+	if slices.Contains(ids, id) {
+		return ids
+	}
+	ids = append(ids, id)
+	slices.Sort(ids)
+	return ids
+}
+
+func remove(ids []string, id string) []string {
+	return slices.DeleteFunc(ids, func(x string) bool { return x == id })
 }
 
 // Remove implements voice.Transport with DisconnectConnection, for every connection of the
-// session. A connection that is gone already is not on the next list, so a call that failed
-// because of it succeeds when it is tried again.
+// session; a connection that is gone already counts as disconnected.
 func (t *Transport) Remove(ctx context.Context, room voice.RoomRef, s voice.Session) error {
 	conns, err := t.connections(ctx, room)
 	if err != nil {
 		return err
 	}
+	var errs []error
 	for _, c := range conns {
 		if c.ClientID == s.ID {
-			if err := t.disconnect(ctx, room, c.ConnectionID); err != nil {
-				return err
-			}
+			errs = append(errs, t.disconnect(ctx, room, c.ConnectionID))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // Close implements voice.Transport with TerminateSession, which disconnects everyone. A
-// channel without connections has no session, or one that ends by itself.
+// channel without connections has no session, or one that ends by itself, and a session that
+// is gone already counts as terminated.
 func (t *Transport) Close(ctx context.Context, room voice.RoomRef) error {
 	conns, err := t.connections(ctx, room)
 	if err != nil || len(conns) == 0 {
 		return err
 	}
-	return t.call(ctx, targetTerminateSession, map[string]any{"channel_id": t.channel(room.ID)}, nil)
+	err = t.call(ctx, targetTerminateSession, map[string]any{"channel_id": t.channel(room.ID)}, nil)
+	if isNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 // Sessions implements voice.Transport with ListChannelConnections. A session with several
@@ -337,8 +378,13 @@ func (t *Transport) connections(ctx context.Context, room voice.RoomRef) ([]conn
 	return conns, err
 }
 
+// disconnect disconnects a connection; one that is gone already counts as disconnected.
 func (t *Transport) disconnect(ctx context.Context, room voice.RoomRef, connectionID string) error {
-	return t.call(ctx, targetDisconnectConnection, map[string]any{"channel_id": t.channel(room.ID), "connection_id": connectionID}, nil)
+	err := t.call(ctx, targetDisconnectConnection, map[string]any{"channel_id": t.channel(room.ID), "connection_id": connectionID}, nil)
+	if isNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 // rule is a rule of a forwarding filter.
@@ -350,10 +396,125 @@ type rule struct {
 
 // filter is a channel forwarding filter of ListForwardingFilters.
 type filter struct {
-	Name    string   `json:"name"`
-	Action  string   `json:"action"`
-	Version string   `json:"version"`
-	Rules   [][]rule `json:"rules"`
+	Name     string          `json:"name"`
+	Action   string          `json:"action"`
+	Version  string          `json:"version"`
+	Rules    [][]rule        `json:"rules"`
+	Metadata json.RawMessage `json:"metadata"`
+}
+
+// filterState is what the adapter keeps in the metadata of the channel's forwarding filter: the
+// sessions whose audio is blocked, apart for a mute (which Unmute lifts) and a revoke of the
+// permission to speak (which only SetSpeaking lifts). The rules block the sendrecv connections
+// of these sessions, so a session that connects again stays blocked once the filter is written
+// again (SetSpeaking of JobMediaEvent and voice.sweep).
+type filterState struct {
+	Muted   []string `json:"my_muted,omitempty"`
+	Revoked []string `json:"my_revoked,omitempty"`
+}
+
+// noConnection is the value of the rule of a filter that blocks no connection: Sora refuses a
+// filter without rules.
+const noConnection = "-"
+
+// state returns the state that the adapter kept in a filter. The adapter owns the channel's
+// filter: one it did not write holds no state and is written over.
+func (f filter) state() filterState {
+	var st filterState
+	if len(f.Metadata) == 0 || json.Unmarshal(f.Metadata, &st) != nil {
+		return filterState{}
+	}
+	return st
+}
+
+// change applies fn to the state of the channel's forwarding filter (ADR-0102 §3) and writes the
+// filter again: one rule whose connection_id, the senders, are the sendrecv connections of the
+// blocked sessions, AND the kind audio. A recvonly connection sends no audio, so it is never
+// blocked; a revoked session without a connection is forgotten, as the room applies the role
+// again when it connects. fn may return connections to disconnect after the filter is written.
+// The filter's version makes two changes that race fail, for the job to try again.
+func (t *Transport) change(ctx context.Context, room voice.RoomRef, fn func(st *filterState, conns []connection) []string) error {
+	conns, err := t.connections(ctx, room)
+	if err != nil {
+		return err
+	}
+	channel := t.channel(room.ID)
+	var list struct {
+		Filters []filter `json:"channel_forwarding_filters"`
+	}
+	if err := t.call(ctx, targetListForwardingFilters, map[string]any{"channel_id": channel}, &list); err != nil {
+		return err
+	}
+	var cur *filter
+	var st filterState
+	if len(list.Filters) > 0 {
+		cur = &list.Filters[0]
+		st = cur.state()
+	}
+	before := st
+	before.Muted, before.Revoked = slices.Clone(st.Muted), slices.Clone(st.Revoked)
+	drop := fn(&st, conns)
+
+	connected := map[string]bool{}
+	for _, c := range conns {
+		connected[c.ClientID] = true
+	}
+	st.Revoked = slices.DeleteFunc(st.Revoked, func(id string) bool { return !connected[id] })
+	var ids []string
+	for _, c := range conns {
+		if c.Role == roleRecvOnly || slices.Contains(drop, c.ConnectionID) {
+			continue
+		}
+		if slices.Contains(st.Muted, c.ClientID) || slices.Contains(st.Revoked, c.ClientID) {
+			ids = append(ids, c.ConnectionID)
+		}
+	}
+	slices.Sort(ids)
+	var errs []error
+	if err := t.write(ctx, channel, cur, before, st, ids); err != nil {
+		return err
+	}
+	for _, id := range drop {
+		errs = append(errs, t.disconnect(ctx, room, id))
+	}
+	return errors.Join(errs...)
+}
+
+// write writes the channel's forwarding filter of st blocking ids, unless it is so already.
+func (t *Transport) write(ctx context.Context, channel string, cur *filter, before, st filterState, ids []string) error {
+	empty := len(st.Muted) == 0 && len(st.Revoked) == 0
+	switch {
+	case empty && cur == nil:
+		return nil
+	case empty:
+		return t.call(ctx, targetDeleteChannelFilter, map[string]any{"channel_id": channel}, nil)
+	}
+	values := ids
+	if len(values) == 0 {
+		values = []string{noConnection}
+	}
+	if cur != nil && slices.Equal(before.Muted, st.Muted) && slices.Equal(before.Revoked, st.Revoked) {
+		blocked := cur.blocked()
+		slices.Sort(blocked)
+		if slices.Equal(blocked, values) {
+			return nil
+		}
+	}
+	rules := [][]rule{{
+		{Field: "connection_id", Operator: "is_in", Values: values},
+		{Field: "kind", Operator: "is_in", Values: []string{"audio"}},
+	}}
+	version := rand.Text()
+	req := map[string]any{"channel_id": channel, "action": "block", "rules": rules, "metadata": st}
+	if cur == nil {
+		req["version"] = version
+		return t.call(ctx, targetCreateChannelFilter, req, nil)
+	}
+	req["desired_version"] = version
+	if cur.Version != "" {
+		req["expected_version"] = cur.Version
+	}
+	return t.call(ctx, targetUpdateChannelFilter, req, nil)
 }
 
 // blocked returns the connections whose audio the filter blocks, as the adapter writes it: one
@@ -378,81 +539,6 @@ func (f filter) blocked() []string {
 	return out
 }
 
-// block blocks (or lets through) the audio of the connections of a session with the channel's
-// forwarding filter (ADR-0102 §3): one rule whose connection_id, the senders, are the blocked
-// connections, AND the kind audio. The filter keeps only the connections that are still in the
-// channel. A recvonly connection sends no audio, so it is never blocked. Its version makes two
-// changes that race fail, for the job to try again.
-func (t *Transport) block(ctx context.Context, room voice.RoomRef, s voice.Session, on bool) error {
-	conns, err := t.connections(ctx, room)
-	if err != nil {
-		return err
-	}
-	live := map[string]bool{}
-	var mine []string
-	for _, c := range conns {
-		live[c.ConnectionID] = true
-		if c.ClientID == s.ID && (!on || c.Role != roleRecvOnly) {
-			mine = append(mine, c.ConnectionID)
-		}
-	}
-	channel := t.channel(room.ID)
-	var list struct {
-		Filters []filter `json:"channel_forwarding_filters"`
-	}
-	if err := t.call(ctx, targetListForwardingFilters, map[string]any{"channel_id": channel}, &list); err != nil {
-		return err
-	}
-	var cur *filter
-	if len(list.Filters) > 0 {
-		cur = &list.Filters[0]
-	}
-	var before []string
-	if cur != nil {
-		before = cur.blocked()
-	}
-	var after []string
-	for _, id := range before {
-		if live[id] && (on || !slices.Contains(mine, id)) && !slices.Contains(after, id) {
-			after = append(after, id)
-		}
-	}
-	if on {
-		for _, id := range mine {
-			if !slices.Contains(after, id) {
-				after = append(after, id)
-			}
-		}
-	}
-	slices.Sort(after)
-	sorted := slices.Clone(before)
-	slices.Sort(sorted)
-	if cur != nil && slices.Equal(sorted, after) && len(after) > 0 {
-		return nil
-	}
-	switch {
-	case len(after) == 0 && cur == nil:
-		return nil
-	case len(after) == 0:
-		return t.call(ctx, targetDeleteChannelFilter, map[string]any{"channel_id": channel}, nil)
-	}
-	rules := [][]rule{{
-		{Field: "connection_id", Operator: "is_in", Values: after},
-		{Field: "kind", Operator: "is_in", Values: []string{"audio"}},
-	}}
-	version := rand.Text()
-	if cur == nil {
-		return t.call(ctx, targetCreateChannelFilter, map[string]any{
-			"channel_id": channel, "action": "block", "rules": rules, "version": version,
-		}, nil)
-	}
-	req := map[string]any{"channel_id": channel, "action": "block", "rules": rules, "desired_version": version}
-	if cur.Version != "" {
-		req["expected_version"] = cur.Version
-	}
-	return t.call(ctx, targetUpdateChannelFilter, req, nil)
-}
-
 // APIError is an error response of the Sora API.
 type APIError struct {
 	Target string
@@ -462,6 +548,20 @@ type APIError struct {
 
 func (e *APIError) Error() string {
 	return fmt.Sprintf("sora: %s: %d %s", e.Target, e.Status, e.Body)
+}
+
+// isNotFound reports an error response of Sora for a session or a connection that it does not
+// have: 400 or 404 with an error_type of the form "...-NOT-FOUND" (Sora documents the form of
+// its error types, such as INVALID-VERSION, but not the not-found ones; ADR-0102 §2).
+func isNotFound(err error) bool {
+	var e *APIError
+	if !errors.As(err, &e) || (e.Status != http.StatusBadRequest && e.Status != http.StatusNotFound) {
+		return false
+	}
+	var body struct {
+		ErrorType string `json:"error_type"`
+	}
+	return json.Unmarshal([]byte(e.Body), &body) == nil && strings.HasSuffix(body.ErrorType, "-NOT-FOUND")
 }
 
 // maxResponseBytes bounds a response of the API that the adapter reads.

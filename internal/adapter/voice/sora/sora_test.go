@@ -216,21 +216,23 @@ func TestSpeakingAndMute(t *testing.T) {
 			ch := tr.channel(room.ID)
 			a, b := appvoice.Session{ID: "session-a"}, appvoice.Session{ID: "session-b"}
 			ca, cb := f.connect(ch, a.ID), f.connect(ch, b.ID)
+			blocked := func(want ...string) {
+				t.Helper()
+				if got := f.blocked(ch); !slices.Equal(got, want) && (len(want) != 0 || len(got) != 0) {
+					t.Errorf("blocked = %v, want %v", got, want)
+				}
+			}
 
-			// An allow reconnects without touching the filter.
+			// An allow reconnects without blocking anything.
 			if reconnect, err := tr.SetSpeaking(t.Context(), room, a, true); err != nil || !reconnect {
 				t.Fatalf("SetSpeaking(true) = %t, %v; want a reconnect", reconnect, err)
 			}
-			if got := f.blocked(ch); len(got) != 0 {
-				t.Errorf("blocked after an allow = %v, want none", got)
-			}
+			blocked()
 			// A revoke blocks the audio of the session's connection at once and reconnects.
 			if reconnect, err := tr.SetSpeaking(t.Context(), room, a, false); err != nil || !reconnect {
 				t.Fatalf("SetSpeaking(false) = %t, %v; want a reconnect", reconnect, err)
 			}
-			if got := f.blocked(ch); !slices.Equal(got, []string{ca}) {
-				t.Errorf("blocked after a revoke = %v, want %v", got, []string{ca})
-			}
+			blocked(ca)
 			f.mu.Lock()
 			rules := f.filters[ch].Rules
 			f.mu.Unlock()
@@ -238,36 +240,41 @@ func TestSpeakingAndMute(t *testing.T) {
 			if !jsonEqual(t, rules, want) {
 				t.Errorf("filter rules = %+v, want %+v", rules, want)
 			}
-			// Mute adds b, twice is once; Unmute takes a out.
+			// An Unmute never lifts a revoke; Mute adds b, twice is once.
+			if err := tr.Unmute(t.Context(), room, a); err != nil {
+				t.Fatal(err)
+			}
+			blocked(ca)
 			for range 2 {
 				if err := tr.Mute(t.Context(), room, b); err != nil {
 					t.Fatal(err)
 				}
 			}
-			if got := f.blocked(ch); !slices.Equal(got, []string{ca, cb}) {
-				t.Errorf("blocked after a mute = %v", got)
+			blocked(ca, cb)
+			// A mute and a revoke of one session: the allow lifts the revoke only.
+			if err := tr.Mute(t.Context(), room, a); err != nil {
+				t.Fatal(err)
 			}
+			if _, err := tr.SetSpeaking(t.Context(), room, a, true); err != nil {
+				t.Fatal(err)
+			}
+			blocked(ca, cb)
 			if err := tr.Unmute(t.Context(), room, a); err != nil {
 				t.Fatal(err)
 			}
-			if got := f.blocked(ch); !slices.Equal(got, []string{cb}) {
-				t.Errorf("blocked after an unmute = %v, want %v", got, []string{cb})
-			}
-			// A connection that left is dropped from the filter on the next change.
-			if err := tr.Remove(t.Context(), room, b); err != nil {
+			blocked(cb)
+			// A muted session stays muted when it connects again.
+			cb2 := f.connect(ch, b.ID)
+			if err := tr.Remove(t.Context(), room, appvoice.Session{ID: "nobody"}); err != nil {
 				t.Fatal(err)
 			}
-			c := appvoice.Session{ID: "session-c"}
-			cc := f.connect(ch, c.ID)
-			if err := tr.Mute(t.Context(), room, c); err != nil {
+			if _, err := tr.SetSpeaking(t.Context(), room, a, true); err != nil {
 				t.Fatal(err)
 			}
-			if got := f.blocked(ch); !slices.Equal(got, []string{cc}) {
-				t.Errorf("blocked = %v, want only the connection still there", got)
-			}
+			blocked(cb, cb2)
 			// The last unmute deletes the filter; an unmute without one does nothing.
 			for range 2 {
-				if err := tr.Unmute(t.Context(), room, c); err != nil {
+				if err := tr.Unmute(t.Context(), room, b); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -275,20 +282,43 @@ func TestSpeakingAndMute(t *testing.T) {
 			_, ok := f.filters[ch]
 			f.mu.Unlock()
 			if ok {
-				t.Error("the filter stays without a blocked connection")
+				t.Error("the filter stays without a blocked session")
 			}
+
 			// A listener's recvonly connection sends no audio: nothing to block.
 			f.connectAs(ch, "session-l", roleRecvOnly)
 			if _, err := tr.SetSpeaking(t.Context(), room, appvoice.Session{ID: "session-l"}, false); err != nil {
 				t.Fatal(err)
 			}
-			if got := f.blocked(ch); len(got) != 0 {
-				t.Errorf("blocked after the revoke of a listener = %v, want none", got)
+			blocked()
+			// A revoked session that keeps a sendrecv connection, as a client that does not
+			// connect again recvonly, loses it when the role is applied again.
+			c := appvoice.Session{ID: "session-c"}
+			cc := f.connect(ch, c.ID)
+			if _, err := tr.SetSpeaking(t.Context(), room, c, false); err != nil {
+				t.Fatal(err)
 			}
-			// A session that is not connected has nothing to mute.
+			blocked(cc)
+			if _, err := tr.SetSpeaking(t.Context(), room, c, false); err != nil {
+				t.Fatal(err)
+			}
+			for _, conn := range f.conns(ch) {
+				if conn.ConnectionID == cc {
+					t.Errorf("the revoked session keeps its sendrecv connection %s", cc)
+				}
+			}
+			blocked()
+			// A session that is not connected has nothing to mute now, but is muted when it
+			// connects.
 			if err := tr.Mute(t.Context(), room, appvoice.Session{ID: "absent"}); err != nil {
 				t.Errorf("Mute of an absent session: %v", err)
 			}
+			blocked()
+			cx := f.connect(ch, "absent")
+			if _, err := tr.SetSpeaking(t.Context(), room, appvoice.Session{ID: "absent"}, true); err != nil {
+				t.Fatal(err)
+			}
+			blocked(cx)
 		})
 	}
 }
@@ -686,6 +716,30 @@ func TestTruncate(t *testing.T) {
 	} {
 		if got := truncate(c.in, c.n); got != c.want {
 			t.Errorf("truncate(%q, %d) = %q, want %q", c.in, c.n, got, c.want)
+		}
+	}
+}
+
+func TestNotFoundIsDone(t *testing.T) {
+	clock := testkit.VoiceTransportClock()
+	tr, _ := newTestTransport(t, ModeSelfHosted, clock)
+	// A connection that is gone already counts as disconnected.
+	if err := tr.disconnect(t.Context(), appvoice.RoomRef{ID: "room"}, "CONN-GONE"); err != nil {
+		t.Errorf("disconnect of a connection that is gone: %v", err)
+	}
+	for name, c := range map[string]struct {
+		err  error
+		want bool
+	}{
+		"connection":    {&APIError{Status: 400, Body: `{"error_type":"CONNECTION-NOT-FOUND"}`}, true},
+		"session":       {&APIError{Status: 400, Body: `{"error_type":"SESSION-NOT-FOUND"}`}, true},
+		"other 400":     {&APIError{Status: 400, Body: `{"error_type":"INVALID-VERSION"}`}, false},
+		"proxy 404":     {&APIError{Status: 404, Body: `<html>not found</html>`}, false},
+		"unauthorized":  {&APIError{Status: 401, Body: `{"error_type":"SESSION-NOT-FOUND"}`}, false},
+		"not API error": {errors.New("network"), false},
+	} {
+		if got := isNotFound(c.err); got != c.want {
+			t.Errorf("%s: isNotFound = %t, want %t", name, got, c.want)
 		}
 	}
 }

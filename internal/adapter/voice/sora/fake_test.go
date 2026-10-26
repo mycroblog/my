@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -38,10 +39,11 @@ type fakeConn struct {
 }
 
 type fakeFilter struct {
-	Action  string   `json:"action"`
-	Name    string   `json:"name"`
-	Version string   `json:"version,omitempty"`
-	Rules   [][]rule `json:"rules"`
+	Action   string          `json:"action"`
+	Name     string          `json:"name"`
+	Version  string          `json:"version,omitempty"`
+	Rules    [][]rule        `json:"rules"`
+	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
 func newFakeServer(t *testing.T, authName, authValue string) (*fakeServer, *httptest.Server) {
@@ -76,7 +78,8 @@ func (f *fakeServer) blocked(channel string) []string {
 	if fl == nil {
 		return nil
 	}
-	return filter{Rules: fl.Rules}.blocked()
+	// The placeholder of a filter that blocks no connection blocks nothing.
+	return slices.DeleteFunc(filter{Rules: fl.Rules}.blocked(), func(id string) bool { return id == noConnection })
 }
 
 func (f *fakeServer) conns(channel string) []fakeConn {
@@ -107,13 +110,14 @@ func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	target := r.Header.Get("x-sora-target")
 	b, _ := io.ReadAll(r.Body)
 	var req struct {
-		ChannelID       string   `json:"channel_id"`
-		ConnectionID    string   `json:"connection_id"`
-		Action          string   `json:"action"`
-		Rules           [][]rule `json:"rules"`
-		Version         string   `json:"version"`
-		ExpectedVersion string   `json:"expected_version"`
-		DesiredVersion  string   `json:"desired_version"`
+		ChannelID       string          `json:"channel_id"`
+		ConnectionID    string          `json:"connection_id"`
+		Action          string          `json:"action"`
+		Rules           [][]rule        `json:"rules"`
+		Version         string          `json:"version"`
+		ExpectedVersion string          `json:"expected_version"`
+		DesiredVersion  string          `json:"desired_version"`
+		Metadata        json.RawMessage `json:"metadata"`
 	}
 	if err := json.Unmarshal(b, &req); err != nil || req.ChannelID == "" {
 		soraError(w, http.StatusBadRequest, "INVALID-JSON")
@@ -179,7 +183,7 @@ func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			soraError(w, http.StatusBadRequest, "FORWARDING-FILTER-ALREADY-EXISTS")
 			return
 		}
-		f.filters[ch] = &fakeFilter{Action: req.Action, Name: "default", Version: version, Rules: req.Rules}
+		f.filters[ch] = &fakeFilter{Action: req.Action, Name: "default", Version: version, Rules: req.Rules, Metadata: req.Metadata}
 		res = map[string]any{"channel_id": ch, "action": req.Action, "rules": req.Rules}
 	case targetDeleteChannelFilter:
 		if f.filters[ch] == nil {

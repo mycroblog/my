@@ -861,8 +861,8 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	if err := e.svc.Heartbeat(ctx, listener, r, lj.Session); !errors.Is(err, appvoice.ErrNotFound) {
 		t.Errorf("heartbeat of the disconnected listener: %v, want ErrNotFound", err)
 	}
-	if e.transport.count("speak:"+hj.Session+":true") != 1 {
-		t.Errorf("transport calls = %v, want the host's state applied once the media path saw it", e.transport.calls)
+	if e.transport.count("speak:"+hj.Session+":true") != 2 {
+		t.Errorf("transport calls = %v, want the host's state applied on each sweep that sees it", e.transport.calls)
 	}
 
 	deliver := func(transport string, h http.Header, evs ...appvoice.Event) appvoice.MediaWebhookOutcome {
@@ -926,7 +926,7 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	// speak.
 	l2 := e.join(t, e.account(false), r)
 	deliver("livekit", nil, appvoice.Event{ID: "EV_5", Kind: appvoice.MediaSessionJoined, Room: ref, Session: l2.Session, Connection: "PA_l2"})
-	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 2 {
+	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 3 {
 		t.Errorf("transport calls = %v, want the roles applied on join", e.transport.calls)
 	}
 
@@ -951,7 +951,7 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	if err := e.svc.Sweep(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if e.transport.count("speak:"+hj.Session+":true") != 3 {
+	if e.transport.count("speak:"+hj.Session+":true") != 4 {
 		t.Errorf("transport calls = %v, want the host's state applied after it connected again", e.transport.calls)
 	}
 
@@ -1149,6 +1149,40 @@ func roomsConnect(t *testing.T, e *roomsEnv) {
 	}
 	if res := authorize(e.svc, "livekit", nil, appvoice.ConnectAttempt{Room: room, Session: hj.Session}); res.Outcome != appvoice.MediaWebhookNotFound {
 		t.Errorf("request of another method = %+v, want not_found", res)
+	}
+
+	// Only the requests that do not verify count against the limits, each endpoint its own:
+	// a busy media server is never refused.
+	ip := "192.0.2.9"
+	attempt, err := json.Marshal(appvoice.ConnectAttempt{Room: room, Session: lj.Session})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range appvoice.MediaConnectIPLimit.Max + 1 {
+		res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip})
+		if err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
+			t.Fatalf("authentic request %d = %+v, %v; want an answer", i, res, err)
+		}
+		ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Body: []byte("[]"), ClientIP: ip})
+		if err != nil || ev.Outcome != appvoice.MediaWebhookAccepted {
+			t.Fatalf("authentic delivery %d = %+v, %v; want accepted", i, ev, err)
+		}
+	}
+	bad := http.Header{"X-Bad": {"1"}}
+	var last appvoice.MediaConnectResult
+	for range appvoice.MediaConnectIPLimit.Max + 1 {
+		if last, err = e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: attempt, ClientIP: ip}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if last.Outcome != appvoice.MediaWebhookRateLimited || last.RetryAfter <= 0 {
+		t.Errorf("request past the limit of the ones that do not verify = %+v, want rate_limited", last)
+	}
+	if ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: []byte("[]"), ClientIP: ip}); err != nil || ev.Outcome != appvoice.MediaWebhookRejected {
+		t.Errorf("delivery that does not verify, under its own limit = %+v, %v; want rejected", ev, err)
+	}
+	if res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip}); err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
+		t.Errorf("authentic request past the limit = %+v, %v; want an answer", res, err)
 	}
 	if err := e.svc.End(ctx, host, r); err != nil {
 		t.Fatal(err)

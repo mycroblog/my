@@ -52,15 +52,6 @@ func (s *Service) AuthorizeMediaConnect(ctx context.Context, req MediaWebhook) (
 	if !s.Enabled() || !ok || string(s.d.Config.Transport) != req.Transport {
 		return MediaConnectResult{Outcome: MediaWebhookNotFound}, nil
 	}
-	if s.d.RateLimiter != nil {
-		d, err := s.d.RateLimiter.Take(ctx, MediaWebhookIPLimit, kernel.ClientKey(req.ClientIP))
-		if err != nil {
-			return MediaConnectResult{}, err
-		}
-		if !d.Allowed {
-			return MediaConnectResult{Outcome: MediaWebhookRateLimited, RetryAfter: d.RetryAfter}, nil
-		}
-	}
 	status, body, err := ca.AuthorizeConnect(ctx, req.Header, req.Body, func(a ConnectAttempt) ConnectDecision {
 		d, err := s.decideConnect(ctx, a)
 		if err != nil {
@@ -70,6 +61,13 @@ func (s *Service) AuthorizeMediaConnect(ctx context.Context, req MediaWebhook) (
 		return d
 	})
 	if err != nil {
+		wait, limited, lerr := s.limitRejected(ctx, MediaConnectIPLimit, req.ClientIP)
+		switch {
+		case lerr != nil:
+			return MediaConnectResult{}, lerr
+		case limited:
+			return MediaConnectResult{Outcome: MediaWebhookRateLimited, RetryAfter: wait}, nil
+		}
 		return MediaConnectResult{Outcome: MediaWebhookRejected, Status: status, Body: body, Reason: err}, nil
 	}
 	return MediaConnectResult{Outcome: MediaWebhookAccepted, Status: status, Body: body}, nil
