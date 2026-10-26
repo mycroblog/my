@@ -4,7 +4,8 @@
 // stream with the session and sends heartbeats; the user answers the host's offer receiving only; the microphones,
 // reactions, and raised hands of the participants show; a user who becomes a speaker turns the microphone on, and a
 // host's mute turns it off; leaving asks the host for the next host; the host's menu operates on a participant; and
-// the end of the room stays on the page.
+// the end of the room stays on the page, which says the room ended once the server no longer has it; and the host who
+// starts a room is in its call at once.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -25,6 +26,7 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
   const sessions: string[] = [];
   const requests: { method: string; path: string; body: unknown }[] = [];
   let current = room;
+  let ended = false;
   const record = async (request: Request) => {
     const url = new URL(request.url);
     const text = request.method === "GET" || request.method === "DELETE" ? "" : await request.text();
@@ -37,7 +39,10 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
   server.use(
     signedInHandler,
     http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "everyone" })),
-    http.get(`${apiBase}/voice/rooms/:id`, ({ request }) => withViewer(request, () => HttpResponse.json(current))),
+    http.get(`${apiBase}/voice/rooms/:id`, ({ request }) =>
+      withViewer(request, () => (ended ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 }) : HttpResponse.json(current))),
+    ),
+    http.get(`${apiBase}/voice/rooms/:id/summary`, () => HttpResponse.json({ id: current.id, state: ended ? "ended" : "open", name: current.name })),
     http.post(`${apiBase}/voice/rooms/:id/participation`, async ({ request }) => {
       await record(request);
       return withViewer(request, () => {
@@ -93,6 +98,10 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
       stream?.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
     },
     sent: (path: string) => requests.filter((r) => r.path === path).map((r) => r.body),
+    /** Ends the room: the server no longer shows it, and its summary says it ended. */
+    end: () => {
+      ended = true;
+    },
   };
 }
 
@@ -250,6 +259,21 @@ describe("a listener in the call", () => {
     srv.send("ended", { reason: "host" });
     expect(await screen.findAllByText("The room ended: The host ended it")).not.toHaveLength(0);
   });
+
+  test("the page of a room that ended while it was open says so, without the way to join", async () => {
+    const { room, joined, live } = bobsRoom();
+    const srv = serve(room, joined);
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+    srv.send("state", live);
+    srv.end();
+    srv.send("ended", { reason: "host" });
+    expect(await screen.findByRole("heading", { level: 1, name: "This room has ended" })).toBeInTheDocument();
+    expect(screen.getByText(room.name)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Participants" })).not.toBeInTheDocument();
+  });
 });
 
 describe("the call across pages", () => {
@@ -339,6 +363,26 @@ describe("the host in the call", () => {
     const room = voiceRoomFixture({ host: viewerFixture, participants: [participantFixture(viewerFixture, { role: "speaker", host: true }), bob] });
     return room;
   }
+
+  test("is in the call of the room they start, without joining it again", async () => {
+    const room = voiceRoomFixture({ host: viewerFixture, participants: [participantFixture(viewerFixture, { role: "speaker", host: true })] });
+    const srv = serve(room, room);
+    server.use(
+      http.get(`${apiBase}/voice/rooms`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+      http.post(`${apiBase}/voice/rooms`, ({ request }) => withViewer(request, () => HttpResponse.json({ room, session: "s1", grant }, { status: 201 }))),
+    );
+    const { user } = await renderApp({ path: "/voice" });
+    await user.click(await screen.findByRole("button", { name: "Start a room" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start a room" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Late show");
+    await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
+
+    expect(await screen.findByText("Connected")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Microphone" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join here" })).not.toBeInTheDocument();
+    expect(srv.sessions).toEqual(["s1"]);
+    expect(srv.requests.filter((r) => r.path === `/voice/rooms/${roomId}/participation`)).toHaveLength(0);
+  });
 
   test("lets a participant with a raised hand speak from the participant's menu", async () => {
     const room = hostRoom();
