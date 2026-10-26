@@ -127,6 +127,9 @@ DELETE FROM report_reopenings WHERE report_id IN (SELECT value FROM json_each(CA
 -- name: PurgeReportNotes :exec
 DELETE FROM report_notes WHERE report_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
+-- name: PurgeReportVoiceRooms :exec
+DELETE FROM report_voice_rooms WHERE report_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
 -- name: PurgeReportStates :exec
 DELETE FROM report_states WHERE report_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 

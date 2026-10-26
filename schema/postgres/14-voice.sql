@@ -31,6 +31,8 @@ CREATE TABLE voice_room_revisions (
   revised_at timestamptz NOT NULL
 );
 CREATE INDEX voice_room_revisions_room_id_id ON voice_room_revisions (room_id, id DESC);
+-- The revisions that an account wrote, whose names and descriptions its erasure empties.
+CREATE INDEX voice_room_revisions_revised_by_account_id ON voice_room_revisions (revised_by_account_id, room_id);
 
 -- Resource (child of a revision): the hashtags of a revision, as typed and normalized like the
 -- hashtags of statuses, in the order the host gave them.
@@ -148,13 +150,17 @@ CREATE TABLE voice_room_bans (
 );
 CREATE UNIQUE INDEX voice_room_bans_room_account ON voice_room_bans (room_id, account_id);
 
--- Event: a room ended, once. ended_by_account_id is NULL for an automatic end.
+-- Event: a room ended, once. ended_by_account_id is NULL for an automatic end; note is the reason
+-- that a moderator gave for ending it (moderator, ADR-0100 §11), '' for none.
 CREATE TABLE voice_room_endings (
   room_id uuid NOT NULL PRIMARY KEY,
   reason text NOT NULL CHECK (reason IN ('host', 'empty', 'host_disconnected', 'host_ineligible', 'moderator', 'time_limit', 'disabled')),
   ended_by_account_id uuid,
-  ended_at timestamptz NOT NULL
+  ended_at timestamptz NOT NULL,
+  note text NOT NULL DEFAULT '' CHECK (length(note) <= 500)
 );
+-- The rooms whose participant records the purge erases after their retention (ADR-0100 §13).
+CREATE INDEX voice_room_endings_ended_at ON voice_room_endings (ended_at, room_id);
 
 -- Projection: the current revision, host, and state of each room, and how many participations
 -- of an open room have not ended. The room list reads it.

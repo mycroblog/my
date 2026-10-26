@@ -40,6 +40,16 @@ type Report struct {
 	// RuleIDs are the instance rules that the report cites (report_rule_citations); only a
 	// report of CategoryViolation cites rules.
 	RuleIDs []string
+	// VoiceRoom is the voice chat room that a local report points at (report_voice_rooms,
+	// ADR-0100 §11), nil for none; the target is the host of the room when it was reported.
+	VoiceRoom *ReportVoiceRoom
+}
+
+// ReportVoiceRoom is the voice chat room of a report with the revision of its settings when it
+// was reported. The room and its revisions are the voice module's.
+type ReportVoiceRoom struct {
+	RoomID     string
+	RevisionID string
 }
 
 // ErrInvalidReport reports a report with a missing or invalid field.
@@ -54,6 +64,10 @@ func (r Report) Validate() error {
 		return fmt.Errorf("%w: category %q", ErrInvalidReport, r.Category)
 	case len(r.RuleIDs) > 0 && r.Category != CategoryViolation:
 		return fmt.Errorf("%w: a report of category %q cites rules", ErrInvalidReport, r.Category)
+	case r.VoiceRoom != nil && (r.VoiceRoom.RoomID == "" || r.VoiceRoom.RevisionID == ""):
+		return fmt.Errorf("%w: the voice chat room has an empty field", ErrInvalidReport)
+	case r.VoiceRoom != nil && (r.URI != "" || r.Forwarded || len(r.StatusIDs) > 0):
+		return fmt.Errorf("%w: a report of a voice chat room is local and points at no statuses", ErrInvalidReport)
 	}
 	if err := checkText("comment", r.Comment, MaxReportComment); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidReport, err)

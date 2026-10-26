@@ -274,6 +274,16 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`), `GET .../{i
 - A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
   A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
 
+### Voice chat rooms
+
+- A local user can report an open voice chat room that they can see (`POST /api/v1/reports` with `voice_room_id`, and `account_id` set to the room's host).
+  The report targets the host at that moment and points at the room's settings (name and description) as they were then. It points at no posts and is never forwarded to another server.
+- The report details (`GET /api/v1/admin/reports/{id}`) show the room (`voice_room`): every change of its settings, who took part and when they left, who was removed from it, and how it ended.
+  The records of who took part are kept for 90 days after the room ends (`retention_voice_participants`) and as long as a report points at the room ([record retention](#record-retention-and-holds)).
+  There are no recordings and no text chat, so these records are the only evidence.
+- A holder of `manage_reports` can end an open room for every participant with `POST /api/v1/admin/voice_rooms/{id}/end` (body `{"reason": "..."}`, optional, up to 500 characters).
+  The reason is only for the moderators; the participants see only that the room ended. It works while the voice chat is off too, and the audit log records `voice_room_ended`.
+
 ## Notifications for moderators and the pending counts
 
 New reports, registrations waiting for approval and appeals reach people with the permission as in-app notifications.
@@ -326,6 +336,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (disabling and revoking an OAuth client; disabling revokes all its tokens; the target name is the client's name and `client_id`) |
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
+| `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room's name at that time) |
 
 The list shows whether the target still exists. Accounts, reports, appeals and sign-up blocks that disappeared after their retention period, and deleted roles, custom emoji and webhooks, show only the name at the time of recording and no link to a screen.
 
@@ -347,7 +358,7 @@ In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`,
 
 ## Record retention and holds
 
-After the retention period for each kind of record, hourly jobs (`moderation.purge_records` and `identity.purge_origins`) remove moderation records.
+After the retention period for each kind of record, hourly jobs (`moderation.purge_records`, `identity.purge_origins`, and `voice.purge_records`) remove moderation records.
 You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run.
 
 | Record | Setting | Default | Lower limit | Starts from |
@@ -358,12 +369,14 @@ You can change the periods in the instance settings, but not below the lower lim
 | Actions against accounts (reason, note, target posts, lifting) and appeals | `retention_moderation_actions` | 365 days | 180 days | The end of the action |
 | Audit log | `retention_audit_log` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
+| Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `retention_voice_participants` | 90 days | 30 days | The end of the room |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.
   `warn` and `delete_statuses` have no lasting effect, so the end is the time they were issued. An action without an end (a `ban`, a `suspend` without an end time, and so on) is not removed until it is lifted.
 - Posts that a report or an action points to are not physically deleted by the purge job, with their attached media, until that report or action is removed, even if the author deleted them (they disappear from view). Remote posts also stay beyond the retention period (including the setting `remote_status_max_retention`).
 - A sign-up block that has neither a lift nor an end time stays as long as it is in effect.
+- The records of who took part in a voice chat room that a report points at stay until that report is removed. The room itself (its name, description, hosts, and how it ended) is never removed.
 - One job run removes only a capped number of rows per kind (100 at a time, 20 times, for actions, reports and sign-up blocks; 1,000 rows at a time, 20 times, for the audit log). The next run removes the rest.
 
 ### Holds
@@ -376,12 +389,13 @@ my admin retention list -account @alice
 my admin retention release <hold id>
 ```
 
-- For an account under a hold, its actions and appeals, the reports about it and the reports it made, the audit logs of those, the sign-in and registration IP addresses, and its posts are not removed after the retention period.
+- For an account under a hold, its actions and appeals, the reports about it and the reports it made, the audit logs of those, the sign-in and registration IP addresses, its posts, and the records of the voice chat rooms that it took part in or acted in are not removed after the retention period.
   A sign-up block created from that account's ban is also kept past 30 days after lifting or expiry.
 - You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
 - Holds and their release are done only with the CLI, and the actor in the record is the CLI.
 - The data of a deleted account (one whose `ban` reached its date, or one the user deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`.
   An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
+  The names and descriptions that the account gave its voice chat rooms are emptied; the rooms stay.
 
 ### Exporting for disclosure requests
 

@@ -133,6 +133,9 @@ type Deps struct {
 	Notifier Notifier
 	// Posts writes the start posts (ADR-0100 §9); nil refuses them with ErrNoStartPost.
 	Posts Posts
+	// Retention reads what the purge of the records of the participants keeps (ADR-0100
+	// §13); nil purges nothing.
+	Retention Retention
 	// Host is the serving domain of the pages of the rooms, which the start posts link.
 	Host   string
 	Config Config

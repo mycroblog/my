@@ -95,6 +95,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   service_closure_withdrawn: "client:admin.audit_log.action.service_closure_withdrawn",
   service_closure_closed: "client:admin.audit_log.action.service_closure_closed",
   service_closure_delivery_completed: "client:admin.audit_log.action.service_closure_delivery_completed",
+  voice_room_ended: "client:admin.audit_log.action.voice_room_ended",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -123,6 +124,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   oauth_client: "client:admin.audit_log.target_kind.oauth_client",
   oauth_client_host: "client:admin.audit_log.target_kind.oauth_client_host",
   instance: "client:admin.audit_log.target_kind.instance",
+  voice_room: "client:admin.audit_log.target_kind.voice_room",
 };
 
 /** Who performed an operation without a user's account to show. */

@@ -67,6 +67,8 @@
 - `forwarded` は、ローカルの通報者がリモートのアカウントの通報で相手のサーバーへの転送を求めたかどうかです（受け付けた時点で決まる事実）。対象がローカルのアカウントなら、求めても `false` です。転送は受け付けのトランザクションで outbox に積みます（[ADR-0036](../../../adr/0036-moderation-federation-propagation.md)）。受信した `Flag` は常に `false` です。
 - ローカルの通報のコメントは 1,000 文字、受信した `Flag` のコメントは 5,000 文字までです。`report_rule_citations` は `category = violation` のときだけ持てます。
 - ローカルの通報が指せる投稿は、対象のアカウントの投稿のうち通報者が見られるもの（単一の閲覧判定 `CanView` を通す）を 20 件まで、引用できるルールは効いているもの（引退していないもの）を 20 件までです。自分自身は通報できません。
+- 通話のルームの通報（ADR-0100 §11）は、通報者に見える（`voice.CanSee`）開いたルームを `report_voice_rooms` で指し、対象のアカウントはその時のホスト、`revision_id` はその時の設定の版です。ルームが見えるか・ホスト・版は `voice` が決め（`voice.Service.ReportTarget`）、クライアント API が `moderation.LocalReports` に渡します。投稿は指せず、転送しません。
+  モデレーターが開く通報の詳細は、そのルームの版をすべてと、参加者の記録（参加と退出・退出させた人）を、`voice` の消去が残している間だけ示します（`voice.Service.RoomRecords`）。通報が残る間は、そのルームの参加者の記録は消えません（§4.14）。
 - 通報の状態の投影は、受け付けで `open`、解決で `resolved`（`outcome` を写す）、再開で `open` に戻します（担当は残します）。再開できるのは解決済みの通報だけです。
   処分（`moderation_actions.report_id` を持つもの）を記録すると、同じトランザクションでその通報を `actioned` で解決し、監査ログに `report_resolved` を残します。解決済みの通報を指す処分は、通報を変えません。
 - モデレーターが開く通報の詳細は、メモを古い順に、対象のほかの通報の数（`reports` の `(target_account_id, id)`）と対象への処分の数（`moderation_actions`。解除・期限切れを含む）とともに示します。
@@ -96,7 +98,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
+| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
 
 - 各モジュールの管理のユースケースが元のイベントと同じトランザクションで発行するドメインイベント（`moderation.audit_recorded`）を、`moderation` の同期の購読者が書きます。理由とメモの本文は写さず、`source_event_id` で元のイベントから引きます。
   記録の ID はトランザクションの前に作り、再試行しても同じ行を書きます。何も変えなかった操作（解除済みの処分の解除など）は記録しません。
@@ -119,6 +121,7 @@
   | `oauth_client_host_denied` | `oauth_client_host` | ホスト | ホスト | `oauth_client_host_denials.id` |
   | `oauth_client_host_allowed` | `oauth_client_host` | ホスト | ホスト | なし |
   | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` | `instance` | `service_closure` | `service_closure` | `service_closure_events.id` |
+  | `voice_room_ended` | `voice_room` | `voice_rooms.id` | 終えた時点のルームの名前 | `voice_room_endings.room_id`（= `voice_rooms.id`。理由の文は `voice_room_endings.note`） |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |
@@ -149,7 +152,7 @@
 - 一覧（`moderation.Service.GoneAuditTargets`）は、ページの行の対象が今もあるかを、対象の種類ごとに 1 回の問い合わせでまとめて確かめます。
   アカウントは `account` の公開 API（`account.Service.ExistingIDs`）に、通報・異議申し立て・登録の拒否は `moderation` 自身の `reports`・`moderation_appeals`・`signup_blocks` に問い合わせます。
   ロール・カスタム絵文字・その申請・webhook・リレーは、それを持つモジュールが監査ログを発行する側で `moderation` から呼べないため、ポート `moderation.AuditTargets` を通して `identity.Service.ExistingRoleIDs`（`roles`）・`content.CustomEmojiService.ExistingIDs`（`custom_emojis`）・`content.CustomEmojiService.ExistingRequestIDs`（`custom_emoji_requests`。行を消さないので常にある）・`webhook.Service.ExistingIDs`（`webhook_endpoint_heads` の `deleted` でないもの）・`federation.Relays.ExistingIDs`（`relays`）に問い合わせます。
-  ほかの種類の対象（ドメイン・利用者・設定・ルール・お知らせ・招待）は消えません。
+  ほかの種類の対象（ドメイン・利用者・設定・ルール・お知らせ・招待・通話のルーム）は消えません。
 - 新しい管理操作を足すときは、`internal/domain/moderation` の `AuditAction` と対象の種類、スキーマの `CHECK`、API の enum（`AdminAuditAction`）を一緒に増やし、ユースケースから発行します（API の enum と一致することをテストが確かめます）。
 - 更新・削除の API と CLI はありません。保持期間（ADR-0038、既定 730 日）を過ぎた行だけを消去ジョブが消します。
 
@@ -184,7 +187,7 @@
 | 記録 | 設定（既定・下限） | 起点 | 消すもの |
 | --- | --- | --- | --- |
 | 処分 | `retention_moderation_actions`（365 日・180 日） | 処分の終わり: `warn`・`delete_statuses` は `issued_at`、ほかは解除と期限の早い方（どちらも無ければ消さない）。異議申し立てがあれば審査の `decided_at` より前には消さず、審査待ちの間は消さない | `moderation_actions` と `moderation_action_statuses`・`moderation_action_lifts`・`moderation_appeals`・`moderation_appeal_decisions`・`appeal_states`・`account_restrictions` の行 |
-| 通報 | `retention_reports`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_states` |
+| 通報 | `retention_reports`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_states` |
 | 監査ログ | `retention_audit_log`（730 日・365 日） | `occurred_at` | `audit_log_entries` の行 |
 | 登録の拒否 | なし（30 日に固定） | 拒否の終わり: 解除（`signup_block_lifts.lifted_at`）と期限（`expires_at`）の早い方。どちらも無ければ消さない | `signup_blocks` と `signup_block_lifts` の行 |
 

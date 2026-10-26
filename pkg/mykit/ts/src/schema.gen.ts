@@ -4221,6 +4221,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/voice_rooms/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End a voice chat room as a moderator
+         * @description Ends an open voice chat room for every participant, with an optional reason for the
+         *     moderators. Recorded in the audit log (`voice_room_ended`). Works while the voice chat
+         *     is off too. An unknown or ended room is a 404, and a reason longer than 500 characters
+         *     a 422. Needs the `manage_reports` permission.
+         */
+        post: operations["endVoiceRoomAsModerator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/accounts/{id}/actions": {
         parameters: {
             query?: never;
@@ -6939,7 +6962,7 @@ export interface components {
          *     `service_closure`.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -6996,7 +7019,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -7517,6 +7540,11 @@ export interface components {
             /** @description The IDs of the target's posts that the report points at. */
             status_ids: components["schemas"]["Id"][];
             /**
+             * @description The voice chat room that the report points at, whose host is the target; omitted for
+             *     none.
+             */
+            voice_room_id?: components["schemas"]["Id"];
+            /**
              * @description The IDs of the instance rules that the report cites, retired ones included; only a
              *     report of the `violation` category cites rules.
              */
@@ -7536,6 +7564,7 @@ export interface components {
              *     review. A post that the server no longer has is left out.
              */
             statuses: components["schemas"]["AdminReportStatus"][];
+            voice_room?: components["schemas"]["AdminReportVoiceRoom"];
         };
         /** @description A moderator's internal note on a report; never shown to the target or the reporter. */
         AdminReportNote: {
@@ -7556,6 +7585,86 @@ export interface components {
          * @enum {string}
          */
         AdminReportOutcome: "actioned" | "dismissed";
+        /**
+         * @description The voice chat room that a report points at, as the moderators review it: every revision
+         *     of its settings, and the records of its participants while the server keeps them (90 days
+         *     after the room ends by default, `retention_voice_participants`, and as long as a report
+         *     points at the room).
+         */
+        AdminReportVoiceRoom: {
+            id: components["schemas"]["Id"];
+            /** @description The revision of the settings when the room was reported. */
+            reported_revision_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            opened_at: string;
+            /**
+             * Format: date-time
+             * @description When the room ended; omitted while it is open.
+             */
+            ended_at?: string;
+            /**
+             * @description Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+             *     `moderator`, `time_limit`, `disabled`); omitted while it is open.
+             */
+            end_reason?: string;
+            /** @description Who ended the room; omitted for an automatic end and while it is open. */
+            ended_by_account_id?: components["schemas"]["Id"];
+            /** @description The reason that a moderator gave for ending the room; omitted for none. */
+            end_note?: string;
+            /** @description The revisions of the settings, oldest first. */
+            revisions: components["schemas"]["AdminVoiceRoomRevision"][];
+            /** @description Who took part and when, in the order they joined. */
+            participations: components["schemas"]["AdminVoiceRoomParticipation"][];
+            /** @description The accounts removed from the room, who may not join it again. */
+            bans: components["schemas"]["AdminVoiceRoomBan"][];
+        };
+        /** @description An account removed from a voice chat room, who may not join it again. */
+        AdminVoiceRoomBan: {
+            account_id: components["schemas"]["Id"];
+            banned_by_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            banned_at: string;
+        };
+        /** @description A moderator ending an open voice chat room. */
+        AdminVoiceRoomEnd: {
+            /**
+             * @description Why the room ends, as plain text for the moderators, up to 500 characters. Nothing
+             *     shows it to the participants.
+             */
+            reason?: string;
+        };
+        /** @description An account taking part in a voice chat room, from joining to leaving. */
+        AdminVoiceRoomParticipation: {
+            account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            joined_at: string;
+            /**
+             * Format: date-time
+             * @description When the account left; omitted while it takes part.
+             */
+            left_at?: string;
+            /**
+             * @description Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+             *     `suspended`, `room_ended`); omitted while it takes part.
+             */
+            leave_reason?: string;
+        };
+        /**
+         * @description A revision of the settings of a voice chat room. The name and the description are empty
+         *     once the account that wrote them is erased.
+         */
+        AdminVoiceRoomRevision: {
+            id: components["schemas"]["Id"];
+            name: string;
+            description: string;
+            /** @description The hashtags as the host typed them. */
+            hashtags: string[];
+            visibility: components["schemas"]["VoiceRoomVisibility"];
+            speakers: components["schemas"]["VoiceRoomSpeakers"];
+            revised_by_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            revised_at: string;
+        };
         /** @description A page of reports, newest first. */
         AdminReportPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminReport"][];
@@ -8618,6 +8727,11 @@ export interface components {
             rule_ids?: components["schemas"]["Id"][];
             /** @description A comment for the moderators as plain text. */
             comment?: string;
+            /**
+             * @description A voice chat room open on this server that the user can see; `account_id` is then its
+             *     host. Such a report points at no posts and is never forwarded.
+             */
+            voice_room_id?: components["schemas"]["Id"];
             /**
              * @description Asks to forward the report to the server of a remote account, without naming the
              *     reporter. It means nothing for a local account.
@@ -10933,6 +11047,8 @@ export interface components {
             target_account: components["schemas"]["Account"];
             status_ids: components["schemas"]["Id"][];
             rule_ids: components["schemas"]["Id"][];
+            /** @description The voice chat room reported; omitted for none. */
+            voice_room_id?: components["schemas"]["Id"];
             state: components["schemas"]["ReportState"];
         };
         /**
@@ -17266,6 +17382,32 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminReportDetail"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    endVoiceRoomAsModerator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminVoiceRoomEnd"];
+            };
+        };
+        responses: {
+            /** @description The room ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             default: components["responses"]["Problem"];
         };
     };

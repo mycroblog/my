@@ -62,6 +62,9 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"WritesTheStartPost", roomsStartPost, ""},
 		{"SummarizesForVisitors", roomsSummary, ""},
 		{"ShowsTheProfileEntryAndHistory", roomsProfileAndHistory, ""},
+		{"ReportsAndEndsAsAModerator", roomsModeration, ""},
+		{"PurgesTheRecordsAfterTheRetention", roomsPurge, ""},
+		{"ErasesTheRevisionsOfAnAccount", roomsErasure, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -366,6 +369,8 @@ type roomsEnv struct {
 	posts     *roomsPosts
 	jobs      *InlineJobs
 	hub       *stream.Hub
+	retention *roomsRetention
+	audits    *roomsAudits
 	svc       *appvoice.Service
 	newSvc    func(cfg appvoice.Config) *appvoice.Service
 }
@@ -379,7 +384,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 	outbox, jobs := inlineOutbox(projectors)
 	e := &roomsEnv{
 		h: h, clock: clock, ids: NewIDGenerator(clock), transport: &roomsTransport{}, notices: &roomsNotifier{}, posts: &roomsPosts{},
-		jobs: jobs, hub: stream.NewHub(stream.HubOptions{}),
+		jobs: jobs, hub: stream.NewHub(stream.HubOptions{}), retention: newRoomsRetention(), audits: &roomsAudits{},
 		members: &roomsMembers{
 			inactive: map[string]bool{}, limited: map[string]bool{}, starters: map[string]bool{},
 			follows: map[[2]string]bool{}, blocks: map[[2]string]bool{},
@@ -390,7 +395,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 		d := appvoice.Deps{
 			Repository: h.Voice, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
 			Heartbeats: appvoice.NewHeartbeats(kv, h.Voice), Members: e.members, Relations: e.members, Config: cfg,
-			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost,
+			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost, Retention: e.retention,
 		}
 		if cfg.Transport != "" {
 			d.Transport = e.transport
@@ -402,6 +407,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 	e.svc.RegisterJobs(reg, nil)
 	e.svc.RegisterEligibilityProjectors(projectors)
 	e.svc.RegisterCommitHooks(projectors)
+	e.audits.register(projectors)
 	t.Cleanup(e.hub.Close)
 	return e
 }

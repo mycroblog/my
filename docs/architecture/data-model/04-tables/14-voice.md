@@ -6,7 +6,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `voice_rooms` | リソース | `id`, `opened_by_account_id`, `opened_at`, `transport`（`enum(p2p, livekit, sora)`。開いたときの接続の方式） | — |
-| `voice_room_revisions` | イベント（版） | `id`, `room_id`, `name`（書記素で 1〜100。コード点で 1000 まで）, `description`（`text`。500 文字まで。なしは `''`）, `visibility`（`enum(local, followers, mutuals, invited)`）, `speakers`（`enum(everyone, followers, mutuals, manual)`）, `revised_by_account_id`, `revised_at` | インデックス `(room_id, id DESC)`。開始の設定が最初の版 |
+| `voice_room_revisions` | イベント（版） | `id`, `room_id`, `name`（書記素で 1〜100。コード点で 1000 まで。書いたアカウントの消去で `''`）, `description`（`text`。500 文字まで。なしは `''`）, `visibility`（`enum(local, followers, mutuals, invited)`）, `speakers`（`enum(everyone, followers, mutuals, manual)`）, `revised_by_account_id`, `revised_at` | インデックス `(room_id, id DESC)`, `(revised_by_account_id, room_id)`（アカウントの消去）。開始の設定が最初の版 |
 | `voice_room_revision_hashtags` | リソース（版の子） | `revision_id`, `position`（`int`。0〜4）, `name`（`string(100)`。表示の綴り）, `name_normalized`（`string(100)`。投稿のハッシュタグと同じ正規化） | PK `(revision_id, position)`。一意 `(revision_id, name_normalized)`。インデックス `(name_normalized, revision_id)` |
 | `voice_room_host_changes` | イベント | `id`, `room_id`, `host_account_id`, `reason`（`enum(opened, handed_over, host_disconnected, host_ineligible, host_left)`）, `changed_at` | インデックス `(room_id, id DESC)`, `(host_account_id, room_id)` |
 | `voice_room_cohost_changes` | イベント | `id`, `room_id`, `account_id`, `change`（`enum(assigned, removed)`）, `changed_at` | インデックス `(room_id, account_id, id DESC)` |
@@ -18,7 +18,7 @@
 | `voice_room_invitations` | リソース | `id`, `room_id`, `invitee_account_id`, `role`（`enum(speaker, listener)`）, `invited_by_account_id`, `invited_at` | 一意 `(room_id, invitee_account_id)` |
 | `voice_room_invitation_revocations` | イベント | `invitation_id`（PK）, `revoked_by_account_id`, `revoked_at` | 招待ごとに 1 つ |
 | `voice_room_bans` | イベント | `id`, `room_id`, `account_id`, `banned_by_account_id`, `banned_at` | 一意 `(room_id, account_id)`。退出させる操作が書く |
-| `voice_room_endings` | イベント | `room_id`（PK）, `reason`（`enum(host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled)`）, `ended_by_account_id`（NULL 可 = 自動の終了）, `ended_at` | ルームごとに 1 つ |
+| `voice_room_endings` | イベント | `room_id`（PK）, `reason`（`enum(host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled)`）, `ended_by_account_id`（NULL 可 = 自動の終了）, `ended_at`, `note`（`text`。500 文字まで。モデレーターが終えた理由の文。なしは `''`） | ルームごとに 1 つ。インデックス `(ended_at, room_id)`（記録の消去） |
 | `voice_room_heads` | 投影 | `room_id`（PK）, `revision_id`, `host_account_id`, `state`（`enum(open, ended)`）, `participants_count`（`int`） | インデックス `(state, room_id)`。一覧はこれを引く |
 | `voice_room_participants` | 投影 | `account_id`（PK。1 人 1 ルーム）, `room_id`, `participation_id`, `role`, `cohost_change_id`（NULL 可 = 共同ホストでない）, `hand_raised`（`bool`） | 一意 `(participation_id)`。インデックス `(room_id, participation_id)` |
 | `voice_room_host_graces` | 現在値 | `room_id`（PK）, `ends_at`（猶予の終わり。決定の内容としての期限） | インデックス `(ends_at)`。ホストの猶予の間だけ行がある |
@@ -35,3 +35,8 @@
 - 参加の終わり・招待・取り消し・禁止・ルームの終了は、一意制約と衝突で何もしない挿入で 1 回だけ書きます（同時に走った評価も 1 回だけ効く。ADR-0100 §6）。発話の許可は、そのルームでのそのアカウントの最新の `voice_room_speak_grants` が `granted` かどうかです。
 - 一覧（`OpenRooms`）は `voice_room_heads` の開いたルームを参加者の多い順に引き、ハッシュタグで絞るときは今の版のタグ（`name_normalized`）を見ます。閲覧者ごとの公開範囲は `internal/domain/voice` の `CanSee` でアプリが絞ります（ADR-0100 §4）。
 - 接続の生存（ハートビート）は DB に書かず、`KeyValueStore` に置きます（ADR-0100 §6・§12）。
+- モデレーターによる終了（`voice.Service.EndByModerator`、`manage_reports`。ADR-0100 §11）は、ルームを止める操作と同じトランザクションで、理由 `moderator`・終えたモデレーターのアカウント・理由の文（`note`）の `voice_room_endings` を書き、監査ログ `voice_room_ended`（§4.3）を発行します。
+  通話を `off` にしていても終えられます。終わったルームと知らないルームは `ErrNotFound` です。
+- 参加者の記録の消去（ADR-0100 §13、§8）は、1 時間ごとのジョブ `voice.purge_records` が、`voice_room_endings.ended_at` から `retention_voice_participants`（§4.9。回ごとに読み直す）を過ぎたルームの `voice_room_participations`・`voice_room_participation_ends`・`voice_room_role_changes`・`voice_room_hand_raises`・`voice_room_speak_grants`・`voice_room_invitations`・`voice_room_invitation_revocations`・`voice_room_bans` を、ルームを `LockRoom` してから 1 トランザクションに 100 ルームずつ、20 回まで、ルームの ID 順に消します。
+  通報が指すルーム（`moderation.Service.ReportedVoiceRooms`。通報は保持期間を過ぎると `report_voice_rooms` ごと消える）と、記録が保全（`retention_holds`）のあるアカウントを参加者か操作した人として名指すルームは残し、次の回が調べ直します。
+- アカウントの消去（§8）は、そのアカウントが書いた版の `name` と `description` を `''` にします（`voice.Eraser`。ルームを `LockRoom` してから、1 トランザクションに 100 ルームまで）。ルーム・版のほかの列・タグ・ホストの交代・終了は残します。

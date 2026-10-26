@@ -147,3 +147,4 @@ enum:
   - service_closure_withdrawn
   - service_closure_closed
   - service_closure_delivery_completed
+  - voice_room_ended
