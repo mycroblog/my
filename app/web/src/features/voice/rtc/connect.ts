@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Connects to the audio of a room by the method of the grant (ADR-0101 §7, ADR-0102): p2p here. The SFU methods
-// (livekit, sora) come behind the same VoiceConnection; until then their grant is an UnsupportedVoiceMethodError.
+// Connects to the audio of a room by the method of the grant (ADR-0101 §7, ADR-0102): p2p, livekit, or sora, all behind
+// the same VoiceConnection; the SFU methods load their browser SDK with import() once the grant names them (ADR-0102 §6),
+// and any other method is an UnsupportedVoiceMethodError.
 // The browser's environment plays each remote participant's audio in an audio element of its own, muted while the
 // participant does not speak, and asks for the microphone with the constraints of ADR-0101 §7.
+import { connectLiveKit } from "./livekit";
 import { connectP2P, microphoneConstraints } from "./p2p";
+import { connectSora } from "./sora";
 import type { RemoteAudio, VoiceConnection, VoiceConnectionOptions, VoiceEnvironment } from "./types";
 
 /** The grant names a method that this client does not connect with. */
@@ -22,6 +25,10 @@ export function connectVoice(options: VoiceConnectionOptions): VoiceConnection {
   switch (options.grant.kind) {
     case "p2p":
       return connectP2P(options);
+    case "livekit":
+      return connectLiveKit(options);
+    case "sora":
+      return connectSora(options);
     default:
       throw new UnsupportedVoiceMethodError(options.grant.kind);
   }

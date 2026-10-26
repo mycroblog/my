@@ -368,11 +368,11 @@ describe("the grant", () => {
     expect(r.pcs("a")[1]?.configuration.iceTransportPolicy).toBe("relay");
   });
 
-  test("an SFU method is not supported yet", () => {
+  test("a method that this client does not know is not supported", () => {
     expect(() =>
       connectVoice({
         session: "s1",
-        grant: { ...grant, kind: "livekit" },
+        grant: { ...grant, kind: "mystery" },
         environment: { createPeerConnection: () => new RTCPeerConnection(), getMicrophone: () => Promise.reject(new Error("no")), createRemoteAudio: () => new FakeRemoteAudio() },
         events: { sendSignal: () => Promise.resolve(), onPlaybackBlocked: () => undefined },
       }),

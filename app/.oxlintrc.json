@@ -1262,6 +1262,33 @@
               {
                 "from": {
                   "element": {
+                    "type": [
+                      "shell",
+                      "route",
+                      "feature",
+                      "feature-test",
+                      "lib",
+                      "test"
+                    ]
+                  }
+                },
+                "disallow": {
+                  "to": {
+                    "module": {
+                      "origin": "external",
+                      "source": [
+                        "livekit-client",
+                        "livekit-client/*",
+                        "sora-js-sdk"
+                      ]
+                    }
+                  }
+                },
+                "message": "Only features/*/rtc loads the browser SDKs of the SFU methods, with import() once the grant names the method, so that no other chunk carries them (ADR-0102 §6)."
+              },
+              {
+                "from": {
+                  "element": {
                     "type": "ui"
                   }
                 },
