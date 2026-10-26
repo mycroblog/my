@@ -561,6 +561,6 @@
   },
   "admin.audit_log.target_kind.voice_room": {
     "defaultMessage": "通話のルーム",
-    "description": "Kind of target of an audited operation: a voice chat room, shown by its name when the operation happened."
+    "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
   }
 }

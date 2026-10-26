@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/app/account"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -134,7 +135,9 @@ type ModeratorEndInput struct {
 
 // EndByModerator ends an open room for a holder of manage_reports, whom the caller checked
 // (moderator, ADR-0100 §11): every participant leaves (room_ended), the ending records the
-// moderator and the reason, and the audit log records voice_room_ended in the same transaction.
+// moderator and the reason, and the audit log records voice_room_ended in the same transaction,
+// labelled with the room's ID: the name goes with the erasure of the account that wrote it,
+// and the moderators read it from the report.
 // It works with the voice chat off too. An unknown or ended room fails with ErrNotFound, and a
 // reason that does not hold with ErrInvalidEndNote.
 func (s *Service) EndByModerator(ctx context.Context, in ModeratorEndInput) error {
@@ -171,7 +174,7 @@ func (s *Service) EndByModerator(ctx context.Context, in ModeratorEndInput) erro
 		return tx.Emit(ctx, moderation.AuditRecorded{Entry: moderation.AuditEntry{
 			ID: auditID, ActorKind: actor, ActorUserID: user, Action: moderation.AuditVoiceRoomEnded,
 			TargetKind: moderation.AuditTargetVoiceRoom, TargetID: in.RoomID,
-			TargetLabel: rec.Revision.Settings.Name, SourceEventID: in.RoomID, OccurredAt: now,
+			TargetLabel: in.RoomID, SourceEventID: in.RoomID, OccurredAt: now,
 		}})
 	})
 	if err != nil {
@@ -202,13 +205,24 @@ func (s *Service) RoomRecords(ctx context.Context, roomID string) (RoomRecords, 
 	return out, nil
 }
 
+// kvPurge keys the cursor of JobPurgeRecords: the last room that a run looked at, so that the
+// next run goes on after it however many rooms the earlier runs kept. It lasts purgeCursorLease;
+// a lost cursor starts again from the first room.
+const (
+	kvPurge          = "voice.purge"
+	kvPurgeCursor    = "cursor"
+	purgeCursorLease = 30 * 24 * time.Hour
+)
+
 // PurgeRecords erases the records of the participants of the rooms that ended longer than
 // retention_voice_participants ago (ADR-0100 §13), and returns how many rooms it erased them
 // of. It keeps the records of a room that a report points at, until the moderation module
 // erases the report after its retention, and those of a room whose records name an account
-// that a retention hold preserves. Each batch is one short transaction that locks its rooms;
-// one run erases a bounded number of rooms, and the next run continues. It is safe to repeat.
-// Without Deps.Retention it erases nothing.
+// that a retention hold preserves. Each batch is one short transaction that locks its rooms and
+// reads the holds and the reports again before it deletes. One run looks at a bounded number
+// of rooms in ID order from where the last run stopped (the cursor in the KeyValueStore),
+// and wraps around to the first room at the end, so the rooms that it keeps never starve the
+// others. It is safe to repeat. Without Deps.Retention it erases nothing.
 func (s *Service) PurgeRecords(ctx context.Context) (int, error) {
 	r := s.d.Retention
 	if r == nil {
@@ -224,52 +238,117 @@ func (s *Service) PurgeRecords(ctx context.Context) (int, error) {
 	}
 	before := s.now().Add(-period)
 	repo := s.d.Repository
-	after, total := "", 0
+	start, err := s.purgeCursor(ctx)
+	if err != nil {
+		return 0, err
+	}
+	after, wrapped, total := start, start == "", 0
 	for range recordPurgeMaxBatches {
 		ids, err := repo.RoomsToPurge(ctx, nil, before, after, RecordPurgeBatch)
-		if err != nil || len(ids) == 0 {
-			return total, err
-		}
-		after = ids[len(ids)-1]
-		reported, err := r.ReportedVoiceRooms(ctx, ids)
 		if err != nil {
 			return total, err
 		}
-		purge := make([]string, 0, len(ids))
-		for _, id := range ids {
-			if reported[id] {
-				continue
-			}
-			held, err := s.namesHeld(ctx, id, heldIDs)
+		if len(ids) > 0 {
+			after = ids[len(ids)-1]
+			n, err := s.purgeBatch(ctx, ids, heldIDs)
+			total += n
 			if err != nil {
 				return total, err
 			}
-			if !held {
-				purge = append(purge, id)
-			}
-		}
-		if len(purge) > 0 {
-			err := s.roomTx(ctx, purge, func(tx uow.Tx, _ RoomRecord) error {
-				return repo.PurgeParticipantRecords(ctx, tx, purge)
-			})
-			if err != nil {
-				return total, fmt.Errorf("voice: purge the records of the rooms: %w", err)
-			}
-			total += len(purge)
 		}
 		if len(ids) < RecordPurgeBatch {
-			break
+			// The end of the rooms: the next batch, or the next run, starts from the first.
+			after = ""
+			if wrapped {
+				break
+			}
+			wrapped = true
 		}
 	}
-	return total, nil
+	return total, s.savePurgeCursor(ctx, after)
+}
+
+// purgeBatch erases the records of the rooms ids that no report points at and whose records
+// name none of heldIDs, read before the transaction, and checks both again in it after locking
+// the rooms, so that a hold or a report made meanwhile keeps its room.
+func (s *Service) purgeBatch(ctx context.Context, ids, heldIDs []string) (int, error) {
+	r, repo := s.d.Retention, s.d.Repository
+	candidates, err := s.purgeable(ctx, nil, ids, heldIDs)
+	if err != nil || len(candidates) == 0 {
+		return 0, err
+	}
+	n := 0
+	err = s.roomTx(ctx, candidates, func(tx uow.Tx, _ RoomRecord) error {
+		held, err := r.HeldAccountIDs(ctx)
+		if err != nil {
+			return err
+		}
+		purge, err := s.purgeable(ctx, tx, candidates, held)
+		if err != nil || len(purge) == 0 {
+			n = 0
+			return err
+		}
+		n = len(purge)
+		return repo.PurgeParticipantRecords(ctx, tx, purge)
+	})
+	if err != nil {
+		return 0, fmt.Errorf("voice: purge the records of the rooms: %w", err)
+	}
+	return n, nil
+}
+
+// purgeable returns the rooms of ids that no report points at and whose records name none of
+// heldIDs, reading the records in tx (outside any transaction when tx is nil).
+func (s *Service) purgeable(ctx context.Context, tx uow.Tx, ids, heldIDs []string) ([]string, error) {
+	reported, err := s.d.Retention.ReportedVoiceRooms(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if reported[id] {
+			continue
+		}
+		held, err := s.namesHeld(ctx, tx, id, heldIDs)
+		if err != nil {
+			return nil, err
+		}
+		if !held {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
+// purgeCursor returns the room after which JobPurgeRecords goes on, "" for the first.
+func (s *Service) purgeCursor(ctx context.Context) (string, error) {
+	if s.d.Heartbeats == nil {
+		return "", nil
+	}
+	b, err := s.d.Heartbeats.kv.Get(ctx, kvPurge, kvPurgeCursor)
+	if errors.Is(err, kernel.ErrKeyNotFound) {
+		return "", nil
+	}
+	return string(b), err
+}
+
+// savePurgeCursor keeps the room after which the next run of JobPurgeRecords goes on.
+func (s *Service) savePurgeCursor(ctx context.Context, after string) error {
+	if s.d.Heartbeats == nil {
+		return nil
+	}
+	if after == "" {
+		return s.d.Heartbeats.kv.Delete(ctx, kvPurge, kvPurgeCursor)
+	}
+	return s.d.Heartbeats.kv.Set(ctx, kvPurge, kvPurgeCursor, []byte(after), purgeCursorLease)
 }
 
 // namesHeld reports whether the records of the participants of a room name one of heldIDs.
-func (s *Service) namesHeld(ctx context.Context, roomID string, heldIDs []string) (bool, error) {
+func (s *Service) namesHeld(ctx context.Context, tx uow.Tx, roomID string, heldIDs []string) (bool, error) {
 	if len(heldIDs) == 0 {
 		return false, nil
 	}
-	ids, err := s.d.Repository.RecordAccounts(ctx, nil, roomID)
+	ids, err := s.d.Repository.RecordAccounts(ctx, tx, roomID)
 	if err != nil {
 		return false, err
 	}
