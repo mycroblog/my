@@ -5,11 +5,12 @@
 // the built app (`scripts/task.sh web:e2e` builds it first), or against E2E_BASE_URL when it is set. The tests of the
 // server-rendered pages (e2e/auth-pages.spec.ts) and of the main flow (e2e/main-flow.spec.ts) run against a real `my serve` on SQLite that
 // e2e/server.ts starts from bin/my with the pseudo-locales enabled, or against E2E_SERVER_URL when it is
-// set (a server started with `my serve -pseudo-locales`). Both servers listen on free ports picked per
+// set (a server started with `my serve -pseudo-locales`). The call between two browsers (e2e/voice-p2p.spec.ts) runs
+// once, in Chromium with its fake microphone, against a second server with voice chat on that e2e/server.ts starts. Both servers listen on free ports picked per
 // run (E2E_PREVIEW_PORT and E2E_SERVER_PORT override them; e2e/server-origin.ts), and a run never reuses a
 // server it did not start, so runs in several worktrees on one machine stay apart.
 import { defineConfig, devices, type Project } from "@playwright/test";
-import { previewOrigin, previewPort, serverPort } from "./e2e/server-origin.ts";
+import { previewOrigin, previewPort, serverPort, voiceServerPort } from "./e2e/server-origin.ts";
 
 /** Viewport widths in CSS px (ADR-0027). */
 const widths = [320, 390, 768, 1024, 1440] as const;
@@ -27,6 +28,9 @@ const externalServer = process.env["E2E_SERVER_URL"] !== undefined;
 /** The spec of the emoji web font, which runs once per browser engine instead of in the width × locale projects. */
 const emojiFontSpec = /emoji-font\.spec\.ts$/;
 
+/** The spec of a voice chat call between two browsers, which runs once in Chromium instead of in the matrix. */
+const voiceP2PSpec = /voice-p2p\.spec\.ts$/;
+
 const matrix: Project[] = widths
   .filter((width) => fullMatrix || prWidths.has(width))
   .flatMap((width) =>
@@ -35,7 +39,7 @@ const matrix: Project[] = widths
       const phone = width < 768;
       return {
         name: `${locale}-${width}`,
-        testIgnore: emojiFontSpec,
+        testIgnore: [emojiFontSpec, voiceP2PSpec],
         use: {
           ...devices["Desktop Chrome"],
           viewport: { width, height: phone ? 800 : 900 },
@@ -55,7 +59,24 @@ const emojiFontProjects: Project[] = (["Desktop Chrome", "Desktop Firefox", "Des
   use: { ...devices[device], viewport: { width: 1440, height: 900 }, locale: "en" },
 }));
 
-const projects: Project[] = [...matrix, ...emojiFontProjects];
+// Chromium's fake microphone (a tone) and its acceptance of the permission prompt let two browser contexts speak to
+// each other without a device or a person (Chromium command-line switches); audio plays without a user gesture. The
+// project needs the voice chat server of e2e/server.ts, so it is left out when the specs test a server started elsewhere.
+const voiceP2PProject: Project = {
+  name: "voice-p2p-chromium",
+  testMatch: voiceP2PSpec,
+  use: {
+    ...devices["Desktop Chrome"],
+    viewport: { width: 1440, height: 900 },
+    locale: "en",
+    permissions: ["microphone"],
+    launchOptions: {
+      args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"],
+    },
+  },
+};
+
+const projects: Project[] = [...matrix, ...emojiFontProjects, ...(externalServer ? [] : [voiceP2PProject])];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -91,6 +112,13 @@ export default defineConfig({
             // A fresh database every run: the specs depend on its seed and on rate limits not yet used up.
             command: "node e2e/server.ts",
             url: `http://127.0.0.1:${String(serverPort)}/readyz`,
+            reuseExistingServer: false,
+            gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
+          } as const,
+          {
+            // The server of e2e/voice-p2p.spec.ts, with voice chat on (P2P) and a database of its own.
+            command: "node e2e/server.ts voice",
+            url: `http://127.0.0.1:${String(voiceServerPort)}/readyz`,
             reuseExistingServer: false,
             gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
           } as const,
