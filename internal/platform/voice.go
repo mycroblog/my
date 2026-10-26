@@ -125,7 +125,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
 		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
 		Streams: a.Streams, Emojis: a.Interactions, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,
-		Config: c, Logger: a.Logger,
+		Retention: voiceRetention{a}, Config: c, Logger: a.Logger,
 	})
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
@@ -206,6 +206,26 @@ func (m voiceMembers) PublicSummary(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return s.VoicePublicSummary(), nil
+}
+
+// voiceRetention reads what the purge of the records of the rooms keeps from the instance and
+// moderation modules (ADR-0100 §13).
+type voiceRetention struct{ a *App }
+
+func (r voiceRetention) ParticipantRetention(ctx context.Context) (time.Duration, error) {
+	s, err := r.a.Instance.Settings(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return s.Retention(instance.SettingRetentionVoiceParticipants), nil
+}
+
+func (r voiceRetention) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error) {
+	return r.a.Moderation.ReportedVoiceRooms(ctx, roomIDs)
+}
+
+func (r voiceRetention) HeldAccountIDs(ctx context.Context) ([]string, error) {
+	return r.a.Moderation.HeldAccountIDs(ctx)
 }
 
 // voiceRelations reads the follows and blocks of the rooms from the graph module.

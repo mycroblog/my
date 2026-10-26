@@ -237,6 +237,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/admin/supporter_plans":                                  {Operation: "createSupporterPlan", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/supporter_plans/{id}/retire":                      {Operation: "retireSupporterPlan", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/supporter_subscriptions/{id}/cancel":              {Operation: "cancelSupporterSubscription", Scopes: []string{"admin:write"}},
+	"POST /api/v1/admin/voice_rooms/{id}/end":                             {Operation: "endVoiceRoomAsModerator", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/webhooks":                                         {Operation: "createWebhook", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver": {Operation: "redeliverWebhookDelivery", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/webhooks/{id}/disable":                            {Operation: "disableWebhook", Scopes: []string{"admin:write"}},

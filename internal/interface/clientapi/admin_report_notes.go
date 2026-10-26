@@ -37,6 +37,10 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 	if body.Statuses, err = s.reportStatuses(ctx, r.Id); err != nil {
 		return AdminReportDetailJSONResponse{}, err
 	}
+	body.VoiceRoomId = r.VoiceRoomId
+	if body.VoiceRoom, err = s.reportVoiceRoom(ctx, d.Report); err != nil {
+		return AdminReportDetailJSONResponse{}, err
+	}
 	authors := map[string]string{}
 	for _, n := range d.Notes {
 		note := AdminReportNote{Id: n.ID, Body: n.Body, CreatedAt: n.WrittenAt.UTC()}

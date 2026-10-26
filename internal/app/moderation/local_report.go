@@ -64,6 +64,10 @@ type LocalReportInput struct {
 	// Forward asks to forward the report to the server of a remote target (FR-709); it means
 	// nothing for a local target.
 	Forward bool
+	// VoiceRoom is the voice chat room reported, nil for none (ADR-0100 §11). The voice module
+	// checks that the reporter sees the room and names its host as the target and its current
+	// revision; such a report points at no statuses and is never forwarded.
+	VoiceRoom *moderation.ReportVoiceRoom
 }
 
 // ReportFieldError reports a field of a local report that does not hold: an unknown category,
@@ -96,11 +100,19 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 		Category: in.Category, Comment: in.Comment, FiledAt: now,
 		StatusIDs: uniqueSorted(in.StatusIDs), RuleIDs: uniqueSorted(in.RuleIDs),
 	}
+	if in.VoiceRoom != nil {
+		room := *in.VoiceRoom
+		r.VoiceRoom = &room
+	}
 	switch {
 	case !r.Category.Valid():
 		return moderation.Report{}, &ReportFieldError{Field: "category"}
 	case len(r.RuleIDs) > 0 && r.Category != moderation.CategoryViolation:
 		return moderation.Report{}, &ReportFieldError{Field: "rule_ids"}
+	case r.VoiceRoom != nil && len(r.StatusIDs) > 0:
+		return moderation.Report{}, &ReportFieldError{Field: "status_ids"}
+	case r.VoiceRoom != nil && (r.VoiceRoom.RoomID == "" || r.VoiceRoom.RevisionID == ""):
+		return moderation.Report{}, &ReportFieldError{Field: "voice_room_id"}
 	}
 	if err := r.ValidateLocal(); err != nil {
 		return moderation.Report{}, err
@@ -115,7 +127,7 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 	case err != nil:
 		return moderation.Report{}, err
 	}
-	r.Forwarded = in.Forward && !target.Account.IsLocal()
+	r.Forwarded = in.Forward && !target.Account.IsLocal() && r.VoiceRoom == nil
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: in.ReporterAccountID}
 	for _, id := range r.StatusIDs {
 		st, err := s.d.Statuses.Visible(ctx, viewer, id)

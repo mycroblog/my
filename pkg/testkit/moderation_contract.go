@@ -879,6 +879,41 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 	if err != nil || len(all) != 1 {
 		t.Errorf("ReportsOf(remote) = %+v, %v; want only the filed report", all, err)
 	}
+
+	// A report of a voice chat room, whose host the voice module names, points at the room and
+	// its revision, no statuses, and is never forwarded (ADR-0100 §11). Erasing the report
+	// erases the reference, and the room is no longer reported.
+	room := &moderation.ReportVoiceRoom{RoomID: NamedID("room"), RevisionID: NamedID("revision")}
+	in := appmoderation.LocalReportInput{
+		ReporterAccountID: reporter, TargetAccountID: e.local, Category: moderation.CategorySpam, Forward: true, VoiceRoom: room,
+	}
+	in.StatusIDs = []string{OrderedID(1)}
+	var fieldErr *appmoderation.ReportFieldError
+	if _, err := reports.File(ctx, in); !errors.As(err, &fieldErr) || fieldErr.Field != "status_ids" {
+		t.Errorf("File(a room with statuses) = %v, want a *ReportFieldError of status_ids", err)
+	}
+	in.StatusIDs = nil
+	roomReport, err := reports.File(ctx, in)
+	if err != nil || roomReport.Forwarded || roomReport.VoiceRoom == nil || *roomReport.VoiceRoom != *room {
+		t.Fatalf("File(a room) = %+v, %v; want the room, not forwarded", roomReport, err)
+	}
+	if got, err := e.svc.ReportRecord(ctx, roomReport.ID); err != nil || got.Report.VoiceRoom == nil || *got.Report.VoiceRoom != *room {
+		t.Errorf("ReportRecord(a room) = %+v, %v; want the room and its revision", got.Report, err)
+	}
+	if listed, err := e.svc.Reports(ctx, appmoderation.ReportQuery{}, 10); err != nil || len(listed) == 0 || listed[0].Report.VoiceRoom == nil {
+		t.Errorf("Reports = %+v, %v; want the newest report with its room", listed, err)
+	}
+	reported, err := e.svc.ReportedVoiceRooms(ctx, []string{room.RoomID, NamedID("other room")})
+	if err != nil || !reported[room.RoomID] || len(reported) != 1 {
+		t.Errorf("ReportedVoiceRooms = %v, %v; want the room alone", reported, err)
+	}
+	e.events.take()
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.h.Moderation.PurgeReports(ctx, tx, []string{roomReport.ID}) }); err != nil {
+		t.Fatal(err)
+	}
+	if reported, err := e.svc.ReportedVoiceRooms(ctx, []string{room.RoomID}); err != nil || len(reported) != 0 {
+		t.Errorf("ReportedVoiceRooms after the report's purge = %v, %v; want none", reported, err)
+	}
 }
 
 func moderationHandlesReports(t *testing.T, e *moderationEnv) {

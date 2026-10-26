@@ -28,5 +28,9 @@ properties:
     type: array
     items:
       $ref: ./Id.yaml
+  voice_room_id:
+    description: The voice chat room reported; omitted for none.
+    allOf:
+      - $ref: ./Id.yaml
   state:
     $ref: ./ReportState.yaml

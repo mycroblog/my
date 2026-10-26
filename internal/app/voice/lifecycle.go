@@ -39,6 +39,12 @@ func (s *Service) endParticipationTx(ctx context.Context, tx uow.Tx, p Participa
 // its host grace goes, and its media path closes after the commit. It reports whether it
 // ended the room; a room that ended already stays as it ended.
 func (s *Service) endRoomTx(ctx context.Context, tx uow.Tx, roomID string, reason voice.EndReason, by string, at time.Time) (bool, error) {
+	return s.endRoomWithTx(ctx, tx, Ending{RoomID: roomID, Reason: reason, EndedByAccountID: by, EndedAt: at})
+}
+
+// endRoomWithTx ends a room as endRoomTx does, with the ending given.
+func (s *Service) endRoomWithTx(ctx context.Context, tx uow.Tx, ending Ending) (bool, error) {
+	roomID, at := ending.RoomID, ending.EndedAt
 	ps, err := s.d.Repository.Participants(ctx, tx, roomID)
 	if err != nil {
 		return false, err
@@ -48,7 +54,6 @@ func (s *Service) endRoomTx(ctx context.Context, tx uow.Tx, roomID string, reaso
 			return false, err
 		}
 	}
-	ending := Ending{RoomID: roomID, Reason: reason, EndedByAccountID: by, EndedAt: at}
 	did, err := s.d.Repository.InsertEnding(ctx, tx, ending)
 	if err != nil || !did {
 		return false, err
@@ -159,17 +164,22 @@ type evaluation struct {
 // (LockRoom), and then reads the first of them, so that every command and evaluation of a room
 // decides on what the others committed and applies once (ADR-0100 §6).
 func (s *Service) roomTx(ctx context.Context, roomIDs []string, fn func(tx uow.Tx, rec RoomRecord) error) error {
+	return lockedTx(ctx, s.d.UnitOfWork, s.d.Repository, roomIDs, fn)
+}
+
+// lockedTx is roomTx on u and repo.
+func lockedTx(ctx context.Context, u uow.UnitOfWork, repo Repository, roomIDs []string, fn func(tx uow.Tx, rec RoomRecord) error) error {
 	ids := slices.Clone(roomIDs)
 	ids = slices.DeleteFunc(ids, func(id string) bool { return id == "" })
 	slices.Sort(ids)
 	ids = slices.Compact(ids)
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	return u.Tx(ctx, func(tx uow.Tx) error {
 		for _, id := range ids {
-			if err := s.d.Repository.LockRoom(ctx, tx, id); err != nil {
+			if err := repo.LockRoom(ctx, tx, id); err != nil {
 				return err
 			}
 		}
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomIDs[0])
+		rec, err := repo.FindRoom(ctx, tx, roomIDs[0])
 		if err != nil {
 			return err
 		}

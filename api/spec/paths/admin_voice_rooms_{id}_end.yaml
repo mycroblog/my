@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: endVoiceRoomAsModerator
+  summary: End a voice chat room as a moderator
+  description: |
+    Ends an open voice chat room for every participant, with an optional reason for the
+    moderators. Recorded in the audit log (`voice_room_ended`). Works while the voice chat
+    is off too. An unknown or ended room is a 404, and a reason longer than 500 characters
+    a 422. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/VoiceRoomId.yaml
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AdminVoiceRoomEnd.yaml
+  responses:
+    "204":
+      description: The room ended.
+    default:
+      $ref: ../components/responses/Problem.yaml

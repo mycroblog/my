@@ -171,6 +171,12 @@ func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep 
 			return false, wrap(err, "insert report rule citation")
 		}
 	}
+	if v := rep.VoiceRoom; v != nil {
+		err := q.InsertReportVoiceRoom(ctx, postgresgen.InsertReportVoiceRoomParams{ReportID: rep.ID, RoomID: v.RoomID, RevisionID: v.RevisionID})
+		if err != nil {
+			return false, wrap(err, "insert report voice room")
+		}
+	}
 	return true, nil
 }
 
@@ -328,10 +334,18 @@ func (r *ModerationRepository) reportFrom(ctx context.Context, row postgresgen.R
 	if err != nil {
 		return moderation.Report{}, wrap(err, "list report rule citations")
 	}
+	rooms, err := r.db.reader().GetReportVoiceRoom(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, wrap(err, "read report voice room")
+	}
+	var room *moderation.ReportVoiceRoom
+	if len(rooms) > 0 {
+		room = &moderation.ReportVoiceRoom{RoomID: rooms[0].RoomID, RevisionID: rooms[0].RevisionID}
+	}
 	return moderation.Report{
 		ID: row.ID, URI: fromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
-		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules,
+		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room,
 	}, nil
 }
 

@@ -22,3 +22,5 @@ allOf:
         type: array
         items:
           $ref: ./AdminReportStatus.yaml
+      voice_room:
+        $ref: ./AdminReportVoiceRoom.yaml

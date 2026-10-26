@@ -543,6 +543,10 @@
     "defaultMessage": "Closure delivery completed",
     "description": "Kind of an audited operation: the server recorded that the Delete of every local account, sent at the closure of the service, was delivered."
   },
+  "admin.audit_log.action.voice_room_ended": {
+    "defaultMessage": "Voice chat room ended",
+    "description": "Kind of an audited operation: a moderator ended an open voice chat room."
+  },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth app",
     "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
@@ -554,5 +558,9 @@
   "admin.audit_log.target_kind.instance": {
     "defaultMessage": "Instance",
     "description": "Kind of target of an audited operation: the instance itself, for the closure of the service, shown as service_closure."
+  },
+  "admin.audit_log.target_kind.voice_room": {
+    "defaultMessage": "Voice chat room",
+    "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
   }
 }

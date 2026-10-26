@@ -167,7 +167,7 @@ func (r *ModerationRepository) PurgeReports(ctx context.Context, tx uow.Tx, repo
 	ids := textArray(reportIDs)
 	steps := []func(context.Context, []string) error{
 		q.PurgeReportStatuses, q.PurgeReportRuleCitations, q.PurgeReportAssignments, q.PurgeReportResolutions,
-		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportStates, q.PurgeReports,
+		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportVoiceRooms, q.PurgeReportStates, q.PurgeReports,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {
@@ -175,6 +175,20 @@ func (r *ModerationRepository) PurgeReports(ctx context.Context, tx uow.Tx, repo
 		}
 	}
 	return nil
+}
+
+// ReportedVoiceRooms implements moderation.RetentionRepository.
+func (r *ModerationRepository) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error) {
+	ids := textArray(roomIDs)
+	rooms, err := r.db.reader().ListReportedVoiceRooms(ctx, ids)
+	if err != nil {
+		return nil, wrap(err, "list reported voice rooms")
+	}
+	out := make(map[string]bool, len(rooms))
+	for _, id := range rooms {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // ListSignupBlocksToPurge implements moderation.RetentionRepository.

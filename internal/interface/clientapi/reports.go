@@ -12,6 +12,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
@@ -50,11 +51,28 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 		return CreateReportdefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
 	}
-	r, err := s.o.Reports.File(ctx, appmoderation.LocalReportInput{
+	in := appmoderation.LocalReportInput{
 		ReporterAccountID: v.AccountID, TargetAccountID: knownID(b.AccountId), StatusIDs: knownIDs(deref(b.StatusIds)),
 		Category: moderation.Category(b.Category), RuleIDs: knownIDs(deref(b.RuleIds)), Comment: deref(b.Comment),
 		Forward: deref(b.Forward),
-	})
+	}
+	if b.VoiceRoomId != nil {
+		// A room that the reporter can see, whose host is the account reported (ADR-0100 §11).
+		if s.o.VoiceModeration == nil {
+			return unprocessable(l.ServerErrorsInvalidValue("voice_room_id"))
+		}
+		t, err := s.o.VoiceModeration.ReportTarget(ctx, v.AccountID, knownID(*b.VoiceRoomId))
+		switch {
+		case errors.Is(err, appvoice.ErrNotFound), errors.Is(err, appvoice.ErrDisabled):
+			return unprocessable(l.ServerErrorsInvalidValue("voice_room_id"))
+		case err != nil:
+			return nil, fmt.Errorf("clientapi: the voice chat room %s of a report: %w", *b.VoiceRoomId, err)
+		case t.HostAccountID != in.TargetAccountID:
+			return unprocessable(l.ServerErrorsInvalidValue("account_id"))
+		}
+		in.VoiceRoom = &moderation.ReportVoiceRoom{RoomID: t.RoomID, RevisionID: t.RevisionID}
+	}
+	r, err := s.o.Reports.File(ctx, in)
 	var (
 		fieldErr *appmoderation.ReportFieldError
 		textErr  *moderation.TextError
@@ -162,9 +180,14 @@ func newReport(rec moderation.ReportRecord, target Account) Report {
 	if rec.Status.State == moderation.ReportResolved {
 		state = ReportStateResolved
 	}
-	return Report{
+	out := Report{
 		Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
 		FiledAt: r.FiledAt.UTC(), TargetAccount: target, State: state,
 		StatusIds: append([]string{}, r.StatusIDs...), RuleIds: append([]string{}, r.RuleIDs...),
 	}
+	if r.VoiceRoom != nil {
+		id := r.VoiceRoom.RoomID
+		out.VoiceRoomId = &id
+	}
+	return out
 }

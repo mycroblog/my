@@ -52,6 +52,12 @@ properties:
     type: array
     items:
       $ref: ./Id.yaml
+  voice_room_id:
+    description: |
+      The voice chat room that the report points at, whose host is the target; omitted for
+      none.
+    allOf:
+      - $ref: ./Id.yaml
   rule_ids:
     description: |
       The IDs of the instance rules that the report cites, retired ones included; only a

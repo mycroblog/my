@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The voice chat room that a report points at, as the moderators review it: every revision
+  of its settings, and the records of its participants while the server keeps them (90 days
+  after the room ends by default, `retention_voice_participants`, and as long as a report
+  points at the room).
+type: object
+required: [id, reported_revision_id, opened_at, revisions, participations, bans]
+properties:
+  id:
+    $ref: ./Id.yaml
+  reported_revision_id:
+    description: The revision of the settings when the room was reported.
+    allOf:
+      - $ref: ./Id.yaml
+  opened_at:
+    type: string
+    format: date-time
+  ended_at:
+    description: When the room ended; omitted while it is open.
+    type: string
+    format: date-time
+  end_reason:
+    description: |
+      Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+      `moderator`, `time_limit`, `disabled`); omitted while it is open.
+    type: string
+  ended_by_account_id:
+    description: Who ended the room; omitted for an automatic end and while it is open.
+    allOf:
+      - $ref: ./Id.yaml
+  end_note:
+    description: The reason that a moderator gave for ending the room; omitted for none.
+    type: string
+  revisions:
+    description: The revisions of the settings, oldest first.
+    type: array
+    items:
+      $ref: ./AdminVoiceRoomRevision.yaml
+  participations:
+    description: Who took part and when, in the order they joined.
+    type: array
+    items:
+      $ref: ./AdminVoiceRoomParticipation.yaml
+  bans:
+    description: The accounts removed from the room, who may not join it again.
+    type: array
+    items:
+      $ref: ./AdminVoiceRoomBan.yaml

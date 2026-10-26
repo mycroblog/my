@@ -192,6 +192,7 @@ func (r *VoiceRepository) InsertEnding(ctx context.Context, tx uow.Tx, e appvoic
 	}
 	n, err := q.InsertVoiceRoomEnding(ctx, postgresgen.InsertVoiceRoomEndingParams{
 		RoomID: e.RoomID, Reason: string(e.Reason), EndedByAccountID: toNullString(e.EndedByAccountID), EndedAt: e.EndedAt,
+		Note: e.Note,
 	})
 	return n > 0, wrap(err, "insert voice room ending")
 }
@@ -262,7 +263,7 @@ func voiceRoomRecord(row postgresgen.GetVoiceRoomRow) appvoice.RoomRecord {
 	if row.EndReason != nil && row.EndedAt != nil {
 		rec.Ending = &appvoice.Ending{
 			RoomID: row.ID, Reason: voice.EndReason(*row.EndReason), EndedByAccountID: fromNullString(row.EndedByAccountID),
-			EndedAt: utc(*row.EndedAt),
+			EndedAt: utc(*row.EndedAt), Note: fromNullString(row.EndNote),
 		}
 	}
 	return rec

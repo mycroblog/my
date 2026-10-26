@@ -49,7 +49,7 @@ INSERT INTO voice_room_bans (id, room_id, account_id, banned_by_account_id, bann
 ON CONFLICT (room_id, account_id) DO NOTHING;
 
 -- name: InsertVoiceRoomEnding :execrows
-INSERT INTO voice_room_endings (room_id, reason, ended_by_account_id, ended_at) VALUES ($1, $2, $3, $4)
+INSERT INTO voice_room_endings (room_id, reason, ended_by_account_id, ended_at, note) VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (room_id) DO NOTHING;
 
 -- name: UpsertVoiceRoomHostGrace :exec
@@ -71,7 +71,7 @@ SELECT participation_id, reason, ended_at FROM voice_room_participation_ends WHE
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
 JOIN voice_room_revisions v ON v.id = h.revision_id
@@ -84,7 +84,7 @@ WHERE r.id = $1;
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_room_heads h
 JOIN voice_rooms r ON r.id = h.room_id
 JOIN voice_room_revisions v ON v.id = h.revision_id
@@ -102,7 +102,7 @@ ORDER BY h.participants_count DESC, h.room_id;
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
 JOIN voice_room_revisions v ON v.id = h.revision_id

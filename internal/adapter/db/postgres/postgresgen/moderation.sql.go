@@ -341,6 +341,35 @@ func (q *Queries) GetReportStateForUpdate(ctx context.Context, reportID string) 
 	return i, err
 }
 
+const getReportVoiceRoom = `-- name: GetReportVoiceRoom :many
+SELECT room_id, revision_id FROM report_voice_rooms WHERE report_id = $1
+`
+
+type GetReportVoiceRoomRow struct {
+	RoomID     string
+	RevisionID string
+}
+
+func (q *Queries) GetReportVoiceRoom(ctx context.Context, reportID string) ([]GetReportVoiceRoomRow, error) {
+	rows, err := q.db.Query(ctx, getReportVoiceRoom, reportID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetReportVoiceRoomRow{}
+	for rows.Next() {
+		var i GetReportVoiceRoomRow
+		if err := rows.Scan(&i.RoomID, &i.RevisionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const hasOtherOpenReportOf = `-- name: HasOtherOpenReportOf :one
 SELECT EXISTS (
   SELECT 1 FROM reports r JOIN report_states s ON s.report_id = r.id
@@ -688,6 +717,22 @@ type InsertReportStatusParams struct {
 
 func (q *Queries) InsertReportStatus(ctx context.Context, arg InsertReportStatusParams) error {
 	_, err := q.db.Exec(ctx, insertReportStatus, arg.ReportID, arg.StatusID)
+	return err
+}
+
+const insertReportVoiceRoom = `-- name: InsertReportVoiceRoom :exec
+INSERT INTO report_voice_rooms (report_id, room_id, revision_id) VALUES ($1, $2, $3)
+ON CONFLICT (report_id) DO NOTHING
+`
+
+type InsertReportVoiceRoomParams struct {
+	ReportID   string
+	RoomID     string
+	RevisionID string
+}
+
+func (q *Queries) InsertReportVoiceRoom(ctx context.Context, arg InsertReportVoiceRoomParams) error {
+	_, err := q.db.Exec(ctx, insertReportVoiceRoom, arg.ReportID, arg.RoomID, arg.RevisionID)
 	return err
 }
 
@@ -1057,6 +1102,30 @@ func (q *Queries) ListReportStatusIDs(ctx context.Context, reportID string) ([]s
 			return nil, err
 		}
 		items = append(items, status_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReportedVoiceRooms = `-- name: ListReportedVoiceRooms :many
+SELECT DISTINCT room_id FROM report_voice_rooms WHERE room_id = ANY($1::uuid[]) ORDER BY room_id
+`
+
+func (q *Queries) ListReportedVoiceRooms(ctx context.Context, ids []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listReportedVoiceRooms, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var room_id string
+		if err := rows.Scan(&room_id); err != nil {
+			return nil, err
+		}
+		items = append(items, room_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

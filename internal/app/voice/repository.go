@@ -136,6 +136,9 @@ type Ending struct {
 	// EndedByAccountID is "" for an automatic end.
 	EndedByAccountID string
 	EndedAt          time.Time
+	// Note is the reason that a moderator gave for ending the room (voice.EndModerator), "" for
+	// none.
+	Note string
 }
 
 // Head is the current revision, host, and state of a room (voice_room_heads).
@@ -186,6 +189,7 @@ type RoomRecord struct {
 // transaction of the command; the reads run in tx, or outside any transaction when tx is nil.
 type Repository interface {
 	ProjectionRepository
+	RecordsRepository
 
 	// InsertRoom records a room.
 	InsertRoom(ctx context.Context, tx uow.Tx, r Room) error

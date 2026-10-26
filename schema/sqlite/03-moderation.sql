@@ -238,13 +238,14 @@ CREATE TABLE audit_log_entries (
     'custom_emoji_request_submitted', 'custom_emoji_request_withdrawn', 'custom_emoji_request_approved',
     'custom_emoji_request_rejected', 'payment_reconcile_queued',
     'oauth_client_disabled', 'oauth_client_enabled', 'oauth_client_host_denied', 'oauth_client_host_allowed',
-    'service_closure_announced', 'service_closure_withdrawn', 'service_closure_closed', 'service_closure_delivery_completed'
+    'service_closure_announced', 'service_closure_withdrawn', 'service_closure_closed', 'service_closure_delivery_completed',
+    'voice_room_ended'
   )),
   target_kind TEXT NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
     'signup_block', 'custom_emoji', 'webhook', 'announcement', 'invite', 'relay', 'billing_source',
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
-    'payment_provider', 'oauth_client', 'oauth_client_host', 'instance'
+    'payment_provider', 'oauth_client', 'oauth_client_host', 'instance', 'voice_room'
   )),
   target_id TEXT NOT NULL,
   target_label TEXT NOT NULL,

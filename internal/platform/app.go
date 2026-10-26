@@ -437,7 +437,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err != nil {
 		return nil, err
 	}
-	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias); err != nil {
+	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice); err != nil {
 		return nil, err
 	}
 	a.setUpRemoteActors(cfg, repos.feds)

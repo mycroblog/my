@@ -373,6 +373,7 @@ const (
 	AdminAuditActionSupporterSubscriptionCanceled   AdminAuditAction = "supporter_subscription_canceled"
 	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
 	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
+	AdminAuditActionVoiceRoomEnded                  AdminAuditAction = "voice_room_ended"
 	AdminAuditActionWebhookCreated                  AdminAuditAction = "webhook_created"
 	AdminAuditActionWebhookDeleted                  AdminAuditAction = "webhook_deleted"
 	AdminAuditActionWebhookDisabled                 AdminAuditAction = "webhook_disabled"
@@ -542,6 +543,8 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionTwoFactorDisabled:
 		return true
+	case AdminAuditActionVoiceRoomEnded:
+		return true
 	case AdminAuditActionWebhookCreated:
 		return true
 	case AdminAuditActionWebhookDeleted:
@@ -609,6 +612,7 @@ const (
 	AdminAuditTargetKindSupporterProgram      AdminAuditTargetKind = "supporter_program"
 	AdminAuditTargetKindSupporterSubscription AdminAuditTargetKind = "supporter_subscription"
 	AdminAuditTargetKindUser                  AdminAuditTargetKind = "user"
+	AdminAuditTargetKindVoiceRoom             AdminAuditTargetKind = "voice_room"
 	AdminAuditTargetKindWebhook               AdminAuditTargetKind = "webhook"
 )
 
@@ -662,6 +666,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindSupporterSubscription:
 		return true
 	case AdminAuditTargetKindUser:
+		return true
+	case AdminAuditTargetKindVoiceRoom:
 		return true
 	case AdminAuditTargetKindWebhook:
 		return true
@@ -4877,6 +4883,10 @@ type AdminReport struct {
 	// Uri The `id` of the `Flag` activity that another server sent; omitted for a report
 	// made on this server.
 	Uri *string `json:"uri,omitempty"`
+
+	// VoiceRoomId The voice chat room that the report points at, whose host is the target; omitted for
+	// none.
+	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
 // AdminReportCategory defines model for AdminReport.Category.
@@ -4948,6 +4958,16 @@ type AdminReportDetail struct {
 	// Uri The `id` of the `Flag` activity that another server sent; omitted for a report
 	// made on this server.
 	Uri *string `json:"uri,omitempty"`
+
+	// VoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
+	// of its settings, and the records of its participants while the server keeps them (90 days
+	// after the room ends by default, `retention_voice_participants`, and as long as a report
+	// points at the room).
+	VoiceRoom *AdminReportVoiceRoom `json:"voice_room,omitempty"`
+
+	// VoiceRoomId The voice chat room that the report points at, whose host is the target; omitted for
+	// none.
+	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
 // AdminReportDetailCategory defines model for AdminReportDetail.Category.
@@ -5010,6 +5030,43 @@ type AdminReportTargetHistory struct {
 
 	// ReportsCount The number of the target's other reports, open and resolved.
 	ReportsCount int64 `json:"reports_count"`
+}
+
+// AdminReportVoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
+// of its settings, and the records of its participants while the server keeps them (90 days
+// after the room ends by default, `retention_voice_participants`, and as long as a report
+// points at the room).
+type AdminReportVoiceRoom struct {
+	// Bans The accounts removed from the room, who may not join it again.
+	Bans []AdminVoiceRoomBan `json:"bans"`
+
+	// EndNote The reason that a moderator gave for ending the room; omitted for none.
+	EndNote *string `json:"end_note,omitempty"`
+
+	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
+	EndReason *string `json:"end_reason,omitempty"`
+
+	// EndedAt When the room ended; omitted while it is open.
+	EndedAt *time.Time `json:"ended_at,omitempty"`
+
+	// EndedByAccountId Who ended the room; omitted for an automatic end and while it is open.
+	EndedByAccountId *Id `json:"ended_by_account_id,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id       Id        `json:"id"`
+	OpenedAt time.Time `json:"opened_at"`
+
+	// Participations Who took part and when, in the order they joined.
+	Participations []AdminVoiceRoomParticipation `json:"participations"`
+
+	// ReportedRevisionId The revision of the settings when the room was reported.
+	ReportedRevisionId Id `json:"reported_revision_id"`
+
+	// Revisions The revisions of the settings, oldest first.
+	Revisions []AdminVoiceRoomRevision `json:"revisions"`
 }
 
 // AdminRole A role (FR-720): a named set of permissions. A higher position outranks a lower one;
@@ -5487,6 +5544,74 @@ type AdminTheme struct {
 
 	// Tokens The overridden tokens, in the order of the token list.
 	Tokens []ThemeTokenValue `json:"tokens"`
+}
+
+// AdminVoiceRoomBan An account removed from a voice chat room, who may not join it again.
+type AdminVoiceRoomBan struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id        `json:"account_id"`
+	BannedAt  time.Time `json:"banned_at"`
+
+	// BannedByAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	BannedByAccountId Id `json:"banned_by_account_id"`
+}
+
+// AdminVoiceRoomEnd A moderator ending an open voice chat room.
+type AdminVoiceRoomEnd struct {
+	// Reason Why the room ends, as plain text for the moderators, up to 500 characters. Nothing
+	// shows it to the participants.
+	Reason *string `json:"reason,omitempty"`
+}
+
+// AdminVoiceRoomParticipation An account taking part in a voice chat room, from joining to leaving.
+type AdminVoiceRoomParticipation struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id        `json:"account_id"`
+	JoinedAt  time.Time `json:"joined_at"`
+
+	// LeaveReason Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+	// `suspended`, `room_ended`); omitted while it takes part.
+	LeaveReason *string `json:"leave_reason,omitempty"`
+
+	// LeftAt When the account left; omitted while it takes part.
+	LeftAt *time.Time `json:"left_at,omitempty"`
+}
+
+// AdminVoiceRoomRevision A revision of the settings of a voice chat room. The name and the description are empty
+// once the account that wrote them is erased.
+type AdminVoiceRoomRevision struct {
+	Description string `json:"description"`
+
+	// Hashtags The hashtags as the host typed them.
+	Hashtags []string `json:"hashtags"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id        Id        `json:"id"`
+	Name      string    `json:"name"`
+	RevisedAt time.Time `json:"revised_at"`
+
+	// RevisedByAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	RevisedByAccountId Id `json:"revised_by_account_id"`
+
+	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
+	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	Speakers VoiceRoomSpeakers `json:"speakers"`
+
+	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
+	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
+	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// invited users always see it, and a block with the host or a co-host always hides it.
+	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
 // AdminWebhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
@@ -6312,6 +6437,10 @@ type CreateReportRequest struct {
 
 	// StatusIds Posts of the account that the user can see, up to 20.
 	StatusIds *[]Id `json:"status_ids,omitempty"`
+
+	// VoiceRoomId A voice chat room open on this server that the user can see; `account_id` is then its
+	// host. Such a report points at no posts and is never forwarded.
+	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
 // CreateRoleRequest A new role.
@@ -9210,6 +9339,9 @@ type Report struct {
 
 	// TargetAccount An account, as clients show it (FR-006).
 	TargetAccount Account `json:"target_account"`
+
+	// VoiceRoomId The voice chat room reported; omitted for none.
+	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
 // ReportCategory Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
@@ -11807,6 +11939,9 @@ type SetSupporterProgramJSONRequestBody = AdminSupporterProgramRequest
 // SetAdminThemeJSONRequestBody defines body for SetAdminTheme for application/json ContentType.
 type SetAdminThemeJSONRequestBody = SetThemeRequest
 
+// EndVoiceRoomAsModeratorJSONRequestBody defines body for EndVoiceRoomAsModerator for application/json ContentType.
+type EndVoiceRoomAsModeratorJSONRequestBody = AdminVoiceRoomEnd
+
 // CreateWebhookJSONRequestBody defines body for CreateWebhook for application/json ContentType.
 type CreateWebhookJSONRequestBody = CreateWebhookRequest
 
@@ -12382,6 +12517,9 @@ type ServerInterface interface {
 	// SetAdminTheme Replace the instance theme
 	// (PUT /admin/theme)
 	SetAdminTheme(w http.ResponseWriter, r *http.Request)
+	// EndVoiceRoomAsModerator End a voice chat room as a moderator
+	// (POST /admin/voice_rooms/{id}/end)
+	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// ListAdminWebhooks List the webhooks
 	// (GET /admin/webhooks)
 	ListAdminWebhooks(w http.ResponseWriter, r *http.Request)
@@ -17302,6 +17440,32 @@ func (siw *ServerInterfaceWrapper) SetAdminTheme(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// EndVoiceRoomAsModerator operation middleware
+func (siw *ServerInterfaceWrapper) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EndVoiceRoomAsModerator(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAdminWebhooks operation middleware
 func (siw *ServerInterfaceWrapper) ListAdminWebhooks(w http.ResponseWriter, r *http.Request) {
 
@@ -21845,6 +22009,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/resolve", wrapper.ResolveReport)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/notes", wrapper.AddReportNote)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/reopen", wrapper.ReopenReport)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/voice_rooms/{id}/end", wrapper.EndVoiceRoomAsModerator)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.ListAccountActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.CreateAccountAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/account_actions/{id}", wrapper.GetAccountAction)
@@ -31150,6 +31315,53 @@ type SetAdminThemedefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SetAdminThemedefaultApplicationProblemPlusJSONResponse) VisitSetAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndVoiceRoomAsModeratorRequestObject struct {
+	Id   VoiceRoomId `json:"id"`
+	Body *EndVoiceRoomAsModeratorJSONRequestBody
+}
+
+type EndVoiceRoomAsModeratorResponseObject interface {
+	VisitEndVoiceRoomAsModeratorResponse(w http.ResponseWriter) error
+}
+
+type EndVoiceRoomAsModerator204Response struct {
+}
+
+func (response EndVoiceRoomAsModerator204Response) VisitEndVoiceRoomAsModeratorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type EndVoiceRoomAsModeratordefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EndVoiceRoomAsModeratordefaultApplicationProblemPlusJSONResponse) VisitEndVoiceRoomAsModeratorResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40619,6 +40831,9 @@ type StrictServerInterface interface {
 	// SetAdminTheme Replace the instance theme
 	// (PUT /admin/theme)
 	SetAdminTheme(ctx context.Context, request SetAdminThemeRequestObject) (SetAdminThemeResponseObject, error)
+	// EndVoiceRoomAsModerator End a voice chat room as a moderator
+	// (POST /admin/voice_rooms/{id}/end)
+	EndVoiceRoomAsModerator(ctx context.Context, request EndVoiceRoomAsModeratorRequestObject) (EndVoiceRoomAsModeratorResponseObject, error)
 	// ListAdminWebhooks List the webhooks
 	// (GET /admin/webhooks)
 	ListAdminWebhooks(ctx context.Context, request ListAdminWebhooksRequestObject) (ListAdminWebhooksResponseObject, error)
@@ -45290,6 +45505,42 @@ func (sh *strictHandler) SetAdminTheme(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetAdminThemeResponseObject); ok {
 		if err := validResponse.VisitSetAdminThemeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EndVoiceRoomAsModerator operation middleware
+func (sh *strictHandler) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request EndVoiceRoomAsModeratorRequestObject
+
+	request.Id = id
+
+	var body EndVoiceRoomAsModeratorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EndVoiceRoomAsModerator(ctx, request.(EndVoiceRoomAsModeratorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EndVoiceRoomAsModerator")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EndVoiceRoomAsModeratorResponseObject); ok {
+		if err := validResponse.VisitEndVoiceRoomAsModeratorResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

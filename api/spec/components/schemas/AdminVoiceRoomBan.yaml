@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: An account removed from a voice chat room, who may not join it again.
+type: object
+required: [account_id, banned_by_account_id, banned_at]
+properties:
+  account_id:
+    $ref: ./Id.yaml
+  banned_by_account_id:
+    $ref: ./Id.yaml
+  banned_at:
+    type: string
+    format: date-time

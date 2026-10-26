@@ -98,6 +98,9 @@ const (
 	// AuditTargetInstance is the instance itself, for its service closure (ADR-0088 §1); its ID
 	// and its label are "service_closure".
 	AuditTargetInstance AuditTargetKind = "instance"
+	// AuditTargetVoiceRoom is a voice chat room (ADR-0100 §11); its ID is voice_rooms.id and its
+	// label is the room's name when the operation happened.
+	AuditTargetVoiceRoom AuditTargetKind = "voice_room"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -106,7 +109,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetCustomEmoji, AuditTargetWebhook, AuditTargetAnnouncement, AuditTargetInvite, AuditTargetRelay,
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
-	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance,
+	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -318,6 +321,10 @@ const (
 	AuditServiceClosureWithdrawn         AuditAction = "service_closure_withdrawn"
 	AuditServiceClosureClosed            AuditAction = "service_closure_closed"
 	AuditServiceClosureDeliveryCompleted AuditAction = "service_closure_delivery_completed"
+	// AuditVoiceRoomEnded: a holder of manage_reports ended an open voice chat room
+	// (voice_room_endings with the reason moderator, ADR-0100 §11); the source event is the
+	// ending, whose ID is the room's.
+	AuditVoiceRoomEnded AuditAction = "voice_room_ended"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -410,6 +417,7 @@ var auditActions = []struct {
 	{AuditServiceClosureWithdrawn, AuditTargetInstance},
 	{AuditServiceClosureClosed, AuditTargetInstance},
 	{AuditServiceClosureDeliveryCompleted, AuditTargetInstance},
+	{AuditVoiceRoomEnded, AuditTargetVoiceRoom},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

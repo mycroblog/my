@@ -82,7 +82,7 @@ const getVoiceRoom = `-- name: GetVoiceRoom :one
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
 JOIN voice_room_revisions v ON v.id = h.revision_id
@@ -108,6 +108,7 @@ type GetVoiceRoomRow struct {
 	EndReason          *string
 	EndedByAccountID   *string
 	EndedAt            *time.Time
+	EndNote            *string
 }
 
 // GetVoiceRoom returns a room with its head, its current revision, and its ending (NULL
@@ -133,6 +134,7 @@ func (q *Queries) GetVoiceRoom(ctx context.Context, id string) (GetVoiceRoomRow,
 		&i.EndReason,
 		&i.EndedByAccountID,
 		&i.EndedAt,
+		&i.EndNote,
 	)
 	return i, err
 }
@@ -292,7 +294,7 @@ func (q *Queries) InsertVoiceRoomCohostChange(ctx context.Context, arg InsertVoi
 }
 
 const insertVoiceRoomEnding = `-- name: InsertVoiceRoomEnding :execrows
-INSERT INTO voice_room_endings (room_id, reason, ended_by_account_id, ended_at) VALUES ($1, $2, $3, $4)
+INSERT INTO voice_room_endings (room_id, reason, ended_by_account_id, ended_at, note) VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (room_id) DO NOTHING
 `
 
@@ -301,6 +303,7 @@ type InsertVoiceRoomEndingParams struct {
 	Reason           string
 	EndedByAccountID *string
 	EndedAt          time.Time
+	Note             string
 }
 
 func (q *Queries) InsertVoiceRoomEnding(ctx context.Context, arg InsertVoiceRoomEndingParams) (int64, error) {
@@ -309,6 +312,7 @@ func (q *Queries) InsertVoiceRoomEnding(ctx context.Context, arg InsertVoiceRoom
 		arg.Reason,
 		arg.EndedByAccountID,
 		arg.EndedAt,
+		arg.Note,
 	)
 	if err != nil {
 		return 0, err
@@ -665,7 +669,7 @@ const listHostedVoiceRooms = `-- name: ListHostedVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
 JOIN voice_room_revisions v ON v.id = h.revision_id
@@ -702,6 +706,7 @@ type ListHostedVoiceRoomsRow struct {
 	EndReason          *string
 	EndedByAccountID   *string
 	EndedAt            *time.Time
+	EndNote            *string
 }
 
 // ListHostedVoiceRooms returns at most row_limit rooms that account_id hosted at some time
@@ -734,6 +739,7 @@ func (q *Queries) ListHostedVoiceRooms(ctx context.Context, arg ListHostedVoiceR
 			&i.EndReason,
 			&i.EndedByAccountID,
 			&i.EndedAt,
+			&i.EndNote,
 		); err != nil {
 			return nil, err
 		}
@@ -749,7 +755,7 @@ const listOpenVoiceRooms = `-- name: ListOpenVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
   v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
-  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_room_heads h
 JOIN voice_rooms r ON r.id = h.room_id
 JOIN voice_room_revisions v ON v.id = h.revision_id
@@ -779,6 +785,7 @@ type ListOpenVoiceRoomsRow struct {
 	EndReason          *string
 	EndedByAccountID   *string
 	EndedAt            *time.Time
+	EndNote            *string
 }
 
 // ListOpenVoiceRooms returns the open rooms, of those whose current revision has the hashtag
@@ -810,6 +817,7 @@ func (q *Queries) ListOpenVoiceRooms(ctx context.Context, tag string) ([]ListOpe
 			&i.EndReason,
 			&i.EndedByAccountID,
 			&i.EndedAt,
+			&i.EndNote,
 		); err != nil {
 			return nil, err
 		}
