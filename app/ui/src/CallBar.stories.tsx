@@ -16,7 +16,7 @@ const meta = {
     label: "Voice chat call",
     title: (
       <Link href="#room" variant="standalone">
-        Friday night radio
+        <span>Friday night radio</span>
       </Link>
     ),
     status: "Connected",
@@ -61,7 +61,7 @@ export const LongName: Story = {
   args: {
     title: (
       <Link href="#room" variant="standalone">
-        Friday night radio with a name long enough to be cut short on every screen
+        <span>Friday night radio with a name long enough to be cut short on every screen</span>
       </Link>
     ),
   },
