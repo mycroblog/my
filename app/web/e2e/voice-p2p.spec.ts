@@ -8,8 +8,7 @@
 //
 // The app shows the call's state ("Connected", "Mic on") but not whether audio arrives, so the spec records the
 // RTCPeerConnections each page makes (an init script that wraps the constructor, nothing in the app) and reads the
-// packets of their inbound audio from getStats(). The microphone needs `Permissions-Policy: microphone=(self)` on the
-// server's pages (#1408).
+// packets of their inbound audio from getStats().
 import { randomBytes } from "node:crypto";
 import type { BrowserContext, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
@@ -150,10 +149,9 @@ test.describe("a voice chat call between two browsers", () => {
         await dialog.getByRole("button", { name: message("voice.form.submit_new") }).click();
         await expect(hostPage.getByRole("heading", { level: 1, name })).toBeVisible();
         await expect(hostPage).toHaveURL(/\/voice\/[^/]+$/);
-        // Starting the room makes the host its participant on the server, but the call of this tab starts only from
-        // the join button (#1409).
-        await hostPage.getByRole("button", { name: message("voice.call.join_here") }).click();
+        // Starting the room joins the host: the call starts without a join button.
         await expect(callRegion(hostPage).getByText(message("voice.call.live"))).toBeVisible();
+        await expect(hostPage.getByRole("button", { name: message("voice.call.join_here") })).toHaveCount(0);
       });
 
       await test.step("the guest joins as a listener", async () => {
@@ -194,7 +192,6 @@ test.describe("a voice chat call between two browsers", () => {
         // The radio's input is visually hidden too: the user presses its label.
         await dialog.getByText(message("voice.call.host_leave.end"), { exact: true }).click();
         await expect(dialog.getByRole("radio", { name: message("voice.call.host_leave.end") })).toBeChecked();
-        const roomPath = new URL(hostPage.url()).pathname;
         await dialog.getByRole("button", { name: message("voice.call.leave") }).click();
         // The guest's call ends with the reason, and neither page is in a call any more.
         const ended = message("voice.call.ended", { reason: message("voice.end_reason.host") });
@@ -203,9 +200,12 @@ test.describe("a voice chat call between two browsers", () => {
         await expect(callRegion(guestPage)).toHaveCount(0);
         await expect.poll(() => openConnections(hostPage)).toBe(0);
         await expect.poll(() => openConnections(guestPage)).toBe(0);
-        // The room's page, opened again, says that the room ended (the open page keeps the room it showed, #1409).
-        await guestPage.goto(roomPath);
-        await expect(guestPage.getByRole("heading", { level: 1, name: message("voice.room.ended") })).toBeVisible();
+        // Both pages, still open on the room, say that it ended, and neither offers to join it.
+        for (const page of [hostPage, guestPage]) {
+          await expect(page.getByRole("heading", { level: 1, name: message("voice.room.ended") })).toBeVisible();
+          await expect(page.getByRole("button", { name: message("voice.room.join") })).toHaveCount(0);
+          await expect(page.getByRole("button", { name: message("voice.call.join_here") })).toHaveCount(0);
+        }
       });
     } finally {
       await guestContext.close();
