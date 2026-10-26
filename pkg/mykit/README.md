@@ -149,6 +149,15 @@ timeline, notifications, and announcements, as typed events. The stream needs th
 
 See `ExampleAPI_Stream` and [`ts/examples/stream.ts`](ts/examples/stream.ts).
 
+## Voice chat rooms
+
+The REST operations of the voice chat rooms (`/voice/...`, and `POST /admin/voice_rooms/{id}/end`) are generated like
+every other operation, for example `OpenVoiceRoomWithResponse`, `JoinVoiceRoomWithResponse`, and
+`SendVoiceHeartbeatWithResponse` in Go, and `api.POST("/voice/rooms")` in TypeScript. They need the scopes `read:voice`
+and `write:voice`. mykit has no audio connection: the room's event stream (`GET /voice/rooms/{id}/stream`) and the
+signaling (`POST /voice/rooms/{id}/signals`) belong to the WebRTC connection of a client, so the Go client leaves them
+out and the library does not read the stream.
+
 ## Errors
 
 An answer with a status of 400 or more is an error. The body is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)
