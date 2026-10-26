@@ -189,7 +189,9 @@ test.describe("voice chat moderation", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await dialog.getByRole("radio", { name: message("report.category.spam") }).check();
+    // React Aria hides the native radio under its drawing; the label is what the user presses.
+    await dialog.getByText(message("report.category.spam"), { exact: true }).click();
+    await expect(dialog.getByRole("radio", { name: message("report.category.spam") })).toBeChecked();
     await dialog.getByRole("button", { name: message("report.next") }).click();
     await expect(dialog.getByRole("heading", { level: 3, name: message("report.comment.heading") })).toBeFocused();
     await dialog.getByRole("button", { name: message("report.submit") }).click();
