@@ -96,7 +96,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 			return fmt.Errorf("voice = livekit: %w", err)
 		}
 	default:
-		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p or off", a.Voice.Method)
+		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p, livekit, or off", a.Voice.Method)
 	}
 	outbox := a.Outbox
 	if outbox == nil {
