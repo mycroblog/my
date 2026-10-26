@@ -400,3 +400,31 @@ func TestVoiceSora(t *testing.T) {
 		t.Errorf("LiveKit webhook with voice = sora = %d, want 404", code)
 	}
 }
+
+// TestPermissionsPolicyAllowsTheMicrophoneOnlyWithVoice checks the decider's answer 46 in
+// #1345: Permissions-Policy allows the microphone for the server's own origin while the voice
+// chat is on, and denies it while it is off.
+func TestPermissionsPolicyAllowsTheMicrophoneOnlyWithVoice(t *testing.T) {
+	t.Parallel()
+	for voice, want := range map[string]string{
+		"off": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+		"p2p": "camera=(), microphone=(self), geolocation=(), payment=(), usb=()",
+	} {
+		t.Run(voice, func(t *testing.T) {
+			t.Parallel()
+			cfg := loadConfig(t, map[string]string{
+				"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": voice, "MY_VOICE_STUN_URLS": "stun:stun.example.org",
+			})
+			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+			if err != nil {
+				t.Fatalf("NewApp: %v", err)
+			}
+			t.Cleanup(func() { _ = app.Close() })
+			w := httptest.NewRecorder()
+			app.Handler().ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodGet, platform.PathLiveness, nil))
+			if got := w.Header().Get("Permissions-Policy"); got != want {
+				t.Errorf("Permissions-Policy = %q, want %q", got, want)
+			}
+		})
+	}
+}

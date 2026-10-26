@@ -14,9 +14,11 @@ import { tv } from "tailwind-variants";
 const callBar = tv({
   slots: {
     base: "flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-raised px-4 py-2 shadow-md",
-    // The room's name takes the room left, and is cut short rather than push the controls off the bar.
+    // The room's name takes the room left, and is cut short rather than push the controls off the bar: the link
+    // (a flex item, `min-w-0`) shrinks to the room left, so its target never reaches under the controls (WCAG 2.5.8),
+    // and the element of its text ends in an ellipsis.
     heading: "flex min-w-0 flex-1 basis-40 flex-col",
-    title: "min-w-0 truncate font-bold",
+    title: "flex min-w-0 font-bold *:min-w-0 [&>*>*]:truncate",
     status: "text-sm text-fg-muted",
     actions: "flex flex-wrap items-center gap-2",
     notice: "basis-full",
@@ -26,7 +28,7 @@ const callBar = tv({
 export type CallBarProps = {
   /** The bar's accessible name ("Voice chat call"). */
   label: string;
-  /** The room, as a link to its page. */
+  /** The room, as a link to its page, with its text in an element of its own (a `span`), which the bar cuts short. */
   title: ReactNode;
   /** The call's state, in a few words ("Connected", "Reconnecting…"). */
   status?: ReactNode;
