@@ -1,6 +1,6 @@
 # ADR-0100: 通話のルーム（公開範囲・発話範囲・ホスト・招待・モデレーション）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
 - Issue: #1348
@@ -59,9 +59,11 @@ v0.1.0 の前に DB を作り直せる期間（[ADR-0087](0087-schema-changes-af
 
 ## Decision（決定）
 
-> 推奨案。Accepted にするのは人間の Decider のみ。
+**M1・S1・H1 を採用する。**
 
-**M1・S1・H1 を推奨する。**
+決定者の回答（#1352、原文）:
+
+> ADR Accepted
 
 ### 1. モジュールと依存の向き（M1）
 
