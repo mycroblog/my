@@ -83,6 +83,8 @@ func TestPrometheusMetrics(t *testing.T) {
 		"\nmy_queue_dead 0\n",
 		"\nmy_instance_users 0\n",
 		`my_media_stored_bytes{my_media_origin="remote_cache"`,
+		"\nmy_db_size_bytes ",
+		`my_federation_instances{my_federation_instance_state="unavailable"} 0`,
 		`my_metrics_snapshot_age_seconds{my_metrics_snapshot_part="queue"`,
 		`target_info{`,
 		// The system metrics of ADR-0056 §1.

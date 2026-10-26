@@ -64,6 +64,41 @@ func (q *Queries) CountClosureDeliveries(ctx context.Context, maxAttempts int64)
 	return items, nil
 }
 
+const countInstanceHealth = `-- name: CountInstanceHealth :many
+SELECT state, count(*) AS servers FROM instance_health
+WHERE state = 'unavailable' OR failure_days > 0 GROUP BY state
+`
+
+type CountInstanceHealthRow struct {
+	State   string
+	Servers int64
+}
+
+// CountInstanceHealth counts by state the servers that failed on a day since they last answered
+// or that are unavailable, for the metrics snapshot.
+func (q *Queries) CountInstanceHealth(ctx context.Context) ([]CountInstanceHealthRow, error) {
+	rows, err := q.db.QueryContext(ctx, countInstanceHealth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountInstanceHealthRow{}
+	for rows.Next() {
+		var i CountInstanceHealthRow
+		if err := rows.Scan(&i.State, &i.Servers); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countPendingMoveSends = `-- name: CountPendingMoveSends :one
 SELECT COUNT(*) FROM outbound_activities o
 WHERE o.object_type = 'move' AND o.created_at >= ?1 AND (

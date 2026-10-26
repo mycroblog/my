@@ -220,6 +220,8 @@ type App struct {
 	// ready reports whether the database is reachable and its schema applied.
 	ready  func(ctx context.Context) error
 	closer func() error
+	// dbSize measures the database for the metrics snapshot.
+	dbSize metrics.DatabaseSizer
 	// closeBlobs releases the blob store.
 	closeBlobs func() error
 	// billingClosers release the clients of the billing sources that hold one (ADR-0068).

@@ -140,6 +140,19 @@ func (r *FederationRepository) ListInstanceHealth(ctx context.Context, state fed
 	return out, nil
 }
 
+// CountInstanceHealth implements federation.Repository.
+func (r *FederationRepository) CountInstanceHealth(ctx context.Context) (map[federation.InstanceState]int64, error) {
+	rows, err := r.db.reader().CountInstanceHealth(ctx)
+	if err != nil {
+		return nil, wrap(err, "count instance health")
+	}
+	out := make(map[federation.InstanceState]int64, len(rows))
+	for _, row := range rows {
+		out[federation.InstanceState(row.State)] = row.Servers
+	}
+	return out, nil
+}
+
 func instanceHealth(row sqlitegen.InstanceHealth) federation.InstanceHealth {
 	return federation.InstanceHealth{
 		Domain: row.Domain, State: federation.InstanceState(row.State), Since: fromMillis(row.Since),

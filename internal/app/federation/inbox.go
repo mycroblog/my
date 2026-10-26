@@ -247,7 +247,11 @@ func (i *Inbox) Receive(ctx context.Context, in InboxRequest) (Received, error) 
 	case !rec.Recorded:
 		outcome = InboxOutcomeDuplicate
 	}
-	i.activities.Add(ctx, 1, kernel.NewLabels(LabelActivityType, typ, LabelOutcome, outcome))
+	l := kernel.NewLabels(LabelActivityType, typ, LabelOutcome, outcome)
+	if outcome == InboxOutcomeRejected {
+		l = l.With(LabelInboxRejection, rec.Rejection.MetricReason())
+	}
+	i.activities.Add(ctx, 1, l)
 	return rec, err
 }
 

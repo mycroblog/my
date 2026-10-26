@@ -9,8 +9,9 @@
 # server; tune them, and the `for` durations, to your traffic. alerts.test.yml holds the promtool unit tests
 # (`scripts/task.sh docker:alert-rules`).
 #
-# The instance-wide gauges (my_queue_*, my_media_stored_bytes, my_metrics_snapshot_age_seconds) carry the same value
-# in every process, so the rules take their max(). The other metrics belong to one process (job, instance).
+# The instance-wide gauges (my_queue_*, my_media_stored_bytes, my_db_size_bytes, my_federation_instances,
+# my_billing_import_failing, my_metrics_snapshot_age_seconds) carry the same value in every process, so the rules take
+# their max(). The other metrics belong to one process (job, instance).
 
 groups:
   - name: my-queue
@@ -99,6 +100,31 @@ groups:
           summary: The inbox refuses more than a quarter of the activities it receives
           description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes were refused in the last 15 minutes.'
           runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxrejectionshigh
+      - alert: MyInboxSignatureFailures
+        expr: >-
+          sum(rate(my_inbox_activities_total{my_outcome="rejected", my_inbox_rejection="signature"}[15m]))
+            / sum(rate(my_inbox_activities_total[15m])) > 0.1
+          and sum(rate(my_inbox_activities_total[15m])) > 0.01
+        for: 30m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The inbox refuses more than 10% of the activities it receives for their signature
+          description: >-
+            {{ $value | humanizePercentage }} of the POSTs to the inboxes failed the signature check in the last
+            15 minutes.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxsignaturefailures
+      - alert: MyRemoteServersPaused
+        # 5 is a starting point; a server with followers on many servers sees a few pauses every week.
+        expr: >-
+          max(my_federation_instances{my_federation_instance_state="unavailable"})
+            - max(my_federation_instances{my_federation_instance_state="unavailable"} offset 1d) >= 5
+        labels:
+          severity: ticket
+        annotations:
+          summary: Deliveries to 5 or more servers were paused in a day
+          description: Deliveries to {{ $value | humanize }} more servers were paused in the last day.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremoteserverspaused
       - alert: MyInboxErrors
         expr: >-
           sum(rate(my_inbox_activities_total{my_outcome="error"}[15m]))
@@ -254,6 +280,31 @@ groups:
           summary: The media files take more than the planned storage
           description: The media files in blob storage take {{ $value | humanize1024 }}B.
           runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mymediastoragelarge
+      - alert: MyDatabaseStorageLarge
+        # 8 GiB is an example; set it below the storage limit of your database plan or volume.
+        expr: max(my_db_size_bytes) > 8 * 1024 * 1024 * 1024
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: The database takes more than the planned storage
+          description: The database takes {{ $value | humanize1024 }}B.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydatabasestoragelarge
+
+  - name: my-cost
+    rules:
+      - alert: MyBillingImportFailing
+        # The imports run once a day; throttling and unavailability are retried within hours.
+        expr: max by (my_billing_source) (my_billing_import_failing) == 1
+        for: 6h
+        labels:
+          severity: ticket
+        annotations:
+          summary: The import of the {{ $labels.my_billing_source }} usage charges fails
+          description: >-
+            The newest import of the usage charges of {{ $labels.my_billing_source }} failed, and none has succeeded
+            in the 6 hours since; the costs screen shows older figures.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mybillingimportfailing
 
   - name: my-email
     rules:

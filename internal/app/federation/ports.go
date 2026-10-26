@@ -69,6 +69,9 @@ type Repository interface {
 	// ListInstanceHealth returns at most limit servers with a health row in domain order, starting
 	// after the domain after ("" for the first): those in state, or every one when state is "".
 	ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error)
+	// CountInstanceHealth counts by state the servers that failed on a day since they last
+	// answered or that are unavailable; a state with none is absent.
+	CountInstanceHealth(ctx context.Context) (map[federation.InstanceState]int64, error)
 
 	// InsertFanOutCompletion records that the fan-out of an outbound activity enqueued its last
 	// batch; a repeated one keeps the first.

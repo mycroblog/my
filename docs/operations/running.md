@@ -97,7 +97,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | --- | --- | --- |
 | `http.server.request.duration` | Histogram, seconds | `http.request.method`, `http.route` (the route pattern's path; `other` when none matches), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments`) |
 | `http.server.active_requests` | UpDownCounter | `my.surface` |
-| `my.inbox.activities` | Counter | `activity.type` (a known Activity type, or `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`) |
+| `my.inbox.activities` | Counter | `activity.type` (a known Activity type, or `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (only with `rejected`: `signature` for a signature or integrity proof that is missing, invalid or does not verify, or whose key could not be fetched; `suspended` for a suspended domain; `federation_off`; `rate_limited`; `invalid` for an activity without a valid `id`, `type`, `actor` or `object`) |
 | `my.relay.activities` | Counter | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving`: whether an activity carried by a relay was ingested, and why it was dropped; see [Federation relays](relays.md)) |
 | `my.move.activities` | Counter | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: whether a received `Move` was recorded, and why it was dropped) |
 | `my.delivery.attempts` | Counter | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` covers a 410 and deliveries skipped because the server is unavailable or suspended) |
@@ -108,15 +108,19 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`) |
 | `my.accounts.registered` | Counter | None |
 | `my.statuses.created` | Counter | `my.visibility` |
+| `my.billing.imports` | Counter | `my.billing.source` (`aws` / `gcp`), `my.outcome` (`success` / `failed`), `error.type` (only with `failed`: the kind of failure, as in [Importing cloud usage charges](billing-import.md)). Every attempt counts, including the retries and the failures that wait for the next daily import |
 | `my.queue.ready` | Gauge | `my.job.type` (the number of runnable jobs in the database queue) |
 | `my.queue.oldest_ready_age` | Gauge, seconds | None (how long the oldest runnable job in the database queue has waited) |
 | `my.queue.dead` | Gauge | None |
 | `my.instance.users`, `my.instance.statuses` | Gauge | None (the local user and post counts, as in NodeInfo) |
 | `my.media.stored_bytes` | Gauge, bytes | `my.media.origin` (`local` / `remote_cache`) |
+| `my.db.size` | Gauge, bytes | None (the size of the database: `pg_database_size` for PostgreSQL; the database file without its write-ahead log for SQLite) |
+| `my.billing.import.failing` | Gauge | `my.billing.source` (1 when the newest import of the source failed, 0 otherwise) |
+| `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: servers that deliveries still go to but that failed on at least one day since they last answered; `unavailable`: servers whose deliveries are paused) |
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |
 
 Health checks (`/healthz`, `/readyz`) are not measured. No label contains a remote domain, account, URL or client IP.
-`my.queue.*`, `my.instance.*` and `my.media.stored_bytes` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.
+`my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` and `my.billing.import.failing` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.
 
 ### System metrics
 

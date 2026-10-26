@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -876,6 +877,19 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 	}
 	if _, err := d.health.List(ctx, "gone", "", 10); !errors.Is(err, appfederation.ErrInvalidInstanceState) {
 		t.Errorf("List(gone) = %v, want ErrInvalidInstanceState", err)
+	}
+	// A server that answered again has no failure days and is not counted.
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.h.Federation.UpsertInstanceHealth(ctx, tx, federation.InstanceHealth{
+			Domain: "d.example", State: federation.InstanceAvailable, Since: e.clock.Now(),
+		})
+	})
+	if err != nil {
+		t.Fatalf("UpsertInstanceHealth: %v", err)
+	}
+	wantCounts := map[federation.InstanceState]int64{federation.InstanceAvailable: 1, federation.InstanceUnavailable: 2}
+	if n, err := d.health.Counts(ctx); err != nil || !maps.Equal(n, wantCounts) {
+		t.Errorf("Counts = %v, %v; want %v", n, err, wantCounts)
 	}
 
 	var ids []string

@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/app/metrics"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
+	domainfederation "github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -248,7 +249,8 @@ func (a *App) registerMetricsSnapshot() {
 }
 
 // instanceTotals computes the counts and sizes of the metrics snapshot: the local users and
-// posts as NodeInfo reports them, and the bytes of the media files.
+// posts as NodeInfo reports them, the bytes of the media files and of the database, the
+// remote servers that deliveries fail to reach, and the billing sources whose import fails.
 func (a *App) instanceTotals(ctx context.Context) (metrics.Totals, error) {
 	users, err := a.Accounts.CountLocalUsers(ctx)
 	if err != nil {
@@ -261,6 +263,25 @@ func (a *App) instanceTotals(ctx context.Context) (metrics.Totals, error) {
 	t := metrics.Totals{Users: int64(users), Statuses: statuses}
 	if a.Media != nil {
 		if t.MediaLocalBytes, t.MediaRemoteCacheBytes, err = a.Media.StoredBytes(ctx); err != nil {
+			return metrics.Totals{}, err
+		}
+	}
+	if a.dbSize != nil {
+		n, err := a.dbSize.DatabaseSize(ctx)
+		if err != nil {
+			return metrics.Totals{}, err
+		}
+		t.DatabaseBytes = &n
+	}
+	if a.InstanceHealth != nil {
+		n, err := a.InstanceHealth.Counts(ctx)
+		if err != nil {
+			return metrics.Totals{}, err
+		}
+		t.InstancesFailing, t.InstancesUnavailable = n[domainfederation.InstanceAvailable], n[domainfederation.InstanceUnavailable]
+	}
+	if a.Finance != nil {
+		if t.BillingImportFailing, err = a.Finance.FailingSources(ctx); err != nil {
 			return metrics.Totals{}, err
 		}
 	}

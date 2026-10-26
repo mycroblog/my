@@ -14,6 +14,8 @@ import (
 const (
 	LabelOutcome      = "my.outcome"
 	LabelActivityType = "activity.type"
+	// LabelInboxRejection is why the inbox refused a request; only my.outcome = rejected has it.
+	LabelInboxRejection = "my.inbox.rejection"
 )
 
 // The outcomes of a delivery attempt, the my.outcome label of the delivery metrics.
@@ -44,6 +46,21 @@ const (
 	InboxOutcomeError = "error"
 )
 
+// The reasons of a refusal of the inbox, the my.inbox.rejection label of my.inbox.activities.
+const (
+	// InboxRejectionSignature is a signature or an integrity proof that is missing, malformed,
+	// below the policy, or does not verify, or whose key could not be fetched.
+	InboxRejectionSignature = "signature"
+	// InboxRejectionSuspended is a request signed by a suspended domain.
+	InboxRejectionSuspended = "suspended"
+	// InboxRejectionFederationOff is a request refused because the federation mode is off.
+	InboxRejectionFederationOff = "federation_off"
+	// InboxRejectionRateLimited is a request over the rate limit of its client IP or server.
+	InboxRejectionRateLimited = "rate_limited"
+	// InboxRejectionInvalid is an activity without a valid id, type, actor, or object.
+	InboxRejectionInvalid = "invalid"
+)
+
 // The outcomes of an activity that a relay brought in (ADR-0061), the my.outcome label of
 // my.relay.activities.
 const (
@@ -72,8 +89,8 @@ var (
 		LabelKeys: []string{LabelOutcome}, Buckets: kernel.DurationBuckets,
 	}
 	InboxActivities = kernel.Instrument{
-		Name: "my.inbox.activities", Unit: "{activity}", Description: "Activities POSTed to the inboxes, by type and outcome.",
-		LabelKeys: []string{LabelActivityType, LabelOutcome},
+		Name: "my.inbox.activities", Unit: "{activity}", Description: "Activities POSTed to the inboxes, by type, outcome, and why they were refused.",
+		LabelKeys: []string{LabelActivityType, LabelOutcome, LabelInboxRejection},
 	}
 	RelayActivities = kernel.Instrument{
 		Name: "my.relay.activities", Unit: "{activity}", Description: "Activities that relays brought in, by whether they were taken in (ADR-0061).",
@@ -122,4 +139,20 @@ func activityTypeLabel(t string) string {
 		return t
 	}
 	return ActivityTypeOther
+}
+
+// MetricReason returns the my.inbox.rejection of the refusal: Reason grouped into the few
+// values that an operator tells apart.
+func (e *InboxRejection) MetricReason() string {
+	switch e.Reason() {
+	case ReasonDomainSuspended:
+		return InboxRejectionSuspended
+	case ReasonFederationOff:
+		return InboxRejectionFederationOff
+	case ReasonRateLimited:
+		return InboxRejectionRateLimited
+	case ReasonInvalidActivity:
+		return InboxRejectionInvalid
+	}
+	return InboxRejectionSignature
 }

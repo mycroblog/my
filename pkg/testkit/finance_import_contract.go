@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -250,10 +251,17 @@ func financeImportCaps(t *testing.T, e *financeEnv) {
 	}
 }
 
-// Every failed attempt is recorded alone; throttling and unavailability are retried, the others
-// wait for the next import.
+// Every failed attempt is recorded alone and counted in my.billing.imports with its kind;
+// throttling and unavailability are retried, the others wait for the next import.
 func financeImportFailures(t *testing.T, e *financeEnv) {
 	e.aws.SetMonth(billingMonth(t, "2026-10"), FakeBillingMonth{Rows: []FakeBillingRow{usd(fakeS3, "1.00")}})
+	failing := func(want bool) {
+		t.Helper()
+		if got, err := e.svc.FailingSources(t.Context()); err != nil || !maps.Equal(got, map[string]bool{"aws": want}) {
+			t.Errorf("FailingSources = %v, %v; want aws %v", got, err, want)
+		}
+	}
+	failing(false) // no attempt yet
 	for _, tc := range []struct {
 		err  error
 		kind appfinance.ImportErrorKind
@@ -270,6 +278,7 @@ func financeImportFailures(t *testing.T, e *financeEnv) {
 		if st := e.status(t); st.LastRun == nil || st.LastRun.ErrorKind != tc.kind || st.LastRun.Requests != 1 || st.LastSuccess != nil {
 			t.Errorf("after %v: last run %+v, last success %+v", tc.err, st.LastRun, st.LastSuccess)
 		}
+		failing(true)
 		e.clock.Advance(time.Second)
 	}
 	if got := e.heads(t); len(got) != 0 {
@@ -279,5 +288,24 @@ func financeImportFailures(t *testing.T, e *financeEnv) {
 	e.importNow(t, "run:ok", "done")
 	if st := e.status(t); st.LastSuccess == nil || st.LastRun.ID != st.LastSuccess.ID || st.RequestsToday != 6 {
 		t.Errorf("after a success: %+v", st)
+	}
+	failing(false)
+	for _, kind := range []appfinance.ImportErrorKind{
+		appfinance.ImportErrorThrottled, appfinance.ImportErrorUnavailable, appfinance.ImportErrorPermission,
+		appfinance.ImportErrorNotEnabled, appfinance.ImportErrorInvalidResponse,
+	} {
+		match := map[string]string{
+			appfinance.LabelBillingSource: "aws", appfinance.LabelOutcome: appfinance.ImportOutcomeFailed, appfinance.LabelErrorType: string(kind),
+		}
+		if got := e.meter.Sum(appfinance.BillingImports.Name, match); got != 1 {
+			t.Errorf("%s%v = %v, want 1", appfinance.BillingImports.Name, match, got)
+		}
+	}
+	success := map[string]string{appfinance.LabelBillingSource: "aws", appfinance.LabelOutcome: appfinance.ImportOutcomeSuccess}
+	if got := e.meter.Sum(appfinance.BillingImports.Name, success); got != 1 {
+		t.Errorf("%s%v = %v, want 1", appfinance.BillingImports.Name, success, got)
+	}
+	if err := e.meter.Err(); err != nil {
+		t.Error(err)
 	}
 }

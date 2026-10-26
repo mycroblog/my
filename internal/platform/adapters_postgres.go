@@ -29,6 +29,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		return pgstream.New(pgstream.Options{Pool: pool, ListenURL: listenURL})
 	}
 	d.RegisterMetrics(a.Meter)
+	a.dbSize = d
 	d.SetTracer(a.Tracer)
 	// The attempt log is in the database whatever the queue (ADR-0064 §1).
 	dbQueue := queuedb.NewPostgres(d, queueOpts)
