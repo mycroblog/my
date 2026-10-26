@@ -43,7 +43,8 @@ func (s *Service) Invite(ctx context.Context, byAccountID, roomID, accountID str
 	if err != nil {
 		return Invitation{}, err
 	}
-	if err := s.invitable(ctx, v, byAccountID, accountID); err != nil {
+	blocks, err := s.invitable(ctx, v, byAccountID, accountID)
+	if err != nil {
 		return Invitation{}, err
 	}
 	switch _, err := s.d.Repository.FindInvitation(ctx, nil, roomID, accountID); {
@@ -62,8 +63,14 @@ func (s *Service) Invite(ctx context.Context, byAccountID, roomID, accountID str
 	inv := Invitation{
 		ID: s.d.IDs.NewID(), RoomID: roomID, InviteeAccountID: accountID, Role: role, InvitedByAccountID: byAccountID, InvitedAt: s.now(),
 	}
-	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, _ RoomRecord) error {
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
 		if err := s.authorityTx(ctx, tx, roomID, byAccountID, true); err != nil {
+			return err
+		}
+		if accountID == rec.Head.HostAccountID {
+			return ErrInvalidInvitee
+		}
+		if err := s.invitableTx(ctx, tx, rec, accountID, blocks); err != nil {
 			return err
 		}
 		did, err := s.d.Repository.InsertInvitation(ctx, tx, inv)
@@ -87,36 +94,50 @@ func (s *Service) Invite(ctx context.Context, byAccountID, roomID, accountID str
 	return inv, nil
 }
 
-// invitable checks that byAccountID may invite accountID to the room of v; ErrInvalidInvitee
-// otherwise.
-func (s *Service) invitable(ctx context.Context, v RoomView, byAccountID, accountID string) error {
+// invitable checks, before the transaction, that byAccountID may invite accountID to the room
+// of v (ErrInvalidInvitee otherwise), and returns the blocks that invitableTx checks again.
+func (s *Service) invitable(ctx context.Context, v RoomView, byAccountID, accountID string) (map[string]bool, error) {
 	host := v.Head.HostAccountID
 	if accountID == "" || accountID == byAccountID || accountID == host {
-		return ErrInvalidInvitee
+		return nil, ErrInvalidInvitee
 	}
 	m, err := s.d.Members.Member(ctx, accountID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !m.Local || !m.Active {
-		return ErrInvalidInvitee
+		return nil, ErrInvalidInvitee
 	}
-	others := []string{host}
-	for _, p := range v.Participants {
-		if p.Cohost() && p.AccountID != host && p.AccountID != accountID {
-			others = append(others, p.AccountID)
-		}
+	blocks, err := s.readBlocks(ctx, v, accountID)
+	if err != nil {
+		return nil, err
 	}
-	for _, id := range others {
-		blocked, err := s.d.Relations.Blocked(ctx, accountID, id)
-		if err != nil {
-			return err
-		}
+	for _, blocked := range blocks {
 		if blocked {
-			return ErrInvalidInvitee
+			return nil, ErrInvalidInvitee
 		}
 	}
 	banned, err := s.d.Repository.Banned(ctx, nil, v.ID, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if banned {
+		return nil, ErrInvalidInvitee
+	}
+	return blocks, nil
+}
+
+// invitableTx checks again in tx that accountID may be invited to the room of rec: no block
+// relation with its host and co-hosts as tx reads them, and no ban.
+func (s *Service) invitableTx(ctx context.Context, tx uow.Tx, rec RoomRecord, accountID string, blocks map[string]bool) error {
+	blocked, err := s.guardTx(ctx, tx, rec, accountID, blocks)
+	if err != nil {
+		return err
+	}
+	if blocked {
+		return ErrInvalidInvitee
+	}
+	banned, err := s.d.Repository.Banned(ctx, tx, rec.ID, accountID)
 	if err != nil {
 		return err
 	}

@@ -57,6 +57,8 @@ type applyPayload struct {
 	Room    string `json:"room"`
 	Session string `json:"session,omitempty"`
 	Account string `json:"account,omitempty"`
+	// Participation names the participation whose current session applyMute mutes.
+	Participation string `json:"participation,omitempty"`
 	// Speak is whether the session of applySpeak may publish audio.
 	Speak bool `json:"speak,omitempty"`
 }
@@ -101,7 +103,15 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 			s.d.Logger.DebugContext(ctx, "the voice session connects again", slog.String("room", p.Room))
 		}
 	case applyMute:
-		err = t.Mute(ctx, room, Session{ID: p.Session, AccountID: p.Account})
+		session := p.Session
+		if session == "" {
+			if session, err = s.d.Heartbeats.current(ctx, p.Participation); err != nil {
+				return queue.Retry(0, err)
+			}
+		}
+		if session != "" {
+			err = t.Mute(ctx, room, Session{ID: session, AccountID: p.Account})
+		}
 	case applyRemove:
 		err = t.Remove(ctx, room, Session{ID: p.Session, AccountID: p.Account})
 	case applyClose:

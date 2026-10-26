@@ -42,6 +42,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"Invites", roomsInvitations},
 		{"LimitsInvitations", roomsInvitationLimit},
 		{"ReactsToBlocks", roomsBlocks},
+		{"DecidesInTheTransaction", roomsRaces},
 		{"SerializesConcurrentCommands", roomsConcurrent},
 	}
 	for _, tc := range cases {
@@ -62,6 +63,45 @@ type roomsMembers struct {
 	follows  map[[2]string]bool
 	blocks   map[[2]string]bool
 	everyone bool
+	// calls counts the calls of Follows and Blocked by name; hooks run once, outside the lock,
+	// when a call reaches their count, to commit a change between the reads of a command and
+	// its transaction.
+	calls map[string]int
+	hooks map[string]roomsHook
+}
+
+type roomsHook struct {
+	at int
+	fn func()
+}
+
+// after runs fn once, when the call of name (follows, blocked) n calls from now starts.
+func (m *roomsMembers) after(name string, n int, fn func()) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.calls == nil {
+		m.calls, m.hooks = map[string]int{}, map[string]roomsHook{}
+	}
+	m.hooks[name] = roomsHook{at: m.calls[name] + n, fn: fn}
+}
+
+// fire counts a call of name and runs its hook when it is due.
+func (m *roomsMembers) fire(name string) {
+	m.mu.Lock()
+	if m.calls == nil {
+		m.mu.Unlock()
+		return
+	}
+	m.calls[name]++
+	h, ok := m.hooks[name]
+	due := ok && m.calls[name] == h.at
+	if due {
+		delete(m.hooks, name)
+	}
+	m.mu.Unlock()
+	if due {
+		h.fn()
+	}
 }
 
 func (m *roomsMembers) Member(_ context.Context, id string) (appvoice.Member, error) {
@@ -77,12 +117,14 @@ func (m *roomsMembers) EveryoneStarts(context.Context) (bool, error) {
 }
 
 func (m *roomsMembers) Follows(_ context.Context, a, b string) (bool, error) {
+	m.fire("follows")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.follows[[2]string{a, b}], nil
 }
 
 func (m *roomsMembers) Blocked(_ context.Context, a, b string) (bool, error) {
+	m.fire("blocked")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.blocks[[2]string{a, b}] || m.blocks[[2]string{b, a}], nil

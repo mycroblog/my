@@ -202,7 +202,11 @@ func (s *Service) changeOwn(ctx context.Context, accountID, roomID string, chang
 }
 
 // Speak makes accountID, a listener in a room, a speaker when voice.CanSpeakFreely holds for it
-// (ADR-0100 §4, §5): ErrCannotSpeak otherwise. A speaker stays one.
+// (ADR-0100 §4, §5): ErrCannotSpeak otherwise. A speaker stays one. The relations that other
+// modules own (the follows of the host, a limit) are read before the transaction, whose ports
+// take none; the transaction reads again what the room owns (the host, the settings, the
+// co-host, the explicit permission) and decides there, so that a revocation that commits first
+// holds. A host that changed meanwhile fails with ErrConflict.
 func (s *Service) Speak(ctx context.Context, accountID, roomID string) (RoomView, error) {
 	v, p, err := s.inRoom(ctx, accountID, roomID)
 	if err != nil {
@@ -219,12 +223,36 @@ func (s *Service) Speak(ctx context.Context, accountID, roomID string) (RoomView
 	if err != nil {
 		return RoomView{}, err
 	}
-	if !voice.CanSpeakFreely(policyRoom(v), viewer, f) {
-		return RoomView{}, ErrCannotSpeak
+	session, err := s.d.Heartbeats.current(ctx, p.ParticipationID)
+	if err != nil {
+		return RoomView{}, err
 	}
-	return s.changeOwn(ctx, accountID, roomID, func(tx uow.Tx, p Participant, session string, at time.Time) error {
-		return s.roleTx(ctx, tx, p, voice.RoleSpeaker, accountID, session, at)
+	now := s.now()
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
+		switch {
+		case rec.Head.State != voice.StateOpen:
+			return ErrNotFound
+		case rec.Head.HostAccountID != v.Head.HostAccountID:
+			return ErrConflict
+		}
+		cur, err := s.currentTx(ctx, tx, p, ErrConflict)
+		if err != nil {
+			return err
+		}
+		facts := f
+		facts.Cohost = cur.Cohost()
+		if facts.SpeakGranted, err = s.d.Repository.SpeakGranted(ctx, tx, roomID, accountID); err != nil {
+			return err
+		}
+		if !voice.CanSpeakFreely(policyRoom(RoomView{RoomRecord: rec}), viewer, facts) {
+			return ErrCannotSpeak
+		}
+		return s.roleTx(ctx, tx, cur, voice.RoleSpeaker, accountID, session, now)
 	})
+	if err != nil {
+		return RoomView{}, err
+	}
+	return s.view(ctx, roomID)
 }
 
 // Listen makes accountID, a speaker in a room, a listener again (ADR-0100 §5). The explicit
@@ -326,14 +354,14 @@ func (s *Service) Revoke(ctx context.Context, byAccountID, roomID, accountID str
 }
 
 // Mute stops the audio of the session of accountID in a room, by byAccountID, the host or a
-// co-host (ADR-0100 §5): the transport mutes it after the commit, and the participant may turn
-// the microphone on again. Nothing of it is recorded.
+// co-host (ADR-0100 §5): after the commit, JobApply mutes the session that the participation
+// has then, so that a participant who joined again from another device is muted there too. The
+// participant may turn the microphone on again. Nothing of it is recorded.
 func (s *Service) Mute(ctx context.Context, byAccountID, roomID, accountID string) error {
-	_, err := s.operate(ctx, byAccountID, roomID, accountID, func(tx uow.Tx, p Participant, session string, _ time.Time) error {
-		if session == "" {
-			return nil
-		}
-		return s.enqueueApply(ctx, tx, applyPayload{Op: applyMute, Room: roomID, Session: session, Account: p.AccountID}, "mute:"+s.d.IDs.NewID())
+	_, err := s.operate(ctx, byAccountID, roomID, accountID, func(tx uow.Tx, p Participant, _ string, _ time.Time) error {
+		return s.enqueueApply(ctx, tx, applyPayload{
+			Op: applyMute, Room: roomID, Participation: p.ParticipationID, Account: p.AccountID,
+		}, "mute:"+s.d.IDs.NewID())
 	})
 	return err
 }
@@ -372,7 +400,9 @@ func (s *Service) Remove(ctx context.Context, byAccountID, roomID, accountID str
 
 // AssignCohost makes accountID, a participant of a room that byAccountID hosts, a co-host
 // (ADR-0100 §5): at most voice.MaxCohosts (ErrTooManyCohosts). The participants in a block
-// relation, either way, with the new co-host leave (blocked, §11). A co-host stays one.
+// relation, either way, with the new co-host leave (blocked, §11), as the transaction reads
+// them; a participant who joined after the blocks were read fails it with ErrConflict. A co-host
+// stays one.
 func (s *Service) AssignCohost(ctx context.Context, byAccountID, roomID, accountID string) (RoomView, error) {
 	v, err := s.hostRoom(ctx, byAccountID, roomID, true)
 	if err != nil {
@@ -395,23 +425,23 @@ func (s *Service) AssignCohost(ctx context.Context, byAccountID, roomID, account
 	if blocked {
 		return RoomView{}, ErrInvalidParticipant
 	}
-	var leaving []previous
+	// The blocks are read for the participants now; the transaction fails with ErrConflict
+	// for one who joined meanwhile.
+	blocks := map[string]bool{}
+	sessions := map[string]string{}
 	for _, p := range v.Participants {
 		if p.AccountID == byAccountID || p.AccountID == accountID {
 			continue
 		}
-		blocked, err := s.d.Relations.Blocked(ctx, p.AccountID, accountID)
-		if err != nil {
+		if blocks[p.AccountID], err = s.d.Relations.Blocked(ctx, p.AccountID, accountID); err != nil {
 			return RoomView{}, err
 		}
-		if !blocked {
+		if !blocks[p.AccountID] {
 			continue
 		}
-		session, err := s.d.Heartbeats.current(ctx, p.ParticipationID)
-		if err != nil {
+		if sessions[p.ParticipationID], err = s.d.Heartbeats.current(ctx, p.ParticipationID); err != nil {
 			return RoomView{}, err
 		}
-		leaving = append(leaving, previous{Participant: p, session: session})
 	}
 	now := s.now()
 	var left []previous
@@ -438,14 +468,18 @@ func (s *Service) AssignCohost(ctx context.Context, byAccountID, roomID, account
 		if err := tx.Emit(ctx, CohostChanged{Change: c}); err != nil {
 			return err
 		}
-		for _, l := range leaving {
-			p, err := s.currentTx(ctx, tx, l.Participant, nil)
-			if err != nil {
-				return err
+		for _, p := range ps {
+			if p.AccountID == byAccountID || p.AccountID == accountID {
+				continue
 			}
-			if p.ParticipationID == "" {
-				continue // it left meanwhile
+			blocked, read := blocks[p.AccountID]
+			switch {
+			case !read:
+				return ErrConflict
+			case !blocked:
+				continue
 			}
+			l := previous{Participant: p, session: sessions[p.ParticipationID]}
 			did, err := s.endParticipationTx(ctx, tx, p, voice.BlockedInRoom, l.session, now)
 			if err != nil {
 				return err
@@ -499,6 +533,59 @@ func (s *Service) RemoveCohost(ctx context.Context, byAccountID, roomID, account
 		return RoomView{}, err
 	}
 	return s.view(ctx, roomID)
+}
+
+// guards returns the IDs of the host and the co-hosts of v other than accountID: the accounts
+// whose blocks with accountID keep it out of the room (ADR-0100 §4, §11).
+func guards(v RoomView, accountID string) []string {
+	host := v.Head.HostAccountID
+	var ids []string
+	if host != accountID {
+		ids = append(ids, host)
+	}
+	for _, p := range v.Participants {
+		if p.Cohost() && p.AccountID != host && p.AccountID != accountID {
+			ids = append(ids, p.AccountID)
+		}
+	}
+	return ids
+}
+
+// readBlocks reads, before a transaction, whether accountID is in a block relation, either
+// way, with each of the host and the co-hosts of v. The ports of the relations take no
+// transaction, so guardTx checks the result against the host and the co-hosts that the
+// transaction reads.
+func (s *Service) readBlocks(ctx context.Context, v RoomView, accountID string) (map[string]bool, error) {
+	ids := guards(v, accountID)
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		blocked, err := s.d.Relations.Blocked(ctx, accountID, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = blocked
+	}
+	return out, nil
+}
+
+// guardTx reports, in tx, whether accountID is in a block relation with the host or a co-host
+// of the room of rec as the transaction reads them, from blocks of readBlocks; ErrConflict for a
+// host or a co-host whose block was not read (one that changed meanwhile).
+func (s *Service) guardTx(ctx context.Context, tx uow.Tx, rec RoomRecord, accountID string, blocks map[string]bool) (bool, error) {
+	ps, err := s.d.Repository.Participants(ctx, tx, rec.ID)
+	if err != nil {
+		return false, err
+	}
+	for _, id := range guards(RoomView{RoomRecord: rec, Participants: ps}, accountID) {
+		blocked, read := blocks[id]
+		if !read {
+			return false, ErrConflict
+		}
+		if blocked {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // cohosts counts the co-hosts among ps, other than the host.

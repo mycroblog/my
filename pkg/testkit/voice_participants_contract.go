@@ -425,3 +425,112 @@ func roomsBlocks(t *testing.T, e *roomsEnv) {
 	_, err := e.svc.Join(t.Context(), blockedByHost, r)
 	wantErr(t, "Join after a block of the host", err, appvoice.ErrNotFound)
 }
+
+// roomsRaces commits a change between the reads of a command and its transaction, through the
+// hooks of the relations, and checks that the transaction decides on what committed.
+func roomsRaces(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	host, cohost := e.account(true), e.account(false)
+	r := e.open(t, host, appvoice.SettingsInput{}).Room.ID // speakers: manual
+	e.join(t, cohost, r)
+	e.cohost(t, r, cohost)
+	fired := func(t *testing.T, done bool) {
+		t.Helper()
+		if !done {
+			t.Fatal("the hook did not run")
+		}
+	}
+
+	// Speak: the co-host loses the role after Speak read the room.
+	done := false
+	e.members.after("follows", 3, func() {
+		done = true
+		if _, err := e.svc.RemoveCohost(ctx, host, r, cohost); err != nil {
+			t.Error(err)
+		}
+	})
+	_, err := e.svc.Speak(ctx, cohost, r)
+	fired(t, done)
+	wantErr(t, "Speak by a co-host removed meanwhile", err, appvoice.ErrCannotSpeak)
+	if p := e.wantParticipant(t, r, cohost, true); p.Role != voice.RoleListener {
+		t.Errorf("after the refused Speak = %+v, want a listener", p)
+	}
+
+	// AssignCohost: a participant joins after the blocks were read.
+	target, newcomer := e.account(false), e.account(false)
+	e.join(t, target, r)
+	done = false
+	e.members.after("blocked", 1, func() {
+		done = true
+		e.join(t, newcomer, r)
+	})
+	_, err = e.svc.AssignCohost(ctx, host, r, target)
+	fired(t, done)
+	wantErr(t, "AssignCohost while a participant joined", err, appvoice.ErrConflict)
+	if p := e.wantParticipant(t, r, target, true); p.Cohost() {
+		t.Error("the refused co-host is a co-host")
+	}
+	if _, err := e.svc.AssignCohost(ctx, host, r, target); err != nil {
+		t.Fatalf("AssignCohost again: %v", err)
+	}
+
+	// Join: a co-host in a block relation with the account is assigned after Join read the
+	// blocks; joining again sees the room no more.
+	joiner, blocker := e.account(false), e.account(false)
+	e.join(t, blocker, r)
+	e.members.set(func() { e.members.blocks[[2]string{blocker, joiner}] = true })
+	before, err := e.svc.Get(ctx, joiner, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reads := len(guardIDs(before.Participants, before.Head.HostAccountID))
+	done = false
+	e.members.after("blocked", 2*reads, func() {
+		done = true
+		if _, err := e.svc.AssignCohost(ctx, host, r, blocker); err != nil {
+			t.Error(err)
+		}
+	})
+	_, err = e.svc.Join(ctx, joiner, r)
+	fired(t, done)
+	wantErr(t, "Join while a blocking co-host was assigned", err, appvoice.ErrConflict)
+	e.wantParticipant(t, r, joiner, false)
+	_, err = e.svc.Join(ctx, joiner, r)
+	wantErr(t, "Join after the blocking co-host was assigned", err, appvoice.ErrNotFound)
+
+	// Invite: the invitee is removed and banned after Invite read the blocks.
+	invitee := e.account(false)
+	e.join(t, invitee, r)
+	done = false
+	e.members.after("blocked", 1, func() {
+		done = true
+		if err := e.svc.Remove(ctx, host, r, invitee); err != nil {
+			t.Error(err)
+		}
+	})
+	_, err = e.svc.Invite(ctx, host, r, invitee, "")
+	fired(t, done)
+	wantErr(t, "Invite of an account banned meanwhile", err, appvoice.ErrInvalidInvitee)
+
+	// Mute: the transport mutes the session that the participation has when the job runs.
+	muted := e.account(false)
+	e.join(t, muted, r)
+	session := e.join(t, muted, r).Session // from another device
+	if err := e.svc.Mute(ctx, host, r, muted); err != nil {
+		t.Fatal(err)
+	}
+	if e.transport.count("mute:"+session) != 1 {
+		t.Errorf("transport calls = %v, want the new session muted", e.transport.calls)
+	}
+}
+
+// guardIDs returns the host and the co-hosts among ps.
+func guardIDs(ps []appvoice.Participant, host string) []string {
+	ids := []string{host}
+	for _, p := range ps {
+		if p.Cohost() && p.AccountID != host {
+			ids = append(ids, p.AccountID)
+		}
+	}
+	return ids
+}
