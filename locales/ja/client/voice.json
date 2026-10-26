@@ -168,7 +168,7 @@
     "description": "Explanation of the text of the post that announces a new voice chat room."
   },
   "voice.form.post.draft": {
-    "defaultMessage": "通話のルームを開きました: {name}",
+    "defaultMessage": "通話のルームを開きました：{name}",
     "description": "The draft text of the post that announces a new voice chat room, which the host edits. {name} is the room's name."
   },
   "voice.form.submit_new": {
@@ -180,11 +180,11 @@
     "description": "Button that saves the settings of a voice chat room."
   },
   "voice.form.start_failed": {
-    "defaultMessage": "ルームを開けませんでした: {reason}",
+    "defaultMessage": "ルームを開けませんでした：{reason}",
     "description": "Error when a voice chat room could not start. {reason} is the server's explanation."
   },
   "voice.form.save_failed": {
-    "defaultMessage": "設定を保存できませんでした: {reason}",
+    "defaultMessage": "設定を保存できませんでした：{reason}",
     "description": "Error when the settings of a voice chat room could not be saved. {reason} is the server's explanation."
   },
   "voice.form.saved": {
@@ -204,7 +204,7 @@
     "description": "Button that joins a voice chat room."
   },
   "voice.room.join_failed": {
-    "defaultMessage": "ルームに参加できませんでした: {reason}",
+    "defaultMessage": "ルームに参加できませんでした：{reason}",
     "description": "Error when joining a voice chat room failed. {reason} is the server's explanation."
   },
   "voice.room.joined": {
@@ -268,11 +268,11 @@
     "description": "Accessible name of the spinner while a voice chat room loads."
   },
   "voice.profile.host": {
-    "defaultMessage": "{name} さんが通話のルームを開いています: {room}",
+    "defaultMessage": "{name} さんが通話のルームを開いています：{room}",
     "description": "Note on a profile while the account hosts an open voice chat room. {name} is the account's name, {room} the room's name as a link."
   },
   "voice.profile.speaker": {
-    "defaultMessage": "{name} さんが通話のルームで話しています: {room}",
+    "defaultMessage": "{name} さんが通話のルームで話しています：{room}",
     "description": "Note on a profile while the account speaks in an open voice chat room. {name} is the account's name, {room} the room's name as a link."
   },
   "voice.history.title": {
