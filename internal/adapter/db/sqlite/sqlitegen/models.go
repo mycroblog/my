@@ -1213,6 +1213,12 @@ type VoiceRoomParticipant struct {
 	HandRaised      int64
 }
 
+type VoiceRoomParticipationEnd struct {
+	ParticipationID string
+	Reason          string
+	EndedAt         int64
+}
+
 type VoiceRoomRevisionHashtag struct {
 	RevisionID     string
 	Position       int64

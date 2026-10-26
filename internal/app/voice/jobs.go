@@ -61,6 +61,8 @@ type applyPayload struct {
 	Participation string `json:"participation,omitempty"`
 	// Speak is whether the session of applySpeak may publish audio.
 	Speak bool `json:"speak,omitempty"`
+	// By is the account that muted the session of applyMute.
+	By string `json:"by,omitempty"`
 }
 
 type accountPayload struct {
@@ -98,9 +100,9 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 		var reconnect bool
 		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
 		if err == nil && reconnect {
-			// The client of the session has to connect again with a new grant (ADR-0101 §2);
-			// the job only logs it.
-			s.d.Logger.DebugContext(ctx, "the voice session connects again", slog.String("room", p.Room))
+			// The client of the session connects again with a new grant, which its stream
+			// sends (grant, ADR-0101 §2).
+			err = s.sendGrant(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
 		}
 	case applyMute:
 		session := p.Session
@@ -111,6 +113,11 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 		}
 		if session != "" {
 			err = t.Mute(ctx, room, Session{ID: session, AccountID: p.Account})
+		}
+		if err == nil && session != "" {
+			// The stream of the session tells its client to turn the microphone off
+			// (muted, ADR-0101 §4); a repeated job tells it again.
+			s.muted(ctx, p.Room, session, p.By)
 		}
 	case applyRemove:
 		err = t.Remove(ctx, room, Session{ID: p.Session, AccountID: p.Account})
@@ -123,6 +130,16 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
+}
+
+// sendGrant sends a new grant to the stream of a session that has to connect again.
+func (s *Service) sendGrant(ctx context.Context, room RoomRef, session Session, canSpeak bool) error {
+	g, err := s.d.Transport.Grant(ctx, room, session, canSpeak)
+	if err != nil {
+		return err
+	}
+	s.d.Logger.DebugContext(ctx, "the voice session connects again", slog.String("room", room.ID))
+	return s.send(ctx, Message{Room: room.ID, To: session.ID, Grant: &GrantMessage{Grant: g, Reconnect: true}})
 }
 
 // Sweep evaluates every open room as JobSweep does.

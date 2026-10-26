@@ -271,6 +271,7 @@ entries:
       - "Every place that shows a room or lets someone join or speak goes through voice.CanSee and voice.CanSpeakFreely (ADR-0100 §4); internal/app/voice gathers the facts."
       - "A command writes the rows of its events, then emits the matching voice event in the same transaction; the projectors rebuild voice_room_heads and voice_room_participants with the same SQL as the rebuild."
       - "The heartbeats and the session IDs live only in the KeyValueStore (voice.heartbeat, voice.session); the room requests and voice.sweep evaluate the expiry with conditional writes that apply once. Transport calls never run in a transaction: voice.apply (outbox) makes them after the commit."
+      - "The room streams (voice_stream.go) carry the voice_* signals of stream.Hub / stream.Relay, each at most 1 KiB: a signal or a grant for one session waits in the KeyValueStore (voice.message, 30 s) and only its ID crosses the Bus; mic, reactions, and mutes are never recorded."
   - name: app-infrastructure
     paths: ["internal/app/kernel/**", "internal/app/uow/**", "internal/app/queue/**", "internal/app/stream/**", "internal/app/projection/**", "internal/app/dbupgrade/**", "internal/app/blob/**", "internal/app/media/**", "internal/app/metrics/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]

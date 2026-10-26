@@ -27,6 +27,7 @@ const streamsCloseTimeout = 10 * time.Second
 type Streams interface {
 	stream.Publisher
 	stream.Subscriber
+	stream.RoomSubscriber
 	// Len returns the number of open subscriptions of this process.
 	Len() int
 }

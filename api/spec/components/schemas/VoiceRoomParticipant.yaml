@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: A participant of a voice chat room.
 type: object
-required: [account, role, host, cohost, hand_raised]
+required: [account, role, host, cohost, hand_raised, blocked]
 properties:
   account:
     $ref: ./Account.yaml
@@ -16,3 +16,11 @@ properties:
   hand_raised:
     description: Whether the participant raised a hand to speak.
     type: boolean
+  blocked:
+    description: Whether the user blocks the participant or the participant blocks the user.
+    type: boolean
+  session:
+    description: |
+      The live session of the participant, in the `state` events of a room stream only; the
+      sessions connect to each other with signals.
+    type: string

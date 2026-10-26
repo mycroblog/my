@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+  - name: session
+    in: query
+    required: true
+    description: The `session` of the join.
+    schema:
+      type: string
+get:
+  operationId: streamVoiceRoom
+  summary: Stream the events of a voice chat room
+  description: |
+    A Server-Sent Events stream (`text/event-stream`) of a voice chat room for one session of
+    the user in it. Read it with `fetch` and send the access token in `Authorization`, like
+    every other operation (`EventSource` cannot send it). Only the user's current session in
+    the room, while it sends heartbeats, opens a stream; any other is a 404. A session holds
+    one stream: opening it again ends the one opened before.
+
+    The stream starts with a comment line (`: connected`) and a `state` event, and a comment
+    line (`: heartbeat`) arrives every 15 seconds. Opening the stream does not keep the session
+    alive: keep sending its heartbeats. Events:
+
+    - `state`: the room and its participants changed. `data` is a `VoiceRoom`; each
+      participant has its `session` while it is alive, and `blocked` marks the participants in
+      a block relation with the user. At most one `state` arrives each second, with the newest
+      room.
+    - `mic`: a participant turned the microphone on or off. `data` is a `VoiceStreamMic`.
+    - `reaction`: a participant reacted. `data` is a `VoiceStreamReaction`. The reactions of the
+      participants in a block relation with the user do not arrive.
+    - `signal`: a signal from another session of the room (`POST /voice/rooms/{id}/signals`).
+      `data` is a `VoiceStreamSignal`.
+    - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
+      `VoiceStreamMuted`.
+    - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
+      true, connect to the audio again with it.
+    - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
+      device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
+
+    When the stream ends otherwise, open it again with the same session; the first `state`
+    brings the room up to date, and nothing is replayed. While the server cannot receive the
+    events (it is shutting down) the answer is 503 with `Retry-After`. A 404 while the voice
+    chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["read:voice"]
+  responses:
+    "200":
+      description: The event stream. It stays open until the client or the server ends it.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        text/event-stream:
+          schema:
+            type: string
+    default:
+      $ref: ../components/responses/Problem.yaml

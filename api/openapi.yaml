@@ -4669,6 +4669,193 @@ paths:
           description: The invitation is revoked.
         default:
           $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/stream:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - name: session
+        in: query
+        required: true
+        description: The `session` of the join.
+        schema:
+          type: string
+    get:
+      operationId: streamVoiceRoom
+      summary: Stream the events of a voice chat room
+      description: |
+        A Server-Sent Events stream (`text/event-stream`) of a voice chat room for one session of
+        the user in it. Read it with `fetch` and send the access token in `Authorization`, like
+        every other operation (`EventSource` cannot send it). Only the user's current session in
+        the room, while it sends heartbeats, opens a stream; any other is a 404. A session holds
+        one stream: opening it again ends the one opened before.
+
+        The stream starts with a comment line (`: connected`) and a `state` event, and a comment
+        line (`: heartbeat`) arrives every 15 seconds. Opening the stream does not keep the session
+        alive: keep sending its heartbeats. Events:
+
+        - `state`: the room and its participants changed. `data` is a `VoiceRoom`; each
+          participant has its `session` while it is alive, and `blocked` marks the participants in
+          a block relation with the user. At most one `state` arrives each second, with the newest
+          room.
+        - `mic`: a participant turned the microphone on or off. `data` is a `VoiceStreamMic`.
+        - `reaction`: a participant reacted. `data` is a `VoiceStreamReaction`. The reactions of the
+          participants in a block relation with the user do not arrive.
+        - `signal`: a signal from another session of the room (`POST /voice/rooms/{id}/signals`).
+          `data` is a `VoiceStreamSignal`.
+        - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
+          `VoiceStreamMuted`.
+        - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
+          true, connect to the audio again with it.
+        - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
+          device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
+
+        When the stream ends otherwise, open it again with the same session; the first `state`
+        brings the room up to date, and nothing is replayed. While the server cannot receive the
+        events (it is shutting down) the answer is 503 with `Retry-After`. A 404 while the voice
+        chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - read:voice
+      responses:
+        '200':
+          description: The event stream. It stays open until the client or the server ends it.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/signals:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: sendVoiceSignal
+      summary: Send a signal to another session of a voice chat room
+      description: |
+        Relays a WebRTC signal of a room whose method is `p2p` from the user's session to another
+        live session of the room, which receives it as a `signal` event of its stream. Two sessions
+        connect when at least one of them is a speaker; of the two, the session with the greater ID
+        sends the first offer. The server relays only audio: the `sdp` of an offer or an answer
+        has `m=audio` sections only, and a participant who may not speak only receives
+        (`recvonly` or `inactive`). A signal it does not relay is a 422 with the field that is
+        wrong (`kind`, `to`, `sdp`, or `candidate`): a `to` that is not a live session of the room
+        that the user's session connects to, or an `sdp` and a `candidate` of more than 16 KiB.
+        A session sends at most 20 signals each second; past it the answer is 429 with
+        `Retry-After`. A signal that its receiver's stream does not take within 30 seconds is
+        lost; restart ICE. A session that is not the user's current session in the room is a 404.
+        A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceSignal'
+      responses:
+        '204':
+          description: The signal is on its way.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/mic:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: setVoiceMic
+      summary: Turn the microphone on or off in a voice chat room
+      description: |
+        Tells the participants that the user's microphone is on or off, as a `mic` event of their
+        streams; the server records nothing. Only a speaker turns it on (403
+        `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
+        turning it on lifts the mute. A session that is not the user's current session in the room
+        is a 404. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceMic'
+      responses:
+        '204':
+          description: The participants hear of it.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/grant:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: refreshVoiceGrant
+      summary: Get a new grant for a session of a voice chat room
+      description: |
+        Returns a new grant for the user's session, with new credentials of the STUN and TURN
+        servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
+        servers on its connections, and restarts ICE. A session that is not the user's current
+        session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
+        server cannot give a grant now. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceSession'
+      responses:
+        '200':
+          description: The new grant.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceGrant'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/reactions:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: reactInVoiceRoom
+      summary: React in a voice chat room
+      description: |
+        Sends a reaction of the user, a participant of the room, to the participants, as a
+        `reaction` event of their streams; the server records nothing, and the participants in a
+        block relation with the user do not receive it. The emoji is a Unicode emoji or the
+        `:shortcode:` of an enabled custom emoji of this server; any other is a 422. A participant
+        sends at most 10 reactions in 10 seconds; past it the answer is 429 with `Retry-After`. A
+        404 for a room the user is not in, and while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceReaction'
+      responses:
+        '204':
+          description: The participants receive the reaction.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/queue:
     get:
       operationId: getAdminQueue
@@ -17979,6 +18166,30 @@ components:
           type: string
         credential:
           type: string
+    VoiceMic:
+      description: The microphone of a session of the user in a voice chat room.
+      type: object
+      required:
+        - session
+        - 'on'
+      properties:
+        session:
+          description: The `session` of the join.
+          type: string
+        'on':
+          description: Whether the microphone is on.
+          type: boolean
+    VoiceReaction:
+      description: A reaction in a voice chat room.
+      type: object
+      required:
+        - emoji
+      properties:
+        emoji:
+          description: A Unicode emoji, or the `:shortcode:` of an enabled custom emoji of this server.
+          type: string
+          minLength: 1
+          maxLength: 64
     VoiceRole:
       description: Whether a participant speaks or listens.
       type: string
@@ -18119,6 +18330,7 @@ components:
         - host
         - cohost
         - hand_raised
+        - blocked
       properties:
         account:
           $ref: '#/components/schemas/Account'
@@ -18133,6 +18345,14 @@ components:
         hand_raised:
           description: Whether the participant raised a hand to speak.
           type: boolean
+        blocked:
+          description: Whether the user blocks the participant or the participant blocks the user.
+          type: boolean
+        session:
+          description: |
+            The live session of the participant, in the `state` events of a room stream only; the
+            sessions connect to each other with signals.
+          type: string
     VoiceRoomSettings:
       description: The settings of a new voice chat room.
       type: object
@@ -18203,6 +18423,119 @@ components:
       properties:
         session:
           description: The `session` of the join.
+          type: string
+    VoiceSignal:
+      description: |
+        A WebRTC signal from a session of the user to another session of a voice chat room. An
+        `offer` and an `answer` carry `sdp`, a `candidate` carries `candidate`, and a `restart` asks
+        the other session to restart ICE.
+      type: object
+      required:
+        - session
+        - to
+        - kind
+      properties:
+        session:
+          description: The `session` of the user's join.
+          type: string
+        to:
+          description: The session that receives the signal.
+          type: string
+        kind:
+          $ref: '#/components/schemas/VoiceSignalKind'
+        sdp:
+          description: The session description of an offer or an answer.
+          type: string
+          maxLength: 16384
+        candidate:
+          description: An ICE candidate, as the JSON of an `RTCIceCandidateInit`.
+          type: string
+          maxLength: 16384
+    VoiceSignalKind:
+      description: The kind of a WebRTC signal.
+      type: string
+      enum:
+        - offer
+        - answer
+        - candidate
+        - restart
+    VoiceStreamEnd:
+      description: |
+        The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
+        which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
+        `moved`, `disconnected`, `removed`, `blocked`, `suspended`), the one of `replaced` is
+        `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
+        `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+    VoiceStreamGrant:
+      description: The data of a `grant` event of a voice chat room stream.
+      type: object
+      required:
+        - grant
+        - reconnect
+      properties:
+        grant:
+          $ref: '#/components/schemas/VoiceGrant'
+        reconnect:
+          description: Whether the client connects to the audio again with the new grant.
+          type: boolean
+    VoiceStreamMic:
+      description: The data of a `mic` event of a voice chat room stream.
+      type: object
+      required:
+        - participant
+        - 'on'
+      properties:
+        participant:
+          description: The account ID of the participant.
+          type: string
+        'on':
+          description: Whether the microphone is on.
+          type: boolean
+    VoiceStreamMuted:
+      description: The data of a `muted` event of a voice chat room stream.
+      type: object
+      required:
+        - by
+      properties:
+        by:
+          description: The account ID of the host or co-host who muted the session.
+          type: string
+    VoiceStreamReaction:
+      description: The data of a `reaction` event of a voice chat room stream.
+      type: object
+      required:
+        - participant
+        - emoji
+      properties:
+        participant:
+          description: The account ID of the participant who reacted.
+          type: string
+        emoji:
+          description: A Unicode emoji, or the `:shortcode:` of a custom emoji of this server.
+          type: string
+    VoiceStreamSignal:
+      description: The data of a `signal` event of a voice chat room stream.
+      type: object
+      required:
+        - from
+        - kind
+      properties:
+        from:
+          description: The session that sent the signal.
+          type: string
+        kind:
+          $ref: '#/components/schemas/VoiceSignalKind'
+        sdp:
+          description: The session description of an offer or an answer.
+          type: string
+        candidate:
+          description: The ICE candidate of a `candidate`.
           type: string
     VoteInPollRequest:
       description: A vote in the poll of a status.

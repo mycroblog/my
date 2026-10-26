@@ -58,7 +58,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		ReportCounts:  a.Moderation, RegistrationCounts: a.Identity, Registrations: a.Identity,
 		OwnAppeals: a.Moderation, AppealModeration: a.Moderation, SignupBlocks: a.Moderation,
 		OwnAccount: a.Identity, Exports: a.Exports, Imports: a.Imports,
-		Voice: a.voiceAPI(),
+		Voice: a.voiceAPI(), VoiceStreams: a.Streams,
 		// The moves of local accounts check their targets as received Moves do (ADR-0089).
 		LocalMoves: federation.NewLocalMoves(federation.LocalMovesDeps{
 			Accounts: a.Accounts, Targets: a.RemoteActors, Aliases: a.Accounts,

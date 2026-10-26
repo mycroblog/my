@@ -1215,6 +1215,12 @@ type VoiceRoomParticipant struct {
 	HandRaised      bool
 }
 
+type VoiceRoomParticipationEnd struct {
+	ParticipationID string
+	Reason          string
+	EndedAt         time.Time
+}
+
 type VoiceRoomRevisionHashtag struct {
 	RevisionID     string
 	Position       int32

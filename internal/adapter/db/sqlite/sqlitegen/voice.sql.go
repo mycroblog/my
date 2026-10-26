@@ -205,6 +205,17 @@ func (q *Queries) GetVoiceRoomParticipant(ctx context.Context, accountID string)
 	return i, err
 }
 
+const getVoiceRoomParticipationEnd = `-- name: GetVoiceRoomParticipationEnd :one
+SELECT participation_id, reason, ended_at FROM voice_room_participation_ends WHERE participation_id = ?
+`
+
+func (q *Queries) GetVoiceRoomParticipationEnd(ctx context.Context, participationID string) (VoiceRoomParticipationEnd, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomParticipationEnd, participationID)
+	var i VoiceRoomParticipationEnd
+	err := row.Scan(&i.ParticipationID, &i.Reason, &i.EndedAt)
+	return i, err
+}
+
 const insertVoiceRoom = `-- name: InsertVoiceRoom :exec
 
 

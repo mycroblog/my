@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/voice"
 )
@@ -73,6 +74,17 @@ type Relations interface {
 	Blocked(ctx context.Context, a, b string) (bool, error)
 	// Following returns which of ids accountID follows.
 	Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+	// BlockedAmong returns which of ids are in a block relation, either way, with accountID.
+	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+}
+
+// Emojis reads the emoji of the reactions from the content module (ADR-0100 §10); the
+// composition root implements it.
+type Emojis interface {
+	// ReactionEmoji returns the emoji that a local account reacts with: a Unicode emoji,
+	// normalized, or the :shortcode: of an enabled custom emoji of this instance. Any other
+	// fails with an error that wraps content.ErrInvalidReaction.
+	ReactionEmoji(ctx context.Context, name string) (string, error)
 }
 
 // Config is how the operator runs the voice chat (ADR-0101 §1).
@@ -104,14 +116,25 @@ type Deps struct {
 	Transport Transport
 	Members   Members
 	Relations Relations
-	Config    Config
-	Logger    *slog.Logger
+	// Streams carries the signals of the room streams (ADR-0101 §3) to every process; nil
+	// sends none.
+	Streams stream.Publisher
+	// Emojis checks the emoji of the reactions; nil allows the Unicode emoji only.
+	Emojis Emojis
+	Config Config
+	Logger *slog.Logger
 }
 
 // Service runs the rooms (ADR-0100): opening them, their settings, joining and leaving them,
 // the heartbeats of the participants, the hosts, the operations of the participants, the
 // host, and the co-hosts, the invitations, and the ends of the rooms.
-type Service struct{ d Deps }
+type Service struct {
+	d Deps
+	// snapshots shares the reads of a room among the room streams of this process, and
+	// messages the messages for their sessions.
+	snapshots *snapshots
+	messages  *messages
+}
 
 // NewService returns the Service on d.
 func NewService(d Deps) *Service {
@@ -121,7 +144,7 @@ func NewService(d Deps) *Service {
 	if d.RateLimiter == nil && d.Heartbeats != nil {
 		d.RateLimiter = kernel.NewRateLimiter(d.Heartbeats.kv, d.Clock)
 	}
-	return &Service{d: d}
+	return &Service{d: d, snapshots: newSnapshots(), messages: newMessages()}
 }
 
 // Enabled reports whether the voice chat runs.

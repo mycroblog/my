@@ -358,6 +358,16 @@ paths:
     $ref: ./paths/voice_rooms_{id}_invitations.yaml
   /voice/rooms/{id}/invitations/{account_id}:
     $ref: ./paths/voice_rooms_{id}_invitations_{account_id}.yaml
+  /voice/rooms/{id}/stream:
+    $ref: ./paths/voice_rooms_{id}_stream.yaml
+  /voice/rooms/{id}/signals:
+    $ref: ./paths/voice_rooms_{id}_signals.yaml
+  /voice/rooms/{id}/mic:
+    $ref: ./paths/voice_rooms_{id}_mic.yaml
+  /voice/rooms/{id}/grant:
+    $ref: ./paths/voice_rooms_{id}_grant.yaml
+  /voice/rooms/{id}/reactions:
+    $ref: ./paths/voice_rooms_{id}_reactions.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -1591,6 +1601,10 @@ components:
       $ref: ./components/schemas/VoiceHostChoice.yaml
     VoiceIceServer:
       $ref: ./components/schemas/VoiceIceServer.yaml
+    VoiceMic:
+      $ref: ./components/schemas/VoiceMic.yaml
+    VoiceReaction:
+      $ref: ./components/schemas/VoiceReaction.yaml
     VoiceRole:
       $ref: ./components/schemas/VoiceRole.yaml
     VoiceRoom:
@@ -1617,6 +1631,22 @@ components:
       $ref: ./components/schemas/VoiceRoomVisibility.yaml
     VoiceSession:
       $ref: ./components/schemas/VoiceSession.yaml
+    VoiceSignal:
+      $ref: ./components/schemas/VoiceSignal.yaml
+    VoiceSignalKind:
+      $ref: ./components/schemas/VoiceSignalKind.yaml
+    VoiceStreamEnd:
+      $ref: ./components/schemas/VoiceStreamEnd.yaml
+    VoiceStreamGrant:
+      $ref: ./components/schemas/VoiceStreamGrant.yaml
+    VoiceStreamMic:
+      $ref: ./components/schemas/VoiceStreamMic.yaml
+    VoiceStreamMuted:
+      $ref: ./components/schemas/VoiceStreamMuted.yaml
+    VoiceStreamReaction:
+      $ref: ./components/schemas/VoiceStreamReaction.yaml
+    VoiceStreamSignal:
+      $ref: ./components/schemas/VoiceStreamSignal.yaml
     VoteInPollRequest:
       $ref: ./components/schemas/VoteInPollRequest.yaml
     WebhookCustomEmoji:

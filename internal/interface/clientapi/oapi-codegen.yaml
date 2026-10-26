@@ -10,9 +10,11 @@ generate:
 output-options:
   skip-prune: true
   # GET /streaming is a Server-Sent Events stream, which the strict server cannot serve
-  # (ADR-0029): streaming.go implements it by hand, behind the same guard.
+  # (ADR-0029): streaming.go implements it by hand, behind the same guard, and so does
+  # voice_stream.go GET /voice/rooms/{id}/stream.
   exclude-operation-ids:
     - streamEvents
+    - streamVoiceRoom
 # Enum constants carry their type's name (VisibilityPublic, MediaAttachmentTypeImage), so that
 # enums with the same values never collide in the package.
 compatibility:

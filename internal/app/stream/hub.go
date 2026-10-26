@@ -33,15 +33,20 @@ type HubOptions struct {
 type Hub struct {
 	o HubOptions
 
-	mu        sync.Mutex
-	subs      map[*subscription]struct{}
+	mu   sync.Mutex
+	subs map[*subscription]struct{}
+	// accounts holds the account subscriptions, byAccount them by account, and byRoom the room
+	// subscriptions by room.
+	accounts  map[*subscription]struct{}
 	byAccount map[string]map[*subscription]struct{}
+	byRoom    map[string]map[*subscription]struct{}
 	closed    bool
 }
 
 var (
-	_ Publisher  = (*Hub)(nil)
-	_ Subscriber = (*Hub)(nil)
+	_ Publisher      = (*Hub)(nil)
+	_ Subscriber     = (*Hub)(nil)
+	_ RoomSubscriber = (*Hub)(nil)
 )
 
 // NewHub returns an empty Hub bounded by o.
@@ -55,7 +60,10 @@ func NewHub(o HubOptions) *Hub {
 	if o.Buffer <= 0 {
 		o.Buffer = DefaultBuffer
 	}
-	return &Hub{o: o, subs: map[*subscription]struct{}{}, byAccount: map[string]map[*subscription]struct{}{}}
+	return &Hub{
+		o: o, subs: map[*subscription]struct{}{}, accounts: map[*subscription]struct{}{},
+		byAccount: map[string]map[*subscription]struct{}{}, byRoom: map[string]map[*subscription]struct{}{},
+	}
 }
 
 // Subscribe implements Subscriber. A Hub is always ready, so it waits for nothing.
@@ -73,21 +81,60 @@ func (h *Hub) Subscribe(ctx context.Context, accountID string) (Subscription, er
 	}
 	s := &subscription{hub: h, accountID: accountID, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
 	h.subs[s] = struct{}{}
-	if h.byAccount[accountID] == nil {
-		h.byAccount[accountID] = map[*subscription]struct{}{}
-	}
-	h.byAccount[accountID][s] = struct{}{}
+	h.accounts[s] = struct{}{}
+	add(h.byAccount, accountID, s)
 	return s, nil
 }
 
+// SubscribeRoom implements RoomSubscriber. A Hub is always ready, so it waits for nothing.
+func (h *Hub) SubscribeRoom(ctx context.Context, roomID string) (Subscription, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		return nil, ErrClosed
+	}
+	if len(h.subs) >= h.o.MaxTotal {
+		return nil, ErrTooManySubscriptions
+	}
+	s := &subscription{hub: h, roomID: roomID, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
+	h.subs[s] = struct{}{}
+	add(h.byRoom, roomID, s)
+	return s, nil
+}
+
+// add adds s to the set of key in m.
+func add(m map[string]map[*subscription]struct{}, key string, s *subscription) {
+	if m[key] == nil {
+		m[key] = map[*subscription]struct{}{}
+	}
+	m[key][s] = struct{}{}
+}
+
+// remove removes s from the set of key in m, and the set once it is empty.
+func remove(m map[string]map[*subscription]struct{}, key string, s *subscription) {
+	if set := m[key]; set != nil {
+		delete(set, s)
+		if len(set) == 0 {
+			delete(m, key)
+		}
+	}
+}
+
 // Publish implements Publisher. A signal of KindNotifications goes to the subscriptions of its
-// account, one of KindHomeEntry or KindAnnouncement to every subscription.
+// account, one of KindHomeEntry or KindAnnouncement to every account subscription, and a voice
+// signal to the subscriptions of its room.
 func (h *Hub) Publish(e Event) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	targets := h.subs
-	if e.Kind == KindNotifications {
+	targets := h.accounts
+	switch {
+	case e.Kind == KindNotifications:
 		targets = h.byAccount[e.AccountID]
+	case e.Kind.IsVoice():
+		targets = h.byRoom[e.RoomID]
 	}
 	for s := range targets {
 		select {
@@ -132,18 +179,21 @@ func (h *Hub) removeLocked(s *subscription) {
 		return
 	}
 	delete(h.subs, s)
-	if acc := h.byAccount[s.accountID]; acc != nil {
-		delete(acc, s)
-		if len(acc) == 0 {
-			delete(h.byAccount, s.accountID)
-		}
+	if s.roomID != "" {
+		remove(h.byRoom, s.roomID, s)
+	} else {
+		delete(h.accounts, s)
+		remove(h.byAccount, s.accountID, s)
 	}
 	close(s.done)
 }
 
 type subscription struct {
-	hub       *Hub
+	hub *Hub
+	// accountID is the account of an account subscription, roomID the room of a room
+	// subscription.
 	accountID string
+	roomID    string
 	events    chan Event
 	done      chan struct{}
 }

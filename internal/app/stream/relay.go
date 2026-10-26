@@ -130,8 +130,9 @@ type Relay struct {
 }
 
 var (
-	_ Publisher  = (*Relay)(nil)
-	_ Subscriber = (*Relay)(nil)
+	_ Publisher      = (*Relay)(nil)
+	_ Subscriber     = (*Relay)(nil)
+	_ RoomSubscriber = (*Relay)(nil)
 )
 
 // listening is one listener of a Relay, from its start to its close.
@@ -274,6 +275,16 @@ func (r *Relay) receive(payload []byte) {
 // up to ReadyTimeout. A subscription that joined a start already in progress, which may have
 // begun while the broker was unreachable, starts a fresh one once if that start fails.
 func (r *Relay) Subscribe(ctx context.Context, accountID string) (Subscription, error) {
+	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.Subscribe(ctx, accountID) })
+}
+
+// SubscribeRoom implements RoomSubscriber, as Subscribe does.
+func (r *Relay) SubscribeRoom(ctx context.Context, roomID string) (Subscription, error) {
+	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.SubscribeRoom(ctx, roomID) })
+}
+
+// subscribe opens the subscription of open on the Hub once the listener is ready.
+func (r *Relay) subscribe(ctx context.Context, open func() (Subscription, error)) (Subscription, error) {
 	r.mu.Lock()
 	if r.closed {
 		r.mu.Unlock()
@@ -330,7 +341,7 @@ func (r *Relay) Subscribe(ctx context.Context, accountID string) (Subscription, 
 		r.mu.Unlock()
 	}
 	defer r.mu.Unlock()
-	s, err := r.hub.Subscribe(ctx, accountID)
+	s, err := open()
 	if err != nil {
 		r.releaseLocked()
 		return nil, err

@@ -31,7 +31,7 @@ func (s *Server) serviceClosingProblem(ctx context.Context) problem {
 // away from a closed server (instance.ClosureOwnData): their own account and its settings to
 // read, the exports, their sessions, and the instance; and the administrators' operations that
 // follow the closure's deliveries (its state and the queue, whose dead jobs they may retry,
-// ADR-0088 §3). Every other operation is instance.ClosureClientAPI, and the streaming endpoint
+// ADR-0088 §3). Every other operation is instance.ClosureClientAPI, and the streaming endpoints
 // instance.ClosureStream.
 var closureOperations = map[string]bool{
 	"verifyAccountCredentials": true, "getPreferences": true, "getPasswordStatus": true,
@@ -46,7 +46,7 @@ var closureOperations = map[string]bool{
 // closureOperation returns the operation of the service closure that operationID is.
 func closureOperation(operationID string) instance.ClosureOperation {
 	switch {
-	case operationID == "streamEvents":
+	case operationID == "streamEvents", operationID == "streamVoiceRoom":
 		return instance.ClosureStream
 	case closureOperations[operationID]:
 		return instance.ClosureOwnData

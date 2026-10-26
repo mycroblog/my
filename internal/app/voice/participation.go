@@ -237,6 +237,8 @@ func (s *Service) rejoin(ctx context.Context, p Participant) (Joined, error) {
 		if err != nil {
 			return Joined{}, err
 		}
+		// The stream of the previous session ends (replaced) once it reads the room again.
+		s.publishRoom(p.RoomID)
 	}
 	return s.joined(ctx, p.RoomID, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker)
 }

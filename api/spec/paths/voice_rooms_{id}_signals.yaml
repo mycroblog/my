@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: sendVoiceSignal
+  summary: Send a signal to another session of a voice chat room
+  description: |
+    Relays a WebRTC signal of a room whose method is `p2p` from the user's session to another
+    live session of the room, which receives it as a `signal` event of its stream. Two sessions
+    connect when at least one of them is a speaker; of the two, the session with the greater ID
+    sends the first offer. The server relays only audio: the `sdp` of an offer or an answer
+    has `m=audio` sections only, and a participant who may not speak only receives
+    (`recvonly` or `inactive`). A signal it does not relay is a 422 with the field that is
+    wrong (`kind`, `to`, `sdp`, or `candidate`): a `to` that is not a live session of the room
+    that the user's session connects to, or an `sdp` and a `candidate` of more than 16 KiB.
+    A session sends at most 20 signals each second; past it the answer is 429 with
+    `Retry-After`. A signal that its receiver's stream does not take within 30 seconds is
+    lost; restart ICE. A session that is not the user's current session in the room is a 404.
+    A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceSignal.yaml
+  responses:
+    "204":
+      description: The signal is on its way.
+    default:
+      $ref: ../components/responses/Problem.yaml

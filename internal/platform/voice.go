@@ -102,8 +102,10 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	}
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
-		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, Logger: a.Logger,
+		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
+		Streams: a.Streams, Emojis: a.Interactions, Config: c, Logger: a.Logger,
 	})
+	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
@@ -162,6 +164,10 @@ func (r voiceRelations) Blocked(ctx context.Context, a, b string) (bool, error) 
 		}
 	}
 	return false, nil
+}
+
+func (r voiceRelations) BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	return r.a.Graph.BlockedAmong(ctx, accountID, ids)
 }
 
 func (r voiceRelations) Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {

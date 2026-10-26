@@ -276,6 +276,10 @@ type Options struct {
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms
+	// VoiceStreams opens the subscriptions of the room streams (voice_stream.go); nil answers them
+	// with 503. VoiceStreamHeartbeat overrides DefaultVoiceStreamHeartbeat when positive.
+	VoiceStreams         stream.RoomSubscriber
+	VoiceStreamHeartbeat time.Duration
 	// RateLimiter applies AnonymousLimit and AccountLimit; nil applies no limit.
 	RateLimiter *kernel.RateLimiter
 	// AnonymousLimit and AccountLimit override the package's limits of the same names when
@@ -334,7 +338,7 @@ type Router interface {
 }
 
 // Register registers every operation of the spec on r under BasePath, the generated ones and
-// the hand-written streaming endpoint (streaming.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
+// the hand-written streaming endpoints (streaming.go, voice_stream.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
 // match no operation are left to r, which answers them with its own 404 or 405 problem.
 func (s *Server) Register(r Router) {
 	strict := NewStrictHandlerWithOptions(s, []StrictMiddlewareFunc{s.rejectInvalidBodyText}, StrictHTTPServerOptions{
@@ -348,6 +352,7 @@ func (s *Server) Register(r Router) {
 		ErrorHandlerFunc: s.requestError,
 	})
 	s.registerStreaming(r)
+	s.registerVoiceStream(r)
 	s.registerOpenAPI(r)
 }
 

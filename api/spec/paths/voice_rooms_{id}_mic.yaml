@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: setVoiceMic
+  summary: Turn the microphone on or off in a voice chat room
+  description: |
+    Tells the participants that the user's microphone is on or off, as a `mic` event of their
+    streams; the server records nothing. Only a speaker turns it on (403
+    `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
+    turning it on lifts the mute. A session that is not the user's current session in the room
+    is a 404. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceMic.yaml
+  responses:
+    "204":
+      description: The participants hear of it.
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -31,7 +31,35 @@ const (
 	// published, or withdrawn (FR-726). It goes to every subscriber, which reads whether its
 	// viewer sees the announcement now.
 	KindAnnouncement Kind = "announcement"
+
+	// The signals of a voice chat room (ADR-0101 §3) go to the room subscriptions of their
+	// RoomID only. KindVoiceRoom signals that the room or its participants changed: each
+	// subscriber reads the room again.
+	KindVoiceRoom Kind = "voice_room"
+	// KindVoiceSignal carries MessageID, a message for one session of the room that waits in
+	// the KeyValueStore of the voice module: the subscriber of that session reads it.
+	KindVoiceSignal Kind = "voice_signal"
+	// KindVoiceMic carries the microphone of ParticipantID turned on or off (On).
+	KindVoiceMic Kind = "voice_mic"
+	// KindVoiceReaction carries the Emoji that ParticipantID reacted with.
+	KindVoiceReaction Kind = "voice_reaction"
+	// KindVoiceMute carries the session SessionID muted by the account By.
+	KindVoiceMute Kind = "voice_mute"
 )
+
+// MaxEmojiSize is the largest Emoji of a KindVoiceReaction signal, in bytes: a Unicode emoji or
+// a :shortcode: (ADR-0101 §3).
+const MaxEmojiSize = 64
+
+// IsVoice reports whether k is a kind of the voice chat rooms, which goes to the subscriptions
+// of its room only.
+func (k Kind) IsVoice() bool {
+	switch k {
+	case KindVoiceRoom, KindVoiceSignal, KindVoiceMic, KindVoiceReaction, KindVoiceMute:
+		return true
+	}
+	return false
+}
 
 // Event is one signal.
 type Event struct {
@@ -43,6 +71,20 @@ type Event struct {
 	EntryID string
 	// AnnouncementID is the ID of the announcement that changed (KindAnnouncement).
 	AnnouncementID string
+
+	// RoomID is the voice chat room of a voice signal.
+	RoomID string
+	// MessageID names the message of KindVoiceSignal.
+	MessageID string
+	// ParticipantID is the account of the participant of KindVoiceMic and KindVoiceReaction.
+	ParticipantID string
+	// On is the microphone of KindVoiceMic.
+	On bool
+	// Emoji is the reaction of KindVoiceReaction, at most MaxEmojiSize bytes.
+	Emoji string
+	// SessionID is the muted session of KindVoiceMute, and By the account that muted it.
+	SessionID string
+	By        string
 }
 
 // Publisher publishes signals. Publish never blocks on subscribers or brokers and never fails
@@ -70,6 +112,14 @@ type Subscriber interface {
 	// the signals of every process, for as long as ctx allows and at most a bound of the
 	// broker's own; a broker that is not ready by then reports ErrUnavailable.
 	Subscribe(ctx context.Context, accountID string) (Subscription, error)
+}
+
+// RoomSubscriber opens the subscriptions of the voice chat rooms (ADR-0101 §3).
+type RoomSubscriber interface {
+	// SubscribeRoom opens a subscription to the signals of the voice chat room roomID. It counts
+	// toward the subscriptions of the process, not of an account, and waits for the broker as
+	// Subscribe does.
+	SubscribeRoom(ctx context.Context, roomID string) (Subscription, error)
 }
 
 // Subscription is one open subscription.

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The data of a `grant` event of a voice chat room stream.
+type: object
+required: [grant, reconnect]
+properties:
+  grant:
+    $ref: ./VoiceGrant.yaml
+  reconnect:
+    description: Whether the client connects to the audio again with the new grant.
+    type: boolean
