@@ -26,6 +26,7 @@
 - [Supporter payments with Stripe](operations/payments-stripe.md)
 - [Supporter payments with PAY.JP](operations/payments-payjp.md)
 - [Supporters (paid plans)](operations/supporters.md)
+- [Voice chat (choosing P2P, LiveKit or Sora, STUN and TURN, deployment, moderation)](operations/voice.md)
 
 ## Reference
 
