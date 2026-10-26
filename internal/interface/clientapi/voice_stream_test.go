@@ -28,7 +28,9 @@ func (f *fakeVoiceRooms) StreamCurrent(context.Context, appvoice.RoomStream) (bo
 	return true, nil
 }
 
-func (f *fakeVoiceRooms) CloseStream(context.Context, appvoice.RoomStream) {}
+func (f *fakeVoiceRooms) RenewStream(context.Context, appvoice.RoomStream) (bool, error) {
+	return true, nil
+}
 
 func (f *fakeVoiceRooms) StreamState(context.Context, appvoice.RoomStream, time.Time) (appvoice.StreamState, error) {
 	return appvoice.StreamState{Room: f.room()}, f.err
@@ -109,7 +111,7 @@ func TestVoiceConnections(t *testing.T) {
 	}
 	for _, tc := range cases {
 		f.err = tc.err
-		if res := e.sendJSON(t, http.MethodPost, room+"/signals", "voice", `{"session":"s1","to":"s2","kind":"candidate","candidate":"c"}`); res.StatusCode != tc.status {
+		if res := e.sendJSON(t, http.MethodPost, room+"/signals", "voice", `{"session":"s1","to":"s2","kind":"restart"}`); res.StatusCode != tc.status {
 			t.Errorf("signal with %v = %d, want %d", tc.err, res.StatusCode, tc.status)
 		}
 	}

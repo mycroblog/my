@@ -17,7 +17,15 @@ import (
 
 // kvStreams keys the one open room stream of a session by session ID (ADR-0101 §3): the
 // value is the token of the stream that opened last, and a stream whose token is gone ends.
+// The open stream renews it (RenewStream) well before StreamClaimLease runs out.
 const kvStreams = "voice.stream"
+
+// StreamClaimLease is how long the claim of a room stream on its session lasts without a
+// renewal; a stream renews it every StreamClaimRenewal.
+const (
+	StreamClaimLease   = time.Hour
+	StreamClaimRenewal = 10 * time.Minute
+)
 
 // snapshotReadTimeout bounds a read of a room that the streams of this process share, which
 // does not end with the stream that started it.
@@ -85,7 +93,7 @@ func (s *Service) OpenStream(ctx context.Context, accountID, roomID, session str
 		return RoomStream{}, err
 	}
 	st := RoomStream{RoomID: roomID, AccountID: accountID, ParticipationID: p.ParticipationID, Session: session, token: rand.Text()}
-	if err := s.d.Heartbeats.kv.Set(ctx, kvStreams, session, []byte(st.token), sessionLease); err != nil {
+	if err := s.d.Heartbeats.kv.Set(ctx, kvStreams, session, []byte(st.token), StreamClaimLease); err != nil {
 		return RoomStream{}, err
 	}
 	return st, nil
@@ -127,11 +135,14 @@ func (s *Service) StreamCurrent(ctx context.Context, st RoomStream) (bool, error
 	return err == nil && string(b) == st.token, err
 }
 
-// CloseStream forgets st as the one stream of its session, unless a later stream replaced it.
-func (s *Service) CloseStream(ctx context.Context, st RoomStream) {
-	if ok, err := s.StreamCurrent(ctx, st); err == nil && ok {
-		_ = s.d.Heartbeats.kv.Delete(ctx, kvStreams, st.Session)
+// RenewStream renews the claim of st on its session while it is the one stream of the
+// session, and reports whether it is: a stream that a later one replaced keeps none.
+func (s *Service) RenewStream(ctx context.Context, st RoomStream) (bool, error) {
+	ok, err := s.StreamCurrent(ctx, st)
+	if err != nil || !ok {
+		return false, err
 	}
+	return true, s.d.Heartbeats.kv.Set(ctx, kvStreams, st.Session, []byte(st.token), StreamClaimLease)
 }
 
 // StreamEnd is why a room stream ends.

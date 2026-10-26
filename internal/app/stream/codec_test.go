@@ -14,7 +14,7 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"},
 		{Kind: KindVoiceRoom, RoomID: "r1"},
-		{Kind: KindVoiceSignal, RoomID: "r1", MessageID: "m1"},
+		{Kind: KindVoiceSignal, RoomID: "r1", MessageID: "m1", To: "s1"},
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1", On: true},
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1", On: false},
 		{Kind: KindVoiceReaction, RoomID: "r1", ParticipantID: "a1", Emoji: ":blobcat:"},
@@ -43,7 +43,7 @@ func TestSignalRoundTrips(t *testing.T) {
 	}
 	for e, want := range map[Event]string{
 		{Kind: KindVoiceRoom, RoomID: "r1"}:                                      `{"v":1,"o":"p1","k":"voice_room","r":"r1"}`,
-		{Kind: KindVoiceSignal, RoomID: "r1", MessageID: "m1"}:                   `{"v":1,"o":"p1","k":"voice_signal","r":"r1","m":"m1"}`,
+		{Kind: KindVoiceSignal, RoomID: "r1", MessageID: "m1", To: "s1"}:         `{"v":1,"o":"p1","k":"voice_signal","r":"r1","m":"m1","t":"s1"}`,
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1"}:                  `{"v":1,"o":"p1","k":"voice_mic","r":"r1","p":"a1","on":false}`,
 		{Kind: KindVoiceReaction, RoomID: "r1", ParticipantID: "a1", Emoji: "👏"}: `{"v":1,"o":"p1","k":"voice_reaction","e":"👏","r":"r1","p":"a1"}`,
 		{Kind: KindVoiceMute, RoomID: "r1", SessionID: "s1", By: "a2"}:           `{"v":1,"o":"p1","k":"voice_mute","r":"r1","s":"s1","b":"a2"}`,
@@ -70,6 +70,7 @@ func TestSignalDecodeRejects(t *testing.T) {
 		`{"v":1,"o":"p1","k":"announcement","a":"0199f0a8-0000-7000-8000-000000000002"}`:                errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_room"}`:                                                             errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_signal","r":"r1"}`:                                                  errMalformedSignal,
+		`{"v":1,"o":"p1","k":"voice_signal","r":"r1","m":"m1"}`:                                         errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_mic","r":"r1","p":"a1"}`:                                            errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_reaction","r":"r1","p":"a1"}`:                                       errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_reaction","r":"r1","p":"a1","e":"` + strings.Repeat("x", 65) + `"}`: errMalformedSignal,

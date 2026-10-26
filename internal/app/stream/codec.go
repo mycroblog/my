@@ -26,7 +26,7 @@ var (
 // {"v":1,"o":"<process id>","k":"announcement","n":"<announcement id>"}, and the signals of the
 // voice chat rooms (ADR-0101 §3), which carry the room as "r":
 // {"v":1,"o":…,"k":"voice_room","r":"<room>"},
-// {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>"},
+// {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>","t":"<session>"},
 // {"v":1,"o":…,"k":"voice_mic","r":…,"p":"<participant>","on":true},
 // {"v":1,"o":…,"k":"voice_reaction","r":…,"p":…,"e":"<emoji>"}, and
 // {"v":1,"o":…,"k":"voice_mute","r":…,"s":"<session>","b":"<by>"}.
@@ -41,6 +41,7 @@ type signal struct {
 	AnnouncementID string `json:"n,omitempty"`
 	RoomID         string `json:"r,omitempty"`
 	MessageID      string `json:"m,omitempty"`
+	To             string `json:"t,omitempty"`
 	ParticipantID  string `json:"p,omitempty"`
 	On             *bool  `json:"on,omitempty"`
 	SessionID      string `json:"s,omitempty"`
@@ -52,7 +53,7 @@ type signal struct {
 func encodeSignal(origin string, e Event) ([]byte, error) {
 	s := signal{
 		Version: signalVersion, Origin: origin, Kind: e.Kind, AccountID: e.AccountID, E: e.EntryID, AnnouncementID: e.AnnouncementID,
-		RoomID: e.RoomID, MessageID: e.MessageID, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
+		RoomID: e.RoomID, MessageID: e.MessageID, To: e.To, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
 	}
 	switch e.Kind {
 	case KindVoiceMic:
@@ -109,8 +110,8 @@ func voiceEvent(s signal) (Event, bool) {
 	case KindVoiceRoom:
 		return e, true
 	case KindVoiceSignal:
-		e.MessageID = s.MessageID
-		return e, s.MessageID != ""
+		e.MessageID, e.To = s.MessageID, s.To
+		return e, s.MessageID != "" && s.To != ""
 	case KindVoiceMic:
 		if s.ParticipantID == "" || s.On == nil {
 			return Event{}, false

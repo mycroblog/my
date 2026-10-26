@@ -17,10 +17,10 @@ import (
 // The cases of VoiceRoomsContract for the room streams, the P2P signaling relay, the
 // microphone, the reactions, and the grants (ADR-0100 §10, ADR-0101 §3, §4, §6).
 
-// roomSignals subscribes to the signals of a room on the Hub of e.
-func (e *roomsEnv) roomSignals(t *testing.T, room string) stream.Subscription {
+// roomSignals subscribes the session session to the signals of a room on the Hub of e.
+func (e *roomsEnv) roomSignals(t *testing.T, room, session string) stream.Subscription {
 	t.Helper()
-	sub, err := e.hub.SubscribeRoom(t.Context(), room)
+	sub, err := e.hub.SubscribeRoom(t.Context(), room, session)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func roomsStream(t *testing.T, e *roomsEnv) {
 	host, bob, carol := e.account(true), e.account(false), e.account(false)
 	opened := e.open(t, host, appvoice.SettingsInput{})
 	r := opened.Room.ID
-	sub := e.roomSignals(t, r)
+	sub := e.roomSignals(t, r, opened.Session)
 	bobs := e.join(t, bob, r).Session
 	if got := nextSignal(t, sub, stream.KindVoiceRoom); got.RoomID != r {
 		t.Errorf("the join signals %+v, want voice_room of %s", got, r)
@@ -118,6 +118,22 @@ func roomsStream(t *testing.T, e *roomsEnv) {
 	if s := e.streamState(t, hst); s.End != appvoice.StreamEnded || s.Reason != string(voice.EndHost) {
 		t.Errorf("state after the end = %s %s, want ended by the host", s.End, s.Reason)
 	}
+
+	// The claim of a stream on its session lasts while the stream renews it.
+	e.clock.Advance(appvoice.StreamClaimLease - time.Minute)
+	if ok, err := e.svc.RenewStream(ctx, again); err != nil || !ok {
+		t.Errorf("RenewStream = %v, %v; want true", ok, err)
+	}
+	if ok, err := e.svc.RenewStream(ctx, st); err != nil || ok {
+		t.Errorf("RenewStream of the replaced stream = %v, %v; want false", ok, err)
+	}
+	e.clock.Advance(2 * time.Minute)
+	if ok, err := e.svc.StreamCurrent(ctx, again); err != nil || !ok {
+		t.Errorf("StreamCurrent past the first lease after a renewal = %v, %v; want true", ok, err)
+	}
+	if ok, err := e.svc.StreamCurrent(ctx, cst); err != nil || ok {
+		t.Errorf("StreamCurrent past the lease without a renewal = %v, %v; want false", ok, err)
+	}
 }
 
 // sdpOf is a session description with one audio section of direction dir.
@@ -131,7 +147,8 @@ func roomsSignals(t *testing.T, e *roomsEnv) {
 	opened := e.open(t, host, appvoice.SettingsInput{}) // speakers: manual
 	r := opened.Room.ID
 	bobs, carols := e.join(t, bob, r).Session, e.join(t, carol, r).Session
-	sub := e.roomSignals(t, r)
+	sub := e.roomSignals(t, r, bobs)
+	hostSub := e.roomSignals(t, r, opened.Session)
 	bst := e.openStream(t, bob, r, bobs)
 	hst := e.openStream(t, host, r, opened.Session)
 
@@ -140,6 +157,16 @@ func roomsSignals(t *testing.T, e *roomsEnv) {
 		t.Fatalf("Signal of the host: %v", err)
 	}
 	sig := nextSignal(t, sub, stream.KindVoiceSignal)
+	if sig.To != bobs {
+		t.Errorf("the signal is for %q, want bob's session", sig.To)
+	}
+	select {
+	case e := <-hostSub.Events():
+		if e.Kind == stream.KindVoiceSignal {
+			t.Errorf("the host's subscription received the signal for bob: %+v", e)
+		}
+	default:
+	}
 	if _, ok, err := e.svc.Message(ctx, hst, sig.MessageID); err != nil || ok {
 		t.Errorf("the message for bob read by the host's stream = %v, %v", ok, err)
 	}
@@ -156,7 +183,17 @@ func roomsSignals(t *testing.T, e *roomsEnv) {
 		}
 	}
 	// Two listeners do not connect (P1).
-	field("Signal between listeners", e.svc.Signal(ctx, bob, r, appvoice.SignalInput{Session: bobs, To: carols, Kind: appvoice.SignalCandidate, Candidate: "c"}), "to")
+	field("Signal between listeners", e.svc.Signal(ctx, bob, r, appvoice.SignalInput{Session: bobs, To: carols, Kind: appvoice.SignalCandidate, Candidate: `{"candidate":"candidate:1 1 udp 2122260223 192.0.2.1 54321 typ host","sdpMid":"0","sdpMLineIndex":0}`}), "to")
+	field("a malformed candidate", e.svc.Signal(ctx, host, r, appvoice.SignalInput{Session: opened.Session, To: bobs, Kind: appvoice.SignalCandidate, Candidate: "c"}), "candidate")
+	field("a candidate with SDP", e.svc.Signal(ctx, host, r, appvoice.SignalInput{
+		Session: opened.Session, To: bobs, Kind: appvoice.SignalCandidate, Candidate: `{"candidate":"candidate:1 1 udp 2122260223 192.0.2.1 54321 typ host","sdpMid":"0","sdpMLineIndex":0}`, SDP: offer,
+	}), "sdp")
+	field("an offer with a candidate", e.svc.Signal(ctx, host, r, appvoice.SignalInput{
+		Session: opened.Session, To: bobs, Kind: appvoice.SignalOffer, SDP: offer, Candidate: `{"candidate":"candidate:1 1 udp 2122260223 192.0.2.1 54321 typ host","sdpMid":"0","sdpMLineIndex":0}`,
+	}), "candidate")
+	if err := e.svc.Signal(ctx, host, r, appvoice.SignalInput{Session: opened.Session, To: bobs, Kind: appvoice.SignalCandidate, Candidate: `{"candidate":"candidate:1 1 udp 2122260223 192.0.2.1 54321 typ host","sdpMid":"0","sdpMLineIndex":0}`}); err != nil {
+		t.Errorf("a candidate of the host: %v", err)
+	}
 	field("Signal to an unknown session", e.svc.Signal(ctx, bob, r, appvoice.SignalInput{Session: bobs, To: "unknown", Kind: appvoice.SignalRestart}), "to")
 	field("Signal to oneself", e.svc.Signal(ctx, host, r, appvoice.SignalInput{Session: opened.Session, To: opened.Session, Kind: appvoice.SignalRestart}), "to")
 	field("a sending answer of a listener", e.svc.Signal(ctx, bob, r, appvoice.SignalInput{Session: bobs, To: opened.Session, Kind: appvoice.SignalAnswer, SDP: offer}), "sdp")
@@ -193,7 +230,7 @@ func roomsMicReactions(t *testing.T, e *roomsEnv) {
 	opened := e.open(t, host, appvoice.SettingsInput{})
 	r := opened.Room.ID
 	bobs := e.join(t, bob, r).Session
-	sub := e.roomSignals(t, r)
+	sub := e.roomSignals(t, r, bobs)
 
 	wantErr(t, "Mic on of a listener", e.svc.Mic(ctx, bob, r, bobs, true), appvoice.ErrCannotSpeak)
 	wantErr(t, "Mic of another's session", e.svc.Mic(ctx, host, r, bobs, false), appvoice.ErrNotFound)
@@ -265,6 +302,37 @@ func roomsMicReactions(t *testing.T, e *roomsEnv) {
 		if ok && m.Grant != nil {
 			if !m.Grant.Reconnect || m.Grant.Grant.Token != bobs {
 				t.Errorf("grant = %+v, want a new grant to reconnect", m.Grant)
+			}
+			break
+		}
+	}
+
+	// A grant that could not be sent is sent by the retry, even when the transport no longer
+	// asks for the reconnection.
+	e.transport.mu.Lock()
+	e.transport.grantErr = errors.New("the TURN service is down")
+	e.transport.mu.Unlock()
+	if _, err := e.svc.Speak(ctx, bob, r); err != nil {
+		t.Fatal(err)
+	}
+	results := e.jobs.Results()
+	failed := results[len(results)-1].Job
+	if failed.Type != appvoice.JobApply {
+		t.Fatalf("the last job = %s, want %s", failed.Type, appvoice.JobApply)
+	}
+	e.transport.mu.Lock()
+	e.transport.grantErr, e.transport.reconnect = nil, false
+	e.transport.mu.Unlock()
+	e.svc.Apply(ctx, failed)
+	for {
+		sig := nextSignal(t, sub, stream.KindVoiceSignal)
+		m, ok, err := e.svc.Message(ctx, bst, sig.MessageID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok && m.Grant != nil {
+			if !m.Grant.Reconnect {
+				t.Errorf("grant of the retry = %+v, want a grant to reconnect", m.Grant)
 			}
 			break
 		}

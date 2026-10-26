@@ -106,6 +106,12 @@ func (s *Server) voiceFail(ctx context.Context, err error) (*problem, error) {
 
 // newVoiceRooms presents rooms, reading the accounts of their hosts and participants together.
 func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) ([]VoiceRoom, error) {
+	return s.newVoiceRoomsMarked(ctx, views, nil)
+}
+
+// newVoiceRoomsMarked presents rooms with the block marks blocked, or the marks of the viewer
+// read now when blocked is nil.
+func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomView, blocked map[string]bool) ([]VoiceRoom, error) {
 	ids := map[string]bool{}
 	var actors []appaccount.Actor
 	read := func(id string) error {
@@ -138,8 +144,7 @@ func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) (
 		return nil, err
 	}
 	// The participants in a block relation with the viewer carry a mark (ADR-0100 §10).
-	var blocked map[string]bool
-	if v, ok := ViewerFrom(ctx); ok && s.o.Voice != nil {
+	if v, ok := ViewerFrom(ctx); ok && s.o.Voice != nil && blocked == nil {
 		var participants []string
 		for _, view := range views {
 			for _, p := range view.Participants {

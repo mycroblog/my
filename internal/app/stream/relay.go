@@ -279,8 +279,8 @@ func (r *Relay) Subscribe(ctx context.Context, accountID string) (Subscription, 
 }
 
 // SubscribeRoom implements RoomSubscriber, as Subscribe does.
-func (r *Relay) SubscribeRoom(ctx context.Context, roomID string) (Subscription, error) {
-	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.SubscribeRoom(ctx, roomID) })
+func (r *Relay) SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error) {
+	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.SubscribeRoom(ctx, roomID, session) })
 }
 
 // subscribe opens the subscription of open on the Hub once the listener is ready.

@@ -36,8 +36,8 @@ const (
 	// RoomID only. KindVoiceRoom signals that the room or its participants changed: each
 	// subscriber reads the room again.
 	KindVoiceRoom Kind = "voice_room"
-	// KindVoiceSignal carries MessageID, a message for one session of the room that waits in
-	// the KeyValueStore of the voice module: the subscriber of that session reads it.
+	// KindVoiceSignal carries MessageID, a message for the session To of the room that waits
+	// in the KeyValueStore of the voice module: the subscriber of that session reads it.
 	KindVoiceSignal Kind = "voice_signal"
 	// KindVoiceMic carries the microphone of ParticipantID turned on or off (On).
 	KindVoiceMic Kind = "voice_mic"
@@ -74,8 +74,9 @@ type Event struct {
 
 	// RoomID is the voice chat room of a voice signal.
 	RoomID string
-	// MessageID names the message of KindVoiceSignal.
+	// MessageID names the message of KindVoiceSignal, and To the session it is for.
 	MessageID string
+	To        string
 	// ParticipantID is the account of the participant of KindVoiceMic and KindVoiceReaction.
 	ParticipantID string
 	// On is the microphone of KindVoiceMic.
@@ -116,10 +117,12 @@ type Subscriber interface {
 
 // RoomSubscriber opens the subscriptions of the voice chat rooms (ADR-0101 §3).
 type RoomSubscriber interface {
-	// SubscribeRoom opens a subscription to the signals of the voice chat room roomID. It counts
-	// toward the subscriptions of the process, not of an account, and waits for the broker as
-	// Subscribe does.
-	SubscribeRoom(ctx context.Context, roomID string) (Subscription, error)
+	// SubscribeRoom opens a subscription of the session session to the signals of the voice
+	// chat room roomID: every signal of the room but the ones for another session
+	// (KindVoiceSignal to another To, KindVoiceMute of another SessionID). It counts toward the
+	// subscriptions of the process, not of an account, and waits for the broker as Subscribe
+	// does.
+	SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error)
 }
 
 // Subscription is one open subscription.

@@ -87,7 +87,7 @@ func (h *Hub) Subscribe(ctx context.Context, accountID string) (Subscription, er
 }
 
 // SubscribeRoom implements RoomSubscriber. A Hub is always ready, so it waits for nothing.
-func (h *Hub) SubscribeRoom(ctx context.Context, roomID string) (Subscription, error) {
+func (h *Hub) SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (h *Hub) SubscribeRoom(ctx context.Context, roomID string) (Subscription, e
 	if len(h.subs) >= h.o.MaxTotal {
 		return nil, ErrTooManySubscriptions
 	}
-	s := &subscription{hub: h, roomID: roomID, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
+	s := &subscription{hub: h, roomID: roomID, session: session, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
 	h.subs[s] = struct{}{}
 	add(h.byRoom, roomID, s)
 	return s, nil
@@ -137,6 +137,9 @@ func (h *Hub) Publish(e Event) {
 		targets = h.byRoom[e.RoomID]
 	}
 	for s := range targets {
+		if !s.wants(e) {
+			continue
+		}
 		select {
 		case s.events <- e:
 		default:
@@ -194,8 +197,21 @@ type subscription struct {
 	// subscription.
 	accountID string
 	roomID    string
-	events    chan Event
-	done      chan struct{}
+	// session is the session of a room subscription.
+	session string
+	events  chan Event
+	done    chan struct{}
+}
+
+// wants reports whether a room subscription takes a voice signal: not one for another session.
+func (s *subscription) wants(e Event) bool {
+	switch e.Kind {
+	case KindVoiceSignal:
+		return e.To == "" || e.To == s.session
+	case KindVoiceMute:
+		return e.SessionID == s.session
+	}
+	return true
 }
 
 func (s *subscription) Events() <-chan Event  { return s.events }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -100,10 +101,11 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 	case applySpeak:
 		var reconnect bool
 		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
-		if err == nil && reconnect {
+		if err == nil {
 			// The client of the session connects again with a new grant, which its stream
-			// sends (grant, ADR-0101 §2).
-			err = s.sendGrant(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
+			// sends (grant, ADR-0101 §2). A transport may report it only on the first call, so
+			// a retry after a failed send sends it still.
+			err = s.reconnect(ctx, j.ID, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak, reconnect)
 		}
 	case applyMute:
 		session := p.Session
@@ -131,6 +133,32 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
+}
+
+// kvReconnects keys, by job ID, the JobApply runs whose transport asked the client to connect
+// again, until the grant is sent.
+const kvReconnects = "voice.reconnect"
+
+// reconnect sends the grant of a session that has to connect again, when the transport asked
+// for it in this run of the job or an earlier one.
+func (s *Service) reconnect(ctx context.Context, jobID string, room RoomRef, session Session, canSpeak, asked bool) error {
+	if asked {
+		if err := s.d.Heartbeats.kv.Set(ctx, kvReconnects, jobID, []byte{1}, sessionLease); err != nil {
+			return err
+		}
+	} else {
+		_, err := s.d.Heartbeats.kv.Get(ctx, kvReconnects, jobID)
+		if errors.Is(err, kernel.ErrKeyNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
+	if err := s.sendGrant(ctx, room, session, canSpeak); err != nil {
+		return err
+	}
+	return s.d.Heartbeats.kv.Delete(ctx, kvReconnects, jobID)
 }
 
 // sendGrant sends a new grant to the stream of a session that has to connect again.

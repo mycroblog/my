@@ -23,7 +23,7 @@ import (
 type VoiceConnections interface {
 	OpenStream(ctx context.Context, accountID, roomID, session string) (appvoice.RoomStream, error)
 	StreamCurrent(ctx context.Context, st appvoice.RoomStream) (bool, error)
-	CloseStream(ctx context.Context, st appvoice.RoomStream)
+	RenewStream(ctx context.Context, st appvoice.RoomStream) (bool, error)
 	StreamState(ctx context.Context, st appvoice.RoomStream, notBefore time.Time) (appvoice.StreamState, error)
 	Message(ctx context.Context, st appvoice.RoomStream, id string) (appvoice.Message, bool, error)
 	Blocked(ctx context.Context, a, b string) (bool, error)
@@ -39,7 +39,9 @@ const (
 	DefaultVoiceStreamHeartbeat = 15 * time.Second
 	// voiceStateInterval is the least time between two state events of a room stream.
 	voiceStateInterval = time.Second
-	streamKindVoice    = "voice"
+	// voiceRecentMessages is the number of message IDs a room stream remembers having sent.
+	voiceRecentMessages = 256
+	streamKindVoice     = "voice"
 )
 
 // voiceStreamPattern is the http.ServeMux pattern of the room stream.
@@ -88,12 +90,11 @@ func (s *Server) serveVoiceStream(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	defer rooms.CloseStream(context.WithoutCancel(ctx), st)
 	if s.o.VoiceStreams == nil {
 		s.writeProblem(w, r, http.StatusServiceUnavailable, ProblemTypeBlank, s.localizer(r).ServerErrorsStreamingUnavailable(), "")
 		return
 	}
-	sub, err := s.o.VoiceStreams.SubscribeRoom(ctx, roomID)
+	sub, err := s.o.VoiceStreams.SubscribeRoom(ctx, roomID, st.Session)
 	switch {
 	case errors.Is(err, stream.ErrTooManySubscriptions), errors.Is(err, stream.ErrClosed), errors.Is(err, stream.ErrUnavailable):
 		if !errors.Is(err, stream.ErrClosed) {
@@ -112,7 +113,7 @@ func (s *Server) serveVoiceStream(w http.ResponseWriter, r *http.Request) {
 
 	vs := &voiceStream{
 		streamState: streamState{s: s, w: w, rc: http.NewResponseController(w), viewer: v},
-		rooms:       rooms, st: st,
+		rooms:       rooms, st: st, sentMessages: newRecentIDs(voiceRecentMessages), renewed: time.Now(),
 	}
 	token, _, _ := bearerToken(r.Header)
 	if err := vs.rc.SetReadDeadline(time.Time{}); err != nil && !errors.Is(err, http.ErrNotSupported) {
@@ -160,7 +161,12 @@ func (s *Server) serveVoiceStream(w http.ResponseWriter, r *http.Request) {
 			if s.streamClosed(ctx) {
 				return
 			}
-			if current, err := rooms.StreamCurrent(ctx, st); err != nil || !current {
+			current, err := rooms.StreamCurrent(ctx, st)
+			if err == nil && current && time.Since(vs.renewed) >= appvoice.StreamClaimRenewal {
+				current, err = rooms.RenewStream(ctx, st)
+				vs.renewed = time.Now()
+			}
+			if err != nil || !current {
 				return // another stream of the session opened
 			}
 			if done, err := vs.state(ctx, time.Now()); done || err != nil {
@@ -210,6 +216,10 @@ type voiceStream struct {
 	lastState time.Time
 	blocked   map[string]bool
 	listed    map[string]bool
+	// sentMessages holds the IDs of the messages recently sent, which a cross-process broker
+	// may deliver twice; renewed is when the claim of the stream on its session was renewed.
+	sentMessages *recentIDs
+	renewed      time.Time
 }
 
 // fail logs an error that ended the stream, other than a failed write.
@@ -230,10 +240,11 @@ func (vs *voiceStream) state(ctx context.Context, notBefore time.Time) (done boo
 	if state.End != "" {
 		return true, vs.event(string(state.End), VoiceStreamEnd{Reason: state.Reason})
 	}
-	room, err := vs.s.newVoiceRoom(ctx, state.Room)
+	rooms, err := vs.s.newVoiceRoomsMarked(ctx, []appvoice.RoomView{state.Room}, state.Blocked)
 	if err != nil {
 		return false, err
 	}
+	room := rooms[0]
 	vs.blocked, vs.listed = state.Blocked, map[string]bool{}
 	for i, p := range room.Participants {
 		vs.listed[p.Account.Id] = true
@@ -269,10 +280,14 @@ func (vs *voiceStream) handle(ctx context.Context, e stream.Event) error {
 		}
 		return vs.event("muted", VoiceStreamMuted{By: e.By})
 	case stream.KindVoiceSignal:
+		if e.To != vs.st.Session || vs.sentMessages.has(e.MessageID) {
+			return nil
+		}
 		m, ok, err := vs.rooms.Message(ctx, vs.st, e.MessageID)
 		if err != nil || !ok {
 			return err
 		}
+		vs.sentMessages.add(e.MessageID)
 		switch {
 		case m.Signal != nil:
 			sig := VoiceStreamSignal{From: m.Signal.From, Kind: VoiceSignalKind(m.Signal.Kind)}
