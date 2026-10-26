@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who may become a speaker without asking: `everyone`, `followers` of the current host,
+  `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+type: string
+enum: [everyone, followers, mutuals, manual]

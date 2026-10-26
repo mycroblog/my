@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listVoiceRooms
+  summary: List the open voice chat rooms
+  description: |
+    The open voice chat rooms that the user sees: the rooms where the user follows the host or
+    a speaker first, then by the most participants. With `tag`, only the rooms with that
+    hashtag. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["read:voice"]
+  parameters:
+    - name: tag
+      in: query
+      description: A hashtag, with or without the `#`, that the rooms have.
+      schema:
+        type: string
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the rooms.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: openVoiceRoom
+  summary: Open a voice chat room
+  description: |
+    Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+    The user must be a local, unrestricted user who may start rooms (the instance setting
+    `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+    `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+    while as many rooms are open as the server allows, and a 409
+    `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+    leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceRoomSettings.yaml
+  responses:
+    "201":
+      description: The room and the session of the host.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomJoin.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

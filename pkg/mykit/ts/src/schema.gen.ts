@@ -2892,6 +2892,162 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/voice/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the open voice chat rooms
+         * @description The open voice chat rooms that the user sees: the rooms where the user follows the host or
+         *     a speaker first, then by the most participants. With `tag`, only the rooms with that
+         *     hashtag. A 404 while the voice chat is off on the server.
+         */
+        get: operations["listVoiceRooms"];
+        put?: never;
+        /**
+         * Open a voice chat room
+         * @description Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+         *     The user must be a local, unrestricted user who may start rooms (the instance setting
+         *     `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+         *     `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+         *     while as many rooms are open as the server allows, and a 409
+         *     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+         *     leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+         */
+        post: operations["openVoiceRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a voice chat room
+         * @description An open room that the user sees. A room that ended or that the user does not see is a
+         *     404. A 404 while the voice chat is off on the server.
+         */
+        get: operations["getVoiceRoom"];
+        put?: never;
+        post?: never;
+        /**
+         * End a voice chat room
+         * @description Ends a room that the user hosts, for every participant. A 403
+         *     `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["endVoiceRoom"];
+        options?: never;
+        head?: never;
+        /**
+         * Change the settings of a voice chat room
+         * @description Changes the settings of a room that the user hosts. The participants stay whatever the new
+         *     settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+         *     for invalid settings. A 404 while the voice chat is off on the server.
+         */
+        patch: operations["updateVoiceRoom"];
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join a voice chat room
+         * @description Joins a room that the user sees, as a listener, with a new session. A user who is in the
+         *     room already, from another device, keeps the place with a new session, and the previous
+         *     session is disconnected. Joining leaves the room the user was in; the host of an open room
+         *     leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+         *     `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+         *     allows. A 404 while the voice chat is off on the server.
+         */
+        post: operations["joinVoiceRoom"];
+        /**
+         * Leave a voice chat room
+         * @description Leaves a room that the user is in. The host of a room with other participants chooses the
+         *     next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+         *     409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+         *     `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+         *     ends when nobody is left in it. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["leaveVoiceRoom"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep a session of a voice chat room alive
+         * @description Tells the server that the session is alive; the client sends it every 15 seconds. A session
+         *     without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+         *     minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+         *     session that is not the user's current session in the room is a 404: the client joins
+         *     again. A 404 while the voice chat is off on the server.
+         */
+        post: operations["sendVoiceHeartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/host": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hand a voice chat room over to another host
+         * @description Makes a participant who may host rooms the host of a room that the user hosts; the user
+         *     stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+         *     and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+         *     over. A 404 while the voice chat is off on the server.
+         */
+        post: operations["handOverVoiceRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/queue": {
         parameters: {
             query?: never;
@@ -9990,6 +10146,21 @@ export interface components {
          *       allow the operation.
          *     - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
          *       already.
+         *     - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
+         *     - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
+         *     - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
+         *       server allows.
+         *     - `/api/v1/problems/voice-too-many-rooms` (409): as many voice chat rooms are open as the
+         *       server allows.
+         *     - `/api/v1/problems/voice-hosting-elsewhere` (409): the user hosts another open voice chat
+         *       room; leave it first, choosing the next host or ending it.
+         *     - `/api/v1/problems/voice-host-must-choose` (409): the host leaves a room with other
+         *       participants; choose the next host or end the room.
+         *     - `/api/v1/problems/voice-invalid-next-host` (422): the next host is not a participant of the
+         *       room who may host rooms.
+         *     - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
+         *     - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
+         *       the room.
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
          *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`POST /accounts/move/cancel`).
@@ -10974,6 +11145,136 @@ export interface components {
          * @enum {string}
          */
         Visibility: "public" | "local" | "unlisted" | "private" | "direct";
+        /**
+         * @description What the client of a session needs to connect to the audio of a room. `kind` is the method
+         *     of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+         *     `expires_at`.
+         */
+        VoiceGrant: {
+            kind: string;
+            /** @description The endpoint of the media server; omitted for `p2p`. */
+            url?: string;
+            /** @description The access token of the media server; omitted for `p2p`. */
+            token?: string;
+            /** @description The options of the method for the client. */
+            options: {
+                [key: string]: string;
+            };
+            /** @description The STUN and TURN servers of the connections. */
+            ice_servers: components["schemas"]["VoiceIceServer"][];
+            /** @description Whether the client connects through TURN only (`iceTransportPolicy` `relay`). */
+            relay_only: boolean;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        /** @description The participant who becomes the host. */
+        VoiceHostChoice: {
+            account_id: components["schemas"]["Id"];
+        };
+        /** @description A STUN or TURN server, the `RTCIceServer` of the browser. */
+        VoiceIceServer: {
+            urls: string[];
+            username?: string;
+            credential?: string;
+        };
+        /**
+         * @description Whether a participant speaks or listens.
+         * @enum {string}
+         */
+        VoiceRole: "speaker" | "listener";
+        /**
+         * @description An open voice chat room: its settings, its host, and its participants in the order they
+         *     joined. Everyone who sees the room sees its participants.
+         */
+        VoiceRoom: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the room, 1 to 100 characters. */
+            name: string;
+            /** @description The description of the room, up to 500 characters; empty for none. */
+            description: string;
+            /** @description The hashtags of the room, without the `#`, as the host typed them. */
+            hashtags: string[];
+            visibility: components["schemas"]["VoiceRoomVisibility"];
+            speakers: components["schemas"]["VoiceRoomSpeakers"];
+            host: components["schemas"]["Account"];
+            /**
+             * Format: date-time
+             * @description When the room opened.
+             */
+            opened_at: string;
+            /** @description How many people are in the room, the host included. */
+            participants_count: number;
+            participants: components["schemas"]["VoiceRoomParticipant"][];
+        };
+        /**
+         * @description A session of the user in a voice chat room: the room, the new session, and its grant. The
+         *     client sends the session's heartbeats every 15 seconds.
+         */
+        VoiceRoomJoin: {
+            room: components["schemas"]["VoiceRoom"];
+            /** @description The ID of the session, which replaces the previous session of the user in the room. */
+            session: string;
+            grant: components["schemas"]["VoiceGrant"];
+        };
+        /**
+         * @description A page of the open voice chat rooms that the user sees: the rooms where the user follows the
+         *     host or a speaker first, then by the most participants.
+         */
+        VoiceRoomPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["VoiceRoom"][];
+        };
+        /** @description A participant of a voice chat room. */
+        VoiceRoomParticipant: {
+            account: components["schemas"]["Account"];
+            role: components["schemas"]["VoiceRole"];
+            /** @description Whether the participant is the host. */
+            host: boolean;
+            /** @description Whether the participant is a co-host. The host is never a co-host. */
+            cohost: boolean;
+            /** @description Whether the participant raised a hand to speak. */
+            hand_raised: boolean;
+        };
+        /** @description The settings of a new voice chat room. */
+        VoiceRoomSettings: {
+            /** @description 1 to 100 characters on one line. */
+            name: string;
+            /** @description Up to 500 characters; line breaks are kept. */
+            description?: string;
+            /** @description Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post. */
+            hashtags?: string[];
+            visibility?: components["schemas"]["VoiceRoomVisibility"];
+            speakers?: components["schemas"]["VoiceRoomSpeakers"];
+        };
+        /**
+         * @description Who may become a speaker without asking: `everyone`, `followers` of the current host,
+         *     `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+         * @enum {string}
+         */
+        VoiceRoomSpeakers: "everyone" | "followers" | "mutuals" | "manual";
+        /** @description A change of the settings of a voice chat room; an omitted property keeps its value. */
+        VoiceRoomUpdate: {
+            /** @description 1 to 100 characters on one line. */
+            name?: string;
+            /** @description Up to 500 characters; empty for none. */
+            description?: string;
+            /** @description Up to 5 hashtags, which replace the room's; empty for none. */
+            hashtags?: string[];
+            visibility?: components["schemas"]["VoiceRoomVisibility"];
+            speakers?: components["schemas"]["VoiceRoomSpeakers"];
+        };
+        /**
+         * @description Who sees a voice chat room and may join it: `local` every local user, `followers` the
+         *     followers of the current host, `mutuals` those who follow the host and whom the host follows,
+         *     and `invited` only the invited users. The host, the co-hosts, the participants, and the
+         *     invited users always see it, and a block with the host or a co-host always hides it.
+         * @enum {string}
+         */
+        VoiceRoomVisibility: "local" | "followers" | "mutuals" | "invited";
+        /** @description A session of the user in a voice chat room. */
+        VoiceSession: {
+            /** @description The `session` of the join. */
+            session: string;
+        };
         /** @description A vote in the poll of a status. */
         VoteInPollRequest: {
             poll_id: components["schemas"]["Id"];
@@ -11585,6 +11886,8 @@ export interface components {
         SupporterPlanId: components["schemas"]["Id"];
         /** @description The ID of the subscription. */
         SupporterSubscriptionId: components["schemas"]["Id"];
+        /** @description The ID of the voice chat room. */
+        VoiceRoomId: components["schemas"]["Id"];
         /** @description The ID of the webhook. */
         WebhookId: components["schemas"]["Id"];
     };
@@ -14739,6 +15042,244 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupporterPortal"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listVoiceRooms: {
+        parameters: {
+            query?: {
+                /** @description A hashtag, with or without the `#`, that the rooms have. */
+                tag?: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the rooms. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    openVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRoomSettings"];
+            };
+        };
+        responses: {
+            /** @description The room and the session of the host. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomJoin"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    endVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRoomUpdate"];
+            };
+        };
+        responses: {
+            /** @description The room with its new settings. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    joinVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room and the new session. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomJoin"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    leaveVoiceRoom: {
+        parameters: {
+            query?: {
+                /** @description The participant who becomes the host when the host leaves. */
+                next_host_id?: components["schemas"]["Id"];
+                /** @description Whether the host ends the room on leaving. */
+                end?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user left the room. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    sendVoiceHeartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceSession"];
+            };
+        };
+        responses: {
+            /** @description The session is alive. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    handOverVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceHostChoice"];
+            };
+        };
+        responses: {
+            /** @description The room with its new host. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
                 };
             };
             default: components["responses"]["Problem"];

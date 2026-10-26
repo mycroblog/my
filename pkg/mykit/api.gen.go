@@ -3158,6 +3158,72 @@ func (e Visibility) Valid() bool {
 	}
 }
 
+// Defines values for VoiceRole.
+const (
+	VoiceRoleListener VoiceRole = "listener"
+	VoiceRoleSpeaker  VoiceRole = "speaker"
+)
+
+// Valid indicates whether the value is a known member of the VoiceRole enum.
+func (e VoiceRole) Valid() bool {
+	switch e {
+	case VoiceRoleListener:
+		return true
+	case VoiceRoleSpeaker:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceRoomSpeakers.
+const (
+	VoiceRoomSpeakersEveryone  VoiceRoomSpeakers = "everyone"
+	VoiceRoomSpeakersFollowers VoiceRoomSpeakers = "followers"
+	VoiceRoomSpeakersManual    VoiceRoomSpeakers = "manual"
+	VoiceRoomSpeakersMutuals   VoiceRoomSpeakers = "mutuals"
+)
+
+// Valid indicates whether the value is a known member of the VoiceRoomSpeakers enum.
+func (e VoiceRoomSpeakers) Valid() bool {
+	switch e {
+	case VoiceRoomSpeakersEveryone:
+		return true
+	case VoiceRoomSpeakersFollowers:
+		return true
+	case VoiceRoomSpeakersManual:
+		return true
+	case VoiceRoomSpeakersMutuals:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceRoomVisibility.
+const (
+	VoiceRoomVisibilityFollowers VoiceRoomVisibility = "followers"
+	VoiceRoomVisibilityInvited   VoiceRoomVisibility = "invited"
+	VoiceRoomVisibilityLocal     VoiceRoomVisibility = "local"
+	VoiceRoomVisibilityMutuals   VoiceRoomVisibility = "mutuals"
+)
+
+// Valid indicates whether the value is a known member of the VoiceRoomVisibility enum.
+func (e VoiceRoomVisibility) Valid() bool {
+	switch e {
+	case VoiceRoomVisibilityFollowers:
+		return true
+	case VoiceRoomVisibilityInvited:
+		return true
+	case VoiceRoomVisibilityLocal:
+		return true
+	case VoiceRoomVisibilityMutuals:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for WebhookEventType.
 const (
 	WebhookEventTypeAccountCreated                WebhookEventType = "account.created"
@@ -8768,6 +8834,21 @@ type PreviewDomainBlockImportRequest struct {
 //     allow the operation.
 //   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
 //     already.
+//   - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
+//   - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
+//   - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
+//     server allows.
+//   - `/api/v1/problems/voice-too-many-rooms` (409): as many voice chat rooms are open as the
+//     server allows.
+//   - `/api/v1/problems/voice-hosting-elsewhere` (409): the user hosts another open voice chat
+//     room; leave it first, choosing the next host or ending it.
+//   - `/api/v1/problems/voice-host-must-choose` (409): the host leaves a room with other
+//     participants; choose the next host or end the room.
+//   - `/api/v1/problems/voice-invalid-next-host` (422): the next host is not a participant of the
+//     room who may host rooms.
+//   - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
+//   - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
+//     the room.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
@@ -10114,6 +10195,188 @@ type UpdateWebhookRequest struct {
 // accounts.
 type Visibility string
 
+// VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
+// of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+// `expires_at`.
+type VoiceGrant struct {
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// IceServers The STUN and TURN servers of the connections.
+	IceServers []VoiceIceServer `json:"ice_servers"`
+	Kind       string           `json:"kind"`
+
+	// Options The options of the method for the client.
+	Options map[string]string `json:"options"`
+
+	// RelayOnly Whether the client connects through TURN only (`iceTransportPolicy` `relay`).
+	RelayOnly bool `json:"relay_only"`
+
+	// Token The access token of the media server; omitted for `p2p`.
+	Token *string `json:"token,omitempty"`
+
+	// Url The endpoint of the media server; omitted for `p2p`.
+	Url *string `json:"url,omitempty"`
+}
+
+// VoiceHostChoice The participant who becomes the host.
+type VoiceHostChoice struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+}
+
+// VoiceIceServer A STUN or TURN server, the `RTCIceServer` of the browser.
+type VoiceIceServer struct {
+	Credential *string  `json:"credential,omitempty"`
+	Urls       []string `json:"urls"`
+	Username   *string  `json:"username,omitempty"`
+}
+
+// VoiceRole Whether a participant speaks or listens.
+type VoiceRole string
+
+// VoiceRoom An open voice chat room: its settings, its host, and its participants in the order they
+// joined. Everyone who sees the room sees its participants.
+type VoiceRoom struct {
+	// Description The description of the room, up to 500 characters; empty for none.
+	Description string `json:"description"`
+
+	// Hashtags The hashtags of the room, without the `#`, as the host typed them.
+	Hashtags []string `json:"hashtags"`
+
+	// Host An account, as clients show it (FR-006).
+	Host Account `json:"host"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the room, 1 to 100 characters.
+	Name string `json:"name"`
+
+	// OpenedAt When the room opened.
+	OpenedAt     time.Time              `json:"opened_at"`
+	Participants []VoiceRoomParticipant `json:"participants"`
+
+	// ParticipantsCount How many people are in the room, the host included.
+	ParticipantsCount int `json:"participants_count"`
+
+	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
+	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	Speakers VoiceRoomSpeakers `json:"speakers"`
+
+	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
+	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
+	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// invited users always see it, and a block with the host or a co-host always hides it.
+	Visibility VoiceRoomVisibility `json:"visibility"`
+}
+
+// VoiceRoomJoin A session of the user in a voice chat room: the room, the new session, and its grant. The
+// client sends the session's heartbeats every 15 seconds.
+type VoiceRoomJoin struct {
+	// Grant What the client of a session needs to connect to the audio of a room. `kind` is the method
+	// of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+	// `expires_at`.
+	Grant VoiceGrant `json:"grant"`
+
+	// Room An open voice chat room: its settings, its host, and its participants in the order they
+	// joined. Everyone who sees the room sees its participants.
+	Room VoiceRoom `json:"room"`
+
+	// Session The ID of the session, which replaces the previous session of the user in the room.
+	Session string `json:"session"`
+}
+
+// VoiceRoomPage A page of the open voice chat rooms that the user sees: the rooms where the user follows the
+// host or a speaker first, then by the most participants.
+type VoiceRoomPage struct {
+	Items []VoiceRoom `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// VoiceRoomParticipant A participant of a voice chat room.
+type VoiceRoomParticipant struct {
+	// Account An account, as clients show it (FR-006).
+	Account Account `json:"account"`
+
+	// Cohost Whether the participant is a co-host. The host is never a co-host.
+	Cohost bool `json:"cohost"`
+
+	// HandRaised Whether the participant raised a hand to speak.
+	HandRaised bool `json:"hand_raised"`
+
+	// Host Whether the participant is the host.
+	Host bool `json:"host"`
+
+	// Role Whether a participant speaks or listens.
+	Role VoiceRole `json:"role"`
+}
+
+// VoiceRoomSettings The settings of a new voice chat room.
+type VoiceRoomSettings struct {
+	// Description Up to 500 characters; line breaks are kept.
+	Description *string `json:"description,omitempty"`
+
+	// Hashtags Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post.
+	Hashtags *[]string `json:"hashtags,omitempty"`
+
+	// Name 1 to 100 characters on one line.
+	Name string `json:"name"`
+
+	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
+	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
+
+	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
+	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
+	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// invited users always see it, and a block with the host or a co-host always hides it.
+	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
+}
+
+// VoiceRoomSpeakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
+// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+type VoiceRoomSpeakers string
+
+// VoiceRoomUpdate A change of the settings of a voice chat room; an omitted property keeps its value.
+type VoiceRoomUpdate struct {
+	// Description Up to 500 characters; empty for none.
+	Description *string `json:"description,omitempty"`
+
+	// Hashtags Up to 5 hashtags, which replace the room's; empty for none.
+	Hashtags *[]string `json:"hashtags,omitempty"`
+
+	// Name 1 to 100 characters on one line.
+	Name *string `json:"name,omitempty"`
+
+	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
+	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
+
+	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
+	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
+	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// invited users always see it, and a block with the host or a co-host always hides it.
+	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
+}
+
+// VoiceRoomVisibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
+// followers of the current host, `mutuals` those who follow the host and whom the host follows,
+// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+// invited users always see it, and a block with the host or a co-host always hides it.
+type VoiceRoomVisibility string
+
+// VoiceSession A session of the user in a voice chat room.
+type VoiceSession struct {
+	// Session The `session` of the join.
+	Session string `json:"session"`
+}
+
 // VoteInPollRequest A vote in the poll of a status.
 type VoteInPollRequest struct {
 	// Choices The indexes of the chosen options in `Poll.options`; one for a single-choice poll.
@@ -10412,6 +10675,11 @@ type SupporterPlanId = Id
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type SupporterSubscriptionId = Id
+
+// VoiceRoomId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type VoiceRoomId = Id
 
 // WebhookId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -11065,6 +11333,27 @@ type GetHashtagTimelineParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListVoiceRoomsParams defines parameters for ListVoiceRooms.
+type ListVoiceRoomsParams struct {
+	// Tag A hashtag, with or without the `#`, that the rooms have.
+	Tag *string `form:"tag,omitempty" json:"tag,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// LeaveVoiceRoomParams defines parameters for LeaveVoiceRoom.
+type LeaveVoiceRoomParams struct {
+	// NextHostId The participant who becomes the host when the host leaves.
+	NextHostId *Id `form:"next_host_id,omitempty" json:"next_host_id,omitempty"`
+
+	// End Whether the host ends the room on leaving.
+	End *bool `form:"end,omitempty" json:"end,omitempty"`
+}
+
 // AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
 type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 
@@ -11307,6 +11596,18 @@ type EnableTotpJSONRequestBody = EnableTotpRequest
 
 // DisableTotpJSONRequestBody defines body for DisableTotp for application/json ContentType.
 type DisableTotpJSONRequestBody = TwoFactorCodeRequest
+
+// OpenVoiceRoomJSONRequestBody defines body for OpenVoiceRoom for application/json ContentType.
+type OpenVoiceRoomJSONRequestBody = VoiceRoomSettings
+
+// UpdateVoiceRoomJSONRequestBody defines body for UpdateVoiceRoom for application/json ContentType.
+type UpdateVoiceRoomJSONRequestBody = VoiceRoomUpdate
+
+// SendVoiceHeartbeatJSONRequestBody defines body for SendVoiceHeartbeat for application/json ContentType.
+type SendVoiceHeartbeatJSONRequestBody = VoiceSession
+
+// HandOverVoiceRoomJSONRequestBody defines body for HandOverVoiceRoom for application/json ContentType.
+type HandOverVoiceRoomJSONRequestBody = VoiceHostChoice
 
 // Getter for additional properties for CustomEmojiProblem. Returns the specified
 // element and whether it was found
@@ -16748,6 +17049,156 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListVoiceRooms List the open voice chat rooms
+	//
+	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
+	// a speaker first, then by the most participants. With `tag`, only the rooms with that
+	// hashtag. A 404 while the voice chat is off on the server.
+	//
+	// Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
+	ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OpenVoiceRoomWithBody Open a voice chat room
+	//
+	// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+	// The user must be a local, unrestricted user who may start rooms (the instance setting
+	// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+	// while as many rooms are open as the server allows, and a 409
+	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+	OpenVoiceRoomWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OpenVoiceRoom Open a voice chat room
+	//
+	// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+	// The user must be a local, unrestricted user who may start rooms (the instance setting
+	// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+	// while as many rooms are open as the server allows, and a 409
+	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+	OpenVoiceRoom(ctx context.Context, body OpenVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EndVoiceRoom End a voice chat room
+	//
+	// Ends a room that the user hosts, for every participant. A 403
+	// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+	//
+	// Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
+	EndVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVoiceRoom Get a voice chat room
+	//
+	// An open room that the user sees. A room that ended or that the user does not see is a
+	// 404. A 404 while the voice chat is off on the server.
+	//
+	// Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
+	GetVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateVoiceRoomWithBody Change the settings of a voice chat room
+	//
+	// Changes the settings of a room that the user hosts. The participants stay whatever the new
+	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+	// for invalid settings. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+	UpdateVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateVoiceRoom Change the settings of a voice chat room
+	//
+	// Changes the settings of a room that the user hosts. The participants stay whatever the new
+	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+	// for invalid settings. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+	UpdateVoiceRoom(ctx context.Context, id VoiceRoomId, body UpdateVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SendVoiceHeartbeatWithBody Keep a session of a voice chat room alive
+	//
+	// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+	// session that is not the user's current session in the room is a 404: the client joins
+	// again. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+	SendVoiceHeartbeatWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SendVoiceHeartbeat Keep a session of a voice chat room alive
+	//
+	// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+	// session that is not the user's current session in the room is a 404: the client joins
+	// again. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+	SendVoiceHeartbeat(ctx context.Context, id VoiceRoomId, body SendVoiceHeartbeatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// HandOverVoiceRoomWithBody Hand a voice chat room over to another host
+	//
+	// Makes a participant who may host rooms the host of a room that the user hosts; the user
+	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+	// over. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+	HandOverVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// HandOverVoiceRoom Hand a voice chat room over to another host
+	//
+	// Makes a participant who may host rooms the host of a room that the user hosts; the user
+	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+	// over. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+	HandOverVoiceRoom(ctx context.Context, id VoiceRoomId, body HandOverVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LeaveVoiceRoom Leave a voice chat room
+	//
+	// Leaves a room that the user is in. The host of a room with other participants chooses the
+	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+	// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+	//
+	// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
+	LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// JoinVoiceRoom Join a voice chat room
+	//
+	// Joins a room that the user sees, as a listener, with a new session. A user who is in the
+	// room already, from another device, keeps the place with a new session, and the previous
+	// session is disconnected. Joining leaves the room the user was in; the host of an open room
+	// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+	// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+	// allows. A 404 while the voice chat is off on the server.
+	//
+	// Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
+	JoinVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 // ListAccountAliases List the authenticated user's aliases
@@ -24516,6 +24967,286 @@ func (c *Client) DisableTotp(ctx context.Context, body DisableTotpJSONRequestBod
 // Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 func (c *Client) SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetUpTotpRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListVoiceRooms List the open voice chat rooms
+//
+// The open voice chat rooms that the user sees: the rooms where the user follows the host or
+// a speaker first, then by the most participants. With `tag`, only the rooms with that
+// hashtag. A 404 while the voice chat is off on the server.
+//
+// Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
+func (c *Client) ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListVoiceRoomsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OpenVoiceRoomWithBody Open a voice chat room
+//
+// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+// The user must be a local, unrestricted user who may start rooms (the instance setting
+// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+// while as many rooms are open as the server allows, and a 409
+// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+func (c *Client) OpenVoiceRoomWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOpenVoiceRoomRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OpenVoiceRoom Open a voice chat room
+//
+// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+// The user must be a local, unrestricted user who may start rooms (the instance setting
+// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+// while as many rooms are open as the server allows, and a 409
+// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+func (c *Client) OpenVoiceRoom(ctx context.Context, body OpenVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOpenVoiceRoomRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EndVoiceRoom End a voice chat room
+//
+// Ends a room that the user hosts, for every participant. A 403
+// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+//
+// Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
+func (c *Client) EndVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEndVoiceRoomRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetVoiceRoom Get a voice chat room
+//
+// An open room that the user sees. A room that ended or that the user does not see is a
+// 404. A 404 while the voice chat is off on the server.
+//
+// Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
+func (c *Client) GetVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVoiceRoomRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateVoiceRoomWithBody Change the settings of a voice chat room
+//
+// Changes the settings of a room that the user hosts. The participants stay whatever the new
+// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+// for invalid settings. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+func (c *Client) UpdateVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateVoiceRoomRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateVoiceRoom Change the settings of a voice chat room
+//
+// Changes the settings of a room that the user hosts. The participants stay whatever the new
+// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+// for invalid settings. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+func (c *Client) UpdateVoiceRoom(ctx context.Context, id VoiceRoomId, body UpdateVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateVoiceRoomRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SendVoiceHeartbeatWithBody Keep a session of a voice chat room alive
+//
+// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+// session that is not the user's current session in the room is a 404: the client joins
+// again. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+func (c *Client) SendVoiceHeartbeatWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendVoiceHeartbeatRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SendVoiceHeartbeat Keep a session of a voice chat room alive
+//
+// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+// session that is not the user's current session in the room is a 404: the client joins
+// again. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+func (c *Client) SendVoiceHeartbeat(ctx context.Context, id VoiceRoomId, body SendVoiceHeartbeatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendVoiceHeartbeatRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// HandOverVoiceRoomWithBody Hand a voice chat room over to another host
+//
+// Makes a participant who may host rooms the host of a room that the user hosts; the user
+// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+// over. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+func (c *Client) HandOverVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHandOverVoiceRoomRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// HandOverVoiceRoom Hand a voice chat room over to another host
+//
+// Makes a participant who may host rooms the host of a room that the user hosts; the user
+// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+// over. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+func (c *Client) HandOverVoiceRoom(ctx context.Context, id VoiceRoomId, body HandOverVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHandOverVoiceRoomRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LeaveVoiceRoom Leave a voice chat room
+//
+// Leaves a room that the user is in. The host of a room with other participants chooses the
+// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+//
+// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
+func (c *Client) LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLeaveVoiceRoomRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// JoinVoiceRoom Join a voice chat room
+//
+// Joins a room that the user sees, as a listener, with a new session. A user who is in the
+// room already, from another device, keeps the place with a new session, and the previous
+// session is disconnected. Joining leaves the room the user was in; the host of an open room
+// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+// allows. A 404 while the voice chat is off on the server.
+//
+// Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
+func (c *Client) JoinVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewJoinVoiceRoomRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -36445,6 +37176,440 @@ func NewSetUpTotpRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListVoiceRoomsRequest constructs an http.Request for the ListVoiceRooms method
+func NewListVoiceRoomsRequest(server string, params *ListVoiceRoomsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "tag", *params.Tag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOpenVoiceRoomRequest calls the generic OpenVoiceRoom builder with application/json body
+func NewOpenVoiceRoomRequest(server string, body OpenVoiceRoomJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewOpenVoiceRoomRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewOpenVoiceRoomRequestWithBody constructs an http.Request for the OpenVoiceRoom method, with any body, and a specified content type
+func NewOpenVoiceRoomRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewEndVoiceRoomRequest constructs an http.Request for the EndVoiceRoom method
+func NewEndVoiceRoomRequest(server string, id VoiceRoomId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetVoiceRoomRequest constructs an http.Request for the GetVoiceRoom method
+func NewGetVoiceRoomRequest(server string, id VoiceRoomId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateVoiceRoomRequest calls the generic UpdateVoiceRoom builder with application/json body
+func NewUpdateVoiceRoomRequest(server string, id VoiceRoomId, body UpdateVoiceRoomJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateVoiceRoomRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateVoiceRoomRequestWithBody constructs an http.Request for the UpdateVoiceRoom method, with any body, and a specified content type
+func NewUpdateVoiceRoomRequestWithBody(server string, id VoiceRoomId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSendVoiceHeartbeatRequest calls the generic SendVoiceHeartbeat builder with application/json body
+func NewSendVoiceHeartbeatRequest(server string, id VoiceRoomId, body SendVoiceHeartbeatJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSendVoiceHeartbeatRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewSendVoiceHeartbeatRequestWithBody constructs an http.Request for the SendVoiceHeartbeat method, with any body, and a specified content type
+func NewSendVoiceHeartbeatRequestWithBody(server string, id VoiceRoomId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/heartbeat", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewHandOverVoiceRoomRequest calls the generic HandOverVoiceRoom builder with application/json body
+func NewHandOverVoiceRoomRequest(server string, id VoiceRoomId, body HandOverVoiceRoomJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewHandOverVoiceRoomRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewHandOverVoiceRoomRequestWithBody constructs an http.Request for the HandOverVoiceRoom method, with any body, and a specified content type
+func NewHandOverVoiceRoomRequestWithBody(server string, id VoiceRoomId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/host", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLeaveVoiceRoomRequest constructs an http.Request for the LeaveVoiceRoom method
+func NewLeaveVoiceRoomRequest(server string, id VoiceRoomId, params *LeaveVoiceRoomParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/participation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.NextHostId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "next_host_id", *params.NextHostId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.End != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "end", *params.End, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewJoinVoiceRoomRequest constructs an http.Request for the JoinVoiceRoom method
+func NewJoinVoiceRoomRequest(server string, id VoiceRoomId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/participation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -41126,6 +42291,166 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SetUpTotpResponse, error)
+
+	// ListVoiceRoomsWithResponse List the open voice chat rooms
+	//
+	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
+	// a speaker first, then by the most participants. With `tag`, only the rooms with that
+	// hashtag. A 404 while the voice chat is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
+	ListVoiceRoomsWithResponse(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*ListVoiceRoomsResponse, error)
+
+	// OpenVoiceRoomWithBodyWithResponse Open a voice chat room
+	//
+	// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+	// The user must be a local, unrestricted user who may start rooms (the instance setting
+	// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+	// while as many rooms are open as the server allows, and a 409
+	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+	OpenVoiceRoomWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OpenVoiceRoomResponse, error)
+
+	// OpenVoiceRoomWithResponse Open a voice chat room
+	//
+	// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+	// The user must be a local, unrestricted user who may start rooms (the instance setting
+	// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+	// while as many rooms are open as the server allows, and a 409
+	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+	OpenVoiceRoomWithResponse(ctx context.Context, body OpenVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*OpenVoiceRoomResponse, error)
+
+	// EndVoiceRoomWithResponse End a voice chat room
+	//
+	// Ends a room that the user hosts, for every participant. A 403
+	// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
+	EndVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*EndVoiceRoomResponse, error)
+
+	// GetVoiceRoomWithResponse Get a voice chat room
+	//
+	// An open room that the user sees. A room that ended or that the user does not see is a
+	// 404. A 404 while the voice chat is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
+	GetVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*GetVoiceRoomResponse, error)
+
+	// UpdateVoiceRoomWithBodyWithResponse Change the settings of a voice chat room
+	//
+	// Changes the settings of a room that the user hosts. The participants stay whatever the new
+	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+	// for invalid settings. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+	UpdateVoiceRoomWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateVoiceRoomResponse, error)
+
+	// UpdateVoiceRoomWithResponse Change the settings of a voice chat room
+	//
+	// Changes the settings of a room that the user hosts. The participants stay whatever the new
+	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+	// for invalid settings. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+	UpdateVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, body UpdateVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateVoiceRoomResponse, error)
+
+	// SendVoiceHeartbeatWithBodyWithResponse Keep a session of a voice chat room alive
+	//
+	// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+	// session that is not the user's current session in the room is a 404: the client joins
+	// again. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+	SendVoiceHeartbeatWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendVoiceHeartbeatResponse, error)
+
+	// SendVoiceHeartbeatWithResponse Keep a session of a voice chat room alive
+	//
+	// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+	// session that is not the user's current session in the room is a 404: the client joins
+	// again. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+	SendVoiceHeartbeatWithResponse(ctx context.Context, id VoiceRoomId, body SendVoiceHeartbeatJSONRequestBody, reqEditors ...RequestEditorFn) (*SendVoiceHeartbeatResponse, error)
+
+	// HandOverVoiceRoomWithBodyWithResponse Hand a voice chat room over to another host
+	//
+	// Makes a participant who may host rooms the host of a room that the user hosts; the user
+	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+	// over. A 404 while the voice chat is off on the server.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+	HandOverVoiceRoomWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*HandOverVoiceRoomResponse, error)
+
+	// HandOverVoiceRoomWithResponse Hand a voice chat room over to another host
+	//
+	// Makes a participant who may host rooms the host of a room that the user hosts; the user
+	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+	// over. A 404 while the voice chat is off on the server.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+	HandOverVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, body HandOverVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*HandOverVoiceRoomResponse, error)
+
+	// LeaveVoiceRoomWithResponse Leave a voice chat room
+	//
+	// Leaves a room that the user is in. The host of a room with other participants chooses the
+	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+	// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
+	LeaveVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*LeaveVoiceRoomResponse, error)
+
+	// JoinVoiceRoomWithResponse Join a voice chat room
+	//
+	// Joins a room that the user sees, as a listener, with a new session. A user who is in the
+	// room already, from another device, keeps the place with a new session, and the previous
+	// session is disconnected. Joining leaves the room the user was in; the host of an open room
+	// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+	// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+	// allows. A 404 while the voice chat is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
+	JoinVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*JoinVoiceRoomResponse, error)
 }
 
 // ListAccountAliasesResponse200Headers the declared response headers of an HTTP 200 response for ListAccountAliases
@@ -58725,6 +60050,549 @@ func (r SetUpTotpResponse) ContentType() string {
 	return ""
 }
 
+// ListVoiceRoomsResponse200Headers the declared response headers of an HTTP 200 response for ListVoiceRooms
+type ListVoiceRoomsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListVoiceRoomsResponseDefaultHeaders the declared response headers of an HTTP default response for ListVoiceRooms
+type ListVoiceRoomsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListVoiceRoomsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoomPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListVoiceRoomsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListVoiceRoomsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListVoiceRoomsResponse) GetJSON200() *VoiceRoomPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListVoiceRoomsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListVoiceRoomsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListVoiceRoomsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListVoiceRoomsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListVoiceRoomsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// OpenVoiceRoomResponse201Headers the declared response headers of an HTTP 201 response for OpenVoiceRoom
+type OpenVoiceRoomResponse201Headers struct {
+	CacheControl *string
+}
+
+// OpenVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for OpenVoiceRoom
+type OpenVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type OpenVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *VoiceRoomJoin
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *OpenVoiceRoomResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *OpenVoiceRoomResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r OpenVoiceRoomResponse) GetJSON201() *VoiceRoomJoin {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OpenVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OpenVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OpenVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OpenVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OpenVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// EndVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for EndVoiceRoom
+type EndVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type EndVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *EndVoiceRoomResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r EndVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r EndVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EndVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EndVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EndVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetVoiceRoomResponse200Headers the declared response headers of an HTTP 200 response for GetVoiceRoom
+type GetVoiceRoomResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for GetVoiceRoom
+type GetVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoom
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetVoiceRoomResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetVoiceRoomResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetVoiceRoomResponse) GetJSON200() *VoiceRoom {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateVoiceRoomResponse200Headers the declared response headers of an HTTP 200 response for UpdateVoiceRoom
+type UpdateVoiceRoomResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateVoiceRoom
+type UpdateVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoom
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateVoiceRoomResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateVoiceRoomResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateVoiceRoomResponse) GetJSON200() *VoiceRoom {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SendVoiceHeartbeatResponseDefaultHeaders the declared response headers of an HTTP default response for SendVoiceHeartbeat
+type SendVoiceHeartbeatResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SendVoiceHeartbeatResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SendVoiceHeartbeatResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SendVoiceHeartbeatResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SendVoiceHeartbeatResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SendVoiceHeartbeatResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SendVoiceHeartbeatResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SendVoiceHeartbeatResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// HandOverVoiceRoomResponse200Headers the declared response headers of an HTTP 200 response for HandOverVoiceRoom
+type HandOverVoiceRoomResponse200Headers struct {
+	CacheControl *string
+}
+
+// HandOverVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for HandOverVoiceRoom
+type HandOverVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type HandOverVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoom
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *HandOverVoiceRoomResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *HandOverVoiceRoomResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r HandOverVoiceRoomResponse) GetJSON200() *VoiceRoom {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r HandOverVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r HandOverVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r HandOverVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r HandOverVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r HandOverVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// LeaveVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for LeaveVoiceRoom
+type LeaveVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type LeaveVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *LeaveVoiceRoomResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r LeaveVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r LeaveVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LeaveVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LeaveVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LeaveVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// JoinVoiceRoomResponse200Headers the declared response headers of an HTTP 200 response for JoinVoiceRoom
+type JoinVoiceRoomResponse200Headers struct {
+	CacheControl *string
+}
+
+// JoinVoiceRoomResponseDefaultHeaders the declared response headers of an HTTP default response for JoinVoiceRoom
+type JoinVoiceRoomResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type JoinVoiceRoomResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoomJoin
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *JoinVoiceRoomResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *JoinVoiceRoomResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r JoinVoiceRoomResponse) GetJSON200() *VoiceRoomJoin {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r JoinVoiceRoomResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r JoinVoiceRoomResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r JoinVoiceRoomResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r JoinVoiceRoomResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r JoinVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListAccountAliasesWithResponse List the authenticated user's aliases
 //
 // The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
@@ -65473,6 +67341,244 @@ func (c *ClientWithResponses) SetUpTotpWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseSetUpTotpResponse(rsp)
+}
+
+// ListVoiceRoomsWithResponse List the open voice chat rooms
+//
+// The open voice chat rooms that the user sees: the rooms where the user follows the host or
+// a speaker first, then by the most participants. With `tag`, only the rooms with that
+// hashtag. A 404 while the voice chat is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
+func (c *ClientWithResponses) ListVoiceRoomsWithResponse(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*ListVoiceRoomsResponse, error) {
+	rsp, err := c.ListVoiceRooms(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListVoiceRoomsResponse(rsp)
+}
+
+// OpenVoiceRoomWithBodyWithResponse Open a voice chat room
+//
+// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+// The user must be a local, unrestricted user who may start rooms (the instance setting
+// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+// while as many rooms are open as the server allows, and a 409
+// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+func (c *ClientWithResponses) OpenVoiceRoomWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OpenVoiceRoomResponse, error) {
+	rsp, err := c.OpenVoiceRoomWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOpenVoiceRoomResponse(rsp)
+}
+
+// OpenVoiceRoomWithResponse Open a voice chat room
+//
+// Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+// The user must be a local, unrestricted user who may start rooms (the instance setting
+// `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+// while as many rooms are open as the server allows, and a 409
+// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms (the `OpenVoiceRoom` operationId).
+func (c *ClientWithResponses) OpenVoiceRoomWithResponse(ctx context.Context, body OpenVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*OpenVoiceRoomResponse, error) {
+	rsp, err := c.OpenVoiceRoom(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOpenVoiceRoomResponse(rsp)
+}
+
+// EndVoiceRoomWithResponse End a voice chat room
+//
+// Ends a room that the user hosts, for every participant. A 403
+// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
+func (c *ClientWithResponses) EndVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*EndVoiceRoomResponse, error) {
+	rsp, err := c.EndVoiceRoom(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEndVoiceRoomResponse(rsp)
+}
+
+// GetVoiceRoomWithResponse Get a voice chat room
+//
+// An open room that the user sees. A room that ended or that the user does not see is a
+// 404. A 404 while the voice chat is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
+func (c *ClientWithResponses) GetVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*GetVoiceRoomResponse, error) {
+	rsp, err := c.GetVoiceRoom(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVoiceRoomResponse(rsp)
+}
+
+// UpdateVoiceRoomWithBodyWithResponse Change the settings of a voice chat room
+//
+// Changes the settings of a room that the user hosts. The participants stay whatever the new
+// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+// for invalid settings. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+func (c *ClientWithResponses) UpdateVoiceRoomWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateVoiceRoomResponse, error) {
+	rsp, err := c.UpdateVoiceRoomWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateVoiceRoomResponse(rsp)
+}
+
+// UpdateVoiceRoomWithResponse Change the settings of a voice chat room
+//
+// Changes the settings of a room that the user hosts. The participants stay whatever the new
+// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+// for invalid settings. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /voice/rooms/{id} (the `UpdateVoiceRoom` operationId).
+func (c *ClientWithResponses) UpdateVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, body UpdateVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateVoiceRoomResponse, error) {
+	rsp, err := c.UpdateVoiceRoom(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateVoiceRoomResponse(rsp)
+}
+
+// SendVoiceHeartbeatWithBodyWithResponse Keep a session of a voice chat room alive
+//
+// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+// session that is not the user's current session in the room is a 404: the client joins
+// again. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+func (c *ClientWithResponses) SendVoiceHeartbeatWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SendVoiceHeartbeatResponse, error) {
+	rsp, err := c.SendVoiceHeartbeatWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendVoiceHeartbeatResponse(rsp)
+}
+
+// SendVoiceHeartbeatWithResponse Keep a session of a voice chat room alive
+//
+// Tells the server that the session is alive; the client sends it every 15 seconds. A session
+// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+// session that is not the user's current session in the room is a 404: the client joins
+// again. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/heartbeat (the `SendVoiceHeartbeat` operationId).
+func (c *ClientWithResponses) SendVoiceHeartbeatWithResponse(ctx context.Context, id VoiceRoomId, body SendVoiceHeartbeatJSONRequestBody, reqEditors ...RequestEditorFn) (*SendVoiceHeartbeatResponse, error) {
+	rsp, err := c.SendVoiceHeartbeat(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendVoiceHeartbeatResponse(rsp)
+}
+
+// HandOverVoiceRoomWithBodyWithResponse Hand a voice chat room over to another host
+//
+// Makes a participant who may host rooms the host of a room that the user hosts; the user
+// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+// over. A 404 while the voice chat is off on the server.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+func (c *ClientWithResponses) HandOverVoiceRoomWithBodyWithResponse(ctx context.Context, id VoiceRoomId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*HandOverVoiceRoomResponse, error) {
+	rsp, err := c.HandOverVoiceRoomWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHandOverVoiceRoomResponse(rsp)
+}
+
+// HandOverVoiceRoomWithResponse Hand a voice chat room over to another host
+//
+// Makes a participant who may host rooms the host of a room that the user hosts; the user
+// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+// over. A 404 while the voice chat is off on the server.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/host (the `HandOverVoiceRoom` operationId).
+func (c *ClientWithResponses) HandOverVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, body HandOverVoiceRoomJSONRequestBody, reqEditors ...RequestEditorFn) (*HandOverVoiceRoomResponse, error) {
+	rsp, err := c.HandOverVoiceRoom(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHandOverVoiceRoomResponse(rsp)
+}
+
+// LeaveVoiceRoomWithResponse Leave a voice chat room
+//
+// Leaves a room that the user is in. The host of a room with other participants chooses the
+// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
+func (c *ClientWithResponses) LeaveVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*LeaveVoiceRoomResponse, error) {
+	rsp, err := c.LeaveVoiceRoom(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLeaveVoiceRoomResponse(rsp)
+}
+
+// JoinVoiceRoomWithResponse Join a voice chat room
+//
+// Joins a room that the user sees, as a listener, with a new session. A user who is in the
+// room already, from another device, keeps the place with a new session, and the previous
+// session is disconnected. Joining leaves the room the user was in; the host of an open room
+// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+// allows. A 404 while the voice chat is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
+func (c *ClientWithResponses) JoinVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*JoinVoiceRoomResponse, error) {
+	rsp, err := c.JoinVoiceRoom(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseJoinVoiceRoomResponse(rsp)
 }
 
 // ParseListAccountAliasesResponse parses an HTTP response from a ListAccountAliasesWithResponse call
@@ -86548,6 +88654,657 @@ func ParseSetUpTotpResponse(rsp *http.Response) (*SetUpTotpResponse, error) {
 		response.Headers200 = &headers
 	case true:
 		var headers SetUpTotpResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListVoiceRoomsResponse parses an HTTP response from a ListVoiceRoomsWithResponse call
+func ParseListVoiceRoomsResponse(rsp *http.Response) (*ListVoiceRoomsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListVoiceRoomsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoomPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListVoiceRoomsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListVoiceRoomsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseOpenVoiceRoomResponse parses an HTTP response from a OpenVoiceRoomWithResponse call
+func ParseOpenVoiceRoomResponse(rsp *http.Response) (*OpenVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OpenVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest VoiceRoomJoin
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers OpenVoiceRoomResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers OpenVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseEndVoiceRoomResponse parses an HTTP response from a EndVoiceRoomWithResponse call
+func ParseEndVoiceRoomResponse(rsp *http.Response) (*EndVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EndVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers EndVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetVoiceRoomResponse parses an HTTP response from a GetVoiceRoomWithResponse call
+func ParseGetVoiceRoomResponse(rsp *http.Response) (*GetVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoom
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetVoiceRoomResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateVoiceRoomResponse parses an HTTP response from a UpdateVoiceRoomWithResponse call
+func ParseUpdateVoiceRoomResponse(rsp *http.Response) (*UpdateVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoom
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateVoiceRoomResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSendVoiceHeartbeatResponse parses an HTTP response from a SendVoiceHeartbeatWithResponse call
+func ParseSendVoiceHeartbeatResponse(rsp *http.Response) (*SendVoiceHeartbeatResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SendVoiceHeartbeatResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers SendVoiceHeartbeatResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseHandOverVoiceRoomResponse parses an HTTP response from a HandOverVoiceRoomWithResponse call
+func ParseHandOverVoiceRoomResponse(rsp *http.Response) (*HandOverVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &HandOverVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoom
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers HandOverVoiceRoomResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers HandOverVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseLeaveVoiceRoomResponse parses an HTTP response from a LeaveVoiceRoomWithResponse call
+func ParseLeaveVoiceRoomResponse(rsp *http.Response) (*LeaveVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LeaveVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers LeaveVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseJoinVoiceRoomResponse parses an HTTP response from a JoinVoiceRoomWithResponse call
+func ParseJoinVoiceRoomResponse(rsp *http.Response) (*JoinVoiceRoomResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &JoinVoiceRoomResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoomJoin
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers JoinVoiceRoomResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers JoinVoiceRoomResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

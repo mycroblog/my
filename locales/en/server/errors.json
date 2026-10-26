@@ -558,5 +558,45 @@
   "errors.move_too_soon": {
     "defaultMessage": "Your account moved too recently.",
     "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
+  },
+  "errors.voice.not_eligible": {
+    "defaultMessage": "You may not host voice chat rooms.",
+    "description": "API error title for HTTP 403 when a user who may not host voice chat rooms opens one (ADR-0100 §2: a local, unrestricted account, with the start_voice_rooms permission unless everyone may start rooms)."
+  },
+  "errors.voice.not_host": {
+    "defaultMessage": "Only the host of the room may do this.",
+    "description": "API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over."
+  },
+  "errors.voice.room_full": {
+    "defaultMessage": "The room is full.",
+    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows."
+  },
+  "errors.voice.too_many_rooms": {
+    "defaultMessage": "No more rooms can be opened now.",
+    "description": "API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows."
+  },
+  "errors.voice.hosting_elsewhere": {
+    "defaultMessage": "You host another room.",
+    "description": "API error title for HTTP 409 when the host of an open voice chat room opens or joins another room."
+  },
+  "errors.voice.hosting_elsewhere_detail": {
+    "defaultMessage": "Leave that room first, choosing the next host or ending it.",
+    "description": "API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room."
+  },
+  "errors.voice.host_must_choose": {
+    "defaultMessage": "Choose the next host or end the room.",
+    "description": "API error title for HTTP 409 when the host leaves a voice chat room that has other participants without choosing the next host or ending the room."
+  },
+  "errors.voice.invalid_next_host": {
+    "defaultMessage": "The next host must be a participant who may host rooms.",
+    "description": "API error title for HTTP 422 when the host of a voice chat room chooses as the next host someone who is not in the room or may not host rooms."
+  },
+  "errors.voice.conflict": {
+    "defaultMessage": "The room changed meanwhile. Try again.",
+    "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
+  },
+  "errors.voice.unavailable": {
+    "defaultMessage": "Voice chat is not available right now.",
+    "description": "API error title for HTTP 503 when the server could not prepare the connection of a voice chat room."
   }
 }

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: A STUN or TURN server, the `RTCIceServer` of the browser.
+type: object
+required: [urls]
+properties:
+  urls:
+    type: array
+    items:
+      type: string
+  username:
+    type: string
+  credential:
+    type: string

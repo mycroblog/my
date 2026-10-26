@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A session of the user in a voice chat room: the room, the new session, and its grant. The
+  client sends the session's heartbeats every 15 seconds.
+type: object
+required: [room, session, grant]
+properties:
+  room:
+    $ref: ./VoiceRoom.yaml
+  session:
+    description: The ID of the session, which replaces the previous session of the user in the room.
+    type: string
+  grant:
+    $ref: ./VoiceGrant.yaml

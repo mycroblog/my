@@ -253,6 +253,7 @@ const (
 	ScopeReadReports        = "read:reports"
 	ScopeReadStatuses       = "read:statuses"
 	ScopeReadSupporters     = "read:supporters"
+	ScopeReadVoice          = "read:voice"
 	ScopeWriteAccounts      = "write:accounts"
 	ScopeWriteBlocks        = "write:blocks"
 	ScopeWriteBookmarks     = "write:bookmarks"
@@ -265,6 +266,7 @@ const (
 	ScopeWriteReports       = "write:reports"
 	ScopeWriteStatuses      = "write:statuses"
 	ScopeWriteSupporters    = "write:supporters"
+	ScopeWriteVoice         = "write:voice"
 )
 
 // broadScopes are the scopes that AllScopes holds; together they grant every scope.
@@ -275,10 +277,10 @@ var knownScopes = []string{
 	ScopeAdmin, ScopeAdminRead, ScopeAdminWrite,
 	ScopeFollow, ScopePush, ScopeRead,
 	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadFavourites, ScopeReadFinance,
-	ScopeReadFollows, ScopeReadMutes, ScopeReadNotifications, ScopeReadReports, ScopeReadStatuses, ScopeReadSupporters,
+	ScopeReadFollows, ScopeReadMutes, ScopeReadNotifications, ScopeReadReports, ScopeReadStatuses, ScopeReadSupporters, ScopeReadVoice,
 	ScopeWrite,
 	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteFavourites, ScopeWriteFollows,
-	ScopeWriteMedia, ScopeWriteMutes, ScopeWriteNotifications, ScopeWriteReports, ScopeWriteStatuses, ScopeWriteSupporters,
+	ScopeWriteMedia, ScopeWriteMutes, ScopeWriteNotifications, ScopeWriteReports, ScopeWriteStatuses, ScopeWriteSupporters, ScopeWriteVoice,
 }
 
 // followScopes are the fine-grained scopes that follow grants.

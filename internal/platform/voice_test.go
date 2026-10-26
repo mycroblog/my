@@ -15,6 +15,7 @@ import (
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
 )
 
@@ -143,5 +144,59 @@ func TestAppVoice(t *testing.T) {
 	}
 	if sfu := (platform.Voice{Method: platform.VoiceLiveKit, P2PMaxParticipants: 10, MaxParticipants: 100}); sfu.RoomCapacity() != 100 {
 		t.Errorf("livekit room capacity = %d, want 100", sfu.RoomCapacity())
+	}
+}
+
+// TestVoiceRoomsThroughAPI drives the rooms of voice = p2p on SQLite through the client API
+// (ADR-0100 §2, §5, §6): the administrator, whose role has start_voice_rooms, opens a room; a
+// user without the permission may not, but joins it, sends a heartbeat, and sees it in the list;
+// the host leaves only with a choice; and the room ends. voice = livekit has no transport yet.
+func TestVoiceRoomsThroughAPI(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org",
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	e := &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}
+	alice := e.user("alice")
+	r, err := app.Identity.RegisterLocalUser(t.Context(), identity.RegisterInput{Username: "bob", Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob := issueTokens(t, app, r.User.ID, "").AccessToken
+
+	if p := e.want(e.do(http.MethodPost, "/voice/rooms", bob, map[string]any{"name": "Bob's"}, nil), http.StatusForbidden, "open by bob"); p != clientapi.ProblemTypeVoiceNotEligible {
+		t.Errorf("open by bob = %s", p)
+	}
+	var opened clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, "/voice/rooms", alice.token, map[string]any{"name": "Talk", "hashtags": []string{"go"}}, &opened), http.StatusCreated, "open")
+	if opened.Grant.Kind != "p2p" || len(opened.Grant.IceServers) != 1 || opened.Room.Host.Id != alice.id {
+		t.Errorf("open = %+v", opened)
+	}
+	room := "/voice/rooms/" + opened.Room.Id
+	var joined clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, room+"/participation", bob, nil, &joined), http.StatusOK, "join")
+	e.want(e.do(http.MethodPost, room+"/heartbeat", bob, map[string]any{"session": joined.Session}, nil), http.StatusNoContent, "heartbeat")
+	var page clientapi.VoiceRoomPage
+	e.want(e.do(http.MethodGet, "/voice/rooms?tag=GO", bob, nil, &page), http.StatusOK, "list")
+	if len(page.Items) != 1 || page.Items[0].ParticipantsCount != 2 {
+		t.Errorf("list = %+v", page)
+	}
+	if p := e.want(e.do(http.MethodDelete, room+"/participation", alice.token, nil, nil), http.StatusConflict, "leave by the host"); p != clientapi.ProblemTypeVoiceHostMustChoose {
+		t.Errorf("leave by the host = %s", p)
+	}
+	e.want(e.do(http.MethodDelete, room, alice.token, nil, nil), http.StatusNoContent, "end")
+	e.want(e.do(http.MethodGet, room, bob, nil, nil), http.StatusNotFound, "get after the end")
+
+	sfu := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "livekit", "MY_VOICE_LIVEKIT_URL": "wss://livekit.example.org",
+		"MY_VOICE_LIVEKIT_API_KEY": "key", "MY_VOICE_LIVEKIT_API_SECRET": "secret",
+	})
+	if _, err := platform.NewApp(t.Context(), sfu, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)}); err == nil || !strings.Contains(err.Error(), "no transport") {
+		t.Errorf("NewApp with voice = livekit: %v, want no transport", err)
 	}
 }

@@ -547,6 +547,46 @@
     "defaultMessage": "‮{name} ɯnsʇ qǝ ɐu ıɯɐƃǝ ʇɥɐʇ ʎon ndʅoɐpǝp ɐup ʇɥɐʇ ɥɐs ɟıuısɥǝp dɹoɔǝssıuƃ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.voice.conflict": {
+    "defaultMessage": "‮⊥ɥǝ ɹooɯ ɔɥɐuƃǝp ɯǝɐuʍɥıʅǝ. ⊥ɹʎ ɐƃɐıu.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.host_must_choose": {
+    "defaultMessage": "‮Ↄɥoosǝ ʇɥǝ uǝxʇ ɥosʇ oɹ ǝup ʇɥǝ ɹooɯ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.hosting_elsewhere": {
+    "defaultMessage": "‮⅄on ɥosʇ ɐuoʇɥǝɹ ɹooɯ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.hosting_elsewhere_detail": {
+    "defaultMessage": "‮⅂ǝɐʌǝ ʇɥɐʇ ɹooɯ ɟıɹsʇ, ɔɥoosıuƃ ʇɥǝ uǝxʇ ɥosʇ oɹ ǝupıuƃ ıʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.invalid_next_host": {
+    "defaultMessage": "‮⊥ɥǝ uǝxʇ ɥosʇ ɯnsʇ qǝ ɐ dɐɹʇıɔıdɐuʇ ʍɥo ɯɐʎ ɥosʇ ɹooɯs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.not_eligible": {
+    "defaultMessage": "‮⅄on ɯɐʎ uoʇ ɥosʇ ʌoıɔǝ ɔɥɐʇ ɹooɯs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.not_host": {
+    "defaultMessage": "‮Ouʅʎ ʇɥǝ ɥosʇ oɟ ʇɥǝ ɹooɯ ɯɐʎ po ʇɥıs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.room_full": {
+    "defaultMessage": "‮⊥ɥǝ ɹooɯ ıs ɟnʅʅ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.too_many_rooms": {
+    "defaultMessage": "‮No ɯoɹǝ ɹooɯs ɔɐu qǝ odǝuǝp uoʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.unavailable": {
+    "defaultMessage": "‮Ʌoıɔǝ ɔɥɐʇ ıs uoʇ ɐʌɐıʅɐqʅǝ ɹıƃɥʇ uoʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.webhook.invalid": {
     "defaultMessage": "‮⊥ɥǝ ʍǝqɥooʞ ɔɐuuoʇ qǝ sɐʌǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."

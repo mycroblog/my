@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who sees a voice chat room and may join it: `local` every local user, `followers` the
+  followers of the current host, `mutuals` those who follow the host and whom the host follows,
+  and `invited` only the invited users. The host, the co-hosts, the participants, and the
+  invited users always see it, and a block with the host or a co-host always hides it.
+type: string
+enum: [local, followers, mutuals, invited]

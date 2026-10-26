@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: sendVoiceHeartbeat
+  summary: Keep a session of a voice chat room alive
+  description: |
+    Tells the server that the session is alive; the client sends it every 15 seconds. A session
+    without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+    minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+    session that is not the user's current session in the room is a 404: the client joins
+    again. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceSession.yaml
+  responses:
+    "204":
+      description: The session is alive.
+    default:
+      $ref: ../components/responses/Problem.yaml

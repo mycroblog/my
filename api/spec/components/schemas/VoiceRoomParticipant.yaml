@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: A participant of a voice chat room.
+type: object
+required: [account, role, host, cohost, hand_raised]
+properties:
+  account:
+    $ref: ./Account.yaml
+  role:
+    $ref: ./VoiceRole.yaml
+  host:
+    description: Whether the participant is the host.
+    type: boolean
+  cohost:
+    description: Whether the participant is a co-host. The host is never a co-host.
+    type: boolean
+  hand_raised:
+    description: Whether the participant raised a hand to speak.
+    type: boolean

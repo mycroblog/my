@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An open voice chat room: its settings, its host, and its participants in the order they
+  joined. Everyone who sees the room sees its participants.
+type: object
+required: [id, name, description, hashtags, visibility, speakers, host, opened_at, participants_count, participants]
+properties:
+  id:
+    $ref: ./Id.yaml
+  name:
+    description: The name of the room, 1 to 100 characters.
+    type: string
+  description:
+    description: The description of the room, up to 500 characters; empty for none.
+    type: string
+  hashtags:
+    description: The hashtags of the room, without the `#`, as the host typed them.
+    type: array
+    items:
+      type: string
+  visibility:
+    $ref: ./VoiceRoomVisibility.yaml
+  speakers:
+    $ref: ./VoiceRoomSpeakers.yaml
+  host:
+    $ref: ./Account.yaml
+  opened_at:
+    description: When the room opened.
+    type: string
+    format: date-time
+  participants_count:
+    description: How many people are in the room, the host included.
+    type: integer
+  participants:
+    type: array
+    items:
+      $ref: ./VoiceRoomParticipant.yaml

@@ -134,6 +134,21 @@ description: |
     allow the operation.
   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
     already.
+  - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
+  - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
+  - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
+    server allows.
+  - `/api/v1/problems/voice-too-many-rooms` (409): as many voice chat rooms are open as the
+    server allows.
+  - `/api/v1/problems/voice-hosting-elsewhere` (409): the user hosts another open voice chat
+    room; leave it first, choosing the next host or ending it.
+  - `/api/v1/problems/voice-host-must-choose` (409): the host leaves a room with other
+    participants; choose the next host or end the room.
+  - `/api/v1/problems/voice-invalid-next-host` (422): the next host is not a participant of the
+    room who may host rooms.
+  - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
+  - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
+    the room.
   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
     (`POST /accounts/move/cancel`).

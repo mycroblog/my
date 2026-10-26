@@ -547,6 +547,46 @@
     "defaultMessage": "[{name} ḿŭŭşŧ ƀḗḗ ȧȧƞ īḿȧȧɠḗḗ ŧħȧȧŧ ẏǿǿŭŭ ŭŭƥŀǿǿȧȧḓḗḗḓ ȧȧƞḓ ŧħȧȧŧ ħȧȧş ƒīƞīşħḗḗḓ ƥřǿǿƈḗḗşşīƞɠ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.voice.conflict": {
+    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ ƈħȧȧƞɠḗḗḓ ḿḗḗȧȧƞẇħīŀḗḗ. Ŧřẏ ȧȧɠȧȧīƞ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.host_must_choose": {
+    "defaultMessage": "[Ƈħǿǿǿǿşḗḗ ŧħḗḗ ƞḗḗẋŧ ħǿǿşŧ ǿǿř ḗḗƞḓ ŧħḗḗ řǿǿǿǿḿ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.hosting_elsewhere": {
+    "defaultMessage": "[Ẏǿǿŭŭ ħǿǿşŧ ȧȧƞǿǿŧħḗḗř řǿǿǿǿḿ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.hosting_elsewhere_detail": {
+    "defaultMessage": "[Ŀḗḗȧȧṽḗḗ ŧħȧȧŧ řǿǿǿǿḿ ƒīřşŧ, ƈħǿǿǿǿşīƞɠ ŧħḗḗ ƞḗḗẋŧ ħǿǿşŧ ǿǿř ḗḗƞḓīƞɠ īŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.invalid_next_host": {
+    "defaultMessage": "[Ŧħḗḗ ƞḗḗẋŧ ħǿǿşŧ ḿŭŭşŧ ƀḗḗ ȧȧ ƥȧȧřŧīƈīƥȧȧƞŧ ẇħǿǿ ḿȧȧẏ ħǿǿşŧ řǿǿǿǿḿş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.not_eligible": {
+    "defaultMessage": "[Ẏǿǿŭŭ ḿȧȧẏ ƞǿǿŧ ħǿǿşŧ ṽǿǿīƈḗḗ ƈħȧȧŧ řǿǿǿǿḿş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.not_host": {
+    "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ħǿǿşŧ ǿǿƒ ŧħḗḗ řǿǿǿǿḿ ḿȧȧẏ ḓǿǿ ŧħīş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.room_full": {
+    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.too_many_rooms": {
+    "defaultMessage": "[Ƞǿǿ ḿǿǿřḗḗ řǿǿǿǿḿş ƈȧȧƞ ƀḗḗ ǿǿƥḗḗƞḗḗḓ ƞǿǿẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.unavailable": {
+    "defaultMessage": "[Ṽǿǿīƈḗḗ ƈħȧȧŧ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ řīɠħŧ ƞǿǿẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.webhook.invalid": {
     "defaultMessage": "[Ŧħḗḗ ẇḗḗƀħǿǿǿǿķ ƈȧȧƞƞǿǿŧ ƀḗḗ şȧȧṽḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
