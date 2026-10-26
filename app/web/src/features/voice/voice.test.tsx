@@ -252,6 +252,46 @@ describe("the page of a room", () => {
     expect(await screen.findByText("Everyone who joins")).toBeInTheDocument();
   });
 
+  test("reports the room with its host as the target, without a posts step", async () => {
+    server.use(signedInHandler);
+    voiceOn();
+    const reports: Schemas["CreateReportRequest"][] = [];
+    server.events.on("request:start", ({ request }) => {
+      if (request.method === "POST" && new URL(request.url).pathname === `${apiBase}/reports`) {
+        void request
+          .clone()
+          .json()
+          .then((body: Schemas["CreateReportRequest"]) => reports.push(body));
+      }
+    });
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Report room" }));
+    const dialog = await screen.findByRole("dialog", { name: "Report the room ⁨Friday night radio⁩" });
+    const heading = within(dialog).getByRole("heading", { name: "Why are you reporting this room?" });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+    expect(within(dialog).getByText("The report is about this room and its host, ⁨Bob⁩.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Step 1 of 2")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("radio", { name: "Spam" }));
+    await user.click(within(dialog).getByRole("button", { name: "Next" }));
+    // The comment follows the reason: a room's report cites no posts.
+    expect(await within(dialog).findByText("Step 2 of 2")).toBeInTheDocument();
+    await user.type(within(dialog).getByRole("textbox", { name: /Comment/u }), "Shouting ads");
+    await user.click(within(dialog).getByRole("button", { name: "Send report" }));
+
+    expect(await within(dialog).findByRole("heading", { name: "Report sent" })).toBeInTheDocument();
+    expect(reports).toEqual([{ account_id: otherAccountFixture.id, category: "spam", voice_room_id: roomId, comment: "Shouting ads", forward: false }]);
+  });
+
+  test("offers the host no report of their own room", async () => {
+    server.use(signedInHandler);
+    voiceOn([ownRoomFixture()]);
+    await renderApp({ path: `/voice/${roomId}` });
+    expect(await screen.findByRole("button", { name: "Room settings" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Report room" })).not.toBeInTheDocument();
+  });
+
   test("tells a visitor who is not signed in that only this server's users join, with the summary the server shows", async () => {
     server.use(
       http.get(`${apiBase}/voice/rooms/:id/summary`, () =>

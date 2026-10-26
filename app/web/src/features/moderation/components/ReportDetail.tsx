@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A report's page below its heading: everything a moderator needs to handle one report on one page (NFR-MOD-4,
-// FR-710). The report itself, the posts it points at, its target with the target's history (its other reports
+// FR-710). The report itself, the posts it points at (or the voice chat room, with its records and ending it,
+// ADR-0100 §11), its target with the target's history (its other reports
 // and its moderation actions), the moderator who handles it, the moderators' notes, and handling it: a
 // moderation action on the target that resolves it, resolving it without one, or reopening it. What a change
 // did stays on the page in a StatusMessage (role="status") next to what caused it; failures are toasts, and a
@@ -32,6 +33,7 @@ import {
 import { AccountActionForm } from "./AccountActionForm";
 import { DateTime, RecordList, RequirePermission, useFocusAfterChange } from "./parts";
 import { AccountLabel, AssigneeName } from "./reportParts";
+import { ReportVoiceRoom } from "./ReportVoiceRoom";
 import { imageSources } from "../../../lib/images";
 
 export function ReportDetailView({ id }: { id: string }) {
@@ -67,9 +69,13 @@ function ReportPage({ id }: { id: string }) {
       <DetailSection title={t("client:admin.report.summary.title")}>
         <ReportSummary report={report} />
       </DetailSection>
-      <DetailSection title={t("client:admin.report.posts.title")}>
-        <ReportedPosts posts={posts} />
-      </DetailSection>
+      {report.voice_room !== undefined && <ReportVoiceRoom report={report} room={report.voice_room} />}
+      {/* A room's report points at no posts. */}
+      {report.voice_room === undefined && (
+        <DetailSection title={t("client:admin.report.posts.title")}>
+          <ReportedPosts posts={posts} />
+        </DetailSection>
+      )}
       <DetailSection title={t("client:admin.report.target.title")}>
         {target === undefined ? (
           <p>{t("client:admin.report.target.deleted")}</p>

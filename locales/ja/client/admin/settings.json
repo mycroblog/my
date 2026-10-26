@@ -726,5 +726,49 @@
   "admin.settings.oauth_apps.dynamic.description": {
     "defaultMessage": "アプリがサインインなしで自分を登録します（RFC 7591）。メタデータ文書を使えないツール向けです。",
     "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "通話",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "ルームを開ける人",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "このサーバーの全員",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "このサーバーにログインしている人なら誰でもルームを開けます。",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "権限を持つ人だけ",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "通話のルームを開く権限をロールで持つ人だけが開けます。",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "ログインしていない人にもルームの要約を見せる",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "公開範囲が「このサーバーの全員」のルームでは、ログインしていない人とほかのサーバーの人にも、名前・説明・ホスト・開いているかを見せ、リンクのプレビューにも載せます。参加している人は見せません。",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "参加者の記録を残す日数",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "ルームが終わってから、参加・退出・話す許可・退出させたことの記録を残す日数です（{min}〜{max} 日）。通報されたルームの記録は、その通報が残る間は残ります。",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
   }
 }

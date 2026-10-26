@@ -166,5 +166,17 @@
   "report.title": {
     "defaultMessage": "{name} を通報",
     "description": "Title of the dialog that reports an account to the moderators. {name} is the account's display name."
+  },
+  "report.title_room": {
+    "defaultMessage": "ルーム {room} を通報",
+    "description": "Title of the dialog that reports a voice chat room to the moderators. {room} is the room's name."
+  },
+  "report.room.category.heading": {
+    "defaultMessage": "このルームを通報する理由は何ですか？",
+    "description": "Heading of the first step of the dialog that reports a voice chat room, which also names the group of reasons."
+  },
+  "report.room.target": {
+    "defaultMessage": "このルームと、そのホストの {name} を通報します。",
+    "description": "Text above the reasons of the dialog that reports a voice chat room. {name} is the host's display name."
   }
 }

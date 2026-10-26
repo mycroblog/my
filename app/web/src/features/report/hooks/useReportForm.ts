@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The steps of reporting an account (FR-701, FR-709): the category, the rules it breaks (for a rule
 // violation), the posts it is about, a comment for the moderators and, for an account of another server,
-// whether to forward the report there. The draft lives here until the last step files it; nothing reaches
+// whether to forward the report there. A report of a voice chat room (ADR-0100 §11) targets the room's host and
+// points at the room instead of posts, so it has no posts step and is never forwarded. The draft lives here until the last step files it; nothing reaches
 // the server before.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
@@ -73,14 +74,29 @@ function loadable<T>(query: { isError: boolean; error: unknown; refetch: () => u
   return { status: "loading" };
 }
 
-/** The steps of the draft for `category`. */
-function stepsOf(category: ReportCategory | null): readonly ReportStep[] {
-  return category === "violation" ? ["category", "rules", "posts", "comment"] : ["category", "posts", "comment"];
+/** A voice chat room that a report points at, by its ID and its name as the user sees it now. */
+export type ReportedVoiceRoom = { id: string; name: string };
+
+/** The steps of the draft for `category`; a room's report has no posts step. */
+function stepsOf(category: ReportCategory | null, isRoom: boolean): readonly ReportStep[] {
+  const steps: readonly ReportStep[] = category === "violation" ? ["category", "rules", "posts", "comment"] : ["category", "posts", "comment"];
+  return isRoom ? steps.filter((step) => step !== "posts") : steps;
 }
 
 /** The request of a draft whose category is chosen; what does not apply is left out. */
-function requestOf(account: Account, draft: ReportDraft, category: ReportCategory, remoteDomain: string | null): CreateReportRequest {
+function requestOf(account: Account, draft: ReportDraft, category: ReportCategory, remoteDomain: string | null, room: ReportedVoiceRoom | undefined): CreateReportRequest {
   const comment = draft.comment.trim();
+  if (room !== undefined) {
+    // A room's report points at the room, not at posts, and stays on this server (its host is local).
+    return {
+      account_id: account.id,
+      category,
+      voice_room_id: room.id,
+      ...(category === "violation" && { rule_ids: [...draft.ruleIds] }),
+      ...(comment !== "" && { comment }),
+      forward: false,
+    };
+  }
   return {
     account_id: account.id,
     category,
@@ -93,10 +109,11 @@ function requestOf(account: Account, draft: ReportDraft, category: ReportCategor
 }
 
 /**
- * The report of `account`, started from its post `status` (preselected) or from its profile. The steps are
- * kept here, so the dialog that shows them only renders one at a time.
+ * The report of `account`, started from its post `status` (preselected), from its profile, or from the page of
+ * the voice chat room `room` that it hosts. The steps are kept here, so the dialog that shows them only renders
+ * one at a time.
  */
-export function useReportForm(account: Account, status: Status | undefined): ReportForm {
+export function useReportForm(account: Account, status: Status | undefined, room?: ReportedVoiceRoom): ReportForm {
   const api = useApi();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<ReportStep>("category");
@@ -109,7 +126,8 @@ export function useReportForm(account: Account, status: Status | undefined): Rep
   }));
   const [isRuleMissing, setIsRuleMissing] = useState(false);
   const instance = useQuery(instanceQueryOptions(api));
-  const latest = useQuery(reportablePostsQueryOptions(api, account.id));
+  // A room's report cites no posts, so it does not load them.
+  const latest = useQuery({ ...reportablePostsQueryOptions(api, account.id), enabled: room === undefined });
   const file = useMutation({ ...createReportMutation(api), onSuccess: () => cacheFiledReport(queryClient) });
 
   const rules = loadable(instance, instance.data?.rules);
@@ -119,7 +137,7 @@ export function useReportForm(account: Account, status: Status | undefined): Rep
     latestPosts && (status === undefined || latestPosts.some((post) => post.id === status.id) ? latestPosts : [status, ...latestPosts]),
   );
   const remoteDomain = account.acct.includes("@") ? account.domain : null;
-  const steps = stepsOf(draft.category);
+  const steps = stepsOf(draft.category, room !== undefined);
   const index = steps.indexOf(step);
 
   return {
@@ -146,7 +164,7 @@ export function useReportForm(account: Account, status: Status | undefined): Rep
         setStep(following);
         return;
       }
-      file.mutate(requestOf(account, draft, draft.category, remoteDomain), {
+      file.mutate(requestOf(account, draft, draft.category, remoteDomain, room), {
         onSuccess: () => {
           setStep("sent");
         },

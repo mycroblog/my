@@ -21,6 +21,11 @@ const endReasons: Readonly<Record<string, ClientMessageKey>> = {
   disabled: "client:voice.end_reason.disabled",
 };
 
+/** The sentence of why a room ended, `other` for a reason the app does not know. */
+export function voiceEndReasonLabel(reason: string | undefined): ClientMessageKey {
+  return endReasons[reason ?? ""] ?? "client:voice.end_reason.other";
+}
+
 /** A date and time as the page shows it: the machine-readable value and the text in the user's locale. */
 export type DateView = { dateTime: string; text: string };
 
@@ -51,7 +56,7 @@ export function useVoiceHistory(): VoiceHistory {
     name: entry.name,
     opened: dateOf(entry.opened_at),
     ended: entry.ended_at === undefined ? undefined : dateOf(entry.ended_at),
-    reason: entry.ended_at === undefined ? undefined : (endReasons[entry.end_reason ?? ""] ?? "client:voice.end_reason.other"),
+    reason: entry.ended_at === undefined ? undefined : voiceEndReasonLabel(entry.end_reason),
   });
   if (query.data !== undefined) {
     return {

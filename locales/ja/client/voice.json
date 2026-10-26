@@ -338,5 +338,9 @@
   "voice.end_reason.other": {
     "defaultMessage": "その他",
     "description": "Why a voice chat room ended, for a reason the app does not know."
+  },
+  "voice.room.report": {
+    "defaultMessage": "ルームを通報",
+    "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
   }
 }

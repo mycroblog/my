@@ -314,5 +314,201 @@
   "admin.report.unassigned": {
     "defaultMessage": "この通報の担当を外しました。",
     "description": "Status message after unassigning."
+  },
+  "admin.report.voice.title": {
+    "defaultMessage": "通話のルーム",
+    "description": "Heading of the section of a report's page about the reported voice chat room."
+  },
+  "admin.report.voice.state": {
+    "defaultMessage": "状態",
+    "description": "Term: whether the reported voice chat room is open or ended."
+  },
+  "admin.report.voice.state.open": {
+    "defaultMessage": "開いている",
+    "description": "Value: the voice chat room is open."
+  },
+  "admin.report.voice.state.ended": {
+    "defaultMessage": "終了",
+    "description": "Value: the voice chat room has ended."
+  },
+  "admin.report.voice.opened_at": {
+    "defaultMessage": "開いた日時",
+    "description": "Term: when the voice chat room was opened."
+  },
+  "admin.report.voice.ended_at": {
+    "defaultMessage": "終わった日時",
+    "description": "Term: when the voice chat room ended."
+  },
+  "admin.report.voice.end_reason": {
+    "defaultMessage": "終わった理由",
+    "description": "Term: why the voice chat room ended."
+  },
+  "admin.report.voice.ended_by": {
+    "defaultMessage": "終えた人",
+    "description": "Term: who ended the voice chat room."
+  },
+  "admin.report.voice.end_note": {
+    "defaultMessage": "モデレーターの理由",
+    "description": "Term: the reason a moderator gave for ending the voice chat room."
+  },
+  "admin.report.voice.records": {
+    "defaultMessage": "参加者の記録は、ルームが終わってからしばらくの間と、ルームを指す通報が残る間だけ残ります。",
+    "description": "Explanation under the heading of the reported voice chat room."
+  },
+  "admin.report.voice.revisions": {
+    "defaultMessage": "設定の改版",
+    "description": "Heading of the list of the revisions of the settings of the reported voice chat room, oldest first."
+  },
+  "admin.report.voice.revision.reported": {
+    "defaultMessage": "通報の時点",
+    "description": "Tag on the revision of the settings that was in effect when the voice chat room was reported."
+  },
+  "admin.report.voice.revision.name": {
+    "defaultMessage": "名前",
+    "description": "Term: the name of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.description": {
+    "defaultMessage": "説明",
+    "description": "Term: the description of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.hashtags": {
+    "defaultMessage": "ハッシュタグ",
+    "description": "Term: the hashtags of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.visibility": {
+    "defaultMessage": "見て参加できる人",
+    "description": "Term: the visibility of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.speakers": {
+    "defaultMessage": "許可なしに話せる人",
+    "description": "Term: who may speak in the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.by": {
+    "defaultMessage": "設定した人",
+    "description": "Term: who set this revision of the settings of the voice chat room."
+  },
+  "admin.report.voice.revision.at": {
+    "defaultMessage": "設定した日時",
+    "description": "Term: when this revision of the settings of the voice chat room was set."
+  },
+  "admin.report.voice.revision.erased": {
+    "defaultMessage": "書いた人のアカウントとともに消去されました",
+    "description": "Value of a name or description of a voice chat room erased with its author's account."
+  },
+  "admin.report.voice.revision.none": {
+    "defaultMessage": "なし",
+    "description": "Value of an empty description or of no hashtags of a voice chat room."
+  },
+  "admin.report.voice.participations": {
+    "defaultMessage": "参加者",
+    "description": "Heading of the records of who took part in the reported voice chat room."
+  },
+  "admin.report.voice.participations.empty": {
+    "defaultMessage": "参加者の記録は残っていません。",
+    "description": "Shown when no records of the participants of the reported voice chat room remain."
+  },
+  "admin.report.voice.joined_at": {
+    "defaultMessage": "参加した日時",
+    "description": "Term: when the account joined the voice chat room."
+  },
+  "admin.report.voice.left_at": {
+    "defaultMessage": "退出した日時",
+    "description": "Term: when the account left the voice chat room."
+  },
+  "admin.report.voice.still_in": {
+    "defaultMessage": "参加中",
+    "description": "Value of when an account left a voice chat room, while it is still in it."
+  },
+  "admin.report.voice.leave_reason": {
+    "defaultMessage": "退出の理由",
+    "description": "Term: why the account left the voice chat room."
+  },
+  "admin.report.voice.leave_reason.left": {
+    "defaultMessage": "自分で退出した",
+    "description": "Why an account left a voice chat room: it left."
+  },
+  "admin.report.voice.leave_reason.moved": {
+    "defaultMessage": "別のルームに移った",
+    "description": "Why an account left a voice chat room: it joined another one."
+  },
+  "admin.report.voice.leave_reason.disconnected": {
+    "defaultMessage": "接続が切れた",
+    "description": "Why an account left a voice chat room: its connection was lost."
+  },
+  "admin.report.voice.leave_reason.removed": {
+    "defaultMessage": "ホストが退出させた",
+    "description": "Why an account left a voice chat room: a host removed it."
+  },
+  "admin.report.voice.leave_reason.blocked": {
+    "defaultMessage": "ホストとのブロック",
+    "description": "Why an account left a voice chat room: it and the host blocked each other one way or the other."
+  },
+  "admin.report.voice.leave_reason.suspended": {
+    "defaultMessage": "アカウントの凍結",
+    "description": "Why an account left a voice chat room: the account was suspended."
+  },
+  "admin.report.voice.leave_reason.room_ended": {
+    "defaultMessage": "ルームが終わった",
+    "description": "Why an account left a voice chat room: the room ended."
+  },
+  "admin.report.voice.leave_reason.other": {
+    "defaultMessage": "その他",
+    "description": "Why an account left a voice chat room, for a reason this app does not know."
+  },
+  "admin.report.voice.bans": {
+    "defaultMessage": "退出させられた人",
+    "description": "Heading of the accounts removed from the reported voice chat room, who may not join again."
+  },
+  "admin.report.voice.bans.empty": {
+    "defaultMessage": "このルームから退出させられた人はいません。",
+    "description": "Shown when no account was removed from the reported voice chat room."
+  },
+  "admin.report.voice.banned_by": {
+    "defaultMessage": "退出させた人",
+    "description": "Term: who removed the account from the voice chat room."
+  },
+  "admin.report.voice.banned_at": {
+    "defaultMessage": "退出させた日時",
+    "description": "Term: when the account was removed from the voice chat room."
+  },
+  "admin.report.voice.end": {
+    "defaultMessage": "ルームを終える",
+    "description": "Button that ends the reported voice chat room for everyone in it, and the confirm button of its dialog."
+  },
+  "admin.report.voice.end.description": {
+    "defaultMessage": "ルームにいる全員の通話を終えます。監査ログに残ります。",
+    "description": "Explanation next to the button that ends the reported voice chat room."
+  },
+  "admin.report.voice.end.confirm.title": {
+    "defaultMessage": "このルームを終えますか？",
+    "description": "Title of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.confirm.description": {
+    "defaultMessage": "参加している全員の接続が切れ、このルームを再び開くことはできません。",
+    "description": "Description of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.note_field": {
+    "defaultMessage": "理由（任意）",
+    "description": "Label of the optional reason a moderator gives for ending a voice chat room."
+  },
+  "admin.report.voice.end.note_field.description": {
+    "defaultMessage": "モデレーターだけが見ます。参加者には見せません。",
+    "description": "Description of the reason for ending a voice chat room."
+  },
+  "admin.report.voice.end.note_field.too_long": {
+    "defaultMessage": "理由は {max} 文字までで入力してください。",
+    "description": "Error of the reason for ending a voice chat room when it is too long."
+  },
+  "admin.report.voice.end.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the confirmation of ending a voice chat room without ending it."
+  },
+  "admin.report.voice.end.failed": {
+    "defaultMessage": "ルームを終えられませんでした：{reason}",
+    "description": "Error in the confirmation when ending a voice chat room failed. {reason} is why."
+  },
+  "admin.report.voice.ended": {
+    "defaultMessage": "ルームを終えました。",
+    "description": "Message after a moderator ended the reported voice chat room."
   }
 }

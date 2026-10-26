@@ -3,7 +3,8 @@
 // up, the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0076, which asks before it narrows), who may read the
 // list of the domain actions, how much of the running costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5), how much of the income is published (FR-917), who may read the supporter list (ADR-0071 §4),
-// and what the server states to search engines and AI crawlers. They are
+// what the server states to search engines and AI crawlers, and voice chat (ADR-0100 §2, §9, §13: who may start a
+// room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
 // instance settings that used to change only from the CLI (`my instance set`); the form sends the ones that
 // changed together, all or none, and each change goes to the audit log (FR-704).
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -42,6 +43,9 @@ const policyKeys = [
   "indexable_default",
   "ai_usage",
   "security_contact",
+  "voice_room_starters",
+  "voice_public_summary",
+  "retention_voice_participants",
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PolicyKey = (typeof policyKeys)[number];
@@ -95,7 +99,9 @@ export function useServerPolicies() {
 
   const savedValue = (key: PolicyKey) => saved.get(key)?.value ?? "";
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
-  const changes = Object.fromEntries(policyKeys.filter((key) => valueOf(key) !== savedValue(key)).map((key) => [key, valueOf(key)]));
+  // A number of days is sent without the spaces around it.
+  const sentValue = (key: PolicyKey) => (key === "retention_voice_participants" ? valueOf(key).trim() : valueOf(key));
+  const changes = Object.fromEntries(policyKeys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]));
 
   const save = useMutation({
     ...updateInstanceSettingsMutation(api),
@@ -117,6 +123,16 @@ export function useServerPolicies() {
     return t("client:admin.settings.duration.seconds", { count: seconds });
   };
   const currentTtl = Number(savedValue("remote_media_cache_ttl"));
+  // The days the participants' records of voice chat rooms are kept (ADR-0100 §13), within the bounds the server gives.
+  const retentionSetting = saved.get("retention_voice_participants");
+  const retentionBounds = { min: retentionSetting?.minimum ?? 30, max: retentionSetting?.maximum ?? 3650 };
+  const retentionText = valueOf("retention_voice_participants").trim();
+  const retentionDays = /^\d+$/u.test(retentionText) ? Number(retentionText) : Number.NaN;
+  // Only what the operator typed is checked: the saved value is the server's.
+  const retentionError =
+    drafts.retention_voice_participants === undefined || (retentionDays >= retentionBounds.min && retentionDays <= retentionBounds.max)
+      ? undefined
+      : t("client:admin.settings.voice.retention.invalid", { min: String(retentionBounds.min), max: String(retentionBounds.max) });
   const ttlChoices = [...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])])].toSorted((a, b) => a - b);
   const localeChoices = [...new Set([...selectableLocales(), savedValue("default_locale")])].filter((locale) => locale !== "");
   const narrowing = federationNarrowing(federationModeOf(savedValue("federation_mode")), federationModeOf(valueOf("federation_mode")));
@@ -134,7 +150,8 @@ export function useServerPolicies() {
     cacheTtlChoices: ttlChoices.map((seconds): PolicyChoice => ({ value: String(seconds), label: durationLabel(seconds) })),
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (save.isPending) return;
+      // The field under the error says what to fix; nothing is sent until it holds a number of days in bounds.
+      if (save.isPending || retentionError !== undefined) return;
       if (Object.keys(changes).length === 0) {
         setStatus(t("client:admin.settings.policies.unchanged"));
         return;
@@ -146,6 +163,8 @@ export function useServerPolicies() {
       }
       save.mutate(changes);
     },
+    /** The days to keep the participants' records of voice chat rooms: the bounds, and why the value cannot be saved. */
+    voiceRetention: { ...retentionBounds, error: retentionError },
     /** What the chosen federation mode stops compared with the saved one, or null when it stops nothing. */
     narrowing,
     /** Whether the confirmation of `narrowing` is open. */

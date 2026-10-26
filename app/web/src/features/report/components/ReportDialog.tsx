@@ -2,7 +2,8 @@
 // The dialog that reports an account to the moderators (FR-701, FR-709), opened from the menu of one of its
 // posts or of its profile. It is a modal dialog (WAI-ARIA APG, dialog pattern) that goes through one step at a
 // time: the reason, the rules it breaks (for a rule violation), the posts, then a comment and, for an account
-// of another server, forwarding. Each step is a form whose heading takes the focus when the step appears, so a
+// of another server, forwarding; or, from a voice chat room's page, reports the room and its host without the
+// posts step (ADR-0100 §11). Each step is a form whose heading takes the focus when the step appears, so a
 // screen reader reads where the user is and Tab goes on from there; Back keeps the answers.
 import {
   Button,
@@ -26,13 +27,15 @@ import { type ReactNode, useEffect, useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type Account, maxReportComment, maxReportItems, reportCategories, type ReportCategory, type Status } from "../api/reports";
-import { type ReportForm, type ReportStep, useReportForm } from "../hooks/useReportForm";
+import { type ReportedVoiceRoom, type ReportForm, type ReportStep, useReportForm } from "../hooks/useReportForm";
 
 export type ReportDialogProps = {
   /** The account reported. */
   account: Account;
   /** The post the report starts from, chosen at first; none from a profile. */
   status?: Status | undefined;
+  /** The voice chat room the report is about, whose host is `account`; its report cites no posts (ADR-0100 §11). */
+  voiceRoom?: ReportedVoiceRoom | undefined;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 };
@@ -63,26 +66,27 @@ const stepHeadings: Readonly<Record<ReportStep, ClientMessageKey>> = {
 };
 
 /** The report dialog. It loads the rules and the posts when it opens, and every opening starts a new draft. */
-export function ReportDialog({ account, status, isOpen, onOpenChange }: ReportDialogProps) {
+export function ReportDialog({ account, status, voiceRoom, isOpen, onOpenChange }: ReportDialogProps) {
   const t = useT();
+  const title = voiceRoom === undefined ? t("client:report.title", { name: isolatedName(account) }) : t("client:report.title_room", { room: `⁨${voiceRoom.name}⁩` });
   return (
-    <Dialog title={t("client:report.title", { name: isolatedName(account) })} closeLabel={t("client:report.close")} isDismissable={false} isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Dialog title={title} closeLabel={t("client:report.close")} isDismissable={false} isOpen={isOpen} onOpenChange={onOpenChange}>
       {/* The steps mount with the dialog's content, so closing the dialog drops the draft. */}
-      {({ close }) => <ReportSteps account={account} status={status} close={close} />}
+      {({ close }) => <ReportSteps account={account} status={status} voiceRoom={voiceRoom} close={close} />}
     </Dialog>
   );
 }
 
-type ReportStepsProps = { account: Account; status: Status | undefined; close: () => void };
+type ReportStepsProps = { account: Account; status: Status | undefined; voiceRoom: ReportedVoiceRoom | undefined; close: () => void };
 
-function ReportSteps({ account, status, close }: ReportStepsProps) {
+function ReportSteps({ account, status, voiceRoom, close }: ReportStepsProps) {
   const t = useT();
-  const form = useReportForm(account, status);
+  const form = useReportForm(account, status, voiceRoom);
   const headingId = useId();
   // A new key per step mounts a new heading, which takes the focus.
   const heading = (
     <StepHeading key={form.step} id={headingId}>
-      {t(stepHeadings[form.step])}
+      {t(voiceRoom !== undefined && form.step === "category" ? "client:report.room.category.heading" : stepHeadings[form.step])}
     </StepHeading>
   );
 
@@ -112,6 +116,11 @@ function ReportSteps({ account, status, close }: ReportStepsProps) {
         <Hint>{t("client:report.step", { current: form.position.current, total: form.position.total })}</Hint>
         {heading}
       </Stack>
+      {voiceRoom !== undefined && form.step === "category" && (
+        <Text as="p" wrap="anywhere">
+          {t("client:report.room.target", { name: isolatedName(account) })}
+        </Text>
+      )}
       <StepFields form={form} headingId={headingId} />
       {form.error !== undefined && (
         <InlineError alert size="inherit">
