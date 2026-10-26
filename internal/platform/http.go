@@ -67,7 +67,7 @@ func (a *App) Handler() http.Handler {
 	h = clientAPICORS(a.Config.WebOrigin, h)
 	h = a.crawlerHeaders(h)
 	h = a.recoverPanics(h)
-	h = securityHeaders(h)
+	h = securityHeaders(h, a.Voice.Enabled())
 	h = a.accessLog(h)
 	return a.requestIDs(h)
 }
@@ -330,20 +330,33 @@ func (a *App) recoverPanics(next http.Handler) http.Handler {
 // securityHeaders sets the headers of ADR-0019 §9 that every response carries. A handler may
 // override them, for example Cross-Origin-Resource-Policy: cross-origin for ActivityPub JSON
 // and public media. The Content-Security-Policy is the policy for responses that are not
-// documents; the web client's responses set their own.
-func securityHeaders(next http.Handler) http.Handler {
+// documents; the web client's responses set their own. microphone lets the documents of this
+// origin use the microphone, for the voice chat (ADR-0019 §9 relaxes a feature to self when
+// it is needed; the decider's answer 46 in #1345 does so only while the voice chat is on).
+func securityHeaders(next http.Handler, microphone bool) http.Handler {
+	policy := permissionsPolicy(microphone)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
+		h.Set("Permissions-Policy", policy)
 		h.Set("Cross-Origin-Opener-Policy", "same-origin")
 		h.Set("Cross-Origin-Resource-Policy", "same-site")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
 		next.ServeHTTP(w, r)
 	})
+}
+
+// permissionsPolicy is the Permissions-Policy of every response: no camera, geolocation,
+// payment, or USB, and the microphone only for this origin when microphone is set.
+func permissionsPolicy(microphone bool) string {
+	mic := "microphone=()"
+	if microphone {
+		mic = "microphone=(self)"
+	}
+	return "camera=(), " + mic + ", geolocation=(), payment=(), usb=()"
 }
 
 // HeaderRequestID carries the request ID in requests (from a trusted proxy) and responses.
