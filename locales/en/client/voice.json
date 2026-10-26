@@ -384,7 +384,7 @@
     "description": "Explanation under the microphone switch of a voice chat call."
   },
   "voice.call.microphone_failed": {
-    "defaultMessage": "Couldn't use the microphone. Allow this site to use it in your browser, then try again.",
+    "defaultMessage": "Couldn't use the microphone. Try again.",
     "description": "Error when the browser did not give the microphone."
   },
   "voice.call.speak": {
@@ -422,14 +422,6 @@
   "voice.call.leave_failed": {
     "defaultMessage": "Couldn't leave the room: {reason}",
     "description": "Error when leaving a voice chat room failed. {reason} is why."
-  },
-  "voice.call.leave_page.title": {
-    "defaultMessage": "Leave the room?",
-    "description": "Title of the dialog shown when the user opens another page during a voice chat call."
-  },
-  "voice.call.leave_page.description": {
-    "defaultMessage": "The call ends when you leave this page.",
-    "description": "Explanation of the dialog shown when the user opens another page during a voice chat call."
   },
   "voice.call.host_leave.title": {
     "defaultMessage": "Leave the room you host?",
@@ -670,5 +662,21 @@
   "voice.invite.failed": {
     "defaultMessage": "Couldn't invite: {reason}",
     "description": "Error of the invitation. {reason} is why."
+  },
+  "voice.bar.label": {
+    "defaultMessage": "Voice chat call",
+    "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.call.microphone_denied": {
+    "defaultMessage": "This site may not use the microphone. Allow it in your browser's settings, then try again.",
+    "description": "Error when the user or the browser refused the microphone."
+  },
+  "voice.call.microphone_missing": {
+    "defaultMessage": "No microphone was found. Connect one, then try again.",
+    "description": "Error when the device has no microphone."
+  },
+  "voice.call.microphone_busy": {
+    "defaultMessage": "The microphone is in use by another app. Close it, then try again.",
+    "description": "Error when another app holds the microphone."
   }
 }

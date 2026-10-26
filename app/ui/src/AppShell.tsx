@@ -94,6 +94,39 @@ export function AppShell({ navigation, children, skipLinkLabel, mainId = "main",
   );
 }
 
+const shellDock = tv({
+  base: "sticky z-10",
+  variants: {
+    // Below md the dock sits 1rem above the tab bar (as the floating button does), or 0.5rem above its smaller form on
+    // short screens; from md 1rem above the bottom edge. While the floating new-post button shows, the dock leaves its
+    // end corner to the button (4rem), up to xl, where nothing floats.
+    clearsTabBar: {
+      true: [
+        "bottom-[calc(5rem+env(safe-area-inset-bottom))] short:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-[max(1rem,env(safe-area-inset-bottom))]",
+        "with-compose-fab:me-16 xl:with-compose-fab:me-0",
+      ],
+      false: "bottom-[max(1rem,env(safe-area-inset-bottom))]",
+    },
+  },
+  defaultVariants: { clearsTabBar: true },
+});
+
+export type ShellDockProps = {
+  /** The bar that stays in view: the call bar (`CallBar`). */
+  children: ReactNode;
+  /** Whether the page has the bottom tab bar below md (`AppShell`); false in the admin frame (`AdminShell`). */
+  clearsTabBar?: boolean;
+};
+
+/**
+ * A bar docked at the bottom of the page's column, which stays in view while the page scrolls: render it as the last
+ * child of the page (inside `main`), so that it comes after the page's content in the focus order and the end of the
+ * page is never under it. It stays clear of the tab bar and the floating new-post button (web-client/09-app-shell.md §9).
+ */
+export function ShellDock({ children, clearsTabBar = true }: ShellDockProps) {
+  return <div className={shellDock({ clearsTabBar })}>{children}</div>;
+}
+
 const asidePanel = tv({
   slots: {
     base: "flex flex-col gap-2",

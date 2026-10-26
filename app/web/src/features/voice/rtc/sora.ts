@@ -4,15 +4,17 @@
 // token) in the metadata that Sora's auth webhook checks. The SDK is a chunk of its own, loaded with import() only
 // when a grant names Sora.
 //
-// The role of a Sora connection does not change while it is open (ADR-0102 §3): a session joins `recvonly`, and joins
-// again `sendrecv` with the same client_id to speak. It does so when the user turns the microphone on with a
-// `sendrecv` grant, so a speaker who never speaks is never asked for the microphone; a `grant` event with
-// `reconnect: true` joins again with the role of the new grant (back to `recvonly` when the user no longer speaks).
-// The new connection replaces the previous one once it is up, so the audio pauses only while it connects.
+// The role of a Sora connection does not change while it is open (ADR-0102 §3): a session joins in the role of its
+// grant, `recvonly` for a listener, and a `grant` event with `reconnect: true` joins again in the role of the new grant
+// with the same client_id (`sendrecv` when the user may speak, `recvonly` when no longer). The grant is short-lived and
+// comes only with the join and those events, so a `sendrecv` join happens then: it takes the microphone, which stays
+// off until the user turns it on. The new connection replaces the previous one once it is up, so the audio pauses only
+// while it connects. When the browser does not give the microphone, the session keeps listening, and turning the
+// microphone on asks again while the grant is valid.
 //
 // Each remote stream is the connection ID of its sender; the `notify` events of Sora name the client_id (the session)
-// of each connection, which decides whose audio is heard. A renewed grant is kept for the next join, and joins again
-// at once when the connection went away without the user leaving.
+// of each connection, which decides whose audio is heard. A renewed grant is kept, and joins again at once when the
+// connection went away without the user leaving.
 import type Sora from "sora-js-sdk";
 import type { ConnectionOptions, ConnectionPublisher, ConnectionSubscriber, SignalingNotifyMessage } from "sora-js-sdk";
 import { RemoteAudios, Waiters, warn } from "./sfu";
@@ -131,7 +133,13 @@ class SoraConnection implements VoiceConnection {
   #link: Link | null = null;
   /** The joins, one after another. */
   #joining: Promise<void> = Promise.resolve();
+  /** How many sendrecv joins wait or run. */
+  #sendrecvJoins = 0;
   #microphone: MediaStream | null = null;
+  /** The microphone the user wants: the latest `setMicrophone`. */
+  #wantMicrophone = false;
+  /** The changes of the microphone, one after another. */
+  #microphoneChanges: Promise<void> = Promise.resolve();
   /** Whether the connection went away without the user leaving: the next grant joins again. */
   #lost = false;
   #closed = false;
@@ -140,50 +148,89 @@ class SoraConnection implements VoiceConnection {
     this.#options = options;
     this.#grant = options.grant;
     this.#sdk = import("sora-js-sdk").then((module) => module.default);
-    void this.#join("recvonly").catch((error: unknown) => {
-      warn("could not connect to Sora", error);
-    });
-  }
-
-  /** Joins with `role` and replaces the live connection once the new one is up; a failure keeps the previous one. */
-  #join(role: Role): Promise<void> {
-    const joined = this.#joining.then(async () => {
-      if (this.#closed) return;
-      this.#lost = false;
-      const sdk = await this.#sdk;
-      if (this.#isClosed()) return;
-      const link = new Link({
-        sdk,
-        grant: this.#grant,
-        role,
-        connection: this.#options,
-        roster: this.#roster,
-        onLost: (lost) => {
-          this.#linkLost(lost);
-        },
-      });
-      try {
-        await link.connect(role === "sendrecv" ? this.#microphone : null);
-      } catch (error) {
-        link.close();
-        if (this.#link === null) this.#lost = !this.#closed;
-        throw error;
-      }
-      if (this.#isClosed()) {
-        link.close();
-        return;
-      }
-      link.audios.update(this.#roster);
-      this.#link?.close();
-      this.#link = link;
-    });
-    this.#joining = joined.catch(() => undefined);
-    return joined;
+    this.#rejoin(grantRole(options.grant));
   }
 
   /** Whether the user left; a method, so that it is read again after an await. */
   #isClosed(): boolean {
     return this.#closed;
+  }
+
+  /**
+   * Joins with `role` and replaces the live connection once the new one is up; a failure keeps the previous one. A
+   * `sendrecv` join takes the microphone first (off until the user turns it on). Without it the join rejects with the
+   * browser's error, and a session that has no connection yet joins `recvonly` instead.
+   */
+  #join(role: Role): Promise<void> {
+    if (role === "sendrecv") this.#sendrecvJoins++;
+    const joined = this.#joining.then(async () => {
+      if (this.#closed) return;
+      // The browser's error (a DOMException) as it is, so that the hooks tell a refusal from a missing microphone.
+      let microphoneError: Error | null = null;
+      let joinRole = role;
+      if (role === "sendrecv" && this.#microphone === null) {
+        try {
+          const stream = await this.#options.environment.getMicrophone();
+          if (this.#isClosed()) {
+            for (const track of stream.getTracks()) track.stop();
+            return;
+          }
+          this.#microphone = stream;
+        } catch (error) {
+          if (this.#link !== null) throw error;
+          microphoneError = error instanceof Error ? error : new Error(String(error));
+          joinRole = "recvonly";
+        }
+      }
+      this.#applyMicrophoneTracks();
+      await this.#connect(joinRole);
+      if (microphoneError !== null) throw microphoneError;
+    });
+    const settled = joined.catch(() => undefined);
+    this.#joining = settled.then(() => {
+      if (role === "sendrecv") this.#sendrecvJoins--;
+    });
+    return joined;
+  }
+
+  async #connect(role: Role): Promise<void> {
+    this.#lost = false;
+    const sdk = await this.#sdk;
+    if (this.#isClosed()) return;
+    const link = new Link({
+      sdk,
+      grant: this.#grant,
+      role,
+      connection: this.#options,
+      roster: this.#roster,
+      onLost: (lost) => {
+        this.#linkLost(lost);
+      },
+    });
+    try {
+      await link.connect(role === "sendrecv" ? this.#microphone : null);
+    } catch (error) {
+      link.close();
+      if (role === "sendrecv" && this.#link?.role !== "sendrecv") this.#stopMicrophone();
+      if (this.#link === null) this.#lost = !this.#closed;
+      throw error;
+    }
+    if (this.#isClosed()) {
+      link.close();
+      return;
+    }
+    link.audios.update(this.#roster);
+    this.#link?.close();
+    this.#link = link;
+    if (role === "recvonly") this.#stopMicrophone();
+    this.#waiters.changed();
+  }
+
+  #rejoin(role: Role): void {
+    if (role === "recvonly") this.#stopMicrophone();
+    this.#join(role).catch((error: unknown) => {
+      warn(`could not join Sora ${role}`, error);
+    });
   }
 
   #linkLost(link: Link): void {
@@ -193,79 +240,55 @@ class SoraConnection implements VoiceConnection {
     this.#lost = !this.#closed;
   }
 
-  /** The role to join with: `sendrecv` only while the user speaks with the microphone and the grant allows it. */
-  #role(): Role {
-    return this.#roster.speaker && this.#microphone !== null && grantRole(this.#grant) === "sendrecv" ? "sendrecv" : "recvonly";
-  }
-
   #stopMicrophone(): void {
     for (const track of this.#microphone?.getTracks() ?? []) track.stop();
     this.#microphone = null;
   }
 
-  #mayStillSpeak(): boolean {
-    return !this.#closed && this.#roster.speaker;
+  /** Sends the microphone only while the user wants it and speaks. */
+  #applyMicrophoneTracks(): void {
+    for (const track of this.#microphone?.getAudioTracks() ?? []) track.enabled = this.#wantMicrophone && this.#roster.speaker;
   }
 
   update(roster: VoiceRoster): void {
     if (this.#closed) return;
     this.#roster = roster;
     // The server blocks the audio of a session that no longer speaks and sends it a recvonly grant to join again.
-    if (!roster.speaker) this.#stopMicrophone();
+    this.#applyMicrophoneTracks();
     this.#link?.audios.update(roster);
   }
 
-  async setMicrophone(on: boolean): Promise<void> {
+  setMicrophone(on: boolean): Promise<void> {
+    this.#wantMicrophone = on;
+    const change = this.#microphoneChanges.then(() => this.#applyMicrophone());
+    this.#microphoneChanges = change.catch(() => undefined);
+    return change;
+  }
+
+  /** Applies the microphone the user wants now, joining sendrecv first when the session does not send yet. */
+  async #applyMicrophone(): Promise<void> {
     if (this.#closed) return;
-    if (on && !this.#roster.speaker) return;
-    if (!on) {
-      for (const track of this.#microphone?.getAudioTracks() ?? []) track.enabled = false;
-      return;
+    if (this.#wantMicrophone && this.#roster.speaker && this.#link?.role !== "sendrecv") {
+      // A sendrecv grant in hand that is still valid (after the browser refused the microphone, say): join with it now.
+      if (this.#sendrecvJoins === 0 && grantRole(this.#grant) === "sendrecv" && this.#grant.expiresAt > Date.now()) {
+        await this.#join("sendrecv");
+      }
+      // Otherwise the sendrecv grant comes on the room stream, after the `state` that made the user a speaker.
+      await this.#waiters.wait(() => this.#closed || this.#link?.role === "sendrecv", "Sora did not let the session send");
     }
-    if (this.#microphone !== null && this.#link?.role === "sendrecv") {
-      for (const track of this.#microphone.getAudioTracks()) track.enabled = true;
-      return;
-    }
-    // The `sendrecv` grant can come on the room stream after the `state` that made the user a speaker.
-    await this.#waiters.wait(() => this.#closed || grantRole(this.#grant) === "sendrecv", "Sora did not give a sendrecv grant");
-    if (!this.#mayStillSpeak()) return;
-    const stream = this.#microphone ?? (await this.#options.environment.getMicrophone());
-    if (!this.#mayStillSpeak()) {
-      for (const track of stream.getTracks()) track.stop();
-      return;
-    }
-    this.#microphone = stream;
-    for (const track of stream.getAudioTracks()) track.enabled = true;
-    try {
-      await this.#join("sendrecv");
-    } catch (error) {
-      this.#stopMicrophone();
-      throw error;
-    }
+    this.#applyMicrophoneTracks();
   }
 
   renew(grant: VoiceGrant): void {
     if (this.#closed) return;
     this.#grant = grant;
-    this.#waiters.changed();
-    if (this.#lost) this.#rejoin(this.#role());
+    if (this.#lost) this.#rejoin(grantRole(grant));
   }
 
   reconnect(grant: VoiceGrant): void {
     if (this.#closed) return;
     this.#grant = grant;
-    this.#waiters.changed();
-    if (grantRole(grant) === "recvonly") this.#stopMicrophone();
-    const role = this.#role();
-    // A speaker whose microphone is off keeps listening on the connection it has: it joins sendrecv to speak.
-    if (role === "recvonly" && grantRole(grant) === "sendrecv" && this.#link?.role === "recvonly") return;
-    this.#rejoin(role);
-  }
-
-  #rejoin(role: Role): void {
-    this.#join(role).catch((error: unknown) => {
-      warn("could not join Sora again", error);
-    });
+    this.#rejoin(grantRole(grant));
   }
 
   receive(): void {

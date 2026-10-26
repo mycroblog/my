@@ -110,6 +110,12 @@
   `main` は終わりに、タブバーとボタン（出ているとき、`data-compose-fab`）の高さぶんの余白を取り、`index.css` の `scroll-padding-block-end` もフォーカスした要素を同じだけ避ける。`md` 未満のトーストは、タブバーの上に、ボタンが出ているときはボタンの上に出す（`with-compose-fab:` の variant）。
   3 列目（右帯）は `AppShell` の `aside` で、`xl` の幅の画面でだけ置く（狭い画面には出さず、そこにある内容は別の画面かメニューのシートから開ける）。上から、通話の開いているルーム（`features/voice` の `VoiceRail`、[ADR-0100](../../adr/0100-voice-chat-rooms.md) §8）、サーバーについて（`ServerInfo`）の順に、それぞれ `AsidePanel`（見出しが名前の `aside`）として並べ、区画ごとに `react-error-boundary` で囲む。
   通話の区画は、サーバーが通話を有効にしていて（`GET /instance` の `voice_enabled`）開いているルームがあるときだけ出し、一覧の先頭の 3 件（並びは API のまま）と「すべてのルームを見る」（`/voice`）を出す。区画はカードなので、中のルームはカードにしない（`VoiceRoomCard` の `surface="plain"`）。通話の画面（`/voice`・`/voice/{id}`）では一覧と重なるので出さない。
+  **通話の帯**: 通話はアプリ全体の状態で、画面を移っても続く（`features/voice` の `VoiceCallProvider` をアプリの providers に置く。[#1345](https://github.com/mycroblog/my/issues/1345) の回答 45、X のスペースと同じ使い方）。
+  通話の間は、そのルームの画面を除くすべての画面の `main` の最後に、小さな通話の帯（`VoiceCallBar`。見た目は `@my/ui` の `CallBar`、置き場所は `ShellDock`）を出す。帯には、ルーム名（ルームの画面へ戻るリンク）・通話の状態・話者のマイクの `Switch`・ブラウザが止めた音を出すボタン・退出（ホストは次のホストか解散を選ぶダイアログ）を並べる。
+  帯は「通話」という名前の `region`（`section` の `aria-label`）で、ランドマークの一覧に出る。`main` の最後の子なので、フォーカスの順はページの内容の後になる。
+  帯は `position: sticky` で、ページの列の下端に留まる（ページが画面より短いときは内容のすぐ後に出る）: `md` 未満はタブバーの 1rem 上（短い画面は 0.5rem）、`md` から画面の下端の 1rem 上。タブバーを覆わず、浮かぶ投稿のボタンが出ている間（`with-compose-fab:`、`xl` 未満）は帯の終わり側を 4rem 空けてボタンと重ならない。投稿フォームはモーダルの `Sheet` なので帯の上に開く。
+  `main` の最後にあるので、ページを最後まで送れば最後の項目は帯の上に出る。フォーカスした要素も帯を避ける（`index.css` の `:root:has([data-call-bar])` の `scroll-padding-block-end`）。管理の画面（`AdminLayout`）でも、タブバーがないので画面の下端の 1rem 上に出す。
+  通話の間にタブを閉じる・再読み込みするときはブラウザの確認（`beforeunload`）を出し、ページが去るとき（`pagehide`）は `keepalive` の要求で退出する。サインアウトと別のアカウントへの切り替えで通話を終える。
   `md` 未満で高さが 32rem 以下の画面（横向きの電話、400% の拡大の 320 × 225 CSS px）は `short:` の variant（`@my/ui/theme.css`）で、タブバーの項目を `min-h-12` にし、ボタンとの間を詰め、上端のオフラインの帯（G17）を粘着させずにページと一緒に流して、固定した要素を画面の高さの半分に収める（WCAG 1.4.10）。
   ナビゲーション（`routes/-layout/Navigation.tsx`）は 1 つの `nav` で、今いる区画のリンクに `aria-current="page"` を付ける。「プロフィール」の区画は自分のプロフィールとそのフォロワー / フォローの一覧で、
   同じ `/@{acct}` の下にある自分の投稿の詳細は含めない。画面の端に接する要素は `env(safe-area-inset-*)` を足し、高さは `svh` で指定する。

@@ -10,7 +10,7 @@ import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
-import { VoiceRail } from "../../features/voice";
+import { VoiceCallBar, VoiceRail } from "../../features/voice";
 import { hasClosed, useClosure } from "../../lib/closure";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
@@ -59,6 +59,7 @@ export function AppLayout() {
         <ClosureBanner />
         <AdminLayout skipLinkLabel={t("client:shell.skip_to_main")} mainId={mainId} mainRef={mainRef}>
           <Outlet />
+          <VoiceCallBar clearsTabBar={false} />
         </AdminLayout>
       </ComposeProvider>
     );
@@ -109,6 +110,8 @@ export function AppLayout() {
         })}
       >
         <Outlet />
+        {/* The call goes on across pages: its bar ends every page while it lasts (web-client/09-app-shell.md §9). */}
+        <VoiceCallBar />
       </AppShell>
     </ComposeProvider>
   );

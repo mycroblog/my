@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
 // from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room, a room's page with
-// its participants and the notice before joining, and the call after joining (its controls and a raised hand), all
+// its participants and the notice before joining, the call after joining (its controls, a raised hand, and the call
+// bar that it keeps on other pages), all
 // axe-clean and without horizontal scroll; and the room's page of a visitor who is not signed in. `vite preview` has
 // no API, so the spec answers the token refresh and the client API with `page.route`, as a server with voice chat on
 // would (a call between two browsers needs a server with voice chat on, which e2e/server.ts does not configure).
@@ -217,6 +218,27 @@ test.describe("the call of a room", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await call.getByRole("button", { name: message("voice.call.leave") }).click();
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
+  });
+
+  test("goes on across pages with the call bar, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
+    await expect(page.getByRole("region", { name: message("voice.call.title") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+    await openFromNavigation(page, "/home", hasTouch);
+    const bar = page.getByRole("region", { name: message("voice.bar.label") });
+    await expect(bar.getByRole("link", { name: room.name })).toBeVisible();
+    // The bar stays in view, above the tab bar of phones (the projects below md have touch).
+    const barBox = await bar.boundingBox();
+    expect(barBox).not.toBeNull();
+    const barBottom = (barBox?.y ?? 0) + (barBox?.height ?? 0);
+    expect(barBottom).toBeLessThanOrEqual(page.viewportSize()?.height ?? Number.POSITIVE_INFINITY);
+    if (hasTouch) {
+      const tabBar = await page.getByRole("navigation").first().boundingBox();
+      expect(barBottom).toBeLessThanOrEqual(tabBar?.y ?? Number.POSITIVE_INFINITY);
+    }
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await bar.getByRole("link", { name: room.name }).click();
+    await expect(page.getByRole("heading", { level: 1, name: room.name })).toBeVisible();
+    await expect(page.getByRole("region", { name: message("voice.bar.label") })).toHaveCount(0);
   });
 });
 

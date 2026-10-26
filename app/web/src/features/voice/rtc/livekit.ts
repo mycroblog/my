@@ -34,6 +34,8 @@ class LiveKitConnection implements VoiceConnection {
   #lost = false;
   /** Whether the user wants the microphone on: a join after the room went away publishes it again. */
   #micOn = false;
+  /** The changes of the microphone, one after another. */
+  #microphoneChanges: Promise<void> = Promise.resolve();
   #closed = false;
 
   constructor(options: VoiceConnectionOptions) {
@@ -152,18 +154,24 @@ class LiveKitConnection implements VoiceConnection {
     }
   }
 
-  async setMicrophone(on: boolean): Promise<void> {
+  setMicrophone(on: boolean): Promise<void> {
+    this.#micOn = on;
+    const change = this.#microphoneChanges.then(() => this.#applyMicrophone());
+    this.#microphoneChanges = change.catch(() => undefined);
+    return change;
+  }
+
+  /** Applies the microphone the user wants now (the latest `setMicrophone`); one change runs at a time. */
+  async #applyMicrophone(): Promise<void> {
     if (this.#closed) return;
-    if (on && !this.#roster.speaker) return;
     const room = await this.#joined;
     if (this.#isClosed()) return;
+    const on = this.#micOn && this.#roster.speaker;
     if (room === null || room !== this.#room) {
       if (on) throw new Error("voice: not connected to LiveKit");
-      this.#micOn = false;
       return;
     }
     if (!on) {
-      this.#micOn = false;
       await room.localParticipant.setMicrophoneEnabled(false);
       return;
     }
@@ -172,9 +180,7 @@ class LiveKitConnection implements VoiceConnection {
       // The user stopped speaking, or left, while LiveKit or the browser was asked.
       const sdk = await this.#sdk;
       await this.#unpublish(sdk, room);
-      return;
     }
-    this.#micOn = true;
   }
 
   renew(grant: VoiceGrant): void {

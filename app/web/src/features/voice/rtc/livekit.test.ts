@@ -218,13 +218,27 @@ describe("the microphone", () => {
     expect(room().localParticipant.setMicrophoneEnabled).not.toHaveBeenCalled();
   });
 
+  test("applies one change after another, the latest last", async () => {
+    const connection = join();
+    connection.update(speaking);
+    await settle();
+    room().permit(true);
+    const on = connection.setMicrophone(true);
+    const off = connection.setMicrophone(false);
+    await Promise.all([on, off]);
+    expect(room().localParticipant.setMicrophoneEnabled.mock.calls).toEqual([[false], [false]]);
+
+    await connection.setMicrophone(true);
+    expect(room().localParticipant.setMicrophoneEnabled).toHaveBeenLastCalledWith(true);
+  });
+
   test("stays off for a listener", async () => {
     const connection = join();
     connection.update(listening);
     await settle();
     room().permit(true);
     await connection.setMicrophone(true);
-    expect(room().localParticipant.setMicrophoneEnabled).not.toHaveBeenCalled();
+    expect(room().localParticipant.setMicrophoneEnabled).not.toHaveBeenCalledWith(true);
   });
 
   test("is unpublished and stopped when the user goes back to listening", async () => {

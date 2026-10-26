@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Sora method with a mocked sora-js-sdk (ADR-0102 §3, §6): the recvonly join with the grant's metadata and the
-// session's client_id, whose audio is heard, joining again sendrecv with the same client_id to speak, muting, going
-// back to recvonly, joining again after the connection went away, and leaving.
+// The Sora method with a mocked sora-js-sdk (ADR-0102 §3, §6): the join in the grant's role with the grant's metadata
+// and the session's client_id, whose audio is heard, joining again sendrecv with the same client_id to speak, the
+// microphone (one change after another, the latest last), going back to recvonly, joining again after the connection
+// went away, and leaving.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { FakeRemoteAudio, FakeStream, resetFakeRtc, settle } from "../test/fakeRtc";
 import { connectVoice } from "./connect";
@@ -67,17 +68,8 @@ vi.mock("sora-js-sdk", () => ({ default: { connection: fake.connection } }));
 
 const { FakeSoraConnection } = fake;
 
-const grant: VoiceGrant = {
-  kind: "sora",
-  url: "wss://sora1.example/signaling",
-  token: "join-1",
-  options: { channel_id: "room1", role: "recvonly", signaling_urls: "wss://sora1.example/signaling,wss://sora2.example/signaling" },
-  iceServers: [],
-  relayOnly: false,
-  expiresAt: Date.parse("2026-10-26T18:00:00Z"),
-};
-
-const sendrecv: VoiceGrant = { ...grant, token: "join-2", options: { ...grant.options, role: "sendrecv" } };
+let grant: VoiceGrant;
+let sendrecv: VoiceGrant;
 
 const speaking: VoiceRoster = {
   speaker: true,
@@ -90,6 +82,7 @@ const speaking: VoiceRoster = {
 const listening: VoiceRoster = { ...speaking, speaker: false };
 
 let microphones: FakeStream[] = [];
+let microphoneRefused = false;
 let onPlaybackBlocked = vi.fn();
 
 function join(first: VoiceGrant = grant): VoiceConnection {
@@ -101,6 +94,7 @@ function join(first: VoiceGrant = grant): VoiceConnection {
         throw new Error("Sora makes its own connections");
       },
       getMicrophone: () => {
+        if (microphoneRefused) return Promise.reject(new DOMException("denied", "NotAllowedError"));
         const stream = new FakeStream();
         microphones.push(stream);
         return Promise.resolve(stream as unknown as MediaStream);
@@ -111,10 +105,24 @@ function join(first: VoiceGrant = grant): VoiceConnection {
   });
 }
 
+/** Joins with `first` and makes the user a speaker or a listener, as the hooks do. */
+async function joined(roster: VoiceRoster, first: VoiceGrant = grant): Promise<VoiceConnection> {
+  const connection = join(first);
+  connection.update(roster);
+  await settle();
+  return connection;
+}
+
 function sora(index: number) {
   const found = FakeSoraConnection.all[index];
   if (found === undefined) throw new Error(`no connection ${index}`);
   return found;
+}
+
+function microphone(index = 0) {
+  const track = microphones[index]?.tracks[0];
+  if (track === undefined) throw new Error(`no microphone ${index}`);
+  return track;
 }
 
 beforeEach(() => {
@@ -122,39 +130,57 @@ beforeEach(() => {
   FakeSoraConnection.all = [];
   FakeSoraConnection.failNext = false;
   microphones = [];
+  microphoneRefused = false;
   onPlaybackBlocked = vi.fn();
+  grant = {
+    kind: "sora",
+    url: "wss://sora1.example/signaling",
+    token: "join-1",
+    options: { channel_id: "room1", role: "recvonly", signaling_urls: "wss://sora1.example/signaling,wss://sora2.example/signaling" },
+    iceServers: [],
+    relayOnly: false,
+    expiresAt: Date.now() + 60_000,
+  };
+  sendrecv = { ...grant, token: "join-2", options: { ...grant.options, role: "sendrecv" } };
 });
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
-test("joins recvonly with the channel, the join value, and the session as the client_id", async () => {
-  join();
-  await settle();
-  expect(FakeSoraConnection.all).toHaveLength(1);
-  expect(sora(0)).toMatchObject({
-    urls: ["wss://sora1.example/signaling", "wss://sora2.example/signaling"],
-    role: "recvonly",
-    channel: "room1",
-    metadata: { join: "join-1" },
-    options: { audio: true, video: false, audioCodecType: "OPUS", clientId: "s1" },
+describe("joining", () => {
+  test("a listener joins recvonly with the channel, the join value, and the session as the client_id", async () => {
+    await joined(listening);
+    expect(FakeSoraConnection.all).toHaveLength(1);
+    expect(sora(0)).toMatchObject({
+      urls: ["wss://sora1.example/signaling", "wss://sora2.example/signaling"],
+      role: "recvonly",
+      channel: "room1",
+      metadata: { join: "join-1" },
+      options: { audio: true, video: false, audioCodecType: "OPUS", clientId: "s1" },
+    });
+    expect(sora(0).connect).toHaveBeenCalledWith();
+    expect(microphones).toHaveLength(0);
   });
-  expect(sora(0).connect).toHaveBeenCalledWith();
-});
 
-test("a speaker joins recvonly too, and Sora Cloud's access token goes into the metadata", async () => {
-  join({ ...sendrecv, options: { ...sendrecv.options, access_token: "cloud" } });
-  await settle();
-  expect(sora(0)).toMatchObject({ role: "recvonly", metadata: { join: "join-2", access_token: "cloud" } });
-  expect(microphones).toHaveLength(0);
+  test("a speaker joins sendrecv with the microphone off, and Sora Cloud's access token goes into the metadata", async () => {
+    await joined(speaking, { ...sendrecv, options: { ...sendrecv.options, access_token: "cloud" } });
+    expect(sora(0)).toMatchObject({ role: "sendrecv", metadata: { join: "join-2", access_token: "cloud" } });
+    expect(sora(0).connect).toHaveBeenCalledWith(microphones[0]);
+    expect(microphone().enabled).toBe(false);
+  });
+
+  test("a speaker whose browser refuses the microphone joins recvonly", async () => {
+    microphoneRefused = true;
+    await joined(speaking, sendrecv);
+    expect(FakeSoraConnection.all).toHaveLength(1);
+    expect(sora(0)).toMatchObject({ role: "recvonly", metadata: { join: "join-2" } });
+  });
 });
 
 describe("remote audio", () => {
   test("plays each connection's audio, heard once Sora names its session and while it speaks", async () => {
-    const connection = join();
-    connection.update(listening);
-    await settle();
+    const connection = await joined(listening);
     sora(0).track("c2");
     expect(FakeRemoteAudio.all[0]).toMatchObject({ playing: true, audible: false });
 
@@ -174,53 +200,55 @@ describe("remote audio", () => {
     expect(FakeRemoteAudio.all[0]?.closed).toBe(true);
   });
 
-  test("tells when the browser blocks the audio, and plays it again on resume", async () => {
+  test("tells when the browser blocks the audio, and rejects resuming while it stays blocked", async () => {
     FakeRemoteAudio.blocked = true;
-    const connection = join();
-    await settle();
+    const connection = await joined(listening);
     sora(0).track("c2");
     await settle();
     expect(onPlaybackBlocked).toHaveBeenCalled();
 
-    await connection.resumePlayback();
-    expect(FakeRemoteAudio.all[0]?.playing).toBe(true);
+    const audio = FakeRemoteAudio.all[0];
+    if (audio === undefined) throw new Error("no audio");
+    audio.resume = () => Promise.reject(new DOMException("blocked", "NotAllowedError"));
+    await expect(connection.resumePlayback()).rejects.toThrow();
   });
 });
 
 describe("speaking", () => {
-  test("joins again sendrecv with the same client_id once the sendrecv grant comes, then drops the recvonly connection", async () => {
-    const connection = join();
-    connection.update(speaking);
-    await settle();
+  test("a grant to reconnect with joins sendrecv with the same client_id, then drops the recvonly connection", async () => {
+    const connection = await joined(listening);
     sora(0).track("c2");
+    connection.update(speaking);
+    connection.reconnect(sendrecv);
+    await settle();
+    expect(sora(1)).toMatchObject({ role: "sendrecv", metadata: { join: "join-2" }, options: { clientId: "s1" } });
+    expect(sora(1).connect).toHaveBeenCalledWith(microphones[0]);
+    expect(microphone().enabled).toBe(false);
+    expect(sora(0).disconnect).toHaveBeenCalled();
+    expect(FakeRemoteAudio.all[0]?.closed).toBe(true);
+
+    await connection.setMicrophone(true);
+    expect(microphone().enabled).toBe(true);
+    expect(FakeSoraConnection.all).toHaveLength(2);
+  });
+
+  test("turning the microphone on waits for the sendrecv grant that follows the state", async () => {
+    const connection = await joined(listening);
+    connection.update(speaking);
     const on = connection.setMicrophone(true);
     await settle();
     expect(FakeSoraConnection.all).toHaveLength(1);
 
-    // The grant event of a speaker whose microphone is off: it keeps listening until the microphone goes on.
     connection.reconnect(sendrecv);
     await on;
-    expect(FakeSoraConnection.all).toHaveLength(2);
-    expect(sora(1)).toMatchObject({ role: "sendrecv", metadata: { join: "join-2" }, options: { clientId: "s1" } });
-    expect(sora(1).connect).toHaveBeenCalledWith(microphones[0]);
-    expect(microphones[0]?.tracks[0]?.enabled).toBe(true);
-    expect(sora(0).disconnect).toHaveBeenCalled();
-    expect(FakeRemoteAudio.all[0]?.closed).toBe(true);
-  });
-
-  test("joins sendrecv at once with a sendrecv grant in hand", async () => {
-    const connection = join(sendrecv);
-    connection.update(speaking);
-    await settle();
-    await connection.setMicrophone(true);
     expect(sora(1)).toMatchObject({ role: "sendrecv" });
+    expect(microphone().enabled).toBe(true);
   });
 
-  test("rejects when no sendrecv grant comes in time", async () => {
+  test("turning the microphone on rejects when no sendrecv grant comes in time", async () => {
     vi.useFakeTimers();
-    const connection = join();
+    const connection = await joined(listening);
     connection.update(speaking);
-    await settle();
     const rejected = expect(connection.setMicrophone(true)).rejects.toThrow();
     await vi.advanceTimersByTimeAsync(sendWait);
     await rejected;
@@ -228,82 +256,89 @@ describe("speaking", () => {
     expect(microphones).toHaveLength(0);
   });
 
-  test("a failed sendrecv join keeps the recvonly connection and stops the microphone", async () => {
-    const connection = join(sendrecv);
+  test("after the browser refused the microphone, turning it on asks again with the valid sendrecv grant", async () => {
+    const connection = await joined(listening);
     connection.update(speaking);
+    microphoneRefused = true;
+    connection.reconnect(sendrecv);
     await settle();
-    FakeSoraConnection.failNext = true;
-    await expect(connection.setMicrophone(true)).rejects.toThrow();
+    expect(FakeSoraConnection.all).toHaveLength(1);
     expect(sora(0).disconnect).not.toHaveBeenCalled();
-    expect(microphones[0]?.tracks[0]?.stopped).toBe(true);
+    // The browser's error reaches the hooks as it is.
+    await expect(connection.setMicrophone(true)).rejects.toMatchObject({ name: "NotAllowedError" });
+
+    microphoneRefused = false;
+    await connection.setMicrophone(true);
+    expect(sora(1)).toMatchObject({ role: "sendrecv", metadata: { join: "join-2" } });
+    expect(microphone().enabled).toBe(true);
   });
 
-  test("muting turns the track off on the sendrecv connection, without joining again", async () => {
-    const connection = join(sendrecv);
+  test("a failed sendrecv join keeps the recvonly connection and stops the microphone", async () => {
+    const connection = await joined(listening);
     connection.update(speaking);
+    FakeSoraConnection.failNext = true;
+    connection.reconnect(sendrecv);
     await settle();
+    expect(sora(0).disconnect).not.toHaveBeenCalled();
+    expect(microphone().stopped).toBe(true);
+  });
+
+  test("the microphone goes on and off on the sendrecv connection, the latest change last", async () => {
+    const connection = await joined(speaking, sendrecv);
+    const on = connection.setMicrophone(true);
+    const off = connection.setMicrophone(false);
+    await Promise.all([on, off]);
+    expect(microphone().enabled).toBe(false);
     await connection.setMicrophone(true);
-    await connection.setMicrophone(false);
-    expect(microphones[0]?.tracks[0]?.enabled).toBe(false);
-    await connection.setMicrophone(true);
-    expect(microphones[0]?.tracks[0]?.enabled).toBe(true);
-    expect(FakeSoraConnection.all).toHaveLength(2);
+    expect(microphone().enabled).toBe(true);
+    expect(FakeSoraConnection.all).toHaveLength(1);
     expect(microphones).toHaveLength(1);
   });
 
   test("stays off for a listener", async () => {
-    const connection = join(sendrecv);
-    connection.update(listening);
-    await settle();
+    const connection = await joined(listening, sendrecv);
     await connection.setMicrophone(true);
+    expect(microphone().enabled).toBe(false);
     expect(FakeSoraConnection.all).toHaveLength(1);
   });
 
-  test("going back to listening stops the microphone and joins recvonly with the new grant", async () => {
-    const connection = join(sendrecv);
-    connection.update(speaking);
-    await settle();
+  test("going back to listening turns the microphone off, and the recvonly grant stops it and joins recvonly", async () => {
+    const connection = await joined(speaking, sendrecv);
     await connection.setMicrophone(true);
 
     connection.update(listening);
-    expect(microphones[0]?.tracks[0]?.stopped).toBe(true);
+    expect(microphone().enabled).toBe(false);
     connection.reconnect({ ...grant, token: "join-3" });
     await settle();
-    expect(sora(2)).toMatchObject({ role: "recvonly", metadata: { join: "join-3" }, options: { clientId: "s1" } });
-    expect(sora(1).disconnect).toHaveBeenCalled();
+    expect(microphone().stopped).toBe(true);
+    expect(sora(1)).toMatchObject({ role: "recvonly", metadata: { join: "join-3" }, options: { clientId: "s1" } });
+    expect(sora(0).disconnect).toHaveBeenCalled();
   });
 });
 
 describe("the grant", () => {
-  test("a renewed grant is kept for the next join, without joining again", async () => {
-    const connection = join(sendrecv);
-    connection.update(speaking);
-    await settle();
-    connection.renew({ ...sendrecv, token: "join-4" });
+  test("a renewed grant is kept, without joining again", async () => {
+    const connection = await joined(listening);
+    connection.renew({ ...grant, token: "join-4" }, { restartIce: false });
     await settle();
     expect(FakeSoraConnection.all).toHaveLength(1);
-    await connection.setMicrophone(true);
-    expect(sora(1)).toMatchObject({ metadata: { join: "join-4" } });
   });
 
-  test("joins again with the renewed grant after the connection went away, in the role it had", async () => {
-    const connection = join(sendrecv);
-    connection.update(speaking);
-    await settle();
+  test("joins again with the renewed grant after the connection went away, in its role", async () => {
+    const connection = await joined(speaking, sendrecv);
     await connection.setMicrophone(true);
-    sora(1).track("c2");
+    sora(0).track("c2");
 
-    sora(1).emit("disconnect", { type: "abend", title: "WEBSOCKET-ONCLOSE" });
+    sora(0).emit("disconnect", { type: "abend", title: "WEBSOCKET-ONCLOSE" });
     expect(FakeRemoteAudio.all[0]?.closed).toBe(true);
-    connection.renew({ ...sendrecv, token: "join-5" });
+    connection.renew({ ...sendrecv, token: "join-5" }, { restartIce: false });
     await settle();
-    expect(sora(2)).toMatchObject({ role: "sendrecv", metadata: { join: "join-5" } });
-    expect(sora(2).connect).toHaveBeenCalledWith(microphones[0]);
+    expect(sora(1)).toMatchObject({ role: "sendrecv", metadata: { join: "join-5" } });
+    expect(sora(1).connect).toHaveBeenCalledWith(microphones[0]);
   });
 
   test("a grant to reconnect with joins again in the same role", async () => {
-    const connection = join();
-    await settle();
+    const connection = await joined(listening);
     connection.reconnect({ ...grant, token: "join-6" });
     await settle();
     expect(sora(1)).toMatchObject({ role: "recvonly", metadata: { join: "join-6" } });
@@ -312,14 +347,12 @@ describe("the grant", () => {
 });
 
 test("leaving disconnects, stops the microphone, and joins no more", async () => {
-  const connection = join(sendrecv);
-  connection.update(speaking);
-  await settle();
+  const connection = await joined(speaking, sendrecv);
   await connection.setMicrophone(true);
   connection.close();
-  expect(sora(1).disconnect).toHaveBeenCalled();
-  expect(microphones[0]?.tracks[0]?.stopped).toBe(true);
-  connection.renew(sendrecv);
+  expect(sora(0).disconnect).toHaveBeenCalled();
+  expect(microphone().stopped).toBe(true);
+  connection.reconnect(sendrecv);
   await settle();
-  expect(FakeSoraConnection.all).toHaveLength(2);
+  expect(FakeSoraConnection.all).toHaveLength(1);
 });

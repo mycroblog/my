@@ -7,6 +7,7 @@ import { ApiError } from "../../../lib/errors";
 import { otherAccountFixture, viewerFixture } from "../../../test/fixtures";
 import type { VoiceGrantData, VoiceStreamEvent, VoiceStreamOptions } from "../api/call";
 import type { VoiceRoom } from "../api/voice";
+import type { VoiceConnection, VoiceConnectionOptions } from "../rtc/types";
 import { FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, settle } from "../test/fakeRtc";
 import { participantFixture, voiceRoomFixture } from "../test/handlers";
 import { grantRenewalLead, heartbeatInterval, reactionDuration, VoiceCall, type VoiceCallNotice, type VoiceCallServer, type VoiceJoin } from "./voiceCall";
@@ -24,11 +25,14 @@ const live: VoiceRoom = voiceRoomFixture({
 const notFound = () => new ApiError({ type: "about:blank", title: "Not Found", status: 404 });
 
 /** A call with a fake server whose room stream the test drives. */
-function setup(join: VoiceJoin = { session: "s5", grant: grantFixture(), room: live }) {
+type SetupOptions = { getMicrophone?: () => Promise<MediaStream>; connect?: (options: VoiceConnectionOptions) => VoiceConnection };
+
+function setup(join: VoiceJoin = { session: "s5", grant: grantFixture(), room: live }, options: SetupOptions = {}) {
   const streams: { session: string; options: VoiceStreamOptions; end: () => void; fail: (error: unknown) => void }[] = [];
   const notices: VoiceCallNotice[] = [];
   const server = {
     join: vi.fn<VoiceCallServer["join"]>(() => Promise.resolve({ ...join, session: "s7" })),
+    abandon: vi.fn<VoiceCallServer["abandon"]>(() => Promise.resolve()),
     heartbeat: vi.fn<VoiceCallServer["heartbeat"]>(() => Promise.resolve()),
     refreshGrant: vi.fn<VoiceCallServer["refreshGrant"]>(() => Promise.resolve(grantFixture({ ice_servers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], relay_only: true, expires_at: new Date(now + 120 * 60_000).toISOString() }))),
     sendSignal: vi.fn<VoiceCallServer["sendSignal"]>(() => Promise.resolve()),
@@ -49,10 +53,11 @@ function setup(join: VoiceJoin = { session: "s5", grant: grantFixture(), room: l
     server,
     environment: {
       createPeerConnection: (configuration) => new FakePeerConnection(configuration) as unknown as RTCPeerConnection,
-      getMicrophone: () => Promise.resolve(new FakeStream() as unknown as MediaStream),
+      getMicrophone: options.getMicrophone ?? (() => Promise.resolve(new FakeStream() as unknown as MediaStream)),
       createRemoteAudio: () => new FakeRemoteAudio(),
     },
     onNotice: (notice) => notices.push(notice),
+    ...(options.connect === undefined ? {} : { connect: options.connect }),
   });
   const send = (event: VoiceStreamEvent) => {
     streams.at(-1)?.options.onEvent(event);
@@ -154,7 +159,9 @@ describe("the room stream's events", () => {
     expect(call.getSnapshot().micOn).toBe(true);
     send({ type: "muted", muted: { by: otherAccountFixture.id } });
     await settle();
-    expect(server.setMic).toHaveBeenLastCalledWith("s5", false);
+    // The server turned it off for everyone: the client does not tell it again.
+    expect(server.setMic).toHaveBeenCalledTimes(1);
+    expect(call.getSnapshot().micOn).toBe(false);
     expect(notices).toContainEqual({ kind: "muted" });
     call.close();
   });
@@ -202,4 +209,113 @@ test("a method that this client does not have ends the call at once", () => {
   const { call } = setup({ session: "s5", grant: grantFixture({ kind: "mystery" }), room: live });
   call.start();
   expect(call.getSnapshot()).toMatchObject({ phase: "ended", end: { kind: "unsupported", reason: "mystery" } });
+});
+
+/** A connection that records what the call asks of it, for a method other than P2P. */
+function fakeConnection() {
+  const connection = {
+    update: vi.fn<VoiceConnection["update"]>(),
+    setMicrophone: vi.fn<VoiceConnection["setMicrophone"]>(() => Promise.resolve()),
+    renew: vi.fn<VoiceConnection["renew"]>(),
+    reconnect: vi.fn<VoiceConnection["reconnect"]>(),
+    receive: vi.fn<VoiceConnection["receive"]>(),
+    resumePlayback: vi.fn<VoiceConnection["resumePlayback"]>(() => Promise.resolve()),
+    close: vi.fn<VoiceConnection["close"]>(),
+  } satisfies VoiceConnection;
+  return connection;
+}
+
+test("an SFU's grant is not renewed on a schedule; a grant event renews it without restarting ICE", async () => {
+  const connection = fakeConnection();
+  const { call, server, send } = setup({ session: "s5", grant: grantFixture({ kind: "livekit", expires_at: new Date(now + 60_000).toISOString() }), room: live }, { connect: () => connection });
+  call.start();
+  await vi.advanceTimersByTimeAsync(10 * 60_000);
+  expect(server.refreshGrant).not.toHaveBeenCalled();
+  send({ type: "grant", grant: { grant: grantFixture({ kind: "livekit" }), reconnect: false } });
+  expect(connection.renew).toHaveBeenCalledWith(expect.objectContaining({ kind: "livekit" }), { restartIce: false });
+  await vi.advanceTimersByTimeAsync(10 * 60_000);
+  expect(server.refreshGrant).not.toHaveBeenCalled();
+  call.close();
+});
+
+describe("the microphone", () => {
+  const speaking: VoiceRoom = { ...live, participants: live.participants.map((p) => (p.session === "s5" ? { ...p, role: "speaker" } : p)) };
+
+  test("works as soon as a write says the user speaks, before the next state", async () => {
+    const { call, server } = setup();
+    call.start();
+    await settle();
+    call.applyRoom(speaking);
+    await call.setMicrophone(true);
+    expect(call.getSnapshot().micOn).toBe(true);
+    expect(server.setMic).toHaveBeenCalledWith("s5", true);
+    call.close();
+  });
+
+  test("stays off for a listener, and says nothing to the server", async () => {
+    const { call, server } = setup();
+    call.start();
+    await settle();
+    await call.setMicrophone(true);
+    expect(call.getSnapshot().micOn).toBe(false);
+    expect(server.setMic).not.toHaveBeenCalled();
+    call.close();
+  });
+
+  test("says why the browser did not give it", async () => {
+    const { call } = setup(undefined, { getMicrophone: () => Promise.reject(new DOMException("no", "NotAllowedError")) });
+    call.start();
+    call.applyRoom(speaking);
+    await settle();
+    await call.setMicrophone(true);
+    expect(call.getSnapshot()).toMatchObject({ micOn: false, micPending: false, micError: "denied" });
+    call.close();
+  });
+});
+
+test("waits out a 429 of a signal and sends it again", async () => {
+  const { call, server, send } = setup();
+  server.sendSignal.mockRejectedValueOnce(new ApiError({ type: "about:blank", title: "Too Many Requests", status: 429 }, { retryAt: now + 2_000 }));
+  call.start();
+  // s9 > s5: s9 offers; s5 answers.
+  send({ type: "state", room: live });
+  send({ type: "signal", signal: { from: "s9", kind: "offer", sdp: "v=0\r\na=ice-ufrag:x\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" } });
+  await settle();
+  expect(server.sendSignal).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(2_000);
+  await settle();
+  await vi.advanceTimersByTimeAsync(1_000);
+  // The refused signal is sent again first, then the rest in order.
+  const kinds = server.sendSignal.mock.calls.map(([, signal]) => signal.kind);
+  expect(kinds).toHaveLength(3);
+  expect(kinds[1]).toBe(kinds[0]);
+  expect(kinds.toSorted()).toEqual(["answer", "candidate", "candidate"]);
+  call.close();
+});
+
+test("a session joined again after the user left is left at once", async () => {
+  const { call, server } = setup();
+  let joined: (join: VoiceJoin) => void = () => undefined;
+  server.join.mockImplementationOnce(
+    () =>
+      new Promise<VoiceJoin>((resolve) => {
+        joined = resolve;
+      }),
+  );
+  server.heartbeat.mockRejectedValueOnce(notFound());
+  call.start();
+  await settle();
+  expect(server.join).toHaveBeenCalledTimes(1);
+  call.close();
+  joined({ session: "s7", grant: grantFixture(), room: live });
+  await settle();
+  expect(server.abandon).toHaveBeenCalledTimes(1);
+});
+
+test("start after close does nothing, and close twice is one close", () => {
+  const { call, server } = setup();
+  call.close();
+  call.start();
+  call.close();
+  expect(server.openStream).not.toHaveBeenCalled();
 });

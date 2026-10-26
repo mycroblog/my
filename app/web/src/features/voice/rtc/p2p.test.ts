@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The P2P engine with a fake RTCPeerConnection (ADR-0101 §4, §5): whom a session connects to (P1), who sends the first
 // offer, glare under perfect negotiation, whose audio plays, the renewal of a grant with restartIce, the relay
-// policy, and the direction of the session descriptions of a participant who does not speak. A relay between the
+// policy, the direction of the session descriptions of a participant who does not speak, and the recovery from lost or
+// refused signals, stale candidates, and refused configurations. A relay between the
 // connections plays the server: it passes each signal on, after checking it as the server does.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, sdpDirections, settle } from "../test/fakeRtc";
 import { connectVoice, UnsupportedVoiceMethodError } from "./connect";
-import { offerWait } from "./p2p";
+import { offerWait, resendWait } from "./p2p";
 import type { IncomingVoiceSignal, OutgoingVoiceSignal, VoiceConnection, VoiceGrant, VoiceMember } from "./types";
 
 const grant: VoiceGrant = {
@@ -28,7 +29,9 @@ function room() {
   const pcs = new Map<string, FakePeerConnection[]>();
   let paused = false;
   const held: (() => void)[] = [];
-  const join = (session: string, options: { grant?: VoiceGrant; blocked?: boolean } = {}) => {
+  /** The signals that the relay refuses (a 422 or a lost request). */
+  let refuse: ((signal: Sent) => boolean) | null = null;
+  const join = (session: string, options: { grant?: VoiceGrant; getMicrophone?: () => Promise<MediaStream> } = {}) => {
     const connection = connectVoice({
       session,
       grant: options.grant ?? grant,
@@ -38,13 +41,17 @@ function room() {
           pcs.set(session, [...(pcs.get(session) ?? []), pc]);
           return pc as unknown as RTCPeerConnection;
         },
-        getMicrophone: () => Promise.resolve(new FakeStream() as unknown as MediaStream),
+        getMicrophone: options.getMicrophone ?? (() => Promise.resolve(new FakeStream() as unknown as MediaStream)),
         createRemoteAudio: () => new FakeRemoteAudio(),
       },
       events: {
         sendSignal: (signal) => {
           const message = { ...signal, from: session };
           sent.push(message);
+          if (refuse?.(message) === true) {
+            rejected.push(message);
+            return Promise.reject(new Error("refused"));
+          }
           // The server relays audio only, and from a participant who does not speak, receiving only.
           if ((signal.kind === "offer" || signal.kind === "answer") && !speakers.has(session)) {
             if (sdpDirections(signal.sdp ?? "").some((d) => d === "sendrecv" || d === "sendonly")) {
@@ -81,6 +88,9 @@ function room() {
     sent,
     rejected,
     pcs: (session: string) => pcs.get(session) ?? [],
+    refuse: (which: ((signal: Sent) => boolean) | null) => {
+      refuse = which;
+    },
     pause: () => {
       paused = true;
     },
@@ -391,4 +401,144 @@ test("leaving closes every connection and stops the microphone", async () => {
   a.close();
   expect(r.pcs("a")[0]?.closed).toBe(true);
   expect(track?.stopped).toBe(true);
+});
+
+describe("lost and refused signals", () => {
+  test("an offer whose answer is lost is rolled back and made again", async () => {
+    vi.useFakeTimers();
+    const r = room();
+    r.join("s1");
+    r.join("s2");
+    r.refuse((s) => s.kind === "answer");
+    r.state({ s1: true, s2: true });
+    await settle();
+    expect(r.pcs("s2")[0]?.signalingState).toBe("have-local-offer");
+    r.refuse(null);
+    await vi.advanceTimersByTimeAsync(offerWait);
+    await settle();
+    expect(r.pcs("s1")[0]?.signalingState).toBe("stable");
+    expect(r.pcs("s2")[0]?.signalingState).toBe("stable");
+    expect(r.sent.filter((s) => s.kind === "offer").length).toBeGreaterThan(1);
+  });
+
+  test("an offer that the relay refuses is made again a little later", async () => {
+    vi.useFakeTimers();
+    const r = room();
+    r.join("s1");
+    r.join("s2");
+    r.refuse((s) => s.kind === "offer" && r.rejected.length === 0);
+    r.state({ s1: true, s2: true });
+    await settle();
+    expect(r.rejected).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(resendWait);
+    await settle();
+    expect(r.pcs("s1")[0]?.signalingState).toBe("stable");
+    expect(r.pcs("s2")[0]?.signalingState).toBe("stable");
+  });
+
+  test("a candidate of another ICE generation, queued before the offer, is dropped and the offer answered", async () => {
+    const r = room();
+    const s1 = r.join("s1");
+    r.state({ s1: false, s2: true });
+    await settle();
+    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment: "old" }) });
+    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:new\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:8 1 udp 1 192.0.2.8 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment: "new" }) });
+    await settle();
+    expect(r.pcs("s1")[0]?.signalingState).toBe("stable");
+    expect(r.pcs("s1")[0]?.candidates.map((c) => c.usernameFragment)).toEqual(["new"]);
+    expect(r.sent.filter((s) => s.kind === "answer")).toHaveLength(1);
+  });
+
+  test("a candidate that the browser refuses does not stop the next description", async () => {
+    const r = room();
+    const s1 = r.join("s1");
+    r.state({ s1: false, s2: true });
+    await settle();
+    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:g1\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    // No usernameFragment, but of a generation the browser does not know: it rejects it.
+    const pc = r.pcs("s1")[0];
+    if (pc === undefined) throw new Error("no connection");
+    pc.addIceCandidate = () => Promise.reject(new DOMException("unknown", "OperationError"));
+    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host", sdpMid: "0", sdpMLineIndex: 0 }) });
+    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:g2\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    await settle();
+    expect(r.sent.filter((s) => s.kind === "answer")).toHaveLength(2);
+  });
+
+  test("ignores an offer from a listener while the user listens too (a stale one)", async () => {
+    const r = room();
+    const s1 = r.join("s1");
+    r.state({ s1: false, s2: false });
+    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=recvonly\r\n" });
+    await settle();
+    expect(r.pcs("s1")).toEqual([]);
+  });
+});
+
+test("the microphone's changes apply one after another: one request for it, and the latest wish wins", async () => {
+  let give: (stream: MediaStream) => void = () => undefined;
+  const getMicrophone = vi.fn(
+    () =>
+      new Promise<MediaStream>((resolve) => {
+        give = resolve;
+      }),
+  );
+  const r = room();
+  const a = r.join("a", { getMicrophone });
+  r.join("b");
+  r.state({ a: true, b: false });
+  await settle();
+  const first = a.setMicrophone(true);
+  await settle();
+  // While the browser asks: on again, then off.
+  const changes = [first, a.setMicrophone(true), a.setMicrophone(false)];
+  await settle();
+  const stream = new FakeStream();
+  give(stream as unknown as MediaStream);
+  await Promise.all(changes);
+  expect(getMicrophone).toHaveBeenCalledTimes(1);
+  // Turned off while the browser asked: the track does not send.
+  expect(stream.tracks[0]?.enabled).toBe(false);
+});
+
+describe("the renewal", () => {
+  test("connects the pair again where the browser refuses the new configuration", async () => {
+    const r = room();
+    const a = r.join("a");
+    r.join("b");
+    r.state({ a: true, b: false });
+    await settle();
+    FakePeerConnection.refusesConfiguration = true;
+    a.renew({ ...grant, relayOnly: true });
+    await settle();
+    expect(r.pcs("a")).toHaveLength(2);
+    expect(r.pcs("a")[0]?.closed).toBe(true);
+    expect(r.pcs("a")[1]?.configuration.iceTransportPolicy).toBe("relay");
+  });
+
+  test("a grant that does not ask for a restart only sets the configuration", async () => {
+    const r = room();
+    const a = r.join("a");
+    r.join("b");
+    r.state({ a: true, b: false });
+    await settle();
+    a.renew(grant, { restartIce: false });
+    expect(r.pcs("a")[0]?.configurations).toHaveLength(1);
+    expect(r.pcs("a")[0]?.restarts).toBe(0);
+  });
+});
+
+test("resuming the sound plays every audio that can, and says when some stays blocked", async () => {
+  const r = room();
+  const a = r.join("a");
+  r.join("b");
+  r.join("c");
+  r.state({ a: false, b: true, c: true });
+  await settle();
+  const [first, second] = FakeRemoteAudio.all.filter((audio) => !audio.closed);
+  if (first === undefined || second === undefined) throw new Error("no audio");
+  second.resume = () => Promise.reject(new DOMException("blocked", "NotAllowedError"));
+  await expect(a.resumePlayback()).rejects.toThrow("blocked");
+  expect(first.playing).toBe(true);
 });

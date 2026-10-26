@@ -7,7 +7,7 @@
 import { EventStreamParser, type components } from "@mycroblog/mykit";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import { ApiError } from "../../../lib/errors";
+import { ApiError, NetworkError } from "../../../lib/errors";
 import { type VoiceRoom, voiceRoomQueryOptions } from "./voice";
 
 type Schemas = components["schemas"];
@@ -130,6 +130,18 @@ export function isSessionGone(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
 
+/**
+ * How long to wait before sending a signal again after `error`, the failure of try `attempt` (from 1): the time
+ * that a 429 names (a session sends at most 20 signals a second), or a growing wait after a network failure, three
+ * times at most. Null for a failure that sending again does not cure (a 422 of a signal that the relay refuses).
+ */
+export function signalRetryDelay(error: unknown, attempt: number, now: number): number | null {
+  if (attempt > 3) return null;
+  if (error instanceof ApiError && error.status === 429) return Math.max((error.retryAt ?? now + 1_000) - now, 100);
+  if (error instanceof NetworkError) return 500 * 2 ** (attempt - 1);
+  return null;
+}
+
 /** Tells the server that the session is alive (every 15 seconds). */
 export async function sendVoiceHeartbeat(api: Api, id: string, session: string): Promise<void> {
   await api.fetch.POST("/voice/rooms/{id}/heartbeat", { params: { path: { id } }, body: { session } });
@@ -164,6 +176,14 @@ export type VoiceLeaveChoice = { nextHostId: string } | { end: true } | undefine
 export async function leaveVoiceRoom(api: Api, id: string, choice: VoiceLeaveChoice): Promise<void> {
   const query = choice === undefined ? {} : "end" in choice ? { end: true } : { next_host_id: choice.nextHostId };
   await api.fetch.DELETE("/voice/rooms/{id}/participation", { params: { path: { id }, query } });
+}
+
+/**
+ * Leaves the room as the page goes away (pagehide): the request outlives the page (keepalive). The host of a room with
+ * others in it is refused (the server's 409) and stays the host until the grace after the heartbeats stop.
+ */
+export function leaveVoiceRoomOnUnload(api: Api, id: string): void {
+  void api.fetch.DELETE("/voice/rooms/{id}/participation", { params: { path: { id } }, keepalive: true }).catch(() => undefined);
 }
 
 /** The user's own operations in a room, each answering the room after it. */
