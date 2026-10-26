@@ -60,7 +60,8 @@
 
 ### 1.3 ID とキーセットページング
 
-- 主キーは UUIDv7 です（`IdGenerator` ポート、Go 1.27 の `uuid.NewV7()`）。辞書順と時刻順が一致するので、`ORDER BY id` がそのまま時系列になります。
+- 主キーは UUIDv7 です（`IdGenerator` ポート、`uuid.NewV7()` と同じくミリ秒の後の 12 ビットにミリ秒未満の時刻を入れる RFC 9562 の方式）。辞書順と時刻順が一致するので、`ORDER BY id` がそのまま時系列になります。
+  - 1 つのプロセスが発行する ID は、システム時計が 1 分以内だけ戻っても増え続けます（`Clock` と同じく、戻った間は最後の時刻の次の値を使います）。`uuid.NewV7()` は秒をまたいで戻った時計にそのまま従うので、時刻同期が数秒おきに時計を戻す仮想マシンでは、続けて行った操作の ID の順序が逆になります。
 - PostgreSQL の `uuid` には `max` / `min` の集約関数が無いので、「最新の版の `id`」は `ORDER BY id DESC LIMIT 1` や `DISTINCT ON` で取ります。
 - ページングは常にキーセット方式（`id < :cursor ORDER BY id DESC LIMIT :n + 1`）です。不透明なカーソルの中身はこの `id` です（ADR-0016）。
 - リモート投稿の `id` は AP の `published` から生成します（未来の時刻は現在時刻に丸めます）。Go では `IDGenerator.NewIDAt` です。
