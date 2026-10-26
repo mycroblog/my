@@ -75,13 +75,21 @@ M4.3（Voice Chat、epic #1345）は、通話の音声を P2P のほかに SFU �
 | `SetSpeaking`（許可） | `UpdateParticipant` の `permission`。再接続なし（`reconnect` は偽） | 役割を変えられないので `reconnect` を真で返す。クライアントは `sendrecv` の新しい `Grant` で入り直す（回答 40） |
 | `SetSpeaking`（取り消し） | `UpdateParticipant` で `canPublish: false`（公開中のトラックは自動で非公開になる） | 転送フィルター（そのコネクションの `audio` を `block`）ですぐ止め、`reconnect` を真で返して `recvonly` で入り直させる |
 | `Mute` | `GetParticipant` でトラックを引き、`MutePublishedTrack(muted: true)` | 転送フィルターでそのコネクションの音声を `block` |
-| `Unmute` | 何もしない（本人がクライアントでオンにする。要検証 §Open Questions） | 転送フィルターを消す |
+| `Unmute` | 何もしない（本人がクライアントでオンにする。サーバーのミュートの後も、本人のミュートの解除の要求はそのまま通る） | 転送フィルターを消す |
 | `Remove` | `RemoveParticipant` | `DisconnectConnection` |
 | `Close` | `DeleteRoom` | `TerminateSession` |
 | `Sessions` | `ListParticipants` | `ListChannelConnections` |
 
+- **Sora の転送フィルター**: 1 人の送り手の音声をチャネルの全員に対して止めるのは、チャネル単位のフィルター（`CreateChannelForwardingFilter`、`action: block`）の 1 つの規則に `{"field": "connection_id", "operator": "is_in", "values": [送り手]}` と `{"field": "kind", "operator": "is_in", "values": ["audio"]}` を AND で並べる。
+  `connection_id` は送り手のコネクションを指す（確認日 2026-10-26: [転送フィルター](https://sora-doc.shiguredo.jp/FORWARDING_FILTER.html)）。`allow` は `block` より優先されるので、my は `allow` の規則を作らない。
+- **LiveKit のミュートの解除**: `MutePublishedTrack(muted: true)` はサーバーがトラックを止めて本人に知らせるだけで、本人のクライアントからのミュートの解除の要求は制限なく通る（確認日 2026-10-26: `livekit/livekit` のコミット `385aa40` の `pkg/rtc/participant.go` の `SetTrackMuted` と `pkg/rtc/signalling/signalhandler.go`）。
+  サーバーからの解除（`muted: false`）は既定で無効（`enable_remote_unmute`）なので、my は使わない。
 - **SFU の利用者の識別子**: ADR-0101 §2 のセッションの ID を使う（LiveKit の `identity`、Sora の `client_id`）。アカウントの ID は SFU に渡さない。同じアカウントの別の端末は別のセッションで、my が前のセッションを `Remove` する（ADR-0100 §5）。
   禁止や退出の後に古いトークンで入ってきた接続は、識別子が生きたセッションでないので、§4 の照合で切れる。
+- **Sora の入り直しと `client_id`**: 役割を変える入り直し（§3）は同じセッション、つまり同じ `client_id` で行う。同じ `client_id` の接続が重なったときの扱いは Sora の設定 `default_duplicate_client_id`（`allow` / `evict`、既定は `allow`）で決まり、
+  `evict` なら新しい接続を受けて古い接続を切る（確認日 2026-10-26: [セッションウェブフック](https://sora-doc.shiguredo.jp/SESSION_WEBHOOK.html)、[sora.conf](https://sora-doc.shiguredo.jp/SORA_CONF.html)。文書の版 2026.1.3）。
+  運営者の文書はセルフホストで `evict` を勧める。`allow` のとき（と、この設定を変えられるか文書で確かめられない Sora Cloud）は、my が同じ `client_id` の新しい接続の `connection.created` を受けたときと §4 の照合で、古い方の接続を `DisconnectConnection` で切る。
+  新しい接続ができてから古い接続を切るので、途切れは新しい接続が音声を流し始めるまでの間になる。
 - **音声だけ**: LiveKit はトークンの `canPublishSources: ["microphone"]`、Sora は認証 Webhook の応答の `video: false`・`audio: true`・`audio_codec_type: "OPUS"`。運営者の文書は、セルフホストの LiveKit の `room.enabled_codecs` を音声だけにし、`room.auto_create` を `false` にすることを勧める（my の外でルームを作らせない）。
 - **SFU の TURN**: SFU のときの STUN / TURN は SFU が持つもの（LiveKit の組み込みの TURN、Sora の TURN）を使い、`Grant.ICE` は空、`voice_stun_urls`・`voice_turn*`・`voice_ice_transport_policy` は使わない（起動時に設定されていれば警告）。
   SFU の構成では利用者の IP は SFU にだけ見え、他の参加者には見えない。
@@ -93,7 +101,10 @@ M4.3（Voice Chat、epic #1345）は、通話の音声を P2P のほかに SFU �
 - **イベント**（`EventSource`）: LiveKit は `POST /voice/webhooks/livekit`（`Authorization` の JWT を API シークレットで検証し、JWT の `sha256` と本文の SHA-256 を定数時間で比べる）。Sora は `POST /voice/webhooks/sora/events`。
   検証した参加・退出・ルームの終了は、イベントの `id` を冪等キーにした outbox のジョブ `voice.media_event` に積む。ジョブは、参加が生きたセッションでなければ（禁止・退出の後・未知）`Remove` し、退出ならそのセッションのハートビートの値を消して ADR-0100 §6 の切断として扱う。受信の行は DB に残さない（イベントは照合を早めるだけ。ADR-0101 §2）。
 - **照合**: ADR-0100 §6 の `voice.sweep`（1 分ごと）が、開いたルームごとに `Sessions` を呼ぶ（ADR-0101 §2）。開いたルームの数は運営者の上限で抑えられ、呼び出しは 1 ルーム 1 回。
-- **セルフホストの LiveKit の再入室**: `RemoveParticipant` はセルフホストではトークンを失効させず、接続中のクライアントは 5 分ごとに寿命 10 分のトークンを受け取る（LiveKit のサーバーの実装）。退出させた人が最大でおよそ 10 分、入り直せる。
+- **Webhook が届かないとき**: LiveKit の Webhook は、送る前にキューで 30 秒を超えた知らせを捨て、送るときは失敗したら最大 4 回、1〜30 秒の間隔で再送する（確認日 2026-10-26: `livekit/protocol` のコミット `b20af9b` の `webhook/resource_url_notifier.go` の `MaxAge = 30s`、
+  `go-retryablehttp` v0.7.8 の既定 `RetryMax = 4`・`RetryWaitMin = 1s`・`RetryWaitMax = 30s`）。my が冷えた起動で応えられないと知らせは失われうるので、照合が正である（判断基準 2）。
+- **セルフホストの LiveKit の再入室**: `RemoveParticipant` はセルフホストではトークンを失効させない（失効の処理は LiveKit Cloud だけ）。接続中のクライアントはサーバーから 5 分ごとに新しいトークンを受け取り、その寿命は 10 分か元のトークンの残りの長い方である。
+  退出させた人は、手元の最新のトークンで最大でおよそ 10 分、入り直せる（確認日 2026-10-26: `livekit/livekit` のコミット `385aa40` の `pkg/service/roommanager.go` の `RemoveParticipant`・`refreshToken`・`tokenRefreshInterval = 5m`・`tokenDefaultTTL = 10m`）。
   入ってきたら参加の Webhook（`participant_joined`）か 1 分ごとの照合で見つけ、すぐ切る。その間、数秒から 1 分ほど音が聞こえうることを運営者の文書に書き、厳密さが要るなら LiveKit Cloud を勧める（回答 42。LiveKit Cloud の `RemoveParticipant` はトークンをすぐ失効させる）。
 
 ### 5. 設定と守り方（回答 41）
@@ -129,7 +140,7 @@ ADR-0101 §1 の表に足す。秘密は `_FILE` でも渡せ、TOML には書�
 
 ADR-0101 §9 の通話の文書に足す:
 
-- 方式の選び方: 小さなインスタンスには P2P か LiveKit Cloud の無料のプラン（Build: $0、月 5,000 分・50 GB・同時 100 接続。確認日 2026-10-26、[LiveKit の料金](https://livekit.com/pricing)）。LiveKit と Sora は UDP の常駐のプロセスなので、Cloud Run・Lambda ではなく別の VM で動かす（要検証）
+- 方式の選び方: 小さなインスタンスには P2P か LiveKit Cloud の無料のプラン（Build: $0、月 5,000 分・50 GB・同時 100 接続。確認日 2026-10-26、[LiveKit の料金](https://livekit.com/pricing)）。LiveKit と Sora はメディアを UDP で受ける常駐のプロセスなので、Cloud Run・Lambda ではなく別の VM で動かす（Cloud Run のサービスが受けるのは HTTP の要求だけ: 確認日 2026-10-26、[Cloud Run のコンテナの契約](https://docs.cloud.google.com/run/docs/container-contract)。Lambda は呼び出しごとに動き、待ち受けのソケットを持たない）
 - LiveKit: セルフホストの設定（`auto_create: false`・`enabled_codecs`・Webhook の URL `/voice/webhooks/livekit`）、`livekit-server --dev` での試し方、セルフホストの再入室の制限（§4）
 - Sora: リバースプロキシと Basic 認証の置き方、Webhook の URL（`/voice/webhooks/sora/auth`・`/voice/webhooks/sora/events`）、認証 Webhook のタイムアウトと冷えた起動、聞き手が話者になるときの途切れ（§3）。
   料金とライセンスの形（Sora Cloud は月の基本料 5,000 円から、無料の期間はない。パッケージは同時接続数と期間の前払い。製品のページは海外の法人・団体・個人には提供していないと書く）。
@@ -142,7 +153,7 @@ ADR-0101 §9 の通話の文書に足す:
 
 - 良い影響: どちらの SFU も 1 回の HTTP の呼び出しだけで動かせ、my はサーバーレスのまま SFU を使える。サーバーの依存は増えない。
 - 良い影響: 通話を使わない画面のバンドルは増えない。SFU のときは利用者の IP が他の参加者に見えず、発話の制限を SFU が強制する（P2P の結託の限界がない）。
-- 悪い影響: Sora では聞き手が話者になるとき、話者が聞き手に戻るときに入り直しで音が途切れる（要検証: 1〜2 秒）。
+- 悪い影響: Sora では聞き手が話者になるとき、話者が聞き手に戻るときに入り直しで、その人の音が新しい接続の確立まで途切れる（長さは実機でしか測れず、Sora は fake でだけ試す決定なので測らない。回答 43）。
 - 悪い影響: セルフホストの LiveKit では、退出させた人が切られるまで数秒から 1 分ほど聞こえうる。
 - 悪い影響: Sora の adapter は実機で確かめず、Sora の API の変化に気づくのが運営者の報告になる。セルフホストの Sora は、運営者がリバースプロキシを置く手間を負う。
 - 悪い影響: Sora の認証 Webhook は同期で、my の冷えた起動が参加の失敗になりうる。
@@ -165,7 +176,4 @@ ADR-0101 §9 の通話の文書に足す:
 
 ## Open Questions / 要検証
 
-- LiveKit の `MutePublishedTrack(muted: true)` の後、本人がクライアントでマイクをオンにできるか（要検証: `livekit-server --dev`。できなければ `Unmute` で `UpdateParticipant` を使って発話の許可を付け直す）
-- Sora の転送フィルターで、特定の送り手の音声をチャネルの全員に対して止める規則の書き方（要検証: 規則の `connection_id` が送り手を指すか）
-- Sora で同じ `client_id` のまま入り直すときの扱いと、途切れの長さ（要検証: 実機を持つ運営者の報告を待つ）
-- LiveKit のセルフホストの Webhook の再送の回数と間隔（要検証）
+- Sora Cloud で `default_duplicate_client_id` を `evict` にできるか（要検証: Sora Cloud の文書に記載がない。できなくても §3 の切り直しで動く）
