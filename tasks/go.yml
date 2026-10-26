@@ -75,6 +75,13 @@ tasks:
     cmds:
       - go test -count=1 -run Mailpit ./internal/adapter/mail/smtp/ ./internal/platform/
 
+  test-voice:
+    desc: Run the voice.Transport contract of voice = livekit on a livekit-server --dev container (pkg/testkit/livekittest) (needs Docker; CI in the slow suite)
+    env:
+      TEST_LIVEKIT: container
+    cmds:
+      - go test -count=1 -run LiveKitServer ./internal/adapter/voice/livekit/
+
   warm:
     desc: Download the modules and build the packages and the Go tools once, so that the Go checks a CI job runs in parallel read the build cache instead of each compiling the same packages
     cmds:

@@ -4,7 +4,10 @@ package testkit
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"testing"
@@ -22,38 +25,47 @@ import (
 // of the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
 // visibility and the order of the list, the reaction to suspensions and lost eligibility, the
 // operations of the participants, the host, and the co-hosts with their permissions, the
-// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11).
+// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), and, on a
+// media server, the reconciliation of voice.sweep and the events of voice.media_event
+// (ADR-0102 §4).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
 	cases := []struct {
 		name string
 		run  func(t *testing.T, e *roomsEnv)
+		// transport is the method of the case, TransportP2P when empty.
+		transport voice.Transport
 	}{
-		{"OpensARoom", roomsOpen},
-		{"JoinsMovesAndReplaces", roomsJoin},
-		{"LeavesWithTheHostsChoice", roomsLeave},
-		{"HandsOver", roomsHandOver},
-		{"ExpiresHeartbeatsAndTheGrace", roomsGrace},
-		{"SweepsOnce", roomsSweep},
-		{"ListsVisibleRooms", roomsList},
-		{"ReactsToSuspensions", roomsSuspension},
-		{"SpeaksAndRaisesHands", roomsSpeaking},
-		{"MutesAndRemoves", roomsRemove},
-		{"AssignsCohosts", roomsCohosts},
-		{"Invites", roomsInvitations},
-		{"LimitsInvitations", roomsInvitationLimit},
-		{"ReactsToBlocks", roomsBlocks},
-		{"DecidesInTheTransaction", roomsRaces},
-		{"SerializesConcurrentCommands", roomsConcurrent},
-		{"FailsWithoutAGrant", roomsNoGrant},
-		{"StreamsTheRoom", roomsStream},
-		{"RelaysSignals", roomsSignals},
-		{"SendsMicReactionsAndGrants", roomsMicReactions},
+		{"OpensARoom", roomsOpen, ""},
+		{"JoinsMovesAndReplaces", roomsJoin, ""},
+		{"LeavesWithTheHostsChoice", roomsLeave, ""},
+		{"HandsOver", roomsHandOver, ""},
+		{"ExpiresHeartbeatsAndTheGrace", roomsGrace, ""},
+		{"SweepsOnce", roomsSweep, ""},
+		{"ListsVisibleRooms", roomsList, ""},
+		{"ReactsToSuspensions", roomsSuspension, ""},
+		{"ReconcilesTheMediaPath", roomsMedia, voice.TransportLiveKit},
+		{"SpeaksAndRaisesHands", roomsSpeaking, ""},
+		{"MutesAndRemoves", roomsRemove, ""},
+		{"AssignsCohosts", roomsCohosts, ""},
+		{"Invites", roomsInvitations, ""},
+		{"LimitsInvitations", roomsInvitationLimit, ""},
+		{"ReactsToBlocks", roomsBlocks, ""},
+		{"DecidesInTheTransaction", roomsRaces, ""},
+		{"SerializesConcurrentCommands", roomsConcurrent, ""},
+		{"FailsWithoutAGrant", roomsNoGrant, ""},
+		{"StreamsTheRoom", roomsStream, ""},
+		{"RelaysSignals", roomsSignals, ""},
+		{"SendsMicReactionsAndGrants", roomsMicReactions, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(t, newRoomsEnv(t, newHarness, appvoice.Config{Transport: voice.TransportP2P}))
+			tr := tc.transport
+			if tr == "" {
+				tr = voice.TransportP2P
+			}
+			tc.run(t, newRoomsEnv(t, newHarness, appvoice.Config{Transport: tr}))
 		})
 	}
 }
@@ -169,6 +181,11 @@ type roomsTransport struct {
 	mu        sync.Mutex
 	calls     []string
 	reconnect bool
+	// enforced makes it a media server that holds the sessions of media, by room.
+	enforced bool
+	media    map[string][]string
+	// conns is the connection of each session on the media path, by session ID.
+	conns map[string]string
 	// grantErr fails the grants when set, as a TURN source that cannot be reached does.
 	grantErr error
 }
@@ -191,7 +208,60 @@ func (r *roomsTransport) count(c string) int {
 	return n
 }
 
-func (*roomsTransport) Capabilities() appvoice.Capabilities { return appvoice.Capabilities{} }
+func (r *roomsTransport) Capabilities() appvoice.Capabilities {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return appvoice.Capabilities{ServerEnforced: r.enforced, Events: r.enforced}
+}
+
+// sfu makes the transport a media server that holds the sessions it was told of with connect
+// and sends the events of deliver.
+func (r *roomsTransport) sfu() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.enforced, r.media, r.conns = true, map[string][]string{}, map[string]string{}
+}
+
+func (r *roomsTransport) connect(room string, sessions ...string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.media[room] = append(r.media[room], sessions...)
+}
+
+// connectAs puts a session on the media path of a room with the connection conn, replacing a
+// connection of the same session as a full reconnect does.
+func (r *roomsTransport) connectAs(room, session, conn string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !slices.Contains(r.media[room], session) {
+		r.media[room] = append(r.media[room], session)
+	}
+	r.conns[session] = conn
+}
+
+// vanish drops the media room as a media server that closed it does.
+func (r *roomsTransport) vanish(room string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.media, room)
+}
+
+// disconnect takes a session off the media path.
+func (r *roomsTransport) disconnect(room, session string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.media[room] = slices.DeleteFunc(r.media[room], func(id string) bool { return id == session })
+}
+
+// ParseEvents implements appvoice.EventSource: the body is the JSON of the events, and a
+// header X-Bad refuses the delivery.
+func (*roomsTransport) ParseEvents(_ context.Context, h http.Header, body []byte) ([]appvoice.Event, error) {
+	if h.Get("X-Bad") != "" {
+		return nil, errors.New("bad signature")
+	}
+	var evs []appvoice.Event
+	return evs, json.Unmarshal(body, &evs)
+}
 func (r *roomsTransport) Open(_ context.Context, room appvoice.RoomRef) error {
 	r.add("open:" + room.ID)
 	return nil
@@ -218,16 +288,27 @@ func (r *roomsTransport) Unmute(_ context.Context, _ appvoice.RoomRef, s appvoic
 	r.add("unmute:" + s.ID)
 	return nil
 }
-func (r *roomsTransport) Remove(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
+func (r *roomsTransport) Remove(_ context.Context, room appvoice.RoomRef, s appvoice.Session) error {
 	r.add("remove:" + s.ID)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.media != nil {
+		r.media[room.ID] = slices.DeleteFunc(r.media[room.ID], func(id string) bool { return id == s.ID })
+	}
 	return nil
 }
 func (r *roomsTransport) Close(_ context.Context, room appvoice.RoomRef) error {
 	r.add("close:" + room.ID)
 	return nil
 }
-func (*roomsTransport) Sessions(context.Context, appvoice.RoomRef) ([]appvoice.SessionRef, error) {
-	return nil, nil
+func (r *roomsTransport) Sessions(_ context.Context, room appvoice.RoomRef) ([]appvoice.SessionRef, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var out []appvoice.SessionRef
+	for _, id := range r.media[room.ID] {
+		out = append(out, appvoice.SessionRef{ID: id, Connection: r.conns[id]})
+	}
+	return out, nil
 }
 
 type roomsEnv struct {
@@ -747,6 +828,166 @@ func roomsSuspension(t *testing.T, e *roomsEnv) {
 		t.Fatal(err)
 	}
 	e.wantEnded(t, r, voice.EndHostIneligible)
+}
+
+// roomsMedia checks a room on a media server (ADR-0101 §2, ADR-0102 §4): voice.sweep removes
+// the sessions on the media path that are not in the room and disconnects the participants the
+// media path has not seen for longer than the life of a grant, applies the room's state to a
+// session it sees for the first time, and opens a media room again that vanished;
+// voice.media_event removes a session that joined without being in the room, applies the room's
+// state to one that is, disconnects one that left unless it connected again, and opens a media
+// room again that finished while the room is open; a session taken away cannot be revived by
+// heartbeats; and a delivery of another method or that does not verify is refused.
+func roomsMedia(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	e.transport.sfu()
+	host, listener := e.account(true), e.account(false)
+	hj := e.open(t, host, appvoice.SettingsInput{})
+	r := hj.Room.ID
+	lj := e.join(t, listener, r)
+	e.transport.connect(r, hj.Session, "ghost")
+	lst := e.openStream(t, listener, r, lj.Session)
+
+	e.clock.Advance(30 * time.Second)
+	e.beat(t, host, r, hj.Session)
+	e.beat(t, listener, r, lj.Session)
+	if err := e.svc.Sweep(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if e.transport.count("remove:ghost") != 1 {
+		t.Errorf("transport calls = %v, want the session outside the room removed", e.transport.calls)
+	}
+	if ps := e.participants(t, r); len(ps) != 2 {
+		t.Fatalf("participants = %v, want the listener kept while it may still connect", ps)
+	}
+	for range 4 {
+		e.clock.Advance(30 * time.Second)
+		e.beat(t, host, r, hj.Session)
+		e.beat(t, listener, r, lj.Session)
+	}
+	if err := e.svc.Sweep(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if ps := e.participants(t, r); len(ps) != 1 || ps[host].AccountID != host {
+		t.Fatalf("participants = %v, want the listener that never connected disconnected", ps)
+	}
+	if st := e.streamState(t, lst); st.End != appvoice.StreamRemoved || st.Reason != string(voice.Disconnected) {
+		t.Errorf("the stream of the disconnected listener = %s %s, want removed (disconnected)", st.End, st.Reason)
+	}
+	if err := e.svc.Heartbeat(ctx, listener, r, lj.Session); !errors.Is(err, appvoice.ErrNotFound) {
+		t.Errorf("heartbeat of the disconnected listener: %v, want ErrNotFound", err)
+	}
+	if e.transport.count("speak:"+hj.Session+":true") != 1 {
+		t.Errorf("transport calls = %v, want the host's state applied once the media path saw it", e.transport.calls)
+	}
+
+	deliver := func(transport string, h http.Header, evs ...appvoice.Event) appvoice.MediaWebhookOutcome {
+		t.Helper()
+		body, err := json.Marshal(evs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: transport, Header: h, Body: body, ClientIP: "192.0.2.1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.Outcome
+	}
+	ref := appvoice.RoomRef{ID: r}
+	joined := appvoice.Event{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: ref, Session: "intruder"}
+	for range 2 {
+		if got := deliver("livekit", nil, joined); got != appvoice.MediaWebhookAccepted {
+			t.Fatalf("delivery = %s, want accepted", got)
+		}
+	}
+	if got := deliver("livekit", nil, appvoice.Event{ID: "EV_2", Kind: appvoice.MediaSessionJoined, Room: ref, Session: hj.Session}); got != appvoice.MediaWebhookAccepted {
+		t.Fatalf("delivery = %s, want accepted", got)
+	}
+	if e.transport.count("remove:intruder") != 2 || e.transport.count("remove:"+hj.Session) != 0 {
+		t.Errorf("transport calls = %v, want the intruder removed and the host kept", e.transport.calls)
+	}
+	keys := map[string]int{}
+	for _, res := range e.jobs.Results() {
+		if res.Job.Type == appvoice.JobMediaEvent {
+			keys[res.Job.IdempotencyKey]++
+		}
+	}
+	if keys["voice.media_event:livekit:EV_1"] != 2 || keys["voice.media_event:livekit:EV_2"] != 1 {
+		t.Errorf("media event jobs = %v, want one key per event", keys)
+	}
+
+	if got := deliver("sora", nil, joined); got != appvoice.MediaWebhookNotFound {
+		t.Errorf("delivery of another method = %s, want not_found", got)
+	}
+	if got := deliver("livekit", http.Header{"X-Bad": {"1"}}, joined); got != appvoice.MediaWebhookRejected {
+		t.Errorf("delivery that does not verify = %s, want rejected", got)
+	}
+	p2p := e.newSvc(appvoice.Config{Transport: voice.TransportP2P})
+	if res, err := p2p.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "livekit", Body: []byte("[]")}); err != nil || res.Outcome != appvoice.MediaWebhookNotFound {
+		t.Errorf("delivery to voice = p2p = %+v, %v; want not_found", res, err)
+	}
+
+	deliver("livekit", nil, appvoice.Event{ID: "EV_3", Kind: appvoice.MediaRoomFinished, Room: ref})
+	if e.transport.count("open:"+r) != 2 {
+		t.Errorf("transport calls = %v, want the media room opened again", e.transport.calls)
+	}
+	noGrace := func(what string) {
+		t.Helper()
+		if _, err := e.h.Voice.FindHostGrace(ctx, nil, r); !errors.Is(err, appvoice.ErrNotFound) {
+			t.Errorf("%s: host grace %v, want none", what, err)
+		}
+	}
+
+	// A session that joins gets the room's state, whatever its grant said: a listener may not
+	// speak.
+	l2 := e.join(t, e.account(false), r)
+	deliver("livekit", nil, appvoice.Event{ID: "EV_5", Kind: appvoice.MediaSessionJoined, Room: ref, Session: l2.Session, Connection: "PA_l2"})
+	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 2 {
+		t.Errorf("transport calls = %v, want the roles applied on join", e.transport.calls)
+	}
+
+	// A full reconnect: the new connection joins before the old one's left arrives.
+	e.transport.connectAs(r, hj.Session, "PA_new")
+	deliver("livekit", nil, appvoice.Event{ID: "EV_6", Kind: appvoice.MediaSessionLeft, Room: ref, Session: hj.Session, Connection: "PA_old"})
+	noGrace("left of an old connection")
+	e.beat(t, host, r, hj.Session)
+
+	// A media room that vanished is opened again, and its sessions get the time to connect.
+	e.transport.vanish(r)
+	for range 2 {
+		if err := e.svc.Sweep(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if e.transport.count("open:"+r) != 3 {
+		t.Errorf("transport calls = %v, want the vanished media room opened again once", e.transport.calls)
+	}
+	noGrace("a vanished media room")
+	e.transport.connectAs(r, hj.Session, "PA_3")
+	if err := e.svc.Sweep(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if e.transport.count("speak:"+hj.Session+":true") != 3 {
+		t.Errorf("transport calls = %v, want the host's state applied after it connected again", e.transport.calls)
+	}
+
+	// The host leaves the media path: the grace starts, and its session cannot be revived by
+	// heartbeats; the client joins again.
+	e.transport.disconnect(r, hj.Session)
+	deliver("livekit", nil, appvoice.Event{ID: "EV_7", Kind: appvoice.MediaSessionLeft, Room: ref, Session: hj.Session, Connection: "PA_3"})
+	if _, err := e.h.Voice.FindHostGrace(ctx, nil, r); err != nil {
+		t.Errorf("host grace after the host left the media path: %v, want one", err)
+	}
+	if e.room(t, r).Head.State != voice.StateOpen {
+		t.Error("the room ended when its host left the media path, want the grace")
+	}
+	if err := e.svc.Heartbeat(ctx, host, r, hj.Session); !errors.Is(err, appvoice.ErrNotFound) {
+		t.Errorf("heartbeat of the session that left: %v, want ErrNotFound", err)
+	}
+	back := e.join(t, host, r)
+	if back.Session == hj.Session || e.room(t, r).Head.HostAccountID != host {
+		t.Errorf("rejoin of the host = %+v, want a new session of the host", back)
+	}
 }
 
 // parallel runs fn n times at once and returns the errors.

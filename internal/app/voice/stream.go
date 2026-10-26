@@ -80,7 +80,7 @@ func (s *Service) OpenStream(ctx context.Context, accountID, roomID, session str
 	if err := s.evaluate(ctx, roomID, false); err != nil {
 		return RoomStream{}, err
 	}
-	p, err := s.liveParticipant(ctx, accountID, roomID, session)
+	p, err := s.liveSession(ctx, accountID, roomID, session)
 	if err != nil {
 		return RoomStream{}, err
 	}
@@ -91,9 +91,9 @@ func (s *Service) OpenStream(ctx context.Context, accountID, roomID, session str
 	return st, nil
 }
 
-// liveParticipant returns the participant of accountID in a room whose current session is
+// liveSession returns the participant of accountID in a room whose current session is
 // session and alive; ErrNotFound otherwise.
-func (s *Service) liveParticipant(ctx context.Context, accountID, roomID, session string) (Participant, error) {
+func (s *Service) liveSession(ctx context.Context, accountID, roomID, session string) (Participant, error) {
 	p, err := s.d.Repository.FindParticipant(ctx, nil, accountID)
 	if err != nil {
 		return Participant{}, err
@@ -203,7 +203,12 @@ func (s *Service) StreamState(ctx context.Context, st RoomStream, notBefore time
 		}
 		return StreamState{End: StreamRemoved, Reason: reason, Room: v}, nil
 	}
-	if snap.live.session[st.ParticipationID] != st.Session {
+	switch cur := snap.live.session[st.ParticipationID]; {
+	case cur == "":
+		// The media path lost the session, which was taken away while the participation
+		// lasts (a host in the grace): the client joins again.
+		return StreamState{End: StreamRemoved, Reason: string(voice.Disconnected), Room: v}, nil
+	case cur != st.Session:
 		return StreamState{End: StreamReplaced, Reason: ReasonReplaced, Room: v}, nil
 	}
 	blocked, err := s.blockedAmong(ctx, st.AccountID, ids)

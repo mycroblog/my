@@ -118,7 +118,7 @@ func (s *Service) Signal(ctx context.Context, accountID, roomID string, in Signa
 	if err := checkSignal(in); err != nil {
 		return err
 	}
-	from, err := s.liveParticipant(ctx, accountID, roomID, in.Session)
+	from, err := s.liveSession(ctx, accountID, roomID, in.Session)
 	if err != nil {
 		return err
 	}

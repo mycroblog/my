@@ -108,8 +108,10 @@ type Deps struct {
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
 	Heartbeats *Heartbeats
-	// RateLimiter bounds the invitations (InvitationLimit); without one, the Service keeps the
-	// counters in the KeyValueStore of Heartbeats.
+	// RateLimiter bounds the invitations (InvitationLimit), the signals (SignalLimit), the
+	// reactions (ReactionLimit), and the deliveries of a media server's events
+	// (MediaWebhookIPLimit); without one, the Service keeps the counters in the
+	// KeyValueStore of Heartbeats.
 	RateLimiter *kernel.RateLimiter
 	// Transport carries the audio of the rooms of Config.Transport; nil when the voice chat
 	// is off.
@@ -370,6 +372,9 @@ func (s *Service) grant(ctx context.Context, roomID string, session Session, can
 	if err != nil {
 		s.d.Logger.WarnContext(ctx, "the voice transport gave no grant", slog.String("room", roomID), slog.Any("error", err))
 		return Grant{}, errors.Join(ErrTransportUnavailable, err)
+	}
+	if s.d.Transport.Capabilities().ServerEnforced {
+		s.markPending(ctx, session.ID)
 	}
 	return g, nil
 }

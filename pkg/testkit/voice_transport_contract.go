@@ -12,7 +12,10 @@ import (
 
 // VoiceTransportHarness is what VoiceTransportContract needs from a transport adapter: the
 // transport, the clock of its grants, and Connect, which makes a session seen by the media path
-// of a room as a client that connected with its grant would (a heartbeat for p2p).
+// of a room as a client that connected with its grant would (a heartbeat for p2p). Connect is
+// nil for a real media server that only a WebRTC client connects to: the contract then changes
+// and removes sessions that never connected, and checks that the media path of a room sees no
+// session.
 type VoiceTransportHarness struct {
 	Transport appvoice.Transport
 	Clock     *Clock
@@ -24,6 +27,7 @@ type VoiceTransportHarness struct {
 // URLs; SetSpeaking reports a reconnect only for a transport whose server enforces speaking;
 // Mute, Unmute, and Remove accept a session twice; Sessions lists the connected sessions, and
 // on a transport whose server enforces speaking, never one it removed or of a room it closed.
+// A session's ID identifies it; SessionRef.AccountID, when the media path knows it, matches.
 func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTransportHarness) {
 	t.Helper()
 	t.Run("OpensAndClosesIdempotently", func(t *testing.T) {
@@ -71,7 +75,9 @@ func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTra
 		if err := h.Transport.Open(t.Context(), room); err != nil {
 			t.Fatal(err)
 		}
-		h.Connect(t, room, s)
+		if h.Connect != nil {
+			h.Connect(t, room, s)
+		}
 		for _, speak := range []bool{true, false} {
 			reconnect, err := h.Transport.SetSpeaking(t.Context(), room, s, speak)
 			if err != nil {
@@ -99,8 +105,7 @@ func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTra
 		if err := h.Transport.Open(t.Context(), room); err != nil {
 			t.Fatal(err)
 		}
-		h.Connect(t, room, a)
-		h.Connect(t, room, b)
+		accounts := map[string]string{a.ID: a.AccountID, b.ID: b.AccountID}
 		ids := func() []string {
 			t.Helper()
 			ss, err := h.Transport.Sessions(t.Context(), room)
@@ -109,12 +114,34 @@ func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTra
 			}
 			var out []string
 			for _, s := range ss {
-				out = append(out, s.ID+"/"+s.AccountID)
+				if s.AccountID != "" && s.AccountID != accounts[s.ID] {
+					t.Errorf("Sessions: session %s of account %s, want %s", s.ID, s.AccountID, accounts[s.ID])
+				}
+				out = append(out, s.ID)
 			}
 			slices.Sort(out)
 			return out
 		}
-		if got, want := ids(), []string{"session-a/account-a", "session-b/account-b"}; !slices.Equal(got, want) {
+		if h.Connect == nil {
+			if got := ids(); len(got) != 0 {
+				t.Fatalf("Sessions without a connected session = %v, want none", got)
+			}
+			for range 2 {
+				if err := h.Transport.Remove(t.Context(), room, a); err != nil {
+					t.Fatalf("Remove: %v", err)
+				}
+			}
+			if err := h.Transport.Close(t.Context(), room); err != nil {
+				t.Fatal(err)
+			}
+			if got := ids(); len(got) != 0 {
+				t.Errorf("Sessions after Close = %v, want none", got)
+			}
+			return
+		}
+		h.Connect(t, room, a)
+		h.Connect(t, room, b)
+		if got, want := ids(), []string{"session-a", "session-b"}; !slices.Equal(got, want) {
 			t.Fatalf("Sessions = %v, want %v", got, want)
 		}
 		for range 2 {
@@ -125,7 +152,7 @@ func VoiceTransportContract(t *testing.T, newHarness func(t *testing.T) VoiceTra
 		if !h.Transport.Capabilities().ServerEnforced {
 			return
 		}
-		if got, want := ids(), []string{"session-b/account-b"}; !slices.Equal(got, want) {
+		if got, want := ids(), []string{"session-b"}; !slices.Equal(got, want) {
 			t.Errorf("Sessions after Remove = %v, want %v", got, want)
 		}
 		if err := h.Transport.Close(t.Context(), room); err != nil {
