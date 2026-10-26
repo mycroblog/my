@@ -23,7 +23,7 @@
     "eslint-plugin-testing-library": "7.16.2",
     "knip": "6.41.0",
     "oxlint": "1.87.0",
-    "oxlint-tsgolint": "7.0.2003",
+    "oxlint-tsgolint": "7.0.2004",
     "tailwindcss": "4.3.3",
     "typescript": "npm:@typescript/typescript6@6.0.2"
   }
