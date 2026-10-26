@@ -3,7 +3,6 @@
 package integration_test
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"io"
@@ -59,9 +58,7 @@ func (c *specCheck) RoundTrip(req *http.Request) (*http.Response, error) {
 	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/event-stream") {
 		// The body of a stream never ends: check the answer without it, and each event as it arrives.
 		c.spec.ValidateResponse(c.t, check, resp.StatusCode, resp.Header, nil)
-		pr, pw := io.Pipe()
-		go c.readEvents(pr)
-		resp.Body = &teeBody{r: io.TeeReader(resp.Body, pw), c: resp.Body, w: pw}
+		resp.Body = &teeBody{body: resp.Body, ev: &eventReader{c: c}}
 		return resp, nil
 	}
 	b, err := io.ReadAll(resp.Body)
@@ -74,29 +71,42 @@ func (c *specCheck) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-// readEvents checks the data of each event of a stream against the schema of its event.
-func (c *specCheck) readEvents(r io.Reader) {
-	sc := bufio.NewScanner(r)
-	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
-	var name, data string
-	for sc.Scan() {
-		line := sc.Text()
-		switch {
-		case line == "":
-			if schema, ok := streamSchemas[name]; ok {
-				c.spec.ValidateSchema(c.t, schema, []byte(data))
-				c.count(c.events, name)
-			} else if name != "" {
-				c.t.Errorf("unknown event %q of the stream", name)
-			}
-			name, data = "", ""
-		case strings.HasPrefix(line, "event: "):
-			name = strings.TrimPrefix(line, "event: ")
-		case strings.HasPrefix(line, "data: "):
-			data += strings.TrimPrefix(line, "data: ")
+// eventReader checks the data of each event of a stream against the schema of its event. It is fed by
+// the body that the bot reads, so an event is counted before the bytes that complete it reach the bot.
+type eventReader struct {
+	c          *specCheck
+	buf        []byte
+	name, data string
+}
+
+func (e *eventReader) write(p []byte) {
+	e.buf = append(e.buf, p...)
+	for {
+		i := bytes.IndexByte(e.buf, '\n')
+		if i < 0 {
+			return
 		}
+		line := strings.TrimSuffix(string(e.buf[:i]), "\r")
+		e.buf = e.buf[i+1:]
+		e.line(line)
 	}
-	_, _ = io.Copy(io.Discard, r)
+}
+
+func (e *eventReader) line(line string) {
+	switch {
+	case line == "":
+		if schema, ok := streamSchemas[e.name]; ok {
+			e.c.spec.ValidateSchema(e.c.t, schema, []byte(e.data))
+			e.c.count(e.c.events, e.name)
+		} else if e.name != "" {
+			e.c.t.Errorf("unknown event %q of the stream", e.name)
+		}
+		e.name, e.data = "", ""
+	case strings.HasPrefix(line, "event: "):
+		e.name = strings.TrimPrefix(line, "event: ")
+	case strings.HasPrefix(line, "data: "):
+		e.data += strings.TrimPrefix(line, "data: ")
+	}
 }
 
 func (c *specCheck) count(m map[string]int, k string) {
@@ -118,19 +128,19 @@ func (c *specCheck) counts() (seen, events map[string]int) {
 	return seen, events
 }
 
-// teeBody passes a stream to the client and to readEvents.
+// teeBody passes a stream to the client after eventReader has checked and counted what it carries.
 type teeBody struct {
-	r io.Reader
-	c io.Closer
-	w *io.PipeWriter
+	body io.ReadCloser
+	ev   *eventReader
 }
 
-func (b *teeBody) Read(p []byte) (int, error) { return b.r.Read(p) }
-
-func (b *teeBody) Close() error {
-	_ = b.w.Close()
-	return b.c.Close()
+func (b *teeBody) Read(p []byte) (int, error) {
+	n, err := b.body.Read(p)
+	b.ev.write(p[:n])
+	return n, err
 }
+
+func (b *teeBody) Close() error { return b.body.Close() }
 
 // operationPath turns the IDs of a path into the parameters of its operation.
 func operationPath(p string) string {
