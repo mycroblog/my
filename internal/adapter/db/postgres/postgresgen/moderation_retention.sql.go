@@ -569,6 +569,15 @@ func (q *Queries) PurgeReportStatuses(ctx context.Context, ids []string) error {
 	return err
 }
 
+const purgeReportVoiceRooms = `-- name: PurgeReportVoiceRooms :exec
+DELETE FROM report_voice_rooms WHERE report_id = ANY($1::uuid[])
+`
+
+func (q *Queries) PurgeReportVoiceRooms(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, purgeReportVoiceRooms, ids)
+	return err
+}
+
 const purgeReports = `-- name: PurgeReports :exec
 DELETE FROM reports WHERE id = ANY($1::uuid[])
 `

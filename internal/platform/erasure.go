@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/timeline"
+	appvoice "github.com/mycroblog/my/internal/app/voice"
 )
 
 // setUpErasure registers the erasure of deleted local accounts' data and its schedule
@@ -18,11 +19,13 @@ import (
 // erasure repositories. The erasers run in order: the statuses first, whose notifications the
 // notification module erases with them, then the account's interactions, follows, timeline and
 // notification rows, its user's reads of the announcements, its uploads with their blobs, and
-// its user's identity data; the account module erases the profile and keys last. A retention hold stops it, and the statuses that the
+// the names and descriptions of the voice chat room revisions it wrote, and its user's identity
+// data; the account module erases the profile and keys last. A retention hold stops it, and the statuses that the
 // moderation records need stay with their media files (ADR-0038). It comes after the content,
 // graph, timeline, notification, and media services, the blob store, and the data exports and imports.
 func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository, statuses content.Repository,
 	follows graph.Repository, feeds timeline.Repository, notifs notification.Repository, medias content.MediaRepository,
+	rooms appvoice.Repository,
 ) error {
 	identities, okI := ids.(identity.ErasureRepository)
 	profiles, okA := accounts.(account.ErasureRepository)
@@ -58,6 +61,8 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			// The user's listing on the supporter list and the payment provider's customers; the
 			// subscriptions stay for the accounting (ADR-0072 §10).
 			a.Supporters,
+			// The names and descriptions of the revisions of the rooms it wrote (ADR-0100 §13).
+			appvoice.NewEraser(a.UnitOfWork, rooms),
 			identity.NewEraser(a.UnitOfWork, identities),
 		},
 	}).RegisterJobs(a.Handlers, a.Scheduler)

@@ -430,6 +430,8 @@ paths:
     $ref: ./paths/admin_reports_{id}_notes.yaml
   /admin/reports/{id}/reopen:
     $ref: ./paths/admin_reports_{id}_reopen.yaml
+  /admin/voice_rooms/{id}/end:
+    $ref: ./paths/admin_voice_rooms_{id}_end.yaml
   /admin/accounts/{id}/actions:
     $ref: ./paths/admin_accounts_{id}_actions.yaml
   /admin/account_actions/{id}:
@@ -975,6 +977,16 @@ components:
       $ref: ./components/schemas/AdminReportNote.yaml
     AdminReportOutcome:
       $ref: ./components/schemas/AdminReportOutcome.yaml
+    AdminReportVoiceRoom:
+      $ref: ./components/schemas/AdminReportVoiceRoom.yaml
+    AdminVoiceRoomBan:
+      $ref: ./components/schemas/AdminVoiceRoomBan.yaml
+    AdminVoiceRoomEnd:
+      $ref: ./components/schemas/AdminVoiceRoomEnd.yaml
+    AdminVoiceRoomParticipation:
+      $ref: ./components/schemas/AdminVoiceRoomParticipation.yaml
+    AdminVoiceRoomRevision:
+      $ref: ./components/schemas/AdminVoiceRoomRevision.yaml
     AdminReportPage:
       $ref: ./components/schemas/AdminReportPage.yaml
     AdminReportState:

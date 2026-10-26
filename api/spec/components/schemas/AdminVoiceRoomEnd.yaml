@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: A moderator ending an open voice chat room.
+type: object
+properties:
+  reason:
+    description: |
+      Why the room ends, as plain text for the moderators, up to 500 characters. Nothing
+      shows it to the participants.
+    type: string
+    maxLength: 500

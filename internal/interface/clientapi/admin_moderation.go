@@ -280,6 +280,10 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 		if r.URI != "" {
 			item.Uri = &r.URI
 		}
+		if r.VoiceRoom != nil {
+			id := r.VoiceRoom.RoomID
+			item.VoiceRoomId = &id
+		}
 		if st.Outcome != "" {
 			o := AdminReportOutcome(st.Outcome)
 			item.Outcome = &o

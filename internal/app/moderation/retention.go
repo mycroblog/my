@@ -92,9 +92,11 @@ type RetentionRepository interface {
 	// resolvedBefore and still resolved, that no action follows from and whose target and
 	// reporter no hold preserves.
 	ListReportsToPurge(ctx context.Context, tx uow.Tx, resolvedBefore time.Time, limit int) ([]string, error)
-	// PurgeReports deletes the reports with their statuses, rule citations, assignments,
-	// resolutions, reopenings, notes, and states.
+	// PurgeReports deletes the reports with their statuses, rule citations, voice chat rooms,
+	// assignments, resolutions, reopenings, notes, and states.
 	PurgeReports(ctx context.Context, tx uow.Tx, ids []string) error
+	// ReportedVoiceRooms returns which of roomIDs a report points at (report_voice_rooms).
+	ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error)
 	// ListSignupBlocksToPurge returns up to limit sign-up blocks, oldest first, that ended (were
 	// lifted or expired, whichever came first) before endedBefore, except those made by a ban
 	// of an account that a hold preserves.
@@ -173,6 +175,16 @@ func (s *Service) ReleaseRetentionHold(ctx context.Context, holdID, byUserID str
 // released ones included, newest first.
 func (s *Service) RetentionHolds(ctx context.Context, accountID string) ([]moderation.RetentionHoldRecord, error) {
 	return s.d.Repository.ListRetentionHolds(ctx, accountID)
+}
+
+// ReportedVoiceRooms returns which of roomIDs a report points at: the voice module keeps the
+// records of the participants of such a room until the reports are erased after their
+// retention (ADR-0100 §13).
+func (s *Service) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error) {
+	if len(roomIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+	return s.d.Repository.ReportedVoiceRooms(ctx, roomIDs)
 }
 
 // HeldAccountIDs returns the accounts that a hold in effect preserves; the purges of other

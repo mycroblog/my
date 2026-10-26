@@ -1193,6 +1193,14 @@ type UserToken struct {
 	IssuedAt            time.Time
 }
 
+type VoiceRoomBan struct {
+	ID                string
+	RoomID            string
+	AccountID         string
+	BannedByAccountID string
+	BannedAt          time.Time
+}
+
 type VoiceRoomHostGrace struct {
 	RoomID string
 	EndsAt time.Time
@@ -1220,6 +1228,17 @@ type VoiceRoomParticipationEnd struct {
 	ParticipationID string
 	Reason          string
 	EndedAt         time.Time
+}
+
+type VoiceRoomRevision struct {
+	ID                 string
+	RoomID             string
+	Name               string
+	Description        string
+	Visibility         string
+	Speakers           string
+	RevisedByAccountID string
+	RevisedAt          time.Time
 }
 
 type VoiceRoomRevisionHashtag struct {

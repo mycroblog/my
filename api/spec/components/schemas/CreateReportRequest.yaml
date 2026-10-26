@@ -27,6 +27,12 @@ properties:
     description: A comment for the moderators as plain text.
     type: string
     maxLength: 1000
+  voice_room_id:
+    description: |
+      A voice chat room open on this server that the user can see; `account_id` is then its
+      host. Such a report points at no posts and is never forwarded.
+    allOf:
+      - $ref: ./Id.yaml
   forward:
     description: |
       Asks to forward the report to the server of a remote account, without naming the

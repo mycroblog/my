@@ -35,13 +35,20 @@ func (f *fakeReports) File(_ context.Context, in appmoderation.LocalReportInput)
 	return moderation.Report{
 		ID: "01890a5d-ac96-774b-bcce-b302099a7001", ReporterAccountID: in.ReporterAccountID, TargetAccountID: in.TargetAccountID,
 		Category: in.Category, Comment: in.Comment, Forwarded: in.Forward, FiledAt: time.Date(2026, 10, 17, 9, 0, 0, 0, time.UTC),
-		StatusIDs: append([]string{}, in.StatusIDs...), RuleIDs: append([]string{}, in.RuleIDs...),
+		StatusIDs: append([]string{}, in.StatusIDs...), RuleIDs: append([]string{}, in.RuleIDs...), VoiceRoom: in.VoiceRoom,
 	}, nil
 }
 
 func newReportsEnv(t *testing.T, reports *fakeReports) *authEnv {
 	t.Helper()
+	return newReportsEnvWith(t, reports, nil)
+}
+
+// newReportsEnvWith is newReportsEnv with the voice chat rooms of rooms, none when nil.
+func newReportsEnvWith(t *testing.T, reports *fakeReports, rooms clientapi.VoiceModeration) *authEnv {
+	t.Helper()
 	return newAuthEnv(t, func(o *clientapi.Options) {
+		o.VoiceModeration = rooms
 		accounts := fakeAccounts{}
 		for id, a := range o.Accounts.(fakeAccounts) {
 			accounts[id] = a

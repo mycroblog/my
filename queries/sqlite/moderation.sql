@@ -116,6 +116,16 @@ FROM reports WHERE uri = ?;
 -- name: ListReportStatusIDs :many
 SELECT status_id FROM report_statuses WHERE report_id = ? ORDER BY status_id;
 
+-- name: InsertReportVoiceRoom :exec
+INSERT INTO report_voice_rooms (report_id, room_id, revision_id) VALUES (?, ?, ?)
+ON CONFLICT (report_id) DO NOTHING;
+
+-- name: GetReportVoiceRoom :many
+SELECT room_id, revision_id FROM report_voice_rooms WHERE report_id = ?;
+
+-- name: ListReportedVoiceRooms :many
+SELECT DISTINCT room_id FROM report_voice_rooms WHERE room_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY room_id;
+
 -- name: ListReportRuleIDs :many
 SELECT rule_id FROM report_rule_citations WHERE report_id = ? ORDER BY rule_id;
 

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: An account taking part in a voice chat room, from joining to leaving.
+type: object
+required: [account_id, joined_at]
+properties:
+  account_id:
+    $ref: ./Id.yaml
+  joined_at:
+    type: string
+    format: date-time
+  left_at:
+    description: When the account left; omitted while it takes part.
+    type: string
+    format: date-time
+  leave_reason:
+    description: |
+      Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+      `suspended`, `room_ended`); omitted while it takes part.
+    type: string

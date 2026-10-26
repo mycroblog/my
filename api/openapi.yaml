@@ -5854,6 +5854,32 @@ paths:
           $ref: '#/components/responses/AdminReportDetail'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/voice_rooms/{id}/end:
+    post:
+      operationId: endVoiceRoomAsModerator
+      summary: End a voice chat room as a moderator
+      description: |
+        Ends an open voice chat room for every participant, with an optional reason for the
+        moderators. Recorded in the audit log (`voice_room_ended`). Works while the voice chat
+        is off too. An unknown or ended room is a 404, and a reason longer than 500 characters
+        a 422. Needs the `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/VoiceRoomId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminVoiceRoomEnd'
+      responses:
+        '204':
+          description: The room ended.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/accounts/{id}/actions:
     get:
       operationId: listAccountActions
@@ -10343,6 +10369,7 @@ components:
         - service_closure_withdrawn
         - service_closure_closed
         - service_closure_delivery_completed
+        - voice_room_ended
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -10454,6 +10481,7 @@ components:
         - oauth_client
         - oauth_client_host
         - instance
+        - voice_room
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -11379,6 +11407,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Id'
+        voice_room_id:
+          description: |
+            The voice chat room that the report points at, whose host is the target; omitted for
+            none.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         rule_ids:
           description: |
             The IDs of the instance rules that the report cites, retired ones included; only a
@@ -11413,6 +11447,8 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminReportStatus'
+            voice_room:
+              $ref: '#/components/schemas/AdminReportVoiceRoom'
     AdminReportNote:
       description: A moderator's internal note on a report; never shown to the target or the reporter.
       type: object
@@ -11443,6 +11479,142 @@ components:
       enum:
         - actioned
         - dismissed
+    AdminReportVoiceRoom:
+      description: |
+        The voice chat room that a report points at, as the moderators review it: every revision
+        of its settings, and the records of its participants while the server keeps them (90 days
+        after the room ends by default, `retention_voice_participants`, and as long as a report
+        points at the room).
+      type: object
+      required:
+        - id
+        - reported_revision_id
+        - opened_at
+        - revisions
+        - participations
+        - bans
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        reported_revision_id:
+          description: The revision of the settings when the room was reported.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        opened_at:
+          type: string
+          format: date-time
+        ended_at:
+          description: When the room ended; omitted while it is open.
+          type: string
+          format: date-time
+        end_reason:
+          description: |
+            Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+            `moderator`, `time_limit`, `disabled`); omitted while it is open.
+          type: string
+        ended_by_account_id:
+          description: Who ended the room; omitted for an automatic end and while it is open.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        end_note:
+          description: The reason that a moderator gave for ending the room; omitted for none.
+          type: string
+        revisions:
+          description: The revisions of the settings, oldest first.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVoiceRoomRevision'
+        participations:
+          description: Who took part and when, in the order they joined.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVoiceRoomParticipation'
+        bans:
+          description: The accounts removed from the room, who may not join it again.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVoiceRoomBan'
+    AdminVoiceRoomBan:
+      description: An account removed from a voice chat room, who may not join it again.
+      type: object
+      required:
+        - account_id
+        - banned_by_account_id
+        - banned_at
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+        banned_by_account_id:
+          $ref: '#/components/schemas/Id'
+        banned_at:
+          type: string
+          format: date-time
+    AdminVoiceRoomEnd:
+      description: A moderator ending an open voice chat room.
+      type: object
+      properties:
+        reason:
+          description: |
+            Why the room ends, as plain text for the moderators, up to 500 characters. Nothing
+            shows it to the participants.
+          type: string
+          maxLength: 500
+    AdminVoiceRoomParticipation:
+      description: An account taking part in a voice chat room, from joining to leaving.
+      type: object
+      required:
+        - account_id
+        - joined_at
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          description: When the account left; omitted while it takes part.
+          type: string
+          format: date-time
+        leave_reason:
+          description: |
+            Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+            `suspended`, `room_ended`); omitted while it takes part.
+          type: string
+    AdminVoiceRoomRevision:
+      description: |
+        A revision of the settings of a voice chat room. The name and the description are empty
+        once the account that wrote them is erased.
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - hashtags
+        - visibility
+        - speakers
+        - revised_by_account_id
+        - revised_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+        description:
+          type: string
+        hashtags:
+          description: The hashtags as the host typed them.
+          type: array
+          items:
+            type: string
+        visibility:
+          $ref: '#/components/schemas/VoiceRoomVisibility'
+        speakers:
+          $ref: '#/components/schemas/VoiceRoomSpeakers'
+        revised_by_account_id:
+          $ref: '#/components/schemas/Id'
+        revised_at:
+          type: string
+          format: date-time
     AdminReportPage:
       description: A page of reports, newest first.
       allOf:
@@ -13288,6 +13460,12 @@ components:
           description: A comment for the moderators as plain text.
           type: string
           maxLength: 1000
+        voice_room_id:
+          description: |
+            A voice chat room open on this server that the user can see; `account_id` is then its
+            host. Such a report points at no posts and is never forwarded.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         forward:
           description: |
             Asks to forward the report to the server of a remote account, without naming the
@@ -16949,6 +17127,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Id'
+        voice_room_id:
+          description: The voice chat room reported; omitted for none.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         state:
           $ref: '#/components/schemas/ReportState'
     ReportCategory:

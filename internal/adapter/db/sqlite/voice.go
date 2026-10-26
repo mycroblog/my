@@ -189,6 +189,7 @@ func (r *VoiceRepository) InsertEnding(ctx context.Context, tx uow.Tx, e appvoic
 	}
 	n, err := q.InsertVoiceRoomEnding(ctx, sqlitegen.InsertVoiceRoomEndingParams{
 		RoomID: e.RoomID, Reason: string(e.Reason), EndedByAccountID: toNullString(e.EndedByAccountID), EndedAt: toMillis(e.EndedAt),
+		Note: e.Note,
 	})
 	return n > 0, wrap(err, "insert voice room ending")
 }
@@ -259,7 +260,7 @@ func voiceRoomRecord(row sqlitegen.GetVoiceRoomRow) appvoice.RoomRecord {
 	if row.EndReason.Valid && row.EndedAt.Valid {
 		rec.Ending = &appvoice.Ending{
 			RoomID: row.ID, Reason: voice.EndReason(row.EndReason.String), EndedByAccountID: row.EndedByAccountID.String,
-			EndedAt: fromMillis(row.EndedAt.Int64),
+			EndedAt: fromMillis(row.EndedAt.Int64), Note: row.EndNote.String,
 		}
 	}
 	return rec

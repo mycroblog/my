@@ -276,6 +276,9 @@ type Options struct {
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms
+	// VoiceModeration reports the rooms, ends them for the moderators, and reads their records
+	// for the reports (admin_voice.go), with the voice chat off too; nil reports no room.
+	VoiceModeration VoiceModeration
 	// VoiceStreams opens the subscriptions of the room streams (voice_stream.go); nil answers them
 	// with 503. VoiceStreamHeartbeat overrides DefaultVoiceStreamHeartbeat when positive.
 	VoiceStreams         stream.RoomSubscriber
