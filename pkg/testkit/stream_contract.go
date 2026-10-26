@@ -439,11 +439,11 @@ func brokerRoutesRooms(t *testing.T, b StreamBroker) {
 	if !ok {
 		t.Fatalf("the subscriber %T opens no room subscriptions", b.Subscriber)
 	}
-	open := func(roomID string) stream.Subscription {
+	open := func(roomID, session string) stream.Subscription {
 		t.Helper()
 		ctx, cancel := context.WithTimeout(t.Context(), b.Timeout)
 		defer cancel()
-		s, err := rooms.SubscribeRoom(ctx, roomID)
+		s, err := rooms.SubscribeRoom(ctx, roomID, session)
 		if err != nil {
 			t.Fatalf("SubscribeRoom(%q): %v", roomID, err)
 		}
@@ -451,10 +451,11 @@ func brokerRoutesRooms(t *testing.T, b StreamBroker) {
 		return s
 	}
 	alice := brokerSubscribe(t, b, NamedID("alice"))
-	r1, r2 := open(NamedID("room1")), open(NamedID("room2"))
+	r1, r2 := open(NamedID("room1"), "s1"), open(NamedID("room2"), "s1")
+	other := open(NamedID("room1"), "s2")
 	events := []stream.Event{
 		{Kind: stream.KindVoiceRoom, RoomID: NamedID("room1")},
-		{Kind: stream.KindVoiceSignal, RoomID: NamedID("room1"), MessageID: "m1"},
+		{Kind: stream.KindVoiceSignal, RoomID: NamedID("room1"), MessageID: "m1", To: "s1"},
 		{Kind: stream.KindVoiceMic, RoomID: NamedID("room1"), ParticipantID: NamedID("alice"), On: true},
 		{Kind: stream.KindVoiceReaction, RoomID: NamedID("room1"), ParticipantID: NamedID("alice"), Emoji: "👏"},
 		{Kind: stream.KindVoiceMute, RoomID: NamedID("room1"), SessionID: "s1", By: NamedID("bob")},
@@ -483,6 +484,16 @@ func brokerRoutesRooms(t *testing.T, b StreamBroker) {
 		}
 		if e, ok := brokerNext(r2, streamGrace); ok {
 			t.Errorf("room2 received %+v from %s", e, from)
+		}
+		// The signal and the mute for s1 do not reach the subscription of s2.
+		for {
+			e, ok := brokerNext(other, streamGrace)
+			if !ok {
+				break
+			}
+			if e.Kind == stream.KindVoiceSignal || e.Kind == stream.KindVoiceMute {
+				t.Errorf("the subscription of s2 received %+v from %s", e, from)
+			}
 		}
 		for {
 			e, ok := brokerNext(alice, streamGrace)

@@ -10615,10 +10615,12 @@ type VoiceSession struct {
 }
 
 // VoiceSignal A WebRTC signal from a session of the user to another session of a voice chat room. An
-// `offer` and an `answer` carry `sdp`, a `candidate` carries `candidate`, and a `restart` asks
-// the other session to restart ICE.
+// `offer` and an `answer` carry `sdp` and no `candidate`, a `candidate` carries `candidate` and
+// no `sdp`, and a `restart`, which asks the other session to restart ICE, carries neither.
 type VoiceSignal struct {
-	// Candidate An ICE candidate, as the JSON of an `RTCIceCandidateInit`.
+	// Candidate An ICE candidate, as the JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`,
+	// `sdpMLineIndex`, and `usernameFragment`; `candidate` is empty (no more candidates) or a
+	// `candidate:` attribute on one line.
 	Candidate *string `json:"candidate,omitempty"`
 
 	// Kind The kind of a WebRTC signal.

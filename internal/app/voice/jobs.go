@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -27,7 +28,8 @@ const (
 	JobApply = "voice.apply"
 	// JobSweep evaluates every open room (ADR-0100 §6): the expiry of the participants and the
 	// grace of the hosts, the rooms of a voice chat turned off (disabled), and the rooms open
-	// longer than the operator allows (time_limit). No payload.
+	// longer than the operator allows (time_limit). On a transport whose media server holds
+	// the sessions, it first reconciles the room with its media path (ADR-0101 §2). No payload.
 	JobSweep = "voice.sweep"
 	// JobCheckAccount applies a change of an account to its participation (ADR-0100 §2, §11):
 	// a suspended or deleted account leaves (suspended), and a host who lost the eligibility
@@ -99,10 +101,11 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 	case applySpeak:
 		var reconnect bool
 		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
-		if err == nil && reconnect {
+		if err == nil {
 			// The client of the session connects again with a new grant, which its stream
-			// sends (grant, ADR-0101 §2).
-			err = s.sendGrant(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
+			// sends (grant, ADR-0101 §2). A transport may report it only on the first call, so
+			// a retry after a failed send sends it still.
+			err = s.reconnect(ctx, j.ID, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak, reconnect)
 		}
 	case applyMute:
 		session := p.Session
@@ -132,6 +135,32 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 	return queue.Done()
 }
 
+// kvReconnects keys, by job ID, the JobApply runs whose transport asked the client to connect
+// again, until the grant is sent.
+const kvReconnects = "voice.reconnect"
+
+// reconnect sends the grant of a session that has to connect again, when the transport asked
+// for it in this run of the job or an earlier one.
+func (s *Service) reconnect(ctx context.Context, jobID string, room RoomRef, session Session, canSpeak, asked bool) error {
+	if asked {
+		if err := s.d.Heartbeats.kv.Set(ctx, kvReconnects, jobID, []byte{1}, sessionLease); err != nil {
+			return err
+		}
+	} else {
+		_, err := s.d.Heartbeats.kv.Get(ctx, kvReconnects, jobID)
+		if errors.Is(err, kernel.ErrKeyNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
+	if err := s.sendGrant(ctx, room, session, canSpeak); err != nil {
+		return err
+	}
+	return s.d.Heartbeats.kv.Delete(ctx, kvReconnects, jobID)
+}
+
 // sendGrant sends a new grant to the stream of a session that has to connect again.
 func (s *Service) sendGrant(ctx context.Context, room RoomRef, session Session, canSpeak bool) error {
 	g, err := s.d.Transport.Grant(ctx, room, session, canSpeak)
@@ -150,6 +179,10 @@ func (s *Service) Sweep(ctx context.Context) error {
 	}
 	var errs []error
 	for _, r := range open {
+		// A media server that does not answer leaves the room to the heartbeats.
+		if err := s.reconcile(ctx, r); err != nil {
+			errs = append(errs, fmt.Errorf("room %s: reconcile: %w", r.ID, err))
+		}
 		if err := s.evaluate(ctx, r.ID, true); err != nil {
 			errs = append(errs, fmt.Errorf("room %s: %w", r.ID, err))
 		}
@@ -238,6 +271,7 @@ func (s *Service) checkHost(ctx context.Context, rec RoomRecord) error {
 // RegisterJobs registers the handlers of the module's jobs and the schedule of JobSweep.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobApply, s.Apply)
+	reg.Register(JobMediaEvent, s.MediaEvent)
 	reg.Register(JobSweep, func(ctx context.Context, _ queue.Job) queue.Result {
 		if err := s.Sweep(ctx); err != nil {
 			return queue.Retry(0, err)

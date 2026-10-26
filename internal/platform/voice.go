@@ -21,6 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/voice"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	voicehttp "github.com/mycroblog/my/internal/interface/voice"
 	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -78,8 +79,9 @@ func newVoice(cfg *config.Config, logger *slog.Logger) Voice {
 }
 
 // setUpVoice builds the voice module (ADR-0100): the projectors of its projections, its
-// subscriptions to the events that change who may be in a room, its jobs, and the rooms over the
-// transport of the voice setting (ADR-0101 §2). The jobs run with the voice chat off too, so that
+// subscriptions to the events that change who may be in a room, its jobs, the rooms over the
+// transport of the voice setting (ADR-0101 §2), and the endpoints of the events of the media
+// servers (ADR-0102 §4). The jobs run with the voice chat off too, so that
 // voice.sweep ends the rooms left open (disabled).
 func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	appvoice.RegisterProjectors(a.Projectors, repo)
@@ -96,8 +98,13 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 			STUNURLs: cfg.VoiceSTUNURLs, TURN: turn, TTL: cfg.VoiceTURNCredentialTTL,
 			RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock, Meter: a.Meter,
 		})
+	case VoiceLiveKit:
+		var err error
+		if transport, err = a.newLiveKitTransport(cfg); err != nil {
+			return fmt.Errorf("voice = livekit: %w", err)
+		}
 	default:
-		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p or off", a.Voice.Method)
+		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p, livekit, or off", a.Voice.Method)
 	}
 	outbox := a.Outbox
 	if outbox == nil {
@@ -117,6 +124,10 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
+	// The endpoints of the media servers' events answer 404 unless the voice chat runs on
+	// their method.
+	voicehttp.New(voicehttp.Options{Webhooks: a.VoiceRooms, Problem: a.writeStatusProblem, Logger: a.Logger}).
+		Register(surfaceRouter{a, surfaceVoice})
 	return nil
 }
 

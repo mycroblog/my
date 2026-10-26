@@ -118,7 +118,7 @@ func (s *Service) Signal(ctx context.Context, accountID, roomID string, in Signa
 	if err := checkSignal(in); err != nil {
 		return err
 	}
-	from, err := s.liveParticipant(ctx, accountID, roomID, in.Session)
+	from, err := s.liveSession(ctx, accountID, roomID, in.Session)
 	if err != nil {
 		return err
 	}
@@ -174,10 +174,19 @@ func checkSignal(in SignalInput) error {
 			return &SignalError{Field: "sdp"}
 		}
 		return &SignalError{Field: "candidate"}
-	case (in.Kind == SignalOffer || in.Kind == SignalAnswer) && in.SDP == "":
+	}
+	describes := in.Kind == SignalOffer || in.Kind == SignalAnswer
+	switch {
+	case describes != (in.SDP != ""):
+		// An offer and an answer carry a session description, and nothing else does.
 		return &SignalError{Field: "sdp"}
-	case in.Kind == SignalCandidate && in.Candidate == "":
+	case (in.Kind == SignalCandidate) != (in.Candidate != ""):
 		return &SignalError{Field: "candidate"}
+	}
+	if in.Candidate != "" {
+		if err := voice.CheckCandidate(in.Candidate); err != nil {
+			return &SignalError{Field: "candidate", Err: err}
+		}
 	}
 	return nil
 }
@@ -225,8 +234,9 @@ func (s *Service) mayPublish(ctx context.Context, v RoomView, p Participant) (bo
 	return voice.CanSpeakFreely(policyRoom(v), viewer, f), nil
 }
 
-// send puts a message for a session in the KeyValueStore for MessageTTL and signals its ID to
-// the streams of the room (ADR-0101 §4, B1).
+// send puts a message for a session in the KeyValueStore for MessageTTL and signals its ID, with
+// the session it is for, to the streams of the room (ADR-0101 §4, B1): only the stream of that
+// session reads it.
 func (s *Service) send(ctx context.Context, m Message) error {
 	b, err := json.Marshal(m)
 	if err != nil {
@@ -236,7 +246,7 @@ func (s *Service) send(ctx context.Context, m Message) error {
 	if err := s.d.Heartbeats.kv.Set(ctx, kvMessages, id, b, MessageTTL); err != nil {
 		return err
 	}
-	s.publish(stream.Event{Kind: stream.KindVoiceSignal, RoomID: m.Room, MessageID: id})
+	s.publish(stream.Event{Kind: stream.KindVoiceSignal, RoomID: m.Room, MessageID: id, To: m.To})
 	return nil
 }
 
@@ -252,10 +262,19 @@ func (s *Service) Message(ctx context.Context, st RoomStream, id string) (Messag
 	return m, true, nil
 }
 
-// messages keeps the messages that the streams of this process read, until they expire.
+// messages keeps the messages that the streams of this process read, until they expire; one
+// read of a message serves the streams that ask for it at once.
 type messages struct {
 	mu   sync.Mutex
 	read map[string]cachedMessage
+	// loading holds the reads in progress, which the streams that ask meanwhile wait for.
+	loading map[string]*messageLoad
+}
+
+type messageLoad struct {
+	done chan struct{}
+	m    cachedMessage
+	err  error
 }
 
 type cachedMessage struct {
@@ -264,14 +283,40 @@ type cachedMessage struct {
 	expires time.Time
 }
 
-func newMessages() *messages { return &messages{read: map[string]cachedMessage{}} }
+func newMessages() *messages {
+	return &messages{read: map[string]cachedMessage{}, loading: map[string]*messageLoad{}}
+}
 
 func (c *messages) get(ctx context.Context, id string, read func(context.Context) ([]byte, error)) (Message, bool, error) {
+	c.mu.Lock()
+	l, waiting := c.loading[id]
+	if !waiting {
+		l = &messageLoad{done: make(chan struct{})}
+		c.loading[id] = l
+	}
+	c.mu.Unlock()
+	if waiting {
+		select {
+		case <-l.done:
+			return l.m.m, l.m.ok, l.err
+		case <-ctx.Done():
+			return Message{}, false, ctx.Err()
+		}
+	}
+	l.m, l.err = c.load(ctx, id, read)
+	c.mu.Lock()
+	delete(c.loading, id)
+	c.mu.Unlock()
+	close(l.done)
+	return l.m.m, l.m.ok, l.err
+}
+
+func (c *messages) load(ctx context.Context, id string, read func(context.Context) ([]byte, error)) (cachedMessage, error) {
 	now := time.Now()
 	c.mu.Lock()
 	if m, ok := c.read[id]; ok && now.Before(m.expires) {
 		c.mu.Unlock()
-		return m.m, m.ok, nil
+		return m, nil
 	}
 	for k, m := range c.read {
 		if !now.Before(m.expires) {
@@ -284,10 +329,10 @@ func (c *messages) get(ctx context.Context, id string, read func(context.Context
 	switch {
 	case errors.Is(err, kernel.ErrKeyNotFound):
 	case err != nil:
-		return Message{}, false, err
+		return cachedMessage{}, err
 	default:
 		if err := json.Unmarshal(b, &m.m); err != nil {
-			return Message{}, false, fmt.Errorf("decode the voice message %s: %w", id, err)
+			return cachedMessage{}, fmt.Errorf("decode the voice message %s: %w", id, err)
 		}
 		m.ok = true
 	}
@@ -295,5 +340,5 @@ func (c *messages) get(ctx context.Context, id string, read func(context.Context
 	c.mu.Lock()
 	c.read[id] = m
 	c.mu.Unlock()
-	return m.m, m.ok, nil
+	return m, nil
 }

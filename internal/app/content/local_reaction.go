@@ -184,14 +184,15 @@ func (s *Interactions) emojiTag(ctx context.Context, id string) (*EmojiTag, erro
 // custom emoji of this instance whose image can be shown. Anything else fails with
 // content.ErrInvalidReaction.
 func (s *Interactions) ReactionEmoji(ctx context.Context, name string) (string, error) {
-	e, _, err := s.localReactionEmoji(ctx, name)
+	e, tag, err := s.localReactionEmoji(ctx, name)
 	if err != nil {
 		return "", err
 	}
-	if e.Unicode != "" {
+	if e.Unicode != "" || tag == nil {
 		return e.Unicode, nil
 	}
-	return ":" + content.TrimShortcode(name) + ":", nil
+	// The stored shortcode, whatever the spelling of name.
+	return ":" + tag.Shortcode + ":", nil
 }
 
 // localReactionEmoji returns the emoji that a local account reacts with (ADR-0052 §2), with the

@@ -37,7 +37,7 @@ func (s *Service) session(ctx context.Context, accountID, roomID, session string
 	if err != nil {
 		return RoomView{}, Participant{}, err
 	}
-	if _, err := s.liveParticipant(ctx, accountID, roomID, session); err != nil {
+	if _, err := s.liveSession(ctx, accountID, roomID, session); err != nil {
 		return RoomView{}, Participant{}, err
 	}
 	return v, p, nil

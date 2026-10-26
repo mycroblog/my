@@ -11907,8 +11907,8 @@ export interface components {
         };
         /**
          * @description A WebRTC signal from a session of the user to another session of a voice chat room. An
-         *     `offer` and an `answer` carry `sdp`, a `candidate` carries `candidate`, and a `restart` asks
-         *     the other session to restart ICE.
+         *     `offer` and an `answer` carry `sdp` and no `candidate`, a `candidate` carries `candidate` and
+         *     no `sdp`, and a `restart`, which asks the other session to restart ICE, carries neither.
          */
         VoiceSignal: {
             /** @description The `session` of the user's join. */
@@ -11918,7 +11918,11 @@ export interface components {
             kind: components["schemas"]["VoiceSignalKind"];
             /** @description The session description of an offer or an answer. */
             sdp?: string;
-            /** @description An ICE candidate, as the JSON of an `RTCIceCandidateInit`. */
+            /**
+             * @description An ICE candidate, as the JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`,
+             *     `sdpMLineIndex`, and `usernameFragment`; `candidate` is empty (no more candidates) or a
+             *     `candidate:` attribute on one line.
+             */
             candidate?: string;
         };
         /**
