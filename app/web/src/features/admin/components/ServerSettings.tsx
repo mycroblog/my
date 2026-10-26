@@ -2,7 +2,7 @@
 // The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
 // to reach its operators and its thumbnail (#663), then its policies (who may sign up, the default language, the
 // public timelines, whether images need a description, the federation, who may read the list of the domain
-// actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
+// actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
 // the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
 // form from being sent while a field is invalid (React Aria's native validation: the error is under its field and
@@ -32,6 +32,7 @@ import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { DetailSection, RequirePermission } from "../../moderation";
 import { acceptedImageTypes } from "../../settings";
+import { useVoiceAvailable } from "../../voice";
 import { thumbnailAltLimit } from "../api/settings";
 import { useServerContact } from "../hooks/useServerContact";
 import { type DescriptionField, descriptionLimits, useServerDescriptions } from "../hooks/useServerDescriptions";
@@ -279,6 +280,10 @@ const choices = {
     { value: "deny_training", label: "client:admin.settings.crawlers.ai.deny_training", description: "client:admin.settings.crawlers.ai.deny_training.description" },
     { value: "deny", label: "client:admin.settings.crawlers.ai.deny", description: "client:admin.settings.crawlers.ai.deny.description" },
   ],
+  voice_room_starters: [
+    { value: "everyone", label: "client:admin.settings.voice.starters.everyone", description: "client:admin.settings.voice.starters.everyone.description" },
+    { value: "permitted", label: "client:admin.settings.voice.starters.permitted", description: "client:admin.settings.voice.starters.permitted.description" },
+  ],
 } as const satisfies Partial<Record<PolicyKey, readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[]>>;
 
 type RadioKey = keyof typeof choices;
@@ -320,6 +325,8 @@ function PolicyCheckbox({ form, setting, label, description }: { form: ReturnTyp
 function PoliciesForm() {
   const t = useT();
   const form = useServerPolicies();
+  // The voice chat settings show only while the server offers voice chat (ADR-0100 §2).
+  const voiceAvailable = useVoiceAvailable();
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
       <DetailSection title={t("client:admin.settings.registration.title")}>
@@ -471,6 +478,29 @@ function PoliciesForm() {
           }}
         />
       </DetailSection>
+      {voiceAvailable && (
+        <DetailSection title={t("client:admin.settings.voice.title")}>
+          <PolicyRadios form={form} setting="voice_room_starters" label={t("client:admin.settings.voice.starters")} />
+          <PolicyCheckbox
+            form={form}
+            setting="voice_public_summary"
+            label={t("client:admin.settings.voice.public_summary")}
+            description={t("client:admin.settings.voice.public_summary.description")}
+          />
+          <TextField
+            label={t("client:admin.settings.voice.retention")}
+            description={t("client:admin.settings.voice.retention.description", { min: String(form.voiceRetention.min), max: String(form.voiceRetention.max) })}
+            value={form.value("retention_voice_participants")}
+            onChange={(value) => {
+              form.change("retention_voice_participants", value);
+            }}
+            inputMode="numeric"
+            autoComplete="off"
+            // Only an invalid value sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
+            {...(form.voiceRetention.error === undefined ? {} : { isInvalid: true, errorMessage: form.voiceRetention.error })}
+          />
+        </DetailSection>
+      )}
       {form.saveError !== undefined && (
         <InlineError size="inherit" alert>
           {t("client:admin.settings.policies.save_failed", { reason: form.saveError })}

@@ -726,5 +726,49 @@
   "admin.settings.oauth_apps.dynamic.description": {
     "defaultMessage": "Apps register themselves without signing in (RFC 7591), for tools that cannot use a metadata document.",
     "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "Voice chat",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "Who can start rooms",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "Every signed-in user of this server can start a room.",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "Only people with the permission",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "Only people whose roles have the permission to start voice chat rooms can start one.",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "Show a summary of rooms to visitors",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "For a room open to everyone on this server, people who are not signed in and people on other servers see its name, description, host, and whether it is open, in link previews too. They never see who is in it.",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "Days to keep the participants' records",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "How long after a room ends the server keeps who joined, left, spoke, and was removed: {min} to {max} days. The records of a reported room stay as long as the report.",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "Enter a whole number of days from {min} to {max}.",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
   }
 }

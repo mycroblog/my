@@ -314,5 +314,201 @@
   "admin.report.unassigned": {
     "defaultMessage": "Nobody handles this report now.",
     "description": "Status message after unassigning."
+  },
+  "admin.report.voice.title": {
+    "defaultMessage": "Voice chat room",
+    "description": "Heading of the section of a report's page about the reported voice chat room."
+  },
+  "admin.report.voice.state": {
+    "defaultMessage": "State",
+    "description": "Term: whether the reported voice chat room is open or ended."
+  },
+  "admin.report.voice.state.open": {
+    "defaultMessage": "Open",
+    "description": "Value: the voice chat room is open."
+  },
+  "admin.report.voice.state.ended": {
+    "defaultMessage": "Ended",
+    "description": "Value: the voice chat room has ended."
+  },
+  "admin.report.voice.opened_at": {
+    "defaultMessage": "Opened",
+    "description": "Term: when the voice chat room was opened."
+  },
+  "admin.report.voice.ended_at": {
+    "defaultMessage": "Ended",
+    "description": "Term: when the voice chat room ended."
+  },
+  "admin.report.voice.end_reason": {
+    "defaultMessage": "Why it ended",
+    "description": "Term: why the voice chat room ended."
+  },
+  "admin.report.voice.ended_by": {
+    "defaultMessage": "Ended by",
+    "description": "Term: who ended the voice chat room."
+  },
+  "admin.report.voice.end_note": {
+    "defaultMessage": "Moderator's reason",
+    "description": "Term: the reason a moderator gave for ending the voice chat room."
+  },
+  "admin.report.voice.records": {
+    "defaultMessage": "The server keeps the participants' records for a while after the room ends, and as long as a report points at the room.",
+    "description": "Explanation under the heading of the reported voice chat room."
+  },
+  "admin.report.voice.revisions": {
+    "defaultMessage": "Revisions of the settings",
+    "description": "Heading of the list of the revisions of the settings of the reported voice chat room, oldest first."
+  },
+  "admin.report.voice.revision.reported": {
+    "defaultMessage": "When reported",
+    "description": "Tag on the revision of the settings that was in effect when the voice chat room was reported."
+  },
+  "admin.report.voice.revision.name": {
+    "defaultMessage": "Name",
+    "description": "Term: the name of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.description": {
+    "defaultMessage": "Description",
+    "description": "Term: the description of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.hashtags": {
+    "defaultMessage": "Hashtags",
+    "description": "Term: the hashtags of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.visibility": {
+    "defaultMessage": "Who can see and join",
+    "description": "Term: the visibility of the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.speakers": {
+    "defaultMessage": "Who can speak without asking",
+    "description": "Term: who may speak in the voice chat room in a revision."
+  },
+  "admin.report.voice.revision.by": {
+    "defaultMessage": "Set by",
+    "description": "Term: who set this revision of the settings of the voice chat room."
+  },
+  "admin.report.voice.revision.at": {
+    "defaultMessage": "Set at",
+    "description": "Term: when this revision of the settings of the voice chat room was set."
+  },
+  "admin.report.voice.revision.erased": {
+    "defaultMessage": "Erased with the account that wrote it",
+    "description": "Value of a name or description of a voice chat room erased with its author's account."
+  },
+  "admin.report.voice.revision.none": {
+    "defaultMessage": "None",
+    "description": "Value of an empty description or of no hashtags of a voice chat room."
+  },
+  "admin.report.voice.participations": {
+    "defaultMessage": "Participants",
+    "description": "Heading of the records of who took part in the reported voice chat room."
+  },
+  "admin.report.voice.participations.empty": {
+    "defaultMessage": "No records of participants are kept.",
+    "description": "Shown when no records of the participants of the reported voice chat room remain."
+  },
+  "admin.report.voice.joined_at": {
+    "defaultMessage": "Joined",
+    "description": "Term: when the account joined the voice chat room."
+  },
+  "admin.report.voice.left_at": {
+    "defaultMessage": "Left",
+    "description": "Term: when the account left the voice chat room."
+  },
+  "admin.report.voice.still_in": {
+    "defaultMessage": "Still in the room",
+    "description": "Value of when an account left a voice chat room, while it is still in it."
+  },
+  "admin.report.voice.leave_reason": {
+    "defaultMessage": "Why they left",
+    "description": "Term: why the account left the voice chat room."
+  },
+  "admin.report.voice.leave_reason.left": {
+    "defaultMessage": "Left on their own",
+    "description": "Why an account left a voice chat room: it left."
+  },
+  "admin.report.voice.leave_reason.moved": {
+    "defaultMessage": "Joined another room",
+    "description": "Why an account left a voice chat room: it joined another one."
+  },
+  "admin.report.voice.leave_reason.disconnected": {
+    "defaultMessage": "Disconnected",
+    "description": "Why an account left a voice chat room: its connection was lost."
+  },
+  "admin.report.voice.leave_reason.removed": {
+    "defaultMessage": "Removed by a host",
+    "description": "Why an account left a voice chat room: a host removed it."
+  },
+  "admin.report.voice.leave_reason.blocked": {
+    "defaultMessage": "A block with the host",
+    "description": "Why an account left a voice chat room: it and the host blocked each other one way or the other."
+  },
+  "admin.report.voice.leave_reason.suspended": {
+    "defaultMessage": "Account suspended",
+    "description": "Why an account left a voice chat room: the account was suspended."
+  },
+  "admin.report.voice.leave_reason.room_ended": {
+    "defaultMessage": "The room ended",
+    "description": "Why an account left a voice chat room: the room ended."
+  },
+  "admin.report.voice.leave_reason.other": {
+    "defaultMessage": "Other",
+    "description": "Why an account left a voice chat room, for a reason this app does not know."
+  },
+  "admin.report.voice.bans": {
+    "defaultMessage": "Removed from the room",
+    "description": "Heading of the accounts removed from the reported voice chat room, who may not join again."
+  },
+  "admin.report.voice.bans.empty": {
+    "defaultMessage": "No one was removed from the room.",
+    "description": "Shown when no account was removed from the reported voice chat room."
+  },
+  "admin.report.voice.banned_by": {
+    "defaultMessage": "Removed by",
+    "description": "Term: who removed the account from the voice chat room."
+  },
+  "admin.report.voice.banned_at": {
+    "defaultMessage": "Removed at",
+    "description": "Term: when the account was removed from the voice chat room."
+  },
+  "admin.report.voice.end": {
+    "defaultMessage": "End room",
+    "description": "Button that ends the reported voice chat room for everyone in it, and the confirm button of its dialog."
+  },
+  "admin.report.voice.end.description": {
+    "defaultMessage": "Ends the call for everyone in the room. The audit log records it.",
+    "description": "Explanation next to the button that ends the reported voice chat room."
+  },
+  "admin.report.voice.end.confirm.title": {
+    "defaultMessage": "End this room?",
+    "description": "Title of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.confirm.description": {
+    "defaultMessage": "Everyone in it is disconnected, and the room cannot be opened again.",
+    "description": "Description of the confirmation before a moderator ends a voice chat room."
+  },
+  "admin.report.voice.end.reason": {
+    "defaultMessage": "Reason (optional)",
+    "description": "Label of the optional reason a moderator gives for ending a voice chat room."
+  },
+  "admin.report.voice.end.reason.description": {
+    "defaultMessage": "Only the moderators see it; the participants never do.",
+    "description": "Description of the reason for ending a voice chat room."
+  },
+  "admin.report.voice.end.reason.too_long": {
+    "defaultMessage": "Enter a reason of up to {max} characters.",
+    "description": "Error of the reason for ending a voice chat room when it is too long."
+  },
+  "admin.report.voice.end.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the confirmation of ending a voice chat room without ending it."
+  },
+  "admin.report.voice.end.failed": {
+    "defaultMessage": "Couldn't end the room: {reason}",
+    "description": "Error in the confirmation when ending a voice chat room failed. {reason} is why."
+  },
+  "admin.report.voice.ended": {
+    "defaultMessage": "Ended the room.",
+    "description": "Message after a moderator ended the reported voice chat room."
   }
 }

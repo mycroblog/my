@@ -166,5 +166,17 @@
   "report.title": {
     "defaultMessage": "Report {name}",
     "description": "Title of the dialog that reports an account to the moderators. {name} is the account's display name."
+  },
+  "report.title_room": {
+    "defaultMessage": "Report the room {room}",
+    "description": "Title of the dialog that reports a voice chat room to the moderators. {room} is the room's name."
+  },
+  "report.room.category.heading": {
+    "defaultMessage": "Why are you reporting this room?",
+    "description": "Heading of the first step of the dialog that reports a voice chat room, which also names the group of reasons."
+  },
+  "report.room.target": {
+    "defaultMessage": "The report is about this room and its host, {name}.",
+    "description": "Text above the reasons of the dialog that reports a voice chat room. {name} is the host's display name."
   }
 }

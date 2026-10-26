@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The page of a room (/voice/{id}, ADR-0100 §9). Before joining: the room's name as the page's heading, its host,
 // description, hashtags and settings, the notice that joining lists the user's name with the join button (回答 31),
-// the host's button to its settings, and everyone in it by name, speakers and listeners alike, each with their role.
+// the host's button to its settings (to anyone else, the button that reports the room), and everyone in it by name, speakers and listeners alike, each with their role.
 // The audio of the call is not here. To a visitor who does not see the room, its summary: that only the users of this
 // server join, with the way to sign in; a room that ended says so, by its name when the summary has one.
 import { AccountItem, Button, Callout, Cluster, DescriptionItem, DescriptionList, Heading, Hint, InlineError, Link, RegionError, Spinner, Stack, Tag, Text } from "@my/ui";
@@ -10,6 +10,7 @@ import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
+import { ReportDialog } from "../../report";
 import { type VoiceAccount, type VoiceRoom, type VoiceRoomParticipant, voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
 import { speakerLabels, visibilityLabels, VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
@@ -163,7 +164,7 @@ function RoomBody({ room, isHost }: { room: VoiceRoom; isHost: boolean }) {
         <DescriptionItem term={t("client:voice.form.visibility")}>{t(visibilityLabels[room.visibility])}</DescriptionItem>
         <DescriptionItem term={t("client:voice.form.speakers")}>{t(speakerLabels[room.speakers])}</DescriptionItem>
       </DescriptionList>
-      {isHost && (
+      {isHost ? (
         <div>
           <Button
             onPress={() => {
@@ -174,8 +175,29 @@ function RoomBody({ room, isHost }: { room: VoiceRoom; isHost: boolean }) {
           </Button>
           <VoiceRoomFormDialog room={room} isOpen={formOpen} onOpenChange={setFormOpen} />
         </div>
+      ) : (
+        <ReportRoom room={room} />
       )}
     </Stack>
+  );
+}
+
+/** Reporting the room to the moderators (ADR-0100 §11): the report targets its current host and names the room. */
+function ReportRoom({ room }: { room: VoiceRoom }) {
+  const t = useT();
+  const [isReporting, setIsReporting] = useState(false);
+  return (
+    <div>
+      <Button
+        variant="ghost"
+        onPress={() => {
+          setIsReporting(true);
+        }}
+      >
+        {t("client:voice.room.report")}
+      </Button>
+      <ReportDialog account={room.host} voiceRoom={{ id: room.id, name: room.name }} isOpen={isReporting} onOpenChange={setIsReporting} />
+    </div>
   );
 }
 

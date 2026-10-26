@@ -7,6 +7,8 @@
 export { voiceHistoryQueryOptions, voiceRoomQueryOptions, voiceRoomSummaryQueryOptions, voiceRoomsQueryOptions } from "./api/voice";
 export { ProfileVoiceRoom } from "./components/ProfileVoiceRoom";
 export { VoiceHistoryView } from "./components/VoiceHistoryView";
+export { speakerLabels, visibilityLabels } from "./components/VoiceRoomFormDialog";
 export { TagVoiceRooms, VoiceRail, VoiceRoomList } from "./components/VoiceRooms";
 export { VoiceRoomView } from "./components/VoiceRoomView";
+export { voiceEndReasonLabel } from "./hooks/useVoiceHistory";
 export { useVoiceAvailable } from "./hooks/useVoiceRooms";

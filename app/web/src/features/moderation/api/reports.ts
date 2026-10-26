@@ -173,3 +173,40 @@ export function createAccountActionMutation(api: Api) {
     },
   };
 }
+
+export type ReportVoiceRoom = Schemas["AdminReportVoiceRoom"];
+export type VoiceRoomRevision = Schemas["AdminVoiceRoomRevision"];
+export type VoiceRoomParticipation = Schemas["AdminVoiceRoomParticipation"];
+export type VoiceRoomBan = Schemas["AdminVoiceRoomBan"];
+
+/** The most characters of a moderator's reason for ending a voice chat room (AdminVoiceRoomEnd). */
+export const voiceRoomEndReasonLimit = 500;
+
+/**
+ * Ends an open voice chat room as a moderator (POST /admin/voice_rooms/{id}/end, ADR-0100 §11), with an optional
+ * reason for the moderators, as the options of useMutation. The server answers no content.
+ */
+export function endVoiceRoomMutation(api: Api) {
+  return {
+    mutationKey: ["post", "/admin/voice_rooms/{id}/end"] as const,
+    mutationFn: async ({ roomId, reason }: { roomId: string; reason: string }): Promise<void> => {
+      // The middleware throws an ApiError for every error status.
+      await api.fetch.POST("/admin/voice_rooms/{id}/end", { params: { path: { id: roomId } }, body: reason === "" ? {} : { reason } });
+    },
+  };
+}
+
+/**
+ * Marks what ending a room changes (ADR-0045): the report, whose room shows it ended with every participation
+ * ended; the audit log, which records it; the voice chat queries (the list of the open rooms and the room's page),
+ * whose answers no longer have the room open; and the reported host's account, whose profile links its open room.
+ * Resolves once those on screen are fetched again.
+ */
+export async function refreshEndedVoiceRoom(queryClient: QueryClient, api: Api, report: Pick<ReportDetail, "id" | "target_account_id">): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: reportQueryOptions(api, report.id).queryKey }),
+    refreshAuditLog(queryClient),
+    queryClient.invalidateQueries({ predicate: (query) => typeof query.queryKey[1] === "string" && query.queryKey[1].startsWith("/voice/") }),
+    queryClient.invalidateQueries({ queryKey: accountByIdQueryOptions(api, report.target_account_id).queryKey }),
+  ]);
+}
