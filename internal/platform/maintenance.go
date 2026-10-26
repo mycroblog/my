@@ -105,7 +105,8 @@ func maintenanceTheme(overrides []instance.ThemeTokenValue) maintenance.Theme {
 func (m *MaintenanceApp) Handler() http.Handler {
 	a := m.app
 	h := a.recoverPanics(m.handler)
-	h = securityHeaders(h)
+	// The maintenance pages end any voice chat call, so they never allow the microphone.
+	h = securityHeaders(h, false)
 	h = a.accessLog(h)
 	return a.requestIDs(h)
 }

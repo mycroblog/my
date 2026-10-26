@@ -276,6 +276,8 @@ my job delete <id> [<id>...] # remove without running
 Every response carries `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy: same-site` and `X-Frame-Options`,
 and, for responses that are not documents, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`.
 A handler overrides these for responses that need other values, such as ActivityPub JSON and public media.
+`Permissions-Policy` denies the camera, geolocation, payment and USB. It denies the microphone too, except while the voice chat is on (`voice` is not `off`):
+then it allows the microphone for pages of the server's own origin only (`microphone=(self)`), so that browsers can speak in a call.
 The web client's HTML gets a document CSP that does not use a nonce (`script-src 'self'` and so on).
 It requires Trusted Types (`require-trusted-types-for 'script'`) and limits the policies that can be created to the client's two (`trusted-types my-server-sanitized-html my-service-worker`).
 
