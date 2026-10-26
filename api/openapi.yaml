@@ -14438,6 +14438,8 @@ components:
         - income_visibility
         - supporters_enabled
         - supporter_list_visibility
+        - voice_enabled
+        - voice_room_starters
       properties:
         domain:
           description: The domain that serves the instance.
@@ -14517,6 +14519,20 @@ components:
           type: boolean
         supporter_list_visibility:
           $ref: '#/components/schemas/SupporterListVisibility'
+        voice_enabled:
+          description: |
+            Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
+            they are off, and clients then show no entry to them.
+          type: boolean
+        voice_room_starters:
+          description: |
+            Who may open voice chat rooms: `everyone` (every local user who is not limited) or
+            `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
+            voice chat is off.
+          type: string
+          enum:
+            - everyone
+            - permitted
         theme:
           $ref: '#/components/schemas/InstanceTheme'
         contact:

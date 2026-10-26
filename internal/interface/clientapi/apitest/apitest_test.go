@@ -51,7 +51,7 @@ func TestServe(t *testing.T) {
 			_, _ = w.Write([]byte(body))
 		})
 	}
-	const instance = `{"domain":"a.example","name":"A","version":"1","source_url":"https://a.example/src","registrations":{"mode":"open"},"limits":{"max_post_characters":500,"require_media_description":false},"timelines":{"local":"everyone","federated":"everyone"},"federation":{"mode":"both"},"sends_email":false,"rules":[],"search_indexing":"deny","ai_usage":"deny","finance_visibility":"private","income_visibility":"private","supporters_enabled":false,"supporter_list_visibility":"off"}`
+	const instance = `{"domain":"a.example","name":"A","version":"1","source_url":"https://a.example/src","registrations":{"mode":"open"},"limits":{"max_post_characters":500,"require_media_description":false},"timelines":{"local":"everyone","federated":"everyone"},"federation":{"mode":"both"},"sends_email":false,"rules":[],"search_indexing":"deny","ai_usage":"deny","finance_visibility":"private","income_visibility":"private","supporters_enabled":false,"supporter_list_visibility":"off","voice_enabled":false,"voice_room_starters":"permitted"}`
 	tests := []struct {
 		name     string
 		path     string

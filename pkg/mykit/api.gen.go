@@ -1763,6 +1763,24 @@ func (e IncomeVisibility) Valid() bool {
 	}
 }
 
+// Defines values for InstanceVoiceRoomStarters.
+const (
+	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
+	InstanceVoiceRoomStartersPermitted InstanceVoiceRoomStarters = "permitted"
+)
+
+// Valid indicates whether the value is a known member of the InstanceVoiceRoomStarters enum.
+func (e InstanceVoiceRoomStarters) Valid() bool {
+	switch e {
+	case InstanceVoiceRoomStartersEveryone:
+		return true
+	case InstanceVoiceRoomStartersPermitted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceDocumentKind.
 const (
 	InstanceDocumentKindCommerceDisclosure InstanceDocumentKind = "commerce_disclosure"
@@ -7415,7 +7433,21 @@ type Instance struct {
 
 	// Version The server version.
 	Version string `json:"version"`
+
+	// VoiceEnabled Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
+	// they are off, and clients then show no entry to them.
+	VoiceEnabled bool `json:"voice_enabled"`
+
+	// VoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
+	// `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
+	// voice chat is off.
+	VoiceRoomStarters InstanceVoiceRoomStarters `json:"voice_room_starters"`
 }
+
+// InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
+// `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
+// voice chat is off.
+type InstanceVoiceRoomStarters string
 
 // InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the

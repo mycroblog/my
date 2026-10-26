@@ -9349,6 +9349,18 @@ export interface components {
              */
             supporters_enabled: boolean;
             supporter_list_visibility: components["schemas"]["SupporterListVisibility"];
+            /**
+             * @description Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
+             *     they are off, and clients then show no entry to them.
+             */
+            voice_enabled: boolean;
+            /**
+             * @description Who may open voice chat rooms: `everyone` (every local user who is not limited) or
+             *     `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
+             *     voice chat is off.
+             * @enum {string}
+             */
+            voice_room_starters: "everyone" | "permitted";
             theme?: components["schemas"]["InstanceTheme"];
             contact?: components["schemas"]["InstanceContact"];
             thumbnail?: components["schemas"]["InstanceThumbnail"];
