@@ -336,7 +336,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (disabling and revoking an OAuth client; disabling revokes all its tokens; the target name is the client's name and `client_id`) |
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
-| `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room's name at that time) |
+| `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room ID, since the name goes when the account that wrote it is erased; the report details show the name) |
 
 The list shows whether the target still exists. Accounts, reports, appeals and sign-up blocks that disappeared after their retention period, and deleted roles, custom emoji and webhooks, show only the name at the time of recording and no link to a screen.
 

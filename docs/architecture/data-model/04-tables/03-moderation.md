@@ -121,7 +121,7 @@
   | `oauth_client_host_denied` | `oauth_client_host` | ホスト | ホスト | `oauth_client_host_denials.id` |
   | `oauth_client_host_allowed` | `oauth_client_host` | ホスト | ホスト | なし |
   | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` | `instance` | `service_closure` | `service_closure` | `service_closure_events.id` |
-  | `voice_room_ended` | `voice_room` | `voice_rooms.id` | 終えた時点のルームの名前 | `voice_room_endings.room_id`（= `voice_rooms.id`。理由の文は `voice_room_endings.note`） |
+  | `voice_room_ended` | `voice_room` | `voice_rooms.id` | `voice_rooms.id`（名前は書いた人の消去で消えるので写さない。モデレーターは通報の詳細で名前を見る） | `voice_room_endings.room_id`（= `voice_rooms.id`。理由の文は `voice_room_endings.note`） |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |

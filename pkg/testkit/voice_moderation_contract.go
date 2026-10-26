@@ -143,7 +143,7 @@ func roomsModeration(t *testing.T, e *roomsEnv) {
 	}
 	a := audits[0]
 	if a.Action != appmoderation.AuditVoiceRoomEnded || a.TargetKind != appmoderation.AuditTargetVoiceRoom || a.TargetID != room ||
-		a.TargetLabel != "Renamed" || a.SourceEventID != room || a.ActorUserID != in.ByUserID || a.Validate() != nil {
+		a.TargetLabel != room || a.SourceEventID != room || a.ActorUserID != in.ByUserID || a.Validate() != nil {
 		t.Errorf("audit entry = %+v (%v), want voice_room_ended on the room by the moderator", a, a.Validate())
 	}
 	wantErr(t, "EndByModerator of an ended room", e.svc.EndByModerator(ctx, in), appvoice.ErrNotFound)
@@ -236,7 +236,63 @@ func roomsPurge(t *testing.T, e *roomsEnv) {
 	kept(reported, false)
 	kept(held, false)
 	purge(0)
+
+	// More reported rooms than one run looks at do not starve the room after them: the next
+	// run goes on from where the last one stopped, and wraps around at the end.
+	var many []string
+	last := ""
+	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		at := e.clock.Now().Add(-100 * day)
+		for i := range appvoice.RecordPurgeBatch*recordPurgeRuns + 1 {
+			id := e.ids.NewID()
+			if err := e.h.Voice.InsertRoom(ctx, tx, appvoice.Room{ID: id, OpenedByAccountID: id, OpenedAt: at, Transport: voice.TransportP2P}); err != nil {
+				return err
+			}
+			rev := appvoice.Revision{ID: e.ids.NewID(), RoomID: id, RevisedByAccountID: id, RevisedAt: at,
+				Settings: voice.Settings{Name: "Room", Visibility: voice.VisibilityLocal, Speakers: voice.SpeakersManual}}
+			if err := e.h.Voice.InsertRevision(ctx, tx, rev); err != nil {
+				return err
+			}
+			c := appvoice.HostChange{ID: e.ids.NewID(), RoomID: id, HostAccountID: id, Reason: voice.HostOpened, ChangedAt: at}
+			if err := e.h.Voice.InsertHostChange(ctx, tx, c); err != nil {
+				return err
+			}
+			p := appvoice.Participation{ID: e.ids.NewID(), RoomID: id, AccountID: id, JoinedAt: at}
+			if err := e.h.Voice.InsertParticipation(ctx, tx, p); err != nil {
+				return err
+			}
+			if _, err := e.h.Voice.InsertEnding(ctx, tx, appvoice.Ending{RoomID: id, Reason: voice.EndHost, EndedAt: at}); err != nil {
+				return err
+			}
+			if err := e.h.Voice.RefreshHead(ctx, tx, id); err != nil {
+				return err
+			}
+			if i < appvoice.RecordPurgeBatch*recordPurgeRuns {
+				many = append(many, id)
+			} else {
+				last = id
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.retention.set(func() {
+		for _, id := range many {
+			e.retention.reported[id] = true
+		}
+	})
+	purge(0)
+	purge(1)
+	if ps, err := e.h.Voice.Participations(ctx, nil, last); err != nil || len(ps) != 0 {
+		t.Errorf("the room after the reported ones keeps %+v, %v; want its records erased", ps, err)
+	}
+	purge(0)
 }
+
+// recordPurgeRuns is how many batches of rooms one run of voice.purge_records looks at.
+const recordPurgeRuns = 20
 
 func roomsErasure(t *testing.T, e *roomsEnv) {
 	ctx := t.Context()
