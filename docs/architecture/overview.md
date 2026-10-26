@@ -122,7 +122,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | `PushSender` | Web Push 送信 | webpush | — |
 | `Publisher` / `Subscriber` | リアルタイム更新の通知と購読（§4.4）。設定 `stream` が `hub` なら `stream.Hub`、それ以外は `stream.Relay` | in-process（`stream.Hub`、`stream = hub`） | [0016](../adr/0016-client-api-style.md), [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Bus` / `Sweeper` | プロセス間の知らせの同報（`stream.Relay` が使う）と、プロセスが残したブローカーの資源の後始末（§4.4）。アダプタは `postgres` / `valkey` / `sns` / `pubsub`（`sns` と `pubsub` は `Sweeper` も実装）。`stream.MemoryBroker` はテスト用 | なし（`stream = hub`）。複数プロセスは `postgres` | [0050](../adr/0050-stream-pubsub-across-processes.md) |
-| `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / `uuid.NewV7()`） | [0003](../adr/0003-database-abstraction.md) |
+| `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / UUIDv7。どちらもプロセス内では小さく戻った時計で逆行しない） | [0003](../adr/0003-database-abstraction.md) |
 | `KeyManager` | 秘密（アクター秘密鍵など）を包む DEK の wrap / unwrap。暗号化は `kernel.Sealer` が行う | local（設定の KEK） | [0019](../adr/0019-security-baseline.md) |
 | `SearchIndex` | アカウント・タグ検索（将来全文） | db（FTS） | [0009](../adr/0009-internationalization.md) |
 | `Meter` | サービスとシステムの指標の計測。計器（Counter・UpDownCounter・Histogram・Gauge）を名前・単位・許すラベルのキーとともに宣言して記録し、`Begin` でリクエスト・ジョブの区切りを示す。型は標準ライブラリだけで、OTel の型を出さない。アダプタは `none` / `otel`（OpenTelemetry Go SDK。Prometheus の scrape と OTLP/HTTP）/ `emf`（CloudWatch Embedded Metric Format。Gauge は収集されないので、定期ジョブが `GaugeWriter` で書かせる）。ログは port でなく `log/slog` の JSON Lines（標準エラー）で、トレースは `Tracer` が持つ | none（`metrics_exporter = none`） | [0055](../adr/0055-service-observability.md), [0056](../adr/0056-system-observability.md) |

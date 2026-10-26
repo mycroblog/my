@@ -43,7 +43,8 @@ func TestIDGeneratorContract(t *testing.T) {
 }
 
 func TestIDGeneratorStampsCurrentTime(t *testing.T) {
-	before := time.Now().UnixMilli()
+	// NewID may hold over a step back of the system clock of up to a minute.
+	before := time.Now().Add(-time.Minute - time.Millisecond).UnixMilli()
 	ms, ok := testkit.UUIDv7Millis(system.IDGenerator{}.NewID())
 	after := time.Now().UnixMilli()
 	if !ok {
