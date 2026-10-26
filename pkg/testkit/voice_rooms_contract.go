@@ -45,6 +45,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"ReactsToBlocks", roomsBlocks},
 		{"DecidesInTheTransaction", roomsRaces},
 		{"SerializesConcurrentCommands", roomsConcurrent},
+		{"FailsWithoutAGrant", roomsNoGrant},
 		{"StreamsTheRoom", roomsStream},
 		{"RelaysSignals", roomsSignals},
 		{"SendsMicReactionsAndGrants", roomsMicReactions},
@@ -168,6 +169,8 @@ type roomsTransport struct {
 	mu        sync.Mutex
 	calls     []string
 	reconnect bool
+	// grantErr fails the grants when set, as a TURN source that cannot be reached does.
+	grantErr error
 }
 
 func (r *roomsTransport) add(c string) {
@@ -193,7 +196,12 @@ func (r *roomsTransport) Open(_ context.Context, room appvoice.RoomRef) error {
 	r.add("open:" + room.ID)
 	return nil
 }
-func (*roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, _ bool) (appvoice.Grant, error) {
+func (r *roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, _ bool) (appvoice.Grant, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.grantErr != nil {
+		return appvoice.Grant{}, r.grantErr
+	}
 	return appvoice.Grant{Kind: "test", Token: s.ID, ExpiresAt: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 }
 func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) (bool, error) {
@@ -830,4 +838,15 @@ func roomsConcurrent(t *testing.T, e *roomsEnv) {
 	if _, ok := e.participants(t, room)[rec.Head.HostAccountID]; !ok {
 		t.Errorf("the host %s is not in the room", rec.Head.HostAccountID)
 	}
+}
+
+// roomsNoGrant checks that a join whose transport gives no grant (a TURN source that cannot be
+// reached, ADR-0101 §5) fails with ErrTransportUnavailable, which the API answers with 503.
+func roomsNoGrant(t *testing.T, e *roomsEnv) {
+	room := e.open(t, e.account(true), appvoice.SettingsInput{}).Room.ID
+	e.transport.mu.Lock()
+	e.transport.grantErr = errors.New("the TURN service is down")
+	e.transport.mu.Unlock()
+	_, err := e.svc.Join(t.Context(), e.account(false), room)
+	wantErr(t, "Join without a grant", err, appvoice.ErrTransportUnavailable)
 }

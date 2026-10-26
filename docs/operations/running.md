@@ -109,6 +109,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.accounts.registered` | Counter | None |
 | `my.statuses.created` | Counter | `my.visibility` |
 | `my.billing.imports` | Counter | `my.billing.source` (`aws` / `gcp`), `my.outcome` (`success` / `failed`), `error.type` (only with `failed`: the kind of failure, as in [Importing cloud usage charges](billing-import.md)). Every attempt counts, including the retries and the failures that wait for the next daily import |
+| `my.voice.turn.credentials` | Counter | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). One per TURN credential that a voice chat participant asked for when joining a room or renewing its connection: `reused` means Cloudflare credentials issued earlier for the same connection were returned again, and `failed` means Cloudflare could not be reached or refused, so the participant got an error and could not connect |
 | `my.queue.ready` | Gauge | `my.job.type` (the number of runnable jobs in the database queue) |
 | `my.queue.oldest_ready_age` | Gauge, seconds | None (how long the oldest runnable job in the database queue has waited) |
 | `my.queue.dead` | Gauge | None |
