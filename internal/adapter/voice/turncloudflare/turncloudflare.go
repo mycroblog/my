@@ -33,9 +33,10 @@ const DefaultBaseURL = "https://rtc.live.cloudflare.com/v1"
 // MaxTTL is the longest validity of Cloudflare's TURN credentials.
 const MaxTTL = 48 * time.Hour
 
-// renewalMargin is how long before their expiry cached credentials stop being reused, so that
-// a client renewing its grant ahead of the expiry (10 minutes before it, ADR-0101 §5) gets new
-// ones instead of the expiring ones.
+// renewalMargin is how long before their expiry cached credentials stop being reused (half
+// their validity when that is shorter), so that a client renewing its grant ahead of the expiry
+// (10 minutes before it, ADR-0101 §5) gets new ones instead of the expiring ones. The cache
+// keeps them until they expire, so that Revoke still finds them.
 const renewalMargin = 15 * time.Minute
 
 // kvNamespace holds the credentials of the sessions, keyed by session ID.
@@ -89,7 +90,14 @@ func (*Source) Name() string { return Name }
 type cached struct {
 	Username  string            `json:"username"`
 	Servers   []voice.ICEServer `json:"servers"`
+	IssuedAt  time.Time         `json:"issued_at"`
 	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+// reusable reports whether the credentials are far enough from their expiry to hand out again.
+func (c cached) reusable(now time.Time) bool {
+	margin := min(renewalMargin, c.ExpiresAt.Sub(c.IssuedAt)/2)
+	return now.Before(c.ExpiresAt.Add(-margin))
 }
 
 // Credentials implements p2p.TURN: the cached credentials of the session while they last
@@ -97,7 +105,7 @@ type cached struct {
 func (s *Source) Credentials(ctx context.Context, session voice.Session, ttl time.Duration) (p2p.Credentials, error) {
 	if c, ok, err := s.cached(ctx, session.ID); err != nil {
 		return p2p.Credentials{}, err
-	} else if ok {
+	} else if ok && c.reusable(s.o.Clock.Now()) {
 		return p2p.Credentials{Servers: c.Servers, ExpiresAt: c.ExpiresAt, Reused: true}, nil
 	}
 	ttl = min(ttl, MaxTTL).Truncate(time.Second)
@@ -109,15 +117,13 @@ func (s *Source) Credentials(ctx context.Context, session voice.Session, ttl tim
 	if err != nil {
 		return p2p.Credentials{}, err
 	}
-	c.ExpiresAt = now.Add(ttl)
-	if keep := ttl - min(renewalMargin, ttl/2); keep > 0 {
-		b, err := json.Marshal(c)
-		if err != nil {
-			return p2p.Credentials{}, err
-		}
-		if err := s.o.KV.Set(ctx, kvNamespace, session.ID, b, keep); err != nil {
-			return p2p.Credentials{}, fmt.Errorf("turncloudflare: cache the credentials: %w", err)
-		}
+	c.IssuedAt, c.ExpiresAt = now, now.Add(ttl)
+	b, err := json.Marshal(c)
+	if err != nil {
+		return p2p.Credentials{}, err
+	}
+	if err := s.o.KV.Set(ctx, kvNamespace, session.ID, b, ttl); err != nil {
+		return p2p.Credentials{}, fmt.Errorf("turncloudflare: cache the credentials: %w", err)
 	}
 	return p2p.Credentials{Servers: c.Servers, ExpiresAt: c.ExpiresAt}, nil
 }
@@ -224,13 +230,17 @@ func (s *Source) call(ctx context.Context, path string, body []byte, out any) er
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	// The errors name the call by its operation, never by its URL, which holds the key ID.
+	op := path[strings.LastIndex(path, "/")+1:]
 	resp, err := s.o.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("turncloudflare: call the API: %w", err)
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err
+		}
+		return fmt.Errorf("turncloudflare: call %s: %w", op, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	// The key ID is the operator's, but the path still names it only by its operation.
-	op := path[strings.LastIndex(path, "/")+1:]
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBytes))
 		return &statusError{path: op, status: resp.StatusCode}

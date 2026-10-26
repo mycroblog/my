@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -214,5 +215,40 @@ func TestNewNeedsTheKey(t *testing.T) {
 	clock := testkit.VoiceTransportClock()
 	if _, err := turncloudflare.New(turncloudflare.Options{APIToken: "t", KV: testkit.NewKeyValueStore(clock), Clock: clock}); err == nil {
 		t.Error("New without a key ID = nil error")
+	}
+}
+
+func TestRevokeNearTheExpiry(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t)
+	ctx := t.Context()
+	if _, err := h.source.Credentials(ctx, session, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	// Within the renewal margin the credentials are no longer reused, but still revoked.
+	h.clock.Advance(50 * time.Minute)
+	if err := h.source.Revoke(ctx, session); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(h.api.revoked, []string{"user-1"}) {
+		t.Errorf("revoked = %v, want [user-1]", h.api.revoked)
+	}
+}
+
+func TestErrorsHideTheKeyID(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.NotFoundHandler())
+	base := srv.URL
+	srv.Close() // every call fails to connect
+	clock := testkit.VoiceTransportClock()
+	s, err := turncloudflare.New(turncloudflare.Options{
+		KeyID: "secret-key-id", APIToken: "token-1", KV: testkit.NewKeyValueStore(clock), Clock: clock, BaseURL: base,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Credentials(t.Context(), session, time.Hour)
+	if err == nil || strings.Contains(err.Error(), "secret-key-id") || strings.Contains(err.Error(), base) {
+		t.Errorf("Credentials error = %v, want one without the URL", err)
 	}
 }
