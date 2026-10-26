@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.10.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.47.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sqs v1.52.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.52.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.38.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.43.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.3 // indirect
