@@ -9,18 +9,12 @@ An ActivityPub-compatible microblog server written in Go, designed to run at nea
 or a self-hosted VM (Docker / microk8s), with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
 a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OSS.
 
-## Current phase: M4 — Feature Completeness
+## Current phase: M5 — v0 Release
 
-- Goal: extend the basic features and raise the completeness of the service — custom emoji (local and remote) and emoji reactions
-  that federate with Mastodon, Misskey and Pleroma (Akkoma), and the remaining unimplemented Must / Should
-  [functional requirements](docs/requirements/01-functional.md) — on the server, the client API and the web client
-  ([vision](docs/requirements/00-vision.md)). Deployment templates for GCP / AWS / microk8s belong to M6.
-- **M4.1 — Finance** follows on the same footing: recording, aggregating and publishing the server's running costs
-  (one-off, weekly, monthly and yearly payments) and importing AWS / Google Cloud usage costs (FR-901–FR-904,
-  epic [#883](https://github.com/mycroblog/my/issues/883)). Its ADRs come first; implementation issues wait for them to be Accepted.
-- **M4.2 — Supporters** follows M4.1: paid supporter plans that grant roles (badges, custom emoji creation with approval,
-  finance read access), through Stripe behind a provider-agnostic port, off unless the admin enables it, with an opt-in member list and published
-  income (FR-910–FR-917, epic [#925](https://github.com/mycroblog/my/issues/925)). Spike and ADRs come first.
+- Goal: publish v0.x and start running the maintainer's instance — moderation essentials, i18n (en / ja and more),
+  documentation, the release (tags, the container image on `ghcr.io/mycroblog/my`, release notes), and the API client
+  library `pkg/mykit` and the bot library `pkg/mybot` (epic [#30](https://github.com/mycroblog/my/issues/30),
+  [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. Deployment templates for GCP / AWS / microk8s belong to M6.
 - The server is Go ([ADR-0001](docs/adr/0001-server-language-and-runtime.md)); clients are TypeScript under `app/` with Bun.
   Cloudflare Workers is **not** a target.
 - **Web client work must follow [docs/architecture/web-client/](docs/architecture/web-client/README.md).** Do not write React from memory or
