@@ -166,7 +166,7 @@ function SamplePageInCall({ failed = false }: { failed?: boolean }) {
           label="Voice chat call"
           title={
             <Link href="#room" variant="standalone">
-              Friday night radio
+              <span>Friday night radio</span>
             </Link>
           }
           status="Connected"
