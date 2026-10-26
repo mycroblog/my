@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Development override of compose.yaml: turns on the voice chat with voice = p2p (docs/operations/voice.md,
+# "Try it with Docker Compose"). Browsers on this machine connect to each other directly, so no STUN or TURN server is
+# needed; set MY_VOICE_STUN_URLS in .env to reach browsers on other machines. Open the instance at http://localhost
+# (MY_WEB_ORIGIN of .env.example): browsers allow the microphone only on localhost or over HTTPS.
+#
+#   docker compose -f compose.yaml -f compose.voice.yaml up -d --build
+
+services:
+  my:
+    environment:
+      MY_VOICE: p2p
+      # Comma-separated stun: / stuns: URLs; empty uses none.
+      MY_VOICE_STUN_URLS: ${MY_VOICE_STUN_URLS:-}
+      MY_VOICE_P2P_MAX_PARTICIPANTS: ${MY_VOICE_P2P_MAX_PARTICIPANTS:-10}
