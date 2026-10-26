@@ -9,6 +9,7 @@ import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { components } from "@mycroblog/mykit";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
+import { shellQueryRetry } from "../../../lib/query";
 
 type Schemas = components["schemas"];
 
@@ -73,9 +74,13 @@ export function voiceRoomsQueryOptions(api: Api, tag?: string) {
   });
 }
 
-/** An open room that the user sees; a 404 for one that ended or that the user does not see. */
+/**
+ * An open room that the user sees; a 404 for one that ended or that the user does not see. A refusal (4xx) is not
+ * tried again, so that the room's page says at once that the room ended; every reader of the room (the page, the call
+ * bar) takes these options, so none of them puts the default three retries on the query they share.
+ */
 export function voiceRoomQueryOptions(api: Api, id: string) {
-  return api.query.queryOptions("get", "/voice/rooms/{id}", { params: { path: { id } } });
+  return { ...api.query.queryOptions("get", "/voice/rooms/{id}", { params: { path: { id } } }), retry: shellQueryRetry };
 }
 
 /** What the page of a room shows to a visitor who does not see it; needs no session. A 404 for an unknown room. */
