@@ -487,15 +487,15 @@
     "defaultMessage": "参加している全員の接続が切れ、このルームを再び開くことはできません。",
     "description": "Description of the confirmation before a moderator ends a voice chat room."
   },
-  "admin.report.voice.end.reason": {
+  "admin.report.voice.end.note_field": {
     "defaultMessage": "理由（任意）",
     "description": "Label of the optional reason a moderator gives for ending a voice chat room."
   },
-  "admin.report.voice.end.reason.description": {
+  "admin.report.voice.end.note_field.description": {
     "defaultMessage": "モデレーターだけが見ます。参加者には見せません。",
     "description": "Description of the reason for ending a voice chat room."
   },
-  "admin.report.voice.end.reason.too_long": {
+  "admin.report.voice.end.note_field.too_long": {
     "defaultMessage": "理由は {max} 文字までで入力してください。",
     "description": "Error of the reason for ending a voice chat room when it is too long."
   },

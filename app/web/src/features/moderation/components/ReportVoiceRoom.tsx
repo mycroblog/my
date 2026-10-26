@@ -114,15 +114,15 @@ function EndRoom({ end }: { end: EndVoiceRoom }) {
         {...(end.error === undefined ? {} : { errorMessage: t("client:admin.report.voice.end.failed", { reason: end.error }) })}
       >
         <ReasonField
-          label={t("client:admin.report.voice.end.reason")}
-          description={t("client:admin.report.voice.end.reason.description")}
+          label={t("client:admin.report.voice.end.note_field")}
+          description={t("client:admin.report.voice.end.note_field.description")}
           value={end.reason}
           onChange={end.changeReason}
           characterLimit={voiceRoomEndReasonLimit}
           formatRemaining={(remaining) =>
             remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining })
           }
-          errorMessage={t("client:admin.report.voice.end.reason.too_long", { max: String(voiceRoomEndReasonLimit) })}
+          errorMessage={t("client:admin.report.voice.end.note_field.too_long", { max: String(voiceRoomEndReasonLimit) })}
         />
       </ConfirmDialog>
     </Stack>

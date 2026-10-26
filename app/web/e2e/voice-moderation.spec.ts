@@ -217,10 +217,10 @@ test.describe("voice chat moderation", () => {
 
     await section.getByRole("button", { name: message("admin.report.voice.end") }).click();
     const confirmation = page.getByRole("alertdialog", { name: message("admin.report.voice.end.confirm.title") });
-    await expect(confirmation.getByRole("textbox", { name: message("admin.report.voice.end.reason") })).toBeFocused();
+    await expect(confirmation.getByRole("textbox", { name: message("admin.report.voice.end.note_field") })).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
-    await confirmation.getByRole("textbox", { name: message("admin.report.voice.end.reason") }).fill("Advertising");
+    await confirmation.getByRole("textbox", { name: message("admin.report.voice.end.note_field") }).fill("Advertising");
     await confirmation.getByRole("button", { name: message("admin.report.voice.end") }).click();
 
     await expect(section.getByText(message("admin.report.voice.ended"))).toBeVisible();

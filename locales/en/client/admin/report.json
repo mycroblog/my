@@ -487,15 +487,15 @@
     "defaultMessage": "Everyone in it is disconnected, and the room cannot be opened again.",
     "description": "Description of the confirmation before a moderator ends a voice chat room."
   },
-  "admin.report.voice.end.reason": {
+  "admin.report.voice.end.note_field": {
     "defaultMessage": "Reason (optional)",
     "description": "Label of the optional reason a moderator gives for ending a voice chat room."
   },
-  "admin.report.voice.end.reason.description": {
+  "admin.report.voice.end.note_field.description": {
     "defaultMessage": "Only the moderators see it; the participants never do.",
     "description": "Description of the reason for ending a voice chat room."
   },
-  "admin.report.voice.end.reason.too_long": {
+  "admin.report.voice.end.note_field.too_long": {
     "defaultMessage": "Enter a reason of up to {max} characters.",
     "description": "Error of the reason for ending a voice chat room when it is too long."
   },
