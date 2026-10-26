@@ -74,11 +74,11 @@ ADR-0100 がこの ADR に任せたもの: 設定 `voice` と `off` の振る舞
 | `voice_turn_urls` | coturn の TURN の URL の一覧（`turn:` / `turns:`） | なし |
 | `voice_turn_secret` | coturn の `static-auth-secret`（秘密） | なし |
 | `voice_turn_cloudflare_key_id` / `voice_turn_cloudflare_api_token` | Cloudflare の TURN キーの ID と API トークン（トークンは秘密） | なし |
-| `voice_turn_credential_ttl` | TURN の資格情報の有効期間 | `6h` |
+| `voice_turn_credential_ttl` | TURN の資格情報の有効期間（`cloudflare` では 48 時間まで） | `6h` |
 | `voice_ice_transport_policy` | `all` / `relay`（TURN 経由だけ） | `all` |
 
 - `voice = off` のとき、通話の API は `404` を返し、Web は通話の画面と入口を出さない（ADR-0100 §2）。起動時に他の `voice_*` は検査しない。
-- 起動時の検査（失敗したら起動しない）: `voice_ice_transport_policy = relay` で `voice_turn = none` は誤り（TURN がないと繋がらない）。`voice_turn = coturn` で URL か秘密がない、`cloudflare` でキーかトークンがないのも誤り。
+- 起動時の検査（失敗したら起動しない）: `voice_ice_transport_policy = relay` で `voice_turn = none` は誤り（TURN がないと繋がらない）。`voice_turn = coturn` で URL か秘密がない、`cloudflare` でキーかトークンがない、または `voice_turn_credential_ttl` が 48 時間を超えるのも誤り。
   `voice = p2p` で STUN も TURN もないときは警告をログに出す（同じ LAN の中でしか繋がらない）。
 - SFU（`livekit` / `sora`）のときの `voice_stun_urls`・`voice_turn*`・`voice_ice_transport_policy` の扱いと、SFU の接続先の設定は ADR-C が決める。
 - 上限は §1 の設定で、ADR-0100 §5・§6 が評価する（参加の `409`、`voice.sweep` の `time_limit`、開く操作の `409`）。
@@ -200,13 +200,20 @@ type EventSource interface {
 
 ### 5. STUN / TURN（回答 4）
 
-- `Grant` の `ICE` は、`voice_stun_urls` と、`voice_turn` が発行する短命の資格情報の TURN を返す。資格情報の有効期間は `voice_turn_credential_ttl`（既定 6 時間）で、クライアントは `ExpiresAt` の前に `POST /voice/rooms/{id}/grant` で取り直し、`RTCPeerConnection.setConfiguration` で差し替える。
-- **coturn**（`use-auth-secret`）: ユーザー名は `<期限の Unix 秒>:<セッションの ID>`、パスワードは `base64(HMAC(static-auth-secret, ユーザー名))`。サーバーの中で計算し、外部の I/O はない
-  （確認日 2026-10-26: [coturn の turnserver.conf の例](https://github.com/coturn/coturn/blob/master/examples/etc/turnserver.conf) の `use-auth-secret`・`static-auth-secret` の説明。HMAC のハッシュ関数は既定の SHA-1 を使う。要検証: coturn の版ごとの既定）。
+- `Grant` の `ICE` は、`voice_stun_urls` と、`voice_turn` が発行する短命の資格情報の TURN を返す。資格情報の有効期間は `voice_turn_credential_ttl`（既定 6 時間。`cloudflare` では 48 時間まで）。
+- **取り直し**: クライアントは `ExpiresAt` の 10 分前に `POST /voice/rooms/{id}/grant` で取り直し、各 `RTCPeerConnection` に `setConfiguration` で新しい ICE の設定を入れて `restartIce()` する。
+  ICE の再起動で新しい割り当てが新しい資格情報で作られる。期限が切れたときの振る舞いが TURN の事業者で違う（下の 2 つ）ので、どちらでも同じこの手順にする。
+- **coturn**（`use-auth-secret`）: ユーザー名は `<期限の Unix 秒>:<セッションの ID>`、パスワードは `base64(HMAC-SHA1(static-auth-secret, ユーザー名))`。サーバーの中で計算し、外部の I/O はない。
+  ハッシュ関数は SHA-1 に決まっていて、変える設定はない（確認日 2026-10-26: [README.turnserver](https://github.com/coturn/coturn/blob/master/README.turnserver) の TURN REST API の節 `hmac-sha1`。
+  ソース `src/apps/relay/userdb.c`（コミット `596c48b`）も、REST の資格情報では SHA-1 の長さの MESSAGE-INTEGRITY だけを受ける）。
+  期限は割り当ての最初の認証で確かめ、通ったらセッションの鍵を覚えて以後の要求（Refresh を含む）に使うので、**期限が切れても確立済みの割り当ては続く**。同じ割り当てでユーザー名は替えられない（441）ので、新しい資格情報は新しい割り当てでだけ使える
+  （同日、`src/server/ns_turn_server.c` の `check_stun_auth` の `hmackey_set`）。
 - **Cloudflare TURN**: `POST https://rtc.live.cloudflare.com/v1/turn/keys/{key_id}/credentials/generate-ice-servers`（`Authorization: Bearer <API トークン>`、本文 `{"ttl": 秒}`）が `iceServers` を返す。取り消しは `.../credentials/{username}/revoke`
-  （確認日 2026-10-26: [Generate credentials](https://developers.cloudflare.com/realtime/turn/generate-credentials/)）。料金は SFU と使わないとき、クライアントへの送信 1 GB あたり $0.05（同日、[TURN service](https://developers.cloudflare.com/realtime/turn/)）。
+  （確認日 2026-10-26: [Generate credentials](https://developers.cloudflare.com/realtime/turn/generate-credentials/)）。
+  **期限が切れると、少しの後に接続を切る**。期限は 48 時間先まで。長い通話では `RTCPeerConnection` の設定で資格情報を更新する（同日、[TURN FAQ](https://developers.cloudflare.com/realtime/turn/faq/)）。
+  料金は SFU と使わないとき、クライアントへの送信 1 GB あたり $0.05 で、課金の前に 1,000 GB の無料枠がある（同日、[TURN service](https://developers.cloudflare.com/realtime/turn/)・TURN FAQ）。
   この呼び出しは運営者が設定した事業者の API なので、`internal/adapter/voice/turncloudflare` に置き、SSRF の防御の `kernel.HTTPClient` ではなく専用の HTTP クライアントを使う（AGENTS.md の規則）。`Grant` は参加の要求の中で呼び、失敗したら `503` を返す。
-  同じセッションの資格情報は期限まで `KeyValueStore` に置いて使い回す。退出・退出させる操作で取り消す（`voice.apply`）。
+  同じセッションの資格情報は期限まで `KeyValueStore` に置いて使い回す。退出・退出させる操作で取り消す（`voice.apply`）。取り消しが確立済みの接続を切るかは文書にないので、切断は §4 のシグナリングから外す操作に頼り、取り消しは資格情報を再使用させないためだけに行う。
 - **IP を隠す（`relay`）**: `voice_ice_transport_policy = relay` のとき、`Grant.RelayOnly` を真にし、クライアントは `iceTransportPolicy: "relay"` で接続する。そのクライアント自身は TURN の候補しか出さないので、相手にはそのクライアントの IP が見えない。
   守られるのは設定に従うクライアントの IP で、改造したクライアントが自分の IP を出すことは防がない（それはそのクライアントの利用者の選択である）。
 - TURN の運営の注意（運営者の文書）: coturn では内部のネットワークへの中継を `denied-peer-ip` で拒み、`external-ip` を設定する。TURN の転送量は事業者の料金になる。
@@ -227,7 +234,10 @@ ADR-0100 §14 の形に、接続のための操作を足す（細部は [client-
   SFU の方式のブラウザの SDK（依存の追加）は ADR-C が決める。P2P はブラウザの WebRTC の API だけを使い、依存を足さない。
 - マイクは `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`。映像は求めない。HTTPS（secure context）が要る。
 - 参加の操作（ボタンを押す）を利用者の操作として、その中で音声の再生を始める（ブラウザの自動再生の制限）。
-- 対応するブラウザは Web クライアントの対応範囲のまま。iOS の PWA では、アプリを背面にすると音声が止まることがある（要検証: iOS の版ごとの挙動）。利用者の文書に書く。
+- 対応するブラウザは Web クライアントの対応範囲のまま。iOS のホーム画面の Web アプリ（PWA）を背面にしたとき音声の再生が止まる不具合は、iOS 15.4 で直っている
+  （確認日 2026-10-26: [WebKit bug 198277](https://bugs.webkit.org/show_bug.cgi?id=198277) は [232909](https://bugs.webkit.org/show_bug.cgi?id=232909) の重複として閉じられ、修正は iOS 15.4 に入ったとコメントされている）。
+  背面にしたときにマイクの取り込みが続くかは公開の文書で確かめられない（Apple の Developer Forums には、画面のロックか背面で WebRTC が止まるという開発者の報告がある: [thread 774239](https://developer.apple.com/forums/thread/774239)）。
+  利用者の文書には「iPhone と iPad では、通話中にアプリを背面にすると話せなくなることがある」と書く。
 
 ### 8. 構成ごとの注意
 
@@ -283,6 +293,4 @@ P2 は話者の切り替えが単純だが、聞き手どうしの接続は音�
 
 ## Open Questions / 要検証
 
-- coturn の `use-auth-secret` の HMAC の既定のハッシュ関数が版によらず SHA-1 か（要検証: coturn の版ごとの文書）
-- TURN の資格情報の期限が切れたとき、確立済みの割り当て（allocation の refresh）が切れるか（要検証: coturn と Cloudflare。切れるなら §5 の取り直しを期限の前に必ず行う）
-- iOS の PWA を背面にしたときの WebRTC の音声の継続（要検証: 実機）
+- iOS のホーム画面の Web アプリを背面にしたとき、マイクの取り込み（WebRTC の送信）が続くか（要検証: 実機。公開の文書では確かめられない）
