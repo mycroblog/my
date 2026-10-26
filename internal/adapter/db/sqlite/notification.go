@@ -36,7 +36,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		CustomEmojiRequestID: toNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: toNullString(n.SupporterSubscriptionID),
 		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID),
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
-		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
+		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -191,7 +191,7 @@ func notificationFrom(row sqlitegen.Notification) notification.Notification {
 		CustomEmojiRequestID: row.CustomEmojiRequestID.String, SupporterSubscriptionID: row.SupporterSubscriptionID.String,
 		ReactionEmoji: row.ReactionEmoji.String, ReactionCustomEmojiID: row.ReactionCustomEmojiID.String,
 		AccountMoveID: row.AccountMoveID.String, AccountMoveOutcome: notification.MoveOutcome(row.AccountMoveOutcome.String),
-		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
+		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), VoiceRoomID: row.VoiceRoomID.String, DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 

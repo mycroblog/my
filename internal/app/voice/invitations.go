@@ -31,7 +31,8 @@ var InvitationLimit = kernel.Limit{Name: "voice.invitations", Max: 100, Window: 
 // Invite invites accountID to a room as a listener or a speaker, by byAccountID, the host or a
 // co-host (ADR-0100 §7): the account sees the room from now on, and an invitation as a speaker
 // is an explicit permission to speak (§4). It fails with ErrInvalidInvitee and
-// ErrAlreadyInvited, and with a *kernel.RateLimitedError past InvitationLimit.
+// ErrAlreadyInvited, and with a *kernel.RateLimitedError past InvitationLimit. The invited account
+// is notified (voice_room_invited, §8) in the same transaction.
 func (s *Service) Invite(ctx context.Context, byAccountID, roomID, accountID string, role voice.Role) (Invitation, error) {
 	if role == "" {
 		role = voice.RoleListener
@@ -82,6 +83,11 @@ func (s *Service) Invite(ctx context.Context, byAccountID, roomID, accountID str
 		}
 		if err := tx.Emit(ctx, Invited{Invitation: inv}); err != nil {
 			return err
+		}
+		if s.d.Notifier != nil {
+			if err := s.d.Notifier.RoomInvitedTx(ctx, tx, inv.ID, roomID, byAccountID, accountID, inv.InvitedAt); err != nil {
+				return err
+			}
 		}
 		if role != voice.RoleSpeaker {
 			return nil

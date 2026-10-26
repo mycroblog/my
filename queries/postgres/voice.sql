@@ -95,6 +95,25 @@ WHERE h.state = 'open'
   ))
 ORDER BY h.participants_count DESC, h.room_id;
 
+-- ListHostedVoiceRooms returns at most row_limit rooms that account_id hosted at some time
+-- (ADR-0100 section 13), newest first, before the room of an ID (or from the newest with ''); the
+-- columns are those of GetVoiceRoom.
+-- name: ListHostedVoiceRooms :many
+SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
+  h.revision_id, h.host_account_id, h.state, h.participants_count,
+  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+FROM voice_rooms r
+JOIN voice_room_heads h ON h.room_id = r.id
+JOIN voice_room_revisions v ON v.id = h.revision_id
+LEFT JOIN voice_room_endings e ON e.room_id = r.id
+WHERE EXISTS (
+    SELECT 1 FROM voice_room_host_changes c WHERE c.host_account_id = sqlc.arg(account_id) AND c.room_id = r.id
+  )
+  AND (sqlc.arg(before)::text = '' OR r.id::text < sqlc.arg(before)::text)
+ORDER BY r.id DESC
+LIMIT sqlc.arg(row_limit);
+
 -- name: ListVoiceRoomRevisionHashtags :many
 SELECT revision_id, position, name, name_normalized FROM voice_room_revision_hashtags
 WHERE revision_id = ANY(sqlc.arg(revision_ids)::uuid[])

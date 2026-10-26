@@ -304,6 +304,7 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 		}
 		return queue.Done()
 	})
+	reg.Register(JobNotifyStarted, s.NotifyStarted)
 	if sched != nil {
 		sched.Add(queue.Schedule{Name: JobSweep, Every: SweepInterval, Job: queue.NewJob{Type: JobSweep}})
 	}

@@ -661,6 +661,91 @@ func (q *Queries) IsVoiceRoomSpeakGranted(ctx context.Context, arg IsVoiceRoomSp
 	return granted, err
 }
 
+const listHostedVoiceRooms = `-- name: ListHostedVoiceRooms :many
+SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
+  h.revision_id, h.host_account_id, h.state, h.participants_count,
+  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  e.reason AS end_reason, e.ended_by_account_id, e.ended_at
+FROM voice_rooms r
+JOIN voice_room_heads h ON h.room_id = r.id
+JOIN voice_room_revisions v ON v.id = h.revision_id
+LEFT JOIN voice_room_endings e ON e.room_id = r.id
+WHERE r.id IN (SELECT c.room_id FROM voice_room_host_changes c WHERE c.host_account_id = ?1)
+  AND (CAST(?2 AS TEXT) = '' OR r.id < CAST(?2 AS TEXT))
+ORDER BY r.id DESC
+LIMIT ?3
+`
+
+type ListHostedVoiceRoomsParams struct {
+	AccountID string
+	Before    string
+	RowLimit  int64
+}
+
+type ListHostedVoiceRoomsRow struct {
+	ID                 string
+	OpenedByAccountID  string
+	OpenedAt           int64
+	Transport          string
+	RevisionID         string
+	HostAccountID      string
+	State              string
+	ParticipantsCount  int64
+	Name               string
+	Description        string
+	Visibility         string
+	Speakers           string
+	RevisedByAccountID string
+	RevisedAt          int64
+	EndReason          sql.NullString
+	EndedByAccountID   sql.NullString
+	EndedAt            sql.NullInt64
+}
+
+// ListHostedVoiceRooms returns at most row_limit rooms that account_id hosted at some time
+// (ADR-0100 section 13), newest first, before the room of an ID (or from the newest with ”); the
+// columns are those of GetVoiceRoom.
+func (q *Queries) ListHostedVoiceRooms(ctx context.Context, arg ListHostedVoiceRoomsParams) ([]ListHostedVoiceRoomsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listHostedVoiceRooms, arg.AccountID, arg.Before, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListHostedVoiceRoomsRow{}
+	for rows.Next() {
+		var i ListHostedVoiceRoomsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OpenedByAccountID,
+			&i.OpenedAt,
+			&i.Transport,
+			&i.RevisionID,
+			&i.HostAccountID,
+			&i.State,
+			&i.ParticipantsCount,
+			&i.Name,
+			&i.Description,
+			&i.Visibility,
+			&i.Speakers,
+			&i.RevisedByAccountID,
+			&i.RevisedAt,
+			&i.EndReason,
+			&i.EndedByAccountID,
+			&i.EndedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOpenVoiceRooms = `-- name: ListOpenVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,

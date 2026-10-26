@@ -38,5 +38,13 @@
   "preview.title": {
     "defaultMessage": "‮{name} (@{handle})‬",
     "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "preview.voice_room_ended": {
+    "defaultMessage": "‮{room} — ʇɥıs ʌoıɔǝ ɔɥɐʇ ɥɐs ǝupǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "preview.voice_room_open": {
+    "defaultMessage": "‮{room} — ɐ ʌoıɔǝ ɔɥɐʇ ɥosʇǝp qʎ {host}, odǝu uoʍ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
   }
 }

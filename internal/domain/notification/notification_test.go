@@ -178,6 +178,30 @@ func TestValidateModeratorNotifications(t *testing.T) {
 	}
 }
 
+func TestValidateVoiceNotifications(t *testing.T) {
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeVoiceRoomStarted, SourceAccountID: idB, VoiceRoomID: idR, DedupeKey: VoiceRoomStartedKey(idR)},
+		{ID: idN, RecipientAccountID: idA, Type: TypeVoiceRoomInvited, SourceAccountID: idB, VoiceRoomID: idR, DedupeKey: VoiceRoomInvitedKey(idP)},
+	} {
+		if err := n.Validate(); err != nil {
+			t.Errorf("Validate(%+v) = %v", n, err)
+		}
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeVoiceRoomStarted, SourceAccountID: idB, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeVoiceRoomStarted, VoiceRoomID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeVoiceRoomInvited, VoiceRoomID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, VoiceRoomID: idR, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+	if VoiceRoomStartedKey(idR) == VoiceRoomInvitedKey(idR) {
+		t.Error("the dedupe keys of the two voice notifications collide")
+	}
+}
+
 func TestHiddenTypes(t *testing.T) {
 	for _, tc := range []struct {
 		granted []Permission

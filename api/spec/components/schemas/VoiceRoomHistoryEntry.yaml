@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+description: A voice chat room that the user hosted, as its settings stand last.
+type: object
+required: [id, name, opened_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  name:
+    description: The name of the room.
+    type: string
+  opened_at:
+    description: When the room opened.
+    type: string
+    format: date-time
+  ended_at:
+    description: When the room ended; omitted while it is open.
+    type: string
+    format: date-time
+  end_reason:
+    description: |
+      Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+      `moderator`, `time_limit`, `disabled`); omitted while it is open.
+    type: string

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The open voice chat room where an account is the host or a speaker, on its profile. Only a
+  user who sees the room gets it; a listener's profile shows no room.
+type: object
+required: [id, name, role, participants_count]
+properties:
+  id:
+    $ref: ./Id.yaml
+  name:
+    description: The name of the room.
+    type: string
+  role:
+    description: Whether the account hosts the room or speaks in it.
+    type: string
+    enum: [host, speaker]
+  participants_count:
+    description: How many people are in the room.
+    type: integer

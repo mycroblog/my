@@ -15,9 +15,11 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	if err != nil {
 		return err
 	}
-	notification.RegisterProjectors(a.Projectors, notification.ProjectorDeps{
+	deps := notification.ProjectorDeps{
 		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, IDs: a.IDs, Push: pusher,
-	})
+	}
+	notification.RegisterProjectors(a.Projectors, deps)
+	a.voiceNotifier = notification.NewVoiceNotifier(deps)
 	a.Notifications = notification.NewService(notification.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
 	})

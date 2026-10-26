@@ -63,6 +63,8 @@ type Members interface {
 	Member(ctx context.Context, accountID string) (Member, error)
 	// EveryoneStarts reports the instance setting voice_room_starters = everyone.
 	EveryoneStarts(ctx context.Context) (bool, error)
+	// PublicSummary reports the instance setting voice_public_summary (ADR-0100 §9).
+	PublicSummary(ctx context.Context) (bool, error)
 }
 
 // Relations reads the follows and blocks between accounts from the graph module; the
@@ -76,6 +78,10 @@ type Relations interface {
 	Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
 	// BlockedAmong returns which of ids are in a block relation, either way, with accountID.
 	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+	// LocalFollowers returns a batch of the local accounts that follow accountID, newest follow
+	// first, after the cursor before ("" for the newest), of at most limit followers read, and
+	// the cursor of the next batch, "" after the last one.
+	LocalFollowers(ctx context.Context, accountID, before string, limit int) (ids []string, next string, err error)
 }
 
 // Emojis reads the emoji of the reactions from the content module (ADR-0100 §10); the
@@ -123,6 +129,12 @@ type Deps struct {
 	Streams stream.Publisher
 	// Emojis checks the emoji of the reactions; nil allows the Unicode emoji only.
 	Emojis Emojis
+	// Notifier creates the notifications of the rooms (ADR-0100 §8); nil notifies nobody.
+	Notifier Notifier
+	// Posts writes the start posts (ADR-0100 §9); nil refuses them with ErrNoStartPost.
+	Posts Posts
+	// Host is the serving domain of the pages of the rooms, which the start posts link.
+	Host   string
 	Config Config
 	Logger *slog.Logger
 }
@@ -184,6 +196,8 @@ type SettingsInput struct {
 	Hashtags    []string
 	Visibility  voice.Visibility
 	Speakers    voice.Speakers
+	// Post is the start post of Open, nil for none (ADR-0100 §9).
+	Post *StartPost
 }
 
 // SettingsPatch changes the settings of a room; a nil field keeps its value.

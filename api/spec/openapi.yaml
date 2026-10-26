@@ -89,10 +89,10 @@ tags:
     description: |
       The voice chat rooms of the local users: opening them, their settings, joining and
       leaving them, the heartbeats of the sessions, handing a room over, speaking and raising a
-      hand, the operations of the host and the co-hosts on the participants, and the
-      invitations. The operations need
-      a `read:voice` or `write:voice` scope, and answer 404 while the voice chat is off on the
-      server.
+      hand, the operations of the host and the co-hosts on the participants, the
+      invitations, and the rooms the user hosted. The operations need
+      a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
+      do not see it, and answer 404 while the voice chat is off on the server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -368,6 +368,10 @@ paths:
     $ref: ./paths/voice_rooms_{id}_grant.yaml
   /voice/rooms/{id}/reactions:
     $ref: ./paths/voice_rooms_{id}_reactions.yaml
+  /voice/rooms/{id}/summary:
+    $ref: ./paths/voice_rooms_{id}_summary.yaml
+  /voice/history:
+    $ref: ./paths/voice_history.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -1615,6 +1619,12 @@ components:
       $ref: ./components/schemas/VoiceRoomInvitationCreate.yaml
     VoiceRoomInvitationPage:
       $ref: ./components/schemas/VoiceRoomInvitationPage.yaml
+    VoiceRoomEntry:
+      $ref: ./components/schemas/VoiceRoomEntry.yaml
+    VoiceRoomHistoryEntry:
+      $ref: ./components/schemas/VoiceRoomHistoryEntry.yaml
+    VoiceRoomHistoryPage:
+      $ref: ./components/schemas/VoiceRoomHistoryPage.yaml
     VoiceRoomJoin:
       $ref: ./components/schemas/VoiceRoomJoin.yaml
     VoiceRoomPage:
@@ -1625,12 +1635,16 @@ components:
       $ref: ./components/schemas/VoiceRoomSettings.yaml
     VoiceRoomSpeakers:
       $ref: ./components/schemas/VoiceRoomSpeakers.yaml
+    VoiceRoomSummary:
+      $ref: ./components/schemas/VoiceRoomSummary.yaml
     VoiceRoomUpdate:
       $ref: ./components/schemas/VoiceRoomUpdate.yaml
     VoiceRoomVisibility:
       $ref: ./components/schemas/VoiceRoomVisibility.yaml
     VoiceSession:
       $ref: ./components/schemas/VoiceSession.yaml
+    VoiceStartPost:
+      $ref: ./components/schemas/VoiceStartPost.yaml
     VoiceSignal:
       $ref: ./components/schemas/VoiceSignal.yaml
     VoiceSignalKind:

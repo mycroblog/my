@@ -15,7 +15,11 @@ import (
 // speaker (ADR-0100 §2, §5): the account must be eligible to host (ErrNotEligible), fewer rooms
 // than the operator allows must be open (ErrTooManyRooms), and the account must not host
 // another open room (ErrHostingElsewhere). A participation in another room ends (moved).
-// Invalid settings fail with a *voice.SettingsError.
+// Invalid settings fail with a *voice.SettingsError. With in.Post, the host's start post, which
+// links the room, is written in the same transaction (ADR-0100 §9): local for a room of the local
+// users and private for one of the followers; the other rooms fail with ErrNoStartPost, and a
+// post that the content module refuses with its error. The local followers of the host who see
+// the room are notified by JobNotifyStarted (§8).
 func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) (Joined, error) {
 	if err := s.enabled(); err != nil {
 		return Joined{}, err
@@ -31,12 +35,17 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 	if !ok {
 		return Joined{}, ErrNotEligible
 	}
+	roomID := s.d.IDs.NewID()
+	post, err := s.prepareStartPost(ctx, accountID, roomID, settings, in.Post)
+	if err != nil {
+		return Joined{}, err
+	}
 	prev, err := s.leaveForJoin(ctx, accountID, "")
 	if err != nil {
 		return Joined{}, err
 	}
 	now := s.now()
-	room := Room{ID: s.d.IDs.NewID(), OpenedByAccountID: accountID, OpenedAt: now, Transport: s.d.Config.Transport}
+	room := Room{ID: roomID, OpenedByAccountID: accountID, OpenedAt: now, Transport: s.d.Config.Transport}
 	rev := Revision{ID: s.d.IDs.NewID(), RoomID: room.ID, Settings: settings, RevisedByAccountID: accountID, RevisedAt: now}
 	host := HostChange{ID: s.d.IDs.NewID(), RoomID: room.ID, HostAccountID: accountID, Reason: voice.HostOpened, ChangedAt: now}
 	part := Participation{ID: s.d.IDs.NewID(), RoomID: room.ID, AccountID: accountID, JoinedAt: now}
@@ -80,6 +89,15 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 			return err
 		}
 		if err := s.startParticipationTx(ctx, tx, part, voice.RoleSpeaker); err != nil {
+			return err
+		}
+		if post != nil {
+			// The start post is the host's own post, written with the room (ADR-0100 §9).
+			if _, err := s.d.Posts.CreateTx(ctx, tx, *post); err != nil {
+				return err
+			}
+		}
+		if err := s.enqueueNotifyStarted(ctx, tx, room, rev); err != nil {
 			return err
 		}
 		return s.enqueueApply(ctx, tx, applyPayload{Op: applyOpen, Room: room.ID}, "open")

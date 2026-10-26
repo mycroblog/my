@@ -54,3 +54,12 @@ properties:
   reaction:
     description: The emoji of a `reaction`; omitted for the other types.
     $ref: ./ReactionEmoji.yaml
+  voice_room_id:
+    description: The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
+    allOf:
+      - $ref: ./Id.yaml
+  voice_room:
+    description: |
+      The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
+      it is open and the user sees it; omitted otherwise.
+    $ref: ./VoiceRoom.yaml

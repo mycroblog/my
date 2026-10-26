@@ -379,6 +379,9 @@ func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (G
 	if err != nil {
 		return nil, err
 	}
+	if body.VoiceRoom, err = s.voiceRoomEntry(ctx, v, a.Account.ID); err != nil {
+		return nil, err
+	}
 	return GetAccount200JSONResponse{AccountProfileJSONResponse{Body: body, Headers: AccountProfileResponseHeaders{CacheControl: cacheFor(v)}}}, nil
 }
 

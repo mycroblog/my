@@ -118,5 +118,13 @@
   "push.supporter_service_closure": {
     "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.voice_room_started": {
+    "defaultMessage": "{name}さんが通話のルームを開きました",
+    "description": "Web Push notification: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host."
+  },
+  "push.voice_room_invited": {
+    "defaultMessage": "{name}さんから通話のルームに招待されました",
+    "description": "Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user."
   }
 }

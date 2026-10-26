@@ -22,7 +22,8 @@ CREATE TABLE notifications (
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
-    'service_closure', 'admin_service_closure_due', 'supporter_service_closure'
+    'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
+    'voice_room_started', 'voice_room_invited'
   )),
   source_account_id uuid,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -55,6 +56,8 @@ CREATE TABLE notifications (
   service_closure_event_id uuid,
   -- service_closure: what the event did to the closure.
   service_closure_change text CHECK (service_closure_change IN ('announced', 'rescheduled', 'withdrawn')),
+  -- voice_room_started, voice_room_invited: the voice_rooms row.
+  voice_room_id uuid,
   dedupe_key text NOT NULL,
   created_at timestamptz NOT NULL,
   -- nobody is notified of their own actions.
@@ -130,7 +133,8 @@ CREATE TABLE push_subscription_alerts (
     'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request', 'custom_emoji_request_decided',
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
-    'service_closure', 'admin_service_closure_due', 'supporter_service_closure'
+    'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
+    'voice_room_started', 'voice_room_invited'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 );

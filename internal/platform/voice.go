@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/voice/p2p"
@@ -22,6 +23,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	voicehttp "github.com/mycroblog/my/internal/interface/voice"
+	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -122,7 +124,8 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
 		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
-		Streams: a.Streams, Emojis: a.Interactions, Config: c, Logger: a.Logger,
+		Streams: a.Streams, Emojis: a.Interactions, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,
+		Config: c, Logger: a.Logger,
 	})
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
@@ -197,6 +200,14 @@ func (m voiceMembers) EveryoneStarts(ctx context.Context) (bool, error) {
 	return s.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone, nil
 }
 
+func (m voiceMembers) PublicSummary(ctx context.Context) (bool, error) {
+	s, err := m.a.Instance.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	return s.VoicePublicSummary(), nil
+}
+
 // voiceRelations reads the follows and blocks of the rooms from the graph module.
 type voiceRelations struct{ a *App }
 
@@ -219,6 +230,27 @@ func (r voiceRelations) BlockedAmong(ctx context.Context, accountID string, ids 
 	return r.a.Graph.BlockedAmong(ctx, accountID, ids)
 }
 
+func (r voiceRelations) LocalFollowers(ctx context.Context, accountID, before string, limit int) ([]string, string, error) {
+	ids, next, err := r.a.Graph.ActiveFollowerIDs(ctx, accountID, before, limit)
+	if err != nil {
+		return nil, "", err
+	}
+	local := make([]string, 0, len(ids))
+	for _, id := range ids {
+		act, err := r.a.Accounts.FindByID(ctx, id)
+		if errors.Is(err, account.ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, "", err
+		}
+		if act.Account.IsLocal() && act.Local != nil {
+			local = append(local, id)
+		}
+	}
+	return local, next, nil
+}
+
 func (r voiceRelations) Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
 	rel, err := r.a.Graph.CandidateRelations(ctx, accountID, ids)
 	if err != nil {
@@ -229,6 +261,41 @@ func (r voiceRelations) Following(ctx context.Context, accountID string, ids []s
 		out[id] = c.Following
 	}
 	return out, nil
+}
+
+// voiceRoomSummary returns the summary of a room for the link preview of its page, found false
+// when the room is unknown or the voice chat is off (ADR-0100 §9).
+func (a *App) voiceRoomSummary(ctx context.Context, roomID string) (web.VoiceRoomSummary, bool, error) {
+	if a.voiceAPI() == nil {
+		return web.VoiceRoomSummary{}, false, nil
+	}
+	s, err := a.VoiceRooms.Summary(ctx, roomID)
+	if errors.Is(err, appvoice.ErrNotFound) {
+		return web.VoiceRoomSummary{}, false, nil
+	}
+	if err != nil {
+		return web.VoiceRoomSummary{}, false, err
+	}
+	if !s.Shown {
+		return web.VoiceRoomSummary{Ended: s.Ended}, true, nil
+	}
+	out := web.VoiceRoomSummary{Name: s.Name, Description: s.Description, Ended: s.Ended, Shown: true}
+	if s.HostAccountID != "" {
+		act, err := a.Accounts.FindByID(ctx, s.HostAccountID)
+		switch {
+		case errors.Is(err, account.ErrNotFound):
+		case err != nil:
+			return web.VoiceRoomSummary{}, false, err
+		default:
+			if act.Local != nil {
+				out.HostName = act.Local.Username
+			}
+			if act.Profile != nil && strings.TrimSpace(act.Profile.DisplayName) != "" {
+				out.HostName = act.Profile.DisplayName
+			}
+		}
+	}
+	return out, true, nil
 }
 
 // voiceAPI returns the rooms of the client API, nil while the voice chat is off (404).

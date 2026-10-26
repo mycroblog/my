@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the page of a voice chat room shows to a visitor who does not see the room, such as a
+  visitor who is not signed in or a user of another server: only the users of this server
+  join its rooms. `name` is present only when the server shows the summaries of its rooms (the
+  instance setting `voice_public_summary`) and the room is for every local user (the `local`
+  visibility); `description` and `host` then come too while the room is open. The
+  participants are never shown.
+type: object
+required: [id, state]
+properties:
+  id:
+    $ref: ./Id.yaml
+  state:
+    description: Whether the room is open or ended.
+    type: string
+    enum: [open, ended]
+  name:
+    description: The name of the room.
+    type: string
+  description:
+    description: The description of the room, empty for none.
+    type: string
+  host:
+    $ref: ./Account.yaml

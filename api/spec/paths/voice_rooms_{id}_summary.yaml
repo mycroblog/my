@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+get:
+  operationId: getVoiceRoomSummary
+  summary: Get the summary of a voice chat room
+  description: |
+    What the page of a room shows to a visitor who does not see the room: whether it is open or
+    ended, and its name, description, and host only when the server shows the summaries of its
+    rooms and the room is for every local user. It needs no sign-in and is the same for every
+    visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+    server.
+  tags: [voice]
+  security: []
+  responses:
+    "200":
+      description: The summary of the room.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomSummary.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
