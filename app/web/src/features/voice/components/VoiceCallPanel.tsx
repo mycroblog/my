@@ -121,7 +121,7 @@ function CallControls({ call, room }: { call: InCall; room: VoiceRoom }) {
               <PlaybackButton controls={controls} />
             </Callout>
           )}
-          <MicrophoneControl controls={controls} withDescription />
+          <MicrophoneControl controls={controls} withDescription withErrors />
         </>
       )}
       <Cluster gap="2" align="center">

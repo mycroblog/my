@@ -27,8 +27,8 @@ export function callPhaseText(t: ReturnType<typeof useT>, controls: VoiceCallCon
   return t(phaseLabels[controls.phase]);
 }
 
-/** The microphone switch of a speaker, with why it could not turn on. */
-export function MicrophoneControl({ controls, withDescription }: { controls: VoiceCallControls; withDescription: boolean }) {
+/** The microphone switch of a speaker; with `withErrors`, why it could not turn on (otherwise CallErrors says it). */
+export function MicrophoneControl({ controls, withDescription, withErrors }: { controls: VoiceCallControls; withDescription: boolean; withErrors: boolean }) {
   const t = useT();
   if (!controls.isSpeaker) return null;
   return (
@@ -41,6 +41,16 @@ export function MicrophoneControl({ controls, withDescription }: { controls: Voi
       >
         {t("client:voice.call.microphone")}
       </Switch>
+      {withErrors && <MicrophoneErrors controls={controls} />}
+    </>
+  );
+}
+
+/** Why the microphone could not turn on: the browser's refusal, or the server's. */
+function MicrophoneErrors({ controls }: { controls: VoiceCallControls }) {
+  const t = useT();
+  return (
+    <>
       {controls.micError !== undefined && (
         <InlineError size="inherit" alert>
           {t(micErrors[controls.micError])}
@@ -49,6 +59,22 @@ export function MicrophoneControl({ controls, withDescription }: { controls: Voi
       {controls.micRefused !== undefined && (
         <InlineError size="inherit" alert>
           {t("client:voice.call.action_failed", { reason: controls.micRefused })}
+        </InlineError>
+      )}
+    </>
+  );
+}
+
+/** What failed in the call (the microphone, leaving), for the notice of the call bar; null for nothing. */
+export function CallErrors({ controls }: { controls: VoiceCallControls }) {
+  const t = useT();
+  if (controls.micError === undefined && controls.micRefused === undefined && controls.leaveError === undefined) return null;
+  return (
+    <>
+      {controls.isSpeaker && <MicrophoneErrors controls={controls} />}
+      {controls.leaveError !== undefined && (
+        <InlineError size="inherit" alert>
+          {t("client:voice.call.leave_failed", { reason: controls.leaveError })}
         </InlineError>
       )}
     </>
@@ -67,7 +93,7 @@ export function PlaybackButton({ controls }: { controls: VoiceCallControls }) {
 }
 
 /** The leave button and its dialog: the host of a room with others in it hands it over or ends it (ADR-0100 §6). */
-export function LeaveCallButton({ controls }: { controls: VoiceCallControls }) {
+export function LeaveCallButton({ controls, withError = true }: { controls: VoiceCallControls; withError?: boolean }) {
   const t = useT();
   const [asking, setAsking] = useState(false);
   return (
@@ -82,7 +108,7 @@ export function LeaveCallButton({ controls }: { controls: VoiceCallControls }) {
       >
         {t("client:voice.call.leave")}
       </Button>
-      {controls.leaveError !== undefined && !asking && (
+      {withError && controls.leaveError !== undefined && !asking && (
         <InlineError size="inherit" alert>
           {t("client:voice.call.leave_failed", { reason: controls.leaveError })}
         </InlineError>

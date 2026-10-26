@@ -56,7 +56,7 @@ export function App({ config, locale, queryClient, api, session, leaveApp, maint
               <AnnouncerProvider>
                 <Toasts>
                   <UpdatePrompt />
-                  <VoiceCallProvider>
+                  <VoiceCallProvider maintenance={maintenance}>
                     <AutoplayContext value={autoplay}>
                       <ExternalLinks>
                         <AriaRouterProvider navigate={navigate}>

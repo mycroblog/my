@@ -5,11 +5,10 @@
 // button that plays the sound the browser blocked, and leaving (with the host's choice). It is a region named
 // "Voice chat call", after the page's content in the focus order.
 import { CallBar, Link, ShellDock } from "@my/ui";
-import { useLocation } from "@tanstack/react-router";
 import { useT } from "../../../lib/i18n";
 import { voiceRoomPath } from "../api/voice";
-import { useVoiceCallControls } from "../hooks/useVoiceCallControls";
-import { callPhaseText, LeaveCallButton, MicrophoneControl, PlaybackButton } from "./VoiceCallParts";
+import { useVoiceCallBar } from "../hooks/useVoiceCallControls";
+import { CallErrors, callPhaseText, LeaveCallButton, MicrophoneControl, PlaybackButton } from "./VoiceCallParts";
 
 export type VoiceCallBarProps = {
   /** Whether the page has the bottom tab bar below md (the app's frame), not the admin frame. */
@@ -18,10 +17,8 @@ export type VoiceCallBarProps = {
 
 export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
   const t = useT();
-  const controls = useVoiceCallControls();
-  const pathname = useLocation({ select: (location) => location.pathname });
-  // The room's page has the call's controls itself.
-  if (controls === null || pathname === voiceRoomPath(controls.room.id)) return null;
+  const controls = useVoiceCallBar();
+  if (controls === null) return null;
   return (
     <ShellDock clearsTabBar={clearsTabBar}>
       <CallBar
@@ -32,10 +29,11 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
           </Link>
         }
         status={callPhaseText(t, controls)}
+        notice={<CallErrors controls={controls} />}
       >
         <PlaybackButton controls={controls} />
-        <MicrophoneControl controls={controls} withDescription={false} />
-        <LeaveCallButton controls={controls} />
+        <MicrophoneControl controls={controls} withDescription={false} withErrors={false} />
+        <LeaveCallButton controls={controls} withError={false} />
       </CallBar>
     </ShellDock>
   );

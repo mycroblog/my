@@ -5,11 +5,11 @@
 // reactions, and raised hands of the participants show; a user who becomes a speaker turns the microphone on, and a
 // host's mute turns it off; leaving asks the host for the next host; the host's menu operates on a participant; and
 // the end of the room stays on the page.
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { instanceFixture, otherAccountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
-import { apiBase, signedInHandler, withViewer } from "../../test/msw/http";
+import { apiBase, oauthPaths, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { FakeAudioContext, FakePeerConnection, FakeStream, resetFakeRtc, sdpDirections } from "./test/fakeRtc";
@@ -282,6 +282,54 @@ describe("the call across pages", () => {
       expect(screen.queryByRole("region", { name: "Voice chat call" })).not.toBeInTheDocument();
     });
     expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(true);
+  });
+});
+
+describe("the end of the call with the app", () => {
+  test("signing out leaves the room before the token is revoked", async () => {
+    const { room, joined, live } = bobsRoom();
+    const srv = serve(room, joined);
+    server.use(
+      http.post(oauthPaths.revoke, () => {
+        srv.requests.push({ method: "POST", path: "revoke", body: undefined });
+        return new HttpResponse(null, { status: 200 });
+      }),
+    );
+    const { user, session } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+    srv.send("state", live);
+    await act(() => session.signOut());
+    const order = srv.requests.map((r) => `${r.method} ${r.path}`);
+    const left = order.indexOf(`DELETE /voice/rooms/${roomId}/participation`);
+    expect(left).toBeGreaterThanOrEqual(0);
+    expect(left).toBeLessThan(order.indexOf("POST revoke"));
+    expect(FakePeerConnection.all.every((pc) => pc.closed)).toBe(true);
+  });
+
+  test("the maintenance screen, which replaces the pages, ends the call", async () => {
+    const { room, joined, live } = bobsRoom();
+    const srv = serve(room, joined);
+    const { user, api } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+    srv.send("state", live);
+    let maintenance = false;
+    server.use(
+      http.all("*", async ({ request }) => {
+        if (!maintenance || !new URL(request.url).pathname.startsWith("/api/")) return undefined;
+        if (request.method === "DELETE") srv.requests.push({ method: "DELETE", path: new URL(request.url).pathname.slice(apiBase.length), body: undefined });
+        await Promise.resolve();
+        return HttpResponse.json({ type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503 }, { status: 503, headers: { "Content-Type": "application/problem+json", "Retry-After": "600" } });
+      }),
+    );
+    maintenance = true;
+    await act(() => api.fetch.GET("/instance").catch(() => undefined));
+    expect(await screen.findByRole("heading", { level: 1, name: "Under maintenance" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(true);
+    });
+    expect(FakePeerConnection.all.every((pc) => pc.closed)).toBe(true);
   });
 });
 

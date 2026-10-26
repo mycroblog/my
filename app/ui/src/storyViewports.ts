@@ -9,6 +9,7 @@
 const shellViewports = {
   phone: { name: "Phone, below md: the tab bar", styles: { width: "360px", height: "640px" }, type: "mobile" },
   short: { name: "Short screen (short:): the smaller tab bar", styles: { width: "568px", height: "320px" }, type: "mobile" },
+  zoomed: { name: "400% zoom (short:): 320 × 225 CSS px", styles: { width: "320px", height: "225px" }, type: "mobile" },
   tablet: { name: "Tablet, md: the rail", styles: { width: "800px", height: "640px" }, type: "tablet" },
   laptop: { name: "Laptop, lg: the sidebar", styles: { width: "1100px", height: "720px" }, type: "desktop" },
   desktop: { name: "Desktop, xl: the third column", styles: { width: "1400px", height: "800px" }, type: "desktop" },

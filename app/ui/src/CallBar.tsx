@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The small bar of a voice chat call that the user is in (web-client/09-app-shell.md §9), which stays in view on
-// every page while the call lasts: the room's name (a link back to its page) with the call's state, and its controls
-// (the microphone, leaving). It is a region named by `label`, so that assistive technology lists it with the
-// landmarks. Place it at the end of the page in the shell's `ShellDock`, which keeps it at the bottom edge of the
-// screen, clear of the tab bar and the floating new-post button.
-import type { ReactNode } from "react";
+// every page while the call lasts: the room's name (a link back to its page) with the call's state, its controls
+// (the microphone, leaving), and a notice of what failed. It is a region named by `label`, so that assistive
+// technology lists it with the landmarks. Place it at the end of the page in the shell's `ShellDock`, which keeps it
+// at the bottom edge of the screen, clear of the tab bar and the floating new-post button.
+//
+// While it shows, its height is the `--call-bar-block-size` of the document (ResizeObserver), from which the app's
+// stylesheet keeps focused elements clear of it (scroll-padding): the bar wraps on narrow screens, and the notice
+// adds a row.
+import { type ReactNode, useEffect, useRef } from "react";
 import { tv } from "tailwind-variants";
 
 const callBar = tv({
@@ -15,6 +19,7 @@ const callBar = tv({
     title: "min-w-0 truncate font-bold",
     status: "text-sm text-fg-muted",
     actions: "flex flex-wrap items-center gap-2",
+    notice: "basis-full",
   },
 });
 
@@ -27,17 +32,40 @@ export type CallBarProps = {
   status?: ReactNode;
   /** The controls: the microphone switch, the leave button. */
   children: ReactNode;
+  /** What failed (the microphone, leaving), on a row of its own; nothing for none. */
+  notice?: ReactNode;
 };
 
-export function CallBar({ label, title, status, children }: CallBarProps) {
+/** The custom property with the bar's height, for the app's scroll-padding. */
+const blockSizeProperty = "--call-bar-block-size";
+
+export function CallBar({ label, title, status, children, notice }: CallBarProps) {
   const styles = callBar();
+  const ref = useRef<HTMLElement>(null);
+  // The bar's height is an external fact that the document's stylesheet needs (react.dev, "Synchronizing with Effects").
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const root = document.documentElement;
+    const write = () => {
+      root.style.setProperty(blockSizeProperty, `${String(element.getBoundingClientRect().height)}px`);
+    };
+    write();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(write) : null;
+    observer?.observe(element);
+    return () => {
+      observer?.disconnect();
+      root.style.removeProperty(blockSizeProperty);
+    };
+  }, []);
   return (
-    <section aria-label={label} data-call-bar="" className={styles.base()}>
+    <section ref={ref} aria-label={label} data-call-bar="" className={styles.base()}>
       <div className={styles.heading()}>
         <div className={styles.title()}>{title}</div>
         {status !== undefined && <div className={styles.status()}>{status}</div>}
       </div>
       <div className={styles.actions()}>{children}</div>
+      {notice !== undefined && notice !== null && notice !== false && <div className={styles.notice()}>{notice}</div>}
     </section>
   );
 }

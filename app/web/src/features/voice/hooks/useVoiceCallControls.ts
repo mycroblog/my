@@ -2,11 +2,14 @@
 // The controls that the room's page and the call bar share (ADR-0100 §5, §6; ADR-0101 §7): the call's state, the
 // microphone (only a speaker has it; the browser's refusal says why), the sound that the browser blocked, and leaving,
 // where the host of a room with others in it gives the next host or ends the room. Null while there is no call.
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { useState } from "react";
+import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useViewer } from "../../session";
 import type { VoiceLeaveChoice } from "../api/call";
-import type { VoiceRoom, VoiceRoomParticipant } from "../api/voice";
+import { type VoiceRoom, type VoiceRoomParticipant, voiceRoomPath, voiceRoomQueryOptions } from "../api/voice";
 import { useVoiceCallState } from "./useVoiceCallProvider";
 import type { VoiceCallSnapshot, VoiceMicError } from "./voiceCall";
 
@@ -73,4 +76,25 @@ export function useVoiceCallControls(): VoiceCallControls | null {
     leaveError: state.leaveError,
     resetLeave: state.resetLeave,
   };
+}
+
+/** A path without its trailing slashes, as the router matches it. */
+function normalizedPath(pathname: string): string {
+  return pathname.length > 1 ? pathname.replace(/\/+$/u, "") : pathname;
+}
+
+/**
+ * The call bar's controls, or null while there is no call or the page shows the call itself: the room's page of
+ * the call, when it shows the room (not its summary or an error), has the call's controls.
+ */
+export function useVoiceCallBar(): VoiceCallControls | null {
+  const api = useApi();
+  const controls = useVoiceCallControls();
+  const roomId = controls?.room.id ?? "";
+  const pathname = useLocation({ select: (location) => normalizedPath(location.pathname) });
+  // Only what the page has read: the room's page shows the call while it has the room.
+  const pageRoom = useQuery({ ...voiceRoomQueryOptions(api, roomId), enabled: false });
+  if (controls === null) return null;
+  if (pathname === voiceRoomPath(roomId) && pageRoom.data !== undefined) return null;
+  return controls;
 }

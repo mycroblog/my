@@ -27,7 +27,7 @@ import { PageHeading } from "./PageHeading";
 import { ServerNameLink } from "./ServerNameLink";
 import { atViewport, shellParameters } from "./storyViewports";
 import { Switch } from "./Switch";
-import { Hint, Text } from "./Text";
+import { Hint, InlineError, Text } from "./Text";
 
 type Labels = { home: string; local: string; federated: string; notifications: string; search: string; profile: string; bookmarks: string; settings: string };
 
@@ -156,8 +156,8 @@ function SamplePage() {
   );
 }
 
-/** A short page with the bar of a call docked at its end. */
-function SamplePageInCall() {
+/** A short page with the bar of a call docked at its end, with a notice of what failed when `failed`. */
+function SamplePageInCall({ failed = false }: { failed?: boolean }) {
   return (
     <>
       <SamplePage />
@@ -170,6 +170,7 @@ function SamplePageInCall() {
             </Link>
           }
           status="Connected"
+          notice={failed ? <InlineError alert>No microphone was found. Connect one, then try again.</InlineError> : undefined}
         >
           <Switch defaultSelected>Microphone</Switch>
           <Button variant="danger">Leave</Button>
@@ -247,6 +248,25 @@ export const PhoneInCall: Story = {
     await expect(bar).toBeVisible();
     // The bar is part of the page, after its content in the focus order.
     await expect(canvas.getByRole("main")).toContainElement(bar);
+  },
+};
+
+/**
+ * A short screen in a call (320 × 225 at 400% zoom) with a failure: the bar does not stick but ends the page, so that
+ * what is fixed (the tab bar and the floating button) stays within half the screen's height.
+ */
+export const ShortScreenInCall: Story = {
+  globals: atViewport("zoomed"),
+  args: { children: <SamplePageInCall failed />, floating: floatingButton, floatingVisible: true },
+  play: async ({ canvas }) => {
+    const bar = canvas.getByRole("region", { name: "Voice chat call" });
+    await expect(canvas.getByRole("alert")).toHaveTextContent("No microphone was found.");
+    const dock = bar.parentElement;
+    if (dock === null) throw new Error("no dock");
+    await expect(getComputedStyle(dock).position).toBe("static");
+    const nav = canvas.getByRole("navigation", { name: "Main" });
+    const fab = canvas.getByRole("button", { name: "New post" });
+    await expect(nav.getBoundingClientRect().height + fab.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight / 2);
   },
 };
 

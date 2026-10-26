@@ -97,12 +97,13 @@ export function AppShell({ navigation, children, skipLinkLabel, mainId = "main",
 const shellDock = tv({
   base: "sticky z-10",
   variants: {
-    // Below md the dock sits 1rem above the tab bar (as the floating button does), or 0.5rem above its smaller form on
-    // short screens; from md 1rem above the bottom edge. While the floating new-post button shows, the dock leaves its
-    // end corner to the button (4rem), up to xl, where nothing floats.
+    // Below md the dock sits 1rem above the tab bar (as the floating button does); from md 1rem above the bottom edge.
+    // On short screens (a phone in landscape, 400% zoom) it does not stick: it ends the page and scrolls with it, as
+    // the offline bar does, so that what is fixed stays within half the screen's height (WCAG 1.4.10). While the
+    // floating new-post button shows, the dock leaves its end corner to the button (4rem), up to xl, where nothing floats.
     clearsTabBar: {
       true: [
-        "bottom-[calc(5rem+env(safe-area-inset-bottom))] short:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-[max(1rem,env(safe-area-inset-bottom))]",
+        "bottom-[calc(5rem+env(safe-area-inset-bottom))] short:static md:bottom-[max(1rem,env(safe-area-inset-bottom))]",
         "with-compose-fab:me-16 xl:with-compose-fab:me-0",
       ],
       false: "bottom-[max(1rem,env(safe-area-inset-bottom))]",

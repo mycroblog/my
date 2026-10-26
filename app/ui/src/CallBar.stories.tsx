@@ -7,6 +7,7 @@ import { Button } from "./Button";
 import { CallBar } from "./CallBar";
 import { Link } from "./Link";
 import { Switch } from "./Switch";
+import { InlineError } from "./Text";
 
 const meta = {
   title: "Voice/CallBar",
@@ -44,6 +45,14 @@ export const Listener: Story = {
   args: {
     status: "Reconnecting…",
     children: <Button variant="danger">Leave</Button>,
+  },
+};
+
+/** What failed shows on a row of its own. */
+export const WithNotice: Story = {
+  args: { notice: <InlineError alert>No microphone was found. Connect one, then try again.</InlineError> },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("alert")).toHaveTextContent("No microphone was found.");
   },
 };
 
