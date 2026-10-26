@@ -38,7 +38,7 @@ func TestVoiceTransportContract(t *testing.T) {
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()
 				defer hb.mu.Unlock()
-				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef(s))
+				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef{ID: s.ID, AccountID: s.AccountID})
 			},
 		}
 	})
@@ -174,7 +174,7 @@ func TestVoiceTransportContractWithCoturn(t *testing.T) {
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()
 				defer hb.mu.Unlock()
-				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef(s))
+				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef{ID: s.ID, AccountID: s.AccountID})
 			},
 		}
 	})

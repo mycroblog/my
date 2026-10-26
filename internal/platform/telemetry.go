@@ -82,6 +82,8 @@ const (
 	surfaceAdmin       = "admin"
 	// surfacePayments is the endpoint that the payment provider calls (ADR-0074 §3).
 	surfacePayments = "payments"
+	// surfaceVoice is the endpoints that the media servers of the voice chat call (ADR-0102 §4).
+	surfaceVoice = "voice"
 )
 
 // routeOther is the http.route of a request that no route pattern matched.

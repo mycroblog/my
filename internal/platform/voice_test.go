@@ -4,8 +4,13 @@ package platform_test
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -150,7 +155,7 @@ func TestAppVoice(t *testing.T) {
 // TestVoiceRoomsThroughAPI drives the rooms of voice = p2p on SQLite through the client API
 // (ADR-0100 §2, §5, §6): the administrator, whose role has start_voice_rooms, opens a room; a
 // user without the permission may not, but joins it, sends a heartbeat, and sees it in the list;
-// the host leaves only with a choice; and the room ends. voice = livekit has no transport yet.
+// the host leaves only with a choice; and the room ends.
 func TestVoiceRoomsThroughAPI(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{
@@ -192,12 +197,73 @@ func TestVoiceRoomsThroughAPI(t *testing.T) {
 	e.want(e.do(http.MethodDelete, room, alice.token, nil, nil), http.StatusNoContent, "end")
 	e.want(e.do(http.MethodGet, room, bob, nil, nil), http.StatusNotFound, "get after the end")
 
-	sfu := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "livekit", "MY_VOICE_LIVEKIT_URL": "wss://livekit.example.org",
-		"MY_VOICE_LIVEKIT_API_KEY": "key", "MY_VOICE_LIVEKIT_API_SECRET": "secret",
+	// The endpoint of LiveKit's events answers 404 with voice = p2p.
+	if code := postWebhook(t, app.Handler(), "", []byte("{}")); code != http.StatusNotFound {
+		t.Errorf("LiveKit webhook with voice = p2p = %d, want 404", code)
+	}
+}
+
+// postWebhook posts body to the endpoint of LiveKit's events with the Authorization header auth
+// and returns the status.
+func postWebhook(t *testing.T, h http.Handler, auth string, body []byte) int {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/voice/webhooks/livekit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/webhook+json")
+	if auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	return rec.Code
+}
+
+// liveKitWebhookToken signs a token of LiveKit's webhooks for body: HS256 with secret, the API
+// key in iss, and the base64 SHA-256 of body in sha256.
+func liveKitWebhookToken(key, secret string, body []byte) string {
+	enc := base64.RawURLEncoding
+	sum := sha256.Sum256(body)
+	now := time.Now()
+	claims, _ := json.Marshal(map[string]any{
+		"iss": key, "nbf": now.Unix(), "exp": now.Add(5 * time.Minute).Unix(), "sha256": base64.StdEncoding.EncodeToString(sum[:]),
 	})
-	if _, err := platform.NewApp(t.Context(), sfu, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)}); err == nil || !strings.Contains(err.Error(), "no transport") {
-		t.Errorf("NewApp with voice = livekit: %v, want no transport", err)
+	signing := enc.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`)) + "." + enc.EncodeToString(claims)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(signing))
+	return signing + "." + enc.EncodeToString(mac.Sum(nil))
+}
+
+// TestVoiceLiveKit starts the server with voice = livekit and checks the endpoint of LiveKit's
+// events (ADR-0102 §4): a delivery signed with the API secret is accepted, and one that does not
+// verify, such as a tampered body, is refused.
+func TestVoiceLiveKit(t *testing.T) {
+	t.Parallel()
+	const key, secret = "APIkey", "a-secret-of-the-livekit-api-key"
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "livekit", "MY_VOICE_LIVEKIT_URL": "wss://livekit.example.org",
+		"MY_VOICE_LIVEKIT_API_KEY": key, "MY_VOICE_LIVEKIT_API_SECRET": secret,
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	if !app.VoiceRooms.Enabled() {
+		t.Fatal("voice = livekit is not enabled")
+	}
+	body := []byte(`{"event":"participant_left","id":"EV_1","createdAt":"1793000000","room":{"name":"room-1"},"participant":{"identity":"session-1"}}`)
+	token := liveKitWebhookToken(key, secret, body)
+	if code := postWebhook(t, app.Handler(), token, body); code != http.StatusNoContent {
+		t.Errorf("signed delivery = %d, want 204", code)
+	}
+	tampered := bytes.Replace(body, []byte("session-1"), []byte("session-2"), 1)
+	if code := postWebhook(t, app.Handler(), token, tampered); code != http.StatusBadRequest {
+		t.Errorf("tampered delivery = %d, want 400", code)
+	}
+	if code := postWebhook(t, app.Handler(), liveKitWebhookToken(key, "another secret", body), body); code != http.StatusBadRequest {
+		t.Errorf("delivery signed with another secret = %d, want 400", code)
+	}
+	if code := postWebhook(t, app.Handler(), "", body); code != http.StatusBadRequest {
+		t.Errorf("unsigned delivery = %d, want 400", code)
 	}
 }
 

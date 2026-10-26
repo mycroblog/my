@@ -17,6 +17,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments_provider = stripe` |
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments_provider = payjp` |
+| `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics and of the traces | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp` |
 
 Leave out the database that the instance does not use, but keep at least one of `no_sqlite` and `no_postgres` off:
@@ -49,7 +50,7 @@ and fails when `cmd/my` still depends on a package that a tag of the set leaves 
 | --- | --- |
 | `no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
 | `no_sqlite,no_valkey,no_pubsub,no_otel,no_billing_gcp,no_payments_payjp` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, and the Stripe payments |
-| `no_sqlite,no_valkey,no_sns,no_ses,no_billing_aws` | Google Cloud: PostgreSQL and the Pub/Sub broker |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL and the Pub/Sub broker, without the LiveKit voice chat |
 
 `scripts/go-build-tags.sh SET...` checks other sets. The tests (`scripts/task.sh go:test`) run without tags, on every adapter.
 
