@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+  - $ref: ../components/parameters/VoiceAccountId.yaml
+delete:
+  operationId: dismissVoiceHand
+  summary: Dismiss the raised hand of a participant of a voice chat room
+  description: |
+    Turns down a participant's request to speak, by the host or a co-host. A hand that is down
+    stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room with the participant's hand down.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

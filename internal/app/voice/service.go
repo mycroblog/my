@@ -96,26 +96,31 @@ type Deps struct {
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
 	Heartbeats *Heartbeats
+	// RateLimiter bounds the invitations (InvitationLimit) and the deliveries of a media server's
+	// events (MediaWebhookIPLimit); without one, the Service keeps the counters in the
+	// KeyValueStore of Heartbeats.
+	RateLimiter *kernel.RateLimiter
 	// Transport carries the audio of the rooms of Config.Transport; nil when the voice chat
 	// is off.
 	Transport Transport
 	Members   Members
 	Relations Relations
 	Config    Config
-	// RateLimiter applies MediaWebhookIPLimit to the deliveries of a media server's events;
-	// nil applies none.
-	RateLimiter *kernel.RateLimiter
-	Logger      *slog.Logger
+	Logger    *slog.Logger
 }
 
 // Service runs the rooms (ADR-0100): opening them, their settings, joining and leaving them,
-// the heartbeats of the participants, the hosts, and the ends of the rooms.
+// the heartbeats of the participants, the hosts, the operations of the participants, the
+// host, and the co-hosts, the invitations, and the ends of the rooms.
 type Service struct{ d Deps }
 
 // NewService returns the Service on d.
 func NewService(d Deps) *Service {
 	if d.Logger == nil {
 		d.Logger = slog.New(slog.DiscardHandler)
+	}
+	if d.RateLimiter == nil && d.Heartbeats != nil {
+		d.RateLimiter = kernel.NewRateLimiter(d.Heartbeats.kv, d.Clock)
 	}
 	return &Service{d: d}
 }

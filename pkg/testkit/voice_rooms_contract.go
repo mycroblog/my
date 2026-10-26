@@ -6,9 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -22,8 +22,10 @@ import (
 // ADR-0101 §2, §6) on a database adapter: opening a room, joining, moving, replacing a session,
 // leaving with the choice of the host, handing over, the expiry of the heartbeats and the grace
 // of the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
-// visibility and the order of the list, the reaction to suspensions and lost eligibility, and,
-// on a media server, the reconciliation of voice.sweep and the events of voice.media_event
+// visibility and the order of the list, the reaction to suspensions and lost eligibility, the
+// operations of the participants, the host, and the co-hosts with their permissions, the
+// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), and, on a
+// media server, the reconciliation of voice.sweep and the events of voice.media_event
 // (ADR-0102 §4).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
@@ -42,6 +44,13 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"ListsVisibleRooms", roomsList, ""},
 		{"ReactsToSuspensions", roomsSuspension, ""},
 		{"ReconcilesTheMediaPath", roomsMedia, voice.TransportLiveKit},
+		{"SpeaksAndRaisesHands", roomsSpeaking, ""},
+		{"MutesAndRemoves", roomsRemove, ""},
+		{"AssignsCohosts", roomsCohosts, ""},
+		{"Invites", roomsInvitations, ""},
+		{"LimitsInvitations", roomsInvitationLimit, ""},
+		{"ReactsToBlocks", roomsBlocks, ""},
+		{"DecidesInTheTransaction", roomsRaces, ""},
 		{"SerializesConcurrentCommands", roomsConcurrent, ""},
 		{"FailsWithoutAGrant", roomsNoGrant, ""},
 	}
@@ -67,6 +76,45 @@ type roomsMembers struct {
 	follows  map[[2]string]bool
 	blocks   map[[2]string]bool
 	everyone bool
+	// calls counts the calls of Follows and Blocked by name; hooks run once, outside the lock,
+	// when a call reaches their count, to commit a change between the reads of a command and
+	// its transaction.
+	calls map[string]int
+	hooks map[string]roomsHook
+}
+
+type roomsHook struct {
+	at int
+	fn func()
+}
+
+// after runs fn once, when the call of name (follows, blocked) n calls from now starts.
+func (m *roomsMembers) after(name string, n int, fn func()) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.calls == nil {
+		m.calls, m.hooks = map[string]int{}, map[string]roomsHook{}
+	}
+	m.hooks[name] = roomsHook{at: m.calls[name] + n, fn: fn}
+}
+
+// fire counts a call of name and runs its hook when it is due.
+func (m *roomsMembers) fire(name string) {
+	m.mu.Lock()
+	if m.calls == nil {
+		m.mu.Unlock()
+		return
+	}
+	m.calls[name]++
+	h, ok := m.hooks[name]
+	due := ok && m.calls[name] == h.at
+	if due {
+		delete(m.hooks, name)
+	}
+	m.mu.Unlock()
+	if due {
+		h.fn()
+	}
 }
 
 func (m *roomsMembers) Member(_ context.Context, id string) (appvoice.Member, error) {
@@ -82,12 +130,14 @@ func (m *roomsMembers) EveryoneStarts(context.Context) (bool, error) {
 }
 
 func (m *roomsMembers) Follows(_ context.Context, a, b string) (bool, error) {
+	m.fire("follows")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.follows[[2]string{a, b}], nil
 }
 
 func (m *roomsMembers) Blocked(_ context.Context, a, b string) (bool, error) {
+	m.fire("blocked")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.blocks[[2]string{a, b}] || m.blocks[[2]string{b, a}], nil
@@ -207,10 +257,13 @@ func (r *roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice
 	return appvoice.Grant{Kind: "test", Token: s.ID, ExpiresAt: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 }
 func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) (bool, error) {
-	r.add(fmt.Sprintf("speak:%s:%t", s.ID, canSpeak))
+	r.add("speak:" + s.ID + ":" + strconv.FormatBool(canSpeak))
 	return false, nil
 }
-func (*roomsTransport) Mute(context.Context, appvoice.RoomRef, appvoice.Session) error   { return nil }
+func (r *roomsTransport) Mute(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
+	r.add("mute:" + s.ID)
+	return nil
+}
 func (*roomsTransport) Unmute(context.Context, appvoice.RoomRef, appvoice.Session) error { return nil }
 func (r *roomsTransport) Remove(_ context.Context, room appvoice.RoomRef, s appvoice.Session) error {
 	r.add("remove:" + s.ID)

@@ -24,6 +24,8 @@ type fakeVoiceRooms struct {
 	beats    []string
 	handover []string
 	queries  []appvoice.ListQuery
+	ops      []string
+	limits   []int
 }
 
 func (f *fakeVoiceRooms) room() appvoice.RoomView {

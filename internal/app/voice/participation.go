@@ -164,6 +164,10 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	if capacity > 0 && len(v.Participants) >= capacity {
 		return Joined{}, ErrRoomFull
 	}
+	blocks, err := s.readBlocks(ctx, v, accountID)
+	if err != nil {
+		return Joined{}, err
+	}
 	now := s.now()
 	part := Participation{ID: s.d.IDs.NewID(), RoomID: roomID, AccountID: accountID, JoinedAt: now}
 	session := newSessionID()
@@ -176,6 +180,19 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	}
 	err = s.roomTx(ctx, locked, func(tx uow.Tx, rec RoomRecord) error {
 		if rec.Head.State != voice.StateOpen {
+			return ErrNotFound
+		}
+		// A block with the host or a co-host, or a ban, that committed after the visibility
+		// was read keeps the account out (ADR-0100 §4).
+		blocked, err := s.guardTx(ctx, tx, rec, accountID, blocks)
+		if err != nil {
+			return err
+		}
+		banned, err := s.d.Repository.Banned(ctx, tx, roomID, accountID)
+		if err != nil {
+			return err
+		}
+		if blocked || banned {
 			return ErrNotFound
 		}
 		if capacity > 0 {

@@ -247,6 +247,9 @@ type Repository interface {
 	FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (Participant, error)
 	// FindInvitation returns the invitation of an account to a room; ErrNotFound without one.
 	FindInvitation(ctx context.Context, tx uow.Tx, roomID, accountID string) (InvitationRecord, error)
+	// Invitations returns at most limit invitations of a room that were not revoked, in the
+	// order they were made, after the invitation afterID unless it is "".
+	Invitations(ctx context.Context, tx uow.Tx, roomID, afterID string, limit int) ([]Invitation, error)
 	// Banned reports whether an account is banned from a room.
 	Banned(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error)
 	// SpeakGranted reports whether the newest speak grant of an account in a room is granted.

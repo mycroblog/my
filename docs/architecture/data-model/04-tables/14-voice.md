@@ -25,6 +25,7 @@
 
 - コマンドはイベントの行を書いてから、同じトランザクションでドメインイベント（`voice.room_opened`・`voice.room_revised`・`voice.host_changed`・`voice.cohost_changed`・`voice.participation_started`・`voice.participation_ended`・`voice.role_changed`・`voice.hand_raise_changed`・`voice.room_ended`）を発行します。
   `voice` の projector は、そのイベントが触れるルームの `voice_room_heads` の行と、アカウントの `voice_room_participants` の行を、再構築と同じ規則の SQL で作り直します（同期）。
+  投影に効かない変化（発話の許可と取り消し・招待・招待の取り消し・禁止）も、行を書いてから `voice.speak_grant_changed`・`voice.invited`・`voice.invitation_revoked`・`voice.banned` を発行します。これらを読む projector はありません（他のモジュールの購読のため）。
 - `voice_room_heads` は、ルームの最新の版（`id` の最も大きい行）と最新のホストの交代、終了があれば `ended`、開いたルームなら終わっていない参加の数です。終わったルームの数は 0 です。
 - `voice_room_participants` は、終わっていないルームの、終わっていない参加ごとの行です（`voice_room_endings` のあるルームの行は持ちません）。役割は参加の最新の役割の変化（なければ `listener`）、挙手はその参加の最新の挙手の変化が `raised` かどうかです。
   共同ホストは、その参加が始まった後（`id` がその参加より大きい）の、そのルームでのそのアカウントの最新の共同ホストの変化が `assigned` で、そのアカウントがいまのホスト（最新の `voice_room_host_changes`）でないとき、その行の `id` です（指名の順はこの `id` の順）。

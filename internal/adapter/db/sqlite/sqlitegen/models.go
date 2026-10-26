@@ -1195,6 +1195,15 @@ type VoiceRoomHostGrace struct {
 	EndsAt int64
 }
 
+type VoiceRoomInvitation struct {
+	ID                 string
+	RoomID             string
+	InviteeAccountID   string
+	Role               string
+	InvitedByAccountID string
+	InvitedAt          int64
+}
+
 type VoiceRoomParticipant struct {
 	AccountID       string
 	RoomID          string
