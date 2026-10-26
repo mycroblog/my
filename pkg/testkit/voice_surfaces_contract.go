@@ -301,4 +301,13 @@ func roomsProfileAndHistory(t *testing.T, e *roomsEnv) {
 	if hosted, _, err := e.svc.History(ctx, listener, "", 10); err != nil || len(hosted) != 0 {
 		t.Errorf("History(listener) = %+v, %v; want none", hosted, err)
 	}
+
+	// A room whose heartbeats expired shows no entry once its evaluation ends it, before
+	// voice.sweep runs: the heartbeats stop, the host's grace begins, and past it the room ends.
+	e.clock.Advance(time.Minute)
+	entry(viewer, speaker)
+	e.clock.Advance(3 * time.Minute)
+	if entry(viewer, speaker) {
+		t.Error("the profile entry shows a room whose host is gone past the grace")
+	}
 }

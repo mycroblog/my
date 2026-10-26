@@ -15,10 +15,12 @@ const voiceRoomID = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70"
 
 // TestVoiceRoomPages checks the shells of the pages of the voice chat rooms (ADR-0100 §9,
 // ADR-0028): an open room that shows its summary carries its name, host, and description in the
-// link preview, an ended one only its name and that it ended, neither is indexed, and a room
-// that shows no summary (voice_public_summary off, a room not for every local user), an unknown
-// one, or a path that is no room is the generic shell with 404. The signed-in viewers' web client
-// loads the room itself, so the shell is the same for every visitor.
+// link preview, an ended one only its name and that it ended, and neither is indexed; a room
+// that shows no summary (voice_public_summary off, a room not for every local user), open or
+// ended, is the generic shell with 200 and no preview of the room, for the web client to show
+// that only the local users join; an unknown room or a path that names none is the generic
+// shell with 404. The signed-in viewers' web client loads the room itself, so the shell is the
+// same for every visitor.
 func TestVoiceRoomPages(t *testing.T) {
 	summaries := map[string]web.VoiceRoomSummary{}
 	mux := previewHandler(t, &fakePreviews{}, web.Options{
@@ -28,20 +30,28 @@ func TestVoiceRoomPages(t *testing.T) {
 		},
 	})
 	generic := get(mux, "/home", nil)
-	hidden := func(path string) {
+	shell := func(path string, status int) {
 		t.Helper()
 		rec := get(mux, path, nil)
-		if rec.Code != http.StatusNotFound || rec.Body.String() != generic.Body.String() || rec.Header().Get("X-Robots-Tag") != "noindex, noarchive" {
-			t.Errorf("GET %s = %d, want 404 with the generic shell", path, rec.Code)
+		if rec.Code != status || rec.Body.String() != generic.Body.String() || rec.Header().Get("X-Robots-Tag") != "noindex, noarchive" {
+			t.Errorf("GET %s = %d, want %d with the generic shell", path, rec.Code, status)
+		}
+		if strings.Contains(rec.Body.String(), "og:title") {
+			t.Errorf("GET %s carries a link preview:\n%s", path, rec.Body)
 		}
 	}
-	// voice_public_summary off, or a room not for every local user: the platform reports no
-	// summary, as for an unknown room.
-	hidden("/voice/" + voiceRoomID)
-	hidden("/voice/not-a-room")
-	hidden("/voice/" + strings.ToUpper(voiceRoomID))
+	// Unknown rooms, and paths that name none (the voice chat off reports none either).
+	shell("/voice/"+voiceRoomID, http.StatusNotFound)
+	shell("/voice/not-a-room", http.StatusNotFound)
+	shell("/voice/"+strings.ToUpper(voiceRoomID), http.StatusNotFound)
 
-	summaries[voiceRoomID] = web.VoiceRoomSummary{Name: "Go talk", Description: "About\nGo", HostName: "Alice"}
+	// A room that shows no summary, open or ended.
+	summaries[voiceRoomID] = web.VoiceRoomSummary{}
+	shell("/voice/"+voiceRoomID, http.StatusOK)
+	summaries[voiceRoomID] = web.VoiceRoomSummary{Ended: true}
+	shell("/voice/"+voiceRoomID, http.StatusOK)
+
+	summaries[voiceRoomID] = web.VoiceRoomSummary{Shown: true, Name: "Go talk", Description: "About\nGo", HostName: "Alice"}
 	rec := get(mux, "/voice/"+voiceRoomID, nil)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET an open room = %d", rec.Code)
@@ -55,7 +65,7 @@ func TestVoiceRoomPages(t *testing.T) {
 		t.Errorf("the page title of an open room is not its preview title:\n%s", rec.Body)
 	}
 
-	summaries[voiceRoomID] = web.VoiceRoomSummary{Name: "Go talk", Ended: true}
+	summaries[voiceRoomID] = web.VoiceRoomSummary{Shown: true, Name: "Go talk", Ended: true}
 	m = metas(t, get(mux, "/voice/"+voiceRoomID, nil).Body.String())
 	if m["og:title"] != "Go talk — this voice chat has ended" || m["og:description"] != "" {
 		t.Errorf("metas of an ended room = %v", m)

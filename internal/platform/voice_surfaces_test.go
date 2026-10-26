@@ -127,19 +127,32 @@ func TestVoiceSurfacesThroughAPI(t *testing.T) {
 	}
 
 	// The summary and the page of the room for the visitors who do not see it.
-	page := func() string {
+	pageOf := func(id string) (int, string) {
 		t.Helper()
-		req := httptest.NewRequest(http.MethodGet, "/voice/"+room, nil)
+		req := httptest.NewRequest(http.MethodGet, "/voice/"+id, nil)
 		req.Header.Set("Accept", "text/html")
 		rec := httptest.NewRecorder()
 		e.h.ServeHTTP(rec, req)
-		return rec.Body.String()
+		return rec.Code, rec.Body.String()
+	}
+	page := func() string {
+		t.Helper()
+		code, body := pageOf(room)
+		if code != http.StatusOK {
+			t.Errorf("the page of an existing room = %d, want 200", code)
+		}
+		return body
+	}
+	if code, _ := pageOf("01a176ce-0000-7000-8000-000000000000"); code != http.StatusNotFound {
+		t.Errorf("the page of an unknown room = %d, want 404", code)
 	}
 	var sum clientapi.VoiceRoomSummary
-	sum = clientapi.VoiceRoomSummary{}
 	e.want(e.do(http.MethodGet, "/voice/rooms/"+room+"/summary", "", nil, &sum), http.StatusOK, "summary of the followers' room")
 	if sum.State != clientapi.VoiceRoomSummaryStateOpen || sum.Name != nil || sum.Host != nil {
 		t.Errorf("summary of a room of the followers = %+v, want the state only", sum)
+	}
+	if body := page(); strings.Contains(body, "og:title") {
+		t.Errorf("the page of a room that shows no summary carries a preview:\n%s", body)
 	}
 	e.want(e.do(http.MethodPatch, "/admin/settings", alice.token, map[string]any{"values": map[string]string{"voice_public_summary": "true"}}, nil), http.StatusOK, "show the summaries")
 	sum = clientapi.VoiceRoomSummary{}

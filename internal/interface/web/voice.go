@@ -11,12 +11,13 @@ import (
 
 // This file serves the shell of the page of a voice chat room (/voice/{room_id}, ADR-0100 §9).
 // Like every shell it is the same for every visitor (ADR-0028): a signed-in local user's web
-// client loads the room with its token, and the others see that only the local users join,
-// with the summary of the room from the client API when the instance shows it. The shell
+// client loads the room with its token, and the others see that only the local users join, with
+// a way to sign in, and whether the room ended, from the summary of the client API. The shell
 // carries the link preview of the summary only when the instance shows the summaries of its
-// rooms (voice_public_summary) and the room is for every local user; any other room, an
-// unknown one, and every room while the voice chat is off get the generic shell with 404, which
-// does not reveal which.
+// rooms (voice_public_summary) and the room is for every local user; any other room that exists
+// gets the generic shell (200, never indexed), for the web client to show that notice. An
+// unknown room, an ID that names none, and every room while the voice chat is off get the
+// generic shell with 404. A room ID is not secret: the page shows the notice for any room.
 
 // pathVoicePrefix is the prefix of the pages of the rooms.
 const pathVoicePrefix = "/voice/"
@@ -28,11 +29,13 @@ type VoiceRoomSummary struct {
 	// HostName is the display name of the host, or the username without one.
 	HostName string
 	Ended    bool
+	// Shown reports that the room shows its summary: only then do the other fields have values.
+	Shown bool
 }
 
-// VoiceRooms reads the summaries of the rooms for their pages. Summary returns ok false when the
-// room does not show its summary, is unknown, or the voice chat is off.
-type VoiceRooms func(ctx context.Context, roomID string) (s VoiceRoomSummary, ok bool, err error)
+// VoiceRooms reads the summaries of the rooms for their pages. It returns found false for an
+// unknown room and while the voice chat is off.
+type VoiceRooms func(ctx context.Context, roomID string) (s VoiceRoomSummary, found bool, err error)
 
 // voiceRoomID returns the room of a page of a room, false for any other path.
 func voiceRoomID(p string) (string, bool) {
@@ -43,16 +46,23 @@ func voiceRoomID(p string) (string, bool) {
 	return id, true
 }
 
-// errNoVoiceSummary reports a room whose page shows no summary.
-var errNoVoiceSummary = errors.New("web: the room shows no summary")
+// The pages of the rooms that show no summary.
+var (
+	// errNoVoiceRoom reports an unknown room, an ID that names none, or the voice chat off.
+	errNoVoiceRoom = errors.New("web: no such room")
+	// errNoVoiceSummary reports a room whose page shows no summary.
+	errNoVoiceSummary = errors.New("web: the room shows no summary")
+)
 
 // serveVoiceRoom serves the shell of the page of a room.
 func (h *Handler) serveVoiceRoom(w http.ResponseWriter, r *http.Request, roomID string) {
 	ctx := r.Context()
 	doc, err := h.renderVoiceRoom(ctx, roomID)
 	switch {
-	case errors.Is(err, errNoVoiceSummary):
+	case errors.Is(err, errNoVoiceRoom):
 		h.serveHidden(w, r)
+	case errors.Is(err, errNoVoiceSummary):
+		h.serveShell(w, r)
 	case err != nil:
 		h.fail(w, r, err)
 	default:
@@ -67,13 +77,15 @@ func (h *Handler) serveVoiceRoom(w http.ResponseWriter, r *http.Request, roomID 
 // a room is for the moment it is open.
 func (h *Handler) renderVoiceRoom(ctx context.Context, roomID string) (document, error) {
 	if !uuidPattern.MatchString(roomID) {
-		return document{}, errNoVoiceSummary
+		return document{}, errNoVoiceRoom
 	}
-	s, ok, err := h.o.VoiceRooms(ctx, roomID)
-	if err != nil {
+	s, found, err := h.o.VoiceRooms(ctx, roomID)
+	switch {
+	case err != nil:
 		return document{}, err
-	}
-	if !ok {
+	case !found:
+		return document{}, errNoVoiceRoom
+	case !s.Shown:
 		return document{}, errNoVoiceSummary
 	}
 	lang := h.instanceLocale(ctx)

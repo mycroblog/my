@@ -263,8 +263,8 @@ func (r voiceRelations) Following(ctx context.Context, accountID string, ids []s
 	return out, nil
 }
 
-// voiceRoomSummary returns the summary of a room for the link preview of its page, ok false
-// when the room shows none, is unknown, or the voice chat is off (ADR-0100 §9).
+// voiceRoomSummary returns the summary of a room for the link preview of its page, found false
+// when the room is unknown or the voice chat is off (ADR-0100 §9).
 func (a *App) voiceRoomSummary(ctx context.Context, roomID string) (web.VoiceRoomSummary, bool, error) {
 	if a.voiceAPI() == nil {
 		return web.VoiceRoomSummary{}, false, nil
@@ -273,10 +273,13 @@ func (a *App) voiceRoomSummary(ctx context.Context, roomID string) (web.VoiceRoo
 	if errors.Is(err, appvoice.ErrNotFound) {
 		return web.VoiceRoomSummary{}, false, nil
 	}
-	if err != nil || !s.Shown {
+	if err != nil {
 		return web.VoiceRoomSummary{}, false, err
 	}
-	out := web.VoiceRoomSummary{Name: s.Name, Description: s.Description, Ended: s.Ended}
+	if !s.Shown {
+		return web.VoiceRoomSummary{Ended: s.Ended}, true, nil
+	}
+	out := web.VoiceRoomSummary{Name: s.Name, Description: s.Description, Ended: s.Ended, Shown: true}
 	if s.HostAccountID != "" {
 		act, err := a.Accounts.FindByID(ctx, s.HostAccountID)
 		switch {

@@ -205,6 +205,8 @@ func (s *Service) seesOpened(ctx context.Context, v RoomView, opened voice.Visib
 	if !voice.CanSee(room, viewer, f) {
 		return false, nil
 	}
+	// The facts are those of now; only the visibility is the one the room opened with, so that a
+	// widening after the opening notifies nobody more (ADR-0100 §8) and a narrowing narrows it.
 	room.Visibility = opened
 	return voice.CanSee(room, viewer, f), nil
 }
@@ -225,6 +227,10 @@ func (s *Service) ProfileRoom(ctx context.Context, viewerID, accountID string) (
 	}
 	if p.Role != voice.RoleSpeaker {
 		return RoomView{}, false, nil
+	}
+	// A room whose participants expired and that voice.sweep has not ended yet shows no entry.
+	if err := s.evaluate(ctx, p.RoomID, false); err != nil {
+		return RoomView{}, false, err
 	}
 	v, err := s.visibleRoom(ctx, viewerID, p.RoomID)
 	if errors.Is(err, ErrNotFound) {

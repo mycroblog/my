@@ -5,9 +5,11 @@ package clientapi_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
 	"github.com/mycroblog/my/internal/interface/clientapi"
@@ -63,6 +65,23 @@ func TestVoiceRoomSummary(t *testing.T) {
 	f.summary = &appvoice.Summary{RoomID: voiceRoomID, Ended: true, Shown: true, Name: "Talk"}
 	if s := get(); s.State != clientapi.VoiceRoomSummaryStateEnded || s.Name == nil || *s.Name != "Talk" || s.Description != nil || s.Host != nil {
 		t.Errorf("summary of an ended room = %+v, want the name only", s)
+	}
+}
+
+// TestVoiceRoomSummaryRateLimit checks that the summary, which needs no sign-in, counts against
+// the limit of the client IP like the other anonymous requests.
+func TestVoiceRoomSummaryRateLimit(t *testing.T) {
+	f := &fakeVoiceRooms{summary: &appvoice.Summary{RoomID: voiceRoomID}}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Voice = f
+		o.AnonymousLimit = kernel.Limit{Name: "test.ip", Max: 1, Window: time.Minute}
+	})
+	if res := e.send(t, http.MethodGet, "/voice/rooms/"+voiceRoomID+"/summary", "", ""); res.StatusCode != http.StatusOK ||
+		!strings.HasPrefix(res.Header.Get("RateLimit-Policy"), `"ip";`) {
+		t.Fatalf("first summary = %d, RateLimit-Policy %q", res.StatusCode, res.Header.Get("RateLimit-Policy"))
+	}
+	if res := e.send(t, http.MethodGet, "/voice/rooms/"+voiceRoomID+"/summary", "", ""); res.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("summary over the limit = %d, want 429", res.StatusCode)
 	}
 }
 
