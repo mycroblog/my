@@ -86,39 +86,72 @@ ADR-0100 がこの ADR に任せたもの: 設定 `voice` と `off` の振る舞
 ### 2. 方式のポート（判断基準 3）
 
 `internal/app/voice` に置く。型は標準ライブラリだけで、SDK の型を出さない。adapter は `internal/adapter/voice/<name>`（`p2p`、ADR-C の `livekit`・`sora`、テスト用の `fake`）。契約は `testkit.VoiceTransportContract`。
+形は spike #1347 のレポート（[ポートの形の案](https://github.com/mycroblog/my/issues/1347#issuecomment-6406319607)）の差を吸収するように決める。
 
 ```go
-// Transport carries the audio of the rooms (ADR-0101 §2).
+// Transport carries the audio of the rooms (ADR-0101 §2). The room domain is the source
+// of truth; a transport enforces what it is told and reports what it saw.
 type Transport interface {
-    // Grant returns what the client of a participant session needs to connect to the
-    // media path of a room. canSpeak is whether the session may publish audio now.
+    Capabilities() Capabilities
+    // Open prepares the media path of a room. Idempotent.
+    Open(ctx context.Context, room RoomRef) error
+    // Grant returns what the client of a participant session needs to connect.
+    // canSpeak is whether the session may publish audio now.
     Grant(ctx context.Context, room RoomRef, session Session, canSpeak bool) (Grant, error)
-    // SetSpeaking allows or stops the audio of a session.
-    SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) error
-    // Mute stops the audio of a session once; the participant may turn it on again.
+    // SetSpeaking allows or stops the audio of a session. Reconnect reports that the
+    // client must connect again with a new grant for the change to take effect.
+    SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) (reconnect bool, err error)
+    // Mute stops the audio of a session; Unmute lifts it when the participant turns the
+    // microphone on again.
     Mute(ctx context.Context, room RoomRef, session Session) error
+    Unmute(ctx context.Context, room RoomRef, session Session) error
     // Remove disconnects a session from the media path.
     Remove(ctx context.Context, room RoomRef, session Session) error
-    // Close ends the media path of a room.
+    // Close ends the media path of a room. Idempotent.
     Close(ctx context.Context, room RoomRef) error
+    // Sessions returns the sessions the media path sees now, for reconciliation.
+    Sessions(ctx context.Context, room RoomRef) ([]SessionRef, error)
+}
+
+type Capabilities struct {
+    ServerEnforced  bool // false for p2p: speaking is enforced by the relay and the peers (§4)
+    ConnectCallback bool // the media server asks before every connect (ConnectAuthorizer)
+    Events          bool // the media server sends events (EventSource)
 }
 
 type Grant struct {
-    Kind      string      // "p2p", "livekit", "sora"
-    URL       string      // the SFU endpoint; empty for p2p
-    Token     string      // the SFU access token; empty for p2p
-    ICE       []ICEServer // STUN / TURN servers with short-lived credentials
-    RelayOnly bool        // iceTransportPolicy = "relay"
-    ExpiresAt time.Time   // the client asks for a new grant before this
+    Kind      string            // "p2p", "livekit", "sora"
+    URL       string            // the SFU endpoint; empty for p2p
+    Token     string            // the SFU access token; empty for p2p
+    Options   map[string]string // method-specific options for the client (ADR-C)
+    ICE       []ICEServer       // STUN / TURN servers with short-lived credentials
+    RelayOnly bool              // iceTransportPolicy = "relay"
+    ExpiresAt time.Time         // the client asks for a new grant before this
+}
+
+// ConnectAuthorizer is implemented by a transport whose media server asks before every
+// connect; decide applies the room domain (bans, roles, one room per account).
+type ConnectAuthorizer interface {
+    AuthorizeConnect(ctx context.Context, header http.Header, body []byte, decide func(ConnectAttempt) ConnectDecision) (status int, response []byte, err error)
+}
+
+// EventSource is implemented by a transport whose media server sends events.
+type EventSource interface {
+    // ParseEvents verifies and decodes one delivery of events.
+    ParseEvents(ctx context.Context, header http.Header, body []byte) ([]Event, error)
 }
 ```
 
-- **セッション**: 参加（ADR-0100 の参加の行）ごとに、端末が参加するたびに新しい不透明なセッションの ID を作る。同じアカウントが別の端末で参加すると、セッションが替わり、前のセッションのストリームは `replaced` を受けて閉じる（ADR-0100 §5）。
-  セッションの ID は `KeyValueStore` のハートビートの値のキーで、DB には書かない。
-- **呼び出しの時機**: ポートの呼び出しは外部の I/O になりうるので、トランザクションの中では呼ばない。ルームの変更をコミットしたら、outbox のジョブ `voice.apply`（冪等。キーは（ルーム, 変更のイベント））が `SetSpeaking`・`Mute`・`Remove`・`Close` を呼ぶ（[ADR-0004](0004-job-queue-abstraction.md)）。
-  `Grant` は参加と更新の要求の中で、トランザクションの外で呼ぶ。
-- **P2P の adapter**: `Grant` は §5 の ICE の設定だけを返す。`SetSpeaking`・`Mute`・`Remove`・`Close` はメディアを持たないので何もしない。P2P の強制は §4 のシグナリングの中継と §3 のストリームのイベントが行う。
-- adapter の失敗は `voice.apply` が再試行する。再試行を尽くしたら dead job に残し、ルームの状態（DB）は変えない（ルームのドメインが正で、メディアの経路が後から従う）。
+- **セッション**: 参加（ADR-0100 の参加の行）ごとに、端末が参加するたびに新しい不透明なセッションの ID を作る。同じアカウントが別の端末で参加すると、セッションが替わり、前のセッションのストリームは `replaced` を受けて閉じ、`Remove` で前の接続を切る（ADR-0100 §5）。
+  セッションの ID は `KeyValueStore` のハートビートの値のキーで、DB には書かない。SFU の利用者の識別子にセッションとアカウントのどちらを使うかは ADR-C が決める。
+- **呼び出しの時機**: ポートの呼び出しは外部の I/O になりうるので、トランザクションの中では呼ばない。ルームの変更をコミットしたら、outbox のジョブ `voice.apply`（冪等。キーは（ルーム, 変更のイベント））が `Open`・`SetSpeaking`・`Mute`・`Remove`・`Close` を呼ぶ（[ADR-0004](0004-job-queue-abstraction.md)）。
+  `Grant` は参加と更新の要求の中で、`Unmute` はマイクの操作（§6）の中で、トランザクションの外で呼ぶ。
+- **再接続**: `SetSpeaking` が `reconnect` を返したら（接続の途中で役割を変えられない方式）、`voice.apply` はそのセッションのストリームに新しい `Grant` を `grant` のイベント（`reconnect: true`）で送り、クライアントは入り直す。
+- **照合**: `Sessions` は ADR-0100 §6 の `voice.sweep` が開いたルームごとに呼び、ルームのドメインにいてメディアの経路にいないセッションを退出させ（ハートビートが生きていても）、メディアの経路にいてドメインで退出・禁止のセッションを `Remove` する。
+  イベント（`EventSource`）は照合を早めるだけで、届くことを前提にしない。受け口とイベントの記録は ADR-C が決める。
+- **P2P の adapter**: `Capabilities` はすべて偽。`Grant` は §5 の ICE の設定だけを返す。`Open`・`SetSpeaking`（`reconnect` は偽）・`Mute`・`Unmute`・`Remove`・`Close` はメディアを持たないので何もしない。`Sessions` はハートビートの値を返す。
+  P2P の強制は §4 のシグナリングの中継と §3 のストリームのイベントが行う。
+- adapter の失敗は `voice.apply` が再試行する。再試行を尽くしたら dead job に残し、ルームの状態（DB）は変えない（ルームのドメインが正で、メディアの経路が後から従い、`voice.sweep` の照合が残りを直す）。
 
 ### 3. ルームのストリーム（回答 29、R1）
 
@@ -133,7 +166,7 @@ type Grant struct {
   | `reaction` | `{participant, emoji}` | 全員（送った人とブロックの関係にある人を除く。ADR-0100 §10） |
   | `signal` | `{from, kind, sdp?, candidate?}`（§4） | 宛先のセッション |
   | `muted` | `{by}` | ミュートされたセッション |
-  | `grant` | `Grant`（話せるようになったときなど、方式が新しい資格を要するとき） | そのセッション |
+  | `grant` | `{grant, reconnect}`（話せるようになって方式が入り直しを要するときなど。§2） | そのセッション |
   | `removed` / `replaced` / `ended` | `{reason}`。送った後に閉じる | そのセッション / 全員 |
 
 - 開くと `: connected` と最初の `state` を送り、その後 15 秒ごとに `: heartbeat` のコメント行を送る。ハートビートのたびにアクセストークンを照合し直す（いまのストリームと同じ）。
@@ -184,7 +217,7 @@ ADR-0100 §14 の形に、接続のための操作を足す（細部は [client-
 
 - `POST /voice/rooms/{id}/participation` は `{session, grant}` を返す。クライアントはそのセッションでストリームを開く。
 - `POST /voice/rooms/{id}/heartbeat`（`{session}`、15 秒ごと）: ADR-0100 §6 のハートビート。応答は `204`。ストリームを開いているだけではハートビートにしない（中継の装置がバッファしてストリームの書き込みが失敗しないことがあり、端末が生きていることを確かめられないため）。
-- `POST /voice/rooms/{id}/mic`（`{session, on}`）: マイクのオン・オフ。DB に書かず、`voice_mic` の知らせで配る。
+- `POST /voice/rooms/{id}/mic`（`{session, on}`）: マイクのオン・オフ。DB に書かず、`voice_mic` の知らせで配る。ミュートさせられた後にオンにするときは、`Transport.Unmute` を呼んでから配る（§2）。
 - `POST /voice/rooms/{id}/grant`（`{session}`）: 資格情報の取り直し（§5）。
 
 ### 7. Web の実装の置き場所と、ブラウザの前提
@@ -223,7 +256,7 @@ WebSocket を Lambda で安く使える形が出たとき（R1 のストリー�
 - 悪い影響: P2P の発話の制限は、結託した改造クライアントを防げない（§4）。文書で示し、厳密さが要る運営者には SFU を勧める。
 - 悪い影響: 通話の間は SSE が 1 人 2 本になり、Lambda の実行時間と接続の数が増える。
 - 悪い影響: シグナリングの本文を KV に置くので、`KeyValueStore = db` では接続のたびに数十行の書き込みが起きる（短い期限で消える）。
-- 悪い影響: SFU では `voice.apply` のジョブを通るので、発話の取り消し・退出させる操作がメディアの経路に効くまでキューの遅れが乗る（ADR-C で、直接呼んでジョブを予備にする形を検討する）。
+- 悪い影響: SFU では `voice.apply` のジョブを通るので、発話の取り消し・退出させる操作がメディアの経路に効くまでキューの遅れが乗る。
 - 後続の作業（ADR の決定の後に Issue にする）:
   - 設定のキーと起動時の検査、`Transport` のポート・契約テスト・`fake` と `p2p` の adapter、`voice.apply`
   - `stream.Hub` のルームの購読と通話の知らせ、ルームのストリーム、シグナリングの中継と SDP の検査、ハートビート・マイク・資格情報の API
