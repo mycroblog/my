@@ -95,8 +95,13 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		if transport, err = a.newLiveKitTransport(cfg); err != nil {
 			return fmt.Errorf("voice = livekit: %w", err)
 		}
+	case VoiceSora:
+		var err error
+		if transport, err = a.newSoraTransport(cfg); err != nil {
+			return fmt.Errorf("voice = sora: %w", err)
+		}
 	default:
-		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p, livekit, or off", a.Voice.Method)
+		return fmt.Errorf("voice = %s: this build has no transport for it; use p2p, livekit, sora, or off", a.Voice.Method)
 	}
 	outbox := a.Outbox
 	if outbox == nil {

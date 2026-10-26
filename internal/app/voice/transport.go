@@ -80,7 +80,9 @@ type ICEServer struct {
 }
 
 // ConnectAuthorizer is implemented by a transport whose media server asks before every
-// connect; decide applies the room domain (bans, roles, one room per account).
+// connect; decide applies the room domain (bans, roles, one room per account). The status and
+// the response are the answer to the media server; err reports a request that did not
+// authenticate, whose status refuses it.
 type ConnectAuthorizer interface {
 	AuthorizeConnect(ctx context.Context, header http.Header, body []byte, decide func(ConnectAttempt) ConnectDecision) (status int, response []byte, err error)
 }
@@ -100,6 +102,14 @@ type ConnectDecision struct {
 	Allowed bool
 	// Reason is why a connection is refused, for the media server's log.
 	Reason string
+}
+
+// SessionDeduplicator is implemented by a transport whose media server may hold several
+// connections of one session (Sora with default_duplicate_client_id = allow, ADR-0102 §3):
+// Deduplicate keeps the newest connection of the session and disconnects the others.
+// JobMediaEvent calls it when a live session joins the media path.
+type SessionDeduplicator interface {
+	Deduplicate(ctx context.Context, room RoomRef, session Session) error
 }
 
 // EventSource is implemented by a transport whose media server sends events.

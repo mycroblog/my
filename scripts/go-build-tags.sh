@@ -13,8 +13,8 @@ set -euo pipefail
 sets=(
   # A self-hosted instance on SQLite, without a broker or a metrics exporter.
   "no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe"
-  # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the Stripe payments.
-  "no_sqlite,no_valkey,no_pubsub,no_otel,no_billing_gcp,no_payments_payjp"
+  # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the Stripe payments, without the Sora voice chat.
+  "no_sqlite,no_valkey,no_pubsub,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora"
   # Google Cloud: PostgreSQL, the Pub/Sub broker, without the LiveKit voice chat.
   "no_sqlite,no_valkey,no_sns,no_ses,no_billing_aws,no_voice_livekit"
 )
@@ -46,6 +46,7 @@ excluded_packages() {
     no_payments_stripe) echo "$m/payment/stripe github.com/stripe/stripe-go/v87" ;;
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
+    no_voice_sora) echo "$m/voice/sora" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     *)
       echo "unknown build tag: $1 (see docs/reference/build-tags.md)" >&2

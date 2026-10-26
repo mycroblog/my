@@ -22,8 +22,10 @@ import (
 // the reconciliation of voice.sweep come sooner, and nothing assumes they arrive.
 
 // JobMediaEvent applies one verified event of a media server (ADR-0102 §4): a session that
-// joined the media path and is not a live session of the room is removed from it; a session of
-// the room that left loses its heartbeat and is disconnected as by ADR-0100 §6; a media room
+// joined the media path and is not a live session of the room is removed from it, and the
+// older connections of a live one are disconnected (SessionDeduplicator); a session of the room
+// that left and that the media path no longer sees loses its heartbeat and is disconnected as by
+// ADR-0100 §6; a media room
 // that finished while the room is open is opened again. Its idempotency key is the event's ID.
 const JobMediaEvent = "voice.media_event"
 
@@ -148,17 +150,22 @@ func (s *Service) MediaEvent(ctx context.Context, j queue.Job) queue.Result {
 	switch p.Kind {
 	case MediaSessionJoined:
 		var live bool
-		if live, err = s.liveSession(ctx, p.Room, p.Session); err == nil && !live {
+		live, err = s.liveSession(ctx, p.Room, p.Session)
+		switch d, ok := s.d.Transport.(SessionDeduplicator); {
+		case err != nil:
+		case !live:
 			// Banned, gone, replaced by another device, or never joined: a self-hosted
 			// LiveKit lets a removed participant connect again with its token (ADR-0102 §4).
 			err = s.d.Transport.Remove(ctx, room, Session{ID: p.Session})
+		case ok:
+			// A session that connected again, to change its role, keeps its new connection
+			// (ADR-0102 §3).
+			err = d.Deduplicate(ctx, room, Session{ID: p.Session})
 		}
 	case MediaSessionLeft:
 		var live bool
 		if live, err = s.liveSession(ctx, p.Room, p.Session); err == nil && live {
-			if err = s.d.Heartbeats.kv.Delete(ctx, kvHeartbeats, p.Session); err == nil {
-				err = s.evaluate(ctx, p.Room, false)
-			}
+			err = s.mediaLeft(ctx, room, p.Session)
 		}
 	case MediaRoomFinished:
 		err = s.reopen(ctx, room)
@@ -169,6 +176,25 @@ func (s *Service) MediaEvent(ctx context.Context, j queue.Job) queue.Result {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
+}
+
+// mediaLeft disconnects a live session that left the media path, as by ADR-0100 §6, unless the
+// media path still sees it: a session that connected again, to change its role on Sora, leaves
+// with its previous connection.
+func (s *Service) mediaLeft(ctx context.Context, room RoomRef, session string) error {
+	media, err := s.d.Transport.Sessions(ctx, room)
+	if err != nil {
+		return err
+	}
+	for _, m := range media {
+		if m.ID == session {
+			return nil
+		}
+	}
+	if err := s.d.Heartbeats.kv.Delete(ctx, kvHeartbeats, session); err != nil {
+		return err
+	}
+	return s.evaluate(ctx, room.ID, false)
 }
 
 // reopen opens the media path of a room again when the media server closed it while the room

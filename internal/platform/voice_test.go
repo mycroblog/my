@@ -266,3 +266,55 @@ func TestVoiceLiveKit(t *testing.T) {
 		t.Errorf("unsigned delivery = %d, want 400", code)
 	}
 }
+
+// postSora posts body to an endpoint of Sora's webhooks with Basic authentication and returns
+// the status and the body of the answer.
+func postSora(t *testing.T, h http.Handler, path, user, pass string, body []byte) (int, string) {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(user, pass)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	return rec.Code, rec.Body.String()
+}
+
+// TestVoiceSora starts the server with voice = sora on a self-hosted Sora and checks the
+// endpoints of Sora's webhooks (ADR-0102 §4, §5): with the Basic authentication of the
+// webhooks, the auth webhook answers 200 and refuses a connection without a join value, and
+// the events endpoint answers 200 with a JSON object; without it, both refuse.
+func TestVoiceSora(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "sora", "MY_VOICE_SORA_MODE": "self_hosted",
+		"MY_VOICE_SORA_SIGNALING_URLS": "wss://sora.example.org/signaling", "MY_VOICE_SORA_API_URL": "https://sora-api.example.org",
+		"MY_VOICE_SORA_WEBHOOK_USERNAME": "sora", "MY_VOICE_SORA_WEBHOOK_PASSWORD": "hunter2",
+		"MY_VOICE_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	if !app.VoiceRooms.Enabled() {
+		t.Fatal("voice = sora is not enabled")
+	}
+	auth := []byte(`{"channel_id":"room-1","connection_id":"CONN1","role":"recvonly","metadata":{"join":"forged"}}`)
+	code, body := postSora(t, app.Handler(), "/voice/webhooks/sora/auth", "sora", "hunter2", auth)
+	if code != http.StatusOK || !strings.Contains(body, `"allowed":false`) {
+		t.Errorf("auth webhook = %d %s, want 200 and a refusal", code, body)
+	}
+	if code, _ := postSora(t, app.Handler(), "/voice/webhooks/sora/auth", "sora", "wrong", auth); code != http.StatusUnauthorized {
+		t.Errorf("auth webhook with a wrong password = %d, want 401", code)
+	}
+	event := []byte(`{"type":"connection.destroyed","id":"EV_1","channel_id":"room-1","client_id":"session-1","data":{"reason":"normal"}}`)
+	if code, body := postSora(t, app.Handler(), "/voice/webhooks/sora/events", "sora", "hunter2", event); code != http.StatusOK || body != "{}" {
+		t.Errorf("events webhook = %d %s, want 200 {}", code, body)
+	}
+	if code, _ := postSora(t, app.Handler(), "/voice/webhooks/sora/events", "other", "hunter2", event); code != http.StatusBadRequest {
+		t.Errorf("events webhook with a wrong user = %d, want 400", code)
+	}
+	if code := postWebhook(t, app.Handler(), "", []byte("{}")); code != http.StatusNotFound {
+		t.Errorf("LiveKit webhook with voice = sora = %d, want 404", code)
+	}
+}
