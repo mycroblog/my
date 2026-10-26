@@ -23,6 +23,7 @@ import {
 import { type ComponentProps, type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type AccountTimelineFilter, accountTimelineFilters, TimelineFeed, useRemoteFetch } from "../../timeline";
+import { ProfileVoiceRoom } from "../../voice";
 import { usePinnedStatuses } from "../hooks/usePinnedStatuses";
 import { isolate, type ProfileView as ProfileViewData, useProfile } from "../hooks/useProfile";
 import { useRelationship } from "../hooks/useRelationship";
@@ -123,6 +124,8 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
           <MovedNote name={profile.name} target={account.moved} isSelf={relationship.kind === "self"} />
         </Box>
       )}
+      {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
+      <ProfileVoiceRoom accountId={account.id} name={isolate(profile.name)} />
       <ProfileTabs accountId={account.id} name={profile.name} original={profile.original} tab={tab} onTabChange={onTabChange} />
     </Stack>
   );

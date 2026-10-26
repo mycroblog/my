@@ -346,5 +346,9 @@
   "notifications.type.voice_room_invited": {
     "defaultMessage": "{name}さんから通話のルームに招待されました",
     "description": "Notification sentence. {name} is the display name of the host or a co-host of a voice chat room, who invited the user to it."
+  },
+  "notifications.link.voice_room": {
+    "defaultMessage": "ルームを開く",
+    "description": "Link in a voice chat notification to the page of the room."
   }
 }

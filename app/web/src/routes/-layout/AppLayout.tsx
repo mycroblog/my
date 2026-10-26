@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
-// navigation as a bottom tab bar; from md a side rail and the page; from xl a third column about the
-// server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the open voice chat
+// rooms and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 import { AppShell } from "@my/ui";
 import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useRef } from "react";
@@ -10,6 +10,7 @@ import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
+import { VoiceRail } from "../../features/voice";
 import { hasClosed, useClosure } from "../../lib/closure";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
@@ -47,7 +48,10 @@ export function AppLayout() {
   const closure = useClosure();
   const showButton = !medium && pageWantsButton && signedIn;
   // The admin and moderation screens are a mode of their own, with a frame and a menu of their own (ADR-0058).
-  const staffMode = isStaffMode(useLocation({ select: (location) => location.pathname }));
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const staffMode = isStaffMode(pathname);
+  // The voice chat pages list the rooms themselves, so the third column does not repeat them.
+  const onVoicePage = pathname === "/voice" || pathname.startsWith("/voice/");
   if (staffMode) {
     return (
       <ComposeProvider>
@@ -89,10 +93,18 @@ export function AppLayout() {
         floating={<ComposeEntry trigger={showButton ? "icon" : "none"} />}
         {...(wide && {
           aside: (
-            // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1).
-            <ErrorBoundary fallback={null}>
-              <ServerInfo />
-            </ErrorBoundary>
+            // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The open voice
+            // chat rooms come first, while there are any (web-client/09-app-shell.md §9).
+            <>
+              {!onVoicePage && (
+                <ErrorBoundary fallback={null}>
+                  <VoiceRail />
+                </ErrorBoundary>
+              )}
+              <ErrorBoundary fallback={null}>
+                <ServerInfo />
+              </ErrorBoundary>
+            </>
           ),
         })}
       >

@@ -346,5 +346,9 @@
   "notifications.type.voice_room_invited": {
     "defaultMessage": "{name} invited you to a voice chat room",
     "description": "Notification sentence. {name} is the display name of the host or a co-host of a voice chat room, who invited the user to it."
+  },
+  "notifications.link.voice_room": {
+    "defaultMessage": "Open the room",
+    "description": "Link in a voice chat notification to the page of the room."
   }
 }

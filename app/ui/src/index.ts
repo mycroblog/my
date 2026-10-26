@@ -116,6 +116,7 @@ export {
   StarIcon,
   SubmenuIcon,
   type ToggleIconProps,
+  VoiceIcon,
   WarningIcon,
 } from "./Icons";
 
@@ -165,6 +166,8 @@ export { SettingsLayout, type SettingsLayoutProps } from "./SettingsLayout";
 export { AdminNavBack, AdminNavSection, AdminShell, type AdminNavBackProps, type AdminNavSectionProps, type AdminShellProps } from "./AdminShell";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 export { FeatureCard, type FeatureCardProps } from "./FeatureCard";
+// An open voice chat room in a list (ADR-0100 §8).
+export { VoiceRoomCard, type VoiceRoomCardProps } from "./VoiceRoomCard";
 export { Hero, type HeroProps } from "./Hero";
 export { Cluster, type ClusterProps } from "./Cluster";
 export { InfoPage, type InfoPageProps } from "./InfoPage";

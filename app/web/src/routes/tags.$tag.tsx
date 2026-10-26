@@ -3,6 +3,7 @@ import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-route
 import { useId } from "react";
 import { z } from "zod";
 import { TimelineFeed, TimelineSkeleton, timelineQueryOptions } from "../features/timeline";
+import { TagVoiceRooms } from "../features/voice";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";
 import { RouteError } from "./-layout/RouteStates";
@@ -10,7 +11,7 @@ import { RouteError } from "./-layout/RouteStates";
 /** The hashtag, without the `#` (api/openapi.yaml, getHashtagTimeline); the hashtag links of posts point here. */
 const paramsSchema = z.object({ tag: z.string().min(1).max(256) });
 
-/** The timeline of one hashtag (FR-203). */
+/** The timeline of one hashtag (FR-203), under the open voice chat rooms with the hashtag (ADR-0100 §8). */
 export const Route = createFileRoute("/tags/$tag")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
   staticData: { composeButton: true },
@@ -41,6 +42,7 @@ function TagPage() {
   return (
     <>
       <TagHeading tag={tag} id={headingId} />
+      <TagVoiceRooms key={tag} tag={tag} />
       {/* A new hashtag is a new timeline: nothing of the previous one carries over (web-client/README.md R10). */}
       <TimelineFeed key={tag} timeline={{ kind: "tag", tag }} aria-labelledby={headingId} />
     </>

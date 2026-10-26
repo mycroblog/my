@@ -1,0 +1,338 @@
+{
+  "voice.title": {
+    "defaultMessage": "通話",
+    "description": "Heading and document title of the list of the open voice chat rooms, and its item in the main navigation."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "このサーバーでは通話を使えません。",
+    "description": "Shown on the voice chat pages when the server has voice chat turned off."
+  },
+  "voice.list.label": {
+    "defaultMessage": "開いているルーム",
+    "description": "Accessible name of the list of the open voice chat rooms."
+  },
+  "voice.list.empty": {
+    "defaultMessage": "いま開いているルームはありません",
+    "description": "Heading of the empty list of voice chat rooms."
+  },
+  "voice.list.empty.description": {
+    "defaultMessage": "参加できるルームは、開いている間ここに出ます。",
+    "description": "Explanation under the heading of the empty list of voice chat rooms."
+  },
+  "voice.list.loading": {
+    "defaultMessage": "ルームを読み込んでいます",
+    "description": "Accessible name of the spinner while the voice chat rooms load."
+  },
+  "voice.list.failed": {
+    "defaultMessage": "ルームを読み込めませんでした",
+    "description": "Heading of the error when the voice chat rooms could not load."
+  },
+  "voice.list.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the voice chat rooms again after a failure."
+  },
+  "voice.list.more": {
+    "defaultMessage": "ほかのルームを表示",
+    "description": "Button that loads the next page of voice chat rooms."
+  },
+  "voice.list.more_failed": {
+    "defaultMessage": "ほかのルームを読み込めませんでした",
+    "description": "Error when the next page of voice chat rooms could not load."
+  },
+  "voice.room.participants_count": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "How many people are in a voice chat room, the host included."
+  },
+  "voice.room.hosted_by": {
+    "defaultMessage": "ホスト",
+    "description": "Label before the host of a voice chat room in the room's card."
+  },
+  "voice.rail.title": {
+    "defaultMessage": "通話",
+    "description": "Heading of the panel of open voice chat rooms in the third column of wide screens."
+  },
+  "voice.rail.all": {
+    "defaultMessage": "すべてのルームを見る",
+    "description": "Link from the panel of voice chat rooms to the list of all open rooms."
+  },
+  "voice.tag.title": {
+    "defaultMessage": "#{tag} の通話のルーム",
+    "description": "Heading of the open voice chat rooms with a hashtag, at the top of the hashtag's page. {tag} is the hashtag without the #."
+  },
+  "voice.start": {
+    "defaultMessage": "ルームを開く",
+    "description": "Button on the voice chat page that opens the form to start a new room."
+  },
+  "voice.form.new_title": {
+    "defaultMessage": "ルームを開く",
+    "description": "Title of the dialog with the form that starts a new voice chat room."
+  },
+  "voice.form.edit_title": {
+    "defaultMessage": "ルームの設定",
+    "description": "Title of the dialog with the settings of a voice chat room, and the host's button that opens it."
+  },
+  "voice.form.close": {
+    "defaultMessage": "閉じる",
+    "description": "Accessible name of the close button of the dialog of a voice chat room's settings."
+  },
+  "voice.form.name": {
+    "defaultMessage": "名前",
+    "description": "Label of the field of a voice chat room's name."
+  },
+  "voice.form.name.invalid": {
+    "defaultMessage": "{max} 文字までの 1 行の名前を入れてください。",
+    "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
+  },
+  "voice.form.description": {
+    "defaultMessage": "説明",
+    "description": "Label of the field of a voice chat room's description."
+  },
+  "voice.form.characters_left": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "How many more characters the description of a voice chat room takes."
+  },
+  "voice.form.characters_over": {
+    "defaultMessage": "{count, plural, other {# 文字超えています}}",
+    "description": "How many characters the description of a voice chat room is over its limit."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "ハッシュタグ",
+    "description": "Label of the field of a voice chat room's hashtags."
+  },
+  "voice.form.hashtags.description": {
+    "defaultMessage": "スペースで区切って {max} 個まで。ルームはそのハッシュタグのページにも出ます。",
+    "description": "Explanation of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.invalid": {
+    "defaultMessage": "ハッシュタグは {max} 個までにしてください。",
+    "description": "Error of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "見える人と参加できる人",
+    "description": "Label of the choice of who sees a voice chat room and may join it."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "許可なしに話せる人",
+    "description": "Label of the choice of who may speak in a voice chat room without the hosts letting them."
+  },
+  "voice.visibility.local": {
+    "defaultMessage": "このサーバーの全員",
+    "description": "Visibility of a voice chat room: every local user."
+  },
+  "voice.visibility.followers": {
+    "defaultMessage": "ホストのフォロワー",
+    "description": "Visibility of a voice chat room: the followers of its host."
+  },
+  "voice.visibility.mutuals": {
+    "defaultMessage": "ホストと相互フォローの人",
+    "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
+  },
+  "voice.visibility.invited": {
+    "defaultMessage": "招待された人だけ",
+    "description": "Visibility of a voice chat room: only the people the hosts invite."
+  },
+  "voice.speakers.everyone": {
+    "defaultMessage": "参加した全員",
+    "description": "Who may speak in a voice chat room without asking: everyone in it."
+  },
+  "voice.speakers.followers": {
+    "defaultMessage": "ホストのフォロワー",
+    "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.mutuals": {
+    "defaultMessage": "ホストと相互フォローの人",
+    "description": "Who may speak in a voice chat room without asking: the host's mutual follows."
+  },
+  "voice.speakers.manual": {
+    "defaultMessage": "ホストが許可した人だけ",
+    "description": "Who may speak in a voice chat room without asking: nobody, the host and the co-hosts let them."
+  },
+  "voice.form.post": {
+    "defaultMessage": "ルームのことを投稿する",
+    "description": "Switch in the form that starts a voice chat room: also post a post that links the room."
+  },
+  "voice.form.post.local": {
+    "defaultMessage": "このサーバーの全員に見えるローカルの投稿になります。",
+    "description": "Explanation of the start post of a room for every local user."
+  },
+  "voice.form.post.followers": {
+    "defaultMessage": "フォロワーだけに見える投稿になります。",
+    "description": "Explanation of the start post of a room for the host's followers."
+  },
+  "voice.form.post.text": {
+    "defaultMessage": "投稿の本文",
+    "description": "Label of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.text.description": {
+    "defaultMessage": "ルームへのリンクは末尾に自動で付きます。",
+    "description": "Explanation of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.draft": {
+    "defaultMessage": "通話のルームを開きました: {name}",
+    "description": "The draft text of the post that announces a new voice chat room, which the host edits. {name} is the room's name."
+  },
+  "voice.form.submit_new": {
+    "defaultMessage": "ルームを開く",
+    "description": "Button that starts a new voice chat room."
+  },
+  "voice.form.submit_edit": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the settings of a voice chat room."
+  },
+  "voice.form.start_failed": {
+    "defaultMessage": "ルームを開けませんでした: {reason}",
+    "description": "Error when a voice chat room could not start. {reason} is the server's explanation."
+  },
+  "voice.form.save_failed": {
+    "defaultMessage": "設定を保存できませんでした: {reason}",
+    "description": "Error when the settings of a voice chat room could not be saved. {reason} is the server's explanation."
+  },
+  "voice.form.saved": {
+    "defaultMessage": "ルームの設定を保存しました",
+    "description": "Message after the settings of a voice chat room were saved."
+  },
+  "voice.room.title": {
+    "defaultMessage": "通話のルーム",
+    "description": "Heading of the page of a voice chat room whose name is not shown."
+  },
+  "voice.room.listed_notice": {
+    "defaultMessage": "参加すると、このルームが見える全員にあなたの名前が表示されます。",
+    "description": "Notice on the page of a voice chat room before joining it."
+  },
+  "voice.room.join": {
+    "defaultMessage": "参加する",
+    "description": "Button that joins a voice chat room."
+  },
+  "voice.room.join_failed": {
+    "defaultMessage": "ルームに参加できませんでした: {reason}",
+    "description": "Error when joining a voice chat room failed. {reason} is the server's explanation."
+  },
+  "voice.room.joined": {
+    "defaultMessage": "このルームに参加しています。",
+    "description": "Shown on the page of a voice chat room that the user is in."
+  },
+  "voice.room.participants": {
+    "defaultMessage": "参加者",
+    "description": "Heading of the list of the people in a voice chat room."
+  },
+  "voice.room.details": {
+    "defaultMessage": "ルームについて",
+    "description": "Accessible name of the list of a voice chat room's settings on its page."
+  },
+  "voice.role.host": {
+    "defaultMessage": "ホスト",
+    "description": "Label of the host of a voice chat room in its list of participants."
+  },
+  "voice.role.cohost": {
+    "defaultMessage": "共同ホスト",
+    "description": "Label of a co-host of a voice chat room in its list of participants."
+  },
+  "voice.role.speaker": {
+    "defaultMessage": "話者",
+    "description": "Label of a participant of a voice chat room who speaks."
+  },
+  "voice.role.listener": {
+    "defaultMessage": "聞き手",
+    "description": "Label of a participant of a voice chat room who listens."
+  },
+  "voice.room.local_only": {
+    "defaultMessage": "このサーバーのアカウントを持つ人だけが、このサーバーの通話のルームに参加できます。",
+    "description": "Notice on the page of a voice chat room for a visitor who is not signed in."
+  },
+  "voice.room.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "Link on the page of a voice chat room to the sign-in page, which returns to the room."
+  },
+  "voice.room.open": {
+    "defaultMessage": "このルームはいま開いています。",
+    "description": "Shown on the summary of an open voice chat room to a visitor who is not signed in."
+  },
+  "voice.room.ended": {
+    "defaultMessage": "このルームは終了しました",
+    "description": "Heading of the page of a voice chat room that ended."
+  },
+  "voice.room.hidden": {
+    "defaultMessage": "このルームは見られません。",
+    "description": "Shown on the page of an open voice chat room that the user may not see."
+  },
+  "voice.room.not_found": {
+    "defaultMessage": "このルームはありません",
+    "description": "Heading of the page of a voice chat room that does not exist."
+  },
+  "voice.room.failed": {
+    "defaultMessage": "ルームを読み込めませんでした",
+    "description": "Heading of the error when a voice chat room could not load."
+  },
+  "voice.room.loading": {
+    "defaultMessage": "ルームを読み込んでいます",
+    "description": "Accessible name of the spinner while a voice chat room loads."
+  },
+  "voice.profile.host": {
+    "defaultMessage": "{name} さんが通話のルームを開いています: {room}",
+    "description": "Note on a profile while the account hosts an open voice chat room. {name} is the account's name, {room} the room's name as a link."
+  },
+  "voice.profile.speaker": {
+    "defaultMessage": "{name} さんが通話のルームで話しています: {room}",
+    "description": "Note on a profile while the account speaks in an open voice chat room. {name} is the account's name, {room} the room's name as a link."
+  },
+  "voice.history.title": {
+    "defaultMessage": "通話の履歴",
+    "description": "Heading of the settings page with the voice chat rooms the user hosted, and its item in the settings menu."
+  },
+  "voice.history.description": {
+    "defaultMessage": "あなたがホストだった通話のルーム（新しい順）。",
+    "description": "Explanation at the top of the voice chat history."
+  },
+  "voice.history.empty": {
+    "defaultMessage": "まだルームのホストをしたことはありません",
+    "description": "Heading of the empty voice chat history."
+  },
+  "voice.history.opened": {
+    "defaultMessage": "開いた時刻",
+    "description": "Term of when a room of the voice chat history opened."
+  },
+  "voice.history.ended": {
+    "defaultMessage": "終わった時刻",
+    "description": "Term of when a room of the voice chat history ended."
+  },
+  "voice.history.still_open": {
+    "defaultMessage": "まだ開いています",
+    "description": "Value of when a room of the voice chat history ended, while it is open."
+  },
+  "voice.history.reason": {
+    "defaultMessage": "終わった理由",
+    "description": "Term of why a room of the voice chat history ended."
+  },
+  "voice.end_reason.host": {
+    "defaultMessage": "ホストが終えました",
+    "description": "Why a voice chat room ended: its host ended it."
+  },
+  "voice.end_reason.empty": {
+    "defaultMessage": "全員が退出しました",
+    "description": "Why a voice chat room ended: nobody was left."
+  },
+  "voice.end_reason.host_disconnected": {
+    "defaultMessage": "ホストの接続が切れました",
+    "description": "Why a voice chat room ended: the host was disconnected and nobody could take over."
+  },
+  "voice.end_reason.host_ineligible": {
+    "defaultMessage": "ホストがホストを続けられなくなりました",
+    "description": "Why a voice chat room ended: the host lost the right to host and nobody could take over."
+  },
+  "voice.end_reason.moderator": {
+    "defaultMessage": "モデレーターが終えました",
+    "description": "Why a voice chat room ended: a moderator ended it."
+  },
+  "voice.end_reason.time_limit": {
+    "defaultMessage": "最長時間に達しました",
+    "description": "Why a voice chat room ended: it was open for the longest time the server allows."
+  },
+  "voice.end_reason.disabled": {
+    "defaultMessage": "通話が無効になりました",
+    "description": "Why a voice chat room ended: the server turned voice chat off."
+  },
+  "voice.end_reason.other": {
+    "defaultMessage": "その他",
+    "description": "Why a voice chat room ended, for a reason the app does not know."
+  }
+}
