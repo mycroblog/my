@@ -170,6 +170,41 @@ type Config struct {
 	PaymentsPayjpWebhookToken    string
 	PaymentsReconcileInterval    time.Duration
 	PaymentsReconcileMaxRequests int
+	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
+	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
+	Voice                   string
+	VoiceP2PMaxParticipants int
+	VoiceMaxParticipants    int
+	VoiceMaxRoomDuration    time.Duration
+	VoiceMaxOpenRooms       int
+	// The STUN and TURN servers of voice = p2p (ADR-0101 §1, §5); VoiceTURN is "none", "coturn",
+	// or "cloudflare", and VoiceICETransportPolicy "all" or "relay".
+	VoiceSTUNURLs               []string
+	VoiceTURN                   string
+	VoiceTURNURLs               []string
+	VoiceTURNSecret             string
+	VoiceTURNCloudflareKeyID    string
+	VoiceTURNCloudflareAPIToken string
+	VoiceTURNCredentialTTL      time.Duration
+	VoiceICETransportPolicy     string
+	// The LiveKit server of voice = livekit (ADR-0102 §5); VoiceLiveKitAPIURL defaults to
+	// VoiceLiveKitURL over https (http for ws).
+	VoiceLiveKitURL       string
+	VoiceLiveKitAPIURL    string
+	VoiceLiveKitAPIKey    string
+	VoiceLiveKitAPISecret string
+	// The Sora server of voice = sora (ADR-0102 §5): VoiceSoraMode is "self_hosted" or "cloud",
+	// and VoiceJoinSecret signs the join values that Sora sends back on each connection.
+	VoiceSoraMode            string
+	VoiceSoraSignalingURLs   []string
+	VoiceSoraAPIURL          string
+	VoiceSoraAPIHeaderName   string
+	VoiceSoraAPIHeaderValue  string
+	VoiceSoraWebhookUsername string
+	VoiceSoraWebhookPassword string
+	VoiceSoraCloudProjectID  string
+	VoiceSoraCloudAPIKey     string
+	VoiceJoinSecret          string
 	// DeadJobRetention is how long a dead job is kept after it failed (FR-803).
 	DeadJobRetention time.Duration
 	// JobAttemptRetention is how long the record of a job's run that did not succeed is kept
@@ -312,6 +347,33 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("payments_payjp_webhook_token", redact(c.PaymentsPayjpWebhookToken != "")),
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
+		slog.String("voice", c.Voice),
+		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
+		slog.Int("voice_max_participants", c.VoiceMaxParticipants),
+		slog.Duration("voice_max_room_duration", c.VoiceMaxRoomDuration),
+		slog.Int("voice_max_open_rooms", c.VoiceMaxOpenRooms),
+		slog.Any("voice_stun_urls", c.VoiceSTUNURLs),
+		slog.String("voice_turn", c.VoiceTURN),
+		slog.Any("voice_turn_urls", c.VoiceTURNURLs),
+		slog.String("voice_turn_secret", redact(c.VoiceTURNSecret != "")),
+		slog.String("voice_turn_cloudflare_key_id", c.VoiceTURNCloudflareKeyID),
+		slog.String("voice_turn_cloudflare_api_token", redact(c.VoiceTURNCloudflareAPIToken != "")),
+		slog.Duration("voice_turn_credential_ttl", c.VoiceTURNCredentialTTL),
+		slog.String("voice_ice_transport_policy", c.VoiceICETransportPolicy),
+		slog.String("voice_livekit_url", c.VoiceLiveKitURL),
+		slog.String("voice_livekit_api_url", c.VoiceLiveKitAPIURL),
+		slog.String("voice_livekit_api_key", c.VoiceLiveKitAPIKey),
+		slog.String("voice_livekit_api_secret", redact(c.VoiceLiveKitAPISecret != "")),
+		slog.String("voice_sora_mode", c.VoiceSoraMode),
+		slog.Any("voice_sora_signaling_urls", c.VoiceSoraSignalingURLs),
+		slog.String("voice_sora_api_url", c.VoiceSoraAPIURL),
+		slog.String("voice_sora_api_header_name", c.VoiceSoraAPIHeaderName),
+		slog.String("voice_sora_api_header_value", redact(c.VoiceSoraAPIHeaderValue != "")),
+		slog.String("voice_sora_webhook_username", c.VoiceSoraWebhookUsername),
+		slog.String("voice_sora_webhook_password", redact(c.VoiceSoraWebhookPassword != "")),
+		slog.String("voice_sora_cloud_project_id", c.VoiceSoraCloudProjectID),
+		slog.String("voice_sora_cloud_api_key", redact(c.VoiceSoraCloudAPIKey != "")),
+		slog.String("voice_join_secret", redact(c.VoiceJoinSecret != "")),
 		slog.Duration("dead_job_retention", c.DeadJobRetention),
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
 		slog.Duration("dynamic_client_unredeemed_ttl", c.DynamicClientUnredeemedTTL),
@@ -537,6 +599,9 @@ func load(src Source, maintenance bool) (*Config, []Setting, error) {
 	}
 	if cfg.WebOrigin == "" {
 		cfg.WebOrigin = "https://" + cfg.Host
+	}
+	if cfg.VoiceLiveKitAPIURL == "" {
+		cfg.VoiceLiveKitAPIURL = voiceAPIURL(cfg.VoiceLiveKitURL)
 	}
 	if len(issues) > 0 {
 		return nil, settings, &ValidationError{Issues: issues}

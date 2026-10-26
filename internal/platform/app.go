@@ -176,6 +176,9 @@ type App struct {
 	Payments *supporters.Payments
 	// Supporters runs the supporter program, its plans, and their subscriptions (ADR-0072).
 	Supporters *supporters.Service
+	// Voice is how the voice chat runs: its method, off for none, and the limits of its rooms
+	// (ADR-0101 §1).
+	Voice Voice
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
@@ -344,6 +347,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if opts.Version == "" {
 		opts.Version = "dev"
 	}
+	a.Voice = newVoice(cfg, a.Logger)
 	if err := a.setUpTracer(ctx, cfg, opts); err != nil {
 		return nil, err
 	}

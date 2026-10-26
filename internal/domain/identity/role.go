@@ -56,6 +56,11 @@ const (
 	// it, and close the server (FR-808, FR-809, ADR-0088 §1). It is server administration
 	// (ADR-0058 §4): only the built-in admin role has it by default.
 	PermManageServiceClosure Permission = "manage_service_closure"
+	// PermStartVoiceRooms: open voice chat rooms of one's own and host them, while the instance
+	// setting voice_room_starters is permitted (ADR-0100 §2). It is a member permission
+	// (ADR-0070 §1): it opens the holder's own room and changes nothing of others or of the
+	// whole server, so a supporter plan may grant it (ADR-0072 §5).
+	PermStartVoiceRooms Permission = "start_voice_rooms"
 )
 
 // AllPermissions lists every permission.
@@ -65,7 +70,7 @@ func AllPermissions() []Permission {
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
-		PermManageServiceClosure,
+		PermManageServiceClosure, PermStartVoiceRooms,
 	}
 }
 
@@ -89,7 +94,7 @@ func (p Permission) Category() PermissionCategory {
 	switch p {
 	case PermManageReports, PermManageAccounts, PermManageDomains, PermManageInvites, PermViewAudit:
 		return CategoryModeration
-	case PermViewFinance, PermCreateCustomEmojis:
+	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms:
 		return CategoryMember
 	default:
 		return CategoryServer

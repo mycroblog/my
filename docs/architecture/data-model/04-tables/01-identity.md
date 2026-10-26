@@ -109,13 +109,13 @@
 `admin`（`position` 1000）はすべての権限、`moderator`（`position` 100）は最初 `manage_reports`・`manage_accounts`・`view_audit` を持ちます。
 組み込みロールは `my serve` の起動時（どの `role` のプロセスでも）、`my admin create`、`my admin role` のたびに作り直すので、版を上げても手作業は要りません。作り直すときは、ない組み込みロールを足し、`admin` にすべての権限（新しい版で増えた権限を含む）を持たせ、`moderator` の権限と位置は管理者が変えたまま残します。
 権限は区分（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)、[ADR-0070](../../../adr/0070-permission-split-emoji-finance.md)）を持ちます。モデレーションは `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`、
-利用者の機能は `view_finance`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
+利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
 （Web クライアントのナビゲーションの出し分けと `my admin role list` の表示が使う）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |

@@ -67,6 +67,16 @@ func TestParse(t *testing.T) {
 		{instance.SettingRetentionAuditLog, "364", ""},
 		{instance.SettingRetentionAuditLog, "3650", "3650"},
 		{instance.SettingRetentionAuditLog, "3651", ""},
+		// The voice chat settings (ADR-0100 §2, §9, §13).
+		{instance.SettingVoiceRoomStarters, "everyone", "everyone"},
+		{instance.SettingVoiceRoomStarters, "permitted", "permitted"},
+		{instance.SettingVoiceRoomStarters, "nobody", ""},
+		{instance.SettingVoicePublicSummary, "TRUE", "true"},
+		{instance.SettingVoicePublicSummary, "yes", ""},
+		{instance.SettingRetentionVoiceParticipants, "30", "30"},
+		{instance.SettingRetentionVoiceParticipants, "29", ""},
+		{instance.SettingRetentionVoiceParticipants, "3650", "3650"},
+		{instance.SettingRetentionVoiceParticipants, "3651", ""},
 	} {
 		d, err := instance.Lookup(tc.key)
 		if err != nil {
@@ -254,6 +264,32 @@ func TestFinanceViewerSettings(t *testing.T) {
 	}
 	if _, err := def.Parse("amounts"); !errors.Is(err, instance.ErrInvalidValue) {
 		t.Errorf("Parse(amounts) = %v, want ErrInvalidValue", err)
+	}
+}
+
+// Only the holders of start_voice_rooms open voice chat rooms, rooms show no summary to
+// visitors, and their participants are kept 90 days, until the settings say otherwise
+// (ADR-0100 §2, §9, §13).
+func TestVoiceSettings(t *testing.T) {
+	var zero instance.Settings
+	if zero.VoiceRoomStarters() != instance.VoiceRoomStartersPermitted || zero.VoicePublicSummary() ||
+		zero.Retention(instance.SettingRetentionVoiceParticipants) != 90*24*time.Hour {
+		t.Errorf("zero Settings = %s, %v, %v; want permitted, false, 90 days", zero.VoiceRoomStarters(), zero.VoicePublicSummary(),
+			zero.Retention(instance.SettingRetentionVoiceParticipants))
+	}
+	s := instance.NewSettings([]instance.CurrentSetting{
+		{Key: instance.SettingVoiceRoomStarters, RevisionID: testID(1), Value: "everyone"},
+		{Key: instance.SettingVoicePublicSummary, RevisionID: testID(2), Value: "true"},
+		{Key: instance.SettingRetentionVoiceParticipants, RevisionID: testID(3), Value: "30"},
+	})
+	if s.VoiceRoomStarters() != instance.VoiceRoomStartersEveryone || !s.VoicePublicSummary() ||
+		s.Retention(instance.SettingRetentionVoiceParticipants) != 30*24*time.Hour {
+		t.Errorf("Settings = %s, %v, %v; want everyone, true, 30 days", s.VoiceRoomStarters(), s.VoicePublicSummary(),
+			s.Retention(instance.SettingRetentionVoiceParticipants))
+	}
+	unexpected := instance.NewSettings([]instance.CurrentSetting{{Key: instance.SettingVoiceRoomStarters, RevisionID: testID(1), Value: "nobody"}})
+	if unexpected.VoiceRoomStarters() != instance.VoiceRoomStartersPermitted {
+		t.Errorf("an unexpected voice_room_starters = %s, want permitted", unexpected.VoiceRoomStarters())
 	}
 }
 

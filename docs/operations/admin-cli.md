@@ -46,7 +46,7 @@ my admin role revoke alice moderator
 - Permissions belong to one of three groups.
   - Moderation: `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Server administration: `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`.
-  - Member features: `view_finance`, `create_custom_emojis`.
+  - Member features: `view_finance`, `create_custom_emojis`, `start_voice_rooms`.
 
   `list` prints one column per group (`MODERATION`, `SERVER`, `MEMBER`). The web client shows "Moderation" and "Administration" for the first two groups and counts the member features toward neither (see [moderation.md](moderation.md)).
 - A change takes effect on the user's next request. Notifications for moderators go to the people who hold the permission when the notification is created.
