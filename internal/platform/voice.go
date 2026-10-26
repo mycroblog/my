@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/voice/p2p"
+	"github.com/mycroblog/my/internal/adapter/voice/turncloudflare"
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/queue"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
@@ -85,8 +86,13 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	switch a.Voice.Method {
 	case VoiceOff:
 	case VoiceP2P:
+		turn, err := a.voiceTURN(cfg)
+		if err != nil {
+			return err
+		}
 		transport = p2p.New(p2p.Options{
-			STUNURLs: cfg.VoiceSTUNURLs, RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock,
+			STUNURLs: cfg.VoiceSTUNURLs, TURN: turn, TTL: cfg.VoiceTURNCredentialTTL,
+			RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock, Meter: a.Meter,
 		})
 	default:
 		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p or off", a.Voice.Method)
@@ -107,6 +113,21 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
+}
+
+// voiceTURN returns the TURN source of voice_turn (ADR-0101 §5), nil for none.
+func (a *App) voiceTURN(cfg *config.Config) (p2p.TURN, error) {
+	switch cfg.VoiceTURN {
+	case "", "none":
+		return nil, nil
+	case "coturn":
+		return p2p.NewCoturn(cfg.VoiceTURNURLs, cfg.VoiceTURNSecret, a.Clock)
+	case turncloudflare.Name:
+		return turncloudflare.New(turncloudflare.Options{
+			KeyID: cfg.VoiceTURNCloudflareKeyID, APIToken: cfg.VoiceTURNCloudflareAPIToken, KV: a.KV, Clock: a.Clock,
+		})
+	}
+	return nil, fmt.Errorf("voice_turn = %s: unknown TURN source", cfg.VoiceTURN)
 }
 
 // voiceMembers reads the accounts for the rooms from the account, moderation, identity, and
