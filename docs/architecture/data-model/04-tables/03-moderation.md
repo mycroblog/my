@@ -54,6 +54,7 @@
 | `reports` | リソース | `id`, `uri`（NULL 可。受信した `Flag` の `id`、`id` の無い `Flag` は受信の記録と同じ `urn:my:digest:…`）, `reporter_account_id`, `target_account_id`, `category`（`enum(spam, legal, violation, other)`）, `comment`（5,000 文字まで）, `forwarded`（`bool`）, `filed_at` | 一意 `(uri)`。インデックス `(target_account_id, id)`, `(reporter_account_id, id)`（通報者の一覧） |
 | `report_statuses` | リソース（子） | `report_id`, `status_id` | PK `(report_id, status_id)`。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `report_rule_citations` | リソース（子） | `report_id`, `rule_id` | PK `(report_id, rule_id)`。ルールの文言が改訂されても `rule_id` は変わらない（§4.9） |
+| `report_voice_rooms` | リソース（子） | `report_id`（PK）, `room_id`, `revision_id`（通報の時点の設定の版） | インデックス `(room_id)`。ルームと版の表は `voice` のもの（§4.14、ADR-0100 §11） |
 | `report_assignments` | イベント | `id`, `report_id`, `assignee_user_id`（NULL 可 = 担当解除）, `assigned_by_user_id`（NULL 可 = CLI）, `assigned_at` | インデックス `(report_id, id DESC)`。担当が変わらない割り当ては記録しない |
 | `report_resolutions` | イベント | `id`, `report_id`, `outcome`（`enum(actioned, dismissed)`）, `resolved_by_user_id`（NULL 可 = CLI）, `resolved_at` | インデックス `(report_id, id DESC)`。処分との関連は `moderation_actions.report_id` で辿る。解決済みの通報の解決は記録しない |
 | `report_reopenings` | イベント | `id`, `report_id`, `reopened_by_user_id`（NULL 可 = CLI）, `reopened_at` | インデックス `(report_id, id DESC)`。未解決の通報の再開は記録しない |

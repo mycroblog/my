@@ -42,6 +42,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 		medias: d.MediaRepository(), emojis: d.CustomEmojiRepository(),
 		feds: d.FederationRepository(), mods: d.ModerationRepository(), hooks: d.WebhookRepository(),
 		finance: d.FinanceRepository(), payments: d.PaymentRepository(), supporters: d.SupporterRepository(),
+		voice: d.VoiceRepository(),
 		retention: retentionRepositories{
 			statuses: d.StatusRepository(), purges: d.FederationRepository(), profiles: d.AccountRepository(), emojis: d.CustomEmojiRepository(),
 			autoDeletes: d.StatusRepository(),

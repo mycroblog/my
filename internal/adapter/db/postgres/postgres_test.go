@@ -100,6 +100,13 @@ func TestFinanceRepositoryContract(t *testing.T) {
 	})
 }
 
+func TestVoiceRepositoryContract(t *testing.T) {
+	testkit.VoiceRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.VoiceHarness {
+		db := newTestDB(t, opts)
+		return testkit.VoiceHarness{UnitOfWork: db, Voice: db.VoiceRepository()}
+	})
+}
+
 // newPaymentWorld is the provider's side of PaymentRepositoryContract: the fake adapter.
 func newPaymentWorld(o testkit.PaymentWorldOptions) testkit.PaymentWorld {
 	return fake.New(fake.Options{Name: o.Name, Mode: o.Mode, Now: o.Now, PageSize: o.PageSize})

@@ -127,6 +127,15 @@ CREATE TABLE report_rule_citations (
   PRIMARY KEY (report_id, rule_id)
 );
 
+-- Resource (child of a report): the voice chat room a report points at, with the revision of its
+-- settings at the time of the report (ADR-0100 §11). The room's tables are the voice module's.
+CREATE TABLE report_voice_rooms (
+  report_id uuid NOT NULL PRIMARY KEY,
+  room_id uuid NOT NULL,
+  revision_id uuid NOT NULL
+);
+CREATE INDEX report_voice_rooms_room_id ON report_voice_rooms (room_id);
+
 -- Projection: whether a report is open, how it was resolved, and who handles it. outcome is
 -- that of the latest resolution, set exactly when the report is resolved.
 CREATE TABLE report_states (

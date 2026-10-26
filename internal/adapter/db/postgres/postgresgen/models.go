@@ -1192,6 +1192,27 @@ type UserToken struct {
 	IssuedAt            time.Time
 }
 
+type VoiceRoomHostGrace struct {
+	RoomID string
+	EndsAt time.Time
+}
+
+type VoiceRoomParticipant struct {
+	AccountID       string
+	RoomID          string
+	ParticipationID string
+	Role            string
+	CohostChangeID  *string
+	HandRaised      bool
+}
+
+type VoiceRoomRevisionHashtag struct {
+	RevisionID     string
+	Position       int32
+	Name           string
+	NameNormalized string
+}
+
 type WebhookEndpointFailure struct {
 	EndpointID            string
 	FirstFailureAttemptID string

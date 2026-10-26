@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -59,4 +60,10 @@ func newVoice(cfg *config.Config, logger *slog.Logger) Voice {
 			slog.String("env", f.Env()), slog.String("detail", f.Key+" "+f.Message))
 	}
 	return v
+}
+
+// setUpVoice builds the voice module (ADR-0100): the projectors of its projections, which the
+// commands of the rooms rely on.
+func (a *App) setUpVoice(repo voice.Repository) {
+	voice.RegisterProjectors(a.Projectors, repo)
 }

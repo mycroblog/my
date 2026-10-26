@@ -62,6 +62,7 @@ Remote servers ──AP──►│                               │
 | `webhook` | サーバー単位の webhook（宛先・署名・配送と再送、ADR-0060） | WebhookEndpoint, WebhookMessage, WebhookDelivery |
 | `finance` | サーバーの維持費用（費用の項目・支払いの周期・改定・終了・取り消し、週・月・年の集計。集計は読み取りのときに計算する。ADR-0067）と、クラウドの利用料金の取り込み（見込み・確定・修正の版。ADR-0068）と、決済の事業者からの収入の記録と集計（`supporters` が `RecordIncome` で渡し、`finance` は加入者とプランの人数を `SupporterDirectory` で読む。ADR-0073） | CostItem, PriceRevision, ImportedRevision, IncomeMovement |
 | `supporters` | 管理者が有効にしたときだけ動く課金ユーザー（サポーター。ADR-0072）。課金の有効化・プラン・事業者の価格・加入・加入の状態と猶予・掲載の選択。決済の事業者の事実を運ぶ経路（webhook の受信の記録とジョブ、定期の照合。ADR-0074 §3・§4）。加入の状態は事業者のスナップショットから `Syncer`（`supporters.sync`）が導き、プランのロールを `identity` の管理されたロールの操作で付け外しする | Plan, PlanRevision, Subscription, Transition, WebhookReceipt, ReconcileRun |
+| `voice` | 同じサーバーのローカルの利用者どうしの通話のルーム（ADR-0100）。ルームの設定の版・ホストと共同ホスト・参加と役割・発話の許可・挙手・招待・再入室の禁止・終了。公開範囲・発話・ホストの資格は `internal/domain/voice` の純粋な関数（`CanSee`・`CanSpeakFreely`・`CanHost`）が判定する | Room, Revision, Participation, Participant, Invitation, Ending |
 | `i18n` | ロケール解決・メッセージカタログ・整形 | （横断。`internal/i18n` の 1 パッケージで、`domain` / `app` の層を持たない） |
 
 ### 依存ルール

@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/app/projection"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/app/webhook"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -52,6 +53,7 @@ type repositories struct {
 	finance      finance.Repository
 	payments     supporters.PaymentRepository
 	supporters   supporters.Repository
+	voice        voice.Repository
 	retention    retentionRepositories
 	projections  projection.Store
 	dataUpgrades dbupgrade.Repository
