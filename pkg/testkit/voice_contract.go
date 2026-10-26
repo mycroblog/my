@@ -27,7 +27,9 @@ type VoiceFactory func(t *testing.T, opts uow.Options) VoiceHarness
 // VoiceRepositoryContract verifies the voice repository of a database adapter (ADR-0100 §12,
 // data-model §4.14): a room reads back with its settings, hashtags, host, and ending; the open
 // rooms list by the most participants and filter by a hashtag of the current revision; the
-// participants carry their role, co-host nomination, and raised hand, one room per account;
+// participants carry their role, co-host nomination, and raised hand, one room per account; a
+// co-host nomination lasts while its participation does and ends when the co-host becomes the
+// host; an ended room keeps no participants;
 // participation ends, invitations, their revocations, bans, and endings are recorded once; the
 // speak grants and the host grace read back; and the projections that the projectors keep
 // rebuild from the events alone.
@@ -41,6 +43,8 @@ func VoiceRepositoryContract(t *testing.T, newHarness VoiceFactory) {
 		{"RevisesAndChangesTheHost", voiceRevise},
 		{"TracksParticipants", voiceParticipants},
 		{"KeepsOneRoomPerAccount", voiceOneRoom},
+		{"EndsCohostsWithTheirParticipationOrHosting", voiceCohosts},
+		{"KeepsNoParticipantsInAnEndedRoom", voiceEndedParticipants},
 		{"RecordsInvitationsBansAndGrants", voiceInvitations},
 		{"EndsARoomOnce", voiceEnd},
 		{"KeepsTheHostGrace", voiceGrace},
@@ -680,5 +684,79 @@ func voiceRebuild(t *testing.T, e *voiceEnv) {
 	if after := e.snapshot(t, rooms, []string{host, next, alice, bob}); !reflect.DeepEqual(after.Rooms, before.Rooms) ||
 		!reflect.DeepEqual(after.Participants, before.Participants) {
 		t.Errorf("the other rooms changed in the second rebuild:\n%+v\nwant\n%+v", after, before)
+	}
+}
+
+func voiceCohosts(t *testing.T, e *voiceEnv) {
+	host, alice, bob := NamedID("voice-host"), NamedID("voice-alice"), NamedID("voice-bob")
+	room := e.openRoom(t, host, voiceSettings("Cohosts"), true)
+	ph := e.join(t, room.ID, host, voice.RoleSpeaker)
+	pa := e.join(t, room.ID, alice, voice.RoleSpeaker)
+	pb := e.join(t, room.ID, bob, voice.RoleListener)
+	e.cohost(t, room.ID, alice, voice.CohostAssigned)
+	bobAssigned := e.cohost(t, room.ID, bob, voice.CohostAssigned)
+
+	// A co-host who becomes the host is no longer a co-host.
+	e.changeHost(t, room.ID, alice, voice.HostHandedOver)
+	want := []appvoice.Participant{
+		{AccountID: host, RoomID: room.ID, ParticipationID: ph.ID, Role: voice.RoleSpeaker},
+		{AccountID: alice, RoomID: room.ID, ParticipationID: pa.ID, Role: voice.RoleSpeaker},
+		{AccountID: bob, RoomID: room.ID, ParticipationID: pb.ID, Role: voice.RoleListener, CohostChangeID: bobAssigned.ID},
+	}
+	if got := e.participants(t, room.ID); !reflect.DeepEqual(got, want) {
+		t.Errorf("Participants after the handover =\n%+v\nwant\n%+v", got, want)
+	}
+
+	// A co-host who leaves and joins again is a listener until nominated again.
+	e.leave(t, pb, voice.LeftRoom)
+	again := e.join(t, room.ID, bob, voice.RoleListener)
+	want[2] = appvoice.Participant{AccountID: bob, RoomID: room.ID, ParticipationID: again.ID, Role: voice.RoleListener}
+	if got := e.participants(t, room.ID); !reflect.DeepEqual(got, want) {
+		t.Errorf("Participants after bob joined again =\n%+v\nwant\n%+v", got, want)
+	}
+	before := e.participants(t, room.ID)
+	if err := appvoice.RebuildProjections(t.Context(), e.h.UnitOfWork, e.h.Voice); err != nil {
+		t.Fatalf("RebuildProjections = %v", err)
+	}
+	if got := e.participants(t, room.ID); !reflect.DeepEqual(got, before) {
+		t.Errorf("Participants after the rebuild =\n%+v\nwant\n%+v", got, before)
+	}
+
+	renominated := e.cohost(t, room.ID, bob, voice.CohostAssigned)
+	if got, err := e.h.Voice.FindParticipant(t.Context(), nil, bob); err != nil || got.CohostChangeID != renominated.ID {
+		t.Errorf("FindParticipant(bob) after the new nomination = %+v, %v; want co-host %s", got, err, renominated.ID)
+	}
+	// The former host, nominated after the handover, is a co-host again.
+	hostAssigned := e.cohost(t, room.ID, host, voice.CohostAssigned)
+	if got, err := e.h.Voice.FindParticipant(t.Context(), nil, host); err != nil || got.CohostChangeID != hostAssigned.ID {
+		t.Errorf("FindParticipant(former host) = %+v, %v; want co-host %s", got, err, hostAssigned.ID)
+	}
+}
+
+func voiceEndedParticipants(t *testing.T, e *voiceEnv) {
+	alice := NamedID("voice-alice")
+	room := e.openRoom(t, NamedID("voice-host"), voiceSettings("Ended"), true)
+	e.join(t, room.ID, alice, voice.RoleListener)
+	// The ending is recorded without ending the participation first.
+	if _, ok := e.end(t, room.ID, voice.EndModerator, NamedID("voice-moderator")); !ok {
+		t.Fatal("the ending was not recorded")
+	}
+	check := func(when string) {
+		t.Helper()
+		if ps := e.participants(t, room.ID); len(ps) != 0 {
+			t.Errorf("Participants of the ended room %s = %+v, want none", when, ps)
+		}
+		if _, err := e.h.Voice.FindParticipant(t.Context(), nil, alice); !errors.Is(err, appvoice.ErrNotFound) {
+			t.Errorf("FindParticipant(alice) %s = %v, want ErrNotFound", when, err)
+		}
+	}
+	check("after the end")
+	if err := appvoice.RebuildProjections(t.Context(), e.h.UnitOfWork, e.h.Voice); err != nil {
+		t.Fatalf("RebuildProjections = %v", err)
+	}
+	check("after the rebuild")
+	other := e.openRoom(t, NamedID("voice-other-host"), voiceSettings("Other"), true)
+	if p := e.join(t, other.ID, alice, voice.RoleListener); e.participants(t, other.ID)[0].ParticipationID != p.ID {
+		t.Error("alice did not join another room after the end")
 	}
 }

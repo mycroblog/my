@@ -14,9 +14,10 @@ import (
 // ErrNotFound reports a room, a participant, an invitation, or a host grace that does not exist.
 var ErrNotFound = errors.New("voice: not found")
 
-// ErrInAnotherRoom reports a participation of an account that is in a room already: an
-// account is in one room at most (ADR-0100 §5), so the command ends the other participation
-// first.
+// ErrInAnotherRoom reports a participation of an account that already has a participation that
+// has not ended, in another room or in the same one (two joins that raced): an account has one
+// participation at most (ADR-0100 §5), so a command that moves it ends the other participation
+// first, and a command must not read this error as "a different room".
 var ErrInAnotherRoom = errors.New("voice: the account is in another room")
 
 // Room is a room (voice_rooms).
@@ -155,8 +156,10 @@ type Participant struct {
 	ParticipationID string
 	// Role is the newest role change of the participation, RoleListener without one.
 	Role voice.Role
-	// CohostChangeID is the newest co-host assignment of the account in the room while it is a
-	// co-host, "" otherwise. The nominations are in the order of these IDs.
+	// CohostChangeID is the newest co-host assignment of the account in the room since this
+	// participation started, while it is not followed by a removal and the account is not the
+	// current host; "" otherwise. A co-host who leaves and joins again is not a co-host until
+	// the host nominates them again. The nominations are in the order of these IDs.
 	CohostChangeID string
 	HandRaised     bool
 }
@@ -244,13 +247,14 @@ type Repository interface {
 
 // ProjectionRepository derives the projections of the voice module (data-model §9) from the
 // events: voice_room_heads from the rooms, their revisions, host changes, participations, and
-// endings, and voice_room_participants from the participations that have not ended, their role
-// changes and raised hands, and the co-host changes of their accounts in their rooms.
+// endings, and voice_room_participants from the participations that have not ended in rooms
+// that have not ended, their role changes and raised hands, the co-host changes of their accounts
+// in their rooms since they joined, and the current host.
 type ProjectionRepository interface {
 	// RefreshHead derives the head of a room again.
 	RefreshHead(ctx context.Context, tx uow.Tx, roomID string) error
 	// RefreshParticipant derives again the participant row of an account in a room: the row of
-	// its participation that has not ended, or none. It fails with ErrInAnotherRoom when the
+	// its participation that has not ended, or none when it has none or the room ended. It fails with ErrInAnotherRoom when the
 	// account has a participant row of another room.
 	RefreshParticipant(ctx context.Context, tx uow.Tx, roomID, accountID string) error
 	// RefreshRoomParticipants derives again every participant row of a room.

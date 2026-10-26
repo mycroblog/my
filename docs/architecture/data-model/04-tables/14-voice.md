@@ -26,8 +26,11 @@
 - コマンドはイベントの行を書いてから、同じトランザクションでドメインイベント（`voice.room_opened`・`voice.room_revised`・`voice.host_changed`・`voice.cohost_changed`・`voice.participation_started`・`voice.participation_ended`・`voice.role_changed`・`voice.hand_raise_changed`・`voice.room_ended`）を発行します。
   `voice` の projector は、そのイベントが触れるルームの `voice_room_heads` の行と、アカウントの `voice_room_participants` の行を、再構築と同じ規則の SQL で作り直します（同期）。
 - `voice_room_heads` は、ルームの最新の版（`id` の最も大きい行）と最新のホストの交代、終了があれば `ended`、開いたルームなら終わっていない参加の数です。終わったルームの数は 0 です。
-- `voice_room_participants` は、終わっていない参加ごとの行です。役割は参加の最新の役割の変化（なければ `listener`）、共同ホストはそのルームでのそのアカウントの最新の共同ホストの変化が `assigned` ならその行の `id`（指名の順はこの `id` の順）、挙手はその参加の最新の挙手の変化が `raised` かどうかです。
-  主キーがアカウントなので、別のルームの参加が終わっていないアカウントの参加は projector が `voice.ErrInAnotherRoom` で拒み、トランザクションは何も書きません。別のルームへ移るコマンドは、前の参加を `moved` で終えてから参加します（ADR-0100 §5）。
+- `voice_room_participants` は、終わっていないルームの、終わっていない参加ごとの行です（`voice_room_endings` のあるルームの行は持ちません）。役割は参加の最新の役割の変化（なければ `listener`）、挙手はその参加の最新の挙手の変化が `raised` かどうかです。
+  共同ホストは、その参加が始まった後（`id` がその参加より大きい）の、そのルームでのそのアカウントの最新の共同ホストの変化が `assigned` で、そのアカウントがいまのホスト（最新の `voice_room_host_changes`）でないとき、その行の `id` です（指名の順はこの `id` の順）。
+  共同ホストであることは参加が終わると外れ、戻った人は聞き手で、ホストが指名し直します（[決定者の回答](https://github.com/mycroblog/my/pull/1372#issuecomment-6407284230)、#1345 の回答 44）。ハートビートの期限（45 秒）の内に繋ぎ直した人は参加が続くので、共同ホストのままです。
+  共同ホストがホストになると共同ホストではなくなり、共同ホストの上限（3 人）にも、自動でホストを継ぐ候補（`NextHost`）にも数えません。ホストの交代の projector は、そのルームの参加者の行をすべて作り直します。
+  主キーがアカウントなので、終わっていない参加を持つアカウント（別のルームでも、同時に走った同じルームへの参加でも）の参加は projector が `voice.ErrInAnotherRoom` で拒み、トランザクションは何も書きません。別のルームへ移るコマンドは、前の参加を `moved` で終えてから参加します（ADR-0100 §5）。
 - 参加の終わり・招待・取り消し・禁止・ルームの終了は、一意制約と衝突で何もしない挿入で 1 回だけ書きます（同時に走った評価も 1 回だけ効く。ADR-0100 §6）。発話の許可は、そのルームでのそのアカウントの最新の `voice_room_speak_grants` が `granted` かどうかです。
 - 一覧（`OpenRooms`）は `voice_room_heads` の開いたルームを参加者の多い順に引き、ハッシュタグで絞るときは今の版のタグ（`name_normalized`）を見ます。閲覧者ごとの公開範囲は `internal/domain/voice` の `CanSee` でアプリが絞ります（ADR-0100 §4）。
 - 接続の生存（ハートビート）は DB に書かず、`KeyValueStore` に置きます（ADR-0100 §6・§12）。

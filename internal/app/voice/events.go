@@ -114,7 +114,12 @@ func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 		return repo.RefreshHead(ctx, tx, e.(RoomRevised).Revision.RoomID)
 	})
 	r.Register(EventHostChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.RefreshHead(ctx, tx, e.(HostChanged).Change.RoomID)
+		// The new host stops being a co-host, so the participants of the room change too.
+		roomID := e.(HostChanged).Change.RoomID
+		if err := repo.RefreshRoomParticipants(ctx, tx, roomID); err != nil {
+			return err
+		}
+		return repo.RefreshHead(ctx, tx, roomID)
 	})
 	r.Register(EventCohostChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		c := e.(CohostChanged).Change

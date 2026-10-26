@@ -425,12 +425,15 @@ SELECT p.account_id, p.room_id, p.id,
   COALESCE((SELECT c.role FROM voice_room_role_changes c WHERE c.participation_id = p.id ORDER BY c.id DESC LIMIT 1), 'listener'),
   (SELECT n.id FROM (
     SELECT c.id, c.change FROM voice_room_cohost_changes c
-    WHERE c.room_id = p.room_id AND c.account_id = p.account_id ORDER BY c.id DESC LIMIT 1
-  ) n WHERE n.change = 'assigned'),
+    WHERE c.room_id = p.room_id AND c.account_id = p.account_id AND c.id > p.id ORDER BY c.id DESC LIMIT 1
+  ) n WHERE n.change = 'assigned' AND p.account_id <> (
+    SELECT o.host_account_id FROM voice_room_host_changes o WHERE o.room_id = p.room_id ORDER BY o.id DESC LIMIT 1
+  )),
   COALESCE((SELECT h.change = 'raised' FROM voice_room_hand_raises h WHERE h.participation_id = p.id ORDER BY h.id DESC LIMIT 1), false)
 FROM voice_room_participations p
 WHERE p.room_id = $1 AND p.account_id = $2
   AND NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.participation_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM voice_room_endings x WHERE x.room_id = p.room_id)
 `
 
 type InsertVoiceRoomParticipantParams struct {
@@ -439,8 +442,10 @@ type InsertVoiceRoomParticipantParams struct {
 }
 
 // InsertVoiceRoomParticipant derives the participant row of an account in a room from its
-// participation that has not ended: the newest role change (listener without one), the newest
-// co-host change of the account in the room when it is an assignment, and the newest hand raise.
+// participation that has not ended, in a room that has not ended: the newest role change
+// (listener without one), the newest co-host change of the account in the room since the
+// participation started when it is an assignment and the account is not the current host, and
+// the newest hand raise.
 func (q *Queries) InsertVoiceRoomParticipant(ctx context.Context, arg InsertVoiceRoomParticipantParams) error {
 	_, err := q.db.Exec(ctx, insertVoiceRoomParticipant, arg.RoomID, arg.AccountID)
 	return err
@@ -452,12 +457,15 @@ SELECT p.account_id, p.room_id, p.id,
   COALESCE((SELECT c.role FROM voice_room_role_changes c WHERE c.participation_id = p.id ORDER BY c.id DESC LIMIT 1), 'listener'),
   (SELECT n.id FROM (
     SELECT c.id, c.change FROM voice_room_cohost_changes c
-    WHERE c.room_id = p.room_id AND c.account_id = p.account_id ORDER BY c.id DESC LIMIT 1
-  ) n WHERE n.change = 'assigned'),
+    WHERE c.room_id = p.room_id AND c.account_id = p.account_id AND c.id > p.id ORDER BY c.id DESC LIMIT 1
+  ) n WHERE n.change = 'assigned' AND p.account_id <> (
+    SELECT o.host_account_id FROM voice_room_host_changes o WHERE o.room_id = p.room_id ORDER BY o.id DESC LIMIT 1
+  )),
   COALESCE((SELECT h.change = 'raised' FROM voice_room_hand_raises h WHERE h.participation_id = p.id ORDER BY h.id DESC LIMIT 1), false)
 FROM voice_room_participations p
 WHERE p.room_id = $1
   AND NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.participation_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM voice_room_endings x WHERE x.room_id = p.room_id)
 `
 
 func (q *Queries) InsertVoiceRoomParticipants(ctx context.Context, roomID string) error {
@@ -806,11 +814,14 @@ SELECT p.account_id, p.room_id, p.id,
   COALESCE((SELECT c.role FROM voice_room_role_changes c WHERE c.participation_id = p.id ORDER BY c.id DESC LIMIT 1), 'listener'),
   (SELECT n.id FROM (
     SELECT c.id, c.change FROM voice_room_cohost_changes c
-    WHERE c.room_id = p.room_id AND c.account_id = p.account_id ORDER BY c.id DESC LIMIT 1
-  ) n WHERE n.change = 'assigned'),
+    WHERE c.room_id = p.room_id AND c.account_id = p.account_id AND c.id > p.id ORDER BY c.id DESC LIMIT 1
+  ) n WHERE n.change = 'assigned' AND p.account_id <> (
+    SELECT o.host_account_id FROM voice_room_host_changes o WHERE o.room_id = p.room_id ORDER BY o.id DESC LIMIT 1
+  )),
   COALESCE((SELECT h.change = 'raised' FROM voice_room_hand_raises h WHERE h.participation_id = p.id ORDER BY h.id DESC LIMIT 1), false)
 FROM voice_room_participations p
 WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.participation_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM voice_room_endings x WHERE x.room_id = p.room_id)
 `
 
 func (q *Queries) RebuildVoiceRoomParticipants(ctx context.Context) error {
