@@ -37,6 +37,24 @@ Who may open rooms is the instance setting `voice_room_starters` ([instance sett
 
 ## Peer-to-peer rooms
 
+### Try it with Docker Compose
+
+To try the voice chat on your machine with the Docker Compose setup ([`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml)),
+layer the override [`compose.voice.yaml`](../../deploy/docker/compose.voice.yaml) on top. It sets `voice` of `my` to `p2p`.
+
+```sh
+cd deploy/docker
+docker compose -f compose.yaml -f compose.voice.yaml up -d --build
+```
+
+- Open the instance at `http://localhost:8080` (the `MY_WEB_ORIGIN` of `.env.example`). Browsers let a page use the microphone only on
+  `localhost` or over HTTPS, so an address such as `http://192.168.1.10:8080` cannot speak.
+- Browsers on the same machine (two browser profiles, or a normal and a private window) connect to each other without a STUN or TURN
+  server. To reach browsers on other machines, put the instance behind HTTPS and set `MY_VOICE_STUN_URLS` in `.env`.
+- Only the `admin` role may open rooms by default. Sign in as the administrator you created, or set `voice_room_starters` to `everyone`
+  under the server settings to let every user open rooms.
+- To combine it with Mailpit, list both overrides: `docker compose -f compose.yaml -f compose.mailpit.yaml -f compose.voice.yaml up -d --build`.
+
 ### Size and bandwidth
 
 Two browsers connect to each other when at least one of them is speaking; two people who only listen do not connect.
