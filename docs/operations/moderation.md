@@ -20,7 +20,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 - The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
   so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
 - The admin API paths stay `/api/v1/admin/...` whatever the group, and the scopes are the same pair `admin:read` / `admin:write`. The groups are separated by tags in the API reference (`admin-moderation`, `admin-server`).
-- There is a third group of permissions, "user features" (`view_finance`), which lives outside the staff screens. Someone who has only this permission sees neither "Moderation" nor "Administration",
+- There is a third group of permissions, "user features" (`view_finance`, `create_custom_emojis`, `start_voice_rooms`), which lives outside the staff screens. Someone who has only these permissions sees neither "Moderation" nor "Administration",
   and for someone with `view_finance` the navigation shows "Finances" (`/finance`) after Settings.
   Its API is in the user namespace (`GET /api/v1/finance/cost_totals` and `GET /api/v1/finance/income_totals`, scope `read:finance`) and needs no `admin:*` scope. What it shows is set by `finance_viewer_*` in the [instance settings](instance-settings.md).
 

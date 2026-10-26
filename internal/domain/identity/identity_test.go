@@ -4,6 +4,7 @@ package identity_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -33,6 +34,13 @@ func TestBuiltinRoles(t *testing.T) {
 	}
 	if roles[0].Position <= roles[1].Position {
 		t.Errorf("admin does not outrank moderator")
+	}
+	// Of the built-in roles, only admin may open voice chat rooms (ADR-0100 §2).
+	if !slices.Contains(roles[0].Permissions, identity.PermStartVoiceRooms) || slices.Contains(roles[1].Permissions, identity.PermStartVoiceRooms) {
+		t.Errorf("start_voice_rooms: admin %v, moderator %v; want admin only", roles[0].Permissions, roles[1].Permissions)
+	}
+	if got := identity.PermStartVoiceRooms.Category(); got != identity.CategoryMember {
+		t.Errorf("start_voice_rooms is %s, want member", got)
 	}
 }
 

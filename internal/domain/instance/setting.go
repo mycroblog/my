@@ -98,6 +98,13 @@ const (
 	// SettingOAuthMetadataDocumentClients is whether OAuth clients may use the https URL of a
 	// Client ID Metadata Document as their client_id without registering (ADR-0090 §1).
 	SettingOAuthMetadataDocumentClients SettingKey = "oauth_metadata_document_clients"
+	// SettingVoiceRoomStarters decides who may open voice chat rooms (ADR-0100 §2),
+	// SettingVoicePublicSummary whether the page of a local room shows its summary to visitors
+	// who are not signed in to this server (§9), and SettingRetentionVoiceParticipants how many
+	// days the records of the participants of a room are kept after it ended (§13).
+	SettingVoiceRoomStarters          SettingKey = "voice_room_starters"
+	SettingVoicePublicSummary         SettingKey = "voice_public_summary"
+	SettingRetentionVoiceParticipants SettingKey = "retention_voice_participants"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -211,6 +218,16 @@ const (
 	SupporterListSignedIn SupporterListVisibility = "signed_in" // the users signed in to this server
 )
 
+// VoiceRoomStarters is the value of SettingVoiceRoomStarters (ADR-0100 §2): who may open voice
+// chat rooms among the local users who may host them.
+type VoiceRoomStarters string
+
+// Voice room starters values.
+const (
+	VoiceRoomStartersEveryone  VoiceRoomStarters = "everyone"  // every signed-in local user
+	VoiceRoomStartersPermitted VoiceRoomStarters = "permitted" // the holders of start_voice_rooms
+)
+
 // FinanceViewer is what the holders of view_finance read of the instance's finances beyond the
 // totals and their breakdown by provider and category, which they always read (ADR-0070 §5).
 type FinanceViewer struct {
@@ -268,6 +285,9 @@ const (
 	MinRetentionAuditLog       = 365
 	DefaultRetentionAuditLog   = 730
 	MaxRetention               = 3650
+	// The records of the participants of voice chat rooms (ADR-0100 §13).
+	MinRetentionVoiceParticipants     = 30
+	DefaultRetentionVoiceParticipants = 90
 )
 
 // Kind is the scalar type of a setting's value.
@@ -458,6 +478,19 @@ var definitions = []Definition{
 	{
 		Key: SettingUserAppRegistration, Kind: KindBool, Default: "true",
 		Doc: "Whether signed-in users may register their own OAuth apps, public or confidential, through the client API; apps registered earlier keep working when it is off (ADR-0090 §1).",
+	},
+	{
+		Key: SettingVoiceRoomStarters, Kind: KindEnum, Default: string(VoiceRoomStartersPermitted),
+		Choices: []string{string(VoiceRoomStartersEveryone), string(VoiceRoomStartersPermitted)},
+		Doc:     "Who may open voice chat rooms: everyone (every signed-in local user) or permitted (only the holders of the start_voice_rooms permission) (ADR-0100 §2).",
+	},
+	{
+		Key: SettingVoicePublicSummary, Kind: KindBool, Default: "false",
+		Doc: "Whether the page of a voice chat room whose visibility is local shows its name, description, host, and whether it is open to visitors who are not signed in to this server, and in its link preview; its participants are never shown (ADR-0100 §9).",
+	},
+	{
+		Key: SettingRetentionVoiceParticipants, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionVoiceParticipants), Min: MinRetentionVoiceParticipants, Max: MaxRetention,
+		Doc: "How many days the records of who took part in a voice chat room, and as what, are kept after the room ended; the records of a reported room are kept as long as the report (ADR-0100 §13).",
 	},
 }
 
@@ -799,7 +832,8 @@ func (s Settings) AppealWindow() time.Duration {
 
 // Retention returns the value of a retention setting (SettingRetentionSessionOrigins,
 // SettingRetentionRegistrationOrigins, SettingRetentionReports,
-// SettingRetentionModerationActions, SettingRetentionAuditLog) as a duration.
+// SettingRetentionModerationActions, SettingRetentionAuditLog,
+// SettingRetentionVoiceParticipants) as a duration.
 func (s Settings) Retention(key SettingKey) time.Duration {
 	return time.Duration(s.intValue(key)) * 24 * time.Hour
 }
@@ -882,6 +916,18 @@ func (s Settings) SupporterListVisibility() SupporterListVisibility {
 	}
 	return SupporterListOff
 }
+
+// VoiceRoomStarters returns the value of SettingVoiceRoomStarters; an unexpected value is
+// permitted.
+func (s Settings) VoiceRoomStarters() VoiceRoomStarters {
+	if v, _ := s.Value(SettingVoiceRoomStarters); v == string(VoiceRoomStartersEveryone) {
+		return VoiceRoomStartersEveryone
+	}
+	return VoiceRoomStartersPermitted
+}
+
+// VoicePublicSummary returns the value of SettingVoicePublicSummary.
+func (s Settings) VoicePublicSummary() bool { return s.boolValue(SettingVoicePublicSummary) }
 
 // LinkCardsEnabled returns the value of SettingLinkCardsEnabled.
 func (s Settings) LinkCardsEnabled() bool { return s.boolValue(SettingLinkCardsEnabled) }

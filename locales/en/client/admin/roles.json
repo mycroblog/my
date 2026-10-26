@@ -131,6 +131,10 @@
     "defaultMessage": "Request custom emoji",
     "description": "Name of the permission create_custom_emojis: requesting new custom emoji, which an administrator approves, and changing and deleting the ones the user made."
   },
+  "admin.roles.permission.start_voice_rooms": {
+    "defaultMessage": "Start voice chat rooms",
+    "description": "Name of the permission start_voice_rooms: opening voice chat rooms and hosting them, while the server lets only the holders of this permission open them."
+  },
   "admin.roles.permission.manage_oauth_apps": {
     "defaultMessage": "OAuth apps",
     "description": "Name of the permission manage_oauth_apps: all the OAuth clients, disabling them, and denying the hosts of client metadata documents."

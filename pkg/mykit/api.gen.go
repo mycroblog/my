@@ -1883,11 +1883,14 @@ const (
 	InstanceSettingKeyRetentionRegistrationOrigins     InstanceSettingKey = "retention_registration_origins"
 	InstanceSettingKeyRetentionReports                 InstanceSettingKey = "retention_reports"
 	InstanceSettingKeyRetentionSessionOrigins          InstanceSettingKey = "retention_session_origins"
+	InstanceSettingKeyRetentionVoiceParticipants       InstanceSettingKey = "retention_voice_participants"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
+	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKey enum.
@@ -1955,6 +1958,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRetentionSessionOrigins:
 		return true
+	case InstanceSettingKeyRetentionVoiceParticipants:
+		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
 	case InstanceSettingKeySecurityContact:
@@ -1964,6 +1969,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyThumbnail:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyVoicePublicSummary:
+		return true
+	case InstanceSettingKeyVoiceRoomStarters:
 		return true
 	default:
 		return false
@@ -2406,6 +2415,7 @@ const (
 	PermissionManageSettings       Permission = "manage_settings"
 	PermissionManageSupporters     Permission = "manage_supporters"
 	PermissionManageWebhooks       Permission = "manage_webhooks"
+	PermissionStartVoiceRooms      Permission = "start_voice_rooms"
 	PermissionViewAudit            Permission = "view_audit"
 	PermissionViewFinance          Permission = "view_finance"
 )
@@ -2446,6 +2456,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageSupporters:
 		return true
 	case PermissionManageWebhooks:
+		return true
+	case PermissionStartVoiceRooms:
 		return true
 	case PermissionViewAudit:
 		return true
@@ -8464,7 +8476,9 @@ type PaymentStatusWarnings string
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
 // `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
 // of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-// admin role by default, ADR-0088). The others guard no client API operation
+// admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+// instance setting `voice_room_starters` is `permitted`, a member permission (only the
+// built-in admin role by default, ADR-0100). The others guard no client API operation
 // yet.
 type Permission string
 

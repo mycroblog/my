@@ -133,6 +133,33 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments_provider = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
+| [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
+| [`voice_max_participants`](#voice_max_participants) | `MY_VOICE_MAX_PARTICIPANTS` | `0` | no | no |
+| [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `0` | no | no |
+| [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `0` | no | no |
+| [`voice_stun_urls`](#voice_stun_urls) | `MY_VOICE_STUN_URLS` | none | no | no |
+| [`voice_turn`](#voice_turn) | `MY_VOICE_TURN` | `none` | no | no |
+| [`voice_turn_urls`](#voice_turn_urls) | `MY_VOICE_TURN_URLS` | none | when `voice = p2p` and `voice_turn = coturn` | no |
+| [`voice_turn_secret`](#voice_turn_secret) | `MY_VOICE_TURN_SECRET` | none | when `voice = p2p` and `voice_turn = coturn` | yes |
+| [`voice_turn_cloudflare_key_id`](#voice_turn_cloudflare_key_id) | `MY_VOICE_TURN_CLOUDFLARE_KEY_ID` | none | when `voice = p2p` and `voice_turn = cloudflare` | no |
+| [`voice_turn_cloudflare_api_token`](#voice_turn_cloudflare_api_token) | `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` | none | when `voice = p2p` and `voice_turn = cloudflare` | yes |
+| [`voice_turn_credential_ttl`](#voice_turn_credential_ttl) | `MY_VOICE_TURN_CREDENTIAL_TTL` | `6h` | no | no |
+| [`voice_ice_transport_policy`](#voice_ice_transport_policy) | `MY_VOICE_ICE_TRANSPORT_POLICY` | `all` | no | no |
+| [`voice_livekit_url`](#voice_livekit_url) | `MY_VOICE_LIVEKIT_URL` | none | when `voice = livekit` | no |
+| [`voice_livekit_api_url`](#voice_livekit_api_url) | `MY_VOICE_LIVEKIT_API_URL` | `voice_livekit_url` with `https:` (`http:` for `ws:`) | no | no |
+| [`voice_livekit_api_key`](#voice_livekit_api_key) | `MY_VOICE_LIVEKIT_API_KEY` | none | when `voice = livekit` | no |
+| [`voice_livekit_api_secret`](#voice_livekit_api_secret) | `MY_VOICE_LIVEKIT_API_SECRET` | none | when `voice = livekit` | yes |
+| [`voice_sora_mode`](#voice_sora_mode) | `MY_VOICE_SORA_MODE` | none | when `voice = sora` | no |
+| [`voice_sora_signaling_urls`](#voice_sora_signaling_urls) | `MY_VOICE_SORA_SIGNALING_URLS` | none | when `voice = sora` | no |
+| [`voice_sora_api_url`](#voice_sora_api_url) | `MY_VOICE_SORA_API_URL` | none | when `voice = sora` and `voice_sora_mode = self_hosted` | no |
+| [`voice_sora_api_header_name`](#voice_sora_api_header_name) | `MY_VOICE_SORA_API_HEADER_NAME` | none | no | no |
+| [`voice_sora_api_header_value`](#voice_sora_api_header_value) | `MY_VOICE_SORA_API_HEADER_VALUE` | none | when `voice = sora` and `voice_sora_api_header_name` is set | yes |
+| [`voice_sora_webhook_username`](#voice_sora_webhook_username) | `MY_VOICE_SORA_WEBHOOK_USERNAME` | none | when `voice = sora` and `voice_sora_mode = self_hosted` | no |
+| [`voice_sora_webhook_password`](#voice_sora_webhook_password) | `MY_VOICE_SORA_WEBHOOK_PASSWORD` | none | when `voice = sora` and `voice_sora_mode = self_hosted` | yes |
+| [`voice_sora_cloud_project_id`](#voice_sora_cloud_project_id) | `MY_VOICE_SORA_CLOUD_PROJECT_ID` | none | when `voice = sora` and `voice_sora_mode = cloud` | no |
+| [`voice_sora_cloud_api_key`](#voice_sora_cloud_api_key) | `MY_VOICE_SORA_CLOUD_API_KEY` | none | when `voice = sora` and `voice_sora_mode = cloud` | yes |
+| [`voice_join_secret`](#voice_join_secret) | `MY_VOICE_JOIN_SECRET` | none | when `voice = sora` | yes |
 | [`dead_job_retention`](#dead_job_retention) | `MY_DEAD_JOB_RETENTION` | `720h` | no | no |
 | [`job_attempt_retention`](#job_attempt_retention) | `MY_JOB_ATTEMPT_RETENTION` | `720h` | no | no |
 | [`dynamic_client_unredeemed_ttl`](#dynamic_client_unredeemed_ttl) | `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL` | `24h` | no | no |
@@ -949,6 +976,245 @@ How many requests one reconciliation sends to `payments_provider`, a page of a l
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
 - Required: no
+
+### `voice`
+
+How the voice chat rooms connect their participants. With `off`, the voice chat API answers 404, the web client shows no voice chat, and the other `voice_*` settings are not checked at start.
+
+- Environment variable: `MY_VOICE`
+- Default: `off`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `off` | yes | No voice chat. |
+| `p2p` | yes | The browsers connect to each other, with the STUN and TURN servers of `voice_stun_urls` and `voice_turn`; the server only relays what they send to set up the connections. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
+| `livekit` | yes | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. |
+| `sora` | yes | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. |
+
+### `voice_p2p_max_participants`
+
+How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused. Every speaker sends their audio to every other participant, so a larger room needs more upload bandwidth of each speaker.
+
+- Environment variable: `MY_VOICE_P2P_MAX_PARTICIPANTS`
+- Default: `10`
+- Required: no
+
+### `voice_max_participants`
+
+How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.
+
+- Environment variable: `MY_VOICE_MAX_PARTICIPANTS`
+- Default: `0`
+- Required: no
+
+### `voice_max_room_duration`
+
+The longest a room stays open, a Go duration such as `4h`; a room that reaches it is ended. `0` sets no limit.
+
+- Environment variable: `MY_VOICE_MAX_ROOM_DURATION`
+- Default: `0`
+- Required: no
+
+### `voice_max_open_rooms`
+
+How many rooms may be open on the server at the same time; opening one more is refused. `0` sets no limit.
+
+- Environment variable: `MY_VOICE_MAX_OPEN_ROOMS`
+- Default: `0`
+- Required: no
+
+### `voice_stun_urls`
+
+The STUN servers with which the browsers of `voice = p2p` find their public addresses, comma-separated `stun:` or `stuns:` URLs such as `stun:stun.example.org:3478`. Empty uses none. `voice = livekit` and `voice = sora` do not use it and warn at start when it is set.
+
+- Environment variable: `MY_VOICE_STUN_URLS`
+- Default: none
+- Required: no
+
+### `voice_turn`
+
+The TURN server that relays the audio of `voice = p2p` between browsers that cannot reach each other directly; the server gives each participant short-lived credentials for it. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.
+
+- Environment variable: `MY_VOICE_TURN`
+- Default: `none`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `none` | yes | No TURN server: browsers behind strict NATs or firewalls may not connect. |
+| `coturn` | yes | A coturn server at `voice_turn_urls`, with its `static-auth-secret` in `voice_turn_secret`. |
+| `cloudflare` | yes | Cloudflare's TURN service, with `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`; the server asks it for the credentials of each participant. |
+
+### `voice_turn_urls`
+
+The URLs of the coturn server of `voice_turn = coturn`, comma-separated `turn:` or `turns:` URLs such as `turn:turn.example.org:3478?transport=udp, turns:turn.example.org:5349`.
+
+- Environment variable: `MY_VOICE_TURN_URLS`
+- Default: none
+- Required: when `voice = p2p` and `voice_turn = coturn`
+
+### `voice_turn_secret`
+
+The `static-auth-secret` of the coturn server of `voice_turn = coturn`, which signs the short-lived credentials that the server gives the participants.
+
+- Environment variable: `MY_VOICE_TURN_SECRET` or `MY_VOICE_TURN_SECRET_FILE`
+- Default: none
+- Required: when `voice = p2p` and `voice_turn = coturn`
+
+### `voice_turn_cloudflare_key_id`
+
+The ID of the TURN key of `voice_turn = cloudflare`, from Cloudflare's dashboard.
+
+- Environment variable: `MY_VOICE_TURN_CLOUDFLARE_KEY_ID`
+- Default: none
+- Required: when `voice = p2p` and `voice_turn = cloudflare`
+
+### `voice_turn_cloudflare_api_token`
+
+The API token of the TURN key of `voice_turn = cloudflare`, with which the server asks Cloudflare for the credentials of each participant.
+
+- Environment variable: `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` or `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN_FILE`
+- Default: none
+- Required: when `voice = p2p` and `voice_turn = cloudflare`
+
+### `voice_turn_credential_ttl`
+
+How long the TURN credentials of a participant stay valid, a Go duration; the web client asks for new ones before they expire. With `voice_turn = cloudflare` it may be at most `48h`.
+
+- Environment variable: `MY_VOICE_TURN_CREDENTIAL_TTL`
+- Default: `6h`
+- Required: no
+
+### `voice_ice_transport_policy`
+
+Which connections the browsers of `voice = p2p` make. `voice = livekit` and `voice = sora` do not use it and warn at start when it is `relay`.
+
+- Environment variable: `MY_VOICE_ICE_TRANSPORT_POLICY`
+- Default: `all`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `all` | yes | Direct connections where possible and the TURN server otherwise; the participants of a room may learn each other's IP addresses. |
+| `relay` | yes | Only through the TURN server, which hides the participants' IP addresses from each other; needs `voice_turn`. |
+
+### `voice_livekit_url`
+
+The `wss:` URL of the LiveKit server of `voice = livekit` that the browsers connect to, such as `wss://livekit.example.org`; `ws:` is accepted for localhost only.
+
+- Environment variable: `MY_VOICE_LIVEKIT_URL`
+- Default: none
+- Required: when `voice = livekit`
+
+### `voice_livekit_api_url`
+
+The `https:` URL of the API of the LiveKit server of `voice = livekit` that the server calls, when it differs from `voice_livekit_url`; `http:` is accepted for localhost only.
+
+- Environment variable: `MY_VOICE_LIVEKIT_API_URL`
+- Default: `voice_livekit_url` with `https:` (`http:` for `ws:`)
+- Required: no
+
+### `voice_livekit_api_key`
+
+The API key of the LiveKit server of `voice = livekit`.
+
+- Environment variable: `MY_VOICE_LIVEKIT_API_KEY`
+- Default: none
+- Required: when `voice = livekit`
+
+### `voice_livekit_api_secret`
+
+The API secret of `voice_livekit_api_key`, which signs the access tokens of the participants and verifies the webhooks of the LiveKit server.
+
+- Environment variable: `MY_VOICE_LIVEKIT_API_SECRET` or `MY_VOICE_LIVEKIT_API_SECRET_FILE`
+- Default: none
+- Required: when `voice = livekit`
+
+### `voice_sora_mode`
+
+Where the Sora server of `voice = sora` runs.
+
+- Environment variable: `MY_VOICE_SORA_MODE`
+- Default: none
+- Required: when `voice = sora`
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `self_hosted` | yes | A Sora server of the operator: its API behind a reverse proxy with authentication at `voice_sora_api_url`, and its webhooks with Basic authentication (`voice_sora_webhook_username`, `voice_sora_webhook_password`). |
+| `cloud` | yes | Sora Cloud, with `voice_sora_cloud_project_id` and `voice_sora_cloud_api_key`. |
+
+### `voice_sora_signaling_urls`
+
+The signaling URLs of the Sora server of `voice = sora` that the browsers connect to, comma-separated `wss:` URLs; `ws:` is accepted for localhost only.
+
+- Environment variable: `MY_VOICE_SORA_SIGNALING_URLS`
+- Default: none
+- Required: when `voice = sora`
+
+### `voice_sora_api_url`
+
+The `https:` URL of the reverse proxy in front of the API of the self-hosted Sora server, which the server calls; the API of Sora itself has no authentication and must not be reachable from outside. `http:` is accepted for localhost only.
+
+- Environment variable: `MY_VOICE_SORA_API_URL`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_mode = self_hosted`
+
+### `voice_sora_api_header_name`
+
+The name of the header with which the reverse proxy of `voice_sora_api_url` authenticates the server, such as `Authorization`; set it together with `voice_sora_api_header_value`. Empty sends none.
+
+- Environment variable: `MY_VOICE_SORA_API_HEADER_NAME`
+- Default: none
+- Required: no
+
+### `voice_sora_api_header_value`
+
+The value of the header `voice_sora_api_header_name`, such as `Basic dXNlcjpwYXNz`.
+
+- Environment variable: `MY_VOICE_SORA_API_HEADER_VALUE` or `MY_VOICE_SORA_API_HEADER_VALUE_FILE`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_api_header_name` is set
+
+### `voice_sora_webhook_username`
+
+The Basic authentication user name that the self-hosted Sora server sends with its webhooks.
+
+- Environment variable: `MY_VOICE_SORA_WEBHOOK_USERNAME`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_mode = self_hosted`
+
+### `voice_sora_webhook_password`
+
+The Basic authentication password of `voice_sora_webhook_username`.
+
+- Environment variable: `MY_VOICE_SORA_WEBHOOK_PASSWORD` or `MY_VOICE_SORA_WEBHOOK_PASSWORD_FILE`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_mode = self_hosted`
+
+### `voice_sora_cloud_project_id`
+
+The project ID of Sora Cloud of `voice_sora_mode = cloud`.
+
+- Environment variable: `MY_VOICE_SORA_CLOUD_PROJECT_ID`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_mode = cloud`
+
+### `voice_sora_cloud_api_key`
+
+The API key of the Sora Cloud project, which signs the access tokens of the participants, authenticates the calls of its API, and verifies the signatures of its webhooks.
+
+- Environment variable: `MY_VOICE_SORA_CLOUD_API_KEY` or `MY_VOICE_SORA_CLOUD_API_KEY_FILE`
+- Default: none
+- Required: when `voice = sora` and `voice_sora_mode = cloud`
+
+### `voice_join_secret`
+
+The secret that signs the values with which the participants of `voice = sora` join a room, which the Sora server sends back for the server to authorize each connection. A random string of at least 32 bytes, such as the output of `openssl rand -base64 32`.
+
+- Environment variable: `MY_VOICE_JOIN_SECRET` or `MY_VOICE_JOIN_SECRET_FILE`
+- Default: none
+- Required: when `voice = sora`
 
 ### `dead_job_retention`
 
