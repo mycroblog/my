@@ -73,6 +73,8 @@ type financeEnv struct {
 	caps map[string]appfinance.RequestCaps
 	// dir is the supporter directory of svc, which a test may fill.
 	dir *FakeSupporterDirectory
+	// meter records the metrics of svc.
+	meter *Meter
 }
 
 func newFinanceEnv(t *testing.T, newHarness FinanceFactory) *financeEnv {
@@ -84,11 +86,12 @@ func newFinanceEnv(t *testing.T, newHarness FinanceFactory) *financeEnv {
 	aws := NewFakeBillingSource("aws", time.UTC)
 	caps := map[string]appfinance.RequestCaps{}
 	dir := &FakeSupporterDirectory{}
+	meter := NewMeter()
 	svc := appfinance.NewService(appfinance.Deps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Finance, Clock: clock, IDs: NewIDGenerator(clock),
-		Sources: []appfinance.BillingSource{aws}, Caps: caps, Supporters: dir, Logger: discardLogger(),
+		Sources: []appfinance.BillingSource{aws}, Caps: caps, Supporters: dir, Logger: discardLogger(), Meter: meter,
 	})
-	return &financeEnv{h: h, clock: clock, svc: svc, aws: aws, caps: caps, dir: dir}
+	return &financeEnv{h: h, clock: clock, svc: svc, aws: aws, caps: caps, dir: dir, meter: meter}
 }
 
 func financeDate(t *testing.T, s string) finance.Date {

@@ -36,15 +36,20 @@ type Deps struct {
 	Supporters SupporterDirectory
 	// Logger logs the imports and the income records; nil means slog.Default().
 	Logger *slog.Logger
+	// Meter records my.billing.imports; nil records nothing.
+	Meter kernel.Meter
 }
 
 // Service runs the use cases of the instance's costs.
 type Service struct {
-	d Deps
+	d       Deps
+	imports kernel.Counter
 }
 
 // NewService returns a Service.
-func NewService(d Deps) *Service { return &Service{d: d} }
+func NewService(d Deps) *Service {
+	return &Service{d: d, imports: kernel.MeterOrNop(d.Meter).Counter(BillingImports)}
+}
 
 // NormalizeProvider returns the form of a provider that groups the breakdown
 // (cost_item_label_revisions.provider_normalized): NFKC, then lower case.

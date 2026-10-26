@@ -3,6 +3,9 @@
 package sqlite
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/mycroblog/my/internal/adapter/telemetry/sysmetrics"
 	"github.com/mycroblog/my/internal/app/kernel"
 )
@@ -21,4 +24,15 @@ func (d *DB) RegisterMetrics(m kernel.Meter) {
 			Waits: s.WaitCount, WaitTime: s.WaitDuration,
 		}
 	})
+}
+
+// DatabaseSize implements metrics.DatabaseSizer: the size of the database file, pages on the
+// free list included (page_count × page_size). The write-ahead log is left out: a checkpoint
+// moves it into the file.
+func (d *DB) DatabaseSize(ctx context.Context) (int64, error) {
+	var n int64
+	if err := d.db.QueryRowContext(ctx, "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()").Scan(&n); err != nil {
+		return 0, fmt.Errorf("sqlite: database size: %w", err)
+	}
+	return n, nil
 }

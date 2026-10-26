@@ -220,6 +220,12 @@ SELECT domain, state, since, failure_days, last_failure_day FROM instance_health
 WHERE (sqlc.arg(state)::text = '' OR state = sqlc.arg(state)::text) AND domain > sqlc.arg(after_domain)
 ORDER BY domain LIMIT sqlc.arg(batch_limit);
 
+-- CountInstanceHealth counts by state the servers that failed on a day since they last answered
+-- or that are unavailable, for the metrics snapshot.
+-- name: CountInstanceHealth :many
+SELECT state, count(*) AS servers FROM instance_health
+WHERE state = 'unavailable' OR failure_days > 0 GROUP BY state;
+
 -- LockInstanceHealth reads the health of a server in the transaction that updates it and locks
 -- the row, so that concurrent deliveries to one server do not lose an update.
 -- name: LockInstanceHealth :one

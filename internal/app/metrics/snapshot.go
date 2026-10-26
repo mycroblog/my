@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package metrics keeps the snapshot of the instance-wide gauges of the service metrics
-// (ADR-0055 §4): the queue backlog, the local users and posts, and the bytes of the media files.
+// (ADR-0055 §4): the queue backlog, the local users and posts, the bytes of the media files and
+// of the database, and the remote servers that deliveries fail to reach.
 // They come from the database, and every process reports the same values: one process computes
 // them and puts them in the KeyValueStore, and the others read them from there.
 //
@@ -61,6 +62,23 @@ type Totals struct {
 	// cache of remote media files.
 	MediaLocalBytes       int64 `json:"media_local_bytes"`
 	MediaRemoteCacheBytes int64 `json:"media_remote_cache_bytes"`
+	// DatabaseBytes is the size of the database; nil when the server does not measure it.
+	DatabaseBytes *int64 `json:"database_bytes,omitempty"`
+	// InstancesFailing are the remote servers that deliveries still go to and that failed on a
+	// day since they last answered; InstancesUnavailable those whose deliveries are paused.
+	InstancesFailing     int64 `json:"instances_failing"`
+	InstancesUnavailable int64 `json:"instances_unavailable"`
+	// BillingImportFailing tells, for every enabled billing source, whether its newest import
+	// attempt failed.
+	BillingImportFailing map[string]bool `json:"billing_import_failing,omitempty"`
+}
+
+// DatabaseSizer measures the database. The database adapters implement it and pass
+// testkit.DatabaseSizerContract.
+type DatabaseSizer interface {
+	// DatabaseSize returns the bytes that the database takes in its storage. It is cheap enough
+	// to run once per TotalsMaxAge.
+	DatabaseSize(ctx context.Context) (int64, error)
 }
 
 // QueuePart is the queue part of a snapshot.

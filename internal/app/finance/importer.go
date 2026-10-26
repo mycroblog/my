@@ -265,6 +265,7 @@ func (s *Service) Import(ctx context.Context, source, runKey string) queue.Resul
 	if err != nil {
 		return queue.Retry(0, fmt.Errorf("finance: record the billing import of %s: %w", source, err))
 	}
+	s.imports.Add(ctx, 1, kernel.NewLabels(LabelBillingSource, source, LabelOutcome, ImportOutcomeSuccess))
 	s.logger().InfoContext(ctx, "billing import recorded", slog.String("source", source),
 		slog.Int("lines", len(lines)), slog.Int("revisions", written), slog.Int("requests", run.Requests))
 	return queue.Done()
@@ -282,6 +283,8 @@ func (s *Service) failed(ctx context.Context, run Run, cause error) queue.Result
 	if err := s.d.UnitOfWork.Tx(rec, func(tx uow.Tx) error { return s.d.Repository.InsertRun(rec, tx, run) }); err != nil {
 		return queue.Retry(0, fmt.Errorf("finance: record the failed billing import of %s: %w", run.Source, err))
 	}
+	s.imports.Add(ctx, 1, kernel.NewLabels(
+		LabelBillingSource, run.Source, LabelOutcome, ImportOutcomeFailed, LabelErrorType, string(run.ErrorKind)))
 	s.logger().WarnContext(ctx, "billing import failed", slog.String("source", run.Source),
 		slog.String("error_kind", string(run.ErrorKind)), slog.Int("requests", run.Requests), slog.Any("error", cause))
 	if run.ErrorKind.Retried() {
@@ -447,6 +450,24 @@ type MonthStatus struct {
 	Month  finance.YearMonth
 	Kind   finance.RevisionKind
 	Totals []finance.Money
+}
+
+// FailingSources reports for every enabled source whether its newest import attempt failed, for
+// the metrics snapshot; a source without an attempt is not failing.
+func (s *Service) FailingSources(ctx context.Context) (map[string]bool, error) {
+	out := make(map[string]bool, len(s.d.Sources))
+	for _, src := range s.d.Sources {
+		r, err := s.d.Repository.LastRun(ctx, src.Name(), false)
+		switch {
+		case errors.Is(err, ErrNotFound):
+			out[src.Name()] = false
+		case err != nil:
+			return nil, err
+		default:
+			out[src.Name()] = !r.Succeeded()
+		}
+	}
+	return out, nil
 }
 
 // ImportStatuses returns the state of the imports of every enabled source, in the order of

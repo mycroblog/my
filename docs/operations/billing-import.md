@@ -6,6 +6,8 @@ The server imports the usage charges of the providers listed in the setting `bil
 It imports the charges of the current and the previous billing month (through the 15th of the month, or until the previous month is final), as one line per service and charge type (usage, credit, refund, tax, support, fee, other).
 Until the provider closes a month, the values are recorded as estimates; after it closes, as final; and when a value changes after it is final, as a correction. Records of the past are never rewritten.
 The state of the imports (the last success, the kind of the last failure, and the number of requests this month) is shown on the costs page of the administration and by `GET /api/v1/admin/billing_imports`.
+The metrics count every attempt by source, outcome, and kind of failure (`my.billing.imports`) and report the sources whose newest attempt failed (`my.billing.import.failing`);
+[Alerts and runbook](alerts.md#mybillingimportfailing) has the alert on them.
 
 No credentials are kept in this server's configuration. Give the runtime environment what the default credential chain of each provider's SDK reads (for AWS, the execution role, environment variables, or shared credential files; for Google Cloud, Application Default Credentials).
 

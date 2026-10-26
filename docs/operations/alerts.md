@@ -35,12 +35,12 @@ scrape_configs:
 
 - `metrics_listen` defaults to `127.0.0.1:9464`, which only a Prometheus on the same host reaches. In Docker Compose or Kubernetes, set
   `MY_METRICS_LISTEN=0.0.0.0:9464` and keep the port on the private network: the listener has no authentication.
-- Scrape every process (each `role = web` and `role = worker` process has its own listener). The queue, media, and snapshot gauges
-  carry the same instance-wide value in every process, so the rules take their maximum.
+- Scrape every process (each `role = web` and `role = worker` process has its own listener). The queue, media, database size,
+  remote server, billing import, and snapshot gauges carry the same instance-wide value in every process, so the rules take their maximum.
 - Every rule has a `severity` label: **`page`** needs someone now (users are affected or soon will be), **`ticket`** can wait for working hours.
   Route them to different receivers in Alertmanager. Each rule's `runbook_url` points to its section below.
 - The thresholds are starting points for a small server. Watch the values for a week and tune the thresholds and the `for` durations to your traffic.
-  `MyRemoteMediaCacheOverLimit` and `MyMediaStorageLarge` carry sizes you must set to your own limits.
+  `MyRemoteMediaCacheOverLimit`, `MyMediaStorageLarge`, and `MyDatabaseStorageLarge` carry sizes you must set to your own limits.
 - During the maintenance mode the server serves no metrics and answers `503`, so `MyTargetDown` and the HTTP alerts fire.
   Silence the alerts in Alertmanager for the window before you start ([Maintenance](maintenance.md#steps)).
 
@@ -65,7 +65,7 @@ The deployment templates of each target will carry ready-made policies; until th
 With `metrics_exporter = emf`, CloudWatch Logs turns the server's lines into metrics in the namespace `metrics_emf_namespace`, with the dotted
 names (`my.job.duration`, `my.queue.oldest_ready_age`). The request and job duration metrics come from the request and job log lines, and the
 dimensions are the labels you list in `metrics_emf_dimensions`; include `my.outcome` to alarm on failed jobs and `http.response.status_code`
-to alarm on 5xx. The instance-wide gauges (queue, media, snapshot) are written by the periodic snapshot job. The Go runtime metrics (`go.*`)
+to alarm on 5xx. The instance-wide gauges (queue, media, database size, remote servers, billing imports, snapshot) are written by the periodic snapshot job. The Go runtime metrics (`go.*`)
 are not written in EMF; use the Lambda memory and error metrics instead.
 
 - **Queue backlog**: with `queue = sqs`, the SQS metric `ApproximateAgeOfOldestMessage` of the job queues.
@@ -85,8 +85,9 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 | Queue | [`MyMetricsSnapshotStale`](#mymetricssnapshotstale) | `my_metrics_snapshot_age_seconds` | queue part over 5 min, totals part over 1 h, for 15 min | ticket | The KV store is out of reach, the database queries of the snapshot fail or time out |
 | Federation | [`MyDeliveryFailuresHigh`](#mydeliveryfailureshigh) | `my_delivery_attempts_total` with `my_outcome` `retry` or `failed` | over 50% of attempts for 30 min | ticket | Many followers on servers that are down, a large server is down, outbound network trouble |
 | Federation | [`MyDeliveryAllFailing`](#mydeliveryallfailing) | same | over 95% of attempts for 15 min | page | Outbound network or DNS broken, egress blocked, the server's keys or `host` wrong |
-| Federation | Deliveries to one server stopped | – | – | – | That server is down or blocks this one ([below](#deliveries-to-one-server-stopped)) |
+| Federation | [`MyRemoteServersPaused`](#myremoteserverspaused) | `my_federation_instances{my_federation_instance_state="unavailable"}` | 5 more than a day before | ticket | Servers that shut down or block this one, a network problem on this side that lasted for days |
 | Federation | [`MyInboxRejectionsHigh`](#myinboxrejectionshigh) | `my_inbox_activities_total{my_outcome="rejected"}` | over 25% of POSTs for 30 min | ticket | Signature verification failing (clock skew, key fetches failing), a spammer or a suspended domain retrying, rate limits |
+| Federation | [`MyInboxSignatureFailures`](#myinboxsignaturefailures) | `my_inbox_activities_total{my_inbox_rejection="signature"}` | over 10% of POSTs for 30 min | ticket | The server's clock is off, fetching the senders' keys fails, a server that changed its keys |
 | Federation | [`MyInboxErrors`](#myinboxerrors) | `my_inbox_activities_total{my_outcome="error"}` | over 5% of POSTs for 15 min | ticket | The database failing, a bug in the inbox |
 | HTTP | [`MyHTTPErrorsHigh`](#myhttperrorshigh) | 5xx of `http_server_request_duration_seconds_count` | over 5% for 10 min | page | The database or KV down, a bad release, the maintenance mode |
 | HTTP | [`MyHTTPErrorsElevated`](#myhttperrorselevated) | same | over 1% for 30 min | ticket | One failing route, an adapter that fails now and then |
@@ -97,13 +98,14 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 | Resources | [`MyMemoryNearLimit`](#mymemorynearlimit) | `go_memory_used_bytes` / `go_memory_limit_bytes` | over 90% for 15 min | ticket | `GOMEMLIMIT` too low for the load, many open streams, a leak |
 | Resources | [`MyDBPoolSaturated`](#mydbpoolsaturated) | `db_client_connection_count{db_client_connection_state="used"}` / `db_client_connection_max` | over 90% for 15 min | ticket | Pool too small for the traffic, slow queries holding connections |
 | Resources | [`MyDBPoolWaiting`](#mydbpoolwaiting) | `db_client_connection_wait_time_seconds_total`, `db_client_connection_timeouts_total` | waiting over 0.5 s per second, or any timeout, for 10 min | ticket | Same as above; the database's own connection limit reached |
-| Resources | Database storage | – | – | – | The database grows toward its plan's limit ([below](#database-storage)) |
+| Resources | [`MyDatabaseStorageLarge`](#mydatabasestoragelarge) | `my_db_size_bytes` | over your plan's limit less a margin (example 8 GiB) for 1 h | ticket | Growth of posts and cached remote content; time to raise the plan or shorten the retention |
 | Resources | [`MyFileDescriptorsNearLimit`](#myfiledescriptorsnearlimit) | `process_unix_file_descriptor_count` / `my_process_file_descriptor_limit` | over 80% for 15 min | ticket | Many open streams and connections, a low `ulimit -n` |
 | Resources | [`MyAdapterErrors`](#myadaptererrors) | `my_adapter_operation_duration_seconds_count{my_outcome="error"}` | over 5% of one adapter's operations for 15 min | ticket | Valkey, the blob directory, or the stream backend failing |
 | Resources | [`MyRemoteMediaCacheOverLimit`](#myremotemediacacheoverlimit) | `my_media_stored_bytes{my_media_origin="remote_cache"}` | over 1.2 × `remote_media_cache_max_bytes` for 3 h | ticket | The hourly cleanup does not run or fails |
 | Resources | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | over your planned size (example 50 GiB) for 1 h | ticket | Growth of uploads; time to raise the plan or the budget |
 | Email | [`MyEmailFailing`](#myemailfailing) | `my_job_duration_seconds_count` of the email jobs with `my_outcome="dead"` | any in an hour | ticket | Wrong SMTP or SES settings, an account suspended or out of quota, addresses refused for good |
 | Email | [`MyEmailRetrying`](#myemailretrying) | same, `my_outcome="retry"` | over 50% of runs for 15 min | ticket | The mail server is out of reach or refuses the login, a sending rate limit |
+| Cost | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 for 6 h | ticket | Missing permissions, the billing export not set up, the request cap reached, the provider unavailable |
 | Cost | Budget exceeded | – | – | – | Traffic, storage, or a misconfiguration costing more than planned ([below](#cost-and-budget)) |
 
 ## Where to look
@@ -223,29 +225,60 @@ Fix:
 - If remote servers were paused during the outage, they resume on the next successful delivery, signed request, or the daily probe; you can also press
   "Resume deliveries" on the remote servers screen.
 
-### Deliveries to one server stopped
+### MyRemoteServersPaused
 
-There is no per-server metric (labels never carry a remote domain). Check the remote servers screen: the "Paused" tab lists the servers that failed on
-7 different days, with when and why. If a server you care about is back, press "Resume deliveries"; if its operator reports that they block this server,
-nothing on this side helps. To stop federating with a server on purpose, use a domain action (Moderation → Domain actions).
+Deliveries to 5 or more servers were paused in the last day. A server is paused after deliveries to it failed on 7 different days, so a few pauses a week
+are normal: servers shut down. Many at once mean that many servers failed for days at the same time. `my_federation_instances` with
+`my_federation_instance_state` = `available` counts the servers that are still delivered to but failed on some day; a jump there comes before the pauses.
+
+The metric has no per-server label (labels never carry a remote domain). Check:
+
+- The remote servers screen: the "Paused" tab lists the paused servers, with when and why. Whether they share something (one hosting provider, one software)
+  or are spread out.
+- `MyDeliveryFailuresHigh` and `MyDeliveryAllFailing` over the last week: a network problem on this side that lasted for days pauses many servers.
+
+Fix:
+
+- Servers that are gone: nothing. Paused servers are probed daily and resume by themselves when they answer.
+- After a problem on this side: repair it, then press "Resume deliveries" for the servers you care about, or wait for the daily probe.
+- A server whose operator reports that they block this one: nothing on this side helps. To stop federating with a server on purpose, use a domain action
+  (Moderation → Domain actions).
 
 ### MyInboxRejectionsHigh
 
-More than a quarter of the activities other servers POST to the inboxes are refused. The refusals include bad signatures, suspended domains,
-rate limits, and invalid activities; the metric does not tell them apart.
+More than a quarter of the activities other servers POST to the inboxes are refused.
 
 Check:
 
-- The `http request` log lines of the inbox routes (`my.surface` = `activitypub`) by `http.response.status_code`:
-  `401` is a signature that did not verify, `403` a suspended domain or federation turned off, `429` the rate limit, `400` an invalid activity.
-- Many `401`s from many servers: the server's clock (signatures are refused outside a time window; check NTP), or fetching the senders' keys fails
-  (`MyDeliveryAllFailing`, outbound network).
-- Many requests from one server: a spammer or a suspended domain that keeps retrying. They are refused as intended.
+- `my_inbox_activities_total{my_outcome="rejected"}` by `my_inbox_rejection`: `signature` (follow [MyInboxSignatureFailures](#myinboxsignaturefailures)),
+  `suspended` (a suspended domain that keeps retrying), `federation_off` (federation is turned off), `rate_limited` (a client IP or a server over the
+  rate limit), or `invalid` (activities without a valid `id`, `type`, `actor`, or `object`).
+- The `http request` log lines of the inbox routes (`my.surface` = `activitypub`) carry the same split by `http.response.status_code`
+  (`401`, `403`, `429`, `400`) and the client's address, when you need to know where the requests come from.
+
+Fix:
+
+- Refusals of a suspended domain, or with federation turned off, need nothing: they are refused as intended.
+- Rate-limited requests from one server: a spammer or a burst; suspend the domain if it keeps on.
+- Invalid activities from one server: that server's software sends something this server does not read; report it with the server's software and version.
+
+### MyInboxSignatureFailures
+
+More than 10% of the activities other servers POST to the inboxes are refused because their signature or integrity proof is missing or does not verify,
+or because the sender's key could not be fetched.
+
+Check:
+
+- The server's clock: signatures are refused outside a time window. Check NTP on the host or the container runtime.
+- Fetching the senders' keys: `MyDeliveryAllFailing` and `http_client_request_duration_seconds_count{my_http_purpose="json"}` by `error_type`
+  (the outbound network, DNS, the SSRF guard).
+- Whether the refusals come from many servers or one (the `http request` lines with status `401`): one server that changed its keys, or that signs
+  in a way this server does not accept, affects only that server.
 
 Fix:
 
 - Fix the clock or the outbound network. Other servers retry their deliveries, so nothing is lost if it is fixed within a day or so.
-- Refusals of a suspended domain need nothing.
+- One server that fails: report it to that server's operator, or to this project with the server's software and version.
 
 ### MyInboxErrors
 
@@ -321,7 +354,7 @@ Check:
 Fix:
 
 - Database down or unreachable: restore it, or fail over. While you work, the maintenance mode shows users a clear page.
-- Database out of storage: raise the plan or free space ([Database storage](#database-storage)).
+- Database out of storage: raise the plan or free space ([MyDatabaseStorageLarge](#mydatabasestoragelarge)).
 - Schema not applied: apply it with the schema image of the same version, then the processes become ready by themselves.
 - Data lost or corrupted: restore from your backup, and keep the KEK that the backup's keys were sealed with ([KEK management](key-management.md)).
 
@@ -364,11 +397,18 @@ Fix:
 Work waits for a free database connection, or gave up waiting (timeouts are PostgreSQL only). Follow [MyDBPoolSaturated](#mydbpoolsaturated);
 also check that the database itself is not at its connection limit.
 
-### Database storage
+### MyDatabaseStorageLarge
 
-There is no database size metric yet. Use your database provider's alerts (storage used against the plan's limit) or, for a self-hosted PostgreSQL,
-`postgres_exporter` (`pg_database_size_bytes`). For SQLite, watch the free space of the volume that holds the file. Remote posts are removed after
-`remote_status_retention`; lowering it slows the growth.
+The database takes more than you planned for. `my_db_size_bytes` is the size of the PostgreSQL database (`pg_database_size`, what the providers' storage
+limits count) or of the SQLite file (its write-ahead log left out). This is growth, not a failure. Set the threshold in the rule a margin below the storage
+limit of your database plan, or of the volume that holds the SQLite file, which must also keep room for the write-ahead log and for backups.
+
+Fix:
+
+- Raise the plan or the volume.
+- Remote posts are removed after `remote_status_retention`; lowering it slows the growth.
+- Deleted rows free space that both databases reuse, but the size rarely goes down: PostgreSQL keeps the space of its tables, and SQLite keeps the free
+  pages in the file until a `VACUUM` (run with `sqlite3` while the server is stopped).
 
 ### MyFileDescriptorsNearLimit
 
@@ -428,9 +468,25 @@ The server does not alert on cost. Set a budget with alerts at the provider, whi
 - Google Cloud: a Cloud Billing budget for the project, with alert thresholds at 50%, 90%, and 100%. The same budget's notifications can feed the
   cost import ([Importing cloud usage charges](billing-import.md)).
 
-The imported charges and the month-to-date estimate appear in Administration → Costs. Failed imports are recorded there and retried by the next daily import.
-Each failure also writes a `WARN` log line whose `msg` is `billing import failed`, with the `source` and the `error_kind`
-([the kinds and how to fix them](billing-import.md)); a log-based alert on it tells you before the month's figures go stale.
+The imported charges and the month-to-date estimate appear in Administration → Costs. Failed imports are recorded there and retried by the next daily import;
+[`MyBillingImportFailing`](#mybillingimportfailing) tells you before the month's figures go stale.
+
+### MyBillingImportFailing
+
+The newest import of a billing source's usage charges failed, and no later import has succeeded for 6 hours. Imports run once a day; throttling and
+unavailability are retried within hours, and the other failures wait for the next day's import, so the costs screen shows older figures until then.
+
+Check:
+
+- Administration → Costs: the last import of the source and its error.
+- `my_billing_imports_total{my_outcome="failed"}` by `error_type`, or the `WARN` log line whose `msg` is `billing import failed`, with the `source` and the
+  `error_kind`. [Importing cloud usage charges](billing-import.md) lists the kinds and how to fix each one.
+
+Fix:
+
+- Fix the cause (permissions, the billing export, the request cap), then press "Import now" on the costs screen instead of waiting for the next day.
+
+Without Prometheus (Cloud Run with `metrics_exporter = none`), make a log-based alert on the `billing import failed` line instead.
 
 ## Telling users about an incident
 

@@ -135,6 +135,13 @@ func TestInbox(t *testing.T) {
 			t.Errorf("%s%v = %v, want %v", appfederation.InboxActivities.Name, match, got, want)
 		}
 	}
+	// A refusal also carries its reason: the body changed after signing fails the signature.
+	rejected := map[string]string{
+		appfederation.LabelOutcome: appfederation.InboxOutcomeRejected, appfederation.LabelInboxRejection: appfederation.InboxRejectionSignature,
+	}
+	if got := meter.Sum(appfederation.InboxActivities.Name, rejected); got != 1 {
+		t.Errorf("%s%v = %v, want 1", appfederation.InboxActivities.Name, rejected, got)
+	}
 	if err := meter.Err(); err != nil {
 		t.Error(err)
 	}

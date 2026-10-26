@@ -14,16 +14,22 @@ import (
 
 // Label keys of the snapshot gauges.
 const (
-	LabelMediaOrigin  = "my.media.origin"
-	LabelSnapshotPart = "my.metrics.snapshot.part"
+	LabelMediaOrigin   = "my.media.origin"
+	LabelSnapshotPart  = "my.metrics.snapshot.part"
+	LabelInstanceState = "my.federation.instance.state"
+	LabelBillingSource = "my.billing.source"
 )
 
-// The values of my.media.origin and my.metrics.snapshot.part.
+// The values of my.media.origin, my.metrics.snapshot.part, and my.federation.instance.state.
 const (
 	MediaOriginLocal       = "local"
 	MediaOriginRemoteCache = "remote_cache"
 	PartQueue              = "queue"
 	PartTotals             = "totals"
+	// InstanceStateAvailable is a remote server that deliveries still go to and that failed on a
+	// day since it last answered; InstanceStateUnavailable one whose deliveries are paused.
+	InstanceStateAvailable   = "available"
+	InstanceStateUnavailable = "unavailable"
 )
 
 // The instance-wide gauges of ADR-0055 §3, reported from the snapshot.
@@ -47,6 +53,19 @@ var (
 	MediaStoredBytes = kernel.Instrument{
 		Name: "my.media.stored_bytes", Unit: "By", Description: "Bytes of the media files in blob storage, by origin.",
 		LabelKeys: []string{LabelMediaOrigin},
+	}
+	DBSize = kernel.Instrument{
+		Name: "my.db.size", Unit: "By", Description: "Bytes that the database takes in its storage.",
+	}
+	FederationInstances = kernel.Instrument{
+		Name: "my.federation.instances", Unit: "{server}",
+		Description: "Remote servers that deliveries failed to reach, by whether deliveries to them are paused.",
+		LabelKeys:   []string{LabelInstanceState},
+	}
+	BillingImportFailing = kernel.Instrument{
+		Name: "my.billing.import.failing", Unit: "{source}",
+		Description: "1 when the newest import of the usage charges of a billing source failed, 0 otherwise.",
+		LabelKeys:   []string{LabelBillingSource},
 	}
 	SnapshotAge = kernel.Instrument{
 		Name: "my.metrics.snapshot.age", Unit: "s", Description: "Age of the parts of the snapshot of the instance-wide gauges.",
@@ -87,6 +106,28 @@ func (s *Service) RegisterGauges(m kernel.Meter) {
 		if snap.Totals != nil {
 			o.Observe(float64(snap.Totals.MediaLocalBytes), kernel.NewLabels(LabelMediaOrigin, MediaOriginLocal))
 			o.Observe(float64(snap.Totals.MediaRemoteCacheBytes), kernel.NewLabels(LabelMediaOrigin, MediaOriginRemoteCache))
+		}
+	}))
+	m.Gauge(DBSize, s.gauge(func(snap Snapshot, o kernel.GaugeObserver) {
+		if snap.Totals != nil && snap.Totals.DatabaseBytes != nil {
+			o.Observe(float64(*snap.Totals.DatabaseBytes), kernel.Labels{})
+		}
+	}))
+	m.Gauge(FederationInstances, s.gauge(func(snap Snapshot, o kernel.GaugeObserver) {
+		if snap.Totals != nil {
+			o.Observe(float64(snap.Totals.InstancesFailing), kernel.NewLabels(LabelInstanceState, InstanceStateAvailable))
+			o.Observe(float64(snap.Totals.InstancesUnavailable), kernel.NewLabels(LabelInstanceState, InstanceStateUnavailable))
+		}
+	}))
+	m.Gauge(BillingImportFailing, s.gauge(func(snap Snapshot, o kernel.GaugeObserver) {
+		if snap.Totals != nil {
+			for src, failing := range snap.Totals.BillingImportFailing {
+				v := 0.0
+				if failing {
+					v = 1
+				}
+				o.Observe(v, kernel.NewLabels(LabelBillingSource, src))
+			}
 		}
 	}))
 	m.Gauge(SnapshotAge, func(ctx context.Context, o kernel.GaugeObserver) error {
@@ -159,7 +200,19 @@ func snapshotAttrs(snap Snapshot) []any {
 			slog.Int64(InstanceStatuses.Name, t.Statuses),
 			slog.Group(MediaStoredBytes.Name,
 				slog.Int64(MediaOriginLocal, t.MediaLocalBytes), slog.Int64(MediaOriginRemoteCache, t.MediaRemoteCacheBytes)),
+			slog.Group(FederationInstances.Name,
+				slog.Int64(InstanceStateAvailable, t.InstancesFailing), slog.Int64(InstanceStateUnavailable, t.InstancesUnavailable)),
 		)
+		if t.DatabaseBytes != nil {
+			attrs = append(attrs, slog.Int64(DBSize.Name, *t.DatabaseBytes))
+		}
+		if len(t.BillingImportFailing) > 0 {
+			failing := make([]any, 0, len(t.BillingImportFailing))
+			for _, src := range slices.Sorted(maps.Keys(t.BillingImportFailing)) {
+				failing = append(failing, slog.Bool(src, t.BillingImportFailing[src]))
+			}
+			attrs = append(attrs, slog.Group(BillingImportFailing.Name, failing...))
+		}
 	}
 	return attrs
 }

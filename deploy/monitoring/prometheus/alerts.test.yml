@@ -118,6 +118,105 @@ tests:
               description: 100% of the delivery attempts failed in the last 15 minutes.
               runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydeliveryfailureshigh
 
+  - name: inbox signature failures
+    interval: 1m
+    input_series:
+      # 100 POSTs a minute: 80 accepted, 15 refused for their signature, 5 for a suspended domain.
+      - series: my_inbox_activities_total{job="my", instance="a:9464", activity_type="Create", my_outcome="accepted"}
+        values: 0+80x60
+      - series: my_inbox_activities_total{job="my", instance="a:9464", activity_type="other", my_outcome="rejected", my_inbox_rejection="signature"}
+        values: 0+15x60
+      - series: my_inbox_activities_total{job="my", instance="a:9464", activity_type="other", my_outcome="rejected", my_inbox_rejection="suspended"}
+        values: 0+5x60
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MyInboxSignatureFailures
+        exp_alerts: []
+      - eval_time: 50m
+        alertname: MyInboxSignatureFailures
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: The inbox refuses more than 10% of the activities it receives for their signature
+              description: 15% of the POSTs to the inboxes failed the signature check in the last 15 minutes.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxsignaturefailures
+      # 20% refused in all stays under the quarter of MyInboxRejectionsHigh.
+      - eval_time: 50m
+        alertname: MyInboxRejectionsHigh
+        exp_alerts: []
+
+  - name: remote servers paused
+    interval: 1m
+    input_series:
+      # Two processes report the same snapshot: 2 servers paused for a day, then 7.
+      - series: my_federation_instances{job="my", instance="a:9464", my_federation_instance_state="unavailable"}
+        values: 2x1440 7x120
+      - series: my_federation_instances{job="my", instance="b:9464", my_federation_instance_state="unavailable"}
+        values: 2x1440 7x120
+      - series: my_federation_instances{job="my", instance="a:9464", my_federation_instance_state="available"}
+        values: 30x1560
+    alert_rule_test:
+      - eval_time: 24h
+        alertname: MyRemoteServersPaused
+        exp_alerts: []
+      - eval_time: 25h
+        alertname: MyRemoteServersPaused
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: Deliveries to 5 or more servers were paused in a day
+              description: Deliveries to 5 more servers were paused in the last day.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myremoteserverspaused
+
+  - name: database storage
+    interval: 1m
+    input_series:
+      # 7 GiB for 2 hours, then 8.5 GiB.
+      - series: my_db_size_bytes{job="my", instance="a:9464"}
+        values: 7516192768x120 9126805504x240
+    alert_rule_test:
+      - eval_time: 150m
+        alertname: MyDatabaseStorageLarge
+        exp_alerts: []
+      - eval_time: 4h
+        alertname: MyDatabaseStorageLarge
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: The database takes more than the planned storage
+              description: The database takes 8.5GiB.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mydatabasestoragelarge
+
+  - name: billing import
+    interval: 1m
+    input_series:
+      # The aws import fails from the 2nd hour on; the gcp one keeps succeeding.
+      - series: my_billing_import_failing{job="my", instance="a:9464", my_billing_source="aws"}
+        values: 0x120 1x600
+      - series: my_billing_import_failing{job="my", instance="b:9464", my_billing_source="aws"}
+        values: 0x120 1x600
+      - series: my_billing_import_failing{job="my", instance="a:9464", my_billing_source="gcp"}
+        values: 0x720
+    alert_rule_test:
+      - eval_time: 7h
+        alertname: MyBillingImportFailing
+        exp_alerts: []
+      - eval_time: 9h
+        alertname: MyBillingImportFailing
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              my_billing_source: aws
+            exp_annotations:
+              summary: The import of the aws usage charges fails
+              description: >-
+                The newest import of the usage charges of aws failed, and none has succeeded in the 6 hours since; the
+                costs screen shows older figures.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#mybillingimportfailing
+
   - name: http errors and latency
     interval: 1m
     input_series:

@@ -24,21 +24,27 @@ func TestRejectionReason(t *testing.T) {
 		name string
 		rej  *appfederation.InboxRejection
 		want string
+		// metric is the my.inbox.rejection of the refusal.
+		metric string
 	}{
-		{"no signature", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrNoSignature))}, appfederation.ReasonNoSignature},
-		{"malformed", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: sigErr(http.StatusBadRequest, quoted(appfederation.ErrMalformedSignature))}, appfederation.ReasonMalformedSignature},
-		{"malformed without the sentinel", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: sigErr(http.StatusBadRequest, errors.New(header))}, appfederation.ReasonMalformedSignature},
-		{"key not found", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrPublicKeyNotFound))}, appfederation.ReasonPublicKeyNotFound},
-		{"key unavailable", &appfederation.InboxRejection{Status: http.StatusServiceUnavailable, Err: sigErr(http.StatusServiceUnavailable, quoted(appfederation.ErrPublicKeyUnavailable))}, appfederation.ReasonPublicKeyUnavailable},
-		{"mismatch", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrSignatureMismatch))}, appfederation.ReasonSignatureMismatch},
-		{"policy", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, errors.New("unparsable Date header: "+header))}, appfederation.ReasonSignaturePolicy},
-		{"rate limited", &appfederation.InboxRejection{Status: http.StatusTooManyRequests, Err: &kernel.RateLimitedError{}}, appfederation.ReasonRateLimited},
-		{"suspended", &appfederation.InboxRejection{Status: http.StatusForbidden, Err: errors.New("evil.example is suspended")}, appfederation.ReasonDomainSuspended},
-		{"invalid activity", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: errors.New(header)}, appfederation.ReasonInvalidActivity},
+		{"no signature", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrNoSignature))}, appfederation.ReasonNoSignature, appfederation.InboxRejectionSignature},
+		{"malformed", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: sigErr(http.StatusBadRequest, quoted(appfederation.ErrMalformedSignature))}, appfederation.ReasonMalformedSignature, appfederation.InboxRejectionSignature},
+		{"malformed without the sentinel", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: sigErr(http.StatusBadRequest, errors.New(header))}, appfederation.ReasonMalformedSignature, appfederation.InboxRejectionSignature},
+		{"key not found", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrPublicKeyNotFound))}, appfederation.ReasonPublicKeyNotFound, appfederation.InboxRejectionSignature},
+		{"key unavailable", &appfederation.InboxRejection{Status: http.StatusServiceUnavailable, Err: sigErr(http.StatusServiceUnavailable, quoted(appfederation.ErrPublicKeyUnavailable))}, appfederation.ReasonPublicKeyUnavailable, appfederation.InboxRejectionSignature},
+		{"mismatch", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, quoted(appfederation.ErrSignatureMismatch))}, appfederation.ReasonSignatureMismatch, appfederation.InboxRejectionSignature},
+		{"policy", &appfederation.InboxRejection{Status: http.StatusUnauthorized, Err: sigErr(http.StatusUnauthorized, errors.New("unparsable Date header: "+header))}, appfederation.ReasonSignaturePolicy, appfederation.InboxRejectionSignature},
+		{"rate limited", &appfederation.InboxRejection{Status: http.StatusTooManyRequests, Err: &kernel.RateLimitedError{}}, appfederation.ReasonRateLimited, appfederation.InboxRejectionRateLimited},
+		{"suspended", &appfederation.InboxRejection{Status: http.StatusForbidden, Err: errors.New("evil.example is suspended")}, appfederation.ReasonDomainSuspended, appfederation.InboxRejectionSuspended},
+		{"federation off", &appfederation.InboxRejection{Status: http.StatusForbidden, Err: fmt.Errorf("%w: mode off", appfederation.ErrFederationRestricted)}, appfederation.ReasonFederationOff, appfederation.InboxRejectionFederationOff},
+		{"invalid activity", &appfederation.InboxRejection{Status: http.StatusBadRequest, Err: errors.New(header)}, appfederation.ReasonInvalidActivity, appfederation.InboxRejectionInvalid},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := tc.rej.Reason(); got != tc.want {
 				t.Fatalf("Reason() = %q, want %q", got, tc.want)
+			}
+			if got := tc.rej.MetricReason(); got != tc.metric {
+				t.Errorf("MetricReason() = %q, want %q", got, tc.metric)
 			}
 		})
 	}

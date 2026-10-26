@@ -142,7 +142,12 @@ func (d *database) Totals(context.Context) (metrics.Totals, error) {
 		d.started <- struct{}{}
 		<-d.block
 	}
-	return metrics.Totals{Users: 10, Statuses: 200, MediaLocalBytes: 3000, MediaRemoteCacheBytes: 400}, nil
+	dbBytes := int64(50000)
+	return metrics.Totals{
+		Users: 10, Statuses: 200, MediaLocalBytes: 3000, MediaRemoteCacheBytes: 400,
+		DatabaseBytes: &dbBytes, InstancesFailing: 5, InstancesUnavailable: 2,
+		BillingImportFailing: map[string]bool{"aws": true, "gcp": false},
+	}, nil
 }
 
 // process is one server process: a Service with the gauges registered on a meter that
@@ -231,17 +236,22 @@ func (w *gaugeWriter) WriteGauges(context.Context) error {
 var start = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 
 var want = map[string]float64{
-	"my.queue.ready{my.job.type=delivery.deliver}":             4,
-	"my.queue.ready{my.job.type=media.process}":                1,
-	"my.queue.ready{my.job.type=other}":                        2,
-	"my.queue.oldest_ready_age":                                90,
-	"my.queue.dead":                                            3,
-	"my.instance.users":                                        10,
-	"my.instance.statuses":                                     200,
-	"my.media.stored_bytes{my.media.origin=local}":             3000,
-	"my.media.stored_bytes{my.media.origin=remote_cache}":      400,
-	"my.metrics.snapshot.age{my.metrics.snapshot.part=queue}":  0,
-	"my.metrics.snapshot.age{my.metrics.snapshot.part=totals}": 0,
+	"my.queue.ready{my.job.type=delivery.deliver}":        4,
+	"my.queue.ready{my.job.type=media.process}":           1,
+	"my.queue.ready{my.job.type=other}":                   2,
+	"my.queue.oldest_ready_age":                           90,
+	"my.queue.dead":                                       3,
+	"my.instance.users":                                   10,
+	"my.instance.statuses":                                200,
+	"my.media.stored_bytes{my.media.origin=local}":        3000,
+	"my.media.stored_bytes{my.media.origin=remote_cache}": 400,
+	"my.db.size": 50000,
+	"my.billing.import.failing{my.billing.source=aws}":                  1,
+	"my.billing.import.failing{my.billing.source=gcp}":                  0,
+	"my.federation.instances{my.federation.instance.state=available}":   5,
+	"my.federation.instances{my.federation.instance.state=unavailable}": 2,
+	"my.metrics.snapshot.age{my.metrics.snapshot.part=queue}":           0,
+	"my.metrics.snapshot.age{my.metrics.snapshot.part=totals}":          0,
 }
 
 // withAges returns want with the ages of the parts.
@@ -369,8 +379,11 @@ func TestTheJobLogsTheSnapshot(t *testing.T) {
 	}
 	ready, _ := line["my.queue.ready"].(map[string]any)
 	stored, _ := line["my.media.stored_bytes"].(map[string]any)
+	instances, _ := line["my.federation.instances"].(map[string]any)
+	failing, _ := line["my.billing.import.failing"].(map[string]any)
 	if line["msg"] != "metrics snapshot" || ready["delivery.deliver"] != 4.0 || ready["other"] != 2.0 ||
-		line["my.queue.dead"] != 3.0 || line["my.instance.users"] != 10.0 || stored["remote_cache"] != 400.0 {
+		line["my.queue.dead"] != 3.0 || line["my.instance.users"] != 10.0 || stored["remote_cache"] != 400.0 ||
+		line["my.db.size"] != 50000.0 || instances["unavailable"] != 2.0 || failing["aws"] != true {
 		t.Errorf("log line = %v", line)
 	}
 

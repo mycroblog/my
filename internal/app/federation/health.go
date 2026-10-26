@@ -178,6 +178,20 @@ func (h *Health) Reached(ctx context.Context, domain string, reason federation.A
 	})
 }
 
+// Counts returns, by state, the servers that failed on a day since they last answered
+// (available) or whose deliveries are paused (unavailable), for the metrics snapshot. Both
+// states are present.
+func (h *Health) Counts(ctx context.Context) (map[federation.InstanceState]int64, error) {
+	n, err := h.d.Repository.CountInstanceHealth(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return map[federation.InstanceState]int64{
+		federation.InstanceAvailable:   n[federation.InstanceAvailable],
+		federation.InstanceUnavailable: n[federation.InstanceUnavailable],
+	}, nil
+}
+
 // ErrInvalidInstanceState reports a state that is neither available nor unavailable.
 var ErrInvalidInstanceState = errors.New("federation: invalid instance state")
 
