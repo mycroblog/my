@@ -40,3 +40,6 @@ enum:
   - user_app_registration
   - dynamic_client_registration
   - oauth_metadata_document_clients
+  - voice_room_starters
+  - voice_public_summary
+  - retention_voice_participants

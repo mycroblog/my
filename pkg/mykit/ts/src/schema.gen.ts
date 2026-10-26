@@ -8856,7 +8856,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -9711,11 +9711,13 @@ export interface components {
          *     and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
          *     `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
          *     of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-         *     admin role by default, ADR-0088). The others guard no client API operation
+         *     admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+         *     instance setting `voice_room_starters` is `permitted`, a member permission (only the
+         *     built-in admin role by default, ADR-0100). The others guard no client API operation
          *     yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms";
         /**
          * @description A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
          *     `:shortcode:` into the text.

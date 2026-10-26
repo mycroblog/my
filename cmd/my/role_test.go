@@ -23,7 +23,7 @@ func TestAdminRoleCommands(t *testing.T) {
 		}
 	}
 	code, stdout, stderr := runCmd(t, adminRole, "list")
-	if code != 0 || !regexp.MustCompile(`admin +1000 +manage_reports,\S+ +manage_rules,\S+ +view_finance,create_custom_emojis +(@root,@bob|@bob,@root)`).MatchString(stdout) ||
+	if code != 0 || !regexp.MustCompile(`admin +1000 +manage_reports,\S+ +manage_rules,\S+ +view_finance,create_custom_emojis,start_voice_rooms +(@root,@bob|@bob,@root)`).MatchString(stdout) ||
 		!regexp.MustCompile(`moderator +100 +manage_reports,manage_accounts,view_audit +- +- +-`).MatchString(stdout) {
 		t.Errorf("role list = %d %q\n%s", code, stderr, stdout)
 	}

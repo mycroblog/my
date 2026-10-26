@@ -49,6 +49,8 @@ func TestCheckManageable(t *testing.T) {
 	}{
 		{"member role below staff", byID[fanRoleID], 0, ""},
 		{"no permissions below staff", RoleFacts{Role: Role{ID: newRoleID, Key: "new", Position: 49}}, 0, ""},
+		{"every member permission below staff", RoleFacts{Role: Role{ID: newRoleID, Key: "new", Position: 49},
+			Permissions: []Permission{PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms}}, 0, ""},
 		{"admin", byID[adminRoleID], 0, RuleBuiltin},
 		{"moderator", byID[modRoleID], 0, RuleBuiltin},
 		{"managed already", byID[planRoleID], 0, RuleManaged},
@@ -79,6 +81,9 @@ func TestCheckManagedShape(t *testing.T) {
 	roles := managedRoleFixtures()
 	if err := CheckManagedShape(planRoleID, 49, []Permission{testMemberPermission}, roles); err != nil {
 		t.Errorf("below the lowest staff role: %v", err)
+	}
+	if err := CheckManagedShape(planRoleID, 49, []Permission{PermStartVoiceRooms}, roles); err != nil {
+		t.Errorf("start_voice_rooms (ADR-0100 §2): %v", err)
 	}
 	if err := CheckManagedShape(planRoleID, 50, nil, roles); !errors.Is(err, ErrRoleNotManageable) {
 		t.Errorf("at the lowest staff role: %v", err)
