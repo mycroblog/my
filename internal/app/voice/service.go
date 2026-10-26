@@ -102,7 +102,10 @@ type Deps struct {
 	Members   Members
 	Relations Relations
 	Config    Config
-	Logger    *slog.Logger
+	// RateLimiter applies MediaWebhookIPLimit to the deliveries of a media server's events;
+	// nil applies none.
+	RateLimiter *kernel.RateLimiter
+	Logger      *slog.Logger
 }
 
 // Service runs the rooms (ADR-0100): opening them, their settings, joining and leaving them,
@@ -340,6 +343,9 @@ func (s *Service) grant(ctx context.Context, roomID string, session Session, can
 	if err != nil {
 		s.d.Logger.WarnContext(ctx, "the voice transport gave no grant", slog.String("room", roomID), slog.Any("error", err))
 		return Grant{}, errors.Join(ErrTransportUnavailable, err)
+	}
+	if s.d.Transport.Capabilities().ServerEnforced {
+		s.markPending(ctx, session.ID)
 	}
 	return g, nil
 }

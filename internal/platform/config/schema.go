@@ -803,7 +803,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "off", inV0: true, doc: "No voice chat."},
 			{value: "p2p", inV0: true, doc: "The browsers connect to each other, with the STUN and TURN servers of `voice_stun_urls` and `voice_turn`; the server only relays what they send to set up the connections. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
-			{value: "livekit", inV0: true, doc: "A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers."},
+			{value: "livekit", inV0: true, doc: "A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out."},
 			{value: "sora", inV0: true, doc: "A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers."},
 		},
 		set: func(c *Config, v string) { c.Voice = v },
