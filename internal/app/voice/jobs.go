@@ -145,7 +145,11 @@ func (s *Service) CheckAccount(ctx context.Context, accountID string) error {
 		return err
 	}
 	now := s.now()
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.roomTx(ctx, []string{p.RoomID}, func(tx uow.Tx, rec RoomRecord) error {
+		if rec.Head.HostAccountID == accountID {
+			// The account became the host meanwhile: it hands the room over instead.
+			return ErrConflict
+		}
 		if _, err := s.endParticipationTx(ctx, tx, p, voice.SuspendedAccount, session, now); err != nil {
 			return err
 		}

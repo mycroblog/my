@@ -790,6 +790,17 @@ func (q *Queries) ListVoiceRoomRevisionHashtags(ctx context.Context, revisionIds
 	return items, nil
 }
 
+const lockVoice = `-- name: LockVoice :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// LockVoice takes a transaction-scoped advisory lock on a key of the voice module (a room, or
+// the opening of rooms), so that the commands of one room serialize under READ COMMITTED.
+func (q *Queries) LockVoice(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockVoice, lockKey)
+	return err
+}
+
 const rebuildVoiceRoomHeads = `-- name: RebuildVoiceRoomHeads :exec
 INSERT INTO voice_room_heads (room_id, revision_id, host_account_id, state, participants_count)
 SELECT r.id,

@@ -411,7 +411,7 @@ func TestRateLimits(t *testing.T) {
 // scope to every operation of the spec: those that need a token answer 401 and 403 before
 // their handler runs (security.gen.go matches the spec and covers every operation).
 func TestEveryOperationIsGuarded(t *testing.T) {
-	e := newAuthEnv(t, func(o *clientapi.Options) { o.RateLimiter = nil })
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.RateLimiter, o.Voice = nil, &fakeVoiceRooms{} })
 	e.auth.tokens["none"] = bearer("", aliceAccountID)
 	doc := e.spec.Doc()
 	for path, item := range doc.Paths.Map() {

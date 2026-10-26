@@ -427,3 +427,21 @@ func (s *Server) HandOverVoiceRoom(ctx context.Context, req HandOverVoiceRoomReq
 	}
 	return HandOverVoiceRoom200JSONResponse{Body: out, Headers: HandOverVoiceRoom200ResponseHeaders{CacheControl: voiceCache()}}, nil
 }
+
+// isVoicePattern reports whether the http.ServeMux pattern of an operation is a voice chat one.
+func isVoicePattern(pattern string) bool {
+	_, path, _ := strings.Cut(pattern, " ")
+	return strings.HasPrefix(path, BasePath+"/voice/")
+}
+
+// voiceGate answers 404 to every voice chat operation while the voice chat is off, before the
+// guard looks at the access token (ADR-0100 §2): a server without voice chat has no such API.
+func (s *Server) voiceGate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.o.Voice == nil {
+			s.writeProblem(w, r, http.StatusNotFound, ProblemTypeBlank, s.localizer(r).ServerErrorsNotFound(), "")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

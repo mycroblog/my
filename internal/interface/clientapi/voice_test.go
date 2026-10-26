@@ -203,8 +203,10 @@ func TestVoiceRoomsOff(t *testing.T) {
 		{http.MethodPost, "/voice/rooms/" + voiceRoomID + "/heartbeat", `{"session":"s"}`},
 		{http.MethodPost, "/voice/rooms/" + voiceRoomID + "/host", `{"account_id":"` + bobAccountID + `"}`},
 	} {
-		if res := e.send(t, req.method, req.path, "voice", req.body); res.StatusCode != http.StatusNotFound {
-			t.Errorf("%s %s with the voice chat off = %d, want 404", req.method, req.path, res.StatusCode)
+		for _, token := range []string{"voice", "", "read"} {
+			if res := e.send(t, req.method, req.path, token, req.body); res.StatusCode != http.StatusNotFound {
+				t.Errorf("%s %s with the voice chat off and token %q = %d, want 404", req.method, req.path, token, res.StatusCode)
+			}
 		}
 	}
 }
