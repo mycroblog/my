@@ -14,7 +14,8 @@ a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OS
 - Goal: publish v0.x and start running the maintainer's instance — moderation essentials, i18n (en / ja and more),
   documentation, the release (tags, the container image on `ghcr.io/mycroblog/my`, release notes), and the API client
   library `pkg/mykit` and the bot library `pkg/mybot` (epic [#30](https://github.com/mycroblog/my/issues/30),
-  [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. Deployment templates for GCP / AWS / microk8s belong to M6.
+  [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. M4.3 — Voice Chat (epic [#1345](https://github.com/mycroblog/my/issues/1345))
+  is a precondition of v0.1.0. Deployment templates for GCP / AWS / microk8s belong to M6.
 - The server is Go ([ADR-0001](docs/adr/0001-server-language-and-runtime.md)); clients are TypeScript under `app/` with Bun.
   Cloudflare Workers is **not** a target.
 - **Web client work must follow [docs/architecture/web-client/](docs/architecture/web-client/README.md).** Do not write React from memory or
