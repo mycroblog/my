@@ -273,6 +273,9 @@ type Options struct {
 	// OAuthClients runs the OAuth clients and the denied hosts of client metadata documents
 	// (admin_oauth_clients.go).
 	OAuthClients OAuthClients
+	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
+	// to their operations.
+	Voice VoiceRooms
 	// RateLimiter applies AnonymousLimit and AccountLimit; nil applies no limit.
 	RateLimiter *kernel.RateLimiter
 	// AnonymousLimit and AccountLimit override the package's limits of the same names when

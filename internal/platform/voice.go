@@ -3,10 +3,22 @@
 package platform
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
-	"github.com/mycroblog/my/internal/app/voice"
+	"github.com/mycroblog/my/internal/adapter/voice/p2p"
+	"github.com/mycroblog/my/internal/app/account"
+	"github.com/mycroblog/my/internal/app/queue"
+	appvoice "github.com/mycroblog/my/internal/app/voice"
+	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/domain/voice"
+	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -62,8 +74,112 @@ func newVoice(cfg *config.Config, logger *slog.Logger) Voice {
 	return v
 }
 
-// setUpVoice builds the voice module (ADR-0100): the projectors of its projections, which the
-// commands of the rooms rely on.
-func (a *App) setUpVoice(repo voice.Repository) {
-	voice.RegisterProjectors(a.Projectors, repo)
+// setUpVoice builds the voice module (ADR-0100): the projectors of its projections, its
+// subscriptions to the events that change who may be in a room, its jobs, and the rooms over the
+// transport of the voice setting (ADR-0101 §2). The jobs run with the voice chat off too, so that
+// voice.sweep ends the rooms left open (disabled).
+func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
+	appvoice.RegisterProjectors(a.Projectors, repo)
+	heartbeats := appvoice.NewHeartbeats(a.KV, repo)
+	var transport appvoice.Transport
+	switch a.Voice.Method {
+	case VoiceOff:
+	case VoiceP2P:
+		transport = p2p.New(p2p.Options{
+			STUNURLs: cfg.VoiceSTUNURLs, RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock,
+		})
+	default:
+		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p or off", a.Voice.Method)
+	}
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
+	c := appvoice.Config{Capacity: a.Voice.RoomCapacity(), MaxOpenRooms: a.Voice.MaxOpenRooms, MaxRoomDuration: a.Voice.MaxRoomDuration}
+	if transport != nil {
+		c.Transport = voice.Transport(a.Voice.Method)
+	}
+	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
+		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
+		Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, Logger: a.Logger,
+	})
+	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
+	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
+	return nil
+}
+
+// voiceMembers reads the accounts for the rooms from the account, moderation, identity, and
+// instance modules (ADR-0100 §2, §4).
+type voiceMembers struct{ a *App }
+
+func (m voiceMembers) Member(ctx context.Context, accountID string) (appvoice.Member, error) {
+	act, err := m.a.Accounts.FindByID(ctx, accountID)
+	if errors.Is(err, account.ErrNotFound) {
+		return appvoice.Member{}, nil
+	}
+	if err != nil {
+		return appvoice.Member{}, err
+	}
+	if !act.Account.IsLocal() || act.Local == nil || act.IsInstanceActor() {
+		return appvoice.Member{}, nil
+	}
+	// A suspension or a ban restricts the federation of the account, and a limit its
+	// unsolicited reach (data-model §5.2).
+	rs, err := m.a.AccountPolicy.Restrictions(ctx, accountID)
+	if err != nil {
+		return appvoice.Member{}, err
+	}
+	suspended, limited := slices.Contains(rs, moderation.RestrictFederation), slices.Contains(rs, moderation.RestrictUnsolicitedReach)
+	mayStart, err := m.a.Identity.HasPermission(ctx, act.Local.UserID, identity.PermStartVoiceRooms)
+	if err != nil {
+		return appvoice.Member{}, err
+	}
+	return appvoice.Member{Local: true, Active: !act.Deleted() && !suspended, Limited: limited, MayStart: mayStart}, nil
+}
+
+func (m voiceMembers) EveryoneStarts(ctx context.Context) (bool, error) {
+	s, err := m.a.Instance.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	return s.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone, nil
+}
+
+// voiceRelations reads the follows and blocks of the rooms from the graph module.
+type voiceRelations struct{ a *App }
+
+func (r voiceRelations) Follows(ctx context.Context, followerID, followeeID string) (bool, error) {
+	rel, err := r.a.Graph.CandidateRelations(ctx, followerID, []string{followeeID})
+	return rel[followeeID].Following, err
+}
+
+func (r voiceRelations) Blocked(ctx context.Context, a, b string) (bool, error) {
+	for _, pair := range [][2]string{{a, b}, {b, a}} {
+		ok, err := r.a.Graph.IsBlocking(ctx, pair[0], pair[1])
+		if err != nil || ok {
+			return ok, err
+		}
+	}
+	return false, nil
+}
+
+func (r voiceRelations) Following(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	rel, err := r.a.Graph.CandidateRelations(ctx, accountID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(rel))
+	for id, c := range rel {
+		out[id] = c.Following
+	}
+	return out, nil
+}
+
+// voiceAPI returns the rooms of the client API, nil while the voice chat is off (404).
+func (a *App) voiceAPI() clientapi.VoiceRooms {
+	if a.VoiceRooms == nil || !a.VoiceRooms.Enabled() {
+		return nil
+	}
+	return a.VoiceRooms
 }

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A page of the open voice chat rooms that the user sees: the rooms where the user follows the
+  host or a speaker first, then by the most participants.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./VoiceRoom.yaml

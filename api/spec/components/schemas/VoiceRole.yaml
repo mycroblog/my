@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: Whether a participant speaks or listens.
+type: string
+enum: [speaker, listener]

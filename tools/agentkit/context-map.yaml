@@ -265,11 +265,12 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/13-supporters.md#413-supporters", "docs/adr/0072-supporter-plans-and-roles.md", "docs/operations/supporters.md"]
     userdocs: ["docs/operations/supporters.md"]
   - name: module-voice
-    paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_contract.go", "app/web/src/features/voice/**"]
+    paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_*contract.go", "internal/interface/clientapi/voice*.go", "api/spec/paths/voice_*.yaml", "api/spec/components/*/Voice*.yaml", "app/web/src/features/voice/**"]
     docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0102-voice-chat-sfu-adapters.md"]
     notes:
       - "Every place that shows a room or lets someone join or speak goes through voice.CanSee and voice.CanSpeakFreely (ADR-0100 §4); internal/app/voice gathers the facts."
       - "A command writes the rows of its events, then emits the matching voice event in the same transaction; the projectors rebuild voice_room_heads and voice_room_participants with the same SQL as the rebuild."
+      - "The heartbeats and the session IDs live only in the KeyValueStore (voice.heartbeat, voice.session); the room requests and voice.sweep evaluate the expiry with conditional writes that apply once. Transport calls never run in a transaction: voice.apply (outbox) makes them after the commit."
   - name: app-infrastructure
     paths: ["internal/app/kernel/**", "internal/app/uow/**", "internal/app/queue/**", "internal/app/stream/**", "internal/app/projection/**", "internal/app/dbupgrade/**", "internal/app/blob/**", "internal/app/media/**", "internal/app/metrics/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]

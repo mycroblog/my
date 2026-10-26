@@ -442,3 +442,22 @@ func (r *VoiceRepository) RebuildProjections(ctx context.Context, tx uow.Tx) err
 		(*postgresgen.Queries).DeleteAllVoiceRoomHeads, (*postgresgen.Queries).RebuildVoiceRoomHeads,
 		(*postgresgen.Queries).DeleteAllVoiceRoomParticipants, (*postgresgen.Queries).RebuildVoiceRoomParticipants)
 }
+
+// LockRoom implements appvoice.Repository with a transaction-scoped advisory lock on the room.
+func (r *VoiceRepository) LockRoom(ctx context.Context, tx uow.Tx, roomID string) error {
+	return r.lock(ctx, tx, "voice:room:"+roomID)
+}
+
+// LockOpening implements appvoice.Repository with a transaction-scoped advisory lock on the
+// opening of rooms.
+func (r *VoiceRepository) LockOpening(ctx context.Context, tx uow.Tx) error {
+	return r.lock(ctx, tx, "voice:opening")
+}
+
+func (r *VoiceRepository) lock(ctx context.Context, tx uow.Tx, key string) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.LockVoice(ctx, key), "lock "+key)
+}

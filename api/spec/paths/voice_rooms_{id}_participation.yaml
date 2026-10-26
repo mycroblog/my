@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: joinVoiceRoom
+  summary: Join a voice chat room
+  description: |
+    Joins a room that the user sees, as a listener, with a new session. A user who is in the
+    room already, from another device, keeps the place with a new session, and the previous
+    session is disconnected. Joining leaves the room the user was in; the host of an open room
+    leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+    `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+    allows. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room and the new session.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomJoin.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: leaveVoiceRoom
+  summary: Leave a voice chat room
+  description: |
+    Leaves a room that the user is in. The host of a room with other participants chooses the
+    next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+    409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+    `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+    ends when nobody is left in it. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  parameters:
+    - name: next_host_id
+      in: query
+      description: The participant who becomes the host when the host leaves.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+    - name: end
+      in: query
+      description: Whether the host ends the room on leaving.
+      schema:
+        type: boolean
+        default: false
+  responses:
+    "204":
+      description: The user left the room.
+    default:
+      $ref: ../components/responses/Problem.yaml

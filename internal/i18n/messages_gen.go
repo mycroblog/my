@@ -235,6 +235,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadSupporters() string {
 	return l.format("server:auth.authorize.scope.read_supporters", nil)
 }
 
+// ServerAuthAuthorizeScopeReadVoice formats "server:auth.authorize.scope.read_voice". Permission (OAuth scope read:voice) listed on the authorization page.
+//
+//	en: Read the voice chat rooms you can see
+func (l *Localizer) ServerAuthAuthorizeScopeReadVoice() string {
+	return l.format("server:auth.authorize.scope.read_voice", nil)
+}
+
 // ServerAuthAuthorizeScopeWrite formats "server:auth.authorize.scope.write". Permission (OAuth scope write) listed on the authorization page.
 //
 //	en: Post and change things for you
@@ -324,6 +331,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteStatuses() string {
 //	en: Subscribe to the supporter plans, and change, cancel, and resume your subscription
 func (l *Localizer) ServerAuthAuthorizeScopeWriteSupporters() string {
 	return l.format("server:auth.authorize.scope.write_supporters", nil)
+}
+
+// ServerAuthAuthorizeScopeWriteVoice formats "server:auth.authorize.scope.write_voice". Permission (OAuth scope write:voice) listed on the authorization page.
+//
+//	en: Open, join, and leave voice chat rooms, and host them
+func (l *Localizer) ServerAuthAuthorizeScopeWriteVoice() string {
+	return l.format("server:auth.authorize.scope.write_voice", nil)
 }
 
 // ServerAuthAuthorizeTitle formats "server:auth.authorize.title". Title and heading of the authorization (consent) page. {app} is the name of the application asking for access.
@@ -2179,6 +2193,76 @@ func (l *Localizer) ServerErrorsUnsupportedMediaType() string {
 //	en: {name} must be an image that you uploaded and that has finished processing.
 func (l *Localizer) ServerErrorsUnusableImage(name string) string {
 	return l.format("server:errors.unusable_image", map[string]any{"name": name})
+}
+
+// ServerErrorsVoiceConflict formats "server:errors.voice.conflict". API error title for HTTP 409 when a change of a voice chat room raced another change of the same user.
+//
+//	en: The room changed meanwhile. Try again.
+func (l *Localizer) ServerErrorsVoiceConflict() string {
+	return l.format("server:errors.voice.conflict", nil)
+}
+
+// ServerErrorsVoiceHostMustChoose formats "server:errors.voice.host_must_choose". API error title for HTTP 409 when the host leaves a voice chat room that has other participants without choosing the next host or ending the room.
+//
+//	en: Choose the next host or end the room.
+func (l *Localizer) ServerErrorsVoiceHostMustChoose() string {
+	return l.format("server:errors.voice.host_must_choose", nil)
+}
+
+// ServerErrorsVoiceHostingElsewhere formats "server:errors.voice.hosting_elsewhere". API error title for HTTP 409 when the host of an open voice chat room opens or joins another room.
+//
+//	en: You host another room.
+func (l *Localizer) ServerErrorsVoiceHostingElsewhere() string {
+	return l.format("server:errors.voice.hosting_elsewhere", nil)
+}
+
+// ServerErrorsVoiceHostingElsewhereDetail formats "server:errors.voice.hosting_elsewhere_detail". API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room.
+//
+//	en: Leave that room first, choosing the next host or ending it.
+func (l *Localizer) ServerErrorsVoiceHostingElsewhereDetail() string {
+	return l.format("server:errors.voice.hosting_elsewhere_detail", nil)
+}
+
+// ServerErrorsVoiceInvalidNextHost formats "server:errors.voice.invalid_next_host". API error title for HTTP 422 when the host of a voice chat room chooses as the next host someone who is not in the room or may not host rooms.
+//
+//	en: The next host must be a participant who may host rooms.
+func (l *Localizer) ServerErrorsVoiceInvalidNextHost() string {
+	return l.format("server:errors.voice.invalid_next_host", nil)
+}
+
+// ServerErrorsVoiceNotEligible formats "server:errors.voice.not_eligible". API error title for HTTP 403 when a user who may not host voice chat rooms opens one (ADR-0100 §2: a local, unrestricted account, with the start_voice_rooms permission unless everyone may start rooms).
+//
+//	en: You may not host voice chat rooms.
+func (l *Localizer) ServerErrorsVoiceNotEligible() string {
+	return l.format("server:errors.voice.not_eligible", nil)
+}
+
+// ServerErrorsVoiceNotHost formats "server:errors.voice.not_host". API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over.
+//
+//	en: Only the host of the room may do this.
+func (l *Localizer) ServerErrorsVoiceNotHost() string {
+	return l.format("server:errors.voice.not_host", nil)
+}
+
+// ServerErrorsVoiceRoomFull formats "server:errors.voice.room_full". API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows.
+//
+//	en: The room is full.
+func (l *Localizer) ServerErrorsVoiceRoomFull() string {
+	return l.format("server:errors.voice.room_full", nil)
+}
+
+// ServerErrorsVoiceTooManyRooms formats "server:errors.voice.too_many_rooms". API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows.
+//
+//	en: No more rooms can be opened now.
+func (l *Localizer) ServerErrorsVoiceTooManyRooms() string {
+	return l.format("server:errors.voice.too_many_rooms", nil)
+}
+
+// ServerErrorsVoiceUnavailable formats "server:errors.voice.unavailable". API error title for HTTP 503 when the server could not prepare the connection of a voice chat room.
+//
+//	en: Voice chat is not available right now.
+func (l *Localizer) ServerErrorsVoiceUnavailable() string {
+	return l.format("server:errors.voice.unavailable", nil)
 }
 
 // ServerErrorsWebhookInvalid formats "server:errors.webhook.invalid". API error title for HTTP 422 when the settings of a webhook endpoint break a rule; the detail says which.

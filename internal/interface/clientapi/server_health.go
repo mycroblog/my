@@ -29,6 +29,9 @@ func (s *Server) wrapOperation(pattern string, h http.Handler) http.Handler {
 	if pattern == serverHealthPattern {
 		return h
 	}
+	if isVoicePattern(pattern) {
+		return s.voiceGate(s.guard(pattern, h))
+	}
 	return s.guard(pattern, h)
 }
 

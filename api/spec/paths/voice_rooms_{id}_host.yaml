@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: handOverVoiceRoom
+  summary: Hand a voice chat room over to another host
+  description: |
+    Makes a participant who may host rooms the host of a room that the user hosts; the user
+    stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+    and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+    over. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceHostChoice.yaml
+  responses:
+    "200":
+      description: The room with its new host.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

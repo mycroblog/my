@@ -83,6 +83,12 @@ tags:
       subscribing through the payment provider's hosted checkout, changing the plan, canceling
       and resuming, and the provider's portal. The operations need a `read:supporters` or
       `write:supporters` scope.
+  - name: voice
+    description: |
+      The voice chat rooms of the local users: opening them, their settings, joining and
+      leaving them, the heartbeats of the sessions, and handing a room over. The operations need
+      a `read:voice` or `write:voice` scope, and answer 404 while the voice chat is off on the
+      server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -4041,6 +4047,268 @@ paths:
                 $ref: '#/components/schemas/SupporterPortal'
         default:
           $ref: '#/components/responses/Problem'
+  /voice/rooms:
+    get:
+      operationId: listVoiceRooms
+      summary: List the open voice chat rooms
+      description: |
+        The open voice chat rooms that the user sees: the rooms where the user follows the host or
+        a speaker first, then by the most participants. With `tag`, only the rooms with that
+        hashtag. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - read:voice
+      parameters:
+        - name: tag
+          in: query
+          description: A hashtag, with or without the `#`, that the rooms have.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the rooms.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoomPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: openVoiceRoom
+      summary: Open a voice chat room
+      description: |
+        Opens a room that the user hosts and joins the user to it as a speaker, with a new session.
+        The user must be a local, unrestricted user who may start rooms (the instance setting
+        `voice_room_starters`, or the `start_voice_rooms` permission): a 403
+        `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
+        while as many rooms are open as the server allows, and a 409
+        `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
+        leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceRoomSettings'
+      responses:
+        '201':
+          description: The room and the session of the host.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoomJoin'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    get:
+      operationId: getVoiceRoom
+      summary: Get a voice chat room
+      description: |
+        An open room that the user sees. A room that ended or that the user does not see is a
+        404. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - read:voice
+      responses:
+        '200':
+          description: The room.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateVoiceRoom
+      summary: Change the settings of a voice chat room
+      description: |
+        Changes the settings of a room that the user hosts. The participants stay whatever the new
+        settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+        for invalid settings. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceRoomUpdate'
+      responses:
+        '200':
+          description: The room with its new settings.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: endVoiceRoom
+      summary: End a voice chat room
+      description: |
+        Ends a room that the user hosts, for every participant. A 403
+        `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '204':
+          description: The room ended.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participation:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: joinVoiceRoom
+      summary: Join a voice chat room
+      description: |
+        Joins a room that the user sees, as a listener, with a new session. A user who is in the
+        room already, from another device, keeps the place with a new session, and the previous
+        session is disconnected. Joining leaves the room the user was in; the host of an open room
+        leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
+        `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
+        allows. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room and the new session.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoomJoin'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: leaveVoiceRoom
+      summary: Leave a voice chat room
+      description: |
+        Leaves a room that the user is in. The host of a room with other participants chooses the
+        next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
+        409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
+        `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
+        ends when nobody is left in it. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      parameters:
+        - name: next_host_id
+          in: query
+          description: The participant who becomes the host when the host leaves.
+          schema:
+            $ref: '#/components/schemas/Id'
+        - name: end
+          in: query
+          description: Whether the host ends the room on leaving.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: The user left the room.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/heartbeat:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: sendVoiceHeartbeat
+      summary: Keep a session of a voice chat room alive
+      description: |
+        Tells the server that the session is alive; the client sends it every 15 seconds. A session
+        without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
+        minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
+        session that is not the user's current session in the room is a 404: the client joins
+        again. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceSession'
+      responses:
+        '204':
+          description: The session is alive.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/host:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: handOverVoiceRoom
+      summary: Hand a voice chat room over to another host
+      description: |
+        Makes a participant who may host rooms the host of a room that the user hosts; the user
+        stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
+        and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
+        over. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceHostChoice'
+      responses:
+        '200':
+          description: The room with its new host.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/queue:
     get:
       operationId: getAdminQueue
@@ -7857,6 +8125,7 @@ components:
             read:reports: Read the reports the user filed and whether they are resolved.
             read:statuses: Read posts and timelines.
             read:supporters: Read the user's own supporter subscription.
+            read:voice: Read the voice chat rooms the user sees.
             write:accounts: Change the user's profile and preferences.
             write:blocks: Block and unblock accounts.
             write:bookmarks: Bookmark posts and remove bookmarks.
@@ -7869,6 +8138,7 @@ components:
             write:reports: Report accounts and posts to the moderators.
             write:statuses: Post, edit, delete, boost, and pin posts.
             write:supporters: Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
+            write:voice: Open, join, and leave voice chat rooms, and host them.
   headers:
     CacheControl:
       description: The caching policy. Anonymous public GETs are cacheable by shared caches (ADR-0016).
@@ -8104,6 +8374,13 @@ components:
       in: path
       required: true
       description: The ID of the subscription.
+      schema:
+        $ref: '#/components/schemas/Id'
+    VoiceRoomId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the voice chat room.
       schema:
         $ref: '#/components/schemas/Id'
     WebhookId:
@@ -15590,6 +15867,21 @@ components:
           allow the operation.
         - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
           already.
+        - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
+        - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
+        - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
+          server allows.
+        - `/api/v1/problems/voice-too-many-rooms` (409): as many voice chat rooms are open as the
+          server allows.
+        - `/api/v1/problems/voice-hosting-elsewhere` (409): the user hosts another open voice chat
+          room; leave it first, choosing the next host or ending it.
+        - `/api/v1/problems/voice-host-must-choose` (409): the host leaves a room with other
+          participants; choose the next host or end the room.
+        - `/api/v1/problems/voice-invalid-next-host` (422): the next host is not a participant of the
+          room who may host rooms.
+        - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
+        - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
+          the room.
         - `/api/v1/problems/account-moved` (403): the user's account moved to another account
           (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
           (`POST /accounts/move/cancel`).
@@ -17261,6 +17553,243 @@ components:
         - unlisted
         - private
         - direct
+    VoiceGrant:
+      description: |
+        What the client of a session needs to connect to the audio of a room. `kind` is the method
+        of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+        `expires_at`.
+      type: object
+      required:
+        - kind
+        - options
+        - ice_servers
+        - relay_only
+        - expires_at
+      properties:
+        kind:
+          type: string
+        url:
+          description: The endpoint of the media server; omitted for `p2p`.
+          type: string
+        token:
+          description: The access token of the media server; omitted for `p2p`.
+          type: string
+        options:
+          description: The options of the method for the client.
+          type: object
+          additionalProperties:
+            type: string
+        ice_servers:
+          description: The STUN and TURN servers of the connections.
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceIceServer'
+        relay_only:
+          description: Whether the client connects through TURN only (`iceTransportPolicy` `relay`).
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+    VoiceHostChoice:
+      description: The participant who becomes the host.
+      type: object
+      required:
+        - account_id
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+    VoiceIceServer:
+      description: A STUN or TURN server, the `RTCIceServer` of the browser.
+      type: object
+      required:
+        - urls
+      properties:
+        urls:
+          type: array
+          items:
+            type: string
+        username:
+          type: string
+        credential:
+          type: string
+    VoiceRole:
+      description: Whether a participant speaks or listens.
+      type: string
+      enum:
+        - speaker
+        - listener
+    VoiceRoom:
+      description: |
+        An open voice chat room: its settings, its host, and its participants in the order they
+        joined. Everyone who sees the room sees its participants.
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - hashtags
+        - visibility
+        - speakers
+        - host
+        - opened_at
+        - participants_count
+        - participants
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          description: The name of the room, 1 to 100 characters.
+          type: string
+        description:
+          description: The description of the room, up to 500 characters; empty for none.
+          type: string
+        hashtags:
+          description: The hashtags of the room, without the `#`, as the host typed them.
+          type: array
+          items:
+            type: string
+        visibility:
+          $ref: '#/components/schemas/VoiceRoomVisibility'
+        speakers:
+          $ref: '#/components/schemas/VoiceRoomSpeakers'
+        host:
+          $ref: '#/components/schemas/Account'
+        opened_at:
+          description: When the room opened.
+          type: string
+          format: date-time
+        participants_count:
+          description: How many people are in the room, the host included.
+          type: integer
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceRoomParticipant'
+    VoiceRoomJoin:
+      description: |
+        A session of the user in a voice chat room: the room, the new session, and its grant. The
+        client sends the session's heartbeats every 15 seconds.
+      type: object
+      required:
+        - room
+        - session
+        - grant
+      properties:
+        room:
+          $ref: '#/components/schemas/VoiceRoom'
+        session:
+          description: The ID of the session, which replaces the previous session of the user in the room.
+          type: string
+        grant:
+          $ref: '#/components/schemas/VoiceGrant'
+    VoiceRoomPage:
+      description: |
+        A page of the open voice chat rooms that the user sees: the rooms where the user follows the
+        host or a speaker first, then by the most participants.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/VoiceRoom'
+    VoiceRoomParticipant:
+      description: A participant of a voice chat room.
+      type: object
+      required:
+        - account
+        - role
+        - host
+        - cohost
+        - hand_raised
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        role:
+          $ref: '#/components/schemas/VoiceRole'
+        host:
+          description: Whether the participant is the host.
+          type: boolean
+        cohost:
+          description: Whether the participant is a co-host. The host is never a co-host.
+          type: boolean
+        hand_raised:
+          description: Whether the participant raised a hand to speak.
+          type: boolean
+    VoiceRoomSettings:
+      description: The settings of a new voice chat room.
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          description: 1 to 100 characters on one line.
+          type: string
+        description:
+          description: Up to 500 characters; line breaks are kept.
+          type: string
+        hashtags:
+          description: Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post.
+          type: array
+          items:
+            type: string
+        visibility:
+          $ref: '#/components/schemas/VoiceRoomVisibility'
+        speakers:
+          $ref: '#/components/schemas/VoiceRoomSpeakers'
+    VoiceRoomSpeakers:
+      description: |
+        Who may become a speaker without asking: `everyone`, `followers` of the current host,
+        `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+      type: string
+      enum:
+        - everyone
+        - followers
+        - mutuals
+        - manual
+    VoiceRoomUpdate:
+      description: A change of the settings of a voice chat room; an omitted property keeps its value.
+      type: object
+      properties:
+        name:
+          description: 1 to 100 characters on one line.
+          type: string
+        description:
+          description: Up to 500 characters; empty for none.
+          type: string
+        hashtags:
+          description: Up to 5 hashtags, which replace the room's; empty for none.
+          type: array
+          items:
+            type: string
+        visibility:
+          $ref: '#/components/schemas/VoiceRoomVisibility'
+        speakers:
+          $ref: '#/components/schemas/VoiceRoomSpeakers'
+    VoiceRoomVisibility:
+      description: |
+        Who sees a voice chat room and may join it: `local` every local user, `followers` the
+        followers of the current host, `mutuals` those who follow the host and whom the host follows,
+        and `invited` only the invited users. The host, the co-hosts, the participants, and the
+        invited users always see it, and a block with the host or a co-host always hides it.
+      type: string
+      enum:
+        - local
+        - followers
+        - mutuals
+        - invited
+    VoiceSession:
+      description: A session of the user in a voice chat room.
+      type: object
+      required:
+        - session
+      properties:
+        session:
+          description: The `session` of the join.
+          type: string
     VoteInPollRequest:
       description: A vote in the poll of a status.
       type: object

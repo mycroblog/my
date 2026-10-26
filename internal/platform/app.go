@@ -40,6 +40,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
+	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/app/webhook"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/platform/config"
@@ -179,6 +180,9 @@ type App struct {
 	// Voice is how the voice chat runs: its method, off for none, and the limits of its rooms
 	// (ADR-0101 §1).
 	Voice Voice
+	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
+	// ErrDisabled while Voice is off.
+	VoiceRooms *appvoice.Service
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
@@ -442,7 +446,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpLocalReports(repos.mods)
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)
-	a.setUpVoice(repos.voice)
+	if err := a.setUpVoice(cfg, repos.voice); err != nil {
+		return nil, err
+	}
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the client of a session needs to connect to the audio of a room. `kind` is the method
+  of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+  `expires_at`.
+type: object
+required: [kind, options, ice_servers, relay_only, expires_at]
+properties:
+  kind:
+    type: string
+  url:
+    description: The endpoint of the media server; omitted for `p2p`.
+    type: string
+  token:
+    description: The access token of the media server; omitted for `p2p`.
+    type: string
+  options:
+    description: The options of the method for the client.
+    type: object
+    additionalProperties:
+      type: string
+  ice_servers:
+    description: The STUN and TURN servers of the connections.
+    type: array
+    items:
+      $ref: ./VoiceIceServer.yaml
+  relay_only:
+    description: Whether the client connects through TURN only (`iceTransportPolicy` `relay`).
+    type: boolean
+  expires_at:
+    type: string
+    format: date-time

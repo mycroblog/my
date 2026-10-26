@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: The participant who becomes the host.
+type: object
+required: [account_id]
+properties:
+  account_id:
+    $ref: ./Id.yaml

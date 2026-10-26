@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: A change of the settings of a voice chat room; an omitted property keeps its value.
+type: object
+properties:
+  name:
+    description: 1 to 100 characters on one line.
+    type: string
+  description:
+    description: Up to 500 characters; empty for none.
+    type: string
+  hashtags:
+    description: Up to 5 hashtags, which replace the room's; empty for none.
+    type: array
+    items:
+      type: string
+  visibility:
+    $ref: ./VoiceRoomVisibility.yaml
+  speakers:
+    $ref: ./VoiceRoomSpeakers.yaml

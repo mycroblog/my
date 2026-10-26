@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+get:
+  operationId: getVoiceRoom
+  summary: Get a voice chat room
+  description: |
+    An open room that the user sees. A room that ended or that the user does not see is a
+    404. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["read:voice"]
+  responses:
+    "200":
+      description: The room.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateVoiceRoom
+  summary: Change the settings of a voice chat room
+  description: |
+    Changes the settings of a room that the user hosts. The participants stay whatever the new
+    settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
+    for invalid settings. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceRoomUpdate.yaml
+  responses:
+    "200":
+      description: The room with its new settings.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: endVoiceRoom
+  summary: End a voice chat room
+  description: |
+    Ends a room that the user hosts, for every participant. A 403
+    `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "204":
+      description: The room ended.
+    default:
+      $ref: ../components/responses/Problem.yaml

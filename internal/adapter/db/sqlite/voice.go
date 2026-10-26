@@ -443,3 +443,10 @@ func (r *VoiceRepository) RebuildProjections(ctx context.Context, tx uow.Tx) err
 		(*sqlitegen.Queries).DeleteAllVoiceRoomHeads, (*sqlitegen.Queries).RebuildVoiceRoomHeads,
 		(*sqlitegen.Queries).DeleteAllVoiceRoomParticipants, (*sqlitegen.Queries).RebuildVoiceRoomParticipants)
 }
+
+// LockRoom implements appvoice.Repository. SQLite runs one write transaction at a time, so
+// there is nothing to lock.
+func (r *VoiceRepository) LockRoom(context.Context, uow.Tx, string) error { return nil }
+
+// LockOpening implements appvoice.Repository; see LockRoom.
+func (r *VoiceRepository) LockOpening(context.Context, uow.Tx) error { return nil }

@@ -85,6 +85,12 @@ tags:
       subscribing through the payment provider's hosted checkout, changing the plan, canceling
       and resuming, and the provider's portal. The operations need a `read:supporters` or
       `write:supporters` scope.
+  - name: voice
+    description: |
+      The voice chat rooms of the local users: opening them, their settings, joining and
+      leaving them, the heartbeats of the sessions, and handing a room over. The operations need
+      a `read:voice` or `write:voice` scope, and answer 404 while the voice chat is off on the
+      server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -322,6 +328,16 @@ paths:
     $ref: ./paths/supporter_subscription_cancel_scheduled_change.yaml
   /supporter/portal:
     $ref: ./paths/supporter_portal.yaml
+  /voice/rooms:
+    $ref: ./paths/voice_rooms.yaml
+  /voice/rooms/{id}:
+    $ref: ./paths/voice_rooms_{id}.yaml
+  /voice/rooms/{id}/participation:
+    $ref: ./paths/voice_rooms_{id}_participation.yaml
+  /voice/rooms/{id}/heartbeat:
+    $ref: ./paths/voice_rooms_{id}_heartbeat.yaml
+  /voice/rooms/{id}/host:
+    $ref: ./paths/voice_rooms_{id}_host.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -591,6 +607,7 @@ components:
             "read:reports": Read the reports the user filed and whether they are resolved.
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
+            "read:voice": Read the voice chat rooms the user sees.
             "write:accounts": Change the user's profile and preferences.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
@@ -603,6 +620,7 @@ components:
             "write:reports": Report accounts and posts to the moderators.
             "write:statuses": Post, edit, delete, boost, and pin posts.
             "write:supporters": Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
+            "write:voice": Open, join, and leave voice chat rooms, and host them.
   headers:
     CacheControl:
       $ref: ./components/headers/CacheControl.yaml
@@ -669,6 +687,8 @@ components:
       $ref: ./components/parameters/SupporterPlanId.yaml
     SupporterSubscriptionId:
       $ref: ./components/parameters/SupporterSubscriptionId.yaml
+    VoiceRoomId:
+      $ref: ./components/parameters/VoiceRoomId.yaml
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
@@ -1543,6 +1563,32 @@ components:
       $ref: ./components/schemas/UpdateWebhookRequest.yaml
     Visibility:
       $ref: ./components/schemas/Visibility.yaml
+    VoiceGrant:
+      $ref: ./components/schemas/VoiceGrant.yaml
+    VoiceHostChoice:
+      $ref: ./components/schemas/VoiceHostChoice.yaml
+    VoiceIceServer:
+      $ref: ./components/schemas/VoiceIceServer.yaml
+    VoiceRole:
+      $ref: ./components/schemas/VoiceRole.yaml
+    VoiceRoom:
+      $ref: ./components/schemas/VoiceRoom.yaml
+    VoiceRoomJoin:
+      $ref: ./components/schemas/VoiceRoomJoin.yaml
+    VoiceRoomPage:
+      $ref: ./components/schemas/VoiceRoomPage.yaml
+    VoiceRoomParticipant:
+      $ref: ./components/schemas/VoiceRoomParticipant.yaml
+    VoiceRoomSettings:
+      $ref: ./components/schemas/VoiceRoomSettings.yaml
+    VoiceRoomSpeakers:
+      $ref: ./components/schemas/VoiceRoomSpeakers.yaml
+    VoiceRoomUpdate:
+      $ref: ./components/schemas/VoiceRoomUpdate.yaml
+    VoiceRoomVisibility:
+      $ref: ./components/schemas/VoiceRoomVisibility.yaml
+    VoiceSession:
+      $ref: ./components/schemas/VoiceSession.yaml
     VoteInPollRequest:
       $ref: ./components/schemas/VoteInPollRequest.yaml
     WebhookCustomEmoji:
