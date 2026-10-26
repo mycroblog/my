@@ -24,7 +24,7 @@ import (
 
 // JobMediaEvent applies one verified event of a media server (ADR-0102 §4): a session that
 // joined the media path and is not a live session of the room is removed from it, and a live one
-// gets the room's current state; a session of the room that left, and is not connected again
+// loses its older connections (SessionDeduplicator) and gets the room's current state; a session of the room that left, and is not connected again
 // with another connection, is taken away and disconnected as by ADR-0100 §6; a media room
 // that finished while the room is open is opened again. Its idempotency key is the event's ID.
 const JobMediaEvent = "voice.media_event"
@@ -33,9 +33,27 @@ const JobMediaEvent = "voice.media_event"
 // before it is verified.
 const MediaWebhookMaxBodyBytes = 256 << 10
 
-// MediaWebhookIPLimit bounds the deliveries from one client IP (ADR-0019 §5): far above what a
-// media server sends, so that it only stops a flood of forged requests.
-var MediaWebhookIPLimit = kernel.Limit{Name: "voice.webhook.ip", Max: 3000, Window: 5 * time.Minute}
+// MediaWebhookIPLimit bounds the deliveries of events from one client IP that do not verify
+// (ADR-0019 §5); MediaConnectIPLimit those of the requests that authorize a connection. Only a
+// request that does not verify counts, so that the traffic of a media server, however busy,
+// never makes it refuse a connection or end a session; a flood of forged requests gets 429.
+var (
+	MediaWebhookIPLimit = kernel.Limit{Name: "voice.webhook.ip", Max: 300, Window: 5 * time.Minute}
+	MediaConnectIPLimit = kernel.Limit{Name: "voice.connect.ip", Max: 300, Window: 5 * time.Minute}
+)
+
+// limitRejected counts a request from ip that did not verify against lim and reports how long
+// the client waits when it sent too many.
+func (s *Service) limitRejected(ctx context.Context, lim kernel.Limit, ip string) (time.Duration, bool, error) {
+	if s.d.RateLimiter == nil {
+		return 0, false, nil
+	}
+	d, err := s.d.RateLimiter.Take(ctx, lim, kernel.ClientKey(ip))
+	if err != nil || d.Allowed {
+		return 0, false, err
+	}
+	return d.RetryAfter, true, nil
+}
 
 // mediaConnectGrace is how long a session that was given a grant may be missing from the media
 // path before the reconciliation disconnects it: the client connects within the life of the
@@ -65,7 +83,8 @@ const (
 	MediaWebhookNotFound MediaWebhookOutcome = "not_found"
 	// MediaWebhookRejected: the delivery did not verify (400).
 	MediaWebhookRejected MediaWebhookOutcome = "rejected"
-	// MediaWebhookRateLimited: the client IP sent more than MediaWebhookIPLimit (429).
+	// MediaWebhookRateLimited: the client IP sent more requests that do not verify than
+	// MediaWebhookIPLimit or MediaConnectIPLimit allow (429).
 	MediaWebhookRateLimited MediaWebhookOutcome = "rate_limited"
 )
 
@@ -96,17 +115,15 @@ func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (Med
 	if !s.Enabled() || !ok || string(s.d.Config.Transport) != req.Transport {
 		return MediaWebhookResult{Outcome: MediaWebhookNotFound}, nil
 	}
-	if s.d.RateLimiter != nil {
-		d, err := s.d.RateLimiter.Take(ctx, MediaWebhookIPLimit, kernel.ClientKey(req.ClientIP))
-		if err != nil {
-			return MediaWebhookResult{}, err
-		}
-		if !d.Allowed {
-			return MediaWebhookResult{Outcome: MediaWebhookRateLimited, RetryAfter: d.RetryAfter}, nil
-		}
-	}
 	evs, err := src.ParseEvents(ctx, req.Header, req.Body)
 	if err != nil {
+		wait, limited, lerr := s.limitRejected(ctx, MediaWebhookIPLimit, req.ClientIP)
+		switch {
+		case lerr != nil:
+			return MediaWebhookResult{}, lerr
+		case limited:
+			return MediaWebhookResult{Outcome: MediaWebhookRateLimited, RetryAfter: wait}, nil
+		}
 		return MediaWebhookResult{Outcome: MediaWebhookRejected, Reason: err}, nil
 	}
 	if len(evs) == 0 {
@@ -176,6 +193,13 @@ func (s *Service) mediaJoined(ctx context.Context, room RoomRef, session string)
 	}
 	if !live {
 		return s.d.Transport.Remove(ctx, room, Session{ID: session})
+	}
+	if d, ok := s.d.Transport.(SessionDeduplicator); ok {
+		// A session that connected again, to change its role on Sora, keeps its new
+		// connection (ADR-0102 §3).
+		if err := d.Deduplicate(ctx, room, Session{ID: session, AccountID: p.AccountID}); err != nil {
+			return err
+		}
 	}
 	return s.applyState(ctx, room, p, session)
 }
@@ -294,8 +318,9 @@ const kvMediaReopened = "voice.media_reopened"
 //   - a media path that sees nobody while live sessions of the room should be on it has likely
 //     lost the room (a media server that restarted or closed it): it is opened again, and the
 //     live sessions get mediaConnectGrace to connect again;
-//   - a live session of the room that the media path sees for the first time since its grant
-//     gets the room's current state (applyState);
+//   - every live session of the room that the media path sees gets the room's current state
+//     again (applyState), which puts right a change that the media server lost or that a
+//     client ignored (ADR-0102 §3);
 //   - a live session that the media path does not see past mediaConnectGrace is taken away
 //     (takeAway), so that the evaluation of voice.sweep disconnects it (a host enters the grace)
 //     even if its client still sends heartbeats;
@@ -366,7 +391,7 @@ func (s *Service) reconcile(ctx context.Context, rec RoomRecord) error {
 		live[ls.id] = true
 		var err error
 		switch {
-		case seen[ls.id] && ls.pending:
+		case seen[ls.id]:
 			err = s.applyState(ctx, room, ls.p, ls.id)
 		case !seen[ls.id] && !ls.pending:
 			err = s.takeAway(ctx, ls.p, ls.id)
