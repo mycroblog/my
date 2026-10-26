@@ -31,6 +31,15 @@ const (
 	EventHandRaiseChanged = "voice.hand_raise_changed"
 	// EventRoomEnded follows the end of a room, after the ends of its participations.
 	EventRoomEnded = "voice.room_ended"
+	// EventSpeakGrantChanged follows an explicit permission to speak granted or revoked.
+	EventSpeakGrantChanged = "voice.speak_grant_changed"
+	// EventInvited follows an invitation to a room.
+	EventInvited = "voice.invited"
+	// EventInvitationRevoked follows the revocation of an invitation.
+	EventInvitationRevoked = "voice.invitation_revoked"
+	// EventBanned follows an account removed from a room and banned from it, before the end of
+	// its participation.
+	EventBanned = "voice.banned"
 )
 
 // RoomOpened carries a room that opened.
@@ -100,8 +109,35 @@ type RoomEnded struct{ Ending Ending }
 // EventType implements uow.Event.
 func (RoomEnded) EventType() string { return EventRoomEnded }
 
+// SpeakGrantChanged carries an explicit permission to speak granted or revoked.
+type SpeakGrantChanged struct{ Grant SpeakGrant }
+
+// EventType implements uow.Event.
+func (SpeakGrantChanged) EventType() string { return EventSpeakGrantChanged }
+
+// Invited carries an invitation to a room.
+type Invited struct{ Invitation Invitation }
+
+// EventType implements uow.Event.
+func (Invited) EventType() string { return EventInvited }
+
+// InvitationRevoked carries the revocation of an invitation.
+type InvitationRevoked struct {
+	Invitation Invitation
+	Revocation InvitationRevocation
+}
+
+// EventType implements uow.Event.
+func (InvitationRevoked) EventType() string { return EventInvitationRevoked }
+
+// Banned carries an account banned from a room.
+type Banned struct{ Ban Ban }
+
+// EventType implements uow.Event.
+func (Banned) EventType() string { return EventBanned }
+
 // RegisterProjectors registers the projectors of the module's own projections: each event
-// derives again the rows of voice_room_heads and voice_room_participants that it touches, with
+// that changes them derives again the rows of voice_room_heads and voice_room_participants that it touches, with
 // the same rules as RebuildProjections.
 func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 	participant := func(ctx context.Context, tx uow.Tx, p Participation) error {

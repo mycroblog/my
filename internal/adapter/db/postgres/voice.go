@@ -372,6 +372,30 @@ func (r *VoiceRepository) FindInvitation(ctx context.Context, tx uow.Tx, roomID,
 	}, nil
 }
 
+// Invitations implements appvoice.Repository.
+func (r *VoiceRepository) Invitations(ctx context.Context, tx uow.Tx, roomID, afterID string, limit int) ([]appvoice.Invitation, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomInvitations(ctx, postgresgen.ListVoiceRoomInvitationsParams{RoomID: roomID, ID: afterID, RowLimit: n})
+	if err != nil {
+		return nil, wrap(err, "list voice room invitations")
+	}
+	out := make([]appvoice.Invitation, len(rows))
+	for i, row := range rows {
+		out[i] = appvoice.Invitation{
+			ID: row.ID, RoomID: row.RoomID, InviteeAccountID: row.InviteeAccountID, Role: voice.Role(row.Role),
+			InvitedByAccountID: row.InvitedByAccountID, InvitedAt: utc(row.InvitedAt),
+		}
+	}
+	return out, nil
+}
+
 // Banned implements appvoice.Repository.
 func (r *VoiceRepository) Banned(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error) {
 	q, err := r.q(tx)

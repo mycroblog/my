@@ -5,6 +5,7 @@ package testkit
 import (
 	"context"
 	"errors"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -18,7 +19,9 @@ import (
 // ADR-0101 §2, §6) on a database adapter: opening a room, joining, moving, replacing a session,
 // leaving with the choice of the host, handing over, the expiry of the heartbeats and the grace
 // of the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
-// visibility and the order of the list, and the reaction to suspensions and lost eligibility.
+// visibility and the order of the list, the reaction to suspensions and lost eligibility, the
+// operations of the participants, the host, and the co-hosts with their permissions, the
+// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -33,6 +36,12 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"SweepsOnce", roomsSweep},
 		{"ListsVisibleRooms", roomsList},
 		{"ReactsToSuspensions", roomsSuspension},
+		{"SpeaksAndRaisesHands", roomsSpeaking},
+		{"MutesAndRemoves", roomsRemove},
+		{"AssignsCohosts", roomsCohosts},
+		{"Invites", roomsInvitations},
+		{"LimitsInvitations", roomsInvitationLimit},
+		{"ReactsToBlocks", roomsBlocks},
 		{"SerializesConcurrentCommands", roomsConcurrent},
 	}
 	for _, tc := range cases {
@@ -127,10 +136,14 @@ func (r *roomsTransport) Open(_ context.Context, room appvoice.RoomRef) error {
 func (*roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, _ bool) (appvoice.Grant, error) {
 	return appvoice.Grant{Kind: "test", Token: s.ID, ExpiresAt: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 }
-func (*roomsTransport) SetSpeaking(context.Context, appvoice.RoomRef, appvoice.Session, bool) (bool, error) {
+func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) (bool, error) {
+	r.add("speak:" + s.ID + ":" + strconv.FormatBool(canSpeak))
 	return false, nil
 }
-func (*roomsTransport) Mute(context.Context, appvoice.RoomRef, appvoice.Session) error   { return nil }
+func (r *roomsTransport) Mute(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
+	r.add("mute:" + s.ID)
+	return nil
+}
 func (*roomsTransport) Unmute(context.Context, appvoice.RoomRef, appvoice.Session) error { return nil }
 func (r *roomsTransport) Remove(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
 	r.add("remove:" + s.ID)

@@ -114,6 +114,16 @@ SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i
 FROM voice_room_invitations i
 WHERE i.room_id = ? AND i.invitee_account_id = ?;
 
+-- ListVoiceRoomInvitations returns the invitations of a room that were not revoked, after the
+-- invitation of an ID (or from the first with ''), in the order they were made.
+-- name: ListVoiceRoomInvitations :many
+SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
+FROM voice_room_invitations i
+WHERE i.room_id = ? AND i.id > ?
+  AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)
+ORDER BY i.id
+LIMIT ?;
+
 -- name: IsVoiceRoomBanned :one
 SELECT CAST(EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = ? AND account_id = ?) AS INTEGER) AS banned;
 

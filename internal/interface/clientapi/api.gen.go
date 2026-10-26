@@ -10220,6 +10220,47 @@ type VoiceRoom struct {
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
+// VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
+// revoked; an invitation as a speaker also lets the user speak without asking.
+type VoiceRoomInvitation struct {
+	// Account An account, as clients show it (FR-006).
+	Account Account `json:"account"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id        Id        `json:"id"`
+	InvitedAt time.Time `json:"invited_at"`
+
+	// InvitedById The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	InvitedById Id `json:"invited_by_id"`
+
+	// Role Whether a participant speaks or listens.
+	Role VoiceRole `json:"role"`
+}
+
+// VoiceRoomInvitationCreate The user to invite to a voice chat room, and as what: a listener (the default), or a speaker,
+// who may speak without asking.
+type VoiceRoomInvitationCreate struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+
+	// Role Whether a participant speaks or listens.
+	Role *VoiceRole `json:"role,omitempty"`
+}
+
+// VoiceRoomInvitationPage A page of the invitations of a voice chat room that were not revoked, oldest first.
+type VoiceRoomInvitationPage struct {
+	Items []VoiceRoomInvitation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // VoiceRoomJoin A session of the user in a voice chat room: the room, the new session, and its grant. The
 // client sends the session's heartbeats every 15 seconds.
 type VoiceRoomJoin struct {
@@ -10623,6 +10664,11 @@ type SupporterPlanId = Id
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type SupporterSubscriptionId = Id
+
+// VoiceAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type VoiceAccountId = Id
 
 // VoiceRoomId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -11293,6 +11339,15 @@ type ListVoiceRoomsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListVoiceInvitationsParams defines parameters for ListVoiceInvitations.
+type ListVoiceInvitationsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // LeaveVoiceRoomParams defines parameters for LeaveVoiceRoom.
 type LeaveVoiceRoomParams struct {
 	// NextHostId The participant who becomes the host when the host leaves.
@@ -11556,6 +11611,9 @@ type SendVoiceHeartbeatJSONRequestBody = VoiceSession
 
 // HandOverVoiceRoomJSONRequestBody defines body for HandOverVoiceRoom for application/json ContentType.
 type HandOverVoiceRoomJSONRequestBody = VoiceHostChoice
+
+// InviteToVoiceRoomJSONRequestBody defines body for InviteToVoiceRoom for application/json ContentType.
+type InviteToVoiceRoomJSONRequestBody = VoiceRoomInvitationCreate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -12390,18 +12448,60 @@ type ServerInterface interface {
 	// UpdateVoiceRoom Change the settings of a voice chat room
 	// (PATCH /voice/rooms/{id})
 	UpdateVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// LowerVoiceHand Lower a hand in a voice chat room
+	// (DELETE /voice/rooms/{id}/hand)
+	LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// RaiseVoiceHand Raise a hand in a voice chat room
+	// (POST /voice/rooms/{id}/hand)
+	RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// SendVoiceHeartbeat Keep a session of a voice chat room alive
 	// (POST /voice/rooms/{id}/heartbeat)
 	SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// HandOverVoiceRoom Hand a voice chat room over to another host
 	// (POST /voice/rooms/{id}/host)
 	HandOverVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// ListVoiceInvitations List the invitations of a voice chat room
+	// (GET /voice/rooms/{id}/invitations)
+	ListVoiceInvitations(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params ListVoiceInvitationsParams)
+	// InviteToVoiceRoom Invite a user to a voice chat room
+	// (POST /voice/rooms/{id}/invitations)
+	InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// RevokeVoiceInvitation Revoke an invitation to a voice chat room
+	// (DELETE /voice/rooms/{id}/invitations/{account_id})
+	RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// RemoveVoiceParticipant Remove a participant from a voice chat room
+	// (DELETE /voice/rooms/{id}/participants/{account_id})
+	RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// RemoveVoiceCohost Stop a participant of a voice chat room being a co-host
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/cohost)
+	RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// AssignVoiceCohost Make a participant of a voice chat room a co-host
+	// (POST /voice/rooms/{id}/participants/{account_id}/cohost)
+	AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/grant)
+	RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// GrantVoiceSpeaking Let a participant of a voice chat room speak
+	// (POST /voice/rooms/{id}/participants/{account_id}/grant)
+	GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/hand)
+	DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// MuteVoiceParticipant Mute a participant of a voice chat room
+	// (POST /voice/rooms/{id}/participants/{account_id}/mute)
+	MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
 	// LeaveVoiceRoom Leave a voice chat room
 	// (DELETE /voice/rooms/{id}/participation)
 	LeaveVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LeaveVoiceRoomParams)
 	// JoinVoiceRoom Join a voice chat room
 	// (POST /voice/rooms/{id}/participation)
 	JoinVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// BecomeVoiceListener Go back to listening in a voice chat room
+	// (DELETE /voice/rooms/{id}/speaker)
+	BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	// BecomeVoiceSpeaker Become a speaker in a voice chat room
+	// (POST /voice/rooms/{id}/speaker)
+	BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -20321,6 +20421,58 @@ func (siw *ServerInterfaceWrapper) UpdateVoiceRoom(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// LowerVoiceHand operation middleware
+func (siw *ServerInterfaceWrapper) LowerVoiceHand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LowerVoiceHand(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RaiseVoiceHand operation middleware
+func (siw *ServerInterfaceWrapper) RaiseVoiceHand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RaiseVoiceHand(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SendVoiceHeartbeat operation middleware
 func (siw *ServerInterfaceWrapper) SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request) {
 
@@ -20364,6 +20516,367 @@ func (siw *ServerInterfaceWrapper) HandOverVoiceRoom(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.HandOverVoiceRoom(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListVoiceInvitations operation middleware
+func (siw *ServerInterfaceWrapper) ListVoiceInvitations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListVoiceInvitationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListVoiceInvitations(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// InviteToVoiceRoom operation middleware
+func (siw *ServerInterfaceWrapper) InviteToVoiceRoom(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InviteToVoiceRoom(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeVoiceInvitation operation middleware
+func (siw *ServerInterfaceWrapper) RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeVoiceInvitation(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveVoiceParticipant operation middleware
+func (siw *ServerInterfaceWrapper) RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveVoiceParticipant(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveVoiceCohost operation middleware
+func (siw *ServerInterfaceWrapper) RemoveVoiceCohost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveVoiceCohost(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AssignVoiceCohost operation middleware
+func (siw *ServerInterfaceWrapper) AssignVoiceCohost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AssignVoiceCohost(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeVoiceSpeaking operation middleware
+func (siw *ServerInterfaceWrapper) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeVoiceSpeaking(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GrantVoiceSpeaking operation middleware
+func (siw *ServerInterfaceWrapper) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GrantVoiceSpeaking(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DismissVoiceHand operation middleware
+func (siw *ServerInterfaceWrapper) DismissVoiceHand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DismissVoiceHand(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MuteVoiceParticipant operation middleware
+func (siw *ServerInterfaceWrapper) MuteVoiceParticipant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MuteVoiceParticipant(w, r, id, accountId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20445,6 +20958,58 @@ func (siw *ServerInterfaceWrapper) JoinVoiceRoom(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.JoinVoiceRoom(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BecomeVoiceListener operation middleware
+func (siw *ServerInterfaceWrapper) BecomeVoiceListener(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BecomeVoiceListener(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BecomeVoiceSpeaker operation middleware
+func (siw *ServerInterfaceWrapper) BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BecomeVoiceSpeaker(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20719,6 +21284,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participation", wrapper.JoinVoiceRoom)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/heartbeat", wrapper.SendVoiceHeartbeat)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/host", wrapper.HandOverVoiceRoom)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/speaker", wrapper.BecomeVoiceListener)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/speaker", wrapper.BecomeVoiceSpeaker)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/hand", wrapper.LowerVoiceHand)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/hand", wrapper.RaiseVoiceHand)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}", wrapper.RemoveVoiceParticipant)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/grant", wrapper.RevokeVoiceSpeaking)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/grant", wrapper.GrantVoiceSpeaking)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/hand", wrapper.DismissVoiceHand)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/mute", wrapper.MuteVoiceParticipant)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/cohost", wrapper.RemoveVoiceCohost)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/cohost", wrapper.AssignVoiceCohost)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/rooms/{id}/invitations", wrapper.ListVoiceInvitations)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/invitations", wrapper.InviteToVoiceRoom)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/invitations/{account_id}", wrapper.RevokeVoiceInvitation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}/attempts", wrapper.ListAdminJobAttempts)
@@ -37696,6 +38275,130 @@ func (response UpdateVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitUp
 	return err
 }
 
+type LowerVoiceHandRequestObject struct {
+	Id VoiceRoomId `json:"id"`
+}
+
+type LowerVoiceHandResponseObject interface {
+	VisitLowerVoiceHandResponse(w http.ResponseWriter) error
+}
+
+type LowerVoiceHand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type LowerVoiceHand200JSONResponse struct {
+	Body    VoiceRoom
+	Headers LowerVoiceHand200ResponseHeaders
+}
+
+func (response LowerVoiceHand200JSONResponse) VisitLowerVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LowerVoiceHanddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response LowerVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitLowerVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RaiseVoiceHandRequestObject struct {
+	Id VoiceRoomId `json:"id"`
+}
+
+type RaiseVoiceHandResponseObject interface {
+	VisitRaiseVoiceHandResponse(w http.ResponseWriter) error
+}
+
+type RaiseVoiceHand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RaiseVoiceHand200JSONResponse struct {
+	Body    VoiceRoom
+	Headers RaiseVoiceHand200ResponseHeaders
+}
+
+func (response RaiseVoiceHand200JSONResponse) VisitRaiseVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RaiseVoiceHanddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RaiseVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitRaiseVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SendVoiceHeartbeatRequestObject struct {
 	Id   VoiceRoomId `json:"id"`
 	Body *SendVoiceHeartbeatJSONRequestBody
@@ -37806,6 +38509,588 @@ func (response HandOverVoiceRoomdefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type ListVoiceInvitationsRequestObject struct {
+	Id     VoiceRoomId `json:"id"`
+	Params ListVoiceInvitationsParams
+}
+
+type ListVoiceInvitationsResponseObject interface {
+	VisitListVoiceInvitationsResponse(w http.ResponseWriter) error
+}
+
+type ListVoiceInvitations200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListVoiceInvitations200JSONResponse struct {
+	Body    VoiceRoomInvitationPage
+	Headers ListVoiceInvitations200ResponseHeaders
+}
+
+func (response ListVoiceInvitations200JSONResponse) VisitListVoiceInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListVoiceInvitationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListVoiceInvitationsdefaultApplicationProblemPlusJSONResponse) VisitListVoiceInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToVoiceRoomRequestObject struct {
+	Id   VoiceRoomId `json:"id"`
+	Body *InviteToVoiceRoomJSONRequestBody
+}
+
+type InviteToVoiceRoomResponseObject interface {
+	VisitInviteToVoiceRoomResponse(w http.ResponseWriter) error
+}
+
+type InviteToVoiceRoom201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type InviteToVoiceRoom201JSONResponse struct {
+	Body    VoiceRoomInvitation
+	Headers InviteToVoiceRoom201ResponseHeaders
+}
+
+func (response InviteToVoiceRoom201JSONResponse) VisitInviteToVoiceRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToVoiceRoomdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response InviteToVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitInviteToVoiceRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeVoiceInvitationRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type RevokeVoiceInvitationResponseObject interface {
+	VisitRevokeVoiceInvitationResponse(w http.ResponseWriter) error
+}
+
+type RevokeVoiceInvitation204Response struct {
+}
+
+func (response RevokeVoiceInvitation204Response) VisitRevokeVoiceInvitationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeVoiceInvitationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeVoiceInvitationdefaultApplicationProblemPlusJSONResponse) VisitRevokeVoiceInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveVoiceParticipantRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type RemoveVoiceParticipantResponseObject interface {
+	VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error
+}
+
+type RemoveVoiceParticipant204Response struct {
+}
+
+func (response RemoveVoiceParticipant204Response) VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveVoiceParticipantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveVoiceParticipantdefaultApplicationProblemPlusJSONResponse) VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveVoiceCohostRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type RemoveVoiceCohostResponseObject interface {
+	VisitRemoveVoiceCohostResponse(w http.ResponseWriter) error
+}
+
+type RemoveVoiceCohost200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RemoveVoiceCohost200JSONResponse struct {
+	Body    VoiceRoom
+	Headers RemoveVoiceCohost200ResponseHeaders
+}
+
+func (response RemoveVoiceCohost200JSONResponse) VisitRemoveVoiceCohostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveVoiceCohostdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveVoiceCohostdefaultApplicationProblemPlusJSONResponse) VisitRemoveVoiceCohostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignVoiceCohostRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type AssignVoiceCohostResponseObject interface {
+	VisitAssignVoiceCohostResponse(w http.ResponseWriter) error
+}
+
+type AssignVoiceCohost200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AssignVoiceCohost200JSONResponse struct {
+	Body    VoiceRoom
+	Headers AssignVoiceCohost200ResponseHeaders
+}
+
+func (response AssignVoiceCohost200JSONResponse) VisitAssignVoiceCohostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignVoiceCohostdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AssignVoiceCohostdefaultApplicationProblemPlusJSONResponse) VisitAssignVoiceCohostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeVoiceSpeakingRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type RevokeVoiceSpeakingResponseObject interface {
+	VisitRevokeVoiceSpeakingResponse(w http.ResponseWriter) error
+}
+
+type RevokeVoiceSpeaking200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevokeVoiceSpeaking200JSONResponse struct {
+	Body    VoiceRoom
+	Headers RevokeVoiceSpeaking200ResponseHeaders
+}
+
+func (response RevokeVoiceSpeaking200JSONResponse) VisitRevokeVoiceSpeakingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeVoiceSpeakingdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeVoiceSpeakingdefaultApplicationProblemPlusJSONResponse) VisitRevokeVoiceSpeakingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GrantVoiceSpeakingRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type GrantVoiceSpeakingResponseObject interface {
+	VisitGrantVoiceSpeakingResponse(w http.ResponseWriter) error
+}
+
+type GrantVoiceSpeaking200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GrantVoiceSpeaking200JSONResponse struct {
+	Body    VoiceRoom
+	Headers GrantVoiceSpeaking200ResponseHeaders
+}
+
+func (response GrantVoiceSpeaking200JSONResponse) VisitGrantVoiceSpeakingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GrantVoiceSpeakingdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GrantVoiceSpeakingdefaultApplicationProblemPlusJSONResponse) VisitGrantVoiceSpeakingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissVoiceHandRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type DismissVoiceHandResponseObject interface {
+	VisitDismissVoiceHandResponse(w http.ResponseWriter) error
+}
+
+type DismissVoiceHand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type DismissVoiceHand200JSONResponse struct {
+	Body    VoiceRoom
+	Headers DismissVoiceHand200ResponseHeaders
+}
+
+func (response DismissVoiceHand200JSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissVoiceHanddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DismissVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MuteVoiceParticipantRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type MuteVoiceParticipantResponseObject interface {
+	VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error
+}
+
+type MuteVoiceParticipant204Response struct {
+}
+
+func (response MuteVoiceParticipant204Response) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LeaveVoiceRoomRequestObject struct {
 	Id     VoiceRoomId `json:"id"`
 	Params LeaveVoiceRoomParams
@@ -37892,6 +39177,130 @@ type JoinVoiceRoomdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response JoinVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitJoinVoiceRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BecomeVoiceListenerRequestObject struct {
+	Id VoiceRoomId `json:"id"`
+}
+
+type BecomeVoiceListenerResponseObject interface {
+	VisitBecomeVoiceListenerResponse(w http.ResponseWriter) error
+}
+
+type BecomeVoiceListener200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type BecomeVoiceListener200JSONResponse struct {
+	Body    VoiceRoom
+	Headers BecomeVoiceListener200ResponseHeaders
+}
+
+func (response BecomeVoiceListener200JSONResponse) VisitBecomeVoiceListenerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BecomeVoiceListenerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response BecomeVoiceListenerdefaultApplicationProblemPlusJSONResponse) VisitBecomeVoiceListenerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BecomeVoiceSpeakerRequestObject struct {
+	Id VoiceRoomId `json:"id"`
+}
+
+type BecomeVoiceSpeakerResponseObject interface {
+	VisitBecomeVoiceSpeakerResponse(w http.ResponseWriter) error
+}
+
+type BecomeVoiceSpeaker200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type BecomeVoiceSpeaker200JSONResponse struct {
+	Body    VoiceRoom
+	Headers BecomeVoiceSpeaker200ResponseHeaders
+}
+
+func (response BecomeVoiceSpeaker200JSONResponse) VisitBecomeVoiceSpeakerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BecomeVoiceSpeakerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response BecomeVoiceSpeakerdefaultApplicationProblemPlusJSONResponse) VisitBecomeVoiceSpeakerResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38748,18 +40157,60 @@ type StrictServerInterface interface {
 	// UpdateVoiceRoom Change the settings of a voice chat room
 	// (PATCH /voice/rooms/{id})
 	UpdateVoiceRoom(ctx context.Context, request UpdateVoiceRoomRequestObject) (UpdateVoiceRoomResponseObject, error)
+	// LowerVoiceHand Lower a hand in a voice chat room
+	// (DELETE /voice/rooms/{id}/hand)
+	LowerVoiceHand(ctx context.Context, request LowerVoiceHandRequestObject) (LowerVoiceHandResponseObject, error)
+	// RaiseVoiceHand Raise a hand in a voice chat room
+	// (POST /voice/rooms/{id}/hand)
+	RaiseVoiceHand(ctx context.Context, request RaiseVoiceHandRequestObject) (RaiseVoiceHandResponseObject, error)
 	// SendVoiceHeartbeat Keep a session of a voice chat room alive
 	// (POST /voice/rooms/{id}/heartbeat)
 	SendVoiceHeartbeat(ctx context.Context, request SendVoiceHeartbeatRequestObject) (SendVoiceHeartbeatResponseObject, error)
 	// HandOverVoiceRoom Hand a voice chat room over to another host
 	// (POST /voice/rooms/{id}/host)
 	HandOverVoiceRoom(ctx context.Context, request HandOverVoiceRoomRequestObject) (HandOverVoiceRoomResponseObject, error)
+	// ListVoiceInvitations List the invitations of a voice chat room
+	// (GET /voice/rooms/{id}/invitations)
+	ListVoiceInvitations(ctx context.Context, request ListVoiceInvitationsRequestObject) (ListVoiceInvitationsResponseObject, error)
+	// InviteToVoiceRoom Invite a user to a voice chat room
+	// (POST /voice/rooms/{id}/invitations)
+	InviteToVoiceRoom(ctx context.Context, request InviteToVoiceRoomRequestObject) (InviteToVoiceRoomResponseObject, error)
+	// RevokeVoiceInvitation Revoke an invitation to a voice chat room
+	// (DELETE /voice/rooms/{id}/invitations/{account_id})
+	RevokeVoiceInvitation(ctx context.Context, request RevokeVoiceInvitationRequestObject) (RevokeVoiceInvitationResponseObject, error)
+	// RemoveVoiceParticipant Remove a participant from a voice chat room
+	// (DELETE /voice/rooms/{id}/participants/{account_id})
+	RemoveVoiceParticipant(ctx context.Context, request RemoveVoiceParticipantRequestObject) (RemoveVoiceParticipantResponseObject, error)
+	// RemoveVoiceCohost Stop a participant of a voice chat room being a co-host
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/cohost)
+	RemoveVoiceCohost(ctx context.Context, request RemoveVoiceCohostRequestObject) (RemoveVoiceCohostResponseObject, error)
+	// AssignVoiceCohost Make a participant of a voice chat room a co-host
+	// (POST /voice/rooms/{id}/participants/{account_id}/cohost)
+	AssignVoiceCohost(ctx context.Context, request AssignVoiceCohostRequestObject) (AssignVoiceCohostResponseObject, error)
+	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/grant)
+	RevokeVoiceSpeaking(ctx context.Context, request RevokeVoiceSpeakingRequestObject) (RevokeVoiceSpeakingResponseObject, error)
+	// GrantVoiceSpeaking Let a participant of a voice chat room speak
+	// (POST /voice/rooms/{id}/participants/{account_id}/grant)
+	GrantVoiceSpeaking(ctx context.Context, request GrantVoiceSpeakingRequestObject) (GrantVoiceSpeakingResponseObject, error)
+	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/hand)
+	DismissVoiceHand(ctx context.Context, request DismissVoiceHandRequestObject) (DismissVoiceHandResponseObject, error)
+	// MuteVoiceParticipant Mute a participant of a voice chat room
+	// (POST /voice/rooms/{id}/participants/{account_id}/mute)
+	MuteVoiceParticipant(ctx context.Context, request MuteVoiceParticipantRequestObject) (MuteVoiceParticipantResponseObject, error)
 	// LeaveVoiceRoom Leave a voice chat room
 	// (DELETE /voice/rooms/{id}/participation)
 	LeaveVoiceRoom(ctx context.Context, request LeaveVoiceRoomRequestObject) (LeaveVoiceRoomResponseObject, error)
 	// JoinVoiceRoom Join a voice chat room
 	// (POST /voice/rooms/{id}/participation)
 	JoinVoiceRoom(ctx context.Context, request JoinVoiceRoomRequestObject) (JoinVoiceRoomResponseObject, error)
+	// BecomeVoiceListener Go back to listening in a voice chat room
+	// (DELETE /voice/rooms/{id}/speaker)
+	BecomeVoiceListener(ctx context.Context, request BecomeVoiceListenerRequestObject) (BecomeVoiceListenerResponseObject, error)
+	// BecomeVoiceSpeaker Become a speaker in a voice chat room
+	// (POST /voice/rooms/{id}/speaker)
+	BecomeVoiceSpeaker(ctx context.Context, request BecomeVoiceSpeakerRequestObject) (BecomeVoiceSpeakerResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -46436,6 +47887,58 @@ func (sh *strictHandler) UpdateVoiceRoom(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// LowerVoiceHand operation middleware
+func (sh *strictHandler) LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request LowerVoiceHandRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LowerVoiceHand(ctx, request.(LowerVoiceHandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LowerVoiceHand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LowerVoiceHandResponseObject); ok {
+		if err := validResponse.VisitLowerVoiceHandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RaiseVoiceHand operation middleware
+func (sh *strictHandler) RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request RaiseVoiceHandRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RaiseVoiceHand(ctx, request.(RaiseVoiceHandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RaiseVoiceHand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RaiseVoiceHandResponseObject); ok {
+		if err := validResponse.VisitRaiseVoiceHandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SendVoiceHeartbeat operation middleware
 func (sh *strictHandler) SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
 	var request SendVoiceHeartbeatRequestObject
@@ -46502,6 +48005,282 @@ func (sh *strictHandler) HandOverVoiceRoom(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListVoiceInvitations operation middleware
+func (sh *strictHandler) ListVoiceInvitations(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params ListVoiceInvitationsParams) {
+	var request ListVoiceInvitationsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListVoiceInvitations(ctx, request.(ListVoiceInvitationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListVoiceInvitations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListVoiceInvitationsResponseObject); ok {
+		if err := validResponse.VisitListVoiceInvitationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// InviteToVoiceRoom operation middleware
+func (sh *strictHandler) InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request InviteToVoiceRoomRequestObject
+
+	request.Id = id
+
+	var body InviteToVoiceRoomJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.InviteToVoiceRoom(ctx, request.(InviteToVoiceRoomRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "InviteToVoiceRoom")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(InviteToVoiceRoomResponseObject); ok {
+		if err := validResponse.VisitInviteToVoiceRoomResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeVoiceInvitation operation middleware
+func (sh *strictHandler) RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request RevokeVoiceInvitationRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeVoiceInvitation(ctx, request.(RevokeVoiceInvitationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeVoiceInvitation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeVoiceInvitationResponseObject); ok {
+		if err := validResponse.VisitRevokeVoiceInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveVoiceParticipant operation middleware
+func (sh *strictHandler) RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request RemoveVoiceParticipantRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveVoiceParticipant(ctx, request.(RemoveVoiceParticipantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveVoiceParticipant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveVoiceParticipantResponseObject); ok {
+		if err := validResponse.VisitRemoveVoiceParticipantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveVoiceCohost operation middleware
+func (sh *strictHandler) RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request RemoveVoiceCohostRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveVoiceCohost(ctx, request.(RemoveVoiceCohostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveVoiceCohost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveVoiceCohostResponseObject); ok {
+		if err := validResponse.VisitRemoveVoiceCohostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AssignVoiceCohost operation middleware
+func (sh *strictHandler) AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request AssignVoiceCohostRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AssignVoiceCohost(ctx, request.(AssignVoiceCohostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AssignVoiceCohost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AssignVoiceCohostResponseObject); ok {
+		if err := validResponse.VisitAssignVoiceCohostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeVoiceSpeaking operation middleware
+func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request RevokeVoiceSpeakingRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeVoiceSpeaking(ctx, request.(RevokeVoiceSpeakingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeVoiceSpeaking")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeVoiceSpeakingResponseObject); ok {
+		if err := validResponse.VisitRevokeVoiceSpeakingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GrantVoiceSpeaking operation middleware
+func (sh *strictHandler) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request GrantVoiceSpeakingRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GrantVoiceSpeaking(ctx, request.(GrantVoiceSpeakingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GrantVoiceSpeaking")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GrantVoiceSpeakingResponseObject); ok {
+		if err := validResponse.VisitGrantVoiceSpeakingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DismissVoiceHand operation middleware
+func (sh *strictHandler) DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request DismissVoiceHandRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DismissVoiceHand(ctx, request.(DismissVoiceHandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DismissVoiceHand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DismissVoiceHandResponseObject); ok {
+		if err := validResponse.VisitDismissVoiceHandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MuteVoiceParticipant operation middleware
+func (sh *strictHandler) MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request MuteVoiceParticipantRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MuteVoiceParticipant(ctx, request.(MuteVoiceParticipantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MuteVoiceParticipant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MuteVoiceParticipantResponseObject); ok {
+		if err := validResponse.VisitMuteVoiceParticipantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // LeaveVoiceRoom operation middleware
 func (sh *strictHandler) LeaveVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LeaveVoiceRoomParams) {
 	var request LeaveVoiceRoomRequestObject
@@ -46548,6 +48327,58 @@ func (sh *strictHandler) JoinVoiceRoom(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(JoinVoiceRoomResponseObject); ok {
 		if err := validResponse.VisitJoinVoiceRoomResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BecomeVoiceListener operation middleware
+func (sh *strictHandler) BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request BecomeVoiceListenerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BecomeVoiceListener(ctx, request.(BecomeVoiceListenerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BecomeVoiceListener")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BecomeVoiceListenerResponseObject); ok {
+		if err := validResponse.VisitBecomeVoiceListenerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BecomeVoiceSpeaker operation middleware
+func (sh *strictHandler) BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+	var request BecomeVoiceSpeakerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BecomeVoiceSpeaker(ctx, request.(BecomeVoiceSpeakerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BecomeVoiceSpeaker")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BecomeVoiceSpeakerResponseObject); ok {
+		if err := validResponse.VisitBecomeVoiceSpeakerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

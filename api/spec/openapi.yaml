@@ -88,7 +88,9 @@ tags:
   - name: voice
     description: |
       The voice chat rooms of the local users: opening them, their settings, joining and
-      leaving them, the heartbeats of the sessions, and handing a room over. The operations need
+      leaving them, the heartbeats of the sessions, handing a room over, speaking and raising a
+      hand, the operations of the host and the co-hosts on the participants, and the
+      invitations. The operations need
       a `read:voice` or `write:voice` scope, and answer 404 while the voice chat is off on the
       server.
   - name: admin-moderation
@@ -338,6 +340,24 @@ paths:
     $ref: ./paths/voice_rooms_{id}_heartbeat.yaml
   /voice/rooms/{id}/host:
     $ref: ./paths/voice_rooms_{id}_host.yaml
+  /voice/rooms/{id}/speaker:
+    $ref: ./paths/voice_rooms_{id}_speaker.yaml
+  /voice/rooms/{id}/hand:
+    $ref: ./paths/voice_rooms_{id}_hand.yaml
+  /voice/rooms/{id}/participants/{account_id}:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}.yaml
+  /voice/rooms/{id}/participants/{account_id}/grant:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_grant.yaml
+  /voice/rooms/{id}/participants/{account_id}/hand:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_hand.yaml
+  /voice/rooms/{id}/participants/{account_id}/mute:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_mute.yaml
+  /voice/rooms/{id}/participants/{account_id}/cohost:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_cohost.yaml
+  /voice/rooms/{id}/invitations:
+    $ref: ./paths/voice_rooms_{id}_invitations.yaml
+  /voice/rooms/{id}/invitations/{account_id}:
+    $ref: ./paths/voice_rooms_{id}_invitations_{account_id}.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -687,6 +707,8 @@ components:
       $ref: ./components/parameters/SupporterPlanId.yaml
     SupporterSubscriptionId:
       $ref: ./components/parameters/SupporterSubscriptionId.yaml
+    VoiceAccountId:
+      $ref: ./components/parameters/VoiceAccountId.yaml
     VoiceRoomId:
       $ref: ./components/parameters/VoiceRoomId.yaml
     WebhookId:
@@ -1573,6 +1595,12 @@ components:
       $ref: ./components/schemas/VoiceRole.yaml
     VoiceRoom:
       $ref: ./components/schemas/VoiceRoom.yaml
+    VoiceRoomInvitation:
+      $ref: ./components/schemas/VoiceRoomInvitation.yaml
+    VoiceRoomInvitationCreate:
+      $ref: ./components/schemas/VoiceRoomInvitationCreate.yaml
+    VoiceRoomInvitationPage:
+      $ref: ./components/schemas/VoiceRoomInvitationPage.yaml
     VoiceRoomJoin:
       $ref: ./components/schemas/VoiceRoomJoin.yaml
     VoiceRoomPage:
