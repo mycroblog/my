@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page of a room (/voice/{id}, ADR-0100 §9). Before joining: the room's name as the page's heading, its host,
-// description, hashtags and settings, the notice that joining lists the user's name with the join button (回答 31),
-// the host's button to its settings (to anyone else, the button that reports the room), and everyone in it by name, speakers and listeners alike, each with their role.
-// The audio of the call is not here. To a visitor who does not see the room, its summary: that only the users of this
+// The page of a room (/voice/{id}, ADR-0100 §9): the room's name as the page's heading, its host, description,
+// hashtags and settings, the host's button to its settings (to anyone else, the button that reports the room), and
+// the call (VoiceCallPanel): joining, the call's controls, and everyone in it by name, speakers and listeners alike. To a visitor who does not see the room, its summary: that only the users of this
 // server join, with the way to sign in; a room that ended says so, by its name when the summary has one.
-import { AccountItem, Button, Callout, Cluster, DescriptionItem, DescriptionList, Heading, Hint, InlineError, Link, RegionError, Spinner, Stack, Tag, Text } from "@my/ui";
-import { type ReactNode, useId, useState } from "react";
+import { AccountItem, Button, Callout, Cluster, DescriptionItem, DescriptionList, Hint, Link, RegionError, Spinner, Stack, Tag, Text } from "@my/ui";
+import { type ReactNode, useState } from "react";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
 import { ReportDialog } from "../../report";
-import { type VoiceAccount, type VoiceRoom, type VoiceRoomParticipant, voiceRoomPath } from "../api/voice";
+import { type VoiceAccount, type VoiceRoom, voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
+import { VoiceCallPanel } from "./VoiceCallPanel";
 import { speakerLabels, visibilityLabels, VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
 
 export type VoiceRoomViewProps = {
@@ -111,24 +111,7 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
         <>
           {renderHeading(<span dir="auto">{page.room.name}</span>)}
           <RoomBody room={page.room} isHost={page.isHost} />
-          <Callout>
-            {page.joined ? (
-              <p>{t("client:voice.room.joined")}</p>
-            ) : (
-              <>
-                <p>{t("client:voice.room.listed_notice")}</p>
-                <Button variant="primary" onPress={page.join} isPending={page.isJoining}>
-                  {t("client:voice.room.join")}
-                </Button>
-              </>
-            )}
-          </Callout>
-          {page.joinError !== undefined && (
-            <InlineError size="inherit" alert>
-              {t("client:voice.room.join_failed", { reason: page.joinError })}
-            </InlineError>
-          )}
-          <Participants participants={page.room.participants} />
+          <VoiceCallPanel room={page.room} />
         </>
       );
   }
@@ -198,40 +181,5 @@ function ReportRoom({ room }: { room: VoiceRoom }) {
       </Button>
       <ReportDialog account={room.host} voiceRoom={{ id: room.id, name: room.name }} isOpen={isReporting} onOpenChange={setIsReporting} />
     </div>
-  );
-}
-
-/** The label of a participant's place in the room: the host, a co-host, or a speaker or a listener. */
-function roleLabel(participant: VoiceRoomParticipant) {
-  if (participant.host) return "client:voice.role.host" as const;
-  if (participant.cohost) return "client:voice.role.cohost" as const;
-  return participant.role === "speaker" ? ("client:voice.role.speaker" as const) : ("client:voice.role.listener" as const);
-}
-
-/** Everyone in the room, in the order they joined, each with their role (回答 31). */
-function Participants({ participants }: { participants: readonly VoiceRoomParticipant[] }) {
-  const t = useT();
-  const headingId = useId();
-  return (
-    <Stack as="section" gap="3" aria-labelledby={headingId}>
-      <Heading level={2} id={headingId}>
-        {t("client:voice.room.participants")}
-      </Heading>
-      <Hint>{t("client:voice.room.participants_count", { count: participants.length })}</Hint>
-      <Stack as="ul" gap="3">
-        {participants.map((participant) => (
-          <li key={participant.account.id}>
-            <AccountItem
-              name={participant.account.display_name || participant.account.username}
-              handle={handleOf(participant.account.acct)}
-              avatar={imageSources(participant.account.avatar)}
-              avatarSeed={participant.account.id}
-              href={profilePath(participant.account.acct)}
-              trailing={<Tag>{t(roleLabel(participant))}</Tag>}
-            />
-          </li>
-        ))}
-      </Stack>
-    </Stack>
   );
 }

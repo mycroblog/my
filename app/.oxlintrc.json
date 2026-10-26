@@ -76,6 +76,14 @@
         "partialMatch": false
       },
       {
+        "type": "rtc",
+        "pattern": "web/src/features/*/rtc",
+        "capture": [
+          "feature"
+        ],
+        "partialMatch": false
+      },
+      {
         "type": "feature-test",
         "pattern": "web/src/features/*/test",
         "capture": [
@@ -1001,7 +1009,8 @@
       ]
     },
     // Dependency direction (A1–A3). Elements: the app shell (main.tsx, App.tsx and the router wiring) assembles
-    // everything; test (web/src/test) holds the test helpers and the MSW setup, feature-test a feature's default
+    // everything; rtc (web/src/features/*/rtc) is a feature's plain TypeScript for WebRTC, which only that feature's
+    // hooks import and which imports nothing of the app (ADR-0101 §7); test (web/src/test) holds the test helpers and the MSW setup, feature-test a feature's default
     // MSW handlers and fixtures, ui-test the helpers of the @my/ui component tests. T4: only tests import them.
     // A2: @my/ui knows only React, React Aria, TanStack Virtual (for Feed), the Tailwind helpers and Phosphor
     // (in Icons.tsx); T5: its stories and tests also import Storybook, Testing Library and Vitest.
@@ -1189,6 +1198,66 @@
                     }
                   }
                 }
+              },
+              {
+                "from": {
+                  "element": {
+                    "type": "feature",
+                    "fileInternalPath": "hooks/**"
+                  }
+                },
+                "allow": {
+                  "to": {
+                    "element": {
+                      "type": "rtc",
+                      "captured": {
+                        "feature": "{{ from.element.captured.feature }}"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "from": {
+                  "element": {
+                    "type": "rtc",
+                    "fileInternalPath": "**/*.test.ts"
+                  }
+                },
+                "allow": {
+                  "to": {
+                    "element": {
+                      "type": "feature-test",
+                      "captured": {
+                        "feature": "{{ from.element.captured.feature }}"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "from": {
+                  "element": {
+                    "type": "rtc"
+                  }
+                },
+                "disallow": {
+                  "to": {
+                    "module": {
+                      "origin": "external",
+                      "source": [
+                        "react",
+                        "react/*",
+                        "react-dom",
+                        "react-dom/*",
+                        "@tanstack/*",
+                        "@mycroblog/mykit",
+                        "openapi-fetch"
+                      ]
+                    }
+                  }
+                },
+                "message": "features/*/rtc is plain TypeScript for the browser's WebRTC, used only by the feature's hooks: it imports neither React, the API, @my/ui, nor the feature's api and components (ADR-0101 §7)."
               },
               {
                 "from": {

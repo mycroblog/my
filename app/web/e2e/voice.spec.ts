@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The voice chat pages before the call in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the
-// open rooms opened from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room,
-// and a room's page with its participants and the notice before joining, all axe-clean and without horizontal scroll;
-// and the room's page of a visitor who is not signed in. `vite preview` has no API, so the spec answers the token
-// refresh and the client API with `page.route`, as a server with voice chat on would. Names come from the project's
-// catalog, so the spec finds the same elements in every locale.
+// The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
+// from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room, a room's page with
+// its participants and the notice before joining, and the call after joining (its controls and a raised hand), all
+// axe-clean and without horizontal scroll; and the room's page of a visitor who is not signed in. `vite preview` has
+// no API, so the spec answers the token refresh and the client API with `page.route`, as a server with voice chat on
+// would (a call between two browsers needs a server with voice chat on, which e2e/server.ts does not configure).
+// Names come from the project's catalog, so the spec finds the same elements in every locale.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, openFromNavigation, test } from "./fixtures";
@@ -90,8 +91,22 @@ const room: Schemas["VoiceRoom"] = {
 
 const notFound: Schemas["Problem"] = { type: "about:blank", title: "Not Found", status: 404 };
 
-/** Answers the client API as Alice's session on a server with voice chat on and one open room; signed out without `signedIn`. */
+/** The room after Alice joined it as a listener. */
+const joined: Schemas["VoiceRoom"] = {
+  ...room,
+  participants_count: 3,
+  participants: [...room.participants, { account: alice, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false }],
+};
+
+/** The grant of a P2P room, without TURN. */
+const grant: Schemas["VoiceGrant"] = { kind: "p2p", options: {}, ice_servers: [], relay_only: false, expires_at: "2099-01-01T00:00:00Z" };
+
+/**
+ * Answers the client API as Alice's session on a server with voice chat on and one open room; signed out without
+ * `signedIn`. Joining the room starts Alice's session in it, whose room stream sends the room at once.
+ */
 async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promise<void> {
+  let current = room;
   const json = (route: Route, body: unknown, statusCode = 200) =>
     route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
   await page.route("**/oauth/token/refresh", (route) =>
@@ -110,7 +125,28 @@ async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promis
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
     if (path === "/voice/rooms") return json(route, { items: [room] });
-    if (path === `/voice/rooms/${roomId}`) return json(route, room);
+    if (path === `/voice/rooms/${roomId}`) return json(route, current);
+    const method = route.request().method();
+    if (path === `/voice/rooms/${roomId}/participation` && method === "POST") {
+      current = joined;
+      return json(route, { room: joined, session: "s1", grant });
+    }
+    if (path === `/voice/rooms/${roomId}/participation` && method === "DELETE") {
+      current = room;
+      return route.fulfill({ status: 204 });
+    }
+    if (path === `/voice/rooms/${roomId}/stream`) {
+      // The whole stream at once: the client opens it again after it ends, and the first `state` catches it up.
+      const state = { ...current, participants: current.participants.map((p) => ({ ...p, session: p.account.id === alice.id ? "s1" : `s-${p.account.username}` })) };
+      return route.fulfill({ status: 200, contentType: "text/event-stream", body: `: connected\n\nevent: state\ndata: ${JSON.stringify(state)}\n\n` });
+    }
+    if (path === `/voice/rooms/${roomId}/hand` && method === "POST") {
+      current = { ...current, participants: current.participants.map((p) => (p.account.id === alice.id ? { ...p, hand_raised: true } : p)) };
+      return json(route, current);
+    }
+    if ([`/voice/rooms/${roomId}/heartbeat`, `/voice/rooms/${roomId}/signals`, `/voice/rooms/${roomId}/mic`, `/voice/rooms/${roomId}/reactions`].includes(path)) {
+      return route.fulfill({ status: 204 });
+    }
     return json(route, notFound, 404);
   });
 }
@@ -149,6 +185,38 @@ test.describe("the voice chat pages", () => {
     await expect(page.getByRole("region", { name: message("voice.room.participants") }).getByRole("listitem")).toHaveCount(2);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+  });
+});
+
+test.describe("the call of a room", () => {
+  test.beforeEach(async ({ page }) => {
+    await serveApi(page, { signedIn: true });
+    await page.goto(`/voice/${roomId}`);
+    await expect(page.getByRole("heading", { level: 1, name: room.name })).toBeVisible();
+    await page.getByRole("button", { name: message("voice.room.join") }).click();
+  });
+
+  test("joins and shows the call's controls and everyone in it, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
+    const call = page.getByRole("region", { name: message("voice.call.title") });
+    await expect(call.getByRole("button", { name: message("voice.call.raise_hand") })).toBeVisible();
+    await expect(call.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+    // A listener has no microphone.
+    await expect(call.getByRole("switch", { name: message("voice.call.microphone") })).toHaveCount(0);
+    const participants = page.getByRole("region", { name: message("voice.room.participants") });
+    await expect(participants.getByRole("listitem")).toHaveCount(3);
+    await expect(participants.getByText(message("voice.participant.you"))).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("raises a hand, which shows in the list, and leaves", async ({ page, makeAxeBuilder }) => {
+    const call = page.getByRole("region", { name: message("voice.call.title") });
+    await call.getByRole("button", { name: message("voice.call.raise_hand") }).click();
+    await expect(call.getByRole("button", { name: message("voice.call.lower_hand") })).toBeVisible();
+    await expect(page.getByRole("region", { name: message("voice.room.participants") }).getByText(message("voice.participant.hand_raised"))).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await call.getByRole("button", { name: message("voice.call.leave") }).click();
+    await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
   });
 });
 
