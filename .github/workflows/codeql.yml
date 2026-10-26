@@ -61,6 +61,8 @@ jobs:
           # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
           GOTOOLCHAIN: local
           CGO_ENABLED: "0"
+          GOMEMLIMIT: 11GiB
+          CODEQL_EXTRACTOR_GO_MAX_GOROUTINES: "8"
         run: |
           (while sleep 10; do echo "MON $(date +%T) $(free -m | awk 'NR==2{print "used="$3" avail="$7}') swap=$(free -m | awk 'NR==3{print $3}') disk=$(df -m /home/runner | awk 'NR==2{print $4}')MB"; ps -eo rss=,args= --sort=-rss | head -3 | cut -c1-160; done) &
           go build ./...
