@@ -69,6 +69,8 @@ async function serveInstance(page: Page, origin: string, overrides: Partial<Inst
     income_visibility: "private",
     supporters_enabled: false,
     supporter_list_visibility: "off",
+    voice_enabled: false,
+    voice_room_starters: "permitted",
     rules: [
       { id: "0192f0c4-7a8e-7000-8000-0000000000e1", text: "Be kind", hint: "No insults, no harassment." },
       { id: "0192f0c4-7a8e-7000-8000-0000000000e2", text: "Mark sensitive media" },

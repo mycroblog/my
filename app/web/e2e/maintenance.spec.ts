@@ -90,6 +90,8 @@ const instance: Schemas["Instance"] = {
   income_visibility: "private",
   supporters_enabled: false,
   supporter_list_visibility: "off",
+  voice_enabled: false,
+  voice_room_starters: "permitted",
   rules: [],
 };
 

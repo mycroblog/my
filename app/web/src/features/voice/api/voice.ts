@@ -30,8 +30,11 @@ export const voiceRoomVisibilities = ["local", "followers", "mutuals", "invited"
 /** Who may speak without asking, in the order of the form. */
 export const voiceRoomSpeakers = ["everyone", "followers", "mutuals", "manual"] as const satisfies readonly VoiceRoomSpeakers[];
 
-/** The limits of a room's settings (api/spec VoiceRoomSettings, ADR-0100 回答 38). */
-export const voiceRoomLimits = { name: 100, description: 500, hashtags: 5 } as const;
+/**
+ * The limits of a room's settings, as the server checks them (internal/domain/voice, ADR-0100 回答 38): the name in
+ * grapheme clusters (and in code points, `nameCodePoints`), the description and each hashtag in code points.
+ */
+export const voiceRoomLimits = { name: 100, nameCodePoints: 1000, description: 500, hashtags: 5, hashtagLength: 100 } as const;
 
 /** How many rooms the third column shows. */
 const voiceRailSize = 3;
@@ -44,10 +47,12 @@ export function voiceRoomPath(id: string): string {
   return `/voice/${id}`;
 }
 
-/**
- * The first rooms of the list, for the third column. It is also how the app learns whether the server has voice
- * chat on: a 404 says it is off, and the app then shows no entry to it (ADR-0100 §2).
- */
+/** The instance, which says whether voice chat is on (`voice_enabled`) and who may open rooms (`voice_room_starters`). */
+export function instanceQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/instance");
+}
+
+/** The first rooms of the list, for the third column. */
 export function voiceRailQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/voice/rooms", { params: { query: { limit: voiceRailSize } } });
 }

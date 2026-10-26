@@ -38,6 +38,39 @@ const alice: Schemas["Account"] = {
 };
 const bob: Schemas["Account"] = { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob", url: "https://my.example/@bob" };
 
+/** Alice as the server knows her: a member who may open rooms. */
+const credentials: Schemas["CredentialAccount"] = {
+  ...alice,
+  discoverable: true,
+  indexable: true,
+  ai_opt_out: false,
+  source: { note: "", fields: [] },
+  posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+  permissions: ["start_voice_rooms"],
+};
+
+/** The instance with voice chat on, where only the users with start_voice_rooms open rooms. */
+const instance: Schemas["Instance"] = {
+  domain: "my.example",
+  name: "my example",
+  version: "0.0.0-e2e",
+  source_url: "https://github.com/mycroblog/my",
+  registrations: { mode: "open" },
+  limits: { max_post_characters: 500, require_media_description: false },
+  timelines: { local: "everyone", federated: "everyone" },
+  federation: { mode: "both" },
+  sends_email: false,
+  search_indexing: "deny",
+  ai_usage: "deny",
+  finance_visibility: "private",
+  income_visibility: "private",
+  supporters_enabled: false,
+  supporter_list_visibility: "off",
+  voice_enabled: true,
+  voice_room_starters: "permitted",
+  rules: [],
+};
+
 const roomId = "0192f0c4-7a8e-7000-8000-0000000000f1";
 const room: Schemas["VoiceRoom"] = {
   id: roomId,
@@ -55,7 +88,7 @@ const room: Schemas["VoiceRoom"] = {
   ],
 };
 
-const notFound = { type: "about:blank", title: "Not Found", status: 404 };
+const notFound: Schemas["Problem"] = { type: "about:blank", title: "Not Found", status: 404 };
 
 /** Answers the client API as Alice's session on a server with voice chat on and one open room; signed out without `signedIn`. */
 async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promise<void> {
@@ -66,12 +99,10 @@ async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promis
   );
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/v1", "");
-    if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
-    }
+    if (path === "/instance") return json(route, instance);
     if (path === `/voice/rooms/${roomId}/summary`) return json(route, { id: roomId, state: "open", name: room.name, description: room.description, host: bob });
     if (!signedIn) return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
-    if (path === "/accounts/verify_credentials") return json(route, alice);
+    if (path === "/accounts/verify_credentials") return json(route, credentials);
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
       return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });

@@ -45,10 +45,11 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
   const session = useSessionStatus();
   const viewer = useViewer();
   const signedIn = session === "signed-in";
-  const room = useQuery({ ...voiceRoomQueryOptions(api, id), enabled: signedIn, retry: false });
+  // The loader has asked already: a refusal it got (an ended or hidden room) is not asked again on mount.
+  const room = useQuery({ ...voiceRoomQueryOptions(api, id), enabled: signedIn, retry: false, retryOnMount: false });
   // The summary is read when the room is not there for the user: signed out, or a 404 of the room.
   const needsSummary = session === "signed-out" || (signedIn && isNotFound(room.error));
-  const summary = useQuery({ ...voiceRoomSummaryQueryOptions(api, id), enabled: needsSummary, retry: false });
+  const summary = useQuery({ ...voiceRoomSummaryQueryOptions(api, id), enabled: needsSummary, retry: false, retryOnMount: false });
   const join = useMutation({
     ...joinVoiceRoomMutation(api, id),
     onSuccess: async (joined) => {
