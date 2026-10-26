@@ -103,12 +103,13 @@
   ほかのリンクは新しいタブで開いて、サーバーの `rel`（`nofollow noopener noreferrer`）に `noopener noreferrer` を保ち、「（新しいタブで開きます）」を末尾に足す。
   アプリの外へ出るリンク（ほかのサイト、ソースコードの公開先）は `ExternalLink` で新しいタブで開く（Y12）。
   それ以外のサーバー自身のパス（`/auth`・`/oauth`・`/api` などの予約パス、`lib/paths.ts` の `isServerPath`。登録の画面など）へのリンクはアプリのルートではないので、外枠の `navigate`（`App.tsx`）がルーターに渡さず、`leaveApp` でページごと開く。
-- **レイアウト**（`routes/-layout/AppLayout.tsx`。見た目は `@my/ui` の `AppShell`・`AppNavigation`）: モバイルファーストで、`md` 未満は下端のタブバー、`md` から横のレール、`lg` から文言付きのサイドバー、`xl` からサーバーについての 3 列目を出す。`md` からのレールには「投稿を書く」の `primary` ボタンが 1 つあり（`lg` から文言付き、`md` はアイコンだけ）、`md` 未満のタブバーは場所だけにして投稿は浮かぶボタンから開く（ADR-0039）。
+- **レイアウト**（`routes/-layout/AppLayout.tsx`。見た目は `@my/ui` の `AppShell`・`AppNavigation`）: モバイルファーストで、`md` 未満は下端のタブバー、`md` から横のレール、`lg` から文言付きのサイドバー、`xl` から 3 列目（右帯）を出す。`md` からのレールには「投稿を書く」の `primary` ボタンが 1 つあり（`lg` から文言付き、`md` はアイコンだけ）、`md` 未満のタブバーは場所だけにして投稿は浮かぶボタンから開く（ADR-0039）。
   投稿フォームはページに置かず、常に `Sheet`（`lg` から画面の中央のパネル、§12）で開く。開くのは、レールのボタン、`md` 未満の浮かぶボタン、返信・引用のボタンで、ページに置くフォームは常に 1 つにする。
   浮かぶボタンは `md` 未満の、ルートの静的なデータ（TanStack Router の `staticData`、`composeButton: true`）を持つ画面（タイムラインとプロフィール）にだけ、タブバーの上に出す（G4）。外枠は今のマッチ（`useMatches`）からそれを読む。
   ほかの画面でもシートは置いたままにし、返信のボタンはそこで開く。浮かぶボタンはアイコンだけで、「投稿を書く」をアクセシブルネーム（`aria-label`）と `Tooltip` にする（G12）。レールのボタンは `md` ではアイコンだけで同じ名前を持つ。
   `main` は終わりに、タブバーとボタン（出ているとき、`data-compose-fab`）の高さぶんの余白を取り、`index.css` の `scroll-padding-block-end` もフォーカスした要素を同じだけ避ける。`md` 未満のトーストは、タブバーの上に、ボタンが出ているときはボタンの上に出す（`with-compose-fab:` の variant）。
-  `main` は終わりに、タブバーとボタン（出ているとき、`data-compose-fab`）の高さぶんの余白を取り、`index.css` の `scroll-padding-block-end` もフォーカスした要素を同じだけ避ける。`md` 未満のトーストは、タブバーの上に、ボタンが出ているときはボタンの上に出す（`with-compose-fab:` の variant）。
+  3 列目（右帯）は `AppShell` の `aside` で、`xl` の幅の画面でだけ置く（狭い画面には出さず、そこにある内容は別の画面かメニューのシートから開ける）。上から、通話の開いているルーム（`features/voice` の `VoiceRail`、[ADR-0100](../../adr/0100-voice-chat-rooms.md) §8）、サーバーについて（`ServerInfo`）の順に、それぞれ `AsidePanel`（見出しが名前の `aside`）として並べ、区画ごとに `react-error-boundary` で囲む。
+  通話の区画は、サーバーが通話を有効にしていて（`GET /voice/rooms` が `404` でない）開いているルームがあるときだけ出し、一覧の先頭の 3 件（並びは API のまま）と「すべてのルームを見る」（`/voice`）を出す。区画はカードなので、中のルームはカードにしない（`VoiceRoomCard` の `surface="plain"`）。通話の画面（`/voice`・`/voice/{id}`）では一覧と重なるので出さない。
   `md` 未満で高さが 32rem 以下の画面（横向きの電話、400% の拡大の 320 × 225 CSS px）は `short:` の variant（`@my/ui/theme.css`）で、タブバーの項目を `min-h-12` にし、ボタンとの間を詰め、上端のオフラインの帯（G17）を粘着させずにページと一緒に流して、固定した要素を画面の高さの半分に収める（WCAG 1.4.10）。
   ナビゲーション（`routes/-layout/Navigation.tsx`）は 1 つの `nav` で、今いる区画のリンクに `aria-current="page"` を付ける。「プロフィール」の区画は自分のプロフィールとそのフォロワー / フォローの一覧で、
   同じ `/@{acct}` の下にある自分の投稿の詳細は含めない。画面の端に接する要素は `env(safe-area-inset-*)` を足し、高さは `svh` で指定する。
@@ -125,6 +126,7 @@
     スタッフの画面は「モデレーション」と「サーバー管理」の 2 つの区分に分ける（[ADR-0058](../../adr/0058-moderation-admin-separation.md)、§14）。ロールがモデレーションの画面の権限（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）のどれかを持つ閲覧者には「モデレーション」（`/moderation`）を、
     サーバー管理の画面の権限（`manage_settings`・`manage_rules`・`manage_custom_emojis`・`manage_announcements`・`manage_webhooks`・`manage_roles`・`manage_jobs`・`manage_finance`）のどれかを持つ閲覧者には「管理」（`/admin`）を、設定の後にこの順で足す。どちらも、その区分に閲覧者の使える画面があるときだけ出すので、組み込みのモデレーターには「管理」が出ない。レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     権限の 3 つめの区分「利用者の機能」（`member`。`view_finance` など、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)）はこの規則に数えないので、それだけを持つ閲覧者には「モデレーション」も「管理」も出ない。
+    サーバーが通話を有効にしている（`GET /voice/rooms` が `404` でない、ADR-0100 §2）ログイン中の閲覧者には、利用者の項目のすぐ後に「通話」（`/voice`）を足す。「会計」と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     `view_finance` を持つ閲覧者には、利用者の項目の後、スタッフの区分の前に「会計」（`/finance`）を足す。スタッフの区分と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     jsdom はスタイルを当てないので、統合テストでは両方の項目が文書にあり、どの幅で何が出るかは E2E（`e2e/shell.spec.ts`・`e2e/federated.spec.ts`）で確かめる。
   - **サインインしていないときのナビゲーション**: 上の 8 つの項目とスタッフの区分はセッションが要るので出さず、セッションなしで使える画面とサインイン・登録への導線だけを出す（[#781](https://github.com/mycroblog/my/issues/781)）。
