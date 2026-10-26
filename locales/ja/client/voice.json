@@ -664,7 +664,7 @@
     "description": "Error of the invitation. {reason} is why."
   },
   "voice.bar.label": {
-    "defaultMessage": "通話",
+    "defaultMessage": "参加中の通話",
     "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
   },
   "voice.call.microphone_denied": {
