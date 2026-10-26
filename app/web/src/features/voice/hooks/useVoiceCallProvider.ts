@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's call as a state of the whole app (ADR-0101 §2–§7; #1345 answer 45: the call goes on across pages, with a
 // small call bar on the screen's edge, as in X's Spaces). VoiceCallProvider holds at most one call: joining a room
-// starts it (from the join button's gesture, which starts the audio, ADR-0101 §7), joining another room replaces it,
+// starts it (from the join button's gesture, which starts the audio, ADR-0101 §7), and so does opening one, which joins
+// the host (ADR-0100 §5; from the gesture of the form's submit button); joining another room replaces it,
 // and leaving, the end of the room, or signing out ends it. Its requests go through the app's
 // API client, the rooms it reads go into the Query cache, and what changes for the user is announced in the app's live
 // region (web-client/README.md Y7). While a call lasts, closing or reloading the tab asks first (beforeunload), a
@@ -27,11 +28,14 @@ import {
   setVoiceMic,
   type VoiceLeaveChoice,
 } from "../api/call";
-import { cacheVoiceRoom, joinVoiceRoomMutation } from "../api/voice";
+import { cacheVoiceRoom, joinVoiceRoomMutation, type VoiceRoomJoin } from "../api/voice";
 import { browserEnvironment } from "../rtc/connect";
 import type { VoiceEnvironment } from "../rtc/types";
 import { voiceEndReasonLabel } from "./useVoiceHistory";
 import { participantName, VoiceCall, type VoiceCallEnd, type VoiceCallNotice, type VoiceCallSnapshot } from "./voiceCall";
+
+/** What a call needs from the user's gesture, taken before a request that joins the user to a room (`prepare`). */
+export type VoiceCallGesture = { accountId: string; environment: VoiceEnvironment; generation: number };
 
 export type VoiceCallState = {
   /** The call: the one going on, or the last one, which has ended (its snapshot says how). */
@@ -41,6 +45,13 @@ export type VoiceCallState = {
   inCall: boolean;
   /** Joins the room `roomId` as the account `accountId` from the user's gesture, leaving the call of another room. */
   join: (roomId: string, accountId: string) => void;
+  /**
+   * Takes what a call needs from the user's gesture (it starts the audio, ADR-0101 §7), for another request that joins
+   * the user to a room: opening a room joins its host.
+   */
+  prepare: (accountId: string) => VoiceCallGesture;
+  /** Starts the call of `joined`, the answer of a request that joined the user, with the gesture taken before it. */
+  adopt: (joined: VoiceRoomJoin, gesture: VoiceCallGesture) => void;
   /** The room being joined. */
   joiningRoom: string | undefined;
   joinError: { roomId: string; message: string } | undefined;
@@ -154,45 +165,49 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
     };
   }, [active]);
 
+  /** Starts the call of `joined` (a join, or the opening of a room), unless the user changed since the gesture. */
+  const startCall = async (joined: VoiceRoomJoin, { accountId, environment, generation }: VoiceCallGesture) => {
+    const roomId = joined.room.id;
+    if (generation !== userGenerationRef.current) {
+      // The user signed out while joining: that session must not stay in the room.
+      void leaveVoiceRoom(api, roomId, undefined).catch(() => undefined);
+      return;
+    }
+    await cacheVoiceRoom(api, queryClient, joined.room);
+    const next: VoiceCall = new VoiceCall({
+      accountId,
+      join: joined,
+      environment,
+      onNotice: (notice) => {
+        announce(noticeText(tRef.current, notice));
+      },
+      server: {
+        join: () => joinVoiceRoomMutation(api, roomId).mutationFn(),
+        abandon: () => leaveVoiceRoom(api, roomId, undefined),
+        heartbeat: (id) => sendVoiceHeartbeat(api, roomId, id),
+        refreshGrant: (id) => refreshVoiceGrant(api, roomId, id),
+        sendSignal: (id, signal) => sendVoiceSignal(api, roomId, id, signal),
+        setMic: (id, on) => setVoiceMic(api, roomId, id, on),
+        openStream: (id, options) => readVoiceStream(api, roomId, id, options),
+        onRoom: (state) => {
+          cacheVoiceRoomState(api, queryClient, state);
+        },
+        onEnd: () => {
+          const end = next.getSnapshot().end;
+          if (end !== undefined) announce(callEndText(tRef.current, end), "assertive");
+          void refreshVoiceRoom(api, queryClient, roomId);
+        },
+      },
+    });
+    // Joining another room left the previous one on the server (moved); its call ends here (the effect closes it).
+    next.start();
+    setActive(next);
+  };
+
   const join = useMutation({
     mutationKey: ["voice", "join"] as const,
-    mutationFn: ({ roomId }: { roomId: string; accountId: string; environment: VoiceEnvironment; generation: number }) => joinVoiceRoomMutation(api, roomId).mutationFn(),
-    onSuccess: async (joined, { roomId, accountId, environment, generation }) => {
-      if (generation !== userGenerationRef.current) {
-        // The user signed out while joining: that session must not stay in the room.
-        void leaveVoiceRoom(api, roomId, undefined).catch(() => undefined);
-        return;
-      }
-      await cacheVoiceRoom(api, queryClient, joined.room);
-      const next: VoiceCall = new VoiceCall({
-        accountId,
-        join: joined,
-        environment,
-        onNotice: (notice) => {
-          announce(noticeText(tRef.current, notice));
-        },
-        server: {
-          join: () => joinVoiceRoomMutation(api, roomId).mutationFn(),
-          abandon: () => leaveVoiceRoom(api, roomId, undefined),
-          heartbeat: (id) => sendVoiceHeartbeat(api, roomId, id),
-          refreshGrant: (id) => refreshVoiceGrant(api, roomId, id),
-          sendSignal: (id, signal) => sendVoiceSignal(api, roomId, id, signal),
-          setMic: (id, on) => setVoiceMic(api, roomId, id, on),
-          openStream: (id, options) => readVoiceStream(api, roomId, id, options),
-          onRoom: (state) => {
-            cacheVoiceRoomState(api, queryClient, state);
-          },
-          onEnd: () => {
-            const end = next.getSnapshot().end;
-            if (end !== undefined) announce(callEndText(tRef.current, end), "assertive");
-            void refreshVoiceRoom(api, queryClient, roomId);
-          },
-        },
-      });
-      // Joining another room left the previous one on the server (moved); its call ends here (the effect closes it).
-      next.start();
-      setActive(next);
-    },
+    mutationFn: ({ roomId }: { roomId: string } & VoiceCallGesture) => joinVoiceRoomMutation(api, roomId).mutationFn(),
+    onSuccess: (joined, { accountId, environment, generation }) => startCall(joined, { accountId, environment, generation }),
   });
 
   const leave = useMutation({
@@ -265,6 +280,10 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
       if (join.isPending) return;
       // From the gesture of the join button: the audio of the call starts here (ADR-0101 §7).
       join.mutate({ roomId, accountId, environment: browserEnvironment(), generation: userGenerationRef.current });
+    },
+    prepare: (accountId) => ({ accountId, environment: browserEnvironment(), generation: userGenerationRef.current }),
+    adopt: (joined, gesture) => {
+      void startCall(joined, gesture);
     },
     joiningRoom: join.isPending ? join.variables.roomId : undefined,
     joinError: join.isError ? { roomId: join.variables.roomId, message: errorMessage(join.error) } : undefined,

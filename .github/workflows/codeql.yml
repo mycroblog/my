@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   analyze:
-    name: analyze (${{ matrix.language }})
+    name: analyze (${{ matrix.name || matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -30,9 +30,20 @@ jobs:
       matrix:
         include:
           # Go is analyzed from the CGO_ENABLED=0 build of the main module (manual build mode; Go has no `none` mode,
-          # and autobuild would guess the build instead of building the main module alone).
+          # and autobuild would guess the build instead of building the main module alone), in two jobs. The extractor
+          # holds the syntax and types of every package of the build and its dependencies in memory at once, and the
+          # dependency github.com/shibukawa/pgmem (an in-memory PostgreSQL of about 6 million lines that only the test
+          # helper pkg/testkit/pgtest imports) takes most of it: one build of ./... outgrows the 16 GB of the runner.
+          # The first job builds every package but pgtest; the second builds pgtest alone, under its own category.
+          # Nothing outside tests imports pgtest, so no data flow crosses the two analyses.
           - language: go
             build-mode: manual
+            go-exclude: github.com/mycroblog/my/pkg/testkit/pgtest
+          - language: go
+            build-mode: manual
+            name: go, pgtest
+            category: /language:go/pgtest
+            go-packages: ./pkg/testkit/pgtest
           # Read without building: app/ (the Bun workspace) and tools/i18n, as configured in the config file.
           - language: javascript-typescript
             build-mode: none
@@ -61,8 +72,19 @@ jobs:
           # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
           GOTOOLCHAIN: local
           CGO_ENABLED: "0"
-        run: go build ./...
+          # The extractor is a Go program that reads this too: it collects garbage before its heap passes the limit,
+          # which leaves room below the 16 GB of the runner for the build that runs beside it.
+          GOMEMLIMIT: 12GiB
+          GO_PACKAGES: ${{ matrix.go-packages }}
+          GO_EXCLUDE: ${{ matrix.go-exclude }}
+        run: |
+          if [ -n "$GO_PACKAGES" ]; then
+            read -ra packages <<< "$GO_PACKAGES"
+          else
+            mapfile -t packages < <(go list ./... | grep -v -x -F "$GO_EXCLUDE")
+          fi
+          go build "${packages[@]}"
       - name: Analyze with CodeQL
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
-          category: /language:${{ matrix.language }}
+          category: ${{ matrix.category || format('/language:{0}', matrix.language) }}

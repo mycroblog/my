@@ -43,7 +43,9 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
   const needsSummary = session === "signed-out" || (signedIn && isNotFound(room.error));
   const summary = useQuery({ ...voiceRoomSummaryQueryOptions(api, id), enabled: needsSummary, retry: false, retryOnMount: false });
   if (session === "unknown") return { status: "loading" };
-  if (signedIn && room.data !== undefined) {
+  // A refetch that finds the room gone (it ended while the page showed it) keeps the room's last data in the cache; the
+  // 404 wins, so that the page says the room ended instead of offering to join it.
+  if (signedIn && room.data !== undefined && !isNotFound(room.error)) {
     const viewerId = viewer.status === "signed-in" ? viewer.account.id : undefined;
     return {
       status: "room",
