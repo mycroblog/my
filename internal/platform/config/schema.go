@@ -802,7 +802,7 @@ var schema = []field{
 		def: "off",
 		choices: []choice{
 			{value: "off", inV0: true, doc: "No voice chat."},
-			{value: "p2p", inV0: true, doc: "The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. This build does not yet give the browsers the TURN servers of `voice_turn`. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
+			{value: "p2p", inV0: true, doc: "The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
 			{value: "livekit", inV0: true, doc: "A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out."},
 			{value: "sora", inV0: true, doc: "A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out."},
 		},
@@ -844,7 +844,7 @@ var schema = []field{
 	},
 	{
 		key: "voice_turn",
-		doc: "The TURN server that relays the audio of `voice = p2p` between browsers that cannot reach each other directly, with short-lived credentials for each participant. This build checks the setting at start but does not give the browsers the TURN servers yet. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.",
+		doc: "The TURN server that relays the audio of `voice = p2p` between browsers that cannot reach each other directly, with short-lived credentials for each participant. The server checks the setting at start and gives the browsers the TURN servers of coturn or Cloudflare. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.",
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No TURN server: browsers behind strict NATs or firewalls may not connect."},
