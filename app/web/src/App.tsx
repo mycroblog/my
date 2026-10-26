@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The app's providers, outermost first: the runtime config, the locale store and i18n in its current locale
 // (react-intl and React Aria's locale), the TanStack Query cache, the session and the API client, the live
-// regions and toasts of @my/ui (with the prompt for a new version of the app), whether animations play by
+// regions and toasts of @my/ui (with the prompt for a new version of the app), the user's voice chat call (which goes
+// on across pages, features/voice), whether animations play by
 // themselves (lib/autoplay), how links leave the app (ExternalLinks), React Aria's router binding, and the router
 // with every page, or the maintenance of the server in its place (Maintenance.tsx).
 import { AnnouncerProvider, AutoplayContext, Box, Center, ExternalLinkContext, Heading, I18nProvider as AriaI18nProvider, RouterProvider as AriaRouterProvider, Stack, Text, ToastProvider } from "@my/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type AnyRouter, RouterProvider } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { VoiceCallProvider } from "./features/voice";
 import { SessionProvider } from "./lib/auth/SessionProvider";
 import { useAutoplay } from "./lib/autoplay";
 import { ConfigProvider, type RuntimeConfig, useConfig } from "./lib/config";
@@ -54,15 +56,17 @@ export function App({ config, locale, queryClient, api, session, leaveApp, maint
               <AnnouncerProvider>
                 <Toasts>
                   <UpdatePrompt />
-                  <AutoplayContext value={autoplay}>
-                    <ExternalLinks>
-                      <AriaRouterProvider navigate={navigate}>
-                        <MaintenanceGate maintenance={maintenance}>
-                          <RouterProvider router={router} />
-                        </MaintenanceGate>
-                      </AriaRouterProvider>
-                    </ExternalLinks>
-                  </AutoplayContext>
+                  <VoiceCallProvider maintenance={maintenance}>
+                    <AutoplayContext value={autoplay}>
+                      <ExternalLinks>
+                        <AriaRouterProvider navigate={navigate}>
+                          <MaintenanceGate maintenance={maintenance}>
+                            <RouterProvider router={router} />
+                          </MaintenanceGate>
+                        </AriaRouterProvider>
+                      </ExternalLinks>
+                    </AutoplayContext>
+                  </VoiceCallProvider>
                 </Toasts>
               </AnnouncerProvider>
             </SessionProvider>

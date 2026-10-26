@@ -115,6 +115,9 @@ function localLocks(): Locks {
   };
 }
 
+/** How long signing out waits for its onBeforeSignOut listeners. */
+const beforeSignOutWait = 2_000;
+
 export class Session implements TokenSource {
   readonly #apiOrigin: string;
   readonly #locks: Locks;
@@ -128,6 +131,7 @@ export class Session implements TokenSource {
   #refreshing: Promise<string | null> | null = null;
   readonly #listeners = new Set<() => void>();
   readonly #userListeners = new Set<(status: SessionStatus) => void>();
+  readonly #beforeSignOut = new Set<() => Promise<void>>();
 
   constructor({ apiOrigin, locks, openChannel, maintenance }: SessionOptions) {
     this.#apiOrigin = apiOrigin;
@@ -179,6 +183,15 @@ export class Session implements TokenSource {
   onUserChange(listener: (status: SessionStatus) => void): () => void {
     this.#userListeners.add(listener);
     return () => this.#userListeners.delete(listener);
+  }
+
+  /**
+   * Calls `listener` when this tab signs out, before the token is revoked, so that it can still send a request with
+   * it (leaving a voice chat room). Signing out waits for it, up to beforeSignOutWait.
+   */
+  onBeforeSignOut(listener: () => Promise<void>): () => void {
+    this.#beforeSignOut.add(listener);
+    return () => this.#beforeSignOut.delete(listener);
   }
 
   /**
@@ -289,6 +302,16 @@ export class Session implements TokenSource {
    * reached; a SignOutError then says that the server may keep the session.
    */
   async signOut(): Promise<void> {
+    if (this.#beforeSignOut.size > 0) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      await Promise.race([
+        Promise.allSettled([...this.#beforeSignOut].map((listener) => listener())),
+        new Promise<void>((resolve) => {
+          timer = setTimeout(resolve, beforeSignOutWait);
+        }),
+      ]);
+      clearTimeout(timer);
+    }
     let token = this.#accessToken;
     let failure: unknown = null;
     if (token === null && this.#status !== "signed-out") {

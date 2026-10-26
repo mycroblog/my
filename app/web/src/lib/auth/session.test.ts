@@ -146,6 +146,27 @@ describe("the end of a session", () => {
     expect(changes).toEqual(["signed-out"]);
   });
 
+  test("signing out lets its listeners send a request with the token before revoking it", async () => {
+    refreshEndpoint();
+    const order: string[] = [];
+    server.use(
+      http.post(oauthPaths.revoke, () => {
+        order.push("revoke");
+        return new HttpResponse(null, { status: 200 });
+      }),
+    );
+    const a = openTab();
+    await a.refresh(null);
+    a.onBeforeSignOut(async () => {
+      await delay(10);
+      order.push(`leave with ${a.accessToken ?? "nothing"}`);
+    });
+
+    await a.signOut();
+
+    expect(order).toEqual(["leave with access-1", "revoke"]);
+  });
+
   test("a sign-out that cannot reach the server still signs out here and says so", async () => {
     refreshEndpoint();
     server.use(http.post(oauthPaths.revoke, () => HttpResponse.error()));

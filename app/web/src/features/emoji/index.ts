@@ -12,5 +12,5 @@ export { ReactionPickerButton } from "./components/ReactionPickerButton";
  */
 export { type EmojiSuggestion, useEmojiSuggestions } from "./hooks/emojiSuggestions";
 /** The shortcodes of the local custom emoji, which the highlight layer of a text field marks (ADR-0092 §4). */
-export { useCustomEmojiShortcodes } from "./hooks/customEmojiShortcodes";
+export { useCustomEmojiImages, useCustomEmojiShortcodes } from "./hooks/customEmojiShortcodes";
 export type { ReactionChoice } from "./hooks/useReactionPicker";

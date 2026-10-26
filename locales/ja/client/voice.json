@@ -342,5 +342,341 @@
   "voice.room.report": {
     "defaultMessage": "ルームを通報",
     "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
+  },
+  "voice.call.title": {
+    "defaultMessage": "通話",
+    "description": "Heading of the controls of the voice chat call that the user is in."
+  },
+  "voice.call.connecting": {
+    "defaultMessage": "接続しています…",
+    "description": "State of the voice chat call until it connects."
+  },
+  "voice.call.live": {
+    "defaultMessage": "接続しました",
+    "description": "State of the voice chat call while it is connected."
+  },
+  "voice.call.reconnecting": {
+    "defaultMessage": "接続し直しています…",
+    "description": "State of the voice chat call while the connection to the room is down."
+  },
+  "voice.call.join_here": {
+    "defaultMessage": "ここで参加",
+    "description": "Button that joins a voice chat room on this device, when the user is in it from another device or tab."
+  },
+  "voice.call.unsupported_browser": {
+    "defaultMessage": "このブラウザでは通話に参加できません。通話に対応したブラウザで、HTTPS で開いてください。",
+    "description": "Shown instead of the join button when the browser has no WebRTC or microphone access."
+  },
+  "voice.call.playback_blocked": {
+    "defaultMessage": "ブラウザが通話の音を止めました。",
+    "description": "Shown when the browser blocked the audio of the call from playing."
+  },
+  "voice.call.play_audio": {
+    "defaultMessage": "音を出す",
+    "description": "Button that starts the audio of the call after the browser blocked it."
+  },
+  "voice.call.microphone": {
+    "defaultMessage": "マイク",
+    "description": "Label of the switch that turns the user's microphone on or off in a voice chat call."
+  },
+  "voice.call.microphone.description": {
+    "defaultMessage": "オンの間、ほかの人に声が聞こえます。",
+    "description": "Explanation under the microphone switch of a voice chat call."
+  },
+  "voice.call.microphone_failed": {
+    "defaultMessage": "マイクを使えませんでした。もう一度試してください。",
+    "description": "Error when the browser did not give the microphone."
+  },
+  "voice.call.speak": {
+    "defaultMessage": "話す",
+    "description": "Button that makes a listener of a voice chat room a speaker."
+  },
+  "voice.call.listen": {
+    "defaultMessage": "聞くだけにする",
+    "description": "Button that makes a speaker of a voice chat room a listener again."
+  },
+  "voice.call.raise_hand": {
+    "defaultMessage": "挙手する",
+    "description": "Button that asks the hosts of a voice chat room for permission to speak."
+  },
+  "voice.call.lower_hand": {
+    "defaultMessage": "挙手を取り下げる",
+    "description": "Button that withdraws the user's raised hand in a voice chat room."
+  },
+  "voice.call.leave": {
+    "defaultMessage": "退出",
+    "description": "Button that leaves the voice chat room, and the confirm button of the dialogs about leaving."
+  },
+  "voice.call.stay": {
+    "defaultMessage": "残る",
+    "description": "Button of the dialogs about leaving a voice chat room that keeps the user in it."
+  },
+  "voice.call.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes a dialog of a voice chat call without doing anything."
+  },
+  "voice.call.action_failed": {
+    "defaultMessage": "操作できませんでした：{reason}",
+    "description": "Error of an operation in a voice chat call. {reason} is why, from the server."
+  },
+  "voice.call.leave_failed": {
+    "defaultMessage": "退出できませんでした：{reason}",
+    "description": "Error when leaving a voice chat room failed. {reason} is why."
+  },
+  "voice.call.host_leave.title": {
+    "defaultMessage": "ホストしているルームから退出しますか？",
+    "description": "Title of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.description": {
+    "defaultMessage": "次にホストする人を選ぶか、全員のためにルームを終了してください。ホストになれるのは、ルームを開始できる人だけです。",
+    "description": "Explanation of the dialog where the host of a voice chat room leaves it."
+  },
+  "voice.call.host_leave.choice": {
+    "defaultMessage": "退出するとき",
+    "description": "Label of the choice of the next host or the end of the room, in the host's leave dialog."
+  },
+  "voice.call.host_leave.next_host": {
+    "defaultMessage": "{name} さんをホストにする",
+    "description": "Choice of the host's leave dialog that hands the room to a participant. {name} is the participant's name."
+  },
+  "voice.call.host_leave.end": {
+    "defaultMessage": "全員のためにルームを終了する",
+    "description": "Choice of the host's leave dialog that ends the room."
+  },
+  "voice.call.ended": {
+    "defaultMessage": "ルームは終了しました：{reason}",
+    "description": "Said and shown when the voice chat room the user was in ended. {reason} is why it ended."
+  },
+  "voice.call.replaced": {
+    "defaultMessage": "別の端末からこのルームに参加しました。",
+    "description": "Said and shown when the user joined the same room from another device, which ends the call here."
+  },
+  "voice.call.lost": {
+    "defaultMessage": "ルームとの接続が切れました。",
+    "description": "Said and shown when the call could not reconnect to the room."
+  },
+  "voice.call.unsupported": {
+    "defaultMessage": "このアプリはまだこのサーバーの通話に接続できません。",
+    "description": "Shown when the server's voice chat method is not supported by this client."
+  },
+  "voice.call.removed": {
+    "defaultMessage": "ルームから退出させられました。",
+    "description": "Said and shown when a host or co-host removed the user from the voice chat room."
+  },
+  "voice.call.moved": {
+    "defaultMessage": "別のルームに参加しました。",
+    "description": "Said and shown when the user left this room by joining another one."
+  },
+  "voice.call.disconnected": {
+    "defaultMessage": "ルームから切断されました。",
+    "description": "Said and shown when the server took the user out of the room after the connection was lost."
+  },
+  "voice.call.suspended": {
+    "defaultMessage": "アカウントが凍結されたため、ルームから退出しました。",
+    "description": "Said and shown when the user's account was suspended during a call."
+  },
+  "voice.call.left": {
+    "defaultMessage": "ルームから退出しました。",
+    "description": "Said and shown when the user's session left the room."
+  },
+  "voice.call.blocked": {
+    "defaultMessage": "ホストか共同ホストとのブロックのため、ルームから退出しました。",
+    "description": "Said and shown when a block between the user and a host or co-host took the user out of the room."
+  },
+  "voice.notice.speaker": {
+    "defaultMessage": "話せるようになりました。話すにはマイクをオンにしてください。",
+    "description": "Announced when the user becomes a speaker in a voice chat room."
+  },
+  "voice.notice.listener": {
+    "defaultMessage": "聞き手になりました。",
+    "description": "Announced when the user becomes a listener in a voice chat room."
+  },
+  "voice.notice.muted": {
+    "defaultMessage": "ホストがあなたのマイクをオフにしました。もう一度オンにできます。",
+    "description": "Announced when a host or co-host muted the user."
+  },
+  "voice.notice.hand_down": {
+    "defaultMessage": "挙手を下ろしました。",
+    "description": "Announced when the user's raised hand went down without the user becoming a speaker."
+  },
+  "voice.notice.cohost": {
+    "defaultMessage": "共同ホストになりました。",
+    "description": "Announced when the host makes the user a co-host."
+  },
+  "voice.notice.cohost_removed": {
+    "defaultMessage": "共同ホストではなくなりました。",
+    "description": "Announced when the host stops the user being a co-host."
+  },
+  "voice.notice.host": {
+    "defaultMessage": "ホストになりました。",
+    "description": "Announced when the user becomes the host of the room."
+  },
+  "voice.notice.hand_raised": {
+    "defaultMessage": "{name} さんが挙手しました。",
+    "description": "Announced to the host and co-hosts when a participant raises a hand. {name} is the participant's name."
+  },
+  "voice.notice.reconnecting": {
+    "defaultMessage": "ルームとの接続が切れました。接続し直しています…",
+    "description": "Announced when the room stream of a call goes down."
+  },
+  "voice.notice.reconnected": {
+    "defaultMessage": "ルームに接続し直しました。",
+    "description": "Announced when the room stream of a call is back."
+  },
+  "voice.participant.you": {
+    "defaultMessage": "あなた",
+    "description": "Marker of the user's own row in the participants of a voice chat room."
+  },
+  "voice.participant.hand_raised": {
+    "defaultMessage": "挙手中",
+    "description": "Marker of a participant who raised a hand."
+  },
+  "voice.participant.mic_on": {
+    "defaultMessage": "マイクオン",
+    "description": "Marker of a speaker whose microphone is on."
+  },
+  "voice.participant.blocked": {
+    "defaultMessage": "ブロック中",
+    "description": "Marker of a participant whom the user blocks or who blocks the user."
+  },
+  "voice.participant.reacted": {
+    "defaultMessage": "リアクション：",
+    "description": "Text for screen readers before the emoji a participant just reacted with."
+  },
+  "voice.moderate.menu": {
+    "defaultMessage": "{name} さんへの操作",
+    "description": "Accessible name of the menu of what a host or co-host does to a participant. {name} is the participant's name."
+  },
+  "voice.moderate.grant": {
+    "defaultMessage": "発話を許可",
+    "description": "Menu item that lets a participant speak."
+  },
+  "voice.moderate.dismiss": {
+    "defaultMessage": "挙手を却下",
+    "description": "Menu item that turns down a participant's raised hand."
+  },
+  "voice.moderate.revoke": {
+    "defaultMessage": "発話を取り消す",
+    "description": "Menu item that makes a speaker a listener and takes back the permission to speak."
+  },
+  "voice.moderate.mute": {
+    "defaultMessage": "マイクをオフにさせる",
+    "description": "Menu item that mutes a speaker, who may turn the microphone on again."
+  },
+  "voice.moderate.remove": {
+    "defaultMessage": "ルームから退出させる",
+    "description": "Menu item and confirm button that removes a participant, who cannot join again."
+  },
+  "voice.moderate.cohost": {
+    "defaultMessage": "共同ホストにする",
+    "description": "Menu item of the host that makes a participant a co-host."
+  },
+  "voice.moderate.uncohost": {
+    "defaultMessage": "共同ホストから外す",
+    "description": "Menu item of the host that stops a participant being a co-host."
+  },
+  "voice.moderate.hand_over": {
+    "defaultMessage": "ホストを渡す",
+    "description": "Menu item of the host that hands the room over to a participant."
+  },
+  "voice.moderate.remove.title": {
+    "defaultMessage": "{name} さんをルームから退出させますか？",
+    "description": "Title of the dialog that confirms removing a participant. {name} is the participant's name."
+  },
+  "voice.moderate.remove.description": {
+    "defaultMessage": "このルームを見ることも、再び参加することもできなくなります。",
+    "description": "Explanation of the dialog that confirms removing a participant."
+  },
+  "voice.moderate.done.grant": {
+    "defaultMessage": "{name} さんが話せるようになりました。",
+    "description": "Announced after letting a participant speak."
+  },
+  "voice.moderate.done.dismiss": {
+    "defaultMessage": "{name} さんの挙手を却下しました。",
+    "description": "Announced after dismissing a raised hand."
+  },
+  "voice.moderate.done.revoke": {
+    "defaultMessage": "{name} さんは聞き手になりました。",
+    "description": "Announced after stopping a participant from speaking."
+  },
+  "voice.moderate.done.mute": {
+    "defaultMessage": "{name} さんのマイクをオフにさせました。",
+    "description": "Announced after muting a participant."
+  },
+  "voice.moderate.done.remove": {
+    "defaultMessage": "{name} さんをルームから退出させました。",
+    "description": "Announced after removing a participant."
+  },
+  "voice.moderate.done.cohost": {
+    "defaultMessage": "{name} さんが共同ホストになりました。",
+    "description": "Announced after making a participant a co-host."
+  },
+  "voice.moderate.done.uncohost": {
+    "defaultMessage": "{name} さんは共同ホストではなくなりました。",
+    "description": "Announced after stopping a participant being a co-host."
+  },
+  "voice.moderate.done.hand_over": {
+    "defaultMessage": "{name} さんがホストになりました。",
+    "description": "Announced after handing the room over."
+  },
+  "voice.invite.button": {
+    "defaultMessage": "招待",
+    "description": "Button of the host and co-hosts that opens the dialog to invite someone to the voice chat room."
+  },
+  "voice.invite.title": {
+    "defaultMessage": "ルームに招待",
+    "description": "Title of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.description": {
+    "defaultMessage": "招待した人は、今からこのルームが見え、通知を受け取ります。",
+    "description": "Explanation of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.username": {
+    "defaultMessage": "このサーバーのユーザー名",
+    "description": "Label of the field of the username to invite to a voice chat room."
+  },
+  "voice.invite.role": {
+    "defaultMessage": "招待の種類",
+    "description": "Label of the choice of inviting as a listener or a speaker."
+  },
+  "voice.invite.role.listener": {
+    "defaultMessage": "聞き手",
+    "description": "Choice of inviting someone as a listener."
+  },
+  "voice.invite.role.speaker": {
+    "defaultMessage": "話者",
+    "description": "Choice of inviting someone as a speaker."
+  },
+  "voice.invite.role.speaker.description": {
+    "defaultMessage": "許可を求めずに話せます。",
+    "description": "Explanation of inviting someone as a speaker."
+  },
+  "voice.invite.submit": {
+    "defaultMessage": "招待する",
+    "description": "Confirm button of the dialog that invites someone to a voice chat room."
+  },
+  "voice.invite.sent": {
+    "defaultMessage": "{name} さんを招待しました。",
+    "description": "Announced after inviting someone. {name} is their name."
+  },
+  "voice.invite.failed": {
+    "defaultMessage": "招待できませんでした：{reason}",
+    "description": "Error of the invitation. {reason} is why."
+  },
+  "voice.bar.label": {
+    "defaultMessage": "通話",
+    "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.call.microphone_denied": {
+    "defaultMessage": "このサイトはマイクを使えません。ブラウザの設定で許可してから、もう一度試してください。",
+    "description": "Error when the user or the browser refused the microphone."
+  },
+  "voice.call.microphone_missing": {
+    "defaultMessage": "マイクが見つかりません。接続してから、もう一度試してください。",
+    "description": "Error when the device has no microphone."
+  },
+  "voice.call.microphone_busy": {
+    "defaultMessage": "マイクがほかのアプリで使われています。そのアプリを閉じてから、もう一度試してください。",
+    "description": "Error when another app holds the microphone."
   }
 }

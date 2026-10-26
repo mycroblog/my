@@ -37,10 +37,12 @@ export function useEndVoiceRoom(report: Pick<ReportDetail, "id" | "target_accoun
   const mutation = useMutation({
     ...endVoiceRoomMutation(api),
     onSuccess: async () => {
-      await refreshEndedVoiceRoom(queryClient, api, report);
-      onEnded();
       setIsOpen(false);
       setReason("");
+      // Before the room is read again: the section moves focus once it shows the room ended (useFocusAfterChange), so
+      // the call must come before that change renders, or the change goes by unnoticed and focus stays on the body.
+      onEnded();
+      await refreshEndedVoiceRoom(queryClient, api, report);
       setStatus(t("client:admin.report.voice.ended"));
     },
   });

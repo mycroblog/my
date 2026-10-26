@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What the page of a room (/voice/{id}, ADR-0100 §9) shows. A signed-in user who sees the open room gets the page
-// before joining it: its settings, its participants, and the join button with the notice that joining lists the
-// user's name (回答 31). Anyone else gets the room's summary: a visitor who is not signed in learns that only the
+// What the page of a room (/voice/{id}, ADR-0100 §9) shows. A signed-in user who sees the open room gets the room:
+// its settings and its participants, with the call (useVoiceCall). Anyone else gets the room's summary: a visitor who is not signed in learns that only the
 // users of this server join, with the way to sign in, and the summary's name, description, and host only when the
 // server shows them (回答 30); a room that ended says so with its name when the summary has it (回答 32). Nothing
 // says which of an unknown room, a room of a server with voice chat off, or a room hidden from the user it is,
 // beyond what the summary tells.
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { useViewer } from "../../session";
-import { cacheVoiceRoom, joinVoiceRoomMutation, type VoiceRoom, type VoiceRoomSummary, voiceRoomQueryOptions, voiceRoomSummaryQueryOptions } from "../api/voice";
+import { type VoiceRoom, type VoiceRoomSummary, voiceRoomQueryOptions, voiceRoomSummaryQueryOptions } from "../api/voice";
 
 /** The page of a room as it shows now. */
 export type VoiceRoomPage =
@@ -25,14 +24,8 @@ export type VoiceRoomPage =
   | {
       status: "room";
       room: VoiceRoom;
-      /** Whether the user is a participant now. */
-      joined: boolean;
       /** Whether the user hosts the room, who changes its settings. */
       isHost: boolean;
-      join: () => void;
-      isJoining: boolean;
-      /** Why the last join failed, localized. */
-      joinError: string | undefined;
     };
 
 function isNotFound(error: unknown): boolean {
@@ -41,7 +34,6 @@ function isNotFound(error: unknown): boolean {
 
 export function useVoiceRoomPage(id: string): VoiceRoomPage {
   const api = useApi();
-  const queryClient = useQueryClient();
   const session = useSessionStatus();
   const viewer = useViewer();
   const signedIn = session === "signed-in";
@@ -50,25 +42,13 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
   // The summary is read when the room is not there for the user: signed out, or a 404 of the room.
   const needsSummary = session === "signed-out" || (signedIn && isNotFound(room.error));
   const summary = useQuery({ ...voiceRoomSummaryQueryOptions(api, id), enabled: needsSummary, retry: false, retryOnMount: false });
-  const join = useMutation({
-    ...joinVoiceRoomMutation(api, id),
-    onSuccess: async (joined) => {
-      await cacheVoiceRoom(api, queryClient, joined.room);
-    },
-  });
   if (session === "unknown") return { status: "loading" };
   if (signedIn && room.data !== undefined) {
     const viewerId = viewer.status === "signed-in" ? viewer.account.id : undefined;
     return {
       status: "room",
       room: room.data,
-      joined: room.data.participants.some((participant) => participant.account.id === viewerId),
       isHost: room.data.host.id === viewerId,
-      join: () => {
-        join.mutate();
-      },
-      isJoining: join.isPending,
-      joinError: join.isError ? errorMessage(join.error) : undefined,
     };
   }
   const failed = signedIn && room.error !== null && !isNotFound(room.error) ? room : summary.error !== null && !isNotFound(summary.error) ? summary : undefined;

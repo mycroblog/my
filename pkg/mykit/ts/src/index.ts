@@ -17,6 +17,7 @@ export {
   type StreamEvent,
   type StreamOptions,
 } from "./stream.js";
+export { EventStreamParser, type ServerSentEvent } from "./sse.js";
 export { RefreshingTokenSource, staticToken, type OnTokens, type Token, type TokenSource } from "./token.js";
 export type { RetryPolicy, Sleep } from "./transport.js";
 export { uploadMedia, type MediaAttachment, type MediaUploadInput, type MediaUploadPurpose } from "./upload.js";

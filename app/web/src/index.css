@@ -49,4 +49,24 @@
       scroll-padding-block-end: 0;
     }
   }
+  /* The bar of a voice chat call (data-call-bar, @my/ui CallBar in ShellDock) sticks to the bottom of the page's
+     column, 1rem above the tab bar or the bottom edge from md: focused elements clear it
+     too, with a 1rem gap. The bar writes its measured height to --call-bar-block-size (it wraps on narrow screens). */
+  :root:has([data-call-bar]) {
+    scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 6rem + env(safe-area-inset-bottom));
+  }
+  /* On short screens the bar does not stick (it scrolls with the page): only the tab bar and the button are cleared. */
+  @variant short {
+    :root:has([data-call-bar]) {
+      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom));
+    }
+    :root:has([data-call-bar]):has([data-compose-fab]) {
+      scroll-padding-block-end: calc(7rem + env(safe-area-inset-bottom));
+    }
+  }
+  @variant md {
+    :root:has([data-call-bar]) {
+      scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 2rem + env(safe-area-inset-bottom));
+    }
+  }
 }

@@ -116,6 +116,10 @@ await runStream({
 Abort the signal to stop. See [`examples/stream.ts`](examples/stream.ts) and the
 [mykit README](../README.md#streaming) for what makes it stop.
 
+Other event streams of the API, such as the stream of a voice chat room, are read with `fetch` too: `EventStreamParser`
+turns the text of such a body into its events (`push` each decoded piece, then `end`), as the HTML Standard reads an
+event stream.
+
 ## Retries, idempotency keys, uploads, admin operations, stability
 
 These work as in the [mykit README](../README.md): 429 and 503 are retried after `Retry-After` for `GET`, `HEAD`, and

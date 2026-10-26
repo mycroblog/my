@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Voice chat through the whole app before the call itself (web-client/README.md T4, ADR-0100 §8, §9, §13): MSW plays
 // the server. Nothing shows while the server has voice chat off; with it on, the navigation leads to the list of the
-// open rooms, where the user starts a room with its start post; the room's page lists its participants and says that
-// joining lists the user's name; the host changes the settings; visitors who are not signed in get the summary; the
+// open rooms, where the user starts a room with its start post; the room's page lists its participants (the call is
+// in call.test.tsx); the host changes the settings; visitors who are not signed in get the summary; the
 // hashtag's page, the profile, and the settings' history show the rooms.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { instanceFixture, otherAccountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
+import { instanceFixture, otherAccountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -198,30 +198,19 @@ describe("starting a room", () => {
 });
 
 describe("the page of a room", () => {
-  test("lists everyone with their role and says that joining lists the user's name", async () => {
+  test("lists everyone with their role, and says that this browser cannot join without WebRTC", async () => {
     server.use(signedInHandler);
     voiceOn([voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(carol, { cohost: true })] })]);
-    let joined = false;
-    server.use(
-      http.post(`${apiBase}/voice/rooms/:id/participation`, ({ request }) => {
-        joined = true;
-        const room = voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(viewerFixture)] });
-        return withViewer(request, () => HttpResponse.json({ room, session: "s1", grant: { kind: "p2p", ice_servers: [], relay_only: false, expires_at: "2026-10-26T18:00:00Z" } }));
-      }),
-    );
-    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await renderApp({ path: `/voice/${roomId}` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();
     const participants = screen.getByRole("region", { name: "Participants" });
     const items = within(participants).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([expect.stringMatching(/Bob.*Host/u), expect.stringMatching(/Carol.*Co-host/u)]);
-    expect(screen.getByText("When you join, your name is listed for everyone who can see this room.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Room settings" })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Join" }));
-    expect(await screen.findByText("You are in this room.")).toBeInTheDocument();
-    expect(joined).toBe(true);
-    expect(within(screen.getByRole("region", { name: "Participants" })).getByText(/Alice/u)).toBeInTheDocument();
+    // jsdom has no RTCPeerConnection: the call (call.test.tsx) needs one.
+    expect(screen.getByText("This browser can't join voice chat. Open the room in a browser that supports calls, over HTTPS.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
   });
 
   test("lets the host change the settings, sending only what changed", async () => {
