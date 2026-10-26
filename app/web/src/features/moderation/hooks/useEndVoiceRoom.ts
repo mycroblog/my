@@ -26,7 +26,8 @@ export type EndVoiceRoom = {
   status: string | undefined;
 };
 
-export function useEndVoiceRoom(report: Pick<ReportDetail, "id" | "target_account_id">, roomId: string): EndVoiceRoom {
+/** Ending the room `roomId` of `report`; `onEnded` runs once the page shows the room ended (to move focus). */
+export function useEndVoiceRoom(report: Pick<ReportDetail, "id" | "target_account_id">, roomId: string, onEnded: () => void): EndVoiceRoom {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -37,6 +38,7 @@ export function useEndVoiceRoom(report: Pick<ReportDetail, "id" | "target_accoun
     ...endVoiceRoomMutation(api),
     onSuccess: async () => {
       await refreshEndedVoiceRoom(queryClient, api, report);
+      onEnded();
       setIsOpen(false);
       setReason("");
       setStatus(t("client:admin.report.voice.ended"));

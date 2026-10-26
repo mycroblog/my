@@ -69,11 +69,7 @@ function ReportPage({ id }: { id: string }) {
       <DetailSection title={t("client:admin.report.summary.title")}>
         <ReportSummary report={report} />
       </DetailSection>
-      {report.voice_room !== undefined && (
-        <DetailSection title={t("client:admin.report.voice.title")}>
-          <ReportVoiceRoom report={report} room={report.voice_room} />
-        </DetailSection>
-      )}
+      {report.voice_room !== undefined && <ReportVoiceRoom report={report} room={report.voice_room} />}
       {/* A room's report points at no posts. */}
       {report.voice_room === undefined && (
         <DetailSection title={t("client:admin.report.posts.title")}>

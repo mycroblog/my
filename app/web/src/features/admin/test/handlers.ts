@@ -221,6 +221,9 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "user_app_registration", kind: "bool", default: "true" },
   { key: "oauth_metadata_document_clients", kind: "bool", default: "true" },
   { key: "dynamic_client_registration", kind: "bool", default: "true" },
+  { key: "voice_room_starters", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
+  { key: "voice_public_summary", kind: "bool", default: "false" },
+  { key: "retention_voice_participants", kind: "int", default: "90", minimum: 30, maximum: 3650 },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */

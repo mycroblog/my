@@ -20,6 +20,11 @@ beforeEach(() => {
 
 type Text = Schemas["AdminInstanceText"];
 
+/** The server with voice chat on and no room open. */
+function voiceOn() {
+  server.use(http.get(`${apiBase}/voice/rooms`, () => HttpResponse.json({ items: [] })));
+}
+
 /**
  * Plays the instance name: GET /instance names the instance by it, or its domain without one, and each PUT changes
  * it; records the changes.
@@ -458,6 +463,44 @@ describe("the server's policies", () => {
 
     expect(await screen.findByText("Could not save the settings; nothing was changed: values.registration_mode is invalid")).toHaveAttribute("role", "alert");
     expect(within(registration).getByRole("radio", { name: "Nobody" })).toBeChecked();
+  });
+
+  test("has no voice chat section while the server does not offer voice chat", async () => {
+    settingsServer();
+    await renderApp({ path: "/admin/settings" });
+    expect(await screen.findByRole("region", { name: "Registration" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Voice chat" })).not.toBeInTheDocument();
+  });
+
+  test("chooses who starts voice chat rooms, the visitors' summary, and the days the records are kept, checking the days", async () => {
+    const settings = settingsServer();
+    voiceOn();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const voice = await screen.findByRole("region", { name: "Voice chat" });
+    const starters = within(voice).getByRole("radiogroup", { name: "Who can start rooms" });
+    expect(within(starters).getByRole("radio", { name: "Only people with the permission" })).toBeChecked();
+    const summary = within(voice).getByRole("checkbox", { name: "Show a summary of rooms to visitors" });
+    expect(summary).not.toBeChecked();
+    expect(summary).toHaveAccessibleDescription(/They never see who is in it\./);
+    const days = within(voice).getByRole("textbox", { name: "Days to keep the participants' records" });
+    expect(days).toHaveValue("90");
+    expect(days).toHaveAccessibleDescription(/30 to 3650 days/);
+
+    await user.click(within(starters).getByRole("radio", { name: "Everyone on this server" }));
+    await user.click(summary);
+    await user.clear(days);
+    await user.type(days, "20");
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    // Too few days stay in the form with what to change, and nothing is sent.
+    expect(days).toHaveAccessibleDescription(/Enter a whole number of days from 30 to 3650\./);
+    expect(settings.patches).toHaveLength(0);
+
+    await user.clear(days);
+    await user.type(days, " 45 ");
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { voice_room_starters: "everyone", voice_public_summary: "true", retention_voice_participants: "45" } }]);
+    expect(days).toHaveValue("45");
   });
 });
 

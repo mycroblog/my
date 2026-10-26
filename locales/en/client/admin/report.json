@@ -332,11 +332,11 @@
     "description": "Value: the voice chat room has ended."
   },
   "admin.report.voice.opened_at": {
-    "defaultMessage": "Opened",
+    "defaultMessage": "Opened at",
     "description": "Term: when the voice chat room was opened."
   },
   "admin.report.voice.ended_at": {
-    "defaultMessage": "Ended",
+    "defaultMessage": "Ended at",
     "description": "Term: when the voice chat room ended."
   },
   "admin.report.voice.end_reason": {

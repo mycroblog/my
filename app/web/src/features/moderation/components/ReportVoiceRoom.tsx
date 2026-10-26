@@ -6,12 +6,12 @@
 // stay only for a while after the room ends, which the section says. Names and descriptions were written by the
 // host, in any language (web-client/README.md Y10).
 import { Box, Button, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Heading, Hint, ReasonField, Stack, StatusMessage, Tag, Text } from "@my/ui";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useId, useRef } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { speakerLabels, visibilityLabels, voiceEndReasonLabel } from "../../voice";
 import { type ReportDetail, type ReportVoiceRoom as Room, type VoiceRoomBan, type VoiceRoomParticipation, type VoiceRoomRevision, voiceRoomEndReasonLimit } from "../api/reports";
-import { useEndVoiceRoom } from "../hooks/useEndVoiceRoom";
-import { DateTime } from "./parts";
+import { type EndVoiceRoom, useEndVoiceRoom } from "../hooks/useEndVoiceRoom";
+import { DateTime, DetailSection, useFocusAfterChange } from "./parts";
 import { AccountByIdLabel, AssigneeName } from "./reportParts";
 
 /** The sentence of each reason a participation ended (api/spec AdminVoiceRoomParticipation); another reads as `other`. */
@@ -25,12 +25,37 @@ const leaveReasons: Readonly<Record<string, ClientMessageKey>> = {
   room_ended: "client:admin.report.voice.leave_reason.room_ended",
 };
 
+/**
+ * The section of the room. Ending it takes its button away, so focus then moves to the section's heading, and what
+ * happened stays in the section's StatusMessage.
+ */
 export function ReportVoiceRoom({ report, room }: { report: ReportDetail; room: Room }) {
   const t = useT();
   const isOpen = room.ended_at === undefined;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const focusHeading = useFocusAfterChange(headingRef, room.ended_at);
+  const end = useEndVoiceRoom(report, room.id, focusHeading);
   return (
-    <Stack gap="6">
-      <Hint size="inherit">{t("client:admin.report.voice.records")}</Hint>
+    <DetailSection title={t("client:admin.report.voice.title")} headingRef={headingRef}>
+      <Stack gap="6">
+        <Hint size="inherit">{t("client:admin.report.voice.records")}</Hint>
+        <StatusMessage>{end.status}</StatusMessage>
+        <RoomState room={room} />
+        {isOpen && <EndRoom end={end} />}
+        <Revisions revisions={room.revisions} reportedId={room.reported_revision_id} />
+        <Participations participations={room.participations} />
+        <Bans bans={room.bans} />
+      </Stack>
+    </DetailSection>
+  );
+}
+
+/** Whether the room is open, and when, why and by whom it ended. */
+function RoomState({ room }: { room: Room }) {
+  const t = useT();
+  const isOpen = room.ended_at === undefined;
+  return (
+    <>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.report.voice.state")}>
           <Text weight="semibold">{isOpen ? t("client:admin.report.voice.state.open") : t("client:admin.report.voice.state.ended")}</Text>
@@ -62,18 +87,13 @@ export function ReportVoiceRoom({ report, room }: { report: ReportDetail; room: 
           </DescriptionItem>
         </DescriptionList>
       )}
-      {isOpen && <EndRoom report={report} roomId={room.id} />}
-      <Revisions revisions={room.revisions} reportedId={room.reported_revision_id} />
-      <Participations participations={room.participations} />
-      <Bans bans={room.bans} />
-    </Stack>
+    </>
   );
 }
 
 /** Ending the open room, after its confirmation with an optional reason for the moderators. */
-function EndRoom({ report, roomId }: { report: ReportDetail; roomId: string }) {
+function EndRoom({ end }: { end: EndVoiceRoom }) {
   const t = useT();
-  const end = useEndVoiceRoom(report, roomId);
   return (
     <Stack align="start" gap="3">
       <Hint>{t("client:admin.report.voice.end.description")}</Hint>
@@ -105,7 +125,6 @@ function EndRoom({ report, roomId }: { report: ReportDetail; roomId: string }) {
           errorMessage={t("client:admin.report.voice.end.reason.too_long", { max: String(voiceRoomEndReasonLimit) })}
         />
       </ConfirmDialog>
-      <StatusMessage>{end.status}</StatusMessage>
     </Stack>
   );
 }
@@ -149,9 +168,9 @@ function Revisions({ revisions, reportedId }: { revisions: readonly VoiceRoomRev
                 {revision.hashtags.length === 0 ? (
                   <Text tone="muted">{t("client:admin.report.voice.revision.none")}</Text>
                 ) : (
-                  <Cluster as="ul" gap="1">
+                  <Cluster gap="1">
                     {revision.hashtags.map((tag) => (
-                      <Tag key={tag} as="li" variant="pill" dir="auto">
+                      <Tag key={tag} variant="pill" dir="auto">
                         {t("client:tag.title", { tag })}
                       </Tag>
                     ))}
