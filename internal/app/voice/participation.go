@@ -56,7 +56,8 @@ func (s *Service) moveTx(ctx context.Context, tx uow.Tx, accountID, roomID strin
 		return nil
 	case err != nil:
 		return err
-	case p.RoomID == roomID:
+	case p.RoomID == roomID, prev == nil, prev.ParticipationID != p.ParticipationID:
+		// The account joined a room meanwhile, whose room this transaction did not lock.
 		return ErrConflict
 	}
 	rec, err := s.d.Repository.FindRoom(ctx, tx, p.RoomID)
@@ -66,11 +67,7 @@ func (s *Service) moveTx(ctx context.Context, tx uow.Tx, accountID, roomID strin
 	if rec.Head.State == voice.StateOpen && rec.Head.HostAccountID == accountID {
 		return ErrHostingElsewhere
 	}
-	session := ""
-	if prev != nil && prev.ParticipationID == p.ParticipationID {
-		session = prev.session
-	}
-	if _, err := s.endParticipationTx(ctx, tx, p, voice.MovedRoom, session, at); err != nil {
+	if _, err := s.endParticipationTx(ctx, tx, p, voice.MovedRoom, prev.session, at); err != nil {
 		return err
 	}
 	return s.endIfEmptyTx(ctx, tx, p.RoomID, at)
@@ -173,11 +170,11 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	if err := s.d.Heartbeats.start(ctx, part.ID, session); err != nil {
 		return Joined{}, err
 	}
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
-		if err != nil {
-			return err
-		}
+	locked := []string{roomID}
+	if prev != nil {
+		locked = append(locked, prev.RoomID)
+	}
+	err = s.roomTx(ctx, locked, func(tx uow.Tx, rec RoomRecord) error {
 		if rec.Head.State != voice.StateOpen {
 			return ErrNotFound
 		}
@@ -275,17 +272,26 @@ func (s *Service) Leave(ctx context.Context, accountID, roomID string, in LeaveI
 		}
 	}
 	now := s.now()
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
 		switch {
-		case err != nil:
-			return err
 		case rec.Head.State != voice.StateOpen:
 			return ErrNotFound
 		case (rec.Head.HostAccountID == accountID) != host:
 			return ErrConflict
 		}
+		ps, err := s.d.Repository.Participants(ctx, tx, roomID)
+		if err != nil {
+			return err
+		}
+		others := 0
+		for _, p := range ps {
+			if p.AccountID != accountID {
+				others++
+			}
+		}
 		switch {
+		case host && others == 0:
+			// The last one out: the room ends empty, whatever the host chose.
 		case host && in.End:
 			_, err := s.endRoomTx(ctx, tx, roomID, voice.EndHost, accountID, now)
 			return err
@@ -303,6 +309,9 @@ func (s *Service) Leave(ctx context.Context, accountID, roomID string, in LeaveI
 			if _, err := s.d.Repository.DeleteHostGrace(ctx, tx, roomID); err != nil {
 				return err
 			}
+		case host:
+			// Someone joined since the host chose to leave alone.
+			return ErrHostMustChoose
 		}
 		if _, err := s.endParticipationTx(ctx, tx, *me, voice.LeftRoom, session, now); err != nil {
 			return err
@@ -346,11 +355,8 @@ func (s *Service) HandOver(ctx context.Context, byAccountID, roomID, accountID s
 		return RoomView{}, err
 	}
 	now := s.now()
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
 		switch {
-		case err != nil:
-			return err
 		case rec.Head.State != voice.StateOpen:
 			return ErrNotFound
 		case rec.Head.HostAccountID != byAccountID:
@@ -396,8 +402,21 @@ func (s *Service) Heartbeat(ctx context.Context, accountID, roomID, session stri
 	if cur == "" || cur != session {
 		return ErrNotFound
 	}
+	// The expiry is evaluated first: a heartbeat after the lease does not bring back a
+	// participation that expired.
+	if err := s.evaluate(ctx, roomID, false); err != nil {
+		return err
+	}
+	again, err := s.d.Repository.FindParticipant(ctx, nil, accountID)
+	if errors.Is(err, ErrNotFound) || (err == nil && again.ParticipationID != p.ParticipationID) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
 	if err := s.d.Heartbeats.beat(ctx, p.ParticipationID, session); err != nil {
 		return err
 	}
+	// A host who came back in the grace leaves it now.
 	return s.evaluate(ctx, roomID, false)
 }
