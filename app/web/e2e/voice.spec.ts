@@ -223,7 +223,7 @@ test.describe("the call of a room", () => {
   test("goes on across pages with the call bar, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
     await expect(page.getByRole("region", { name: message("voice.call.title") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     await openFromNavigation(page, "/home", hasTouch);
-    const bar = page.getByRole("region", { name: message("voice.bar.label") });
+    const bar = page.getByRole("region", { name: message("voice.bar.label"), exact: true });
     await expect(bar.getByRole("link", { name: room.name })).toBeVisible();
     // The bar stays in view, above the tab bar of phones (the projects below md have touch).
     const barBox = await bar.boundingBox();
@@ -238,7 +238,7 @@ test.describe("the call of a room", () => {
     await expectNoHorizontalScroll(page);
     await bar.getByRole("link", { name: room.name }).click();
     await expect(page.getByRole("heading", { level: 1, name: room.name })).toBeVisible();
-    await expect(page.getByRole("region", { name: message("voice.bar.label") })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: message("voice.bar.label"), exact: true })).toHaveCount(0);
   });
 });
 
