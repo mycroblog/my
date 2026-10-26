@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The call of a room's page (ADR-0100 §5, §6, §10; ADR-0101 §7). Before joining: the notice that joining lists the
 // user's name with the join button (回答 31), or, for a user in the room from another device, the button that joins
-// here. In the call: the state of the connection, the user's microphone (a switch, only for a speaker), speaking or
-// listening, raising a hand, reactions (the picker of ADR-0091), inviting (the host and the co-hosts), and leaving,
-// where the host of a room with others in it chooses the next host or ends the room. Everyone in the room is listed
+// here. In the call (the app's call, which goes on across pages with the call bar): the state of the connection, the
+// user's microphone (a switch, only for a speaker), speaking or listening, raising a hand, reactions (the picker of
+// ADR-0091), inviting (the host and the co-hosts), and leaving, where the host of a room with others in it chooses the
+// next host or ends the room. Everyone in the room is listed
 // with their role, a raised hand, a microphone that is on, the mark of a block between them and the user (回答 23),
 // and the reactions they just sent; the host and the co-hosts have a menu of what they may do to each participant.
 import {
@@ -23,7 +24,6 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  Switch,
   Tag,
   Text,
   TextField,
@@ -37,10 +37,13 @@ import { profilePath } from "../../../lib/paths";
 import { ReactionPickerButton, useCustomEmojiImages } from "../../emoji";
 import type { VoiceParticipantOperation, VoiceRole } from "../api/call";
 import type { VoiceRoom, VoiceRoomParticipant } from "../api/voice";
-import { callEndText, type VoiceCallControl, useVoiceCall } from "../hooks/useVoiceCall";
+import { type VoiceCallControl, useVoiceCall } from "../hooks/useVoiceCall";
+import { useVoiceCallControls } from "../hooks/useVoiceCallControls";
+import { callEndText } from "../hooks/useVoiceCallProvider";
 import { participantOperations, useVoiceInvite, useVoiceModeration, type VoiceModeration } from "../hooks/useVoiceModeration";
 import type { VoiceReactionShown } from "../hooks/voiceCall";
 import { participantName } from "../hooks/voiceCall";
+import { callPhaseText, LeaveCallButton, MicrophoneControl, PlaybackButton } from "./VoiceCallParts";
 
 type InCall = Extract<VoiceCallControl, { status: "in-call" }>;
 
@@ -60,13 +63,6 @@ const operationLabels: Readonly<Record<VoiceParticipantOperation, ClientMessageK
   cohost: "client:voice.moderate.cohost",
   uncohost: "client:voice.moderate.uncohost",
   "hand-over": "client:voice.moderate.hand_over",
-};
-
-const phaseLabels: Readonly<Record<InCall["phase"], ClientMessageKey>> = {
-  connecting: "client:voice.call.connecting",
-  live: "client:voice.call.live",
-  reconnecting: "client:voice.call.reconnecting",
-  ended: "client:voice.call.connecting",
 };
 
 export function VoiceCallPanel({ room }: { room: VoiceRoom }) {
@@ -110,31 +106,23 @@ function JoinCallout({ call }: { call: Extract<VoiceCallControl, { status: "outs
 function CallControls({ call, room }: { call: InCall; room: VoiceRoom }) {
   const t = useT();
   const headingId = useId();
-  const [leaving, setLeaving] = useState(false);
-  const asking = leaving || call.isLeavingPage;
+  const controls = useVoiceCallControls();
   return (
     <Stack as="section" gap="3" aria-labelledby={headingId}>
       <Heading level={2} id={headingId}>
         {t("client:voice.call.title")}
       </Heading>
-      <Hint>{t(phaseLabels[call.phase])}</Hint>
-      {call.playbackBlocked && (
-        <Callout>
-          <p>{t("client:voice.call.playback_blocked")}</p>
-          <Button variant="primary" onPress={call.resumePlayback}>
-            {t("client:voice.call.play_audio")}
-          </Button>
-        </Callout>
-      )}
-      {call.isSpeaker && (
-        <Switch isSelected={call.micOn} onChange={call.setMicrophone} description={t("client:voice.call.microphone.description")}>
-          {t("client:voice.call.microphone")}
-        </Switch>
-      )}
-      {call.micFailed && (
-        <InlineError size="inherit" alert>
-          {t("client:voice.call.microphone_failed")}
-        </InlineError>
+      {controls !== null && (
+        <>
+          <Hint>{callPhaseText(t, controls)}</Hint>
+          {controls.playbackBlocked && (
+            <Callout>
+              <p>{t("client:voice.call.playback_blocked")}</p>
+              <PlaybackButton controls={controls} />
+            </Callout>
+          )}
+          <MicrophoneControl controls={controls} withDescription />
+        </>
       )}
       <Cluster gap="2" align="center">
         {call.isSpeaker ? (
@@ -181,88 +169,14 @@ function CallControls({ call, room }: { call: InCall; room: VoiceRoom }) {
         )}
         <ReactionPickerButton onSelect={call.react} />
         {call.manages && <InviteButton room={room} />}
-        <Button
-          variant="danger"
-          onPress={() => {
-            if (call.mustChoose) setLeaving(true);
-            else call.leave(undefined);
-          }}
-          isPending={call.isLeaving && !asking}
-        >
-          {t("client:voice.call.leave")}
-        </Button>
+        {controls !== null && <LeaveCallButton controls={controls} />}
       </Cluster>
       {call.actionError !== undefined && (
         <InlineError size="inherit" alert>
           {t("client:voice.call.action_failed", { reason: call.actionError })}
         </InlineError>
       )}
-      {call.leaveError !== undefined && !asking && (
-        <InlineError size="inherit" alert>
-          {t("client:voice.call.leave_failed", { reason: call.leaveError })}
-        </InlineError>
-      )}
-      {call.mustChoose ? (
-        <HostLeaveDialog
-          call={call}
-          isOpen={asking}
-          onClose={() => {
-            setLeaving(false);
-            call.stay();
-          }}
-        />
-      ) : (
-        <ConfirmDialog
-          isOpen={call.isLeavingPage}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) call.stay();
-          }}
-          title={t("client:voice.call.leave_page.title")}
-          description={t("client:voice.call.leave_page.description")}
-          confirmLabel={t("client:voice.call.leave")}
-          cancelLabel={t("client:voice.call.stay")}
-          tone="danger"
-          isPending={call.isLeaving}
-          errorMessage={call.leaveError}
-          onConfirm={() => {
-            call.leave(undefined);
-          }}
-        />
-      )}
     </Stack>
-  );
-}
-
-/** The host leaves a room with others in it: hands it to one of them, or ends it for everyone (ADR-0100 §6). */
-function HostLeaveDialog({ call, isOpen, onClose }: { call: InCall; isOpen: boolean; onClose: () => void }) {
-  const t = useT();
-  const [choice, setChoice] = useState("");
-  return (
-    <ConfirmDialog
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      title={t("client:voice.call.host_leave.title")}
-      description={t("client:voice.call.host_leave.description")}
-      confirmLabel={t("client:voice.call.leave")}
-      cancelLabel={t("client:voice.call.stay")}
-      tone="danger"
-      isPending={call.isLeaving}
-      errorMessage={call.leaveError}
-      onConfirm={() => {
-        call.leave(choice === "end" ? { end: true } : { nextHostId: choice });
-      }}
-    >
-      <RadioGroup label={t("client:voice.call.host_leave.choice")} value={choice} onChange={setChoice} isRequired>
-        {call.nextHosts.map((participant) => (
-          <Radio key={participant.account.id} value={participant.account.id}>
-            <span dir="auto">{t("client:voice.call.host_leave.next_host", { name: participantName(participant) })}</span>
-          </Radio>
-        ))}
-        <Radio value="end">{t("client:voice.call.host_leave.end")}</Radio>
-      </RadioGroup>
-    </ConfirmDialog>
   );
 }
 

@@ -47,7 +47,7 @@ export type IncomingVoiceSignal = VoiceSignal & { from: string };
 export type RemoteAudio = {
   /** Plays `stream`; rejects when the browser does not let it play without a gesture. */
   play: (stream: MediaStream) => Promise<void>;
-  /** Plays the audio again after the browser blocked it, from the user's gesture. */
+  /** Plays the audio again after the browser blocked it, from the user's gesture; rejects while it stays blocked. */
   resume: () => Promise<void>;
   /** Whether the user hears it: only a speaker of the latest `state` is heard (ADR-0101 §4). */
   setAudible: (audible: boolean) => void;
@@ -77,11 +77,20 @@ type VoiceConnectionEvents = {
  */
 export type VoiceConnection = {
   update: (roster: VoiceRoster) => void;
-  /** Turns the microphone on or off; turning it on rejects when the browser does not give it. Only a speaker sends. */
+  /**
+   * Turns the microphone on or off; turning it on rejects when the browser does not give it. Only a speaker sends:
+   * call it after `update` has made the user a speaker. Calls apply one after another, the latest one last.
+   */
   setMicrophone: (on: boolean) => Promise<void>;
-  renew: (grant: VoiceGrant) => void;
+  /**
+   * Takes a new grant on the live connections: for P2P its ICE servers (setConfiguration), and a restart of ICE with
+   * them unless `restartIce` is false.
+   */
+  renew: (grant: VoiceGrant, options?: { restartIce?: boolean }) => void;
+  /** Connects again with a new grant, for the same session (the server asked for it, ADR-0101 §2). */
   reconnect: (grant: VoiceGrant) => void;
   receive: (signal: IncomingVoiceSignal) => void;
+  /** Plays the audio that the browser blocked, from the user's gesture; rejects while some stays blocked. */
   resumePlayback: () => Promise<void>;
   close: () => void;
 };

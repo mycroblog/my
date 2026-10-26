@@ -10,14 +10,22 @@
 // microphone and turns its transceivers to `recvonly`, which renegotiates. The audio of a participant whom the latest
 // `state` does not list as a speaker is not played (the receiver's side of the enforcement).
 //
+// Signals get lost (a receiver's stream that does not take one within 30 seconds, a refused or failed request), so no
+// pair waits for one forever: an offer that gets no answer is rolled back and made again, a description that could not
+// be sent is made again a little later, and a polite side that has had no offer asks the other side for one with a
+// `restart` signal. A candidate that cannot be added (one of an ICE generation that a restart replaced) is dropped.
+// A connection whose ICE failed restarts ICE.
+//
 // New ICE servers (a renewed grant) go onto every connection with setConfiguration, and restartIce gathers new
-// candidates with them. A connection whose ICE failed restarts ICE. A polite side that has not received its first offer
-// after a while asks the other side for one with a `restart` signal (a signal that the receiver's stream did not take
-// is lost after 30 seconds).
+// candidates with them. A browser without setConfiguration (Firefox before 99, MDN browser-compat-data), or one that
+// refuses the new configuration, gets a new connection for that pair instead.
 import { type IncomingVoiceSignal, rtcConfiguration, type VoiceConnection, type VoiceConnectionOptions, type VoiceGrant, type VoiceMember, type VoiceRoster, type VoiceSignal } from "./types";
 
-/** How long a polite side waits for its first offer before it asks for one. */
+/** How long a polite side waits for its first offer, and an offer for its answer, before asking again. */
 export const offerWait = 10_000;
+
+/** How long after a description could not be sent the pair negotiates again. */
+export const resendWait = 3_000;
 
 /** The microphone's constraints (ADR-0101 §7): audio only. */
 export const microphoneConstraints: MediaStreamConstraints = {
@@ -36,6 +44,11 @@ function candidateJson(candidate: RTCIceCandidate): string {
   });
 }
 
+/** The ICE username fragments of a session description (`a=ice-ufrag:`). */
+function usernameFragments(sdp: string | undefined): Set<string> {
+  return new Set([...(sdp ?? "").matchAll(/^a=ice-ufrag:(\S+)/gmu)].map((match) => match[1] ?? ""));
+}
+
 function warn(message: string, error: unknown): void {
   console.warn(`voice: ${message}`, error);
 }
@@ -48,7 +61,6 @@ type PeerOptions = {
   track: MediaStreamTrack | null;
   audible: boolean;
   connection: VoiceConnectionOptions;
-  onPlaybackBlocked: () => void;
 };
 
 /** The connection to one other session. */
@@ -66,7 +78,11 @@ class Peer {
   #settingRemoteAnswer = false;
   #described = false;
   #closed = false;
+  /** The wait of a polite side for its first offer. */
   #offerTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The wait of an offer for its answer. */
+  #answerTimer: ReturnType<typeof setTimeout> | undefined;
+  #resendTimer: ReturnType<typeof setTimeout> | undefined;
   /** The candidates that came before the remote description they belong to. */
   #pendingCandidates: RTCIceCandidateInit[] = [];
   /** The signals to send, one after another. */
@@ -93,7 +109,7 @@ class Peer {
     pc.ontrack = ({ track, streams }) => {
       const stream = streams[0] ?? new MediaStream([track]);
       this.#audio.play(stream).catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "NotAllowedError") options.onPlaybackBlocked();
+        if (error instanceof DOMException && error.name === "NotAllowedError") options.connection.events.onPlaybackBlocked();
         else warn("could not play the audio", error);
       });
     };
@@ -142,14 +158,21 @@ class Peer {
     return this.#audio.resume();
   }
 
-  /** Takes new ICE servers and restarts ICE with them. */
-  renew(configuration: RTCConfiguration): void {
+  /**
+   * Takes new ICE servers, and restarts ICE with them when `restart`. False when the browser cannot change the
+   * configuration of this connection: the caller connects the pair again.
+   */
+  renew(configuration: RTCConfiguration, restart: boolean): boolean {
+    // Firefox before 99 has no setConfiguration (MDN browser-compat-data).
+    if (typeof this.#pc.setConfiguration !== "function") return false;
     try {
       this.#pc.setConfiguration(configuration);
     } catch (error) {
       warn("could not set the new ICE servers", error);
+      return false;
     }
-    this.#pc.restartIce();
+    if (restart) this.#pc.restartIce();
+    return true;
   }
 
   #waitForOffer(): void {
@@ -161,6 +184,26 @@ class Peer {
     }, offerWait);
   }
 
+  /** Waits for the answer of the offer just sent; without one, rolls it back and offers again. */
+  #waitForAnswer(): void {
+    clearTimeout(this.#answerTimer);
+    this.#answerTimer = setTimeout(() => {
+      if (this.#closed || this.#pc.signalingState !== "have-local-offer") return;
+      void this.#renegotiate();
+    }, offerWait);
+  }
+
+  /** Drops an offer that got no answer and negotiates again with new ICE credentials. */
+  async #renegotiate(): Promise<void> {
+    if (this.#closed) return;
+    try {
+      if (this.#pc.signalingState === "have-local-offer") await this.#pc.setLocalDescription({ type: "rollback" });
+      this.#pc.restartIce();
+    } catch (error) {
+      warn("could not negotiate again", error);
+    }
+  }
+
   #send(signal: VoiceSignal): void {
     const to = this.remote;
     this.#sending = this.#sending.then(async () => {
@@ -169,6 +212,14 @@ class Peer {
         await this.#options.events.sendSignal({ ...signal, to });
       } catch (error) {
         warn(`could not send the ${signal.kind}`, error);
+        // A description that the other side never gets leaves the pair waiting: negotiate again a little later, with
+        // the role that the latest `state` gives (the server refuses a description that its role does not allow).
+        if (signal.kind === "offer" || signal.kind === "answer") {
+          clearTimeout(this.#resendTimer);
+          this.#resendTimer = setTimeout(() => {
+            void this.#renegotiate();
+          }, resendWait);
+        }
       }
     });
   }
@@ -179,7 +230,10 @@ class Peer {
       this.#makingOffer = true;
       await this.#pc.setLocalDescription();
       const description = this.#pc.localDescription;
-      if (description !== null && description.type === "offer") this.#send({ kind: "offer", sdp: description.sdp });
+      if (description !== null && description.type === "offer") {
+        this.#send({ kind: "offer", sdp: description.sdp });
+        this.#waitForAnswer();
+      }
     } catch (error) {
       warn("could not make an offer", error);
     } finally {
@@ -208,11 +262,15 @@ class Peer {
         const offerCollision = description.type === "offer" && !readyForOffer;
         this.#ignoreOffer = !this.#polite && offerCollision;
         if (this.#ignoreOffer) return;
+        this.#settingRemoteAnswer = description.type === "answer";
+        try {
+          await pc.setRemoteDescription(description);
+        } finally {
+          this.#settingRemoteAnswer = false;
+        }
         this.#described = true;
         clearTimeout(this.#offerTimer);
-        this.#settingRemoteAnswer = description.type === "answer";
-        await pc.setRemoteDescription(description);
-        this.#settingRemoteAnswer = false;
+        if (description.type === "answer") clearTimeout(this.#answerTimer);
         for (const candidate of this.#pendingCandidates.splice(0)) await this.#addCandidate(candidate);
         if (description.type === "offer") {
           // The first offer made the transceiver on this side: send on it while the user speaks, and only receive otherwise.
@@ -237,18 +295,20 @@ class Peer {
       }
       case "restart": {
         // The other side lost a signal: drop an offer it never answered and offer again with new ICE credentials.
-        if (pc.signalingState === "have-local-offer") await pc.setLocalDescription({ type: "rollback" });
-        pc.restartIce();
+        await this.#renegotiate();
         return;
       }
     }
   }
 
+  /** Adds a candidate of the current remote description; one of another ICE generation, or one that fails, is dropped. */
   async #addCandidate(candidate: RTCIceCandidateInit): Promise<void> {
+    const fragment = candidate.usernameFragment;
+    if (fragment !== undefined && fragment !== null && !usernameFragments(this.#pc.remoteDescription?.sdp).has(fragment)) return;
     try {
       await this.#pc.addIceCandidate(candidate);
     } catch (error) {
-      if (!this.#ignoreOffer) throw error;
+      if (!this.#ignoreOffer) warn("could not add a candidate", error);
     }
   }
 
@@ -256,6 +316,8 @@ class Peer {
     if (this.#closed) return;
     this.#closed = true;
     clearTimeout(this.#offerTimer);
+    clearTimeout(this.#answerTimer);
+    clearTimeout(this.#resendTimer);
     this.#pc.onnegotiationneeded = null;
     this.#pc.onicecandidate = null;
     this.#pc.ontrack = null;
@@ -281,6 +343,9 @@ class P2PConnection implements VoiceConnection {
   #roster: VoiceRoster = { speaker: false, members: [] };
   readonly #peers = new Map<string, Peer>();
   #microphone: MediaStream | null = null;
+  /** The microphone the user wants: the changes apply one after another, the latest one last. */
+  #wantMicrophone = false;
+  #microphoneChanges: Promise<void> = Promise.resolve();
   #closed = false;
 
   constructor(options: VoiceConnectionOptions) {
@@ -295,6 +360,7 @@ class P2PConnection implements VoiceConnection {
   #stopMicrophone(): void {
     for (const track of this.#microphone?.getTracks() ?? []) track.stop();
     this.#microphone = null;
+    this.#wantMicrophone = false;
   }
 
   /** Whether the connection is open and the user speaks; read again after an await. */
@@ -335,14 +401,20 @@ class P2PConnection implements VoiceConnection {
       track: this.#track(),
       audible: member.speaker,
       connection: this.#options,
-      onPlaybackBlocked: this.#options.events.onPlaybackBlocked,
     });
   }
 
-  async setMicrophone(on: boolean): Promise<void> {
+  setMicrophone(on: boolean): Promise<void> {
+    this.#wantMicrophone = on;
+    const change = this.#microphoneChanges.then(() => this.#applyMicrophone());
+    this.#microphoneChanges = change.catch(() => undefined);
+    return change;
+  }
+
+  /** Applies the microphone the user wants now; only one request for the microphone runs at a time. */
+  async #applyMicrophone(): Promise<void> {
     if (this.#closed) return;
-    if (on && !this.#roster.speaker) return;
-    if (on && this.#microphone === null) {
+    if (this.#wantMicrophone && this.#roster.speaker && this.#microphone === null) {
       const stream = await this.#options.environment.getMicrophone();
       // The user stopped speaking, or left, while the browser asked.
       if (!this.#mayStillSpeak()) {
@@ -352,16 +424,26 @@ class P2PConnection implements VoiceConnection {
       this.#microphone = stream;
     }
     const track = this.#track();
-    if (track !== null) track.enabled = on;
+    if (track !== null) track.enabled = this.#wantMicrophone && this.#roster.speaker;
     for (const peer of this.#peers.values()) peer.setSending(this.#roster.speaker, track);
   }
 
-  renew(grant: VoiceGrant): void {
+  renew(grant: VoiceGrant, options: { restartIce?: boolean } = {}): void {
     this.#configuration = rtcConfiguration(grant);
-    for (const peer of this.#peers.values()) peer.renew(this.#configuration);
+    const restart = options.restartIce ?? true;
+    for (const [session, peer] of this.#peers) {
+      if (peer.renew(this.#configuration, restart)) continue;
+      // The browser cannot change this connection: connect the pair again with the new ICE servers.
+      peer.close();
+      const member = this.#roster.members.find((m) => m.session === session);
+      if (member === undefined) this.#peers.delete(session);
+      else this.#peers.set(session, this.#peer(member));
+    }
   }
 
   reconnect(grant: VoiceGrant): void {
+    // New RTCPeerConnections for the same session: the other side meets a new DTLS identity in the new offer and
+    // renegotiates by perfect negotiation. P2P servers never ask for it (SetSpeaking never reconnects, ADR-0101 §2).
     this.#configuration = rtcConfiguration(grant);
     for (const peer of this.#peers.values()) peer.close();
     this.#peers.clear();
@@ -370,19 +452,23 @@ class P2PConnection implements VoiceConnection {
 
   receive(signal: IncomingVoiceSignal): void {
     if (this.#closed) return;
-    // A signal from a session that the latest `state` does not connect to yet (the offer can come first): connect now.
     let peer = this.#peers.get(signal.from);
     if (peer === undefined) {
       if (signal.kind !== "offer") return;
-      const member = this.#roster.members.find((m) => m.session === signal.from) ?? { session: signal.from, account: "", speaker: false };
-      peer = this.#peer(member);
+      const member = this.#roster.members.find((m) => m.session === signal.from);
+      // An offer from a participant whom the latest `state` does not connect to (two listeners): a stale one.
+      if (member !== undefined && !connects(this.#roster.speaker, member)) return;
+      // An offer from a session that the latest `state` does not list yet (the offer can come first): connect now.
+      peer = this.#peer(member ?? { session: signal.from, account: "", speaker: false });
       this.#peers.set(signal.from, peer);
     }
     peer.receive(signal);
   }
 
   async resumePlayback(): Promise<void> {
-    await Promise.all([...this.#peers.values()].map((peer) => peer.resume()));
+    const results = await Promise.allSettled([...this.#peers.values()].map((peer) => peer.resume()));
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed !== undefined) throw failed.reason;
   }
 
   close(): void {

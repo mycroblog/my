@@ -384,7 +384,7 @@
     "description": "Explanation under the microphone switch of a voice chat call."
   },
   "voice.call.microphone_failed": {
-    "defaultMessage": "マイクを使えませんでした。ブラウザでこのサイトにマイクの使用を許可してから、もう一度試してください。",
+    "defaultMessage": "マイクを使えませんでした。もう一度試してください。",
     "description": "Error when the browser did not give the microphone."
   },
   "voice.call.speak": {
@@ -422,14 +422,6 @@
   "voice.call.leave_failed": {
     "defaultMessage": "退出できませんでした：{reason}",
     "description": "Error when leaving a voice chat room failed. {reason} is why."
-  },
-  "voice.call.leave_page.title": {
-    "defaultMessage": "ルームから退出しますか？",
-    "description": "Title of the dialog shown when the user opens another page during a voice chat call."
-  },
-  "voice.call.leave_page.description": {
-    "defaultMessage": "このページを離れると通話も終わります。",
-    "description": "Explanation of the dialog shown when the user opens another page during a voice chat call."
   },
   "voice.call.host_leave.title": {
     "defaultMessage": "ホストしているルームから退出しますか？",
@@ -670,5 +662,21 @@
   "voice.invite.failed": {
     "defaultMessage": "招待できませんでした：{reason}",
     "description": "Error of the invitation. {reason} is why."
+  },
+  "voice.bar.label": {
+    "defaultMessage": "通話",
+    "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.call.microphone_denied": {
+    "defaultMessage": "このサイトはマイクを使えません。ブラウザの設定で許可してから、もう一度試してください。",
+    "description": "Error when the user or the browser refused the microphone."
+  },
+  "voice.call.microphone_missing": {
+    "defaultMessage": "マイクが見つかりません。接続してから、もう一度試してください。",
+    "description": "Error when the device has no microphone."
+  },
+  "voice.call.microphone_busy": {
+    "defaultMessage": "マイクがほかのアプリで使われています。そのアプリを閉じてから、もう一度試してください。",
+    "description": "Error when another app holds the microphone."
   }
 }

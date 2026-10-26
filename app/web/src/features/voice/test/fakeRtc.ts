@@ -86,6 +86,12 @@ class FakeTransceiver {
 
 type Description = { type: RTCSdpType; sdp: string };
 
+let connectionsMade = 0;
+
+function nextConnectionId(): number {
+  return ++connectionsMade;
+}
+
 export class FakePeerConnection {
   /** Every connection made, in order. */
   static all: FakePeerConnection[] = [];
@@ -107,6 +113,15 @@ export class FakePeerConnection {
   #needed = false;
   #restart = false;
   #version = 0;
+  /** The ICE generation, which a restart moves on. */
+  #generation = 0;
+  readonly #id = nextConnectionId();
+  /** Whether setConfiguration throws, as a browser that refuses the change does. */
+  static refusesConfiguration = false;
+
+  #ufrag(): string {
+    return `u${String(this.#id)}g${String(this.#generation)}`;
+  }
 
   constructor(configuration: RTCConfiguration) {
     this.configuration = configuration;
@@ -138,6 +153,7 @@ export class FakePeerConnection {
   }
 
   setConfiguration(configuration: RTCConfiguration): void {
+    if (FakePeerConnection.refusesConfiguration) throw new DOMException("refused", "InvalidModificationError");
     this.configuration = configuration;
     this.configurations.push(configuration);
   }
@@ -145,13 +161,14 @@ export class FakePeerConnection {
   restartIce(): void {
     this.restarts++;
     this.#restart = true;
+    this.#generation++;
     this.needNegotiation();
   }
 
   #sdp(directions: Direction[]): string {
     this.#version++;
     const restart = this.#restart ? "a=ice-options:restart\r\n" : "";
-    return `v=0\r\no=- 1 ${String(this.#version)} IN IP4 0.0.0.0\r\n${restart}${directions.map((d) => `m=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=${d}\r\n`).join("")}`;
+    return `v=0\r\no=- 1 ${String(this.#version)} IN IP4 0.0.0.0\r\na=ice-ufrag:${this.#ufrag()}\r\n${restart}${directions.map((d) => `m=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=${d}\r\n`).join("")}`;
   }
 
   setLocalDescription(description?: { type: "rollback" }): Promise<void> {
@@ -184,7 +201,8 @@ export class FakePeerConnection {
   #candidate(): void {
     queueMicrotask(() => {
       if (this.closed) return;
-      this.onicecandidate?.({ candidate: { toJSON: () => ({ candidate: "candidate:1 1 udp 1 192.0.2.1 9 typ host", sdpMid: "0", sdpMLineIndex: 0 }) } });
+      const usernameFragment = this.#ufrag();
+      this.onicecandidate?.({ candidate: { toJSON: () => ({ candidate: "candidate:1 1 udp 1 192.0.2.1 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment }) } });
     });
   }
 
@@ -215,6 +233,11 @@ export class FakePeerConnection {
 
   addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
     if (this.remoteDescription === null) return Promise.reject(new DOMException("no remote description", "InvalidStateError"));
+    // A candidate of another ICE generation than the remote description's (RFC 8839 §5.4, JSEP §4.1.17).
+    const remote = /^a=ice-ufrag:(\S+)/mu.exec(this.remoteDescription.sdp)?.[1];
+    if (candidate.usernameFragment !== undefined && candidate.usernameFragment !== null && candidate.usernameFragment !== remote) {
+      return Promise.reject(new DOMException("unknown ufrag", "OperationError"));
+    }
     this.candidates.push(candidate);
     return Promise.resolve();
   }
@@ -264,9 +287,25 @@ export class FakeRemoteAudio {
   };
 }
 
+/** The browser's AudioContext, running, for the audio of the calls of the integration tests. */
+export class FakeAudioContext {
+  state: AudioContextState = "running";
+  readonly destination = {};
+  createGain() {
+    return { gain: { value: 0 }, connect: () => undefined, disconnect: () => undefined };
+  }
+  createMediaStreamSource() {
+    return { connect: () => undefined, disconnect: () => undefined };
+  }
+  resume(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 /** Forgets the connections and the audio of the previous test. */
 export function resetFakeRtc(): void {
   FakePeerConnection.all = [];
+  FakePeerConnection.refusesConfiguration = false;
   FakeRemoteAudio.all = [];
   FakeRemoteAudio.blocked = false;
 }

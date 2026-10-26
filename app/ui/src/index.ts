@@ -224,7 +224,8 @@ export { NotificationLinks, NotificationOthers, NotificationSentence, type Notif
 export { PostExcerpt, PostExcerptText, QuoteBlock, type PostExcerptProps, type PostExcerptTextProps, type QuoteBlockProps } from "./Quote";
 
 // The app shell (web-client/09-app-shell.md §9): the frame, the navigation, the page heading and the routes' states.
-export { AppShell, AsidePanel, type AppShellProps, type AsidePanelProps } from "./AppShell";
+export { AppShell, AsidePanel, ShellDock, type AppShellProps, type AsidePanelProps, type ShellDockProps } from "./AppShell";
+export { CallBar, type CallBarProps } from "./CallBar";
 export {
   AppNav,
   AppNavAccount,
