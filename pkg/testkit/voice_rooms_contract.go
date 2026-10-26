@@ -33,6 +33,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"SweepsOnce", roomsSweep},
 		{"ListsVisibleRooms", roomsList},
 		{"ReactsToSuspensions", roomsSuspension},
+		{"SerializesConcurrentCommands", roomsConcurrent},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -507,10 +508,13 @@ func roomsGrace(t *testing.T, e *roomsEnv) {
 	// Without a co-host, the room ends past the grace.
 	r2 := e.open(t, host, appvoice.SettingsInput{}).Room.ID
 	jd := e.join(t, c, r2)
-	for range 5 {
+	for range 4 {
 		e.clock.Advance(40 * time.Second)
 		e.beat(t, c, r2, jd.Session)
 	}
+	// The heartbeat that finds the grace over ends the room before it renews the session.
+	e.clock.Advance(40 * time.Second)
+	wantErr(t, "a heartbeat of an ended room", e.svc.Heartbeat(ctx, c, r2, jd.Session), appvoice.ErrNotFound)
 	e.wantEnded(t, r2, voice.EndHostDisconnected)
 }
 
@@ -653,4 +657,95 @@ func roomsSuspension(t *testing.T, e *roomsEnv) {
 		t.Fatal(err)
 	}
 	e.wantEnded(t, r, voice.EndHostIneligible)
+}
+
+// parallel runs fn n times at once and returns the errors.
+func parallel(n int, fn func(i int) error) []error {
+	errs := make([]error, n)
+	var wg sync.WaitGroup
+	for i := range n {
+		wg.Go(func() { errs[i] = fn(i) })
+	}
+	wg.Wait()
+	return errs
+}
+
+func roomsConcurrent(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	// The cap of the open rooms holds against concurrent opens.
+	capped := e.newSvc(appvoice.Config{Transport: voice.TransportP2P, MaxOpenRooms: 1, Capacity: 3})
+	hosts := make([]string, 6)
+	for i := range hosts {
+		hosts[i] = e.account(true)
+	}
+	opened := ""
+	for i, err := range parallel(len(hosts), func(i int) error {
+		_, err := capped.Open(ctx, hosts[i], appvoice.SettingsInput{Name: "Race"})
+		return err
+	}) {
+		switch {
+		case err == nil:
+			if opened != "" {
+				t.Fatalf("two rooms opened past a cap of one")
+			}
+			opened = hosts[i]
+		case !errors.Is(err, appvoice.ErrTooManyRooms):
+			t.Fatalf("Open: %v", err)
+		}
+	}
+	p, err := e.h.Voice.FindParticipant(ctx, nil, opened)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := p.RoomID
+
+	// The participant cap holds against concurrent joins.
+	joiners := make([]string, 6)
+	for i := range joiners {
+		joiners[i] = e.account(true)
+	}
+	for _, err := range parallel(len(joiners), func(i int) error {
+		_, err := capped.Join(ctx, joiners[i], room)
+		return err
+	}) {
+		if err != nil && !errors.Is(err, appvoice.ErrRoomFull) {
+			t.Fatalf("Join: %v", err)
+		}
+	}
+	ps := e.participants(t, room)
+	if len(ps) != 3 {
+		t.Fatalf("participants = %d, want the cap of 3", len(ps))
+	}
+
+	// Concurrent host changes apply one at a time: each sees the host that the other set.
+	var others []string
+	for id := range ps {
+		if id != opened {
+			others = append(others, id)
+		}
+	}
+	errs := parallel(2, func(i int) error {
+		if i == 0 {
+			_, err := capped.HandOver(ctx, opened, room, others[0])
+			return err
+		}
+		return capped.Leave(ctx, opened, room, appvoice.LeaveInput{NextHostID: others[1]})
+	})
+	won := 0
+	for _, err := range errs {
+		switch {
+		case err == nil:
+			won++
+		case errors.Is(err, appvoice.ErrNotHost), errors.Is(err, appvoice.ErrConflict), errors.Is(err, appvoice.ErrNotFound):
+		default:
+			t.Fatalf("host change: %v", err)
+		}
+	}
+	rec := e.room(t, room)
+	if won == 0 || rec.Head.State != voice.StateOpen || rec.Head.HostAccountID == opened {
+		t.Fatalf("after the host changes: %d won, room %+v", won, rec.Head)
+	}
+	if _, ok := e.participants(t, room)[rec.Head.HostAccountID]; !ok {
+		t.Errorf("the host %s is not in the room", rec.Head.HostAccountID)
+	}
 }

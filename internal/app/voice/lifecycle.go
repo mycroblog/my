@@ -151,6 +151,30 @@ type evaluation struct {
 	endReason voice.EndReason
 	live      liveness
 	eligible  map[string]bool
+	// host is the host that the evaluation read before its transaction.
+	host string
+}
+
+// roomTx runs fn in a transaction that first locks the rooms roomIDs, in the order of their IDs
+// (LockRoom), and then reads the first of them, so that every command and evaluation of a room
+// decides on what the others committed and applies once (ADR-0100 §6).
+func (s *Service) roomTx(ctx context.Context, roomIDs []string, fn func(tx uow.Tx, rec RoomRecord) error) error {
+	ids := slices.Clone(roomIDs)
+	ids = slices.DeleteFunc(ids, func(id string) bool { return id == "" })
+	slices.Sort(ids)
+	ids = slices.Compact(ids)
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for _, id := range ids {
+			if err := s.d.Repository.LockRoom(ctx, tx, id); err != nil {
+				return err
+			}
+		}
+		rec, err := s.d.Repository.FindRoom(ctx, tx, roomIDs[0])
+		if err != nil {
+			return err
+		}
+		return fn(tx, rec)
+	})
 }
 
 // evaluate evaluates the expiry of a room (ADR-0100 §6): the participants whose heartbeat
@@ -166,7 +190,7 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 		return err
 	}
 	now := s.now()
-	e := evaluation{sweep: sweep}
+	e := evaluation{sweep: sweep, host: rec.Head.HostAccountID}
 	if sweep {
 		cfg := s.d.Config
 		switch {
@@ -185,7 +209,10 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 			return err
 		}
 		host := rec.Head.HostAccountID
-		hostExpired, changes := false, len(ps) == 0
+		// A host who is in no participation of the room hands it over at once, as after the
+		// grace.
+		hostExpired := !slices.ContainsFunc(ps, func(p Participant) bool { return p.AccountID == host })
+		changes := len(ps) == 0 || hostExpired
 		for _, p := range ps {
 			if !e.live.expired(p.ParticipationID) {
 				continue
@@ -208,13 +235,15 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 			}
 		}
 	}
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.evaluateTx(ctx, tx, roomID, e, now) })
+	return s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error { return s.evaluateTx(ctx, tx, rec, e, now) })
 }
 
-func (s *Service) evaluateTx(ctx context.Context, tx uow.Tx, roomID string, e evaluation, now time.Time) error {
-	rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
-	if err != nil || rec.Head.State != voice.StateOpen {
-		return err
+// evaluateTx applies an evaluation to a room locked in tx. A room whose host changed since the
+// evaluation read it is left to the next evaluation, which reads the new host's co-hosts.
+func (s *Service) evaluateTx(ctx context.Context, tx uow.Tx, rec RoomRecord, e evaluation, now time.Time) error {
+	roomID := rec.ID
+	if rec.Head.State != voice.StateOpen || (e.endReason == "" && rec.Head.HostAccountID != e.host) {
+		return nil
 	}
 	if e.endReason != "" {
 		_, err := s.endRoomTx(ctx, tx, roomID, e.endReason, "", now)
@@ -314,10 +343,13 @@ func (s *Service) hostIneligible(ctx context.Context, roomID, host string, suspe
 		}
 	}
 	now := s.now()
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
-		if err != nil || rec.Head.State != voice.StateOpen || rec.Head.HostAccountID != host {
-			return err
+	return s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
+		switch {
+		case rec.Head.State != voice.StateOpen:
+			return nil
+		case rec.Head.HostAccountID != host:
+			// Another command changed the host since the read: decide again on the new one.
+			return ErrConflict
 		}
 		ps, err := s.d.Repository.Participants(ctx, tx, roomID)
 		if err != nil {

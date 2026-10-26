@@ -45,6 +45,16 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 		return Joined{}, err
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		// The opening lock serializes the count of the open rooms; the room of the previous
+		// participation is locked after it, as every command of a room locks it.
+		if err := s.d.Repository.LockOpening(ctx, tx); err != nil {
+			return err
+		}
+		if prev != nil {
+			if err := s.d.Repository.LockRoom(ctx, tx, prev.RoomID); err != nil {
+				return err
+			}
+		}
 		if limit := s.d.Config.MaxOpenRooms; limit > 0 {
 			open, err := s.d.Repository.OpenRooms(ctx, tx, "")
 			if err != nil {
@@ -253,11 +263,8 @@ func (s *Service) Update(ctx context.Context, accountID, roomID string, p Settin
 		return RoomView{}, err
 	}
 	rev := Revision{ID: s.d.IDs.NewID(), RoomID: roomID, Settings: settings, RevisedByAccountID: accountID, RevisedAt: s.now()}
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
 		switch {
-		case err != nil:
-			return err
 		case rec.Head.State != voice.StateOpen:
 			return ErrNotFound
 		case rec.Head.HostAccountID != accountID:
@@ -284,11 +291,8 @@ func (s *Service) End(ctx context.Context, accountID, roomID string) error {
 		return err
 	}
 	now := s.now()
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		rec, err := s.d.Repository.FindRoom(ctx, tx, roomID)
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
 		switch {
-		case err != nil:
-			return err
 		case rec.Head.State != voice.StateOpen:
 			return ErrNotFound
 		case rec.Head.HostAccountID != accountID:

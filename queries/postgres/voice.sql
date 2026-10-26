@@ -221,3 +221,8 @@ SELECT p.account_id, p.room_id, p.id,
 FROM voice_room_participations p
 WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.participation_id = p.id)
   AND NOT EXISTS (SELECT 1 FROM voice_room_endings x WHERE x.room_id = p.room_id);
+
+-- LockVoice takes a transaction-scoped advisory lock on a key of the voice module (a room, or
+-- the opening of rooms), so that the commands of one room serialize under READ COMMITTED.
+-- name: LockVoice :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));

@@ -219,6 +219,14 @@ type Repository interface {
 	// first ending, so the evaluations that race end it once (ADR-0100 §6).
 	InsertEnding(ctx context.Context, tx uow.Tx, e Ending) (bool, error)
 
+	// LockRoom locks a room until tx ends, so that the commands and the evaluations of one room
+	// serialize; the transaction reads the room after it. A database whose write transactions
+	// run one at a time takes no lock.
+	LockRoom(ctx context.Context, tx uow.Tx, roomID string) error
+	// LockOpening locks the opening of rooms until tx ends, so that the count of the open rooms
+	// against voice_max_open_rooms holds.
+	LockOpening(ctx context.Context, tx uow.Tx) error
+
 	// PutHostGrace starts or moves the grace of the host of a room.
 	PutHostGrace(ctx context.Context, tx uow.Tx, g HostGrace) error
 	// DeleteHostGrace deletes the grace of a room and reports whether there was one.

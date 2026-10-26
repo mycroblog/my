@@ -76,7 +76,7 @@ func TestLookupsOfInvalidText(t *testing.T) {
 }
 
 func runSweep(t *testing.T, spec *apitest.Spec, dialect, dbURL string, reqs []sweepRequest) map[string]int {
-	cfg := loadConfig(t, map[string]string{"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin})
+	cfg := loadConfig(t, map[string]string{"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
