@@ -20,9 +20,12 @@ beforeEach(() => {
 
 type Text = Schemas["AdminInstanceText"];
 
-/** The server with voice chat on and no room open. */
+/** The server with voice chat on (GET /instance) and no room open. */
 function voiceOn() {
-  server.use(http.get(`${apiBase}/voice/rooms`, () => HttpResponse.json({ items: [] })));
+  server.use(
+    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "permitted" })),
+    http.get(`${apiBase}/voice/rooms`, () => HttpResponse.json({ items: [] })),
+  );
 }
 
 /**
