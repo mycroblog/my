@@ -1,6 +1,6 @@
 # ADR-0102: 通話の SFU: LiveKit と Sora の adapter
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
 - Issue: #1350
@@ -49,9 +49,11 @@ M4.3（Voice Chat、epic #1345）は、通話の音声を P2P のほかに SFU �
 
 ## Decision（決定）
 
-> 推奨案。Accepted にするのは人間の Decider のみ。
+**G1・W1 を採用する。**
 
-**G1・W1 を推奨する。**
+決定者の回答（#1354、原文）:
+
+> ADR Accepted
 
 ### 1. 置き場所とビルド
 
