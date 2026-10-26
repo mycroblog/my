@@ -1,6 +1,6 @@
 # ADR-0101: 通話の接続: 方式のポート・P2P のシグナリング・STUN / TURN・ルームのストリーム
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
 - Issue: #1349
@@ -54,9 +54,11 @@ ADR-0100 がこの ADR に任せたもの: 設定 `voice` と `off` の振る舞
 
 ## Decision（決定）
 
-> 推奨案。Accepted にするのは人間の Decider のみ。
+**R1・B1・P1 を採用する。**
 
-**R1・B1・P1 を推奨する。**
+決定者の回答（#1353、原文）:
+
+> ADR Accepted
 
 ### 1. 設定（回答 3・4・5・20）
 
