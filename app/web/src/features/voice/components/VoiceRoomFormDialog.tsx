@@ -59,6 +59,7 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
     <Stack as="form" gap="4" onSubmit={form.submit} noValidate>
       <TextField
         label={t("client:voice.form.name")}
+        name="name"
         value={draft.name}
         onChange={(name) => {
           change({ name });
@@ -71,6 +72,7 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
       />
       <TextArea
         label={t("client:voice.form.description")}
+        name="description"
         value={draft.description}
         onChange={(description) => {
           change({ description });
@@ -82,6 +84,7 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
       />
       <TextField
         label={t("client:voice.form.hashtags")}
+        name="hashtags"
         description={t("client:voice.form.hashtags.description", { max: String(voiceRoomLimits.hashtags) })}
         value={draft.hashtags}
         onChange={(hashtags) => {

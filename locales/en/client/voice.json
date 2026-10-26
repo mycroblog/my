@@ -107,6 +107,10 @@
     "defaultMessage": "Enter up to {max} hashtags.",
     "description": "Error of the field of a voice chat room's hashtags. {max} is how many it takes."
   },
+  "voice.form.hashtags.too_long": {
+    "defaultMessage": "Each hashtag can have up to {max} characters.",
+    "description": "Error of the field of a voice chat room's hashtags when one is too long. {max} is the most characters a hashtag has."
+  },
   "voice.form.visibility": {
     "defaultMessage": "Who can see and join",
     "description": "Label of the choice of who sees a voice chat room and may join it."

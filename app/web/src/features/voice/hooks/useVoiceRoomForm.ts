@@ -43,13 +43,43 @@ export function offersStartPost(visibility: VoiceRoomVisibility): boolean {
   return visibility === "local" || visibility === "followers";
 }
 
-/** The hashtags typed in the field, without their `#`, each once. */
+/** How many characters (code points) `text` has, as the server and the character counter of @my/ui count them. */
+export function characterCount(text: string): number {
+  return Array.from(text).length;
+}
+
+/** How many grapheme clusters (what a reader sees as one character) `text` has. */
+function graphemeCount(text: string): number {
+  return Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)).length;
+}
+
+/** Whether `name` (trimmed) is a name the server takes: 1 to 100 grapheme clusters on one line, no control characters. */
+export function isValidRoomName(name: string): boolean {
+  return (
+    name !== "" &&
+    !/\p{Cc}/u.test(name) &&
+    characterCount(name) <= voiceRoomLimits.nameCodePoints &&
+    graphemeCount(name) <= voiceRoomLimits.name
+  );
+}
+
+/** How the server tells hashtags apart: Unicode NFKC and lower case, as the hashtags of posts. */
+function normalizedTag(tag: string): string {
+  return tag.normalize("NFKC").toLowerCase();
+}
+
+/** The hashtags typed in the field, without their `#`, each once by its normalized name (the first spelling stays). */
 export function parseHashtags(text: string): string[] {
-  const tags = text
-    .split(/[\s,，、]+/u)
-    .map((word) => word.replace(/^[#＃]+/u, ""))
-    .filter((tag) => tag !== "");
-  return [...new Set(tags)];
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const word of text.split(/[\s,，、]+/u)) {
+    const tag = word.replace(/^[#＃]+/u, "");
+    const key = normalizedTag(tag);
+    if (tag === "" || seen.has(key)) continue;
+    seen.add(key);
+    tags.push(tag);
+  }
+  return tags;
 }
 
 function draftOf(room: VoiceRoom | undefined): VoiceRoomDraft {
@@ -118,15 +148,19 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
   const offersPost = room === undefined && offersStartPost(draft.visibility);
 
   const check = (): VoiceRoomFieldError | undefined => {
-    const name = draft.name.trim();
-    if (name === "" || name.length > voiceRoomLimits.name || /[\r\n]/u.test(name)) {
+    if (!isValidRoomName(draft.name.trim())) {
       return { field: "name", message: t("client:voice.form.name.invalid", { max: String(voiceRoomLimits.name) }) };
     }
-    if (draft.description.length > voiceRoomLimits.description) {
-      return { field: "description", message: t("client:voice.form.characters_over", { count: draft.description.length - voiceRoomLimits.description }) };
+    const description = characterCount(draft.description.trim());
+    if (description > voiceRoomLimits.description) {
+      return { field: "description", message: t("client:voice.form.characters_over", { count: description - voiceRoomLimits.description }) };
     }
-    if (parseHashtags(draft.hashtags).length > voiceRoomLimits.hashtags) {
+    const tags = parseHashtags(draft.hashtags);
+    if (tags.length > voiceRoomLimits.hashtags) {
       return { field: "hashtags", message: t("client:voice.form.hashtags.invalid", { max: String(voiceRoomLimits.hashtags) }) };
+    }
+    if (tags.some((tag) => characterCount(normalizedTag(tag)) > voiceRoomLimits.hashtagLength || characterCount(tag) > voiceRoomLimits.hashtagLength)) {
+      return { field: "hashtags", message: t("client:voice.form.hashtags.too_long", { max: String(voiceRoomLimits.hashtagLength) }) };
     }
     return undefined;
   };
@@ -146,6 +180,9 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
       setFieldError(checked);
       if (checked !== undefined) {
         mutation.reset();
+        // The first field that the check failed on takes focus, so that its message is read and it can be fixed.
+        const field = event.currentTarget.elements.namedItem(checked.field);
+        if (field instanceof HTMLElement) field.focus();
         return;
       }
       const settings = {

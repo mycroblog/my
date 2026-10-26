@@ -1,29 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Whether the server has voice chat on, and the open rooms that the user sees: a few in the third column, all of them
-// on the list page, those of a hashtag on its page (ADR-0100 §2, §8). Voice chat needs a session (read:voice): a
-// visitor who is not signed in has none of it.
+// Whether the server has voice chat on and who may open rooms (GET /instance, ADR-0100 §2), and the open rooms that
+// the user sees: a few in the third column, all of them on the list page, those of a hashtag on its page (§8). Voice
+// chat needs a session (read:voice): a visitor who is not signed in has none of it.
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
-import { shellQueryRetry } from "../../../lib/query";
-import { type VoiceRoom, voiceRailQueryOptions, voiceRoomsQueryOptions } from "../api/voice";
+import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
+import { useViewerPermissions } from "../../moderation";
+import { instanceQueryOptions, type VoiceRoom, voiceRailQueryOptions, voiceRoomsQueryOptions } from "../api/voice";
 
 /**
- * The first rooms of the list, which also tell whether voice chat is on: `available` once the server answered the
- * list, false while it loads, for a visitor who is not signed in, and when it answered 404 (voice chat off). The
- * shell reads it on every page, so a refusal is not tried again (shellQueryRetry).
+ * Whether the signed-in user has voice chat: the server has it on (`voice_enabled`). False while the instance loads
+ * and for a visitor who is not signed in. The entries to voice chat (navigation, third column, hashtags, profiles,
+ * settings) show only then.
  */
-export function useVoiceRail(): { available: boolean; rooms: readonly VoiceRoom[] } {
+export function useVoiceAvailable(): boolean {
   const api = useApi();
   const signedIn = useSessionStatus() === "signed-in";
-  const query = useQuery({ ...voiceRailQueryOptions(api), enabled: signedIn, retry: shellQueryRetry, retryOnMount: false });
-  if (!signedIn || query.data === undefined) return { available: false, rooms: [] };
-  return { available: true, rooms: query.data.items };
+  const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
+  return signedIn && instance.data?.voice_enabled === true;
 }
 
-/** Whether the server has voice chat on for the signed-in user, for the entries to it (navigation, settings, profiles). */
-export function useVoiceAvailable(): boolean {
-  return useVoiceRail().available;
+/**
+ * Whether the user may open a room: voice chat is on, and the server lets everyone open rooms or the user's roles have
+ * `start_voice_rooms` (`voice_room_starters`). The server still refuses one that may not (a 403), which the form says.
+ */
+export function useCanStartVoiceRoom(): boolean {
+  const api = useApi();
+  const available = useVoiceAvailable();
+  const permissions = useViewerPermissions();
+  const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
+  return available && (instance.data?.voice_room_starters === "everyone" || permissions.includes("start_voice_rooms"));
+}
+
+/** The first rooms of the list for the third column, while voice chat is on; empty otherwise and while they load. */
+export function useVoiceRail(): readonly VoiceRoom[] {
+  const api = useApi();
+  const available = useVoiceAvailable();
+  const query = useQuery({ ...voiceRailQueryOptions(api), enabled: available, retry: shellQueryRetry, retryOnMount: false });
+  return available ? (query.data?.items ?? []) : [];
 }
 
 /** The open rooms as a list shows them. `unavailable` is the server with voice chat off (404). */
@@ -42,7 +57,8 @@ export type VoiceRoomList =
 
 /**
  * The open rooms that the user sees (with `tag`, those of the hashtag), in the server's order: the rooms where the user
- * follows the host or a speaker first, then by the most participants. `enabled` false loads nothing (`loading`).
+ * follows the host or a speaker first, then by the most participants. `enabled` false loads nothing (`loading`). The
+ * list page asks even before it knows whether voice chat is on, since it is opened by its address too; a 404 says off.
  */
 export function useVoiceRooms({ tag, enabled = true }: { tag?: string; enabled?: boolean } = {}): VoiceRoomList {
   const api = useApi();

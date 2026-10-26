@@ -7,17 +7,21 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { otherAccountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
-import { apiBase, signedInHandler, withViewer } from "../../test/msw/http";
+import { instanceFixture, otherAccountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
+import { apiBase, operatorHandler, problem, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { ownRoomFixture, participantFixture, roomId, voiceRoomFixture } from "./test/handlers";
 
 const carol: Schemas["Account"] = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-000000000033", username: "carol", acct: "carol", display_name: "Carol" };
 
-/** The server with voice chat on and `rooms` open, answering the list (also by hashtag) and each room. */
-function voiceOn(rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()]) {
+/**
+ * The server with voice chat on, where `starters` open rooms, and `rooms` open, answering the list (also by hashtag)
+ * and each room.
+ */
+function voiceOn(rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()], starters: Schemas["Instance"]["voice_room_starters"] = "everyone") {
   server.use(
+    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: starters })),
     http.get(`${apiBase}/voice/rooms`, ({ request }) =>
       withViewer(request, () => {
         const tag = new URL(request.url).searchParams.get("tag");
@@ -136,6 +140,63 @@ describe("the list of the open rooms", () => {
   });
 });
 
+describe("starting a room", () => {
+  beforeEach(() => {
+    server.use(signedInHandler);
+  });
+
+  test("is offered only to a user who may open rooms", async () => {
+    voiceOn([], "permitted");
+    const { unmount } = await renderApp({ path: "/voice" });
+    expect(await screen.findByRole("heading", { name: "No rooms are open right now" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Start a room" })).not.toBeInTheDocument();
+    unmount();
+
+    server.use(operatorHandler(["start_voice_rooms"]));
+    await renderApp({ path: "/voice" });
+    expect(await screen.findByRole("button", { name: "Start a room" })).toBeInTheDocument();
+  });
+
+  test("says why the server refused the room, and keeps the form", async () => {
+    voiceOn([]);
+    server.use(http.post(`${apiBase}/voice/rooms`, () => problem(403, "/api/v1/problems/voice-not-eligible", "You may not start voice chat rooms")));
+    const { user } = await renderApp({ path: "/voice" });
+    await user.click(await screen.findByRole("button", { name: "Start a room" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start a room" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Late show");
+    await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Couldn't start the room: You may not start voice chat rooms");
+    expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveValue("Late show");
+  });
+
+  test("checks the hashtags before sending, and moves focus to the field", async () => {
+    voiceOn([]);
+    let sent = false;
+    server.use(
+      http.post(`${apiBase}/voice/rooms`, () => {
+        sent = true;
+        return problem(500, "about:blank", "Unexpected");
+      }),
+    );
+    const { user } = await renderApp({ path: "/voice" });
+    await user.click(await screen.findByRole("button", { name: "Start a room" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start a room" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Late show");
+    const hashtags = within(dialog).getByRole("textbox", { name: /Hashtags/u });
+    // The same hashtag in another case counts once, so these are six.
+    await user.type(hashtags, "a b c d e Music music");
+    await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
+    expect(await within(dialog).findByText("Enter up to 5 hashtags.")).toBeInTheDocument();
+    expect(hashtags).toHaveFocus();
+
+    await user.clear(hashtags);
+    await user.type(hashtags, "x".repeat(101));
+    await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
+    expect(await within(dialog).findByText("Each hashtag can have up to 100 characters.")).toBeInTheDocument();
+    expect(sent).toBe(false);
+  });
+});
+
 describe("the page of a room", () => {
   test("lists everyone with their role and says that joining lists the user's name", async () => {
     server.use(signedInHandler);
@@ -250,6 +311,17 @@ describe("the page of a room", () => {
     await renderApp({ path: `/voice/${roomId}` });
     expect(await screen.findByRole("heading", { level: 1, name: "Voice chat room" })).toBeInTheDocument();
     expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" })).toBeInTheDocument();
+  });
+
+  test("tells a signed-in user who does not see an open room so, without its participants", async () => {
+    server.use(signedInHandler);
+    voiceOn([]);
+    server.use(http.get(`${apiBase}/voice/rooms/:id/summary`, () => HttpResponse.json({ id: roomId, state: "open" })));
+    await renderApp({ path: `/voice/${roomId}` });
+    expect(await screen.findByRole("heading", { level: 1, name: "Voice chat room" })).toBeInTheDocument();
+    expect(screen.getByText("You can't see this room.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("main")).queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
   });
 
   test("says that a room ended, with its name from the summary", async () => {

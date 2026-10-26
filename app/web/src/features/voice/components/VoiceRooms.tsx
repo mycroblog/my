@@ -10,7 +10,7 @@ import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
 import { type VoiceRoom, voiceRoomPath } from "../api/voice";
-import { useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
+import { useCanStartVoiceRoom, useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
 
 type VoiceRoomItemProps = { room: VoiceRoom; headingLevel: 2 | 3; surface?: "card" | "plain" };
@@ -43,11 +43,38 @@ function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemPr
   );
 }
 
-/** The list page's body (`/voice`): the button that starts a room, then the open rooms the user sees. */
+/**
+ * The list page's body (`/voice`): the button that starts a room, for a user who may open rooms, then the open rooms the
+ * user sees.
+ */
 export function VoiceRoomList() {
   const t = useT();
-  const list = useVoiceRooms();
+  const canStart = useCanStartVoiceRoom();
   const [formOpen, setFormOpen] = useState(false);
+  return (
+    <Stack gap="6">
+      {canStart && (
+        <div>
+          <Button
+            variant="primary"
+            onPress={() => {
+              setFormOpen(true);
+            }}
+          >
+            {t("client:voice.start")}
+          </Button>
+          <VoiceRoomFormDialog isOpen={formOpen} onOpenChange={setFormOpen} />
+        </div>
+      )}
+      <Rooms />
+    </Stack>
+  );
+}
+
+/** The open rooms of the list page, with its states. */
+function Rooms() {
+  const t = useT();
+  const list = useVoiceRooms();
   switch (list.status) {
     case "unavailable":
       return <EmptyState heading={t("client:voice.unavailable")} />;
@@ -63,18 +90,7 @@ export function VoiceRoomList() {
       );
     case "ready":
       return (
-        <Stack gap="6">
-          <div>
-            <Button
-              variant="primary"
-              onPress={() => {
-                setFormOpen(true);
-              }}
-            >
-              {t("client:voice.start")}
-            </Button>
-          </div>
-          <VoiceRoomFormDialog isOpen={formOpen} onOpenChange={setFormOpen} />
+        <>
           {list.rooms.length === 0 ? (
             <EmptyState heading={t("client:voice.list.empty")} description={t("client:voice.list.empty.description")} />
           ) : (
@@ -92,7 +108,7 @@ export function VoiceRoomList() {
               </Button>
             </div>
           )}
-        </Stack>
+        </>
       );
   }
 }
@@ -103,12 +119,12 @@ export function VoiceRoomList() {
  */
 export function VoiceRail() {
   const t = useT();
-  const rail = useVoiceRail();
-  if (!rail.available || rail.rooms.length === 0) return null;
+  const rooms = useVoiceRail();
+  if (rooms.length === 0) return null;
   return (
     <AsidePanel heading={t("client:voice.rail.title")}>
       <Stack as="ul" gap="3">
-        {rail.rooms.map((room) => (
+        {rooms.map((room) => (
           <VoiceRoomItem key={room.id} room={room} headingLevel={3} surface="plain" />
         ))}
       </Stack>
