@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the voice chat rooms that the user hosted, newest first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./VoiceRoomHistoryEntry.yaml

@@ -118,5 +118,13 @@
   "push.supporter_subscription_ended": {
     "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu ou {instance} ǝupǝp‬",
     "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.voice_room_invited": {
+    "defaultMessage": "‮{name} ıuʌıʇǝp ʎon ʇo ɐ ʌoıɔǝ ɔɥɐʇ ɹooɯ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.voice_room_started": {
+    "defaultMessage": "‮{name} sʇɐɹʇǝp ɐ ʌoıɔǝ ɔɥɐʇ ɹooɯ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
   }
 }

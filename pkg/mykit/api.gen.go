@@ -2173,6 +2173,8 @@ const (
 	NotificationTypeSupporterPlanRetired       NotificationType = "supporter_plan_retired"
 	NotificationTypeSupporterServiceClosure    NotificationType = "supporter_service_closure"
 	NotificationTypeSupporterSubscriptionEnded NotificationType = "supporter_subscription_ended"
+	NotificationTypeVoiceRoomInvited           NotificationType = "voice_room_invited"
+	NotificationTypeVoiceRoomStarted           NotificationType = "voice_room_started"
 )
 
 // Valid indicates whether the value is a known member of the NotificationType enum.
@@ -2231,6 +2233,10 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeSupporterServiceClosure:
 		return true
 	case NotificationTypeSupporterSubscriptionEnded:
+		return true
+	case NotificationTypeVoiceRoomInvited:
+		return true
+	case NotificationTypeVoiceRoomStarted:
 		return true
 	default:
 		return false
@@ -3176,6 +3182,24 @@ func (e VoiceRole) Valid() bool {
 	}
 }
 
+// Defines values for VoiceRoomEntryRole.
+const (
+	VoiceRoomEntryRoleHost    VoiceRoomEntryRole = "host"
+	VoiceRoomEntryRoleSpeaker VoiceRoomEntryRole = "speaker"
+)
+
+// Valid indicates whether the value is a known member of the VoiceRoomEntryRole enum.
+func (e VoiceRoomEntryRole) Valid() bool {
+	switch e {
+	case VoiceRoomEntryRoleHost:
+		return true
+	case VoiceRoomEntryRoleSpeaker:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for VoiceRoomSpeakers.
 const (
 	VoiceRoomSpeakersEveryone  VoiceRoomSpeakers = "everyone"
@@ -3194,6 +3218,24 @@ func (e VoiceRoomSpeakers) Valid() bool {
 	case VoiceRoomSpeakersManual:
 		return true
 	case VoiceRoomSpeakersMutuals:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceRoomSummaryState.
+const (
+	VoiceRoomSummaryStateEnded VoiceRoomSummaryState = "ended"
+	VoiceRoomSummaryStateOpen  VoiceRoomSummaryState = "open"
+)
+
+// Valid indicates whether the value is a known member of the VoiceRoomSummaryState enum.
+func (e VoiceRoomSummaryState) Valid() bool {
+	switch e {
+	case VoiceRoomSummaryStateEnded:
+		return true
+	case VoiceRoomSummaryStateOpen:
 		return true
 	default:
 		return false
@@ -3493,6 +3535,10 @@ type Account struct {
 
 	// Username The username, without the domain.
 	Username string `json:"username"`
+
+	// VoiceRoom The open voice chat room where an account is the host or a speaker, on its profile. Only a
+	// user who sees the room gets it; a listener's profile shows no room.
+	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
 // AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
@@ -6469,6 +6515,10 @@ type CredentialAccount struct {
 
 	// Username The username, without the domain.
 	Username string `json:"username"`
+
+	// VoiceRoom The open voice chat room where an account is the host or a speaker, on its profile. Only a
+	// user who sees the room gets it; a listener's profile shows no room.
+	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
 // Cursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -8160,7 +8210,18 @@ type Notification struct {
 	// close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
 	// their supporter subscription at the end of its period, with its `supporter_subscription`.
 	// Their `service_closure` says what they tell of, and they have no `account`.
+	// `voice_room_started` tells that an account that the user follows (`account`, the host)
+	// opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
+	// host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
+	// carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
 	Type NotificationType `json:"type"`
+
+	// VoiceRoom An open voice chat room: its settings, its host, and its participants in the order they
+	// joined. Everyone who sees the room sees its participants.
+	VoiceRoom *VoiceRoom `json:"voice_room,omitempty"`
+
+	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
+	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
 // NotificationMarker How far the authenticated user has read the notifications.
@@ -8238,6 +8299,10 @@ type NotificationPage struct {
 // close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
 // their supporter subscription at the end of its period, with its `supporter_subscription`.
 // Their `service_closure` says what they tell of, and they have no `account`.
+// `voice_room_started` tells that an account that the user follows (`account`, the host)
+// opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
+// host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
+// carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -10313,6 +10378,56 @@ type VoiceRoom struct {
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
+// VoiceRoomEntry The open voice chat room where an account is the host or a speaker, on its profile. Only a
+// user who sees the room gets it; a listener's profile shows no room.
+type VoiceRoomEntry struct {
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the room.
+	Name string `json:"name"`
+
+	// ParticipantsCount How many people are in the room.
+	ParticipantsCount int `json:"participants_count"`
+
+	// Role Whether the account hosts the room or speaks in it.
+	Role VoiceRoomEntryRole `json:"role"`
+}
+
+// VoiceRoomEntryRole Whether the account hosts the room or speaks in it.
+type VoiceRoomEntryRole string
+
+// VoiceRoomHistoryEntry A voice chat room that the user hosted, as its settings stand last.
+type VoiceRoomHistoryEntry struct {
+	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
+	EndReason *string `json:"end_reason,omitempty"`
+
+	// EndedAt When the room ended; omitted while it is open.
+	EndedAt *time.Time `json:"ended_at,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the room.
+	Name string `json:"name"`
+
+	// OpenedAt When the room opened.
+	OpenedAt time.Time `json:"opened_at"`
+}
+
+// VoiceRoomHistoryPage A page of the voice chat rooms that the user hosted, newest first.
+type VoiceRoomHistoryPage struct {
+	Items []VoiceRoomHistoryEntry `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
 // revoked; an invitation as a speaker also lets the user speak without asking.
 type VoiceRoomInvitation struct {
@@ -10415,6 +10530,13 @@ type VoiceRoomSettings struct {
 	// Name 1 to 100 characters on one line.
 	Name string `json:"name"`
 
+	// Post The post that the host writes when opening a voice chat room. The link of the room is
+	// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
+	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
+	// visibility has no start post.
+	Post *VoiceStartPost `json:"post,omitempty"`
+
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
 	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
@@ -10429,6 +10551,34 @@ type VoiceRoomSettings struct {
 // VoiceRoomSpeakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
 // `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 type VoiceRoomSpeakers string
+
+// VoiceRoomSummary What the page of a voice chat room shows to a visitor who does not see the room, such as a
+// visitor who is not signed in or a user of another server: only the users of this server
+// join its rooms. `name` is present only when the server shows the summaries of its rooms (the
+// instance setting `voice_public_summary`) and the room is for every local user (the `local`
+// visibility); `description` and `host` then come too while the room is open. The
+// participants are never shown.
+type VoiceRoomSummary struct {
+	// Description The description of the room, empty for none.
+	Description *string `json:"description,omitempty"`
+
+	// Host An account, as clients show it (FR-006).
+	Host *Account `json:"host,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the room.
+	Name *string `json:"name,omitempty"`
+
+	// State Whether the room is open or ended.
+	State VoiceRoomSummaryState `json:"state"`
+}
+
+// VoiceRoomSummaryState Whether the room is open or ended.
+type VoiceRoomSummaryState string
 
 // VoiceRoomUpdate A change of the settings of a voice chat room; an omitted property keeps its value.
 type VoiceRoomUpdate struct {
@@ -10486,6 +10636,20 @@ type VoiceSignal struct {
 
 // VoiceSignalKind The kind of a WebRTC signal.
 type VoiceSignalKind string
+
+// VoiceStartPost The post that the host writes when opening a voice chat room. The link of the room is
+// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+// the `local` visibility and `private` for a room of the `followers` visibility, federated like
+// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
+// visibility has no start post.
+type VoiceStartPost struct {
+	// Language A BCP 47 language tag; the user's default post language when omitted.
+	Language *string `json:"language,omitempty"`
+
+	// Text The text of the post, which may be empty for a post of the link only. The link counts
+	// toward the length of a post.
+	Text *string `json:"text,omitempty"`
+}
 
 // VoiceStreamEnd The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
@@ -11500,6 +11664,15 @@ type GetPublicTimelineParams struct {
 
 // GetHashtagTimelineParams defines parameters for GetHashtagTimeline.
 type GetHashtagTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListVoiceHistoryParams defines parameters for ListVoiceHistory.
+type ListVoiceHistoryParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -17254,6 +17427,15 @@ type ClientInterface interface {
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListVoiceHistory List the voice chat rooms the user hosted
+	//
+	// The rooms that the user hosted at some time, from opening them or from taking them over,
+	// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+	// is off on the server.
+	//
+	// Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
+	ListVoiceHistory(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListVoiceRooms List the open voice chat rooms
 	//
 	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
@@ -17272,6 +17454,10 @@ type ClientInterface interface {
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// status for a post that cannot be posted. The local followers of the user who see the room
+	// get a `voice_room_started` notification.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -17287,6 +17473,10 @@ type ClientInterface interface {
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// status for a post that cannot be posted. The local followers of the user who see the room
+	// get a `voice_room_started` notification.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -17703,6 +17893,17 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /voice/rooms/{id}/stream (the `StreamVoiceRoom` operationId).
 	StreamVoiceRoom(ctx context.Context, id VoiceRoomId, params *StreamVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVoiceRoomSummary Get the summary of a voice chat room
+	//
+	// What the page of a room shows to a visitor who does not see the room: whether it is open or
+	// ended, and its name, description, and host only when the server shows the summaries of its
+	// rooms and the room is for every local user. It needs no sign-in and is the same for every
+	// visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+	// server.
+	//
+	// Corresponds with GET /voice/rooms/{id}/summary (the `GetVoiceRoomSummary` operationId).
+	GetVoiceRoomSummary(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 // ListAccountAliases List the authenticated user's aliases
@@ -25481,6 +25682,25 @@ func (c *Client) SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (
 	return c.Client.Do(req)
 }
 
+// ListVoiceHistory List the voice chat rooms the user hosted
+//
+// The rooms that the user hosted at some time, from opening them or from taking them over,
+// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+// is off on the server.
+//
+// Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
+func (c *Client) ListVoiceHistory(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListVoiceHistoryRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListVoiceRooms List the open voice chat rooms
 //
 // The open voice chat rooms that the user sees: the rooms where the user follows the host or
@@ -25509,6 +25729,10 @@ func (c *Client) ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParam
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// status for a post that cannot be posted. The local followers of the user who see the room
+// get a `voice_room_started` notification.
 //
 // Takes any type of body and a specified content type.
 //
@@ -25534,6 +25758,10 @@ func (c *Client) OpenVoiceRoomWithBody(ctx context.Context, contentType string, 
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// status for a post that cannot be posted. The local followers of the user who see the room
+// get a `voice_room_started` notification.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -26291,6 +26519,27 @@ func (c *Client) BecomeVoiceSpeaker(ctx context.Context, id VoiceRoomId, reqEdit
 // Corresponds with GET /voice/rooms/{id}/stream (the `StreamVoiceRoom` operationId).
 func (c *Client) StreamVoiceRoom(ctx context.Context, id VoiceRoomId, params *StreamVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStreamVoiceRoomRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetVoiceRoomSummary Get the summary of a voice chat room
+//
+// What the page of a room shows to a visitor who does not see the room: whether it is open or
+// ended, and its name, description, and host only when the server shows the summaries of its
+// rooms and the room is for every local user. It needs no sign-in and is the same for every
+// visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+// server.
+//
+// Corresponds with GET /voice/rooms/{id}/summary (the `GetVoiceRoomSummary` operationId).
+func (c *Client) GetVoiceRoomSummary(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVoiceRoomSummaryRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -38220,6 +38469,72 @@ func NewSetUpTotpRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListVoiceHistoryRequest constructs an http.Request for the ListVoiceHistory method
+func NewListVoiceHistoryRequest(server string, params *ListVoiceHistoryParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/history")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListVoiceRoomsRequest constructs an http.Request for the ListVoiceRooms method
 func NewListVoiceRoomsRequest(server string, params *ListVoiceRoomsParams) (*http.Request, error) {
 	var err error
@@ -39473,6 +39788,40 @@ func NewStreamVoiceRoomRequest(server string, id VoiceRoomId, params *StreamVoic
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
 		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetVoiceRoomSummaryRequest constructs an http.Request for the GetVoiceRoomSummary method
+func NewGetVoiceRoomSummaryRequest(server string, id VoiceRoomId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/summary", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -44165,6 +44514,17 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /two_factor/totp/setup (the `SetUpTotp` operationId).
 	SetUpTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SetUpTotpResponse, error)
 
+	// ListVoiceHistoryWithResponse List the voice chat rooms the user hosted
+	//
+	// The rooms that the user hosted at some time, from opening them or from taking them over,
+	// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+	// is off on the server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
+	ListVoiceHistoryWithResponse(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*ListVoiceHistoryResponse, error)
+
 	// ListVoiceRoomsWithResponse List the open voice chat rooms
 	//
 	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
@@ -44185,6 +44545,10 @@ type ClientWithResponsesInterface interface {
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// status for a post that cannot be posted. The local followers of the user who see the room
+	// get a `voice_room_started` notification.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -44200,6 +44564,10 @@ type ClientWithResponsesInterface interface {
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// status for a post that cannot be posted. The local followers of the user who see the room
+	// get a `voice_room_started` notification.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -44652,6 +45020,19 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /voice/rooms/{id}/stream (the `StreamVoiceRoom` operationId).
 	StreamVoiceRoomWithResponse(ctx context.Context, id VoiceRoomId, params *StreamVoiceRoomParams, reqEditors ...RequestEditorFn) (*StreamVoiceRoomResponse, error)
+
+	// GetVoiceRoomSummaryWithResponse Get the summary of a voice chat room
+	//
+	// What the page of a room shows to a visitor who does not see the room: whether it is open or
+	// ended, and its name, description, and host only when the server shows the summaries of its
+	// rooms and the room is for every local user. It needs no sign-in and is the same for every
+	// visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+	// server.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /voice/rooms/{id}/summary (the `GetVoiceRoomSummary` operationId).
+	GetVoiceRoomSummaryWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*GetVoiceRoomSummaryResponse, error)
 }
 
 // ListAccountAliasesResponse200Headers the declared response headers of an HTTP 200 response for ListAccountAliases
@@ -62251,6 +62632,71 @@ func (r SetUpTotpResponse) ContentType() string {
 	return ""
 }
 
+// ListVoiceHistoryResponse200Headers the declared response headers of an HTTP 200 response for ListVoiceHistory
+type ListVoiceHistoryResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListVoiceHistoryResponseDefaultHeaders the declared response headers of an HTTP default response for ListVoiceHistory
+type ListVoiceHistoryResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListVoiceHistoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoomHistoryPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListVoiceHistoryResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListVoiceHistoryResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListVoiceHistoryResponse) GetJSON200() *VoiceRoomHistoryPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListVoiceHistoryResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListVoiceHistoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListVoiceHistoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListVoiceHistoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListVoiceHistoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListVoiceRoomsResponse200Headers the declared response headers of an HTTP 200 response for ListVoiceRooms
 type ListVoiceRoomsResponse200Headers struct {
 	CacheControl *string
@@ -63932,6 +64378,71 @@ func (r StreamVoiceRoomResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r StreamVoiceRoomResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetVoiceRoomSummaryResponse200Headers the declared response headers of an HTTP 200 response for GetVoiceRoomSummary
+type GetVoiceRoomSummaryResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetVoiceRoomSummaryResponseDefaultHeaders the declared response headers of an HTTP default response for GetVoiceRoomSummary
+type GetVoiceRoomSummaryResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetVoiceRoomSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoomSummary
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetVoiceRoomSummaryResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetVoiceRoomSummaryResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetVoiceRoomSummaryResponse) GetJSON200() *VoiceRoomSummary {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetVoiceRoomSummaryResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetVoiceRoomSummaryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVoiceRoomSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVoiceRoomSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetVoiceRoomSummaryResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -70688,6 +71199,23 @@ func (c *ClientWithResponses) SetUpTotpWithResponse(ctx context.Context, reqEdit
 	return ParseSetUpTotpResponse(rsp)
 }
 
+// ListVoiceHistoryWithResponse List the voice chat rooms the user hosted
+//
+// The rooms that the user hosted at some time, from opening them or from taking them over,
+// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+// is off on the server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
+func (c *ClientWithResponses) ListVoiceHistoryWithResponse(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*ListVoiceHistoryResponse, error) {
+	rsp, err := c.ListVoiceHistory(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListVoiceHistoryResponse(rsp)
+}
+
 // ListVoiceRoomsWithResponse List the open voice chat rooms
 //
 // The open voice chat rooms that the user sees: the rooms where the user follows the host or
@@ -70714,6 +71242,10 @@ func (c *ClientWithResponses) ListVoiceRoomsWithResponse(ctx context.Context, pa
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// status for a post that cannot be posted. The local followers of the user who see the room
+// get a `voice_room_started` notification.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -70735,6 +71267,10 @@ func (c *ClientWithResponses) OpenVoiceRoomWithBodyWithResponse(ctx context.Cont
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// status for a post that cannot be posted. The local followers of the user who see the room
+// get a `voice_room_started` notification.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -71396,6 +71932,25 @@ func (c *ClientWithResponses) StreamVoiceRoomWithResponse(ctx context.Context, i
 		return nil, err
 	}
 	return ParseStreamVoiceRoomResponse(rsp)
+}
+
+// GetVoiceRoomSummaryWithResponse Get the summary of a voice chat room
+//
+// What the page of a room shows to a visitor who does not see the room: whether it is open or
+// ended, and its name, description, and host only when the server shows the summaries of its
+// rooms and the room is for every local user. It needs no sign-in and is the same for every
+// visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+// server.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /voice/rooms/{id}/summary (the `GetVoiceRoomSummary` operationId).
+func (c *ClientWithResponses) GetVoiceRoomSummaryWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*GetVoiceRoomSummaryResponse, error) {
+	rsp, err := c.GetVoiceRoomSummary(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVoiceRoomSummaryResponse(rsp)
 }
 
 // ParseListAccountAliasesResponse parses an HTTP response from a ListAccountAliasesWithResponse call
@@ -92505,6 +93060,83 @@ func ParseSetUpTotpResponse(rsp *http.Response) (*SetUpTotpResponse, error) {
 	return response, nil
 }
 
+// ParseListVoiceHistoryResponse parses an HTTP response from a ListVoiceHistoryWithResponse call
+func ParseListVoiceHistoryResponse(rsp *http.Response) (*ListVoiceHistoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListVoiceHistoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoomHistoryPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListVoiceHistoryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListVoiceHistoryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListVoiceRoomsResponse parses an HTTP response from a ListVoiceRoomsWithResponse call
 func ParseListVoiceRoomsResponse(rsp *http.Response) (*ListVoiceRoomsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -94494,6 +95126,83 @@ func ParseStreamVoiceRoomResponse(rsp *http.Response) (*StreamVoiceRoomResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers StreamVoiceRoomResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetVoiceRoomSummaryResponse parses an HTTP response from a GetVoiceRoomSummaryWithResponse call
+func ParseGetVoiceRoomSummaryResponse(rsp *http.Response) (*GetVoiceRoomSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVoiceRoomSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoomSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetVoiceRoomSummaryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetVoiceRoomSummaryResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

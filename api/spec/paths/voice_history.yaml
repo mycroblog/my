@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listVoiceHistory
+  summary: List the voice chat rooms the user hosted
+  description: |
+    The rooms that the user hosted at some time, from opening them or from taking them over,
+    newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+    is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["read:voice"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the rooms.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomHistoryPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

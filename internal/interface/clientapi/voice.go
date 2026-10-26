@@ -47,6 +47,7 @@ type VoiceRooms interface {
 	HandOver(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
 	VoiceParticipants
+	VoiceSurfaces
 	VoiceConnections
 }
 
@@ -92,13 +93,19 @@ func (s *Server) voiceProblem(ctx context.Context, err error) (problem, bool) {
 		return s.problem(ctx, http.StatusConflict, ProblemTypeVoiceConflict, l.ServerErrorsVoiceConflict(), ""), true
 	case errors.Is(err, appvoice.ErrTransportUnavailable):
 		return s.problem(ctx, http.StatusServiceUnavailable, ProblemTypeVoiceUnavailable, l.ServerErrorsVoiceUnavailable(), ""), true
+	case errors.Is(err, appvoice.ErrNoStartPost):
+		return s.unprocessable(ctx, "post"), true
 	}
 	return s.voiceParticipantProblem(ctx, err)
 }
 
-// voiceFail returns the problem of err, or err itself for an unexpected error.
+// voiceFail returns the problem of err, or err itself for an unexpected error. The errors of
+// the content module come from the start post of a room (ADR-0100 §9).
 func (s *Server) voiceFail(ctx context.Context, err error) (*problem, error) {
 	if p, ok := s.voiceProblem(ctx, err); ok {
+		return &p, nil
+	}
+	if p, ok := s.statusProblem(ctx, err); ok {
 		return &p, nil
 	}
 	return nil, err
@@ -304,6 +311,9 @@ func (s *Server) OpenVoiceRoom(ctx context.Context, req OpenVoiceRoomRequestObje
 	}
 	if b.Speakers != nil {
 		in.Speakers = voice.Speakers(*b.Speakers)
+	}
+	if b.Post != nil {
+		in.Post = &appvoice.StartPost{Text: deref(b.Post.Text), Language: deref(b.Post.Language)}
 	}
 	j, err := rooms.Open(ctx, v.AccountID, in)
 	if err != nil {

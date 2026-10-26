@@ -134,6 +134,8 @@ type pushJob struct {
 	AppealID        string            `json:"appeal_id,omitempty"`
 	// ServiceClosureChange is what a service_closure tells of.
 	ServiceClosureChange notification.ClosureChange `json:"service_closure_change,omitempty"`
+	// VoiceRoomID is the room of a voice_room_started or a voice_room_invited.
+	VoiceRoomID string `json:"voice_room_id,omitempty"`
 }
 
 // PushTTL is how long a push service keeps a message for a browser that is offline.
@@ -162,7 +164,7 @@ func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notifica
 		payload, err := json.Marshal(pushJob{
 			SubscriptionID: id, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
 			SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
-			ServiceClosureChange: n.ServiceClosureChange,
+			ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
 		})
 		if err != nil {
 			return err
@@ -489,6 +491,10 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		p.Title = l.ServerPushAdminServiceClosureDue(instance)
 	case notification.TypeSupporterServiceClosure:
 		p.Title = l.ServerPushSupporterServiceClosure(instance)
+	case notification.TypeVoiceRoomStarted:
+		p.Title, p.Path = l.ServerPushVoiceRoomStarted(name), "/voice/"+job.VoiceRoomID
+	case notification.TypeVoiceRoomInvited:
+		p.Title, p.Path = l.ServerPushVoiceRoomInvited(name), "/voice/"+job.VoiceRoomID
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

@@ -36,7 +36,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		CustomEmojiRequestID: toNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: toNullString(n.SupporterSubscriptionID),
 		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID),
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
-		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -195,7 +195,7 @@ func notificationFrom(row postgresgen.Notification) notification.Notification {
 		CustomEmojiRequestID: fromNullString(row.CustomEmojiRequestID), SupporterSubscriptionID: fromNullString(row.SupporterSubscriptionID),
 		ReactionEmoji: fromNullString(row.ReactionEmoji), ReactionCustomEmojiID: fromNullString(row.ReactionCustomEmojiID),
 		AccountMoveID: fromNullString(row.AccountMoveID), AccountMoveOutcome: notification.MoveOutcome(fromNullString(row.AccountMoveOutcome)),
-		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
+		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), VoiceRoomID: fromNullString(row.VoiceRoomID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
 	}
 }
 

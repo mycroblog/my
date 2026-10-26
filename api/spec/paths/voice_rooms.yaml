@@ -40,6 +40,10 @@ post:
     while as many rooms are open as the server allows, and a 409
     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
     leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+    With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+    room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+    status for a post that cannot be posted. The local followers of the user who see the room
+    get a `voice_room_started` notification.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

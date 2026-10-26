@@ -20,7 +20,8 @@ type Type string
 // (ADR-0072 §16), and account_moved from the migration of the follows of a moved account
 // (ADR-0089). service_closure tells every local user of the announcement of the service closure,
 // of the change of its dates, and of its withdrawal, and supporter_service_closure a subscriber
-// whose subscription the announcement cancels (ADR-0088 §2). admin_report, admin_sign_up,
+// whose subscription the announcement cancels (ADR-0088 §2). voice_room_started and
+// voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, and
 // admin_service_closure_due go to the staff whose roles grant the permission they need
 // (ModeratorPermission).
@@ -81,6 +82,14 @@ const (
 	// TypeSupporterServiceClosure tells a subscriber that the announcement of the service closure
 	// cancels their subscription at the end of its period (ADR-0088 §2).
 	TypeSupporterServiceClosure Type = "supporter_service_closure"
+	// TypeVoiceRoomStarted tells a local follower of a host who sees the room that the host
+	// opened a voice chat room (ADR-0100 §8): SourceAccountID is the host and VoiceRoomID the
+	// room.
+	TypeVoiceRoomStarted Type = "voice_room_started"
+	// TypeVoiceRoomInvited tells a local account that it was invited to a voice chat room
+	// (ADR-0100 §7, §8): SourceAccountID is the account that invited it and VoiceRoomID the
+	// room.
+	TypeVoiceRoomInvited Type = "voice_room_invited"
 )
 
 // MoveOutcome is what became of a follow of an account that moved (notifications.account_move_outcome).
@@ -138,6 +147,7 @@ var Types = []Type{
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
+	TypeVoiceRoomStarted, TypeVoiceRoomInvited,
 }
 
 // Valid reports whether t is a known notification type.
@@ -149,7 +159,8 @@ func (t Type) Valid() bool {
 		TypeAdminCustomEmojiRequest, TypeCustomEmojiRequestDecided,
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
-		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure:
+		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited:
 		return true
 	}
 	return false
@@ -195,8 +206,11 @@ type Notification struct {
 	// ServiceClosureChange is what the event did, for a service_closure only.
 	ServiceClosureEventID string
 	ServiceClosureChange  ClosureChange
-	DedupeKey             string
-	CreatedAt             time.Time
+	// VoiceRoomID is the voice chat room of a voice_room_started or a voice_room_invited, ""
+	// for the other types.
+	VoiceRoomID string
+	DedupeKey   string
+	CreatedAt   time.Time
 }
 
 var (
@@ -250,6 +264,10 @@ func (n Notification) Validate() error {
 	if closure != (n.ServiceClosureEventID != "") || (n.Type == TypeServiceClosure) != (n.ServiceClosureChange != "") ||
 		(n.ServiceClosureChange != "" && !n.ServiceClosureChange.Valid()) || (closure && n.SourceAccountID != "") {
 		return errors.New("notification: the service closure notifications, and only they, name a service closure event, a service_closure what it did, and they have no source account")
+	}
+	if voice := n.Type == TypeVoiceRoomStarted || n.Type == TypeVoiceRoomInvited; voice != (n.VoiceRoomID != "") ||
+		(voice && n.SourceAccountID == "") {
+		return errors.New("notification: a voice_room_started or a voice_room_invited, and only they, name a voice chat room, and they have a source account")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -428,6 +446,16 @@ func AccountMovedKey(moveID string) string { return string(TypeAccountMoved) + "
 
 // AdminAccountMovedKey is the dedupe key of an admin_account_moved notification: one per move.
 func AdminAccountMovedKey(moveID string) string { return string(TypeAdminAccountMoved) + ":" + moveID }
+
+// VoiceRoomStartedKey is the dedupe key of a voice_room_started notification: one per room and
+// recipient, so that running the fan-out again notifies nobody twice.
+func VoiceRoomStartedKey(roomID string) string { return string(TypeVoiceRoomStarted) + ":" + roomID }
+
+// VoiceRoomInvitedKey is the dedupe key of a voice_room_invited notification: one per
+// invitation, which an account gets once per room.
+func VoiceRoomInvitedKey(invitationID string) string {
+	return string(TypeVoiceRoomInvited) + ":" + invitationID
+}
 
 // AdminAppealKey is the dedupe key of an admin_appeal notification: one per appeal.
 func AdminAppealKey(appealID string) string { return string(TypeAdminAppeal) + ":" + appealID }

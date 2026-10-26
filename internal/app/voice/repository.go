@@ -240,6 +240,9 @@ type Repository interface {
 	// OpenRooms returns the open rooms, of those whose current revision has the hashtag
 	// tagNormalized unless it is "", by the most participants first and then by room ID.
 	OpenRooms(ctx context.Context, tx uow.Tx, tagNormalized string) ([]RoomRecord, error)
+	// HostedRooms returns at most limit rooms that accountID hosted at some time (a host change
+	// names it, ADR-0100 §13), newest first, before the room beforeID unless it is "".
+	HostedRooms(ctx context.Context, tx uow.Tx, accountID, beforeID string, limit int) ([]RoomRecord, error)
 	// Participants returns the participants of a room in the order they joined.
 	Participants(ctx context.Context, tx uow.Tx, roomID string) ([]Participant, error)
 	// FindParticipant returns the participation of an account that has not ended; ErrNotFound

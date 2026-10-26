@@ -2916,6 +2916,10 @@ export interface paths {
          *     while as many rooms are open as the server allows, and a 409
          *     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
          *     leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+         *     With `post`, the user's start post, which links the room, is posted with it: a 422 for a
+         *     room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+         *     status for a post that cannot be posted. The local followers of the user who see the room
+         *     get a `voice_room_started` notification.
          */
         post: operations["openVoiceRoom"];
         delete?: never;
@@ -3481,6 +3485,55 @@ export interface paths {
          *     404 for a room the user is not in, and while the voice chat is off on the server.
          */
         post: operations["reactInVoiceRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get the summary of a voice chat room
+         * @description What the page of a room shows to a visitor who does not see the room: whether it is open or
+         *     ended, and its name, description, and host only when the server shows the summaries of its
+         *     rooms and the room is for every local user. It needs no sign-in and is the same for every
+         *     visitor. An unknown room is a 404, and so is every room while the voice chat is off on the
+         *     server.
+         */
+        get: operations["getVoiceRoomSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the voice chat rooms the user hosted
+         * @description The rooms that the user hosted at some time, from opening them or from taking them over,
+         *     newest first, with when each opened and ended and why it ended. A 404 while the voice chat
+         *     is off on the server.
+         */
+        get: operations["listVoiceHistory"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6413,6 +6466,11 @@ export interface components {
              *     chains).
              */
             moved?: components["schemas"]["Account"];
+            /**
+             * @description The open voice chat room where the account is the host or a speaker, when the user sees
+             *     it. Present only on `GET /accounts/{id}`.
+             */
+            voice_room?: components["schemas"]["VoiceRoomEntry"];
         };
         /**
          * @description An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
@@ -9905,6 +9963,13 @@ export interface components {
             service_closure?: components["schemas"]["ServiceClosureNotice"];
             /** @description The emoji of a `reaction`; omitted for the other types. */
             reaction?: components["schemas"]["ReactionEmoji"];
+            /** @description The voice chat room that a `voice_room_started` or a `voice_room_invited` is about. */
+            voice_room_id?: components["schemas"]["Id"];
+            /**
+             * @description The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
+             *     it is open and the user sees it; omitted otherwise.
+             */
+            voice_room?: components["schemas"]["VoiceRoom"];
         };
         /** @description How far the authenticated user has read the notifications. */
         NotificationMarker: {
@@ -9973,9 +10038,13 @@ export interface components {
          *     close the server; `supporter_service_closure` tells a subscriber that the announcement cancels
          *     their supporter subscription at the end of its period, with its `supporter_subscription`.
          *     Their `service_closure` says what they tell of, and they have no `account`.
+         *     `voice_room_started` tells that an account that the user follows (`account`, the host)
+         *     opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
+         *     host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
+         *     carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -11682,6 +11751,47 @@ export interface components {
             items: components["schemas"]["VoiceRoomInvitation"][];
         };
         /**
+         * @description The open voice chat room where an account is the host or a speaker, on its profile. Only a
+         *     user who sees the room gets it; a listener's profile shows no room.
+         */
+        VoiceRoomEntry: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the room. */
+            name: string;
+            /**
+             * @description Whether the account hosts the room or speaks in it.
+             * @enum {string}
+             */
+            role: "host" | "speaker";
+            /** @description How many people are in the room. */
+            participants_count: number;
+        };
+        /** @description A voice chat room that the user hosted, as its settings stand last. */
+        VoiceRoomHistoryEntry: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the room. */
+            name: string;
+            /**
+             * Format: date-time
+             * @description When the room opened.
+             */
+            opened_at: string;
+            /**
+             * Format: date-time
+             * @description When the room ended; omitted while it is open.
+             */
+            ended_at?: string;
+            /**
+             * @description Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
+             *     `moderator`, `time_limit`, `disabled`); omitted while it is open.
+             */
+            end_reason?: string;
+        };
+        /** @description A page of the voice chat rooms that the user hosted, newest first. */
+        VoiceRoomHistoryPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["VoiceRoomHistoryEntry"][];
+        };
+        /**
          * @description A session of the user in a voice chat room: the room, the new session, and its grant. The
          *     client sends the session's heartbeats every 15 seconds.
          */
@@ -11726,6 +11836,7 @@ export interface components {
             hashtags?: string[];
             visibility?: components["schemas"]["VoiceRoomVisibility"];
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
+            post?: components["schemas"]["VoiceStartPost"];
         };
         /**
          * @description Who may become a speaker without asking: `everyone`, `followers` of the current host,
@@ -11733,6 +11844,27 @@ export interface components {
          * @enum {string}
          */
         VoiceRoomSpeakers: "everyone" | "followers" | "mutuals" | "manual";
+        /**
+         * @description What the page of a voice chat room shows to a visitor who does not see the room, such as a
+         *     visitor who is not signed in or a user of another server: only the users of this server
+         *     join its rooms. `name` is present only when the server shows the summaries of its rooms (the
+         *     instance setting `voice_public_summary`) and the room is for every local user (the `local`
+         *     visibility); `description` and `host` then come too while the room is open. The
+         *     participants are never shown.
+         */
+        VoiceRoomSummary: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description Whether the room is open or ended.
+             * @enum {string}
+             */
+            state: "open" | "ended";
+            /** @description The name of the room. */
+            name?: string;
+            /** @description The description of the room, empty for none. */
+            description?: string;
+            host?: components["schemas"]["Account"];
+        };
         /** @description A change of the settings of a voice chat room; an omitted property keeps its value. */
         VoiceRoomUpdate: {
             /** @description 1 to 100 characters on one line. */
@@ -11756,6 +11888,22 @@ export interface components {
         VoiceSession: {
             /** @description The `session` of the join. */
             session: string;
+        };
+        /**
+         * @description The post that the host writes when opening a voice chat room. The link of the room is
+         *     appended to the text on a line of its own. The post is the host's own: `local` for a room of
+         *     the `local` visibility and `private` for a room of the `followers` visibility, federated like
+         *     any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
+         *     visibility has no start post.
+         */
+        VoiceStartPost: {
+            /**
+             * @description The text of the post, which may be empty for a post of the link only. The link counts
+             *     toward the length of a post.
+             */
+            text?: string;
+            /** @description A BCP 47 language tag; the user's default post language when omitted. */
+            language?: string;
         };
         /**
          * @description A WebRTC signal from a session of the user to another session of a voice chat room. An
@@ -16332,6 +16480,58 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getVoiceRoomSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The summary of the room. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listVoiceHistory: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the rooms. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomHistoryPage"];
+                };
             };
             default: components["responses"]["Problem"];
         };

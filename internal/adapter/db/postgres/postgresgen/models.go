@@ -610,6 +610,7 @@ type Notification struct {
 	AccountMoveOutcome      *string
 	ServiceClosureEventID   *string
 	ServiceClosureChange    *string
+	VoiceRoomID             *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

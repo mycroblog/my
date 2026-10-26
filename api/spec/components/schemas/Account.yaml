@@ -92,3 +92,8 @@ properties:
       `followers_count` is, and without a `moved` of its own (moves are not followed in
       chains).
     $ref: ./Account.yaml
+  voice_room:
+    description: |
+      The open voice chat room where the account is the host or a speaker, when the user sees
+      it. Present only on `GET /accounts/{id}`.
+    $ref: ./VoiceRoomEntry.yaml

@@ -5,6 +5,7 @@ package testkit
 import (
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"sync"
 	"testing"
@@ -49,6 +50,10 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"StreamsTheRoom", roomsStream},
 		{"RelaysSignals", roomsSignals},
 		{"SendsMicReactionsAndGrants", roomsMicReactions},
+		{"NotifiesFollowersWhoSee", roomsNotifications},
+		{"WritesTheStartPost", roomsStartPost},
+		{"SummarizesForVisitors", roomsSummary},
+		{"ShowsTheProfileEntryAndHistory", roomsProfileAndHistory},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -68,6 +73,8 @@ type roomsMembers struct {
 	follows  map[[2]string]bool
 	blocks   map[[2]string]bool
 	everyone bool
+	// public is the instance setting voice_public_summary.
+	public bool
 	// calls counts the calls of Follows and Blocked by name; hooks run once, outside the lock,
 	// when a call reaches their count, to commit a change between the reads of a command and
 	// its transaction.
@@ -157,6 +164,30 @@ func (m *roomsMembers) Following(_ context.Context, a string, ids []string) (map
 	return out, nil
 }
 
+func (m *roomsMembers) PublicSummary(context.Context) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.public, nil
+}
+
+// LocalFollowers returns the followers of a in ID order, one to a batch, so that the fan-out
+// walks the batches.
+func (m *roomsMembers) LocalFollowers(_ context.Context, a, before string, _ int) ([]string, string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var ids []string
+	for pair, ok := range m.follows {
+		if ok && pair[1] == a && pair[0] > before {
+			ids = append(ids, pair[0])
+		}
+	}
+	slices.Sort(ids)
+	if len(ids) == 0 {
+		return nil, "", nil
+	}
+	return ids[:1], ids[0], nil
+}
+
 func (m *roomsMembers) set(fn func()) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -236,6 +267,8 @@ type roomsEnv struct {
 	ids       *IDGenerator
 	members   *roomsMembers
 	transport *roomsTransport
+	notices   *roomsNotifier
+	posts     *roomsPosts
 	jobs      *InlineJobs
 	hub       *stream.Hub
 	svc       *appvoice.Service
@@ -250,7 +283,8 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 	clock := NewClock(time.Date(2026, 10, 26, 9, 0, 0, 0, time.UTC))
 	outbox, jobs := inlineOutbox(projectors)
 	e := &roomsEnv{
-		h: h, clock: clock, ids: NewIDGenerator(clock), transport: &roomsTransport{}, jobs: jobs, hub: stream.NewHub(stream.HubOptions{}),
+		h: h, clock: clock, ids: NewIDGenerator(clock), transport: &roomsTransport{}, notices: &roomsNotifier{}, posts: &roomsPosts{},
+		jobs: jobs, hub: stream.NewHub(stream.HubOptions{}),
 		members: &roomsMembers{
 			inactive: map[string]bool{}, limited: map[string]bool{}, starters: map[string]bool{},
 			follows: map[[2]string]bool{}, blocks: map[[2]string]bool{},
@@ -261,7 +295,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 		d := appvoice.Deps{
 			Repository: h.Voice, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
 			Heartbeats: appvoice.NewHeartbeats(kv, h.Voice), Members: e.members, Relations: e.members, Config: cfg,
-			Streams: e.hub,
+			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost,
 		}
 		if cfg.Transport != "" {
 			d.Transport = e.transport

@@ -3168,6 +3168,20 @@ func (l *Localizer) ServerPreviewTitle(handle string, name string) string {
 	return l.format("server:preview.title", map[string]any{"handle": handle, "name": name})
 }
 
+// ServerPreviewVoiceRoomEnded formats "server:preview.voice_room_ended". Title of the link preview (og:title and the page title) of a voice chat room that has ended, shown only when the instance shows the summaries of its rooms. {room} is the room's name.
+//
+//	en: {room} — this voice chat has ended
+func (l *Localizer) ServerPreviewVoiceRoomEnded(room string) string {
+	return l.format("server:preview.voice_room_ended", map[string]any{"room": room})
+}
+
+// ServerPreviewVoiceRoomOpen formats "server:preview.voice_room_open". Title of the link preview (og:title and the page title) of a voice chat room that is open, shown only when the instance shows the summaries of its rooms. {room} is the room's name; {host} is the display name of the host, or the username when there is none.
+//
+//	en: {room} — a voice chat hosted by {host}, open now
+func (l *Localizer) ServerPreviewVoiceRoomOpen(host string, room string) string {
+	return l.format("server:preview.voice_room_open", map[string]any{"host": host, "room": room})
+}
+
 // ServerPushAccountMoved formats "server:push.account_moved". Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account.
 //
 //	en: {name} moved to another account
@@ -3376,4 +3390,18 @@ func (l *Localizer) ServerPushSupporterServiceClosure(instance string) string {
 //	en: Your supporter plan on {instance} ended
 func (l *Localizer) ServerPushSupporterSubscriptionEnded(instance string) string {
 	return l.format("server:push.supporter_subscription_ended", map[string]any{"instance": instance})
+}
+
+// ServerPushVoiceRoomInvited formats "server:push.voice_room_invited". Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user.
+//
+//	en: {name} invited you to a voice chat room
+func (l *Localizer) ServerPushVoiceRoomInvited(name string) string {
+	return l.format("server:push.voice_room_invited", map[string]any{"name": name})
+}
+
+// ServerPushVoiceRoomStarted formats "server:push.voice_room_started". Web Push notification: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host.
+//
+//	en: {name} started a voice chat room
+func (l *Localizer) ServerPushVoiceRoomStarted(name string) string {
+	return l.format("server:push.voice_room_started", map[string]any{"name": name})
 }

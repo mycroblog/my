@@ -76,6 +76,9 @@ type Options struct {
 	// their pages (/about/terms, /about/privacy, /about/commerce); nil serves the generic shell
 	// there. It is called per request, so that publishing a document applies at once.
 	Documents Documents
+	// VoiceRooms reads the summaries of the voice chat rooms for the link previews of their pages
+	// (/voice/{room_id}); nil serves the generic shell there. It is called per request.
+	VoiceRooms VoiceRooms
 	// Messages formats the texts of link previews; nil loads the embedded catalogs.
 	Messages *i18n.Bundle
 	// DefaultImage returns the instance's preview image for profiles and posts without images,
@@ -457,6 +460,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.o.Previews != nil {
 		if route, ok := h.parsePreviewRoute(p); ok {
 			h.servePreview(w, r, route)
+			return
+		}
+	}
+	if h.o.VoiceRooms != nil {
+		if id, ok := voiceRoomID(p); ok {
+			h.serveVoiceRoom(w, r, id)
 			return
 		}
 	}

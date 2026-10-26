@@ -130,6 +130,7 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
+	voiceRooms := map[string]*VoiceRoom{}
 	var statusIDs []string
 	seen := map[string]bool{}
 	for _, n := range ns {
@@ -260,6 +261,13 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		}
 		if item.Reaction, err = s.reactionEmojiOf(ctx, n); err != nil {
 			return nil, err
+		}
+		if n.VoiceRoomID != "" {
+			id := n.VoiceRoomID
+			item.VoiceRoomId = &id
+			if item.VoiceRoom, err = s.notifiedVoiceRoom(ctx, accountID, id, voiceRooms); err != nil {
+				return nil, err
+			}
 		}
 		out = append(out, item)
 	}

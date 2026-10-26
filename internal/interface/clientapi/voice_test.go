@@ -26,6 +26,10 @@ type fakeVoiceRooms struct {
 	queries  []appvoice.ListQuery
 	ops      []string
 	limits   []int
+	// summary is the summary of the room, nil for an unknown room; historyAfter records the
+	// cursors of the history.
+	summary      *appvoice.Summary
+	historyAfter []string
 }
 
 func (f *fakeVoiceRooms) room() appvoice.RoomView {

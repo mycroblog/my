@@ -34,6 +34,8 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		Previews: a.Previews, Messages: a.Messages,
 		// The pages of the published documents carry link previews under their names.
 		Documents: a.Instance,
+		// The pages of the voice chat rooms carry the summaries the instance shows (ADR-0100 §9).
+		VoiceRooms: a.voiceRoomSummary,
 		// The instance's preview image is read per request, so that a change applies at once.
 		DefaultImage: a.previewImage,
 		// The instance theme (ADR-0059), read per request so that a saved theme applies at once.

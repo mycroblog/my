@@ -260,16 +260,109 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 			return post, err
 		}
 	}
-	restrictions, err := s.postingRestrictions(ctx, in.AuthorAccountID)
+	p, err := s.prepareCreate(ctx, author, in)
 	if err != nil {
 		return Post{}, err
 	}
+	var post Post
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		post, err = s.CreateTx(ctx, tx, p)
+		return err
+	})
+	if errors.Is(err, ErrIdempotencyKeyUsed) {
+		// A concurrent request with the same key won.
+		return s.replay(ctx, in.AuthorAccountID, in.IdempotencyKey)
+	}
+	if err != nil {
+		return Post{}, err
+	}
+	return post, nil
+}
+
+// PreparedCreate is a new local status that PrepareCreate checked and built and CreateTx writes.
+type PreparedCreate struct {
+	st          content.Status
+	local       content.LocalStatus
+	rev         content.Revision
+	tags        []content.Tag
+	quotePolicy content.QuotePolicy
+	quote       *localQuote
+	tally       *content.PollTallyObservation
+	now         time.Time
+}
+
+// PrepareCreate checks and builds a new local status as Create does, without writing it, so
+// that another module writes it with CreateTx inside its own transaction: the start post of a
+// voice chat room (ADR-0100 §9). It takes no Idempotency-Key (content.ErrInvalidIdempotencyKey).
+func (s *Service) PrepareCreate(ctx context.Context, in CreateInput) (PreparedCreate, error) {
+	if !in.Visibility.Valid() {
+		return PreparedCreate{}, fmt.Errorf("%w: %q", content.ErrInvalidVisibility, in.Visibility)
+	}
+	if in.IdempotencyKey != "" {
+		return PreparedCreate{}, content.ErrInvalidIdempotencyKey
+	}
+	author, err := s.localActive(ctx, in.AuthorAccountID)
+	if err != nil {
+		return PreparedCreate{}, err
+	}
+	return s.prepareCreate(ctx, author, in)
+}
+
+// CreateTx writes inside tx the status that PrepareCreate or Create prepared, emitting
+// StatusCreated, and returns it.
+func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Post, error) {
+	repo := s.d.Repository
+	if err := repo.InsertStatus(ctx, tx, p.st); err != nil {
+		return Post{}, err
+	}
+	if err := repo.InsertLocalStatus(ctx, tx, p.local); err != nil {
+		return Post{}, err
+	}
+	rev := p.rev
+	var err error
+	if rev.TagIDs, err = ensureTags(ctx, tx, repo, p.tags); err != nil {
+		return Post{}, err
+	}
+	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
+		return Post{}, err
+	}
+	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev}); err != nil {
+		return Post{}, err
+	}
+	if s.d.Quotes != nil {
+		if err := s.d.Quotes.UpsertQuotePolicy(ctx, tx, content.StatusQuotePolicy{StatusID: p.st.ID, Policy: p.quotePolicy, UpdatedAt: p.now}); err != nil {
+			return Post{}, err
+		}
+	}
+	if p.quote != nil {
+		if err := s.recordLocalQuote(ctx, tx, p.st, *p.quote); err != nil {
+			return Post{}, err
+		}
+	}
+	if p.tally != nil {
+		if err := repo.InsertPollObservation(ctx, tx, *p.tally); err != nil {
+			return Post{}, err
+		}
+		if err := tx.Emit(ctx, PollTallyObserved{Observation: *p.tally}); err != nil {
+			return Post{}, err
+		}
+	}
+	return Post{Status: p.st, Revision: rev}, nil
+}
+
+// prepareCreate checks and builds the status of in by author, outside any transaction.
+func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in CreateInput) (PreparedCreate, error) {
+	restrictions, err := s.postingRestrictions(ctx, in.AuthorAccountID)
+	if err != nil {
+		return PreparedCreate{}, err
+	}
 	if in.Poll != nil && len(in.Media) > 0 {
-		return Post{}, ErrPollWithMedia
+		return PreparedCreate{}, ErrPollWithMedia
 	}
 	body, err := s.prepareText(ctx, author, in.TextInput)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
 
 	id := s.d.IDs.NewID()
@@ -278,7 +371,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	if in.Poll != nil {
 		p, err := content.NewPoll(s.d.IDs.NewID(), *in.Poll, now)
 		if err != nil {
-			return Post{}, err
+			return PreparedCreate{}, err
 		}
 		poll = &p
 	}
@@ -293,27 +386,27 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	st.ConversationURI = st.URI
 	if in.InReplyToID != "" {
 		if !restrictions.CanInteract() {
-			return Post{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
+			return PreparedCreate{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
 		}
 		parent, err := s.replyTarget(ctx, in.AuthorAccountID, in.InReplyToID)
 		if err != nil {
-			return Post{}, err
+			return PreparedCreate{}, err
 		}
 		st.InReplyToURI = parent.URI
 		st.ConversationURI = cmp.Or(parent.ConversationURI, parent.URI)
 	}
 	quotePolicy, err := s.newQuotePolicy(ctx, author, in.QuotePolicy)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
 	var quote *localQuote
 	if in.QuotedStatusID != "" {
 		if !restrictions.CanInteract() {
-			return Post{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
+			return PreparedCreate{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
 		}
 		q, err := s.quoteTarget(ctx, in.AuthorAccountID, in.QuotedStatusID, st.Visibility)
 		if err != nil {
-			return Post{}, err
+			return PreparedCreate{}, err
 		}
 		quote = &q
 	}
@@ -323,59 +416,15 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	rev := body.revision(s.d.IDs.NewID(), id, 1, now)
 	rev.Poll = poll
 	tags := body.tags(s.d.IDs, now)
-	var tally content.PollTallyObservation
+	var tally *content.PollTallyObservation
 	if poll != nil {
 		// A local poll starts with no votes; every vote records its new counts (pollTally).
 		var none int64
-		tally = content.PollTallyObservation{
+		tally = &content.PollTallyObservation{
 			ID: s.d.IDs.NewID(), PollID: poll.ID, VotersCount: &none, ObservedAt: now, Votes: make([]int64, len(poll.Options)),
 		}
 	}
-
-	repo := s.d.Repository
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if err := repo.InsertStatus(ctx, tx, st); err != nil {
-			return err
-		}
-		if err := repo.InsertLocalStatus(ctx, tx, local); err != nil {
-			return err
-		}
-		var err error
-		if rev.TagIDs, err = ensureTags(ctx, tx, repo, tags); err != nil {
-			return err
-		}
-		if err := repo.InsertRevision(ctx, tx, rev); err != nil {
-			return err
-		}
-		if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev}); err != nil {
-			return err
-		}
-		if s.d.Quotes != nil {
-			if err := s.d.Quotes.UpsertQuotePolicy(ctx, tx, content.StatusQuotePolicy{StatusID: st.ID, Policy: quotePolicy, UpdatedAt: now}); err != nil {
-				return err
-			}
-		}
-		if quote != nil {
-			if err := s.recordLocalQuote(ctx, tx, st, *quote); err != nil {
-				return err
-			}
-		}
-		if poll == nil {
-			return nil
-		}
-		if err := repo.InsertPollObservation(ctx, tx, tally); err != nil {
-			return err
-		}
-		return tx.Emit(ctx, PollTallyObserved{Observation: tally})
-	})
-	if errors.Is(err, ErrIdempotencyKeyUsed) {
-		// A concurrent request with the same key won.
-		return s.replay(ctx, in.AuthorAccountID, in.IdempotencyKey)
-	}
-	if err != nil {
-		return Post{}, err
-	}
-	return Post{Status: st, Revision: rev}, nil
+	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, now: now}, nil
 }
 
 // replay returns the post that an author posted with an Idempotency-Key.

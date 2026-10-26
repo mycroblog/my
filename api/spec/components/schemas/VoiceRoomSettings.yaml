@@ -18,3 +18,5 @@ properties:
     $ref: ./VoiceRoomVisibility.yaml
   speakers:
     $ref: ./VoiceRoomSpeakers.yaml
+  post:
+    $ref: ./VoiceStartPost.yaml

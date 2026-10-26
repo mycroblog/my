@@ -329,6 +329,30 @@ func (r *VoiceRepository) OpenRooms(ctx context.Context, tx uow.Tx, tagNormalize
 	return recs, nil
 }
 
+// HostedRooms implements appvoice.Repository.
+func (r *VoiceRepository) HostedRooms(ctx context.Context, tx uow.Tx, accountID, beforeID string, limit int) ([]appvoice.RoomRecord, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListHostedVoiceRooms(ctx, postgresgen.ListHostedVoiceRoomsParams{AccountID: accountID, Before: beforeID, RowLimit: n})
+	if err != nil {
+		return nil, wrap(err, "list hosted voice rooms")
+	}
+	recs := make([]appvoice.RoomRecord, len(rows))
+	for i, row := range rows {
+		recs[i] = voiceRoomRecord(postgresgen.GetVoiceRoomRow(row))
+	}
+	if err := withVoiceHashtags(ctx, q, recs); err != nil {
+		return nil, err
+	}
+	return recs, nil
+}
+
 func voiceParticipant(row postgresgen.VoiceRoomParticipant) appvoice.Participant {
 	return appvoice.Participant{
 		AccountID: row.AccountID, RoomID: row.RoomID, ParticipationID: row.ParticipationID, Role: voice.Role(row.Role),

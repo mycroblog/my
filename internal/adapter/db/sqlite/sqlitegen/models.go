@@ -608,6 +608,7 @@ type Notification struct {
 	AccountMoveOutcome      sql.NullString
 	ServiceClosureEventID   sql.NullString
 	ServiceClosureChange    sql.NullString
+	VoiceRoomID             sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }
