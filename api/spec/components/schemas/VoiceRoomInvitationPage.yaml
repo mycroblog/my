@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the invitations of a voice chat room that were not revoked, oldest first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./VoiceRoomInvitation.yaml

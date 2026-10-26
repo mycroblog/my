@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/voice/p2p"
+	"github.com/mycroblog/my/internal/adapter/voice/turncloudflare"
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/queue"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
@@ -87,8 +88,13 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	switch a.Voice.Method {
 	case VoiceOff:
 	case VoiceP2P:
+		turn, err := a.voiceTURN(cfg)
+		if err != nil {
+			return err
+		}
 		transport = p2p.New(p2p.Options{
-			STUNURLs: cfg.VoiceSTUNURLs, RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock,
+			STUNURLs: cfg.VoiceSTUNURLs, TURN: turn, TTL: cfg.VoiceTURNCredentialTTL,
+			RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock, Meter: a.Meter,
 		})
 	case VoiceLiveKit:
 		var err error
@@ -114,7 +120,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	}
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
-		Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, RateLimiter: a.RateLimiter, Logger: a.Logger,
+		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, Logger: a.Logger,
 	})
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
@@ -123,6 +129,21 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	voicehttp.New(voicehttp.Options{Webhooks: a.VoiceRooms, Problem: a.writeStatusProblem, Logger: a.Logger}).
 		Register(surfaceRouter{a, surfaceVoice})
 	return nil
+}
+
+// voiceTURN returns the TURN source of voice_turn (ADR-0101 §5), nil for none.
+func (a *App) voiceTURN(cfg *config.Config) (p2p.TURN, error) {
+	switch cfg.VoiceTURN {
+	case "", "none":
+		return nil, nil
+	case "coturn":
+		return p2p.NewCoturn(cfg.VoiceTURNURLs, cfg.VoiceTURNSecret, a.Clock)
+	case turncloudflare.Name:
+		return turncloudflare.New(turncloudflare.Options{
+			KeyID: cfg.VoiceTURNCloudflareKeyID, APIToken: cfg.VoiceTURNCloudflareAPIToken, KV: a.KV, Clock: a.Clock,
+		})
+	}
+	return nil, fmt.Errorf("voice_turn = %s: unknown TURN source", cfg.VoiceTURN)
 }
 
 // voiceMembers reads the accounts for the rooms from the account, moderation, identity, and

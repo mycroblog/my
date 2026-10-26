@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+  - $ref: ../components/parameters/VoiceAccountId.yaml
+delete:
+  operationId: removeVoiceParticipant
+  summary: Remove a participant from a voice chat room
+  description: |
+    Takes a participant out of the room, by the host or a co-host, and bans the account from
+    the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
+    each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "204":
+      description: The participant left the room.
+    default:
+      $ref: ../components/responses/Problem.yaml

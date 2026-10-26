@@ -86,7 +86,9 @@ tags:
   - name: voice
     description: |
       The voice chat rooms of the local users: opening them, their settings, joining and
-      leaving them, the heartbeats of the sessions, and handing a room over. The operations need
+      leaving them, the heartbeats of the sessions, handing a room over, speaking and raising a
+      hand, the operations of the host and the co-hosts on the participants, and the
+      invitations. The operations need
       a `read:voice` or `write:voice` scope, and answer 404 while the voice chat is off on the
       server.
   - name: admin-moderation
@@ -4309,6 +4311,364 @@ paths:
                 $ref: '#/components/schemas/VoiceRoom'
         default:
           $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/speaker:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: becomeVoiceSpeaker
+      summary: Become a speaker in a voice chat room
+      description: |
+        Makes the user, a listener in the room, a speaker. The host, the co-hosts, the users whom
+        the room's speakers setting covers, and the users with a permission to speak (a granted
+        raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
+        needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
+        hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the user as a speaker.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: becomeVoiceListener
+      summary: Go back to listening in a voice chat room
+      description: |
+        Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
+        the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the user as a listener.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/hand:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    post:
+      operationId: raiseVoiceHand
+      summary: Raise a hand in a voice chat room
+      description: |
+        Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
+        speaker raises none. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the user's hand raised.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: lowerVoiceHand
+      summary: Lower a hand in a voice chat room
+      description: |
+        Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the user's hand down.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participants/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    delete:
+      operationId: removeVoiceParticipant
+      summary: Remove a participant from a voice chat room
+      description: |
+        Takes a participant out of the room, by the host or a co-host, and bans the account from
+        the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
+        each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '204':
+          description: The participant left the room.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participants/{account_id}/grant:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    post:
+      operationId: grantVoiceSpeaking
+      summary: Let a participant of a voice chat room speak
+      description: |
+        Gives a participant a permission to speak, by the host or a co-host, with or without a
+        raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+        permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room after the grant.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: revokeVoiceSpeaking
+      summary: Stop a participant of a voice chat room from speaking
+      description: |
+        Makes a speaker a listener again, by the host or a co-host, and takes back the
+        participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room after the revocation.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participants/{account_id}/hand:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    delete:
+      operationId: dismissVoiceHand
+      summary: Dismiss the raised hand of a participant of a voice chat room
+      description: |
+        Turns down a participant's request to speak, by the host or a co-host. A hand that is down
+        stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the participant's hand down.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participants/{account_id}/mute:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    post:
+      operationId: muteVoiceParticipant
+      summary: Mute a participant of a voice chat room
+      description: |
+        Turns the microphone of a participant off, by the host or a co-host. The participant may
+        turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '204':
+          description: The participant is muted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/participants/{account_id}/cohost:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    post:
+      operationId: assignVoiceCohost
+      summary: Make a participant of a voice chat room a co-host
+      description: |
+        Makes a participant a co-host, by the host; a room has at most 3 co-hosts (a 409
+        `/api/v1/problems/voice-too-many-cohosts`). The participants in a block relation, either
+        way, with the new co-host leave the room. A co-host stays a co-host while the participation
+        lasts: one who leaves and joins again is a participant until the host makes them a co-host
+        again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
+        in a block relation with the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room with the new co-host.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: removeVoiceCohost
+      summary: Stop a participant of a voice chat room being a co-host
+      description: |
+        Makes a co-host a participant without the role of a co-host, by the host. A 403
+        `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '200':
+          description: The room without the co-host.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoom'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+    get:
+      operationId: listVoiceInvitations
+      summary: List the invitations of a voice chat room
+      description: |
+        Lists the invitations of the room that were not revoked, oldest first, for the host and
+        the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - read:voice
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the invitations.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoomInvitationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: inviteToVoiceRoom
+      summary: Invite a user to a voice chat room
+      description: |
+        Invites a local user to the room as a listener or as a speaker, by the host or a co-host:
+        the user sees the room from now on, and an invitation as a speaker lets the user speak
+        without asking. A user is invited to a room once (a 409 `/api/v1/problems/voice-already-invited`,
+        also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
+        a local, active user, is the host or the user, is in a block relation with the host or a
+        co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
+        with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceRoomInvitationCreate'
+      responses:
+        '201':
+          description: The invitation.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceRoomInvitation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /voice/rooms/{id}/invitations/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/VoiceRoomId'
+      - $ref: '#/components/parameters/VoiceAccountId'
+    delete:
+      operationId: revokeVoiceInvitation
+      summary: Revoke an invitation to a voice chat room
+      description: |
+        Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
+        room unless in it, and the permission to speak of an invitation as a speaker goes too; a
+        participant stays in the room as a speaker or a listener. A 404 for a user without an
+        invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+      tags:
+        - voice
+      security:
+        - oauth2:
+            - write:voice
+      responses:
+        '204':
+          description: The invitation is revoked.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/queue:
     get:
       operationId: getAdminQueue
@@ -8374,6 +8734,13 @@ components:
       in: path
       required: true
       description: The ID of the subscription.
+      schema:
+        $ref: '#/components/schemas/Id'
+    VoiceAccountId:
+      name: account_id
+      in: path
+      required: true
+      description: The ID of the account in the voice chat room.
       schema:
         $ref: '#/components/schemas/Id'
     VoiceRoomId:
@@ -17665,6 +18032,53 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VoiceRoomParticipant'
+    VoiceRoomInvitation:
+      description: |
+        An invitation to a voice chat room. The invited user sees the room until the invitation is
+        revoked; an invitation as a speaker also lets the user speak without asking.
+      type: object
+      required:
+        - id
+        - account
+        - role
+        - invited_by_id
+        - invited_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        account:
+          $ref: '#/components/schemas/Account'
+        role:
+          $ref: '#/components/schemas/VoiceRole'
+        invited_by_id:
+          $ref: '#/components/schemas/Id'
+        invited_at:
+          type: string
+          format: date-time
+    VoiceRoomInvitationCreate:
+      description: |
+        The user to invite to a voice chat room, and as what: a listener (the default), or a speaker,
+        who may speak without asking.
+      type: object
+      required:
+        - account_id
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+        role:
+          $ref: '#/components/schemas/VoiceRole'
+    VoiceRoomInvitationPage:
+      description: A page of the invitations of a voice chat room that were not revoked, oldest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/VoiceRoomInvitation'
     VoiceRoomJoin:
       description: |
         A session of the user in a voice chat room: the room, the new session, and its grant. The

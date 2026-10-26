@@ -193,7 +193,9 @@ type webhookEvent struct {
 	Timestamp string `json:"timestamp"`
 	ChannelID string `json:"channel_id"`
 	ClientID  string `json:"client_id"`
-	Data      *struct {
+	// ConnectionID is the connection of a connection event.
+	ConnectionID string `json:"connection_id"`
+	Data         *struct {
 		Reason string `json:"reason"`
 	} `json:"data"`
 }
@@ -235,7 +237,7 @@ func (t *Transport) ParseEvents(_ context.Context, header http.Header, body []by
 		if e.ClientID == "" {
 			return nil, ErrWebhookBody
 		}
-		ev.Session = e.ClientID
+		ev.Session, ev.Connection = e.ClientID, e.ConnectionID
 	}
 	return []voice.Event{ev}, nil
 }

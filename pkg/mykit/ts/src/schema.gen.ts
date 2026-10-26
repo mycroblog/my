@@ -3048,6 +3048,274 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/voice/rooms/{id}/speaker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Become a speaker in a voice chat room
+         * @description Makes the user, a listener in the room, a speaker. The host, the co-hosts, the users whom
+         *     the room's speakers setting covers, and the users with a permission to speak (a granted
+         *     raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
+         *     needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
+         *     hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+         */
+        post: operations["becomeVoiceSpeaker"];
+        /**
+         * Go back to listening in a voice chat room
+         * @description Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
+         *     the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["becomeVoiceListener"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/hand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Raise a hand in a voice chat room
+         * @description Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
+         *     speaker raises none. A 404 while the voice chat is off on the server.
+         */
+        post: operations["raiseVoiceHand"];
+        /**
+         * Lower a hand in a voice chat room
+         * @description Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["lowerVoiceHand"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participants/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a participant from a voice chat room
+         * @description Takes a participant out of the room, by the host or a co-host, and bans the account from
+         *     the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
+         *     each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["removeVoiceParticipant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participants/{account_id}/grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Let a participant of a voice chat room speak
+         * @description Gives a participant a permission to speak, by the host or a co-host, with or without a
+         *     raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+         *     permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         */
+        post: operations["grantVoiceSpeaking"];
+        /**
+         * Stop a participant of a voice chat room from speaking
+         * @description Makes a speaker a listener again, by the host or a co-host, and takes back the
+         *     participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["revokeVoiceSpeaking"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participants/{account_id}/hand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Dismiss the raised hand of a participant of a voice chat room
+         * @description Turns down a participant's request to speak, by the host or a co-host. A hand that is down
+         *     stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["dismissVoiceHand"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participants/{account_id}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mute a participant of a voice chat room
+         * @description Turns the microphone of a participant off, by the host or a co-host. The participant may
+         *     turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         */
+        post: operations["muteVoiceParticipant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/participants/{account_id}/cohost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a participant of a voice chat room a co-host
+         * @description Makes a participant a co-host, by the host; a room has at most 3 co-hosts (a 409
+         *     `/api/v1/problems/voice-too-many-cohosts`). The participants in a block relation, either
+         *     way, with the new co-host leave the room. A co-host stays a co-host while the participation
+         *     lasts: one who leaves and joins again is a participant until the host makes them a co-host
+         *     again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
+         *     in a block relation with the host. A 404 while the voice chat is off on the server.
+         */
+        post: operations["assignVoiceCohost"];
+        /**
+         * Stop a participant of a voice chat room being a co-host
+         * @description Makes a co-host a participant without the role of a co-host, by the host. A 403
+         *     `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["removeVoiceCohost"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the invitations of a voice chat room
+         * @description Lists the invitations of the room that were not revoked, oldest first, for the host and
+         *     the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         */
+        get: operations["listVoiceInvitations"];
+        put?: never;
+        /**
+         * Invite a user to a voice chat room
+         * @description Invites a local user to the room as a listener or as a speaker, by the host or a co-host:
+         *     the user sees the room from now on, and an invitation as a speaker lets the user speak
+         *     without asking. A user is invited to a room once (a 409 `/api/v1/problems/voice-already-invited`,
+         *     also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
+         *     a local, active user, is the host or the user, is in a block relation with the host or a
+         *     co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
+         *     with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         */
+        post: operations["inviteToVoiceRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/invitations/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke an invitation to a voice chat room
+         * @description Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
+         *     room unless in it, and the permission to speak of an invitation as a speaker goes too; a
+         *     participant stays in the room as a speaker or a listener. A 404 for a user without an
+         *     invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         */
+        delete: operations["revokeVoiceInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/queue": {
         parameters: {
             query?: never;
@@ -11207,6 +11475,30 @@ export interface components {
             participants: components["schemas"]["VoiceRoomParticipant"][];
         };
         /**
+         * @description An invitation to a voice chat room. The invited user sees the room until the invitation is
+         *     revoked; an invitation as a speaker also lets the user speak without asking.
+         */
+        VoiceRoomInvitation: {
+            id: components["schemas"]["Id"];
+            account: components["schemas"]["Account"];
+            role: components["schemas"]["VoiceRole"];
+            invited_by_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            invited_at: string;
+        };
+        /**
+         * @description The user to invite to a voice chat room, and as what: a listener (the default), or a speaker,
+         *     who may speak without asking.
+         */
+        VoiceRoomInvitationCreate: {
+            account_id: components["schemas"]["Id"];
+            role?: components["schemas"]["VoiceRole"];
+        };
+        /** @description A page of the invitations of a voice chat room that were not revoked, oldest first. */
+        VoiceRoomInvitationPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["VoiceRoomInvitation"][];
+        };
+        /**
          * @description A session of the user in a voice chat room: the room, the new session, and its grant. The
          *     client sends the session's heartbeats every 15 seconds.
          */
@@ -11886,6 +12178,8 @@ export interface components {
         SupporterPlanId: components["schemas"]["Id"];
         /** @description The ID of the subscription. */
         SupporterSubscriptionId: components["schemas"]["Id"];
+        /** @description The ID of the account in the voice chat room. */
+        VoiceAccountId: components["schemas"]["Id"];
         /** @description The ID of the voice chat room. */
         VoiceRoomId: components["schemas"]["Id"];
         /** @description The ID of the webhook. */
@@ -15281,6 +15575,372 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["VoiceRoom"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    becomeVoiceSpeaker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the user as a speaker. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    becomeVoiceListener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the user as a listener. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    raiseVoiceHand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the user's hand raised. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    lowerVoiceHand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the user's hand down. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeVoiceParticipant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The participant left the room. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    grantVoiceSpeaking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room after the grant. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeVoiceSpeaking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room after the revocation. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    dismissVoiceHand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the participant's hand down. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    muteVoiceParticipant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The participant is muted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    assignVoiceCohost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room with the new co-host. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeVoiceCohost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The room without the co-host. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listVoiceInvitations: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the invitations. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomInvitationPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    inviteToVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRoomInvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description The invitation. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRoomInvitation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeVoiceInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+                /** @description The ID of the account in the voice chat room. */
+                account_id: components["parameters"]["VoiceAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invitation is revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };

@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+get:
+  operationId: listVoiceInvitations
+  summary: List the invitations of a voice chat room
+  description: |
+    Lists the invitations of the room that were not revoked, oldest first, for the host and
+    the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["read:voice"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the invitations.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomInvitationPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: inviteToVoiceRoom
+  summary: Invite a user to a voice chat room
+  description: |
+    Invites a local user to the room as a listener or as a speaker, by the host or a co-host:
+    the user sees the room from now on, and an invitation as a speaker lets the user speak
+    without asking. A user is invited to a room once (a 409 `/api/v1/problems/voice-already-invited`,
+    also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
+    a local, active user, is the host or the user, is in a block relation with the host or a
+    co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
+    with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceRoomInvitationCreate.yaml
+  responses:
+    "201":
+      description: The invitation.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoomInvitation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

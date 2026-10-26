@@ -598,5 +598,29 @@
   "errors.voice.unavailable": {
     "defaultMessage": "Voice chat is not available right now.",
     "description": "API error title for HTTP 503 when the server could not prepare the connection of a voice chat room."
+  },
+  "errors.voice.not_host_or_cohost": {
+    "defaultMessage": "Only the host or a co-host of the room may do this.",
+    "description": "API error title for HTTP 403 when a participant who is neither the host nor a co-host of a voice chat room grants, revokes, mutes, removes, dismisses a raised hand, or invites."
+  },
+  "errors.voice.cannot_speak": {
+    "defaultMessage": "You may not speak in this room without permission. Raise your hand to ask.",
+    "description": "API error title for HTTP 403 when a listener of a voice chat room whom the speakers setting does not cover and who has no permission becomes a speaker."
+  },
+  "errors.voice.invalid_participant": {
+    "defaultMessage": "This operation does not apply to that participant.",
+    "description": "API error title for HTTP 422 when the host or a co-host of a voice chat room operates on someone who is not in the room, themselves, the host, or (for removing) a co-host."
+  },
+  "errors.voice.too_many_cohosts": {
+    "defaultMessage": "The room has as many co-hosts as it may.",
+    "description": "API error title for HTTP 409 when the host of a voice chat room makes a fourth participant a co-host (at most 3)."
+  },
+  "errors.voice.invalid_invitee": {
+    "defaultMessage": "That user may not be invited to this room.",
+    "description": "API error title for HTTP 422 when the host or a co-host of a voice chat room invites a user who is not a local active user, is the host or themselves, is in a block relation with the host or a co-host, or was removed from the room."
+  },
+  "errors.voice.already_invited": {
+    "defaultMessage": "That user was invited to this room already.",
+    "description": "API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation)."
   }
 }

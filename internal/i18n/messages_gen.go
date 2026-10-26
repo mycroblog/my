@@ -2195,6 +2195,20 @@ func (l *Localizer) ServerErrorsUnusableImage(name string) string {
 	return l.format("server:errors.unusable_image", map[string]any{"name": name})
 }
 
+// ServerErrorsVoiceAlreadyInvited formats "server:errors.voice.already_invited". API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation).
+//
+//	en: That user was invited to this room already.
+func (l *Localizer) ServerErrorsVoiceAlreadyInvited() string {
+	return l.format("server:errors.voice.already_invited", nil)
+}
+
+// ServerErrorsVoiceCannotSpeak formats "server:errors.voice.cannot_speak". API error title for HTTP 403 when a listener of a voice chat room whom the speakers setting does not cover and who has no permission becomes a speaker.
+//
+//	en: You may not speak in this room without permission. Raise your hand to ask.
+func (l *Localizer) ServerErrorsVoiceCannotSpeak() string {
+	return l.format("server:errors.voice.cannot_speak", nil)
+}
+
 // ServerErrorsVoiceConflict formats "server:errors.voice.conflict". API error title for HTTP 409 when a change of a voice chat room raced another change of the same user.
 //
 //	en: The room changed meanwhile. Try again.
@@ -2223,11 +2237,25 @@ func (l *Localizer) ServerErrorsVoiceHostingElsewhereDetail() string {
 	return l.format("server:errors.voice.hosting_elsewhere_detail", nil)
 }
 
+// ServerErrorsVoiceInvalidInvitee formats "server:errors.voice.invalid_invitee". API error title for HTTP 422 when the host or a co-host of a voice chat room invites a user who is not a local active user, is the host or themselves, is in a block relation with the host or a co-host, or was removed from the room.
+//
+//	en: That user may not be invited to this room.
+func (l *Localizer) ServerErrorsVoiceInvalidInvitee() string {
+	return l.format("server:errors.voice.invalid_invitee", nil)
+}
+
 // ServerErrorsVoiceInvalidNextHost formats "server:errors.voice.invalid_next_host". API error title for HTTP 422 when the host of a voice chat room chooses as the next host someone who is not in the room or may not host rooms.
 //
 //	en: The next host must be a participant who may host rooms.
 func (l *Localizer) ServerErrorsVoiceInvalidNextHost() string {
 	return l.format("server:errors.voice.invalid_next_host", nil)
+}
+
+// ServerErrorsVoiceInvalidParticipant formats "server:errors.voice.invalid_participant". API error title for HTTP 422 when the host or a co-host of a voice chat room operates on someone who is not in the room, themselves, the host, or (for removing) a co-host.
+//
+//	en: This operation does not apply to that participant.
+func (l *Localizer) ServerErrorsVoiceInvalidParticipant() string {
+	return l.format("server:errors.voice.invalid_participant", nil)
 }
 
 // ServerErrorsVoiceNotEligible formats "server:errors.voice.not_eligible". API error title for HTTP 403 when a user who may not host voice chat rooms opens one (ADR-0100 §2: a local, unrestricted account, with the start_voice_rooms permission unless everyone may start rooms).
@@ -2244,11 +2272,25 @@ func (l *Localizer) ServerErrorsVoiceNotHost() string {
 	return l.format("server:errors.voice.not_host", nil)
 }
 
+// ServerErrorsVoiceNotHostOrCohost formats "server:errors.voice.not_host_or_cohost". API error title for HTTP 403 when a participant who is neither the host nor a co-host of a voice chat room grants, revokes, mutes, removes, dismisses a raised hand, or invites.
+//
+//	en: Only the host or a co-host of the room may do this.
+func (l *Localizer) ServerErrorsVoiceNotHostOrCohost() string {
+	return l.format("server:errors.voice.not_host_or_cohost", nil)
+}
+
 // ServerErrorsVoiceRoomFull formats "server:errors.voice.room_full". API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows.
 //
 //	en: The room is full.
 func (l *Localizer) ServerErrorsVoiceRoomFull() string {
 	return l.format("server:errors.voice.room_full", nil)
+}
+
+// ServerErrorsVoiceTooManyCohosts formats "server:errors.voice.too_many_cohosts". API error title for HTTP 409 when the host of a voice chat room makes a fourth participant a co-host (at most 3).
+//
+//	en: The room has as many co-hosts as it may.
+func (l *Localizer) ServerErrorsVoiceTooManyCohosts() string {
+	return l.format("server:errors.voice.too_many_cohosts", nil)
 }
 
 // ServerErrorsVoiceTooManyRooms formats "server:errors.voice.too_many_rooms". API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows.

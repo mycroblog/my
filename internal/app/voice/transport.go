@@ -55,10 +55,14 @@ type Session struct {
 	AccountID string
 }
 
-// SessionRef is a session as the media path sees it.
+// SessionRef is a session as the media path sees it. AccountID is empty on a media server that
+// knows only the session (ADR-0102 §3).
 type SessionRef struct {
 	ID        string
 	AccountID string
+	// Connection is the media server's ID of the session's current connection (LiveKit's
+	// participant SID), empty when it has none; a full reconnect gives a new one.
+	Connection string
 }
 
 // Grant is what the client of a session needs to connect (ADR-0101 §2).
@@ -130,9 +134,13 @@ const (
 
 // Event is one event of a media server; ID deduplicates it.
 type Event struct {
-	ID         string
-	Kind       EventKind
-	Room       RoomRef
-	Session    string
+	ID      string
+	Kind    EventKind
+	Room    RoomRef
+	Session string
+	// Connection is the media server's ID of the connection the event is about (LiveKit's
+	// participant SID), empty when it has none: a left event of an old connection does not
+	// disconnect a session that connected again.
+	Connection string
 	OccurredAt time.Time
 }

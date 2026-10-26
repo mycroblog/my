@@ -66,7 +66,7 @@ func (t *Transport) Connect(room voice.RoomRef, s voice.Session) {
 	if t.media[room.ID] == nil {
 		t.media[room.ID] = map[string]voice.SessionRef{}
 	}
-	t.media[room.ID][s.ID] = voice.SessionRef(s)
+	t.media[room.ID][s.ID] = voice.SessionRef{ID: s.ID, AccountID: s.AccountID}
 }
 
 // IsOpen reports whether the media path of a room is open.

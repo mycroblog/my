@@ -265,13 +265,10 @@ func (t *Transport) Sessions(ctx context.Context, room voice.RoomRef) ([]voice.S
 		return nil, err
 	}
 	var out []voice.SessionRef
-	seen := map[string]bool{}
-	for _, c := range conns {
-		if c.ClientID != "" && !seen[c.ClientID] {
-			seen[c.ClientID] = true
-			out = append(out, voice.SessionRef{ID: c.ClientID})
-		}
+	for id, c := range newestBySession(conns) {
+		out = append(out, voice.SessionRef{ID: id, Connection: c.ConnectionID})
 	}
+	slices.SortFunc(out, func(a, b voice.SessionRef) int { return strings.Compare(a.ID, b.ID) })
 	return out, nil
 }
 
@@ -288,12 +285,7 @@ func (t *Transport) Deduplicate(ctx context.Context, room voice.RoomRef, s voice
 // dedupe disconnects the connections of each session but its newest, of session only unless it
 // is "".
 func (t *Transport) dedupe(ctx context.Context, room voice.RoomRef, conns []connection, session string) error {
-	newest := map[string]connection{}
-	for _, c := range conns {
-		if n, ok := newest[c.ClientID]; !ok || c.newer(n) {
-			newest[c.ClientID] = c
-		}
-	}
+	newest := newestBySession(conns)
 	for _, c := range conns {
 		if c.ClientID == "" || (session != "" && c.ClientID != session) || newest[c.ClientID].ConnectionID == c.ConnectionID {
 			continue
@@ -305,10 +297,25 @@ func (t *Transport) dedupe(ctx context.Context, room voice.RoomRef, conns []conn
 	return nil
 }
 
+// newestBySession returns the newest connection of each session of conns.
+func newestBySession(conns []connection) map[string]connection {
+	newest := map[string]connection{}
+	for _, c := range conns {
+		if c.ClientID == "" {
+			continue
+		}
+		if n, ok := newest[c.ClientID]; !ok || c.newer(n) {
+			newest[c.ClientID] = c
+		}
+	}
+	return newest
+}
+
 // connection is the part of a connection of ListChannelConnections that the adapter reads.
 type connection struct {
 	ClientID     string `json:"client_id"`
 	ConnectionID string `json:"connection_id"`
+	Role         string `json:"role"`
 	// CreatedTimestamp is the time of the connection in RFC 3339.
 	CreatedTimestamp string `json:"created_timestamp"`
 }
@@ -374,7 +381,8 @@ func (f filter) blocked() []string {
 // block blocks (or lets through) the audio of the connections of a session with the channel's
 // forwarding filter (ADR-0102 §3): one rule whose connection_id, the senders, are the blocked
 // connections, AND the kind audio. The filter keeps only the connections that are still in the
-// channel. Its version makes two changes that race fail, for the job to try again.
+// channel. A recvonly connection sends no audio, so it is never blocked. Its version makes two
+// changes that race fail, for the job to try again.
 func (t *Transport) block(ctx context.Context, room voice.RoomRef, s voice.Session, on bool) error {
 	conns, err := t.connections(ctx, room)
 	if err != nil {
@@ -384,7 +392,7 @@ func (t *Transport) block(ctx context.Context, room voice.RoomRef, s voice.Sessi
 	var mine []string
 	for _, c := range conns {
 		live[c.ConnectionID] = true
-		if c.ClientID == s.ID {
+		if c.ClientID == s.ID && (!on || c.Role != roleRecvOnly) {
 			mine = append(mine, c.ConnectionID)
 		}
 	}

@@ -51,15 +51,20 @@ func newFakeServer(t *testing.T, authName, authValue string) (*fakeServer, *http
 	return f, srv
 }
 
-// connect adds a connection of clientID to a channel, as a client that the auth webhook let in,
-// and returns its connection ID.
+// connect adds a sendrecv connection of clientID to a channel, as a client that the auth
+// webhook let in, and returns its connection ID.
 func (f *fakeServer) connect(channel, clientID string) string {
+	return f.connectAs(channel, clientID, roleSendRecv)
+}
+
+// connectAs adds a connection of clientID with role to a channel.
+func (f *fakeServer) connectAs(channel, clientID, role string) string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.seq++
 	id := fmt.Sprintf("CONN%04d", f.seq)
 	at := time.Date(2026, 10, 26, 9, 0, f.seq, 0, time.UTC).Format(time.RFC3339Nano)
-	f.channels[channel] = append(f.channels[channel], fakeConn{ClientID: clientID, ConnectionID: id, ChannelID: channel, Role: "sendrecv", Created: at})
+	f.channels[channel] = append(f.channels[channel], fakeConn{ClientID: clientID, ConnectionID: id, ChannelID: channel, Role: role, Created: at})
 	return id
 }
 

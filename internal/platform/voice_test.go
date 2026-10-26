@@ -267,6 +267,88 @@ func TestVoiceLiveKit(t *testing.T) {
 	}
 }
 
+// TestVoiceParticipantsThroughAPI drives the participant operations of voice = p2p on SQLite
+// through the client API (ADR-0100 §4, §5, §7, §11): a listener who may not speak raises a hand
+// and speaks after the host's grant, the host invites a user as a speaker and makes a co-host,
+// a participant may not moderate, and a block by the host takes the blocked participant out of
+// the room through graph.blocked.
+func TestVoiceParticipantsThroughAPI(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org",
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	e := &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}
+	alice := e.user("alice")
+	member := func(name string) testUser {
+		t.Helper()
+		r, err := app.Identity.RegisterLocalUser(t.Context(), identity.RegisterInput{Username: name, Password: "correct horse battery staple"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return testUser{id: r.AccountID, token: issueTokens(t, app, r.User.ID, "").AccessToken}
+	}
+	bob, carol := member("bob"), member("carol")
+
+	var opened clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, "/voice/rooms", alice.token, map[string]any{"name": "Talk"}, &opened), http.StatusCreated, "open")
+	room := "/voice/rooms/" + opened.Room.Id
+	e.want(e.do(http.MethodPost, room+"/participation", bob.token, nil, nil), http.StatusOK, "join by bob")
+	if p := e.want(e.do(http.MethodPost, room+"/speaker", bob.token, nil, nil), http.StatusForbidden, "speak without a grant"); p != clientapi.ProblemTypeVoiceCannotSpeak {
+		t.Errorf("speak without a grant = %s", p)
+	}
+	var got clientapi.VoiceRoom
+	e.want(e.do(http.MethodPost, room+"/hand", bob.token, nil, &got), http.StatusOK, "raise a hand")
+	if len(got.Participants) != 2 || !got.Participants[1].HandRaised {
+		t.Errorf("after raising a hand = %+v", got.Participants)
+	}
+	e.want(e.do(http.MethodPost, room+"/participants/"+bob.id+"/grant", alice.token, nil, nil), http.StatusOK, "grant")
+	e.want(e.do(http.MethodPost, room+"/speaker", bob.token, nil, &got), http.StatusOK, "speak after the grant")
+	if got.Participants[1].Role != clientapi.VoiceRoleSpeaker || got.Participants[1].HandRaised {
+		t.Errorf("after speaking = %+v", got.Participants[1])
+	}
+	if p := e.want(e.do(http.MethodPost, room+"/participants/"+alice.id+"/mute", bob.token, nil, nil), http.StatusForbidden, "mute by a participant"); p != clientapi.ProblemTypeVoiceNotHostOrCohost {
+		t.Errorf("mute by a participant = %s", p)
+	}
+
+	var inv clientapi.VoiceRoomInvitation
+	e.want(e.do(http.MethodPost, room+"/invitations", alice.token, map[string]any{"account_id": carol.id, "role": "speaker"}, &inv), http.StatusCreated, "invite")
+	if inv.Account.Id != carol.id || inv.Role != clientapi.VoiceRoleSpeaker {
+		t.Errorf("invitation = %+v", inv)
+	}
+	if p := e.want(e.do(http.MethodPost, room+"/invitations", alice.token, map[string]any{"account_id": carol.id}, nil), http.StatusConflict, "invite again"); p != clientapi.ProblemTypeVoiceAlreadyInvited {
+		t.Errorf("invite again = %s", p)
+	}
+	var invs clientapi.VoiceRoomInvitationPage
+	e.want(e.do(http.MethodGet, room+"/invitations", alice.token, nil, &invs), http.StatusOK, "invitations")
+	if len(invs.Items) != 1 || invs.Items[0].Account.Id != carol.id {
+		t.Errorf("invitations = %+v", invs)
+	}
+	e.want(e.do(http.MethodPost, room+"/participation", carol.token, nil, nil), http.StatusOK, "join by carol")
+	e.want(e.do(http.MethodPost, room+"/speaker", carol.token, nil, nil), http.StatusOK, "speak after an invitation as a speaker")
+	e.want(e.do(http.MethodPost, room+"/participants/"+carol.id+"/cohost", alice.token, nil, &got), http.StatusOK, "make a co-host")
+	if !got.Participants[2].Cohost {
+		t.Errorf("after making a co-host = %+v", got.Participants[2])
+	}
+
+	e.want(e.do(http.MethodPost, "/accounts/"+bob.id+"/block", alice.token, nil, nil), http.StatusOK, "block by the host")
+	if _, err := app.Runner.Drain(t.Context()); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+	e.want(e.do(http.MethodGet, room, alice.token, nil, &got), http.StatusOK, "get after the block")
+	for _, p := range got.Participants {
+		if p.Account.Id == bob.id {
+			t.Errorf("the participant blocked by the host is still in the room: %+v", got.Participants)
+		}
+	}
+	e.want(e.do(http.MethodGet, room, bob.token, nil, nil), http.StatusNotFound, "get by the blocked participant")
+	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id, alice.token, nil, nil), http.StatusUnprocessableEntity, "remove a co-host")
+}
+
 // postSora posts body to an endpoint of Sora's webhooks with Basic authentication and returns
 // the status and the body of the answer.
 func postSora(t *testing.T, h http.Handler, path, user, pass string, body []byte) (int, string) {

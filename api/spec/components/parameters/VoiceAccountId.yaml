@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+name: account_id
+in: path
+required: true
+description: The ID of the account in the voice chat room.
+schema:
+  $ref: ../schemas/Id.yaml

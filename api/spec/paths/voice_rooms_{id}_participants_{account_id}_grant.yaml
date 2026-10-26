@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+  - $ref: ../components/parameters/VoiceAccountId.yaml
+post:
+  operationId: grantVoiceSpeaking
+  summary: Let a participant of a voice chat room speak
+  description: |
+    Gives a participant a permission to speak, by the host or a co-host, with or without a
+    raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+    permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room after the grant.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: revokeVoiceSpeaking
+  summary: Stop a participant of a voice chat room from speaking
+  description: |
+    Makes a speaker a listener again, by the host or a co-host, and takes back the
+    participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room after the revocation.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

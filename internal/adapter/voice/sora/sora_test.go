@@ -277,6 +277,14 @@ func TestSpeakingAndMute(t *testing.T) {
 			if ok {
 				t.Error("the filter stays without a blocked connection")
 			}
+			// A listener's recvonly connection sends no audio: nothing to block.
+			f.connectAs(ch, "session-l", roleRecvOnly)
+			if _, err := tr.SetSpeaking(t.Context(), room, appvoice.Session{ID: "session-l"}, false); err != nil {
+				t.Fatal(err)
+			}
+			if got := f.blocked(ch); len(got) != 0 {
+				t.Errorf("blocked after the revoke of a listener = %v, want none", got)
+			}
 			// A session that is not connected has nothing to mute.
 			if err := tr.Mute(t.Context(), room, appvoice.Session{ID: "absent"}); err != nil {
 				t.Errorf("Mute of an absent session: %v", err)
@@ -355,13 +363,14 @@ func TestRemoveCloseAndDuplicates(t *testing.T) {
 				t.Errorf("connections after Deduplicate = %v, want the newest of session-a and session-b", ids)
 			}
 			// Sessions lists each session once and disconnects the older duplicates too.
-			f.connect(ch, "session-b")
+			newestB := f.connect(ch, "session-b")
 			ss, err := tr.Sessions(t.Context(), room)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(ss) != 2 || len(f.conns(ch)) != 2 {
-				t.Errorf("Sessions = %v with connections %v, want two sessions of one connection each", ss, f.conns(ch))
+			want := []appvoice.SessionRef{{ID: "session-a", Connection: newer}, {ID: "session-b", Connection: newestB}}
+			if !slices.Equal(ss, want) || len(f.conns(ch)) != 2 {
+				t.Errorf("Sessions = %v with connections %v, want %v, one connection each", ss, f.conns(ch), want)
 			}
 			if err := tr.Remove(t.Context(), room, appvoice.Session{ID: "session-b"}); err != nil {
 				t.Fatal(err)
@@ -616,11 +625,11 @@ func TestParseEvents(t *testing.T) {
 		}{
 			"created": {
 				map[string]any{"type": "connection.created", "id": "EV_1", "timestamp": at, "channel_id": ch, "client_id": "s", "connection_id": "C1"},
-				[]appvoice.Event{{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: appvoice.RoomRef{ID: "room-5"}, Session: "s", OccurredAt: occurred}},
+				[]appvoice.Event{{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: appvoice.RoomRef{ID: "room-5"}, Session: "s", Connection: "C1", OccurredAt: occurred}},
 			},
 			"destroyed": {
-				map[string]any{"type": "connection.destroyed", "id": "EV_2", "timestamp": at, "channel_id": ch, "client_id": "s", "data": map[string]any{"reason": "normal"}},
-				[]appvoice.Event{{ID: "EV_2", Kind: appvoice.MediaSessionLeft, Room: appvoice.RoomRef{ID: "room-5"}, Session: "s", OccurredAt: occurred}},
+				map[string]any{"type": "connection.destroyed", "id": "EV_2", "timestamp": at, "channel_id": ch, "client_id": "s", "connection_id": "C2", "data": map[string]any{"reason": "normal"}},
+				[]appvoice.Event{{ID: "EV_2", Kind: appvoice.MediaSessionLeft, Room: appvoice.RoomRef{ID: "room-5"}, Session: "s", Connection: "C2", OccurredAt: occurred}},
 			},
 			"replaced by a duplicate": {
 				map[string]any{"type": "connection.destroyed", "id": "EV_3", "channel_id": ch, "client_id": "s", "data": map[string]any{"reason": "duplicate_client_id"}},

@@ -113,6 +113,16 @@ SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i
 FROM voice_room_invitations i
 WHERE i.room_id = $1 AND i.invitee_account_id = $2;
 
+-- ListVoiceRoomInvitations returns the invitations of a room that were not revoked, after the
+-- invitation of an ID (or from the first with ''), in the order they were made.
+-- name: ListVoiceRoomInvitations :many
+SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
+FROM voice_room_invitations i
+WHERE i.room_id = sqlc.arg(room_id) AND i.id::text > sqlc.arg(id)::text
+  AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)
+ORDER BY i.id
+LIMIT sqlc.arg(row_limit);
+
 -- name: IsVoiceRoomBanned :one
 SELECT EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = $1 AND account_id = $2) AS banned;
 

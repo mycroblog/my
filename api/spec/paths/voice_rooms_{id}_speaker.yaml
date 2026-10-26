@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: becomeVoiceSpeaker
+  summary: Become a speaker in a voice chat room
+  description: |
+    Makes the user, a listener in the room, a speaker. The host, the co-hosts, the users whom
+    the room's speakers setting covers, and the users with a permission to speak (a granted
+    raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
+    needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
+    hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room with the user as a speaker.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: becomeVoiceListener
+  summary: Go back to listening in a voice chat room
+  description: |
+    Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
+    the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room with the user as a listener.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

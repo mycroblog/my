@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -21,8 +22,8 @@ import (
 // The jobs of the voice module.
 const (
 	// JobApply applies a committed change of a room to its transport (ADR-0101 §2): it opens
-	// the media path of a room, removes a session from it, or closes it. Its idempotency key is
-	// the room and the change.
+	// the media path of a room, allows or stops the audio of a session, mutes a session,
+	// removes a session from it, or closes it. Its idempotency key is the room and the change.
 	JobApply = "voice.apply"
 	// JobSweep evaluates every open room (ADR-0100 §6): the expiry of the participants and the
 	// grace of the hosts, the rooms of a voice chat turned off (disabled), and the rooms open
@@ -46,6 +47,8 @@ const settingVoiceRoomStarters = "voice_room_starters"
 // The operations of JobApply.
 const (
 	applyOpen   = "open"
+	applySpeak  = "speak"
+	applyMute   = "mute"
 	applyRemove = "remove"
 	applyClose  = "close"
 )
@@ -55,6 +58,10 @@ type applyPayload struct {
 	Room    string `json:"room"`
 	Session string `json:"session,omitempty"`
 	Account string `json:"account,omitempty"`
+	// Participation names the participation whose current session applyMute mutes.
+	Participation string `json:"participation,omitempty"`
+	// Speak is whether the session of applySpeak may publish audio.
+	Speak bool `json:"speak,omitempty"`
 }
 
 type accountPayload struct {
@@ -88,6 +95,24 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 	switch p.Op {
 	case applyOpen:
 		err = t.Open(ctx, room)
+	case applySpeak:
+		var reconnect bool
+		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
+		if err == nil && reconnect {
+			// The client of the session has to connect again with a new grant (ADR-0101 §2);
+			// the job only logs it.
+			s.d.Logger.DebugContext(ctx, "the voice session connects again", slog.String("room", p.Room))
+		}
+	case applyMute:
+		session := p.Session
+		if session == "" {
+			if session, err = s.d.Heartbeats.current(ctx, p.Participation); err != nil {
+				return queue.Retry(0, err)
+			}
+		}
+		if session != "" {
+			err = t.Mute(ctx, room, Session{ID: session, AccountID: p.Account})
+		}
 	case applyRemove:
 		err = t.Remove(ctx, room, Session{ID: p.Session, AccountID: p.Account})
 	case applyClose:
@@ -218,6 +243,16 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 		}
 		return queue.Done()
 	})
+	reg.Register(JobCheckBlock, func(ctx context.Context, j queue.Job) queue.Result {
+		var p blockPayload
+		if err := json.Unmarshal(j.Payload, &p); err != nil {
+			return queue.Fail(fmt.Errorf("decode %s: %w", JobCheckBlock, err))
+		}
+		if err := s.CheckBlock(ctx, p.Blocker, p.Blocked); err != nil {
+			return queue.Retry(0, err)
+		}
+		return queue.Done()
+	})
 	reg.Register(JobCheckHosts, func(ctx context.Context, _ queue.Job) queue.Result {
 		if err := s.CheckHosts(ctx); err != nil {
 			return queue.Retry(0, err)
@@ -234,9 +269,11 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 // moderation.account_suspension_changed, the deletions of account.lifecycle_event_recorded,
 // and the restrictions of moderation.account_restrictions_changed enqueue JobCheckAccount for an
 // account in a room; the role changes of moderation.audit_recorded and the revisions of
-// voice_room_starters enqueue JobCheckHosts while rooms are open. Each enqueues in the
-// transaction of its event, and the job applies the change after the commit.
+// voice_room_starters enqueue JobCheckHosts while rooms are open; and the blocks of
+// graph.blocked between two participants of the same room enqueue JobCheckBlock. Each enqueues
+// in the transaction of its event, and the job applies the change after the commit.
 func (s *Service) RegisterEligibilityProjectors(r *uow.Projectors) {
+	s.registerBlockProjector(r)
 	r.Register(moderation.EventAccountSuspensionChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(moderation.AccountSuspensionChanged)
 		if !ev.Suspended {

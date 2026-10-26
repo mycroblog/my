@@ -547,6 +547,14 @@
     "defaultMessage": "[{name} ḿŭŭşŧ ƀḗḗ ȧȧƞ īḿȧȧɠḗḗ ŧħȧȧŧ ẏǿǿŭŭ ŭŭƥŀǿǿȧȧḓḗḗḓ ȧȧƞḓ ŧħȧȧŧ ħȧȧş ƒīƞīşħḗḗḓ ƥřǿǿƈḗḗşşīƞɠ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.voice.already_invited": {
+    "defaultMessage": "[Ŧħȧȧŧ ŭŭşḗḗř ẇȧȧş īƞṽīŧḗḗḓ ŧǿǿ ŧħīş řǿǿǿǿḿ ȧȧŀřḗḗȧȧḓẏ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.cannot_speak": {
+    "defaultMessage": "[Ẏǿǿŭŭ ḿȧȧẏ ƞǿǿŧ şƥḗḗȧȧķ īƞ ŧħīş řǿǿǿǿḿ ẇīŧħǿǿŭŭŧ ƥḗḗřḿīşşīǿǿƞ. Řȧȧīşḗḗ ẏǿǿŭŭř ħȧȧƞḓ ŧǿǿ ȧȧşķ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.voice.conflict": {
     "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ ƈħȧȧƞɠḗḗḓ ḿḗḗȧȧƞẇħīŀḗḗ. Ŧřẏ ȧȧɠȧȧīƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -563,8 +571,16 @@
     "defaultMessage": "[Ŀḗḗȧȧṽḗḗ ŧħȧȧŧ řǿǿǿǿḿ ƒīřşŧ, ƈħǿǿǿǿşīƞɠ ŧħḗḗ ƞḗḗẋŧ ħǿǿşŧ ǿǿř ḗḗƞḓīƞɠ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.voice.invalid_invitee": {
+    "defaultMessage": "[Ŧħȧȧŧ ŭŭşḗḗř ḿȧȧẏ ƞǿǿŧ ƀḗḗ īƞṽīŧḗḗḓ ŧǿǿ ŧħīş řǿǿǿǿḿ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.voice.invalid_next_host": {
     "defaultMessage": "[Ŧħḗḗ ƞḗḗẋŧ ħǿǿşŧ ḿŭŭşŧ ƀḗḗ ȧȧ ƥȧȧřŧīƈīƥȧȧƞŧ ẇħǿǿ ḿȧȧẏ ħǿǿşŧ řǿǿǿǿḿş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.invalid_participant": {
+    "defaultMessage": "[Ŧħīş ǿǿƥḗḗřȧȧŧīǿǿƞ ḓǿǿḗḗş ƞǿǿŧ ȧȧƥƥŀẏ ŧǿǿ ŧħȧȧŧ ƥȧȧřŧīƈīƥȧȧƞŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.not_eligible": {
@@ -575,8 +591,16 @@
     "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ħǿǿşŧ ǿǿƒ ŧħḗḗ řǿǿǿǿḿ ḿȧȧẏ ḓǿǿ ŧħīş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.voice.not_host_or_cohost": {
+    "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ħǿǿşŧ ǿǿř ȧȧ ƈǿǿ-ħǿǿşŧ ǿǿƒ ŧħḗḗ řǿǿǿǿḿ ḿȧȧẏ ḓǿǿ ŧħīş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.voice.room_full": {
     "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.voice.too_many_cohosts": {
+    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ ħȧȧş ȧȧş ḿȧȧƞẏ ƈǿǿ-ħǿǿşŧş ȧȧş īŧ ḿȧȧẏ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.too_many_rooms": {
