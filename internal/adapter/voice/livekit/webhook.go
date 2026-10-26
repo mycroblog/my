@@ -39,6 +39,7 @@ type webhookEvent struct {
 		Name string `json:"name"`
 	} `json:"room"`
 	Participant *struct {
+		SID      string `json:"sid"`
 		Identity string `json:"identity"`
 	} `json:"participant"`
 }
@@ -83,7 +84,7 @@ func (t *Transport) ParseEvents(_ context.Context, header http.Header, body []by
 		if e.Participant == nil || e.Participant.Identity == "" {
 			return nil, ErrWebhookBody
 		}
-		ev.Session = e.Participant.Identity
+		ev.Session, ev.Connection = e.Participant.Identity, e.Participant.SID
 	}
 	return []voice.Event{ev}, nil
 }

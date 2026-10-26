@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"strconv"
 	"strings"
@@ -205,6 +206,38 @@ func TestCallFailure(t *testing.T) {
 	}
 }
 
+// TestNotFoundIsTheTwirpCode checks that only the Twirp code not_found counts as a room or a
+// participant that LiveKit does not have: a 404 of a wrong route or of a proxy is an error.
+func TestNotFoundIsTheTwirpCode(t *testing.T) {
+	for name, body := range map[string]string{
+		"bad_route": `{"code":"bad_route","msg":"no handler"}`,
+		"proxy":     `<html>Not Found</html>`,
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(body))
+		}))
+		tr, err := New(Options{
+			URL: "wss://livekit.example.org", APIURL: srv.URL, APIKey: testKey, APISecret: testSecret,
+			HTTPClient: srv.Client(), Clock: testkit.VoiceTransportClock(),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		room, s := appvoice.RoomRef{ID: "room"}, appvoice.Session{ID: "session"}
+		if err := tr.Remove(t.Context(), room, s); err == nil {
+			t.Errorf("%s: Remove succeeded, want an error", name)
+		}
+		if err := tr.Close(t.Context(), room); err == nil {
+			t.Errorf("%s: Close succeeded, want an error", name)
+		}
+		if _, err := tr.Sessions(t.Context(), room); err == nil {
+			t.Errorf("%s: Sessions succeeded, want an error", name)
+		}
+		srv.Close()
+	}
+}
+
 // webhook returns the header and body of a delivery of event, signed as LiveKit signs them.
 func webhook(t *testing.T, key, secret string, now time.Time, event map[string]any) (http.Header, []byte) {
 	t.Helper()
@@ -238,7 +271,7 @@ func TestParseEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := appvoice.Event{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: appvoice.RoomRef{ID: "room-1"}, Session: "session-1", OccurredAt: now}
+	want := appvoice.Event{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: appvoice.RoomRef{ID: "room-1"}, Session: "session-1", Connection: "PA_1", OccurredAt: now}
 	if len(evs) != 1 || evs[0] != want {
 		t.Errorf("ParseEvents = %+v, want %+v", evs, want)
 	}

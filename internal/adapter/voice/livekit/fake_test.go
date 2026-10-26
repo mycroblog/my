@@ -147,7 +147,7 @@ func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		var ps []map[string]any
 		for id, p := range rm.participants {
-			ps = append(ps, map[string]any{"identity": id, "tracks": p.tracks})
+			ps = append(ps, map[string]any{"sid": "PA_" + id, "identity": id, "tracks": p.tracks})
 		}
 		res = map[string]any{"participants": ps}
 	case "GetParticipant", "UpdateParticipant", "RemoveParticipant", "MutePublishedTrack":

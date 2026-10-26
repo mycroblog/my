@@ -149,6 +149,7 @@ func (t *Transport) SetSpeaking(ctx context.Context, room voice.RoomRef, s voice
 
 // participantInfo is the part of a ParticipantInfo that the adapter reads.
 type participantInfo struct {
+	SID      string      `json:"sid"`
 	Identity string      `json:"identity"`
 	Tracks   []trackInfo `json:"tracks"`
 }
@@ -235,7 +236,7 @@ func (t *Transport) Sessions(ctx context.Context, room voice.RoomRef) ([]voice.S
 	}
 	out := make([]voice.SessionRef, 0, len(res.Participants))
 	for _, p := range res.Participants {
-		out = append(out, voice.SessionRef{ID: p.Identity})
+		out = append(out, voice.SessionRef{ID: p.Identity, Connection: p.SID})
 	}
 	return out, nil
 }
@@ -251,10 +252,12 @@ func (e *apiError) Error() string {
 	return fmt.Sprintf("livekit: %d %s: %s", e.Status, e.Code, e.Msg)
 }
 
-// isNotFound reports an error of a room or a participant that LiveKit does not have.
+// isNotFound reports an error of a room or a participant that LiveKit does not have: the Twirp
+// code not_found. Any other 404, such as bad_route from a wrong API URL or a proxy's own page,
+// is an error.
 func isNotFound(err error) bool {
 	var e *apiError
-	return errors.As(err, &e) && (e.Code == "not_found" || e.Status == http.StatusNotFound)
+	return errors.As(err, &e) && e.Code == "not_found"
 }
 
 // maxResponseBytes bounds a response of the API that the adapter reads.
