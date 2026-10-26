@@ -70,6 +70,7 @@ func TestGetInstance(t *testing.T) {
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,
 		SupporterListVisibility: clientapi.SupporterListVisibilityOff,
+		VoiceRoomStarters:       clientapi.InstanceVoiceRoomStartersPermitted,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("instance = %+v, want %+v", got, want)

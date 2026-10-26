@@ -101,6 +101,8 @@ async function serveApi(page: Page, { own, signedIn }: { own: Schemas["OwnSuppor
         income_visibility: "private",
         supporters_enabled: true,
         supporter_list_visibility: "public",
+        voice_enabled: false,
+        voice_room_starters: "permitted",
         rules: [],
       };
       return json(route, instance);

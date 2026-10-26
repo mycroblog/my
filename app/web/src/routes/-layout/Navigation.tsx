@@ -21,6 +21,8 @@
 // Administration. Only the permissions of those screens count: a permission of the user's side (ADR-0070, the
 // member category, such as view_finance) shows neither. A viewer with view_finance has Finances, after the user's
 // items and before the staff's areas, in the rail, the sidebar and the menu's sheet, never in the tab bar.
+// While the server has voice chat on (ADR-0100 §2), Voice chat, the list of the open rooms, comes right after the
+// user's items the same way.
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
 // their number as a badge the same way ("Moderation, 3 pending"), and so does the tab bar's Menu button, which
 // leads there ("Menu, 3 pending in moderation"): the count is in the names and drawn as digits, never shown by
@@ -61,6 +63,7 @@ import {
   SignInIcon,
   SignUpIcon,
   Text,
+  VoiceIcon,
 } from "@my/ui";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
@@ -81,6 +84,7 @@ import {
   useNavigationEntries,
 } from "../../features/settings";
 import { type TimelineAvailability, useTimelineAvailability } from "../../features/timeline";
+import { useVoiceAvailable } from "../../features/voice";
 import { useSessionStatus, useSessionUnreachable } from "../../lib/auth/SessionProvider";
 import { handleOf } from "../../lib/handle";
 import { type ClientMessageKey, useT } from "../../lib/i18n";
@@ -97,6 +101,7 @@ type Section =
   | "/profile"
   | "/bookmarks"
   | "/settings"
+  | "/voice"
   | "/finance"
   | "/moderation"
   | "/admin"
@@ -142,6 +147,19 @@ const financeItem: NavigationItem = {
   section: "/finance",
   label: "client:shell.nav.finance",
   icon: <FinanceIcon />,
+  shows: "rail",
+};
+
+/**
+ * The list of the open voice chat rooms (ADR-0100 §8), while the server has voice chat on: after the user's items in
+ * the rail and in the menu's sheet, never in the tab bar.
+ */
+const voiceItem: NavigationItem = {
+  id: "voice",
+  href: "/voice",
+  section: "/voice",
+  label: "client:voice.title",
+  icon: <VoiceIcon />,
   shows: "rail",
 };
 
@@ -210,6 +228,7 @@ export function Navigation() {
   const moderationEntry = useModerationEntry();
   const adminEntry = useAdminEntry();
   const financeEntry = useFinanceEntry();
+  const voiceAvailable = useVoiceAvailable();
   const staffAvailable = (item: NavigationItem) =>
     item.staff === undefined || (item.staff === "moderation" ? moderationEntry.available : adminEntry.available);
   const viewer = useViewer();
@@ -233,7 +252,7 @@ export function Navigation() {
   const signedOut = useSignedOut();
   let items: readonly NavigationItem[] = [];
   if (signedOut) items = signedOutItems(signInHref, signUpHref);
-  else if (status !== "unknown") items = [...userItems, ...(financeEntry.available ? [financeItem] : []), ...staffItems];
+  else if (status !== "unknown") items = [...userItems, ...(voiceAvailable ? [voiceItem] : []), ...(financeEntry.available ? [financeItem] : []), ...staffItems];
   const shown = items.filter((item) => (item.timeline === undefined || timelines[item.timeline]) && staffAvailable(item));
   const badgeOf = (section: Section | undefined): ItemBadge => {
     if (section === "/notifications" && unread > 0) {

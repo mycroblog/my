@@ -323,6 +323,10 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     case "supporter_plan_retired":
     case "supporter_service_closure":
       return isTauriApp() ? [] : [{ href: "/settings/supporter", label: "client:notifications.link.supporter" }];
+    // The page of the room, which says when it ended (ADR-0100 §9).
+    case "voice_room_started":
+    case "voice_room_invited":
+      return notification.voice_room_id === undefined ? [] : [{ href: `/voice/${notification.voice_room_id}`, label: "client:notifications.link.voice_room" }];
     case "relationships_severed":
       return ownAcct === null
         ? []

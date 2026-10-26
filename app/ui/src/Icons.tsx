@@ -17,6 +17,7 @@ import {
   PiFlag,
   PiForkKnife,
   PiHandWaving,
+  PiHeadset,
   PiHeart,
   PiLightbulb,
   PiPawPrint,
@@ -162,6 +163,8 @@ export const iconTable = {
   ModerationIcon: { off: glyph(PiShieldCheck, "PiShieldCheck") },
   AdminIcon: { off: glyph(PiWrench, "PiWrench") },
   FinanceIcon: { off: glyph(PiCoins, "PiCoins") },
+  // Voice chat (ADR-0100): a headset, which has no direction.
+  VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
   MenuIcon: { off: glyph(PiList, "PiList") },
   AboutIcon: { off: glyph(PiInfo, "PiInfo") },
   // The arrow points into the door along the line, so it mirrors in right-to-left text.
@@ -415,6 +418,11 @@ export function AdminIcon() {
 /** A stack of coins, for the finances of the server. */
 export function FinanceIcon() {
   return renderIcon(iconTable.FinanceIcon);
+}
+
+/** A headset, for the voice chat rooms. */
+export function VoiceIcon() {
+  return renderIcon(iconTable.VoiceIcon);
 }
 
 /** Three lines, for the button that opens the menu with the rest of the navigation. */

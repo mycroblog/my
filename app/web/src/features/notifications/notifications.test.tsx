@@ -259,6 +259,22 @@ describe("the notifications page", () => {
     expect(within(disabled).getByRole("link", { name: "Open the webhooks" })).toHaveAttribute("href", "/admin/webhooks");
   });
 
+  test("tells of a voice chat room that a followed account started, and leads to the room's page", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const roomId = "0192f0c4-7a8e-7000-8000-0000000000f1";
+    const items: Notification[] = [
+      { id: "0192f0c4-7a8e-7000-8000-0000000000da", type: "voice_room_started", created_at: "2026-10-16T09:00:00Z", account: otherAccountFixture, voice_room_id: roomId },
+    ];
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const started = within(feed).getByRole("article", { name: /started a voice chat room/ });
+    expect(within(started).getByRole("link", { name: "Open the room" })).toHaveAttribute("href", `/voice/${roomId}`);
+  });
+
   test("tells of custom emoji requests: a new one to an administrator, and a decision with its reason to the requester", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });

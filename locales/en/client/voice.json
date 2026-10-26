@@ -1,0 +1,342 @@
+{
+  "voice.title": {
+    "defaultMessage": "Voice chat",
+    "description": "Heading and document title of the list of the open voice chat rooms, and its item in the main navigation."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "This server does not offer voice chat.",
+    "description": "Shown on the voice chat pages when the server has voice chat turned off."
+  },
+  "voice.list.label": {
+    "defaultMessage": "Open rooms",
+    "description": "Accessible name of the list of the open voice chat rooms."
+  },
+  "voice.list.empty": {
+    "defaultMessage": "No rooms are open right now",
+    "description": "Heading of the empty list of voice chat rooms."
+  },
+  "voice.list.empty.description": {
+    "defaultMessage": "Rooms that you can join show up here while they are open.",
+    "description": "Explanation under the heading of the empty list of voice chat rooms."
+  },
+  "voice.list.loading": {
+    "defaultMessage": "Loading the rooms",
+    "description": "Accessible name of the spinner while the voice chat rooms load."
+  },
+  "voice.list.failed": {
+    "defaultMessage": "Couldn't load the rooms",
+    "description": "Heading of the error when the voice chat rooms could not load."
+  },
+  "voice.list.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads the voice chat rooms again after a failure."
+  },
+  "voice.list.more": {
+    "defaultMessage": "Show more rooms",
+    "description": "Button that loads the next page of voice chat rooms."
+  },
+  "voice.list.more_failed": {
+    "defaultMessage": "Couldn't load more rooms",
+    "description": "Error when the next page of voice chat rooms could not load."
+  },
+  "voice.room.participants_count": {
+    "defaultMessage": "{count, plural, one {# person} other {# people}}",
+    "description": "How many people are in a voice chat room, the host included."
+  },
+  "voice.room.hosted_by": {
+    "defaultMessage": "Host",
+    "description": "Label before the host of a voice chat room in the room's card."
+  },
+  "voice.rail.title": {
+    "defaultMessage": "Voice chat",
+    "description": "Heading of the panel of open voice chat rooms in the third column of wide screens."
+  },
+  "voice.rail.all": {
+    "defaultMessage": "See all rooms",
+    "description": "Link from the panel of voice chat rooms to the list of all open rooms."
+  },
+  "voice.tag.title": {
+    "defaultMessage": "Voice chat rooms with #{tag}",
+    "description": "Heading of the open voice chat rooms with a hashtag, at the top of the hashtag's page. {tag} is the hashtag without the #."
+  },
+  "voice.start": {
+    "defaultMessage": "Start a room",
+    "description": "Button on the voice chat page that opens the form to start a new room."
+  },
+  "voice.form.new_title": {
+    "defaultMessage": "Start a room",
+    "description": "Title of the dialog with the form that starts a new voice chat room."
+  },
+  "voice.form.edit_title": {
+    "defaultMessage": "Room settings",
+    "description": "Title of the dialog with the settings of a voice chat room, and the host's button that opens it."
+  },
+  "voice.form.close": {
+    "defaultMessage": "Close",
+    "description": "Accessible name of the close button of the dialog of a voice chat room's settings."
+  },
+  "voice.form.name": {
+    "defaultMessage": "Name",
+    "description": "Label of the field of a voice chat room's name."
+  },
+  "voice.form.name.invalid": {
+    "defaultMessage": "Enter a name of up to {max} characters on one line.",
+    "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
+  },
+  "voice.form.description": {
+    "defaultMessage": "Description",
+    "description": "Label of the field of a voice chat room's description."
+  },
+  "voice.form.characters_left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "How many more characters the description of a voice chat room takes."
+  },
+  "voice.form.characters_over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "How many characters the description of a voice chat room is over its limit."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "Hashtags",
+    "description": "Label of the field of a voice chat room's hashtags."
+  },
+  "voice.form.hashtags.description": {
+    "defaultMessage": "Up to {max}, separated by spaces. The room shows on the pages of its hashtags.",
+    "description": "Explanation of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.invalid": {
+    "defaultMessage": "Enter up to {max} hashtags.",
+    "description": "Error of the field of a voice chat room's hashtags. {max} is how many it takes."
+  },
+  "voice.form.hashtags.too_long": {
+    "defaultMessage": "Each hashtag can have up to {max} characters.",
+    "description": "Error of the field of a voice chat room's hashtags when one is too long. {max} is the most characters a hashtag has."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "Who can see and join",
+    "description": "Label of the choice of who sees a voice chat room and may join it."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "Who can speak without asking",
+    "description": "Label of the choice of who may speak in a voice chat room without the hosts letting them."
+  },
+  "voice.visibility.local": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Visibility of a voice chat room: every local user."
+  },
+  "voice.visibility.followers": {
+    "defaultMessage": "Followers of the host",
+    "description": "Visibility of a voice chat room: the followers of its host."
+  },
+  "voice.visibility.mutuals": {
+    "defaultMessage": "Mutual follows of the host",
+    "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
+  },
+  "voice.visibility.invited": {
+    "defaultMessage": "Only invited people",
+    "description": "Visibility of a voice chat room: only the people the hosts invite."
+  },
+  "voice.speakers.everyone": {
+    "defaultMessage": "Everyone who joins",
+    "description": "Who may speak in a voice chat room without asking: everyone in it."
+  },
+  "voice.speakers.followers": {
+    "defaultMessage": "Followers of the host",
+    "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.mutuals": {
+    "defaultMessage": "Mutual follows of the host",
+    "description": "Who may speak in a voice chat room without asking: the host's mutual follows."
+  },
+  "voice.speakers.manual": {
+    "defaultMessage": "Only people the hosts let speak",
+    "description": "Who may speak in a voice chat room without asking: nobody, the host and the co-hosts let them."
+  },
+  "voice.form.post": {
+    "defaultMessage": "Post about the room",
+    "description": "Switch in the form that starts a voice chat room: also post a post that links the room."
+  },
+  "voice.form.post.local": {
+    "defaultMessage": "A local post, visible to everyone on this server.",
+    "description": "Explanation of the start post of a room for every local user."
+  },
+  "voice.form.post.followers": {
+    "defaultMessage": "A post for your followers only.",
+    "description": "Explanation of the start post of a room for the host's followers."
+  },
+  "voice.form.post.text": {
+    "defaultMessage": "Post text",
+    "description": "Label of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.text.description": {
+    "defaultMessage": "The link to the room is added at the end.",
+    "description": "Explanation of the text of the post that announces a new voice chat room."
+  },
+  "voice.form.post.draft": {
+    "defaultMessage": "I opened a voice chat room: {name}",
+    "description": "The draft text of the post that announces a new voice chat room, which the host edits. {name} is the room's name."
+  },
+  "voice.form.submit_new": {
+    "defaultMessage": "Start the room",
+    "description": "Button that starts a new voice chat room."
+  },
+  "voice.form.submit_edit": {
+    "defaultMessage": "Save",
+    "description": "Button that saves the settings of a voice chat room."
+  },
+  "voice.form.start_failed": {
+    "defaultMessage": "Couldn't start the room: {reason}",
+    "description": "Error when a voice chat room could not start. {reason} is the server's explanation."
+  },
+  "voice.form.save_failed": {
+    "defaultMessage": "Couldn't save the settings: {reason}",
+    "description": "Error when the settings of a voice chat room could not be saved. {reason} is the server's explanation."
+  },
+  "voice.form.saved": {
+    "defaultMessage": "Saved the room's settings",
+    "description": "Message after the settings of a voice chat room were saved."
+  },
+  "voice.room.title": {
+    "defaultMessage": "Voice chat room",
+    "description": "Heading of the page of a voice chat room whose name is not shown."
+  },
+  "voice.room.listed_notice": {
+    "defaultMessage": "When you join, your name is listed for everyone who can see this room.",
+    "description": "Notice on the page of a voice chat room before joining it."
+  },
+  "voice.room.join": {
+    "defaultMessage": "Join",
+    "description": "Button that joins a voice chat room."
+  },
+  "voice.room.join_failed": {
+    "defaultMessage": "Couldn't join the room: {reason}",
+    "description": "Error when joining a voice chat room failed. {reason} is the server's explanation."
+  },
+  "voice.room.joined": {
+    "defaultMessage": "You are in this room.",
+    "description": "Shown on the page of a voice chat room that the user is in."
+  },
+  "voice.room.participants": {
+    "defaultMessage": "Participants",
+    "description": "Heading of the list of the people in a voice chat room."
+  },
+  "voice.room.details": {
+    "defaultMessage": "About the room",
+    "description": "Accessible name of the list of a voice chat room's settings on its page."
+  },
+  "voice.role.host": {
+    "defaultMessage": "Host",
+    "description": "Label of the host of a voice chat room in its list of participants."
+  },
+  "voice.role.cohost": {
+    "defaultMessage": "Co-host",
+    "description": "Label of a co-host of a voice chat room in its list of participants."
+  },
+  "voice.role.speaker": {
+    "defaultMessage": "Speaker",
+    "description": "Label of a participant of a voice chat room who speaks."
+  },
+  "voice.role.listener": {
+    "defaultMessage": "Listener",
+    "description": "Label of a participant of a voice chat room who listens."
+  },
+  "voice.room.local_only": {
+    "defaultMessage": "Only people with an account on this server can join its voice chat rooms.",
+    "description": "Notice on the page of a voice chat room for a visitor who is not signed in."
+  },
+  "voice.room.sign_in": {
+    "defaultMessage": "Sign in",
+    "description": "Link on the page of a voice chat room to the sign-in page, which returns to the room."
+  },
+  "voice.room.open": {
+    "defaultMessage": "This room is open now.",
+    "description": "Shown on the summary of an open voice chat room to a visitor who is not signed in."
+  },
+  "voice.room.ended": {
+    "defaultMessage": "This room has ended",
+    "description": "Heading of the page of a voice chat room that ended."
+  },
+  "voice.room.hidden": {
+    "defaultMessage": "You can't see this room.",
+    "description": "Shown on the page of an open voice chat room that the user may not see."
+  },
+  "voice.room.not_found": {
+    "defaultMessage": "There is no such room",
+    "description": "Heading of the page of a voice chat room that does not exist."
+  },
+  "voice.room.failed": {
+    "defaultMessage": "Couldn't load the room",
+    "description": "Heading of the error when a voice chat room could not load."
+  },
+  "voice.room.loading": {
+    "defaultMessage": "Loading the room",
+    "description": "Accessible name of the spinner while a voice chat room loads."
+  },
+  "voice.profile.host": {
+    "defaultMessage": "{name} is hosting a voice chat room: {room}",
+    "description": "Note on a profile while the account hosts an open voice chat room. {name} is the account's name, {room} the room's name as a link."
+  },
+  "voice.profile.speaker": {
+    "defaultMessage": "{name} is speaking in a voice chat room: {room}",
+    "description": "Note on a profile while the account speaks in an open voice chat room. {name} is the account's name, {room} the room's name as a link."
+  },
+  "voice.history.title": {
+    "defaultMessage": "Voice chat history",
+    "description": "Heading of the settings page with the voice chat rooms the user hosted, and its item in the settings menu."
+  },
+  "voice.history.description": {
+    "defaultMessage": "The voice chat rooms you hosted, newest first.",
+    "description": "Explanation at the top of the voice chat history."
+  },
+  "voice.history.empty": {
+    "defaultMessage": "You haven't hosted a room yet",
+    "description": "Heading of the empty voice chat history."
+  },
+  "voice.history.opened": {
+    "defaultMessage": "Opened",
+    "description": "Term of when a room of the voice chat history opened."
+  },
+  "voice.history.ended": {
+    "defaultMessage": "Ended",
+    "description": "Term of when a room of the voice chat history ended."
+  },
+  "voice.history.still_open": {
+    "defaultMessage": "Still open",
+    "description": "Value of when a room of the voice chat history ended, while it is open."
+  },
+  "voice.history.reason": {
+    "defaultMessage": "Why it ended",
+    "description": "Term of why a room of the voice chat history ended."
+  },
+  "voice.end_reason.host": {
+    "defaultMessage": "The host ended it",
+    "description": "Why a voice chat room ended: its host ended it."
+  },
+  "voice.end_reason.empty": {
+    "defaultMessage": "Everyone left",
+    "description": "Why a voice chat room ended: nobody was left."
+  },
+  "voice.end_reason.host_disconnected": {
+    "defaultMessage": "The host was disconnected",
+    "description": "Why a voice chat room ended: the host was disconnected and nobody could take over."
+  },
+  "voice.end_reason.host_ineligible": {
+    "defaultMessage": "The host could no longer host it",
+    "description": "Why a voice chat room ended: the host lost the right to host and nobody could take over."
+  },
+  "voice.end_reason.moderator": {
+    "defaultMessage": "A moderator ended it",
+    "description": "Why a voice chat room ended: a moderator ended it."
+  },
+  "voice.end_reason.time_limit": {
+    "defaultMessage": "It reached the time limit",
+    "description": "Why a voice chat room ended: it was open for the longest time the server allows."
+  },
+  "voice.end_reason.disabled": {
+    "defaultMessage": "Voice chat was turned off",
+    "description": "Why a voice chat room ended: the server turned voice chat off."
+  },
+  "voice.end_reason.other": {
+    "defaultMessage": "Other",
+    "description": "Why a voice chat room ended, for a reason the app does not know."
+  }
+}
