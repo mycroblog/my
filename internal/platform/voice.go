@@ -108,7 +108,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	}
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
-		Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, Logger: a.Logger,
+		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a}, Config: c, Logger: a.Logger,
 	})
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)

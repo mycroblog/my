@@ -17,7 +17,8 @@ import (
 
 // The voice chat rooms (ADR-0100 §14, ADR-0101 §6; tag voice, scopes read:voice and
 // write:voice): the list and the rooms, opening, changing, and ending them, joining and leaving,
-// the heartbeats of the sessions, and handing a room over. Every operation answers 404 while the
+// the heartbeats of the sessions, and handing a room over; voice_participants.go has the
+// operations of the participants. Every operation answers 404 while the
 // voice chat is off.
 
 // The problem types of the voice chat rooms.
@@ -44,6 +45,7 @@ type VoiceRooms interface {
 	Leave(ctx context.Context, accountID, roomID string, in appvoice.LeaveInput) error
 	Heartbeat(ctx context.Context, accountID, roomID, session string) error
 	HandOver(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
+	VoiceParticipants
 }
 
 // voiceRooms returns the rooms and the viewer, or the 404 of a server whose voice chat is off.
@@ -59,7 +61,8 @@ func (s *Server) voiceRooms(ctx context.Context) (VoiceRooms, Viewer, *problem, 
 	return s.o.Voice, v, nil, nil
 }
 
-// voiceProblem maps the errors of the room use cases; it reports false for any other error.
+// voiceProblem maps the errors of the room use cases and of the participant operations; it
+// reports false for any other error.
 func (s *Server) voiceProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
 	var se *voice.SettingsError
@@ -88,7 +91,7 @@ func (s *Server) voiceProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appvoice.ErrTransportUnavailable):
 		return s.problem(ctx, http.StatusServiceUnavailable, ProblemTypeVoiceUnavailable, l.ServerErrorsVoiceUnavailable(), ""), true
 	}
-	return problem{}, false
+	return s.voiceParticipantProblem(ctx, err)
 }
 
 // voiceFail returns the problem of err, or err itself for an unexpected error.

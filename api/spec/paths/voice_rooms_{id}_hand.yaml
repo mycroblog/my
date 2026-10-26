@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: raiseVoiceHand
+  summary: Raise a hand in a voice chat room
+  description: |
+    Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
+    speaker raises none. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room with the user's hand raised.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: lowerVoiceHand
+  summary: Lower a hand in a voice chat room
+  description: |
+    Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  responses:
+    "200":
+      description: The room with the user's hand down.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceRoom.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The user to invite to a voice chat room, and as what: a listener (the default), or a speaker,
+  who may speak without asking.
+type: object
+required: [account_id]
+properties:
+  account_id:
+    $ref: ./Id.yaml
+  role:
+    $ref: ./VoiceRole.yaml

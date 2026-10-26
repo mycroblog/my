@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An invitation to a voice chat room. The invited user sees the room until the invitation is
+  revoked; an invitation as a speaker also lets the user speak without asking.
+type: object
+required: [id, account, role, invited_by_id, invited_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  account:
+    $ref: ./Account.yaml
+  role:
+    $ref: ./VoiceRole.yaml
+  invited_by_id:
+    $ref: ./Id.yaml
+  invited_at:
+    type: string
+    format: date-time

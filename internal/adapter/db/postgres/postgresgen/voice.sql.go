@@ -726,6 +726,50 @@ func (q *Queries) ListOpenVoiceRooms(ctx context.Context, tag string) ([]ListOpe
 	return items, nil
 }
 
+const listVoiceRoomInvitations = `-- name: ListVoiceRoomInvitations :many
+SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
+FROM voice_room_invitations i
+WHERE i.room_id = $1 AND i.id::text > $2::text
+  AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)
+ORDER BY i.id
+LIMIT $3
+`
+
+type ListVoiceRoomInvitationsParams struct {
+	RoomID   string
+	ID       string
+	RowLimit int32
+}
+
+// ListVoiceRoomInvitations returns the invitations of a room that were not revoked, after the
+// invitation of an ID (or from the first with ”), in the order they were made.
+func (q *Queries) ListVoiceRoomInvitations(ctx context.Context, arg ListVoiceRoomInvitationsParams) ([]VoiceRoomInvitation, error) {
+	rows, err := q.db.Query(ctx, listVoiceRoomInvitations, arg.RoomID, arg.ID, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VoiceRoomInvitation{}
+	for rows.Next() {
+		var i VoiceRoomInvitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoomID,
+			&i.InviteeAccountID,
+			&i.Role,
+			&i.InvitedByAccountID,
+			&i.InvitedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomParticipants = `-- name: ListVoiceRoomParticipants :many
 SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
 WHERE room_id = $1
