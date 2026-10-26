@@ -249,6 +249,24 @@ linters:
             - github.com/mycroblog/my/internal/domain/supporters
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
+        domain-voice:
+          list-mode: strict
+          files:
+            - "**/internal/domain/voice/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/voice
+        app-voice:
+          list-mode: strict
+          files:
+            - "**/internal/app/voice/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/voice
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/i18n
+            # Counting the grapheme clusters of a room's name (ADR-0100 §3): pure-Go Unicode data, not an external resource.
+            - github.com/rivo/uniseg
         # app/kernel holds the ports and helpers shared by every module (Clock, IDGenerator, KeyManager);
         # it depends on nothing in the repository so that any module can import it.
         app-kernel:

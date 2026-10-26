@@ -1190,6 +1190,27 @@ type UserToken struct {
 	IssuedAt            int64
 }
 
+type VoiceRoomHostGrace struct {
+	RoomID string
+	EndsAt int64
+}
+
+type VoiceRoomParticipant struct {
+	AccountID       string
+	RoomID          string
+	ParticipationID string
+	Role            string
+	CohostChangeID  sql.NullString
+	HandRaised      int64
+}
+
+type VoiceRoomRevisionHashtag struct {
+	RevisionID     string
+	Position       int64
+	Name           string
+	NameNormalized string
+}
+
 type WebhookEndpointFailure struct {
 	EndpointID            string
 	FirstFailureAttemptID string

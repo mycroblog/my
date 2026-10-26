@@ -438,6 +438,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpLocalReports(repos.mods)
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)
+	a.setUpVoice(repos.voice)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}
