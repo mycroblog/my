@@ -3,7 +3,8 @@
 // speaks without asking. Opening a room also offers the start post for a room of the `local` or `followers`
 // visibility, on by default (回答 13): the host writes its text, which starts as a draft with the room's name and
 // follows the name until the host edits it (回答 39); the server adds the room's link at its end. The other
-// visibilities have no post visibility to match, so the post is not offered for them.
+// visibilities have no post visibility to match, so the post is not offered for them. Opening a room joins the host
+// (ADR-0100 §5), so the host's call starts from the submit, without a join button.
 import { useAnnouncer } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -23,6 +24,9 @@ import {
   type VoiceRoomUpdate,
   type VoiceRoomVisibility,
 } from "../api/voice";
+import { voiceSupported } from "../rtc/connect";
+import { useViewer } from "../../session";
+import { type VoiceCallGesture, useVoiceCallState } from "./useVoiceCallProvider";
 
 /** What the form holds. `postText` null is the draft that follows the name; a string is the host's own text. */
 type VoiceRoomDraft = {
@@ -127,10 +131,15 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
   const announce = useAnnouncer();
   const [draft, setDraft] = useState<VoiceRoomDraft>(() => draftOf(room));
   const [fieldError, setFieldError] = useState<VoiceRoomFieldError | undefined>(undefined);
+  const call = useVoiceCallState();
+  const viewer = useViewer();
   const open = useMutation({
-    ...openVoiceRoomMutation(api),
-    onSuccess: async (joined: VoiceRoomJoin) => {
+    mutationKey: openVoiceRoomMutation(api).mutationKey,
+    mutationFn: ({ settings }: { settings: VoiceRoomSettings; gesture: VoiceCallGesture | undefined }) => openVoiceRoomMutation(api).mutationFn(settings),
+    onSuccess: async (joined: VoiceRoomJoin, { gesture }) => {
       await cacheVoiceRoom(api, queryClient, joined.room, { opened: true });
+      // Opening the room joined the host (ADR-0100 §5): the call starts here, with the audio started by the submit.
+      if (gesture !== undefined) call.adopt(joined, gesture);
       onDone();
       await navigate({ to: "/voice/$id", params: { id: joined.room.id } });
     },
@@ -194,7 +203,9 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
       };
       if (room === undefined) {
         const body: VoiceRoomSettings = { ...settings, ...(offersPost && draft.post && { post: { text: postText } }) };
-        open.mutate(body);
+        // From the submit's gesture, as the join button does: the audio of the host's call starts here (ADR-0101 §7).
+        const gesture = viewer.status === "signed-in" && voiceSupported() ? call.prepare(viewer.account.id) : undefined;
+        open.mutate({ settings: body, gesture });
         return;
       }
       update.mutate(changeOf(room, settings));
