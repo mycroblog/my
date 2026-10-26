@@ -105,7 +105,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead`) |
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
 | `my.timeline.delivery.lag` | Histogram, seconds | None (from the creation of a local post to its write into home timelines and the notification to streams) |
-| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`) |
+| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `voice` for the streams of the voice chat rooms) |
 | `my.accounts.registered` | Counter | None |
 | `my.statuses.created` | Counter | `my.visibility` |
 | `my.billing.imports` | Counter | `my.billing.source` (`aws` / `gcp`), `my.outcome` (`success` / `failed`), `error.type` (only with `failed`: the kind of failure, as in [Importing cloud usage charges](billing-import.md)). Every attempt counts, including the retries and the failures that wait for the next daily import |

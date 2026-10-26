@@ -72,7 +72,7 @@ func (s *Server) voiceParticipantProblem(ctx context.Context, err error) (proble
 	case errors.Is(err, appvoice.ErrInvalidRole):
 		return s.unprocessable(ctx, "role"), true
 	}
-	return problem{}, false
+	return s.voiceConnectionProblem(ctx, err)
 }
 
 // voiceRoomChange runs change on the rooms and presents the room it returns.

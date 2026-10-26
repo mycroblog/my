@@ -45,7 +45,9 @@ type VoiceRooms interface {
 	Leave(ctx context.Context, accountID, roomID string, in appvoice.LeaveInput) error
 	Heartbeat(ctx context.Context, accountID, roomID, session string) error
 	HandOver(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
+	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
 	VoiceParticipants
+	VoiceConnections
 }
 
 // voiceRooms returns the rooms and the viewer, or the 404 of a server whose voice chat is off.
@@ -104,6 +106,12 @@ func (s *Server) voiceFail(ctx context.Context, err error) (*problem, error) {
 
 // newVoiceRooms presents rooms, reading the accounts of their hosts and participants together.
 func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) ([]VoiceRoom, error) {
+	return s.newVoiceRoomsMarked(ctx, views, nil)
+}
+
+// newVoiceRoomsMarked presents rooms with the block marks blocked, or the marks of the viewer
+// read now when blocked is nil.
+func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomView, blocked map[string]bool) ([]VoiceRoom, error) {
 	ids := map[string]bool{}
 	var actors []appaccount.Actor
 	read := func(id string) error {
@@ -135,6 +143,18 @@ func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) (
 	if err != nil {
 		return nil, err
 	}
+	// The participants in a block relation with the viewer carry a mark (ADR-0100 §10).
+	if v, ok := ViewerFrom(ctx); ok && s.o.Voice != nil && blocked == nil {
+		var participants []string
+		for _, view := range views {
+			for _, p := range view.Participants {
+				participants = append(participants, p.AccountID)
+			}
+		}
+		if blocked, err = s.o.Voice.BlockedAmong(ctx, v.AccountID, participants); err != nil {
+			return nil, err
+		}
+	}
 	byID := make(map[string]Account, len(accounts))
 	for i, a := range actors {
 		byID[a.Account.ID] = accounts[i]
@@ -159,6 +179,7 @@ func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) (
 			host := p.AccountID == v.Head.HostAccountID
 			r.Participants = append(r.Participants, VoiceRoomParticipant{
 				Account: a, Role: VoiceRole(p.Role), Host: host, Cohost: p.Cohost() && !host, HandRaised: p.HandRaised,
+				Blocked: blocked[p.AccountID],
 			})
 		}
 		out = append(out, r)
@@ -179,20 +200,25 @@ func (s *Server) newVoiceRoomJoin(ctx context.Context, j appvoice.Joined) (Voice
 	if err != nil {
 		return VoiceRoomJoin{}, err
 	}
+	return VoiceRoomJoin{Room: room, Session: j.Session, Grant: newVoiceGrant(j.Grant)}, nil
+}
+
+// newVoiceGrant presents the grant of a session.
+func newVoiceGrant(grant appvoice.Grant) VoiceGrant {
 	g := VoiceGrant{
-		Kind: j.Grant.Kind, Options: map[string]string{}, IceServers: make([]VoiceIceServer, 0, len(j.Grant.ICE)),
-		RelayOnly: j.Grant.RelayOnly, ExpiresAt: j.Grant.ExpiresAt.UTC(),
+		Kind: grant.Kind, Options: map[string]string{}, IceServers: make([]VoiceIceServer, 0, len(grant.ICE)),
+		RelayOnly: grant.RelayOnly, ExpiresAt: grant.ExpiresAt.UTC(),
 	}
-	for k, v := range j.Grant.Options {
+	for k, v := range grant.Options {
 		g.Options[k] = v
 	}
-	if j.Grant.URL != "" {
-		g.Url = &j.Grant.URL
+	if grant.URL != "" {
+		g.Url = &grant.URL
 	}
-	if j.Grant.Token != "" {
-		g.Token = &j.Grant.Token
+	if grant.Token != "" {
+		g.Token = &grant.Token
 	}
-	for _, ice := range j.Grant.ICE {
+	for _, ice := range grant.ICE {
 		srv := VoiceIceServer{Urls: append([]string{}, ice.URLs...)}
 		if ice.Username != "" {
 			srv.Username = &ice.Username
@@ -202,7 +228,7 @@ func (s *Server) newVoiceRoomJoin(ctx context.Context, j appvoice.Joined) (Voice
 		}
 		g.IceServers = append(g.IceServers, srv)
 	}
-	return VoiceRoomJoin{Room: room, Session: j.Session, Grant: g}, nil
+	return g
 }
 
 // encodeVoiceCursor writes the position of a room in the list as a cursor.

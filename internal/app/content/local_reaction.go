@@ -179,6 +179,22 @@ func (s *Interactions) emojiTag(ctx context.Context, id string) (*EmojiTag, erro
 	return &EmojiTag{ID: e.ID, Shortcode: e.Shortcode, Local: e.Domain == "", URI: e.URI}, nil
 }
 
+// ReactionEmoji returns the emoji that a local account reacts with, as a voice chat room
+// carries it (ADR-0100 §10): a Unicode emoji, normalized, or the :shortcode: of an enabled
+// custom emoji of this instance whose image can be shown. Anything else fails with
+// content.ErrInvalidReaction.
+func (s *Interactions) ReactionEmoji(ctx context.Context, name string) (string, error) {
+	e, tag, err := s.localReactionEmoji(ctx, name)
+	if err != nil {
+		return "", err
+	}
+	if e.Unicode != "" || tag == nil {
+		return e.Unicode, nil
+	}
+	// The stored shortcode, whatever the spelling of name.
+	return ":" + tag.Shortcode + ":", nil
+}
+
 // localReactionEmoji returns the emoji that a local account reacts with (ADR-0052 §2), with the
 // Emoji tag of a custom emoji: a Unicode emoji, normalized, or an enabled custom emoji of this
 // instance whose image can be shown.

@@ -476,6 +476,25 @@ type CandidateRelation struct {
 	Followers int64
 }
 
+// BlockedAmong returns which of the accounts ids are in a block relation with accountID: one
+// blocks the other, either way. It reads the relations for all of ids at once.
+func (s *Service) BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	r, err := s.d.Repository.RelationsAmong(ctx, accountID, ids, s.d.Clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	for _, list := range [][]string{r.Blocked, r.BlockedBy} {
+		for _, id := range list {
+			out[id] = true
+		}
+	}
+	return out, nil
+}
+
 // CandidateRelations returns the relations of viewerID with the accounts ids, by account ID;
 // every account in ids has an entry. It reads each relation for all of ids at once.
 func (s *Service) CandidateRelations(ctx context.Context, viewerID string, ids []string) (map[string]CandidateRelation, error) {

@@ -356,11 +356,11 @@ func (s *Service) Revoke(ctx context.Context, byAccountID, roomID, accountID str
 // Mute stops the audio of the session of accountID in a room, by byAccountID, the host or a
 // co-host (ADR-0100 §5): after the commit, JobApply mutes the session that the participation
 // has then, so that a participant who joined again from another device is muted there too. The
-// participant may turn the microphone on again. Nothing of it is recorded.
+// participant may turn the microphone on again (Mic). Nothing of it is recorded.
 func (s *Service) Mute(ctx context.Context, byAccountID, roomID, accountID string) error {
 	_, err := s.operate(ctx, byAccountID, roomID, accountID, func(tx uow.Tx, p Participant, _ string, _ time.Time) error {
 		return s.enqueueApply(ctx, tx, applyPayload{
-			Op: applyMute, Room: roomID, Participation: p.ParticipationID, Account: p.AccountID,
+			Op: applyMute, Room: roomID, Participation: p.ParticipationID, Account: p.AccountID, By: byAccountID,
 		}, "mute:"+s.d.IDs.NewID())
 	})
 	return err

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: The kind of a WebRTC signal.
+type: string
+enum: [offer, answer, candidate, restart]

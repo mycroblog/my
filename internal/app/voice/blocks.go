@@ -89,6 +89,9 @@ func (s *Service) CheckBlock(ctx context.Context, blocker, blocked string) error
 	if err != nil || rec.Head.State != voice.StateOpen {
 		return err
 	}
+	// The streams of the room read their block marks again, and stop showing the reactions of
+	// one of the two to the other (ADR-0100 §10).
+	defer s.publishRoom(a.RoomID)
 	leaver, ok := blockLeaver(rec.Head.HostAccountID, a, b)
 	if !ok {
 		return nil

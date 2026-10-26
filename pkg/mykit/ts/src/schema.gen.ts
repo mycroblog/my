@@ -3316,6 +3316,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/voice/rooms/{id}/stream": {
+        parameters: {
+            query: {
+                /** @description The `session` of the join. */
+                session: string;
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Stream the events of a voice chat room
+         * @description A Server-Sent Events stream (`text/event-stream`) of a voice chat room for one session of
+         *     the user in it. Read it with `fetch` and send the access token in `Authorization`, like
+         *     every other operation (`EventSource` cannot send it). Only the user's current session in
+         *     the room, while it sends heartbeats, opens a stream; any other is a 404. A session holds
+         *     one stream: opening it again ends the one opened before.
+         *
+         *     The stream starts with a comment line (`: connected`) and a `state` event, and a comment
+         *     line (`: heartbeat`) arrives every 15 seconds. Opening the stream does not keep the session
+         *     alive: keep sending its heartbeats. Events:
+         *
+         *     - `state`: the room and its participants changed. `data` is a `VoiceRoom`; each
+         *       participant has its `session` while it is alive, and `blocked` marks the participants in
+         *       a block relation with the user. At most one `state` arrives each second, with the newest
+         *       room.
+         *     - `mic`: a participant turned the microphone on or off. `data` is a `VoiceStreamMic`.
+         *     - `reaction`: a participant reacted. `data` is a `VoiceStreamReaction`. The reactions of the
+         *       participants in a block relation with the user do not arrive.
+         *     - `signal`: a signal from another session of the room (`POST /voice/rooms/{id}/signals`).
+         *       `data` is a `VoiceStreamSignal`.
+         *     - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
+         *       `VoiceStreamMuted`.
+         *     - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
+         *       true, connect to the audio again with it.
+         *     - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
+         *       device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
+         *
+         *     When the stream ends otherwise, open it again with the same session; the first `state`
+         *     brings the room up to date, and nothing is replayed. While the server cannot receive the
+         *     events (it is shutting down) the answer is 503 with `Retry-After`. A 404 while the voice
+         *     chat is off on the server.
+         */
+        get: operations["streamVoiceRoom"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a signal to another session of a voice chat room
+         * @description Relays a WebRTC signal of a room whose method is `p2p` from the user's session to another
+         *     live session of the room, which receives it as a `signal` event of its stream. Two sessions
+         *     connect when at least one of them is a speaker; of the two, the session with the greater ID
+         *     sends the first offer. The server relays only audio: the `sdp` of an offer or an answer
+         *     has `m=audio` sections only, and a participant who may not speak only receives
+         *     (`recvonly` or `inactive`). A signal it does not relay is a 422 with the field that is
+         *     wrong (`kind`, `to`, `sdp`, or `candidate`): a `to` that is not a live session of the room
+         *     that the user's session connects to, or an `sdp` and a `candidate` of more than 16 KiB.
+         *     A session sends at most 20 signals each second; past it the answer is 429 with
+         *     `Retry-After`. A signal that its receiver's stream does not take within 30 seconds is
+         *     lost; restart ICE. A session that is not the user's current session in the room is a 404.
+         *     A 404 while the voice chat is off on the server.
+         */
+        post: operations["sendVoiceSignal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/mic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn the microphone on or off in a voice chat room
+         * @description Tells the participants that the user's microphone is on or off, as a `mic` event of their
+         *     streams; the server records nothing. Only a speaker turns it on (403
+         *     `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
+         *     turning it on lifts the mute. A session that is not the user's current session in the room
+         *     is a 404. A 404 while the voice chat is off on the server.
+         */
+        post: operations["setVoiceMic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get a new grant for a session of a voice chat room
+         * @description Returns a new grant for the user's session, with new credentials of the STUN and TURN
+         *     servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
+         *     servers on its connections, and restarts ICE. A session that is not the user's current
+         *     session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
+         *     server cannot give a grant now. A 404 while the voice chat is off on the server.
+         */
+        post: operations["refreshVoiceGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/voice/rooms/{id}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * React in a voice chat room
+         * @description Sends a reaction of the user, a participant of the room, to the participants, as a
+         *     `reaction` event of their streams; the server records nothing, and the participants in a
+         *     block relation with the user do not receive it. The emoji is a Unicode emoji or the
+         *     `:shortcode:` of an enabled custom emoji of this server; any other is a 422. A participant
+         *     sends at most 10 reactions in 10 seconds; past it the answer is 429 with `Retry-After`. A
+         *     404 for a room the user is not in, and while the voice chat is off on the server.
+         */
+        post: operations["reactInVoiceRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/queue": {
         parameters: {
             query?: never;
@@ -11445,6 +11616,18 @@ export interface components {
             username?: string;
             credential?: string;
         };
+        /** @description The microphone of a session of the user in a voice chat room. */
+        VoiceMic: {
+            /** @description The `session` of the join. */
+            session: string;
+            /** @description Whether the microphone is on. */
+            on: boolean;
+        };
+        /** @description A reaction in a voice chat room. */
+        VoiceReaction: {
+            /** @description A Unicode emoji, or the `:shortcode:` of an enabled custom emoji of this server. */
+            emoji: string;
+        };
         /**
          * @description Whether a participant speaks or listens.
          * @enum {string}
@@ -11525,6 +11708,13 @@ export interface components {
             cohost: boolean;
             /** @description Whether the participant raised a hand to speak. */
             hand_raised: boolean;
+            /** @description Whether the user blocks the participant or the participant blocks the user. */
+            blocked: boolean;
+            /**
+             * @description The live session of the participant, in the `state` events of a room stream only; the
+             *     sessions connect to each other with signals.
+             */
+            session?: string;
         };
         /** @description The settings of a new voice chat room. */
         VoiceRoomSettings: {
@@ -11566,6 +11756,76 @@ export interface components {
         VoiceSession: {
             /** @description The `session` of the join. */
             session: string;
+        };
+        /**
+         * @description A WebRTC signal from a session of the user to another session of a voice chat room. An
+         *     `offer` and an `answer` carry `sdp` and no `candidate`, a `candidate` carries `candidate` and
+         *     no `sdp`, and a `restart`, which asks the other session to restart ICE, carries neither.
+         */
+        VoiceSignal: {
+            /** @description The `session` of the user's join. */
+            session: string;
+            /** @description The session that receives the signal. */
+            to: string;
+            kind: components["schemas"]["VoiceSignalKind"];
+            /** @description The session description of an offer or an answer. */
+            sdp?: string;
+            /**
+             * @description An ICE candidate, as the JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`,
+             *     `sdpMLineIndex`, and `usernameFragment`; `candidate` is empty (no more candidates) or a
+             *     `candidate:` attribute on one line.
+             */
+            candidate?: string;
+        };
+        /**
+         * @description The kind of a WebRTC signal.
+         * @enum {string}
+         */
+        VoiceSignalKind: "offer" | "answer" | "candidate" | "restart";
+        /**
+         * @description The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
+         *     which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
+         *     `moved`, `disconnected`, `removed`, `blocked`, `suspended`), the one of `replaced` is
+         *     `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
+         *     `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+         */
+        VoiceStreamEnd: {
+            reason: string;
+        };
+        /** @description The data of a `grant` event of a voice chat room stream. */
+        VoiceStreamGrant: {
+            grant: components["schemas"]["VoiceGrant"];
+            /** @description Whether the client connects to the audio again with the new grant. */
+            reconnect: boolean;
+        };
+        /** @description The data of a `mic` event of a voice chat room stream. */
+        VoiceStreamMic: {
+            /** @description The account ID of the participant. */
+            participant: string;
+            /** @description Whether the microphone is on. */
+            on: boolean;
+        };
+        /** @description The data of a `muted` event of a voice chat room stream. */
+        VoiceStreamMuted: {
+            /** @description The account ID of the host or co-host who muted the session. */
+            by: string;
+        };
+        /** @description The data of a `reaction` event of a voice chat room stream. */
+        VoiceStreamReaction: {
+            /** @description The account ID of the participant who reacted. */
+            participant: string;
+            /** @description A Unicode emoji, or the `:shortcode:` of a custom emoji of this server. */
+            emoji: string;
+        };
+        /** @description The data of a `signal` event of a voice chat room stream. */
+        VoiceStreamSignal: {
+            /** @description The session that sent the signal. */
+            from: string;
+            kind: components["schemas"]["VoiceSignalKind"];
+            /** @description The session description of an offer or an answer. */
+            sdp?: string;
+            /** @description The ICE candidate of a `candidate`. */
+            candidate?: string;
         };
         /** @description A vote in the poll of a status. */
         VoteInPollRequest: {
@@ -15936,6 +16196,141 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The invitation is revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    streamVoiceRoom: {
+        parameters: {
+            query: {
+                /** @description The `session` of the join. */
+                session: string;
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event stream. It stays open until the client or the server ends it. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    sendVoiceSignal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceSignal"];
+            };
+        };
+        responses: {
+            /** @description The signal is on its way. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    setVoiceMic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceMic"];
+            };
+        };
+        responses: {
+            /** @description The participants hear of it. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    refreshVoiceGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceSession"];
+            };
+        };
+        responses: {
+            /** @description The new grant. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceGrant"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    reactInVoiceRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the voice chat room. */
+                id: components["parameters"]["VoiceRoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceReaction"];
+            };
+        };
+        responses: {
+            /** @description The participants receive the reaction. */
             204: {
                 headers: {
                     [name: string]: unknown;

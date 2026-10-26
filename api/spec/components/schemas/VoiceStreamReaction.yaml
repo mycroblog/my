@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The data of a `reaction` event of a voice chat room stream.
+type: object
+required: [participant, emoji]
+properties:
+  participant:
+    description: The account ID of the participant who reacted.
+    type: string
+  emoji:
+    description: A Unicode emoji, or the `:shortcode:` of a custom emoji of this server.
+    type: string

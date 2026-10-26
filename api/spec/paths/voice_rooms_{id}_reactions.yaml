@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: reactInVoiceRoom
+  summary: React in a voice chat room
+  description: |
+    Sends a reaction of the user, a participant of the room, to the participants, as a
+    `reaction` event of their streams; the server records nothing, and the participants in a
+    block relation with the user do not receive it. The emoji is a Unicode emoji or the
+    `:shortcode:` of an enabled custom emoji of this server; any other is a 422. A participant
+    sends at most 10 reactions in 10 seconds; past it the answer is 429 with `Retry-After`. A
+    404 for a room the user is not in, and while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceReaction.yaml
+  responses:
+    "204":
+      description: The participants receive the reaction.
+    default:
+      $ref: ../components/responses/Problem.yaml

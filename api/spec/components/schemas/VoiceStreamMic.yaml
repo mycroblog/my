@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The data of a `mic` event of a voice chat room stream.
+type: object
+required: [participant, "on"]
+properties:
+  participant:
+    description: The account ID of the participant.
+    type: string
+  "on":
+    description: Whether the microphone is on.
+    type: boolean

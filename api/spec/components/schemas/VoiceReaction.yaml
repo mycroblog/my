@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: A reaction in a voice chat room.
+type: object
+required: [emoji]
+properties:
+  emoji:
+    description: A Unicode emoji, or the `:shortcode:` of an enabled custom emoji of this server.
+    type: string
+    minLength: 1
+    maxLength: 64

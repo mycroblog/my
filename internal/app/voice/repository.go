@@ -245,6 +245,9 @@ type Repository interface {
 	// FindParticipant returns the participation of an account that has not ended; ErrNotFound
 	// when the account is in no room.
 	FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (Participant, error)
+	// FindParticipationEnd returns the end of a participation; ErrNotFound for one that has
+	// not ended.
+	FindParticipationEnd(ctx context.Context, tx uow.Tx, participationID string) (ParticipationEnd, error)
 	// FindInvitation returns the invitation of an account to a room; ErrNotFound without one.
 	FindInvitation(ctx context.Context, tx uow.Tx, roomID, accountID string) (InvitationRecord, error)
 	// Invitations returns at most limit invitations of a room that were not revoked, in the

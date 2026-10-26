@@ -43,8 +43,8 @@ const (
 const ProblemTypeTooManyStreams = "/api/v1/problems/too-many-streams"
 
 // StreamConnections is the my.stream.connections metric (ADR-0055 §3): the open streams of
-// this process, by the kind of stream. The streaming endpoint has one kind, user: the viewer's
-// home timeline and notifications.
+// this process, by the kind of stream: user, the streaming endpoint of the viewer's home
+// timeline and notifications, and voice, the room streams of the voice chat (voice_stream.go).
 var StreamConnections = kernel.Instrument{
 	Name: "my.stream.connections", Unit: "{connection}", Description: "Open streams (Server-Sent Events) of this process, by kind.",
 	LabelKeys: []string{labelStreamKind},

@@ -229,6 +229,19 @@ func (r *VoiceRepository) FindHostGrace(ctx context.Context, tx uow.Tx, roomID s
 	return appvoice.HostGrace{RoomID: row.RoomID, EndsAt: utc(row.EndsAt)}, nil
 }
 
+// FindParticipationEnd implements appvoice.Repository.
+func (r *VoiceRepository) FindParticipationEnd(ctx context.Context, tx uow.Tx, participationID string) (appvoice.ParticipationEnd, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.ParticipationEnd{}, err
+	}
+	row, err := q.GetVoiceRoomParticipationEnd(ctx, participationID)
+	if err != nil {
+		return appvoice.ParticipationEnd{}, notFound(err, appvoice.ErrNotFound, "voice room participation end")
+	}
+	return appvoice.ParticipationEnd{ParticipationID: row.ParticipationID, Reason: voice.ParticipationEndReason(row.Reason), EndedAt: utc(row.EndedAt)}, nil
+}
+
 func voiceRoomRecord(row postgresgen.GetVoiceRoomRow) appvoice.RoomRecord {
 	rec := appvoice.RoomRecord{
 		Room: appvoice.Room{

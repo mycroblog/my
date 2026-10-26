@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/VoiceRoomId.yaml
+post:
+  operationId: refreshVoiceGrant
+  summary: Get a new grant for a session of a voice chat room
+  description: |
+    Returns a new grant for the user's session, with new credentials of the STUN and TURN
+    servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
+    servers on its connections, and restarts ICE. A session that is not the user's current
+    session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
+    server cannot give a grant now. A 404 while the voice chat is off on the server.
+  tags: [voice]
+  security:
+    - oauth2: ["write:voice"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VoiceSession.yaml
+  responses:
+    "200":
+      description: The new grant.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VoiceGrant.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

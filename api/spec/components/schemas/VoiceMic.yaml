@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The microphone of a session of the user in a voice chat room.
+type: object
+required: [session, "on"]
+properties:
+  session:
+    description: The `session` of the join.
+    type: string
+  "on":
+    description: Whether the microphone is on.
+    type: boolean

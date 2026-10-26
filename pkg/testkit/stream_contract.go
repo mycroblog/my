@@ -333,7 +333,8 @@ type StreamBrokerFactory func(t *testing.T, o stream.HubOptions) StreamBroker
 
 // StreamBrokerContract verifies a stream broker: a notification signal reaches the
 // subscriptions of its account and a home entry every subscription, once when published in the
-// process and also when published in another; the subscriptions per account and per process
+// process and also when published in another; the signals of a voice chat room reach the room
+// subscriptions of that room only, from this process and from another; the subscriptions per account and per process
 // are bounded and Close releases them; a subscriber that falls behind is ended; and a broken
 // listener ends every subscription, after which new ones open and receive again.
 func StreamBrokerContract(t *testing.T, newBroker StreamBrokerFactory) {
@@ -345,6 +346,7 @@ func StreamBrokerContract(t *testing.T, newBroker StreamBrokerFactory) {
 	}{
 		{"Routes", stream.HubOptions{}, brokerRoutes},
 		{"RoutesRemoteSignals", stream.HubOptions{}, brokerRoutesRemote},
+		{"RoutesRoomSignals", stream.HubOptions{}, brokerRoutesRooms},
 		{"Limits", stream.HubOptions{MaxPerAccount: 2, MaxTotal: 3}, brokerLimits},
 		{"DropsSlowSubscribers", stream.HubOptions{Buffer: 2}, brokerDropsSlow},
 		{"EndsOnBroken", stream.HubOptions{}, brokerEndsOnBroken},
@@ -428,6 +430,84 @@ func brokerRoutes(t *testing.T, b StreamBroker) {
 	for name, s := range map[string]stream.Subscription{"alice": alice, "bob": bob} {
 		if e, ok := brokerNext(s, streamGrace); ok {
 			t.Errorf("%s received %+v more", name, e)
+		}
+	}
+}
+
+func brokerRoutesRooms(t *testing.T, b StreamBroker) {
+	rooms, ok := b.Subscriber.(stream.RoomSubscriber)
+	if !ok {
+		t.Fatalf("the subscriber %T opens no room subscriptions", b.Subscriber)
+	}
+	open := func(roomID, session string) stream.Subscription {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(t.Context(), b.Timeout)
+		defer cancel()
+		s, err := rooms.SubscribeRoom(ctx, roomID, session)
+		if err != nil {
+			t.Fatalf("SubscribeRoom(%q): %v", roomID, err)
+		}
+		t.Cleanup(s.Close)
+		return s
+	}
+	alice := brokerSubscribe(t, b, NamedID("alice"))
+	r1, r2 := open(NamedID("room1"), "s1"), open(NamedID("room2"), "s1")
+	other := open(NamedID("room1"), "s2")
+	events := []stream.Event{
+		{Kind: stream.KindVoiceRoom, RoomID: NamedID("room1")},
+		{Kind: stream.KindVoiceSignal, RoomID: NamedID("room1"), MessageID: "m1", To: "s1"},
+		{Kind: stream.KindVoiceMic, RoomID: NamedID("room1"), ParticipantID: NamedID("alice"), On: true},
+		{Kind: stream.KindVoiceReaction, RoomID: NamedID("room1"), ParticipantID: NamedID("alice"), Emoji: "👏"},
+		{Kind: stream.KindVoiceMute, RoomID: NamedID("room1"), SessionID: "s1", By: NamedID("bob")},
+	}
+	publishers := map[string]stream.Publisher{"this process": b.Publisher}
+	if b.Remote != nil {
+		publishers["another process"] = b.Remote
+	}
+	for from, pub := range publishers {
+		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: NamedID("s1")})
+		for _, e := range events {
+			pub.Publish(e)
+		}
+		// The signals of another process arrive in any order, possibly twice.
+		missing := slices.Clone(events)
+		deadline := time.Now().Add(b.Timeout)
+		for len(missing) > 0 {
+			e, ok := brokerNext(r1, time.Until(deadline))
+			if !ok {
+				t.Fatalf("room1 did not receive %+v from %s", missing, from)
+			}
+			if !slices.Contains(events, e) {
+				t.Errorf("room1 received %+v from %s", e, from)
+			}
+			missing = slices.DeleteFunc(missing, func(m stream.Event) bool { return m == e })
+		}
+		if e, ok := brokerNext(r2, streamGrace); ok {
+			t.Errorf("room2 received %+v from %s", e, from)
+		}
+		// The signal and the mute for s1 do not reach the subscription of s2.
+		for {
+			e, ok := brokerNext(other, streamGrace)
+			if !ok {
+				break
+			}
+			if e.Kind == stream.KindVoiceSignal || e.Kind == stream.KindVoiceMute {
+				t.Errorf("the subscription of s2 received %+v from %s", e, from)
+			}
+		}
+		for {
+			e, ok := brokerNext(alice, streamGrace)
+			if !ok {
+				break
+			}
+			if e.Kind != stream.KindHomeEntry {
+				t.Errorf("alice's subscription received %+v from %s", e, from)
+			}
+		}
+		for {
+			if _, ok := brokerNext(r1, streamGrace); !ok {
+				break
+			}
 		}
 	}
 }

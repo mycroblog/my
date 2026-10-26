@@ -62,6 +62,9 @@ DELETE FROM voice_room_host_graces WHERE room_id = ?;
 -- name: GetVoiceRoomHostGrace :one
 SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id = ?;
 
+-- name: GetVoiceRoomParticipationEnd :one
+SELECT participation_id, reason, ended_at FROM voice_room_participation_ends WHERE participation_id = ?;
+
 -- GetVoiceRoom returns a room with its head, its current revision, and its ending (NULL
 -- columns for an open room).
 -- name: GetVoiceRoom :one

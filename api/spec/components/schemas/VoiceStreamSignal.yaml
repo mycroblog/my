@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: The data of a `signal` event of a voice chat room stream.
+type: object
+required: [from, kind]
+properties:
+  from:
+    description: The session that sent the signal.
+    type: string
+  kind:
+    $ref: ./VoiceSignalKind.yaml
+  sdp:
+    description: The session description of an offer or an answer.
+    type: string
+  candidate:
+    description: The ICE candidate of a `candidate`.
+    type: string

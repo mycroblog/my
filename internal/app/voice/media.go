@@ -241,8 +241,13 @@ func (s *Service) applyState(ctx context.Context, room RoomRef, p Participant, s
 // the participation's current session go, so that later heartbeats of it fail as for an ended
 // participation and the client joins again with a new session and grant, even while the
 // participation lasts (a host in the grace).
+// The stream of the session reads the room again and ends (removed, disconnected).
 func (s *Service) takeAway(ctx context.Context, p Participant, session string) error {
-	return s.d.Heartbeats.stop(ctx, p.ParticipationID, session)
+	if err := s.d.Heartbeats.stop(ctx, p.ParticipationID, session); err != nil {
+		return err
+	}
+	s.publishRoom(p.RoomID)
+	return nil
 }
 
 // reopen opens the media path of a room again when the media server closed it while the room

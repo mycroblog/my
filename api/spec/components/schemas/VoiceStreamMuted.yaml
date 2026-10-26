@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: The data of a `muted` event of a voice chat room stream.
+type: object
+required: [by]
+properties:
+  by:
+    description: The account ID of the host or co-host who muted the session.
+    type: string

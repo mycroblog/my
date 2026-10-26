@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -54,6 +55,9 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"DecidesInTheTransaction", roomsRaces, ""},
 		{"SerializesConcurrentCommands", roomsConcurrent, ""},
 		{"FailsWithoutAGrant", roomsNoGrant, ""},
+		{"StreamsTheRoom", roomsStream, ""},
+		{"RelaysSignals", roomsSignals, ""},
+		{"SendsMicReactionsAndGrants", roomsMicReactions, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -144,6 +148,18 @@ func (m *roomsMembers) Blocked(_ context.Context, a, b string) (bool, error) {
 	return m.blocks[[2]string{a, b}] || m.blocks[[2]string{b, a}], nil
 }
 
+func (m *roomsMembers) BlockedAmong(_ context.Context, a string, ids []string) (map[string]bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := map[string]bool{}
+	for _, id := range ids {
+		if m.blocks[[2]string{a, id}] || m.blocks[[2]string{id, a}] {
+			out[id] = true
+		}
+	}
+	return out, nil
+}
+
 func (m *roomsMembers) Following(_ context.Context, a string, ids []string) (map[string]bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -160,10 +176,12 @@ func (m *roomsMembers) set(fn func()) {
 	fn()
 }
 
-// roomsTransport records the calls of JobApply.
+// roomsTransport records the calls of JobApply; reconnect makes SetSpeaking ask the client to
+// connect again.
 type roomsTransport struct {
-	mu    sync.Mutex
-	calls []string
+	mu        sync.Mutex
+	calls     []string
+	reconnect bool
 	// enforced makes it a media server that holds the sessions of media, by room.
 	enforced bool
 	media    map[string][]string
@@ -273,13 +291,18 @@ func (r *roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice
 }
 func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) (bool, error) {
 	r.add("speak:" + s.ID + ":" + strconv.FormatBool(canSpeak))
-	return false, nil
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.reconnect, nil
 }
 func (r *roomsTransport) Mute(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
 	r.add("mute:" + s.ID)
 	return nil
 }
-func (*roomsTransport) Unmute(context.Context, appvoice.RoomRef, appvoice.Session) error { return nil }
+func (r *roomsTransport) Unmute(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
+	r.add("unmute:" + s.ID)
+	return nil
+}
 func (r *roomsTransport) Remove(_ context.Context, room appvoice.RoomRef, s appvoice.Session) error {
 	r.add("remove:" + s.ID)
 	r.mu.Lock()
@@ -310,6 +333,7 @@ type roomsEnv struct {
 	members   *roomsMembers
 	transport *roomsTransport
 	jobs      *InlineJobs
+	hub       *stream.Hub
 	svc       *appvoice.Service
 	newSvc    func(cfg appvoice.Config) *appvoice.Service
 }
@@ -322,7 +346,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 	clock := NewClock(time.Date(2026, 10, 26, 9, 0, 0, 0, time.UTC))
 	outbox, jobs := inlineOutbox(projectors)
 	e := &roomsEnv{
-		h: h, clock: clock, ids: NewIDGenerator(clock), transport: &roomsTransport{}, jobs: jobs,
+		h: h, clock: clock, ids: NewIDGenerator(clock), transport: &roomsTransport{}, jobs: jobs, hub: stream.NewHub(stream.HubOptions{}),
 		members: &roomsMembers{
 			inactive: map[string]bool{}, limited: map[string]bool{}, starters: map[string]bool{},
 			follows: map[[2]string]bool{}, blocks: map[[2]string]bool{},
@@ -333,6 +357,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 		d := appvoice.Deps{
 			Repository: h.Voice, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
 			Heartbeats: appvoice.NewHeartbeats(kv, h.Voice), Members: e.members, Relations: e.members, Config: cfg,
+			Streams: e.hub,
 		}
 		if cfg.Transport != "" {
 			d.Transport = e.transport
@@ -343,6 +368,8 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 	reg := jobs.Registry
 	e.svc.RegisterJobs(reg, nil)
 	e.svc.RegisterEligibilityProjectors(projectors)
+	e.svc.RegisterCommitHooks(projectors)
+	t.Cleanup(e.hub.Close)
 	return e
 }
 
@@ -834,6 +861,7 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	r := hj.Room.ID
 	lj := e.join(t, listener, r)
 	e.transport.connect(r, hj.Session, "ghost")
+	lst := e.openStream(t, listener, r, lj.Session)
 
 	e.clock.Advance(30 * time.Second)
 	e.beat(t, host, r, hj.Session)
@@ -857,6 +885,9 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	}
 	if ps := e.participants(t, r); len(ps) != 1 || ps[host].AccountID != host {
 		t.Fatalf("participants = %v, want the listener that never connected disconnected", ps)
+	}
+	if st := e.streamState(t, lst); st.End != appvoice.StreamRemoved || st.Reason != string(voice.Disconnected) {
+		t.Errorf("the stream of the disconnected listener = %s %s, want removed (disconnected)", st.End, st.Reason)
 	}
 	if err := e.svc.Heartbeat(ctx, listener, r, lj.Session); !errors.Is(err, appvoice.ErrNotFound) {
 		t.Errorf("heartbeat of the disconnected listener: %v, want ErrNotFound", err)
