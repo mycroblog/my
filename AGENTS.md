@@ -7,7 +7,7 @@ Human contributors should read [CONTRIBUTING.md](CONTRIBUTING.md); the rules are
 
 An ActivityPub-compatible microblog server written in Go, designed to run at near-zero cost on Google Cloud, AWS,
 or a self-hosted VM (Docker / microk8s), with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
-a PWA web client, a Tauri 2 mobile app, and i18n from day one. Distributed as OSS.
+a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OSS.
 
 ## Current phase: M4 — Feature Completeness
 
