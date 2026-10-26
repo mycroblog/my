@@ -45,6 +45,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"ListsVisibleRooms", roomsList, ""},
 		{"ReactsToSuspensions", roomsSuspension, ""},
 		{"ReconcilesTheMediaPath", roomsMedia, voice.TransportLiveKit},
+		{"AuthorizesConnections", roomsConnect, voice.TransportSora},
 		{"SpeaksAndRaisesHands", roomsSpeaking, ""},
 		{"MutesAndRemoves", roomsRemove, ""},
 		{"AssignsCohosts", roomsCohosts, ""},
@@ -281,6 +282,20 @@ func (r *roomsTransport) disconnect(room, session string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.media[room] = slices.DeleteFunc(r.media[room], func(id string) bool { return id == session })
+}
+
+// AuthorizeConnect implements appvoice.ConnectAuthorizer: the body is the JSON of the attempt,
+// the answer the JSON of the decision, and a header X-Bad refuses the request with 401.
+func (*roomsTransport) AuthorizeConnect(_ context.Context, h http.Header, body []byte, decide func(appvoice.ConnectAttempt) appvoice.ConnectDecision) (int, []byte, error) {
+	if h.Get("X-Bad") != "" {
+		return http.StatusUnauthorized, nil, errors.New("bad credentials")
+	}
+	var a appvoice.ConnectAttempt
+	if err := json.Unmarshal(body, &a); err != nil {
+		return http.StatusOK, nil, nil
+	}
+	b, err := json.Marshal(decide(a))
+	return http.StatusOK, b, err
 }
 
 // ParseEvents implements appvoice.EventSource: the body is the JSON of the events, and a
@@ -910,8 +925,8 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	if err := e.svc.Heartbeat(ctx, listener, r, lj.Session); !errors.Is(err, appvoice.ErrNotFound) {
 		t.Errorf("heartbeat of the disconnected listener: %v, want ErrNotFound", err)
 	}
-	if e.transport.count("speak:"+hj.Session+":true") != 1 {
-		t.Errorf("transport calls = %v, want the host's state applied once the media path saw it", e.transport.calls)
+	if e.transport.count("speak:"+hj.Session+":true") != 2 {
+		t.Errorf("transport calls = %v, want the host's state applied on each sweep that sees it", e.transport.calls)
 	}
 
 	deliver := func(transport string, h http.Header, evs ...appvoice.Event) appvoice.MediaWebhookOutcome {
@@ -975,7 +990,7 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	// speak.
 	l2 := e.join(t, e.account(false), r)
 	deliver("livekit", nil, appvoice.Event{ID: "EV_5", Kind: appvoice.MediaSessionJoined, Room: ref, Session: l2.Session, Connection: "PA_l2"})
-	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 2 {
+	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 3 {
 		t.Errorf("transport calls = %v, want the roles applied on join", e.transport.calls)
 	}
 
@@ -1000,7 +1015,7 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	if err := e.svc.Sweep(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if e.transport.count("speak:"+hj.Session+":true") != 3 {
+	if e.transport.count("speak:"+hj.Session+":true") != 4 {
 		t.Errorf("transport calls = %v, want the host's state applied after it connected again", e.transport.calls)
 	}
 
@@ -1111,6 +1126,133 @@ func roomsConcurrent(t *testing.T, e *roomsEnv) {
 	}
 	if _, ok := e.participants(t, room)[rec.Head.HostAccountID]; !ok {
 		t.Errorf("the host %s is not in the room", rec.Head.HostAccountID)
+	}
+}
+
+// roomsConnect checks the decisions of the connections that a media server asks about
+// (ADR-0102 §4): the current, live session of a participant of an open room connects, a
+// connection that publishes audio only as a speaker; a session that is not live (unknown or
+// replaced), of a banned participant, past the capacity in the order of joining, or of a room
+// that is not open is refused; a request that does not authenticate is rejected; and the
+// endpoint of another method is not found.
+func roomsConnect(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	e.transport.sfu()
+	host, listener, banned := e.account(true), e.account(false), e.account(false)
+	hj := e.open(t, host, appvoice.SettingsInput{})
+	r := hj.Room.ID
+	old := e.join(t, listener, r).Session
+	bj := e.join(t, banned, r)
+	// The listener joins again from another device: the first session is replaced.
+	lj := e.join(t, listener, r)
+	ban := appvoice.Ban{ID: e.ids.NewID(), RoomID: r, AccountID: banned, BannedByAccountID: host, BannedAt: e.clock.Now()}
+	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.h.Voice.LockRoom(ctx, tx, r); err != nil {
+			return err
+		}
+		_, err := e.h.Voice.InsertBan(ctx, tx, ban)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authorize := func(svc *appvoice.Service, transport string, h http.Header, a appvoice.ConnectAttempt) appvoice.MediaConnectResult {
+		t.Helper()
+		body, err := json.Marshal(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: transport, Header: h, Body: body, ClientIP: "192.0.2.1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res
+	}
+	decision := func(svc *appvoice.Service, a appvoice.ConnectAttempt) appvoice.ConnectDecision {
+		t.Helper()
+		res := authorize(svc, "sora", nil, a)
+		if res.Outcome != appvoice.MediaWebhookAccepted || res.Status != http.StatusOK {
+			t.Fatalf("AuthorizeMediaConnect(%+v) = %+v, want an answer", a, res)
+		}
+		var d appvoice.ConnectDecision
+		if err := json.Unmarshal(res.Body, &d); err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+	room := appvoice.RoomRef{ID: r}
+	limited := e.newSvc(appvoice.Config{Transport: voice.TransportSora, Capacity: 1})
+	for name, c := range map[string]struct {
+		svc     *appvoice.Service
+		attempt appvoice.ConnectAttempt
+		reason  string
+	}{
+		"host speaks":             {attempt: appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}},
+		"listener listens":        {attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session}},
+		"listener speaks":         {attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session, Speaker: true}, reason: "not a speaker"},
+		"replaced session":        {attempt: appvoice.ConnectAttempt{Room: room, Session: old}, reason: "session not live"},
+		"unknown session":         {attempt: appvoice.ConnectAttempt{Room: room, Session: "unknown"}, reason: "session not live"},
+		"session of another room": {attempt: appvoice.ConnectAttempt{Room: appvoice.RoomRef{ID: e.ids.NewID()}, Session: lj.Session}, reason: "room not open"},
+		"banned":                  {attempt: appvoice.ConnectAttempt{Room: room, Session: bj.Session}, reason: "banned from the room"},
+		"host within capacity":    {svc: limited, attempt: appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}},
+		"listener past capacity":  {svc: limited, attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session}, reason: "room full"},
+	} {
+		svc := c.svc
+		if svc == nil {
+			svc = e.svc
+		}
+		d := decision(svc, c.attempt)
+		if d.Allowed != (c.reason == "") || d.Reason != c.reason {
+			t.Errorf("%s: decision = %+v, want reason %q", name, d, c.reason)
+		}
+	}
+
+	if res := authorize(e.svc, "sora", http.Header{"X-Bad": {"1"}}, appvoice.ConnectAttempt{Room: room, Session: hj.Session}); res.Outcome != appvoice.MediaWebhookRejected || res.Status != http.StatusUnauthorized {
+		t.Errorf("request that does not authenticate = %+v, want rejected with 401", res)
+	}
+	if res := authorize(e.svc, "livekit", nil, appvoice.ConnectAttempt{Room: room, Session: hj.Session}); res.Outcome != appvoice.MediaWebhookNotFound {
+		t.Errorf("request of another method = %+v, want not_found", res)
+	}
+
+	// Only the requests that do not verify count against the limits, each endpoint its own:
+	// a busy media server is never refused.
+	ip := "192.0.2.9"
+	attempt, err := json.Marshal(appvoice.ConnectAttempt{Room: room, Session: lj.Session})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range appvoice.MediaConnectIPLimit.Max + 1 {
+		res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip})
+		if err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
+			t.Fatalf("authentic request %d = %+v, %v; want an answer", i, res, err)
+		}
+		ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Body: []byte("[]"), ClientIP: ip})
+		if err != nil || ev.Outcome != appvoice.MediaWebhookAccepted {
+			t.Fatalf("authentic delivery %d = %+v, %v; want accepted", i, ev, err)
+		}
+	}
+	bad := http.Header{"X-Bad": {"1"}}
+	var last appvoice.MediaConnectResult
+	for range appvoice.MediaConnectIPLimit.Max + 1 {
+		if last, err = e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: attempt, ClientIP: ip}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if last.Outcome != appvoice.MediaWebhookRateLimited || last.RetryAfter <= 0 {
+		t.Errorf("request past the limit of the ones that do not verify = %+v, want rate_limited", last)
+	}
+	if ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: []byte("[]"), ClientIP: ip}); err != nil || ev.Outcome != appvoice.MediaWebhookRejected {
+		t.Errorf("delivery that does not verify, under its own limit = %+v, %v; want rejected", ev, err)
+	}
+	if res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip}); err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
+		t.Errorf("authentic request past the limit = %+v, %v; want an answer", res, err)
+	}
+	if err := e.svc.End(ctx, host, r); err != nil {
+		t.Fatal(err)
+	}
+	if d := decision(e.svc, appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}); d.Allowed || d.Reason != "room not open" {
+		t.Errorf("connection to an ended room = %+v, want refused", d)
 	}
 }
 

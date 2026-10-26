@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -103,8 +104,13 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		if transport, err = a.newLiveKitTransport(cfg); err != nil {
 			return fmt.Errorf("voice = livekit: %w", err)
 		}
+	case VoiceSora:
+		var err error
+		if transport, err = a.newSoraTransport(cfg); err != nil {
+			return fmt.Errorf("voice = sora: %w", err)
+		}
 	default:
-		return fmt.Errorf("voice = %s: this build has no transport for it yet; use p2p, livekit, or off", a.Voice.Method)
+		return fmt.Errorf("voice = %s: this build has no transport for it; use p2p, livekit, sora, or off", a.Voice.Method)
 	}
 	outbox := a.Outbox
 	if outbox == nil {
@@ -131,6 +137,16 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	return nil
 }
 
+// voiceHTTPClient returns the HTTP client of a voice adapter that calls a server the operator
+// configured (an SFU, Cloudflare's TURN service; ADR-0102 §1): it does not follow redirects, so
+// that a request and its credentials reach that server only.
+func voiceHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout:       timeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+}
+
 // voiceTURN returns the TURN source of voice_turn (ADR-0101 §5), nil for none.
 func (a *App) voiceTURN(cfg *config.Config) (p2p.TURN, error) {
 	switch cfg.VoiceTURN {
@@ -141,6 +157,7 @@ func (a *App) voiceTURN(cfg *config.Config) (p2p.TURN, error) {
 	case turncloudflare.Name:
 		return turncloudflare.New(turncloudflare.Options{
 			KeyID: cfg.VoiceTURNCloudflareKeyID, APIToken: cfg.VoiceTURNCloudflareAPIToken, KV: a.KV, Clock: a.Clock,
+			HTTPClient: voiceHTTPClient(10 * time.Second),
 		})
 	}
 	return nil, fmt.Errorf("voice_turn = %s: unknown TURN source", cfg.VoiceTURN)
