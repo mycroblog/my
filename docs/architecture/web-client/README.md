@@ -223,6 +223,9 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
   - ストーリーは `scripts/task.sh ui:test` で実ブラウザのテストになる（`app/ui/vitest.config.ts`、Storybook の Vitest アドオンと Vitest のブラウザモード、Playwright の Chromium）。
     - プロジェクトは方向 × テーマの 4 つ（`en` / `ar-XB` × ライト / ダーク）。すべてのストーリーを 4 つすべてで動かす。
     - axe の違反が 1 つでもあれば失敗する（`parameters.a11y.test: 'error'`、Y1 のタグ）。
+    - テストの間（スクリーンショットの段階を含む）に `console.error` / `console.warn` が出れば、そのテストが失敗し、メッセージが失敗に載る（`app/ui/test/consoleGuard.ts`）。
+      jsdom の部品のテスト（`unit` のプロジェクト）も同じ規則で、警告を期待するテストは自分で console を spy する。
+      無害と分かっているメッセージだけを理由つきで許可リストに置く（React Aria のオーバーレイの位置合わせと TanStack Virtual が ResizeObserver の中で寸法を変える `ResizeObserver loop completed with undelivered notifications`）。
     - `@my/ui` の部品の振る舞いのテスト（フォーカスの閉じ込めと復帰、Esc、矢印キー）は、ストーリーの `play` 関数に `storybook/test` の `expect` と文脈の `userEvent` / `canvas` で書く。
       すべてのプロジェクトで動くので、RTL の矢印キーは `document.documentElement.dir` で向きを決めて同じ `play` で検査する。
     - ダイアログ・ポップオーバー・トーストなどのオーバーレイは、`<body>` ではなくストーリーの枠に portal する（`UNSAFE_PortalProvider`）。枠は `contain: layout` なので、`position: fixed` のオーバーレイも枠を覆い、スクリーンショットに写る。

@@ -9,6 +9,11 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      // In CI, only the failing tests, the console output of those alone, and the summary (Vitest's `minimal`
+      // reporter), and the failures as annotations on GitHub Actions; elsewhere Vitest's default lists every test.
+      ...(process.env["CI"]
+        ? { reporters: ["minimal", ...(process.env["GITHUB_ACTIONS"] === "true" ? ["github-actions"] : [])] }
+        : {}),
       environment: "jsdom",
       include: ["src/**/*.test.{ts,tsx}", "sw/**/*.test.ts", "vite-plugins/**/*.test.ts"],
       setupFiles: ["./src/test/setup.ts"],
