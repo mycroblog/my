@@ -122,10 +122,12 @@ type Options struct {
 	TimelineLanguages func(ctx context.Context, userID string) ([]string, error)
 	// Streams opens the subscriptions of the streaming endpoint; nil answers it with 503.
 	// HomeEntries tells the streams whether a home timeline lists a new entry; nil streams no
-	// home timeline entries. StreamHeartbeat overrides DefaultStreamHeartbeat when positive.
-	Streams         stream.Subscriber
-	HomeEntries     HomeEntries
-	StreamHeartbeat time.Duration
+	// home timeline entries. StreamHeartbeat overrides DefaultStreamHeartbeat when positive,
+	// and StreamWriteTimeout DefaultStreamWriteTimeout.
+	Streams            stream.Subscriber
+	HomeEntries        HomeEntries
+	StreamHeartbeat    time.Duration
+	StreamWriteTimeout time.Duration
 	// Permissions reads the permissions of the viewer's roles, which the admin operations need
 	// (admin.go); nil grants none. InstanceHealth reads and clears the health of remote servers,
 	// and DeadJobs lists and requeues the dead jobs, for the admin operations; Queue reads the

@@ -239,6 +239,33 @@ func TestStreamingWithoutBroker(t *testing.T) {
 	}
 }
 
+// TestStreamingIdleOverHTTP2 checks that an idle stream over HTTP/2 stays open past the write
+// timeout of its last write until the next heartbeat: HTTP/2 resets a stream whose write
+// deadline passes even while nothing is being written.
+func TestStreamingIdleOverHTTP2(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{})
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Streams, o.StreamHeartbeat, o.StreamWriteTimeout = hub, 300*time.Millisecond, 50*time.Millisecond
+	})
+	srv := httptest.NewUnstartedServer(e.h)
+	srv.EnableHTTP2 = true
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+
+	_, res, r := openStream(t.Context(), t, srv, "read")
+	if res.ProtoMajor != 2 {
+		t.Fatalf("protocol = %s, want HTTP/2", res.Proto)
+	}
+	if line := readLine(t, r); line != ": connected" {
+		t.Fatalf("first line = %q, want the connected comment", line)
+	}
+	for range 2 {
+		if line := readLine(t, r); line != ": heartbeat" {
+			t.Fatalf("line = %q, want a heartbeat", line)
+		}
+	}
+}
+
 // TestStreamingNotificationBurst checks that a stream sends every notification of a burst
 // larger than a page of the list, oldest first, and each once.
 func TestStreamingNotificationBurst(t *testing.T) {
