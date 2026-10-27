@@ -59,7 +59,10 @@ description: |
   the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
   `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
   the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-  `service_closure`.
+  `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+  (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
+  and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
+  name.
 type: string
 enum:
   - account_action_issued
@@ -148,3 +151,9 @@ enum:
   - service_closure_closed
   - service_closure_delivery_completed
   - voice_room_ended
+  - login_provider_created
+  - login_provider_updated
+  - login_provider_deleted
+  - login_provider_enabled
+  - login_provider_disabled
+  - login_provider_secret_rotated

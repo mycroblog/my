@@ -82,6 +82,7 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 		q.EraseEmailVerifications, q.EraseUserPrimaryEmail, q.EraseEmailAddresses, q.ErasePasswordCredentialRemovals, q.ErasePasswordCredentials,
 		q.EraseTOTPRecoveryCodeUses, q.EraseTOTPRecoveryCodes, q.EraseTOTPEnrollmentRevocations, q.EraseTOTPEnrollments,
 		q.ErasePasskeyCredentialRevocations, q.ErasePasskeyCredentials,
+		q.EraseUserExternalIdentities, q.EraseExternalIdentityUnlinks, q.EraseExternalIdentities, q.EraseExternalIdentityLinks,
 		q.EraseUserTokenRedemptions, q.EraseUserTokens, q.EraseSessionRevocations, q.EraseSessionActivity,
 		q.EraseSessions, q.EraseAuthorizationCodeRedemptions, q.EraseAuthorizationCodes,
 		q.EraseAccessTokenRevocations, q.EraseAccessTokens, q.EraseUserPreferences, q.EraseUserRoleBadgeDisplays, q.EraseUserTimelineLanguages, q.EraseUserTimeZone,

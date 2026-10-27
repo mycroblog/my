@@ -371,6 +371,39 @@ func (q *Queries) EraseEmailVerifications(ctx context.Context, userID string) er
 	return err
 }
 
+const eraseExternalIdentities = `-- name: EraseExternalIdentities :exec
+DELETE FROM external_identities WHERE id IN (
+  SELECT l.external_identity_id FROM external_identity_links l WHERE l.user_id = ?1)
+  AND NOT EXISTS (
+    SELECT 1 FROM external_identity_links o
+    WHERE o.external_identity_id = external_identities.id AND o.user_id <> ?1)
+`
+
+// EraseExternalIdentities deletes the external identities that only the user linked.
+func (q *Queries) EraseExternalIdentities(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseExternalIdentities, userID)
+	return err
+}
+
+const eraseExternalIdentityLinks = `-- name: EraseExternalIdentityLinks :exec
+DELETE FROM external_identity_links WHERE user_id = ?1
+`
+
+func (q *Queries) EraseExternalIdentityLinks(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseExternalIdentityLinks, userID)
+	return err
+}
+
+const eraseExternalIdentityUnlinks = `-- name: EraseExternalIdentityUnlinks :exec
+DELETE FROM external_identity_unlinks WHERE link_id IN (
+  SELECT l.id FROM external_identity_links l WHERE l.user_id = ?1)
+`
+
+func (q *Queries) EraseExternalIdentityUnlinks(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseExternalIdentityUnlinks, userID)
+	return err
+}
+
 const eraseFavouritesBy = `-- name: EraseFavouritesBy :execrows
 DELETE FROM favourites WHERE favourites.account_id = ?1 AND favourites.status_id IN (
   SELECT f.status_id FROM favourites f WHERE f.account_id = ?1
@@ -1072,6 +1105,15 @@ DELETE FROM totp_recovery_codes WHERE enrollment_id IN (
 
 func (q *Queries) EraseTOTPRecoveryCodes(ctx context.Context, userID string) error {
 	_, err := q.db.ExecContext(ctx, eraseTOTPRecoveryCodes, userID)
+	return err
+}
+
+const eraseUserExternalIdentities = `-- name: EraseUserExternalIdentities :exec
+DELETE FROM user_external_identities WHERE user_id = ?1
+`
+
+func (q *Queries) EraseUserExternalIdentities(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseUserExternalIdentities, userID)
 	return err
 }
 

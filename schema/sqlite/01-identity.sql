@@ -116,7 +116,8 @@ CREATE TABLE role_permissions (
     'manage_settings', 'manage_roles', 'manage_invites', 'view_audit', 'manage_jobs',
     'manage_login_recovery', 'manage_custom_emojis', 'manage_webhooks', 'manage_announcements',
     'manage_finance', 'view_finance', 'manage_supporters', 'create_custom_emojis',
-    'manage_oauth_apps', 'manage_service_closure', 'start_voice_rooms', 'manage_errors'
+    'manage_oauth_apps', 'manage_service_closure', 'start_voice_rooms', 'manage_errors',
+    'manage_login_providers'
   )),
   PRIMARY KEY (role_id, permission)
 ) STRICT;
@@ -651,3 +652,116 @@ CREATE TABLE data_import_item_failures (
   failed_at INTEGER NOT NULL,
   PRIMARY KEY (import_id, position, attempt)
 ) STRICT;
+
+-- External login providers (FR-010, ADR-0106) ---------------------------------------------------
+
+-- Resource: an external identity provider that an administrator set up to sign in with.
+-- created_by_user_id is NULL for the CLI.
+CREATE TABLE login_providers (
+  id TEXT NOT NULL PRIMARY KEY,
+  created_by_user_id TEXT,
+  created_at INTEGER NOT NULL
+) STRICT;
+
+-- Event (revision): the settings of a provider; the newest row is current (login_provider_heads).
+-- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github. scopes are the extra
+-- scopes, space-separated and sorted, NULL for none. revised_by_user_id is NULL for the CLI.
+CREATE TABLE login_provider_revisions (
+  id TEXT NOT NULL PRIMARY KEY,
+  provider_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('oidc', 'github', 'mastodon')),
+  display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 100),
+  issuer TEXT CHECK (issuer IS NULL OR length(issuer) BETWEEN 1 AND 2048),
+  client_id TEXT NOT NULL CHECK (length(client_id) BETWEEN 1 AND 512),
+  scopes TEXT CHECK (scopes IS NULL OR length(scopes) BETWEEN 1 AND 1024),
+  allow_signup INTEGER NOT NULL CHECK (allow_signup IN (0, 1)),
+  allow_link INTEGER NOT NULL CHECK (allow_link IN (0, 1)),
+  revised_by_user_id TEXT,
+  revised_at INTEGER NOT NULL,
+  CHECK ((kind = 'github') = (issuer IS NULL))
+) STRICT;
+CREATE INDEX login_provider_revisions_provider_id_id ON login_provider_revisions (provider_id, id DESC);
+
+-- Event (child of a revision): a value that the OIDC claim may have for a user to sign in. A
+-- user meets the conditions when each claim of the revision has one of its values.
+CREATE TABLE login_provider_revision_claims (
+  revision_id TEXT NOT NULL,
+  claim TEXT NOT NULL CHECK (length(claim) BETWEEN 1 AND 100),
+  value TEXT NOT NULL CHECK (length(value) BETWEEN 1 AND 256),
+  PRIMARY KEY (revision_id, claim, value)
+) STRICT;
+
+-- Event (child of a revision): a GitHub Organization (its login, in lower case) whose members may
+-- sign in. Without a row, every GitHub user may.
+CREATE TABLE login_provider_revision_organizations (
+  revision_id TEXT NOT NULL,
+  organization TEXT NOT NULL CHECK (length(organization) BETWEEN 1 AND 39),
+  PRIMARY KEY (revision_id, organization)
+) STRICT;
+
+-- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds
+-- a row; the newest one is current. created_by_user_id is NULL for the CLI.
+CREATE TABLE login_provider_secrets (
+  id TEXT NOT NULL PRIMARY KEY,
+  provider_id TEXT NOT NULL,
+  sealed_secret BLOB NOT NULL,
+  created_by_user_id TEXT,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX login_provider_secrets_provider_id_id ON login_provider_secrets (provider_id, id DESC);
+
+-- Event: a provider was enabled, disabled, or deleted. changed_by_user_id is NULL for the CLI.
+CREATE TABLE login_provider_state_changes (
+  id TEXT NOT NULL PRIMARY KEY,
+  provider_id TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('enabled', 'disabled', 'deleted')),
+  changed_by_user_id TEXT,
+  changed_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX login_provider_state_changes_provider_id_id ON login_provider_state_changes (provider_id, id DESC);
+
+-- Projection of the revisions, secrets, and state changes: the current revision, state, and
+-- secret of each provider.
+CREATE TABLE login_provider_heads (
+  provider_id TEXT NOT NULL PRIMARY KEY,
+  revision_id TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('enabled', 'disabled', 'deleted')),
+  secret_id TEXT NOT NULL
+) STRICT;
+CREATE INDEX login_provider_heads_state ON login_provider_heads (state);
+
+-- Resource: an account at a provider. subject is its identifier there: the OIDC sub, the GitHub
+-- user's numeric id, or the Mastodon account's id.
+CREATE TABLE external_identities (
+  id TEXT NOT NULL PRIMARY KEY,
+  provider_id TEXT NOT NULL,
+  subject TEXT NOT NULL CHECK (length(subject) BETWEEN 1 AND 255),
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX external_identities_provider_id_subject ON external_identities (provider_id, subject);
+
+-- Event: an external identity was linked to a user, who then signs in with it.
+CREATE TABLE external_identity_links (
+  id TEXT NOT NULL PRIMARY KEY,
+  external_identity_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  linked_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX external_identity_links_external_identity_id ON external_identity_links (external_identity_id);
+CREATE INDEX external_identity_links_user_id ON external_identity_links (user_id);
+
+-- Event: a link ended (removed by its user).
+CREATE TABLE external_identity_unlinks (
+  link_id TEXT NOT NULL PRIMARY KEY,
+  unlinked_at INTEGER NOT NULL
+) STRICT;
+
+-- Projection of the links without an unlink: the user of each linked external identity. A user
+-- has at most one link per provider.
+CREATE TABLE user_external_identities (
+  external_identity_id TEXT NOT NULL PRIMARY KEY,
+  link_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  provider_id TEXT NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX user_external_identities_user_id_provider_id ON user_external_identities (user_id, provider_id);

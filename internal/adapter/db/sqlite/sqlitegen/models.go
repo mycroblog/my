@@ -294,6 +294,13 @@ type ErrorGroupEvent struct {
 	OccurredAt  int64
 }
 
+type ExternalIdentity struct {
+	ID         string
+	ProviderID string
+	Subject    string
+	CreatedAt  int64
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
@@ -520,6 +527,32 @@ type LocalStatus struct {
 	AuthorAccountID string
 	ClientID        sql.NullString
 	IdempotencyKey  sql.NullString
+}
+
+type LoginProviderHead struct {
+	ProviderID string
+	RevisionID string
+	State      string
+	SecretID   string
+}
+
+type LoginProviderRevisionClaim struct {
+	RevisionID string
+	Claim      string
+	Value      string
+}
+
+type LoginProviderRevisionOrganization struct {
+	RevisionID   string
+	Organization string
+}
+
+type LoginProviderSecret struct {
+	ID              string
+	ProviderID      string
+	SealedSecret    []byte
+	CreatedByUserID sql.NullString
+	CreatedAt       int64
 }
 
 type ManagedRole struct {

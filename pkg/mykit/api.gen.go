@@ -326,6 +326,12 @@ const (
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
+	AdminAuditActionLoginProviderCreated            AdminAuditAction = "login_provider_created"
+	AdminAuditActionLoginProviderDeleted            AdminAuditAction = "login_provider_deleted"
+	AdminAuditActionLoginProviderDisabled           AdminAuditAction = "login_provider_disabled"
+	AdminAuditActionLoginProviderEnabled            AdminAuditAction = "login_provider_enabled"
+	AdminAuditActionLoginProviderSecretRotated      AdminAuditAction = "login_provider_secret_rotated"
+	AdminAuditActionLoginProviderUpdated            AdminAuditAction = "login_provider_updated"
 	AdminAuditActionOauthClientDisabled             AdminAuditAction = "oauth_client_disabled"
 	AdminAuditActionOauthClientEnabled              AdminAuditAction = "oauth_client_enabled"
 	AdminAuditActionOauthClientHostAllowed          AdminAuditAction = "oauth_client_host_allowed"
@@ -450,6 +456,18 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
+		return true
+	case AdminAuditActionLoginProviderCreated:
+		return true
+	case AdminAuditActionLoginProviderDeleted:
+		return true
+	case AdminAuditActionLoginProviderDisabled:
+		return true
+	case AdminAuditActionLoginProviderEnabled:
+		return true
+	case AdminAuditActionLoginProviderSecretRotated:
+		return true
+	case AdminAuditActionLoginProviderUpdated:
 		return true
 	case AdminAuditActionOauthClientDisabled:
 		return true
@@ -596,6 +614,7 @@ const (
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
 	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
+	AdminAuditTargetKindLoginProvider         AdminAuditTargetKind = "login_provider"
 	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
 	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
 	AdminAuditTargetKindPaymentProvider       AdminAuditTargetKind = "payment_provider"
@@ -636,6 +655,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindInstance:
 		return true
 	case AdminAuditTargetKindInvite:
+		return true
+	case AdminAuditTargetKindLoginProvider:
 		return true
 	case AdminAuditTargetKindOauthClient:
 		return true
@@ -2587,6 +2608,7 @@ const (
 	PermissionManageFinance        Permission = "manage_finance"
 	PermissionManageInvites        Permission = "manage_invites"
 	PermissionManageJobs           Permission = "manage_jobs"
+	PermissionManageLoginProviders Permission = "manage_login_providers"
 	PermissionManageLoginRecovery  Permission = "manage_login_recovery"
 	PermissionManageOauthApps      Permission = "manage_oauth_apps"
 	PermissionManageReports        Permission = "manage_reports"
@@ -2621,6 +2643,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageInvites:
 		return true
 	case PermissionManageJobs:
+		return true
+	case PermissionManageLoginProviders:
 		return true
 	case PermissionManageLoginRecovery:
 		return true
@@ -4255,7 +4279,10 @@ type AdminAppealPage struct {
 // the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 // `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 // the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-// `service_closure`.
+// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
+// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
+// name.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -4324,7 +4351,10 @@ type AdminAuditEntry struct {
 	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-	// `service_closure`.
+	// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+	// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
+	// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
+	// name.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -9213,8 +9243,9 @@ type PaymentStatusWarnings string
 // instance setting `voice_room_starters` is `permitted`, a member permission (only the
 // built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
-// others guard no client API operation yet.
+// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+// `manage_login_providers`: the external identity providers that users sign in with (only the
+// built-in admin role by default, ADR-0106). The others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts

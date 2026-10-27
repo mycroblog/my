@@ -547,6 +547,30 @@
     "defaultMessage": "Voice chat room ended",
     "description": "Kind of an audited operation: a moderator ended an open voice chat room."
   },
+  "admin.audit_log.action.login_provider_created": {
+    "defaultMessage": "Login provider added",
+    "description": "Kind of an audited operation: an administrator set up an external login provider."
+  },
+  "admin.audit_log.action.login_provider_updated": {
+    "defaultMessage": "Login provider changed",
+    "description": "Kind of an audited operation: the settings of an external login provider changed."
+  },
+  "admin.audit_log.action.login_provider_deleted": {
+    "defaultMessage": "Login provider deleted",
+    "description": "Kind of an audited operation: an external login provider was deleted."
+  },
+  "admin.audit_log.action.login_provider_enabled": {
+    "defaultMessage": "Login provider enabled",
+    "description": "Kind of an audited operation: an external login provider was enabled."
+  },
+  "admin.audit_log.action.login_provider_disabled": {
+    "defaultMessage": "Login provider disabled",
+    "description": "Kind of an audited operation: an external login provider was disabled."
+  },
+  "admin.audit_log.action.login_provider_secret_rotated": {
+    "defaultMessage": "Login provider secret replaced",
+    "description": "Kind of an audited operation: an external login provider got a new client secret."
+  },
   "admin.audit_log.target_kind.oauth_client": {
     "defaultMessage": "OAuth app",
     "description": "Kind of target of an audited operation: an OAuth client, shown by its name and client_id."
@@ -562,5 +586,9 @@
   "admin.audit_log.target_kind.voice_room": {
     "defaultMessage": "Voice chat room",
     "description": "Kind of target of an audited operation: a voice chat room, shown by its ID."
+  },
+  "admin.audit_log.target_kind.login_provider": {
+    "defaultMessage": "Login provider",
+    "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
   }
 }

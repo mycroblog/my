@@ -632,3 +632,10 @@ func TestDiagnosticsRepositoryContract(t *testing.T) {
 		return testkit.DiagnosticsHarness{UnitOfWork: db, Diagnostics: db.DiagnosticsRepository()}
 	})
 }
+
+func TestLoginProviderRepositoryContract(t *testing.T) {
+	testkit.LoginProviderRepositoryContract(t, func(t *testing.T) testkit.LoginProviderHarness {
+		db, _ := newTestDB(t, "", uow.Options{})
+		return testkit.LoginProviderHarness{UnitOfWork: db, Identity: db.IdentityRepository()}
+	})
+}

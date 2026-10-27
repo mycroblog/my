@@ -67,6 +67,40 @@
 - 署名カウンターは保存しません。同期されるパスキーは常に 0 を返すので、複製の検出に使えないからです。
 - 登録・ログイン・確認の途中の状態（チャレンジ、5 分）は、`kernel.Sealer` で封をしてブラウザに持たせ、DB にも KV にも置きません。ログインと確認のチャレンジは 1 回だけ使えるように、使ったことを `KeyValueStore` の名前空間 `passkey` に有効期限まで記録します。ログインの失敗は、パスワードの失敗と同じクライアントのログイン失敗の上限（`login.ip`）に数えます。
 
+#### 外部 IdP でのログイン
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `login_providers` | リソース | `id`, `created_by_user_id`（NULL 可 = CLI）, `created_at` | |
+| `login_provider_revisions` | イベント（版） | `id`, `provider_id`, `kind`（`enum(oidc, github, mastodon)`）, `display_name`（`string(100)`）, `issuer`（NULL 可。`oidc` の issuer、`mastodon` のサーバーの URL。`github` だけ NULL）, `client_id`, `scopes`（NULL 可 = 追加の scope なし。空白区切り・ソート済み）, `allow_signup`（`bool`）, `allow_link`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(provider_id, id DESC)`。CHECK `(kind = 'github') = (issuer IS NULL)`。いちばん新しい行がいまの設定 |
+| `login_provider_revision_claims` | イベント（版の子） | `revision_id`, `claim`, `value` | PK `(revision_id, claim, value)`。`oidc` の条件。claim ごとに許す値の一覧 |
+| `login_provider_revision_organizations` | イベント（版の子） | `revision_id`, `organization`（小文字の login） | PK `(revision_id, organization)`。`github` の条件 |
+| `login_provider_secrets` | イベント | `id`, `provider_id`, `sealed_secret`（`bytes`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | インデックス `(provider_id, id DESC)`。回転は新しい行。いちばん新しい行だけを使う |
+| `login_provider_state_changes` | イベント | `id`, `provider_id`, `state`（`enum(enabled, disabled, deleted)`）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | インデックス `(provider_id, id DESC)` |
+| `login_provider_heads` | 投影 | `provider_id`（PK）, `revision_id`, `state`, `secret_id` | インデックス `(state)` |
+| `external_identities` | リソース | `id`, `provider_id`, `subject`（`string(255)`）, `created_at` | **一意 `(provider_id, subject)`** |
+| `external_identity_links` | イベント | `id`, `external_identity_id`, `user_id`, `linked_at` | インデックス `(external_identity_id)`, `(user_id)` |
+| `external_identity_unlinks` | イベント | `link_id`（PK）, `unlinked_at` | ひも付けの解除。2 回目の記録は何もしない |
+| `user_external_identities` | 投影 | `external_identity_id`（PK）, `link_id`, `user_id`, `provider_id` | **一意 `(user_id, provider_id)`**。解除のないひも付け |
+
+- 管理者が設定する外部 IdP（[ADR-0106](../../../adr/0106-external-login-providers.md)、FR-010）を、webhook の宛先（§4.11）と同じ形で持ちます。
+  IdP の作成は、`login_providers` の行と最初の版・秘密・状態の変化（`enabled`）と `login_provider_heads` の行を 1 つのトランザクションで書きます。
+  変更・秘密の回転・有効化・無効化・削除は、`login_provider_heads` の行をロックして（PostgreSQL は `FOR UPDATE`）から、それぞれの行を足して投影を書き換えます。
+  操作はすべて監査ログ（§4.3、`target_kind = login_provider`）に記録します。
+- `kind` は版に持ちますが、変えられません（`identity.ValidateLoginProviderChange`）。ひも付けた `subject` の意味が IdP の種類ごとに違うからです。
+- 版の値の検証は `identity.LoginProviderSettings.Validate` です。
+  - `oidc` の `issuer` は、ユーザー情報・クエリ・フラグメントのない `https` の URL で、ID トークンの `iss` と比べるので入力のまま保存します。
+  - `mastodon` は、ドメインか URL で入力されたサーバーを `https://<ホスト>`（ホストは小文字、パスなし）に正規化して `issuer` に保存します。追加の scope と条件は持ちません。
+  - `github` は `issuer` を持たず、条件は Organization の一覧（`read:org`）だけです。`oidc` の条件は claim と値の組だけです。
+  - 条件は、版の子の行がないとき「絞らない」です。claim の条件は、どの claim もその値のどれかと一致するときに満たします。
+- `client_secret`（`sealed_secret`）は `kernel.Sealer` で封をし（ADR-0019 §6）、作成と回転のときに入力を受けるだけで、API でも画面でも返しません。
+- 削除した IdP は一覧にも取得にも出ませんが、行とひも付けは残します。
+- `external_identities` は IdP の利用者（`subject` は OIDC の `sub`、GitHub の数値の `id`、Mastodon のアカウントの `id`）で、IdP と識別子の組ごとに 1 行です。
+  ひも付けは `external_identity_links` に 1 行足し、同じトランザクションで `user_external_identities` に加えます。
+  その主キーで 1 つの外部の利用者は同時に 1 人にしかひも付かず、一意 `(user_id, provider_id)` で 1 人の利用者は IdP ごとに 1 つしかひも付けません（`identity.ErrExternalIdentityLinked`・`identity.ErrLoginProviderLinked`）。
+  解除は `external_identity_unlinks` に 1 行足して投影から除きます。解除した外部の利用者は、また同じ人にも別の人にもひも付けられます。
+- 利用者のデータの消去（§8）は、その利用者のひも付けと解除の行・`user_external_identities` の行と、ほかの利用者がひも付けたことのない `external_identities` の行を消します。
+
 #### 登録審査
 
 | テーブル | 分類 | カラム | 制約 |
@@ -115,7 +149,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |

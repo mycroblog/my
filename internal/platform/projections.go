@@ -77,7 +77,10 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 			},
 			{
 				Name: "identity", Module: "identity",
-				Tables: []string{"user_roles", "user_registration_states", "user_primary_emails", "email_suppressions"},
+				Tables: []string{
+					"user_roles", "user_registration_states", "user_primary_emails", "email_suppressions", "login_provider_heads",
+					"user_external_identities",
+				},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return identity.RebuildProjections(ctx, u, r.identities)
 				},

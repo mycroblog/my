@@ -16,8 +16,9 @@ type ErasureRepository interface {
 	// EraseUserData deletes the user's email addresses with their verifications and the primary
 	// address, password credentials, one-time tokens with their redemptions, sessions with their
 	// revocations and activity, authorization codes and access tokens with their redemptions and
-	// revocations, preferences, the choices to show role badges, timeline languages, and
-	// registration application with its decisions and state. The user, the origins of its sessions and registration (erased after
+	// revocations, preferences, the choices to show role badges, timeline languages,
+	// registration application with its decisions and state, and the links to external
+	// identities with their unlinks and the external identities that no other user linked. The user, the origins of its sessions and registration (erased after
 	// their retention, ADR-0038), its invites and role grants stay.
 	EraseUserData(ctx context.Context, tx uow.Tx, userID string) error
 }

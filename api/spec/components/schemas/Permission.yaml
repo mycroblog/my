@@ -24,8 +24,9 @@ description: |
   instance setting `voice_room_starters` is `permitted`, a member permission (only the
   built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
   and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-  the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
-  others guard no client API operation yet.
+  the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+  `manage_login_providers`: the external identity providers that users sign in with (only the
+  built-in admin role by default, ADR-0106). The others guard no client API operation yet.
 type: string
 enum:
   - manage_reports
@@ -49,3 +50,4 @@ enum:
   - manage_service_closure
   - start_voice_rooms
   - manage_errors
+  - manage_login_providers

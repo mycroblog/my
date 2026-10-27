@@ -101,6 +101,9 @@ const (
 	// AuditTargetVoiceRoom is a voice chat room (ADR-0100 §11); its ID is voice_rooms.id and its
 	// label is the room's name when the operation happened.
 	AuditTargetVoiceRoom AuditTargetKind = "voice_room"
+	// AuditTargetLoginProvider is an external login provider (ADR-0106 §2); its ID is
+	// login_providers.id and its label the provider's display name.
+	AuditTargetLoginProvider AuditTargetKind = "login_provider"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -110,6 +113,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
 	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
+	AuditTargetLoginProvider,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -325,6 +329,18 @@ const (
 	// (voice_room_endings with the reason moderator, ADR-0100 §11); the source event is the
 	// ending, whose ID is the room's.
 	AuditVoiceRoomEnded AuditAction = "voice_room_ended"
+	// AuditLoginProviderCreated: a holder of manage_login_providers set up an external login
+	// provider (login_providers, ADR-0106 §2). AuditLoginProviderUpdated: its settings changed
+	// (login_provider_revisions). AuditLoginProviderDeleted, AuditLoginProviderEnabled, and
+	// AuditLoginProviderDisabled: it was deleted, enabled, or disabled
+	// (login_provider_state_changes). AuditLoginProviderSecretRotated: it got a new client
+	// secret (login_provider_secrets).
+	AuditLoginProviderCreated       AuditAction = "login_provider_created"
+	AuditLoginProviderUpdated       AuditAction = "login_provider_updated"
+	AuditLoginProviderDeleted       AuditAction = "login_provider_deleted"
+	AuditLoginProviderEnabled       AuditAction = "login_provider_enabled"
+	AuditLoginProviderDisabled      AuditAction = "login_provider_disabled"
+	AuditLoginProviderSecretRotated AuditAction = "login_provider_secret_rotated"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -418,6 +434,12 @@ var auditActions = []struct {
 	{AuditServiceClosureClosed, AuditTargetInstance},
 	{AuditServiceClosureDeliveryCompleted, AuditTargetInstance},
 	{AuditVoiceRoomEnded, AuditTargetVoiceRoom},
+	{AuditLoginProviderCreated, AuditTargetLoginProvider},
+	{AuditLoginProviderUpdated, AuditTargetLoginProvider},
+	{AuditLoginProviderDeleted, AuditTargetLoginProvider},
+	{AuditLoginProviderEnabled, AuditTargetLoginProvider},
+	{AuditLoginProviderDisabled, AuditTargetLoginProvider},
+	{AuditLoginProviderSecretRotated, AuditTargetLoginProvider},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

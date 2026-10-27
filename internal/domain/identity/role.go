@@ -66,6 +66,11 @@ const (
 	// regressed groups (ADR-0103 §8). It is server administration (ADR-0058 §4): only the
 	// built-in admin role has it by default.
 	PermManageErrors Permission = "manage_errors"
+	// PermManageLoginProviders: set up, change, enable, disable, and delete the external login
+	// providers and rotate their client secrets (ADR-0106 §2). Whoever adds a provider decides
+	// who signs up with it, which weighs more than manage_settings. It is server administration
+	// (ADR-0058 §4): only the built-in admin role has it by default.
+	PermManageLoginProviders Permission = "manage_login_providers"
 )
 
 // AllPermissions lists every permission.
@@ -75,7 +80,7 @@ func AllPermissions() []Permission {
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
-		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors,
+		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors, PermManageLoginProviders,
 	}
 }
 

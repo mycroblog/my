@@ -139,6 +139,10 @@
     "defaultMessage": "Errors",
     "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."
   },
+  "admin.roles.permission.manage_login_providers": {
+    "defaultMessage": "Login providers",
+    "description": "Name of the permission manage_login_providers: setting up, changing, disabling, and deleting the external identity providers (OpenID Connect, GitHub, Mastodon) that users sign in and sign up with."
+  },
   "admin.roles.permission.manage_oauth_apps": {
     "defaultMessage": "OAuth apps",
     "description": "Name of the permission manage_oauth_apps: all the OAuth clients, disabling them, and denying the hosts of client metadata documents."

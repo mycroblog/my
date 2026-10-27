@@ -79,6 +79,7 @@ type Repository interface {
 	ProjectionRepository
 	EmailSuppressionRepository
 	ClosureEmailRepository
+	LoginProviderRepository
 
 	InsertSession(ctx context.Context, tx uow.Tx, s identity.Session) error
 	// InsertSessionRevocation records that a session ended; it does nothing when the session

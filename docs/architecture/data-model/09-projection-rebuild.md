@@ -11,6 +11,7 @@
 | `user_registration_states` | `registration_applications`, `registration_decisions` | 同期 |
 | `user_roles` | `user_role_grants`, `user_role_revocations` | 同期 |
 | `user_primary_emails` | `user_email_addresses` | 同期 |
+| `login_provider_heads` / `user_external_identities` | `login_provider_revisions`・`login_provider_state_changes`・`login_provider_secrets`、`external_identity_links`・`external_identity_unlinks` | 同期 |
 | `account_handles` / `remote_account_heads` / `account_profile_heads` | `local_accounts` と `remote_account_handle_verifications`、`remote_account_snapshots` と取得の結果、`account_profile_revisions` | 同期 |
 | `account_search_terms` | `account_handles`・`account_profile_heads`・`account_lifecycle_states` と `moderation` の凍結（`account_restrictions`） | 同期（再構築は Go の `account.SearchTermProjector.Rebuild`。`moderation` の後に走る） |
 | `status_heads` / `status_mention_index` / `status_reply_links` | `status_revisions` と子テーブル、`statuses`、`status_deletions` | 同期 |
@@ -55,6 +56,7 @@
   - `user_registration_states` は、登録の申請に最新の決定があればその結果と決定の時刻、なければ `pending` と申請の時刻です。
     `user_primary_emails` は利用者の最初のメールアドレスから作ります。アドレスは登録と管理者の作成で 1 つだけ加わるので、それが主アドレスです。
     主アドレスを切り替える操作を足すときは、切り替えをイベントとして記録し、再構築をそれに合わせます。
+  - `login_provider_heads` は IdP ごとに最新（ID の最も大きい）の版・状態の変化・秘密から作ります。`user_external_identities` は解除のないひも付けから作ります。
   - `poll_tallies` は投票ごとに最新の観測（ID の最も大きい `poll_tally_observations`）の票数です。
     ローカルの投票の観測の ID は投票のロックを取った後に採るので、ID の順が集計の順です。
   - `webhook_endpoint_heads` は宛先ごとに最新（ID の最も大きい）の版・状態の変化・秘密から作ります。
