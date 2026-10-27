@@ -181,6 +181,53 @@ func roomsNewerSession(t *testing.T, e *roomsEnv) {
 	e.beat(t, p, r, third.Session)
 }
 
+// roomsClaimedElsewhere runs two evaluations of a host past its grace: the second claims the
+// expired session after the first read it, and the first commits before the second. The first
+// leaves the claimed host to the second instead of taking it for alive, so the room ends.
+func roomsClaimedElsewhere(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	host := e.account(true)
+	hj := e.open(t, host, appvoice.SettingsInput{})
+	r := hj.Room.ID
+	e.clock.Advance(time.Minute)
+	if err := e.svc.Sweep(ctx); err != nil { // the host's grace starts
+		t.Fatal(err)
+	}
+	if _, err := e.h.Voice.FindHostGrace(ctx, nil, r); err != nil {
+		t.Fatalf("the grace of the host: %v", err)
+	}
+	e.clock.Advance(3 * time.Minute)
+
+	claimed, resume, second := make(chan struct{}), make(chan struct{}), make(chan error, 1)
+	fired := false
+	// The first evaluation read the session expired. The second reads it too (its first Get),
+	// claims it, and waits at the check that follows the claim (its second Get) while the first
+	// goes on and commits.
+	e.kv.afterGet("voice.heartbeat", hj.Session, func() {
+		fired = true
+		e.kv.afterGet("voice.heartbeat", hj.Session, func() {
+			e.kv.afterGet("voice.heartbeat", hj.Session, func() {
+				close(claimed)
+				<-resume
+			})
+		})
+		go func() { second <- e.svc.Sweep(ctx) }()
+		<-claimed
+	})
+	err := e.svc.Sweep(ctx)
+	close(resume)
+	if err2 := <-second; err2 != nil {
+		t.Errorf("the second Sweep: %v", err2)
+	}
+	if !fired {
+		t.Fatal("the hook did not run")
+	}
+	if err != nil {
+		t.Fatalf("the first Sweep: %v", err)
+	}
+	e.wantEnded(t, r, voice.EndHostDisconnected)
+}
+
 // roomsNewerMediaSession replaces the session of a participation while the media path reports
 // that the previous one left.
 func roomsNewerMediaSession(t *testing.T, e *roomsEnv) {

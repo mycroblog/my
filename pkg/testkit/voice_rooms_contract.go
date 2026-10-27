@@ -58,6 +58,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"FailsWithoutAGrant", roomsNoGrant, ""},
 		{"AdmitsOnWhatCommitted", roomsAdmission, ""},
 		{"KeepsTheNewerSession", roomsNewerSession, ""},
+		{"LeavesAClaimToItsEvaluation", roomsClaimedElsewhere, ""},
 		{"KeepsTheNewerSessionOnTheMediaPath", roomsNewerMediaSession, voice.TransportLiveKit},
 		{"StreamsTheRoom", roomsStream, ""},
 		{"RelaysSignals", roomsSignals, ""},
