@@ -296,6 +296,13 @@ type ErrorGroupEvent struct {
 	OccurredAt  time.Time
 }
 
+type ExternalIdentity struct {
+	ID         string
+	ProviderID string
+	Subject    string
+	CreatedAt  time.Time
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
@@ -522,6 +529,32 @@ type LocalStatus struct {
 	AuthorAccountID string
 	ClientID        *string
 	IdempotencyKey  *string
+}
+
+type LoginProviderHead struct {
+	ProviderID string
+	RevisionID string
+	State      string
+	SecretID   string
+}
+
+type LoginProviderRevisionClaim struct {
+	RevisionID string
+	Claim      string
+	Value      string
+}
+
+type LoginProviderRevisionOrganization struct {
+	RevisionID   string
+	Organization string
+}
+
+type LoginProviderSecret struct {
+	ID              string
+	ProviderID      string
+	SealedSecret    []byte
+	CreatedByUserID *string
+	CreatedAt       time.Time
 }
 
 type ManagedRole struct {

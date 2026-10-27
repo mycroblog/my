@@ -98,7 +98,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
+| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
 
 - 各モジュールの管理のユースケースが元のイベントと同じトランザクションで発行するドメインイベント（`moderation.audit_recorded`）を、`moderation` の同期の購読者が書きます。理由とメモの本文は写さず、`source_event_id` で元のイベントから引きます。
   記録の ID はトランザクションの前に作り、再試行しても同じ行を書きます。何も変えなかった操作（解除済みの処分の解除など）は記録しません。
@@ -122,6 +122,7 @@
   | `oauth_client_host_allowed` | `oauth_client_host` | ホスト | ホスト | なし |
   | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` | `instance` | `service_closure` | `service_closure` | `service_closure_events.id` |
   | `voice_room_ended` | `voice_room` | `voice_rooms.id` | `voice_rooms.id`（名前は書いた人の消去で消えるので写さない。モデレーターは通報の詳細で名前を見る） | `voice_room_endings.room_id`（= `voice_rooms.id`。理由の文は `voice_room_endings.note`） |
+  | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` | `login_provider` | `login_providers.id` | IdP の表示名 | `login_providers.id` / `login_provider_revisions.id` / `login_provider_state_changes.id` / `login_provider_secrets.id` |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |

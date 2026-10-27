@@ -10461,7 +10461,10 @@ components:
         the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
         `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
         the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-        `service_closure`.
+        `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+        (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
+        and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
+        name.
       type: string
       enum:
         - account_action_issued
@@ -10550,6 +10553,12 @@ components:
         - service_closure_closed
         - service_closure_delivery_completed
         - voice_room_ended
+        - login_provider_created
+        - login_provider_updated
+        - login_provider_deleted
+        - login_provider_enabled
+        - login_provider_disabled
+        - login_provider_secret_rotated
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -10662,6 +10671,7 @@ components:
         - oauth_client_host
         - instance
         - voice_room
+        - login_provider
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -16786,8 +16796,9 @@ components:
         instance setting `voice_room_starters` is `permitted`, a member permission (only the
         built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
         and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-        the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
-        others guard no client API operation yet.
+        the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+        `manage_login_providers`: the external identity providers that users sign in with (only the
+        built-in admin role by default, ADR-0106). The others guard no client API operation yet.
       type: string
       enum:
         - manage_reports
@@ -16811,6 +16822,7 @@ components:
         - manage_service_closure
         - start_voice_rooms
         - manage_errors
+        - manage_login_providers
     PickerCustomEmoji:
       description: |
         A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts

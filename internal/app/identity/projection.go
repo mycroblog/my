@@ -25,24 +25,31 @@ type ProjectionRepository interface {
 	// lifts: for each address, the earliest hard bounce after its last lift, or the earliest
 	// complaint after it when there is no such hard bounce (ADR-0086 §5).
 	RebuildEmailSuppressions(ctx context.Context, tx uow.Tx) error
+	// RebuildLoginProviderHeads derives login_provider_heads from the newest revision, state
+	// change, and secret of each login provider.
+	RebuildLoginProviderHeads(ctx context.Context, tx uow.Tx) error
+	// RebuildUserExternalIdentities derives user_external_identities from the links of the
+	// external identities without an unlink.
+	RebuildUserExternalIdentities(ctx context.Context, tx uow.Tx) error
 }
 
-// RebuildProjections empties user_roles, user_registration_states, user_primary_emails, and
-// email_suppressions and derives them again from the role grants and revocations, the
-// registration applications and decisions, the email addresses, and the delivery failures and
-// suppression lifts, in one transaction (data-model §9).
+// RebuildProjections empties user_roles, user_registration_states, user_primary_emails,
+// email_suppressions, login_provider_heads, and user_external_identities and derives them again
+// from the role grants and revocations, the registration applications and decisions, the email
+// addresses, the delivery failures and suppression lifts, the revisions, state changes, and
+// secrets of the login providers, and the links and unlinks of the external identities, in one
+// transaction (data-model §9).
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
-		if err := repo.RebuildUserRoles(ctx, tx); err != nil {
-			return err
+		for _, rebuild := range []func(context.Context, uow.Tx) error{
+			repo.RebuildUserRoles, repo.RebuildRegistrationStates, repo.RebuildPrimaryEmails,
+			repo.RebuildEmailSuppressions, repo.RebuildLoginProviderHeads, repo.RebuildUserExternalIdentities,
+		} {
+			if err := rebuild(ctx, tx); err != nil {
+				return err
+			}
 		}
-		if err := repo.RebuildRegistrationStates(ctx, tx); err != nil {
-			return err
-		}
-		if err := repo.RebuildPrimaryEmails(ctx, tx); err != nil {
-			return err
-		}
-		return repo.RebuildEmailSuppressions(ctx, tx)
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("rebuild the identity projections: %w", err)

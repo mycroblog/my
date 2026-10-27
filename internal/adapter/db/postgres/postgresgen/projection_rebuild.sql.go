@@ -86,6 +86,15 @@ func (q *Queries) DeleteAllImportedCostHeads(ctx context.Context) error {
 	return err
 }
 
+const deleteAllLoginProviderHeads = `-- name: DeleteAllLoginProviderHeads :exec
+DELETE FROM login_provider_heads
+`
+
+func (q *Queries) DeleteAllLoginProviderHeads(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteAllLoginProviderHeads)
+	return err
+}
+
 const deleteAllPollTallies = `-- name: DeleteAllPollTallies :exec
 DELETE FROM poll_tallies
 `
@@ -112,6 +121,15 @@ DELETE FROM status_sensitivity_overrides
 // Content -------------------------------------------------------------------------------------
 func (q *Queries) DeleteAllStatusSensitivityOverrides(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, deleteAllStatusSensitivityOverrides)
+	return err
+}
+
+const deleteAllUserExternalIdentities = `-- name: DeleteAllUserExternalIdentities :exec
+DELETE FROM user_external_identities
+`
+
+func (q *Queries) DeleteAllUserExternalIdentities(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteAllUserExternalIdentities)
 	return err
 }
 
@@ -439,6 +457,22 @@ func (q *Queries) RebuildImportedCostHeads(ctx context.Context) error {
 	return err
 }
 
+const rebuildLoginProviderHeads = `-- name: RebuildLoginProviderHeads :exec
+INSERT INTO login_provider_heads (provider_id, revision_id, state, secret_id)
+SELECT p.id,
+  (SELECT r.id FROM login_provider_revisions r WHERE r.provider_id = p.id ORDER BY r.id DESC LIMIT 1),
+  (SELECT c.state FROM login_provider_state_changes c WHERE c.provider_id = p.id ORDER BY c.id DESC LIMIT 1),
+  (SELECT s.id FROM login_provider_secrets s WHERE s.provider_id = p.id ORDER BY s.id DESC LIMIT 1)
+FROM login_providers p
+`
+
+// RebuildLoginProviderHeads states the rule of the provider commands: the newest revision,
+// state change, and secret of each provider, which the commands write together with it.
+func (q *Queries) RebuildLoginProviderHeads(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, rebuildLoginProviderHeads)
+	return err
+}
+
 const rebuildPollTallies = `-- name: RebuildPollTallies :exec
 INSERT INTO poll_tallies (poll_id, position, votes, voters_count)
 SELECT o.poll_id, c.position, c.votes, o.voters_count
@@ -481,6 +515,20 @@ FROM (
 // assignment.
 func (q *Queries) RebuildReportStates(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, rebuildReportStates)
+	return err
+}
+
+const rebuildUserExternalIdentities = `-- name: RebuildUserExternalIdentities :exec
+INSERT INTO user_external_identities (external_identity_id, link_id, user_id, provider_id)
+SELECT l.external_identity_id, l.id, l.user_id, x.provider_id
+FROM external_identity_links l JOIN external_identities x ON x.id = l.external_identity_id
+WHERE NOT EXISTS (SELECT 1 FROM external_identity_unlinks u WHERE u.link_id = l.id)
+`
+
+// RebuildUserExternalIdentities states the rule of the link commands: the links without an
+// unlink.
+func (q *Queries) RebuildUserExternalIdentities(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, rebuildUserExternalIdentities)
 	return err
 }
 

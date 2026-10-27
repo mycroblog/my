@@ -50,6 +50,7 @@ const permissionLabels: Readonly<Record<Permission, ClientMessageKey>> = {
   manage_service_closure: "client:admin.roles.permission.manage_service_closure",
   start_voice_rooms: "client:admin.roles.permission.start_voice_rooms",
   manage_errors: "client:admin.roles.permission.manage_errors",
+  manage_login_providers: "client:admin.roles.permission.manage_login_providers",
 };
 
 /** The name of each badge color. */

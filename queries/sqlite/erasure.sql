@@ -113,6 +113,24 @@ DELETE FROM passkey_credential_revocations WHERE passkey_id IN (
 -- name: ErasePasskeyCredentials :exec
 DELETE FROM passkey_credentials WHERE user_id = sqlc.arg(user_id);
 
+-- name: EraseUserExternalIdentities :exec
+DELETE FROM user_external_identities WHERE user_id = sqlc.arg(user_id);
+
+-- name: EraseExternalIdentityUnlinks :exec
+DELETE FROM external_identity_unlinks WHERE link_id IN (
+  SELECT l.id FROM external_identity_links l WHERE l.user_id = sqlc.arg(user_id));
+
+-- EraseExternalIdentities deletes the external identities that only the user linked.
+-- name: EraseExternalIdentities :exec
+DELETE FROM external_identities WHERE id IN (
+  SELECT l.external_identity_id FROM external_identity_links l WHERE l.user_id = sqlc.arg(user_id))
+  AND NOT EXISTS (
+    SELECT 1 FROM external_identity_links o
+    WHERE o.external_identity_id = external_identities.id AND o.user_id <> sqlc.arg(user_id));
+
+-- name: EraseExternalIdentityLinks :exec
+DELETE FROM external_identity_links WHERE user_id = sqlc.arg(user_id);
+
 -- name: EraseUserTokenRedemptions :exec
 DELETE FROM user_token_redemptions WHERE token_id IN (
   SELECT t.id FROM user_tokens t WHERE t.user_id = sqlc.arg(user_id));

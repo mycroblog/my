@@ -232,3 +232,27 @@ SELECT DISTINCT ON (r.source, r.billing_month, r.service, r.charge_type)
   r.source, r.billing_month, r.service, r.charge_type, r.id
 FROM imported_cost_revisions r
 ORDER BY r.source, r.billing_month, r.service, r.charge_type, r.id DESC;
+
+-- name: DeleteAllLoginProviderHeads :exec
+DELETE FROM login_provider_heads;
+
+-- RebuildLoginProviderHeads states the rule of the provider commands: the newest revision,
+-- state change, and secret of each provider, which the commands write together with it.
+-- name: RebuildLoginProviderHeads :exec
+INSERT INTO login_provider_heads (provider_id, revision_id, state, secret_id)
+SELECT p.id,
+  (SELECT r.id FROM login_provider_revisions r WHERE r.provider_id = p.id ORDER BY r.id DESC LIMIT 1),
+  (SELECT c.state FROM login_provider_state_changes c WHERE c.provider_id = p.id ORDER BY c.id DESC LIMIT 1),
+  (SELECT s.id FROM login_provider_secrets s WHERE s.provider_id = p.id ORDER BY s.id DESC LIMIT 1)
+FROM login_providers p;
+
+-- name: DeleteAllUserExternalIdentities :exec
+DELETE FROM user_external_identities;
+
+-- RebuildUserExternalIdentities states the rule of the link commands: the links without an
+-- unlink.
+-- name: RebuildUserExternalIdentities :exec
+INSERT INTO user_external_identities (external_identity_id, link_id, user_id, provider_id)
+SELECT l.external_identity_id, l.id, l.user_id, x.provider_id
+FROM external_identity_links l JOIN external_identities x ON x.id = l.external_identity_id
+WHERE NOT EXISTS (SELECT 1 FROM external_identity_unlinks u WHERE u.link_id = l.id);

@@ -94,6 +94,12 @@ const (
 	AuditServiceClosureClosed            = moderation.AuditServiceClosureClosed
 	AuditServiceClosureDeliveryCompleted = moderation.AuditServiceClosureDeliveryCompleted
 	AuditVoiceRoomEnded                  = moderation.AuditVoiceRoomEnded
+	AuditLoginProviderCreated            = moderation.AuditLoginProviderCreated
+	AuditLoginProviderUpdated            = moderation.AuditLoginProviderUpdated
+	AuditLoginProviderDeleted            = moderation.AuditLoginProviderDeleted
+	AuditLoginProviderEnabled            = moderation.AuditLoginProviderEnabled
+	AuditLoginProviderDisabled           = moderation.AuditLoginProviderDisabled
+	AuditLoginProviderSecretRotated      = moderation.AuditLoginProviderSecretRotated
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -117,6 +123,7 @@ const (
 	AuditTargetOAuthClientHost       = moderation.AuditTargetOAuthClientHost
 	AuditTargetInstance              = moderation.AuditTargetInstance
 	AuditTargetVoiceRoom             = moderation.AuditTargetVoiceRoom
+	AuditTargetLoginProvider         = moderation.AuditTargetLoginProvider
 )
 
 // AuditActorSystem is moderation.AuditActorSystem, the server itself, and AuditActorRemote
