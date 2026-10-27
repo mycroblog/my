@@ -102,7 +102,27 @@ type PageEnv struct {
 	Stylesheet func() string
 	// Logger logs what a page could not do.
 	Logger *slog.Logger
+	// Checkouts claims a checkout across the server's processes; Payments.Pages fills it.
+	Checkouts CheckoutClaims
 }
+
+// CheckoutClaims claims a checkout of the provider's own pages across the server's processes, for
+// a provider that takes no idempotency key on the creation of a subscription (PAY.JP v1), so
+// that the posts of one checkout on several replicas create one subscription.
+type CheckoutClaims interface {
+	// ClaimCheckout claims checkoutID for CheckoutClaimHold and reports whether it did; false
+	// means that another post holds it. release gives the claim back and is nil when the claim
+	// was not taken. A page keeps its calls of the provider within CheckoutCallBudget, so that its
+	// claim does not expire while it runs.
+	ClaimCheckout(ctx context.Context, checkoutID string) (release func(), claimed bool, err error)
+}
+
+// CheckoutClaimHold is how long a claim of a checkout lasts unless it is released: longer than
+// CheckoutCallBudget, so that a process that stopped holds the checkout for a while only.
+const CheckoutClaimHold = 5 * time.Minute
+
+// CheckoutCallBudget is how long a page that holds the claim of a checkout may call the provider.
+const CheckoutCallBudget = 3 * time.Minute
 
 // PagesPathPrefix is the path of the pages of a PageServer, followed by the provider's name.
 const PagesPathPrefix = "/payments/pages/"

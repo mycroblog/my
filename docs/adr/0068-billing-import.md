@@ -1,6 +1,6 @@
 # ADR-0068: 利用料金の自動取り込み（BillingSource ポート）
 
-- Status: Accepted
+- Status: Accepted（§4 の要求の数え方（`billing_import_runs` の `requests` の合計と、それに続くハンドラの手順）を ADR-0105（利用料金の取り込みの要求の予約）が置き換える）
 - Date: 2026-10-22
 - Deciders: @rosylilly
 - Issue: #875

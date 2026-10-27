@@ -335,7 +335,7 @@ func (h *pages) checkoutPage(w http.ResponseWriter, r *http.Request) {
 
 // checkout takes the checkout form: it checks the card's 3-D Secure, prepares the customer,
 // makes the card the customer's default, and creates the subscription with our ID, once: the
-// posts of one checkout run one at a time in the process.
+// posts of one checkout run one at a time, in the process and across the server's processes.
 func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 	s, in := readCardForm(w, r)
 	st, ok := h.state(w, r, pageCheckout, s)
@@ -357,8 +357,17 @@ func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// PAY.JP v1 takes no idempotency key, so the subscription is looked for and created under
-	// the lock of the checkout: a second post waits and then finds the first one's subscription.
+	// the lock of the checkout in the process and its claim across the processes: a second post
+	// waits and then finds the first one's subscription.
 	defer h.checkouts.lock(st.LocalID)()
+	release, err := h.claimCheckout(ctx, st.LocalID)
+	if err != nil {
+		h.failed(w, r, st.Cancel, err)
+		return
+	}
+	defer release()
+	ctx, cancel := context.WithTimeout(ctx, supporters.CheckoutCallBudget)
+	defer cancel()
 	if _, found, err := h.p.findSubscription(ctx, st.Customer, st.LocalID); err != nil {
 		h.failed(w, r, st.Cancel, err)
 		return
@@ -399,6 +408,44 @@ func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, successURL(st), http.StatusSeeOther)
+}
+
+// checkoutClaimWait is how long a post of a checkout waits for the claim that another process
+// holds, and checkoutClaimPoll how often it tries again meanwhile.
+var (
+	checkoutClaimWait = 30 * time.Second
+	checkoutClaimPoll = 250 * time.Millisecond
+)
+
+// errCheckoutBusy reports a checkout whose claim another process held for all of
+// checkoutClaimWait.
+var errCheckoutBusy = errors.New("payjp: another post of the checkout is running")
+
+// claimCheckout claims the checkout localID across the server's processes (PageEnv.Checkouts),
+// waiting up to checkoutClaimWait while another post holds it, and returns its release. Without
+// Checkouts it claims nothing.
+func (h *pages) claimCheckout(ctx context.Context, localID string) (func(), error) {
+	if h.env.Checkouts == nil {
+		return func() {}, nil
+	}
+	deadline := time.NewTimer(checkoutClaimWait)
+	defer deadline.Stop()
+	for {
+		release, claimed, err := h.env.Checkouts.ClaimCheckout(ctx, localID)
+		if err != nil {
+			return nil, err
+		}
+		if claimed {
+			return release, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-deadline.C:
+			return nil, errCheckoutBusy
+		case <-time.After(checkoutClaimPoll):
+		}
+	}
 }
 
 // ensureCustomer reads the customer of a checkout, creating the one that the checkout names

@@ -84,4 +84,22 @@ type PaymentRepository interface {
 	// LastReconcileRun returns the newest attempt of provider, only among the succeeded and
 	// partial ones when resumable is true; ErrNotFound without one.
 	LastReconcileRun(ctx context.Context, provider string, resumable bool) (ReconcileRun, error)
+
+	// ClaimCheckout takes the claim c of a checkout and reports whether it did: it does when no
+	// one holds the checkout or the claim of its holder expired at or before c.ClaimedAt.
+	ClaimCheckout(ctx context.Context, tx uow.Tx, c CheckoutClaim) (bool, error)
+	// ReleaseCheckout deletes the claim of the checkout of provider while holder holds it.
+	ReleaseCheckout(ctx context.Context, tx uow.Tx, provider, checkoutID, holder string) error
+	// PurgeCheckoutClaims deletes the claims that expired before before and returns how many.
+	PurgeCheckoutClaims(ctx context.Context, tx uow.Tx, before time.Time) (int64, error)
+}
+
+// CheckoutClaim is the claim of a checkout of the provider's own pages (payment_checkout_claims):
+// while Holder holds it, no other post of the checkout creates its subscription.
+type CheckoutClaim struct {
+	Provider   string
+	CheckoutID string
+	Holder     string
+	ClaimedAt  time.Time
+	ExpiresAt  time.Time
 }

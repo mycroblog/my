@@ -3,6 +3,7 @@
 package payjp
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -227,6 +228,130 @@ func TestCheckoutAtTheSameTimeSubscribesOnce(t *testing.T) {
 	}
 	if n := len(e.subscriptionsOf("my_local-1")); n != 1 {
 		t.Errorf("%d subscriptions after two checkouts at the same time, want 1", n)
+	}
+}
+
+// sharedClaims is a supporters.CheckoutClaims that the pages of several processes share, as
+// payment_checkout_claims is: one holder per checkout until it releases.
+type sharedClaims struct {
+	mu      sync.Mutex
+	held    map[string]int
+	next    int
+	claims  int
+	refused int
+}
+
+func (c *sharedClaims) ClaimCheckout(_ context.Context, id string) (func(), bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.held == nil {
+		c.held = map[string]int{}
+	}
+	if _, ok := c.held[id]; ok {
+		c.refused++
+		return nil, false, nil
+	}
+	c.next++
+	holder := c.next
+	c.held[id] = holder
+	c.claims++
+	return func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if c.held[id] == holder {
+			delete(c.held, id)
+		}
+	}, true, nil
+}
+
+// process returns the pages of another server process on the same PAY.JP, claiming its
+// checkouts through claims.
+func (e *pageEnv) process(t *testing.T, claims supporters.CheckoutClaims) *pageEnv {
+	t.Helper()
+	b, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := e.p.Pages(supporters.PageEnv{
+		Locales: &i18n.Resolver{Bundle: b}, Stylesheet: func() string { return "" },
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), Checkouts: claims,
+	})
+	return &pageEnv{p: e.p, f: e.f, srv: h}
+}
+
+func TestCheckoutOnTwoProcessesSubscribesOnce(t *testing.T) {
+	e := newPageEnv(t)
+	_, s := e.checkout(t)
+	e.f.addToken("tok_ok", "4242", "verified")
+	base := e.p.o.HTTPClient.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	e.p.o.HTTPClient = &http.Client{Transport: &findBarrier{base: base, arrived: make(chan struct{}, 1), release: make(chan struct{})}}
+	claims := &sharedClaims{}
+	procs := []*pageEnv{e.process(t, claims), e.process(t, claims)}
+	var wg sync.WaitGroup
+	codes := make([]int, len(procs))
+	for i, p := range procs {
+		wg.Go(func() { codes[i] = p.post(t, pageCheckout, postedCard(s, "tok_ok")).Code })
+	}
+	wg.Wait()
+	for _, c := range codes {
+		if c != http.StatusSeeOther {
+			t.Errorf("checkout = %d, want 303", c)
+		}
+	}
+	if n := len(e.subscriptionsOf("my_local-1")); n != 1 {
+		t.Errorf("%d subscriptions after checkouts on two processes at the same time, want 1", n)
+	}
+	if len(claims.held) != 0 || claims.claims != 2 {
+		t.Errorf("claims held %v after %d claims, want none held after 2", claims.held, claims.claims)
+	}
+}
+
+func TestCheckoutReleasesItsClaim(t *testing.T) {
+	e := newPageEnv(t)
+	_, s := e.checkout(t)
+	e.f.addToken("tok_declined", declinedLast4, "verified")
+	e.f.addToken("tok_ok", "4242", "verified")
+	claims := &sharedClaims{}
+	proc := e.process(t, claims)
+	if rec := proc.post(t, pageCheckout, postedCard(s, "tok_declined")); rec.Code != http.StatusPaymentRequired {
+		t.Fatalf("declined checkout = %d, want 402", rec.Code)
+	}
+	if len(claims.held) != 0 {
+		t.Fatalf("claims held %v after a declined checkout, want none", claims.held)
+	}
+	if rec := proc.post(t, pageCheckout, postedCard(s, "tok_ok")); rec.Code != http.StatusSeeOther {
+		t.Errorf("checkout after a declined one = %d, want 303", rec.Code)
+	}
+	if n := len(e.subscriptionsOf("my_local-1")); n != 1 {
+		t.Errorf("%d subscriptions, want 1", n)
+	}
+}
+
+func TestCheckoutWaitsForTheClaimOfAnotherProcess(t *testing.T) {
+	wait, poll := checkoutClaimWait, checkoutClaimPoll
+	checkoutClaimWait, checkoutClaimPoll = 100*time.Millisecond, 10*time.Millisecond
+	t.Cleanup(func() { checkoutClaimWait, checkoutClaimPoll = wait, poll })
+	e := newPageEnv(t)
+	_, s := e.checkout(t)
+	e.f.addToken("tok_ok", "4242", "verified")
+	claims := &sharedClaims{}
+	release, ok, _ := claims.ClaimCheckout(t.Context(), "local-1")
+	if !ok {
+		t.Fatal("ClaimCheckout = false")
+	}
+	proc := e.process(t, claims)
+	if rec := proc.post(t, pageCheckout, postedCard(s, "tok_ok")); rec.Code != http.StatusBadGateway {
+		t.Errorf("checkout while another process holds it = %d, want 502", rec.Code)
+	}
+	if n := len(e.subscriptionsOf("my_local-1")); n != 0 || claims.refused == 0 {
+		t.Errorf("%d subscriptions after %d refused claims, want none after some", n, claims.refused)
+	}
+	release()
+	if rec := proc.post(t, pageCheckout, postedCard(s, "tok_ok")); rec.Code != http.StatusSeeOther {
+		t.Errorf("checkout after the release = %d, want 303", rec.Code)
 	}
 }
 

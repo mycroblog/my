@@ -11,6 +11,40 @@ import (
 	"context"
 )
 
+const claimPaymentCheckout = `-- name: ClaimPaymentCheckout :execrows
+INSERT INTO payment_checkout_claims (provider, checkout_id, holder, claimed_at, expires_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (provider, checkout_id) DO UPDATE SET
+  holder = excluded.holder,
+  claimed_at = excluded.claimed_at,
+  expires_at = excluded.expires_at
+WHERE payment_checkout_claims.expires_at <= excluded.claimed_at
+`
+
+type ClaimPaymentCheckoutParams struct {
+	Provider   string
+	CheckoutID string
+	Holder     string
+	ClaimedAt  int64
+	ExpiresAt  int64
+}
+
+// ClaimPaymentCheckout takes the claim of a checkout when no one holds it or its claim has
+// expired, and reports through its row count whether it did.
+func (q *Queries) ClaimPaymentCheckout(ctx context.Context, arg ClaimPaymentCheckoutParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, claimPaymentCheckout,
+		arg.Provider,
+		arg.CheckoutID,
+		arg.Holder,
+		arg.ClaimedAt,
+		arg.ExpiresAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const countPaymentReconcileRunsByKey = `-- name: CountPaymentReconcileRunsByKey :one
 SELECT COUNT(*) FROM payment_reconcile_runs WHERE provider = ? AND run_key = ?
 `
@@ -168,6 +202,19 @@ func (q *Queries) LastPaymentWebhookReceipt(ctx context.Context, provider string
 	return i, err
 }
 
+const purgePaymentCheckoutClaims = `-- name: PurgePaymentCheckoutClaims :execrows
+DELETE FROM payment_checkout_claims WHERE expires_at < ?1
+`
+
+// PurgePaymentCheckoutClaims deletes the claims that expired before before_at.
+func (q *Queries) PurgePaymentCheckoutClaims(ctx context.Context, beforeAt int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, purgePaymentCheckoutClaims, beforeAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const purgePaymentWebhookReceipts = `-- name: PurgePaymentWebhookReceipts :execrows
 DELETE FROM payment_webhook_receipts WHERE id IN (
   SELECT r.id FROM payment_webhook_receipts r WHERE r.received_at < ?1 ORDER BY r.received_at LIMIT ?2
@@ -186,4 +233,20 @@ func (q *Queries) PurgePaymentWebhookReceipts(ctx context.Context, arg PurgePaym
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const releasePaymentCheckout = `-- name: ReleasePaymentCheckout :exec
+DELETE FROM payment_checkout_claims WHERE provider = ? AND checkout_id = ? AND holder = ?
+`
+
+type ReleasePaymentCheckoutParams struct {
+	Provider   string
+	CheckoutID string
+	Holder     string
+}
+
+// ReleasePaymentCheckout deletes the claim of a checkout when holder still holds it.
+func (q *Queries) ReleasePaymentCheckout(ctx context.Context, arg ReleasePaymentCheckoutParams) error {
+	_, err := q.db.ExecContext(ctx, releasePaymentCheckout, arg.Provider, arg.CheckoutID, arg.Holder)
+	return err
 }

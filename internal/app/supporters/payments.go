@@ -154,7 +154,47 @@ func (p *Payments) Pages(ctx context.Context, provider, clientIP string) (PagesR
 	if env.Stylesheet == nil {
 		env.Stylesheet = func() string { return "" }
 	}
+	if env.Checkouts == nil {
+		env.Checkouts = p
+	}
 	return PagesResult{Handler: ps.Pages(env)}, nil
+}
+
+// ClaimCheckout implements CheckoutClaims on payment_checkout_claims: it takes the claim in one
+// short transaction, and release deletes it in another, so that no call of the provider runs
+// inside a transaction (ADR-0003). A claim that its process never releases expires after
+// CheckoutClaimHold.
+func (p *Payments) ClaimCheckout(ctx context.Context, checkoutID string) (func(), bool, error) {
+	now := p.now()
+	c := CheckoutClaim{
+		Provider: p.d.Provider.Name(), CheckoutID: checkoutID, Holder: p.d.IDs.NewID(),
+		ClaimedAt: now, ExpiresAt: now.Add(CheckoutClaimHold),
+	}
+	var claimed bool
+	err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		claimed, err = p.d.Repository.ClaimCheckout(ctx, tx, c)
+		return err
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("supporters: claim checkout: %w", err)
+	}
+	if !claimed {
+		return nil, false, nil
+	}
+	release := func() {
+		// The claim is released even when the request was canceled.
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+		err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			return p.d.Repository.ReleaseCheckout(ctx, tx, c.Provider, c.CheckoutID, c.Holder)
+		})
+		if err != nil {
+			p.d.Logger.WarnContext(ctx, "the claim of a checkout could not be released; it expires on its own",
+				slog.String("provider", c.Provider), slog.Any("error", err))
+		}
+	}
+	return release, true, nil
 }
 
 // WebhookRequest is a webhook delivery as the endpoint received it.
@@ -360,9 +400,17 @@ func (p *Payments) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler
 
 // PurgeReceipts deletes the webhook receipts older than ReceiptRetention and returns how many.
 // A delivery of a purged event that comes again is recorded again, and its job re-reads and
-// applies the provider's state, which changes nothing.
+// applies the provider's state, which changes nothing. It also deletes the claims of checkouts
+// that expired (ClaimCheckout), which it does not count.
 func (p *Payments) PurgeReceipts(ctx context.Context) (int64, error) {
-	before := p.now().Add(-ReceiptRetention)
+	now := p.now()
+	if err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		_, err := p.d.Repository.PurgeCheckoutClaims(ctx, tx, now)
+		return err
+	}); err != nil {
+		return 0, err
+	}
+	before := now.Add(-ReceiptRetention)
 	var total int64
 	for {
 		var n int64
