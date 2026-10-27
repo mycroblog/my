@@ -151,7 +151,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 状況 | 振る舞い |
 | --- | --- |
 | 同じアクティビティの再処理 | 対象テーブルの一意制約（`statuses (uri)`、`boosts (uri)`、`follows (uri)`、`follow_resends (uri)`、`favourites (uri)`、`blocks (uri)`、`reports (uri)`、版の `(status_id, seq)`）で no-op |
-| `Create` より先に `Delete` | `remote_object_tombstones` に URI と `Delete` の主体を記録する。後から届いた `Create` / `Update` / 取得は、その主体の（主体が `attributedTo` の）オブジェクトに tombstone があれば捨てる |
+| `Create` より先に `Delete` | `remote_object_tombstones` に URI と `Delete` の主体の組を記録する（同じ URI でも主体ごとに 1 行）。後から届いた `Create` / `Update` / 取得は、その主体の（主体が `attributedTo` の）オブジェクトに tombstone があれば捨てる |
 | `Create` より先に `Update` | 取り込み範囲（ADR-0034）に入るなら `Create` として扱う。`published` が 1 日より古いものは取り込まない（Mastodon と同じ） |
 | 古い `Update` が後から届く | `updated`（無ければ `published`）が現在版の `revised_at` 以下なら版を作らない |
 | `Follow` より先に `Undo Follow` | 埋め込みの `Follow` があれば、主体とその `object` の組を `remote_follow_tombstones` に記録し、後から届いた同じ組の最初の `Follow` を捨てる（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`object` が URI だけなら、その URI を tombstone に記録して同じ URI の `Follow` を捨てる |
@@ -164,7 +164,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - `remote_object_tombstones` は `InboxProcessor` が書きます。`Delete` / `Undo` のハンドラが無いか、ハンドラが `ErrUnknownObject` を返したとき、対象の URI が主体と同じオリジンで主体自身でなければ記録します（ほかのサーバーのオブジェクトを封じさせない。`federation.TombstoneFor`）。
   `Undo` が主体自身の `Follow` を埋め込んでいれば、URI の代わりに組を `remote_follow_tombstones` に記録します（`federation.FollowTombstoneFor`。主体自身の `Follow` しか封じない）。
 - `Delete` / `Undo` 以外のアクティビティは、ハンドラを呼ぶ前に、アクティビティの URI に同じ主体が残した tombstone があれば捨てます。`Create` / `Update`（自分自身の Actor 以外）は、オブジェクトの URI の tombstone でも捨てます。
-  tombstone は残した主体のものしか封じません（`InboxRepository.RemoteObjectTombstoned` は URI と主体で引く）。同じオリジンのほかの主体の `Delete` / `Undo` は、その主体のものではないオブジェクトやアクティビティを捨てさせません。取得した投稿は `attributedTo` の主体の tombstone で判定し、作者の分からない取得の前には `status_deletions` だけを見ます。
+  tombstone は残した主体のものしか封じません（tombstone のキーは URI と主体の組で、`InboxRepository.RemoteObjectTombstoned` もその組で引く）。同じオリジンのほかの主体の `Delete` / `Undo` は、その主体のものではないオブジェクトやアクティビティを捨てさせず、先に記録されていても持ち主自身の `Delete` / `Undo` の記録を妨げません。取得した投稿は `attributedTo` の主体の tombstone で判定し、作者の分からない取得の前には `status_deletions` だけを見ます。
   `Follow` は、主体と `object` の組に使い終えていない `remote_follow_tombstones` があれば捨て、同じトランザクションで自分の URI を `Undo` の `activity_uri` で `remote_object_tombstones` に記録します。
   これで組の tombstone は使い終わり、同じ `Follow` の再処理は URI の tombstone で捨てられ、その次の `Follow` は通ります。
 - アクティビティの `object` が URI だけのとき、受信した文書の中に埋め込まれていない対象は、ローカルの DB から引くか、取り込み範囲に入るときだけ取得します。
@@ -190,7 +190,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。投稿・フォロー・ブーストは消去ジョブが消す |
 | `Announce` | 投稿（主体が参加中のリレーの Actor で `relay_id` の付いたもの） | 投稿をオリジンから取得し、`public` なら取り込んで `relayed_statuses` に記録する。ブーストとしては記録しない（§13） |
 | `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0034）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿は捨てる |
-| `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0052）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
+| `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0052）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」。ADR-0052 §1 の取り込みの文を置き換える推奨案は ADR-0104）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
 | `Like` | ローカルの投稿 | `_misskey_reaction`、無ければ `content` が `EmojiReact` と同じ規則で絵文字なら `content.RecordRemoteReaction`（Misskey のリアクション、FEP-c0e0）。それ以外は `content.RecordRemoteFavourite`（お気に入り）。主体が閲覧できない投稿（`ContextObjectFetch`）は捨てる |
 | `Block` | ローカルの Actor | `graph.ReceiveBlock`。両方向のフォローを終了し、相手の投稿を閲覧者から隠す（`feed_exclusions`）。対象がローカルの利用者の Actor でなければ捨てる |
 | `Flag` | ローカルの Actor / 投稿 | `moderation.FileRemoteReport`（`reports.uri`）。送信者のドメインに `report_intake` の制限があれば捨てる。通報の対象は `object` の最初のローカルの Actor、無ければ最初のローカルの投稿の作者で、その作者の投稿を `report_statuses` に残す。ローカルの対象が無ければ捨てる |

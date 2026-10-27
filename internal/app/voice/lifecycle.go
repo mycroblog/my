@@ -5,6 +5,7 @@ package voice
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -158,6 +159,10 @@ type evaluation struct {
 	eligible  map[string]bool
 	// host is the host that the evaluation read before its transaction.
 	host string
+	// claimed holds the participations whose expired session the evaluation claimed
+	// (Heartbeats.claim): only those end (disconnected), and ended records which did.
+	claimed map[string]bool
+	ended   map[string]bool
 }
 
 // roomTx runs fn in a transaction that first locks the rooms roomIDs, in the order of their IDs
@@ -219,6 +224,16 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 			return err
 		}
 		host := rec.Head.HostAccountID
+		graceOver, inGrace := false, false
+		switch g, err := s.d.Repository.FindHostGrace(ctx, nil, roomID); {
+		case err == nil:
+			inGrace, graceOver = true, !now.Before(g.EndsAt)
+		case !errors.Is(err, ErrNotFound):
+			return err
+		}
+		if err := s.claimExpired(ctx, &e, ps, graceOver); err != nil {
+			return err
+		}
 		// A host who is in no participation of the room hands it over at once, as after the
 		// grace.
 		hostExpired := !slices.ContainsFunc(ps, func(p Participant) bool { return p.AccountID == host })
@@ -230,22 +245,66 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 			changes = true
 			hostExpired = hostExpired || p.AccountID == host
 		}
-		switch _, err := s.d.Repository.FindHostGrace(ctx, nil, roomID); {
-		case err == nil:
-			changes = true // a grace that runs out, or a host who came back
-		case !errors.Is(err, ErrNotFound):
-			return err
-		}
+		// A grace that runs out, or a host who came back, changes the room.
+		changes = changes || inGrace
 		if !changes {
 			return nil
 		}
 		if hostExpired {
 			if e.eligible, err = s.eligibleCohosts(ctx, ps, host, func(p Participant) bool { return e.live.expired(p.ParticipationID) }); err != nil {
+				s.releaseClaims(ctx, e)
 				return err
 			}
 		}
 	}
-	return s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error { return s.evaluateTx(ctx, tx, rec, e, now) })
+	err = s.roomTx(ctx, []string{roomID}, func(tx uow.Tx, rec RoomRecord) error {
+		e.ended = map[string]bool{}
+		return s.evaluateTx(ctx, tx, rec, e, now)
+	})
+	if err != nil {
+		e.ended = nil
+	}
+	s.releaseClaims(ctx, e)
+	return err
+}
+
+// claimExpired claims (Heartbeats.claim) the expired sessions of the participations that the
+// evaluation ends: the participants other than the host, and the host once its grace ran out.
+// A session that changed or came back since the read is not claimed and counts as alive, so
+// that a join from another device or a late heartbeat is not undone by what the evaluation
+// read before.
+func (s *Service) claimExpired(ctx context.Context, e *evaluation, ps []Participant, graceOver bool) error {
+	e.claimed = map[string]bool{}
+	for _, p := range ps {
+		id := p.ParticipationID
+		if !e.live.expired(id) || (p.AccountID == e.host && !graceOver) {
+			continue
+		}
+		ok, err := s.d.Heartbeats.claim(ctx, id, e.live.raw[id])
+		if err != nil {
+			s.releaseClaims(ctx, *e)
+			return err
+		}
+		if ok {
+			e.claimed[id] = true
+		} else {
+			e.live.alive[id] = true
+		}
+	}
+	return nil
+}
+
+// releaseClaims gives back the claimed sessions of the participations that the evaluation did
+// not end.
+func (s *Service) releaseClaims(ctx context.Context, e evaluation) {
+	for id := range e.claimed {
+		if e.ended[id] {
+			continue
+		}
+		if err := s.d.Heartbeats.release(ctx, id, e.live.raw[id]); err != nil {
+			s.d.Logger.WarnContext(ctx, "could not release a voice session", slog.Any("error", err))
+		}
+	}
 }
 
 // evaluateTx applies an evaluation to a room locked in tx. A room whose host changed since the
@@ -270,10 +329,12 @@ func (s *Service) evaluateTx(ctx context.Context, tx uow.Tx, rec RoomRecord, e e
 			hostP = &ps[i]
 			continue
 		}
-		if e.live.expired(p.ParticipationID) {
-			if _, err := s.endParticipationTx(ctx, tx, p, voice.Disconnected, e.live.session[p.ParticipationID], now); err != nil {
+		if e.live.expired(p.ParticipationID) && e.claimed[p.ParticipationID] {
+			did, err := s.endParticipationTx(ctx, tx, p, voice.Disconnected, e.live.session[p.ParticipationID], now)
+			if err != nil {
 				return err
 			}
+			e.ended[p.ParticipationID] = did
 		}
 	}
 	switch {
@@ -304,7 +365,8 @@ func (s *Service) graceTx(ctx context.Context, tx uow.Tx, roomID string, host Pa
 		return s.d.Repository.PutHostGrace(ctx, tx, HostGrace{RoomID: roomID, EndsAt: now.Add(HostGracePeriod)})
 	case err != nil:
 		return err
-	case now.Before(g.EndsAt):
+	case now.Before(g.EndsAt), !e.claimed[host.ParticipationID]:
+		// A host whose session the evaluation did not claim is left to the next evaluation.
 		return nil
 	}
 	did, err := s.d.Repository.DeleteHostGrace(ctx, tx, roomID)
@@ -314,7 +376,8 @@ func (s *Service) graceTx(ctx context.Context, tx uow.Tx, roomID string, host Pa
 	if err := s.succeedTx(ctx, tx, roomID, host.AccountID, e, now); err != nil {
 		return err
 	}
-	_, err = s.endParticipationTx(ctx, tx, host, voice.Disconnected, e.live.session[host.ParticipationID], now)
+	did, err = s.endParticipationTx(ctx, tx, host, voice.Disconnected, e.live.session[host.ParticipationID], now)
+	e.ended[host.ParticipationID] = did
 	return err
 }
 

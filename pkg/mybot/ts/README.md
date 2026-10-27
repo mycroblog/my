@@ -94,6 +94,10 @@ saves nothing for it.
 - In the default mode `"streaming"` the bot opens the event stream (`GET /api/v1/streaming`; mykit reconnects it).
   After every connection, the first and each reconnection, it reads the notifications newest first back to the position
   in its store, or to `catchUpLimit` (24 hours; `0` turns the catch-up off), and handles those it missed, oldest first.
+- The notifications reach the handlers in the order of time. Those that the event stream brings while a catch-up
+  runs wait for it, and the bot then hands out the missed ones and the waiting ones together, oldest first. When the
+  catch-up fails, the bot tries it again, waiting longer each time up to a minute, and the stream's notifications
+  keep waiting.
 - The catch-up covers the time the stream is closed: a stop of the bot, or a cut connection. A notification that the
   server sends while the stream stays open but that never reaches the bot, such as one a proxy drops, is older than the
   next one the bot processes, and the catch-up does not find it
@@ -105,7 +109,9 @@ saves nothing for it.
   pass an event stream.
 - `onStatus` receives the new posts of the home timeline from the event stream alone: they are not caught up after a
   disconnection or a restart, and the polling mode does not receive them.
-- Up to `concurrency` (4) handlers run at once; the events of one sender run one after the other.
+- Up to `concurrency` (4) handlers run at once; the events of one sender run one after the other, in the order the
+  bot hands them out. The handlers of different senders run side by side, so one may end before an older one of
+  another sender.
 
 ## Handlers
 
@@ -196,7 +202,11 @@ one, and set the limits lower when they ask for it.
 
 The `store` keeps the processed notifications (for 7 days, `processedRetention`), the position of the catch-up, the last
 runs of the scheduled jobs, and the rotated refresh token. The default is a `FileStore` at `./mybot-state.json`: one JSON file, rewritten through a
-temporary file and a rename, readable by its owner alone, in the same format as the Go library's. `MemoryStore` is for
+temporary file and a rename, readable by its owner alone, in the same format as the Go library's. A change that succeeds
+is flushed to the disk, the directory too except on Windows; a change that fails leaves both the file and the store as
+they were. When the store fails, such as on a full disk, the bot logs the error and tries the call again, waiting
+longer each time up to a minute. The notification stays unprocessed meanwhile, and the position of the catch-up does
+not move past it. `MemoryStore` is for
 tests: a restart loses the rotated refresh token, and the next start sends the used one, which revokes the token. A bot
 that runs all the time, or is started again and again, needs a `FileStore` or a `Store` of its own (such as in a
 database). Run one process per bot: the store takes no lock.

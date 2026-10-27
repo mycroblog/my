@@ -44,6 +44,22 @@ export const defaultConcurrency = 4;
 /** How long the shutdown waits for the running handlers: 10 seconds. */
 export const defaultShutdownGrace = 10_000;
 
+/**
+ * The waits between the tries of a catch-up or of a Store call that failed: the first, doubled after each failure up
+ * to the longest.
+ */
+const retryFirstWait = 1000;
+const retryLongestWait = minute;
+
+/**
+ * The notifications of a and b oldest first, each once. Notification IDs are UUIDv7 strings, whose order is the order
+ * of time.
+ */
+function mergeNotifications(a: readonly Notification[], b: readonly Notification[]): Notification[] {
+  const sorted = [...a, ...b].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+  return sorted.filter((n, i) => i === 0 || sorted[i - 1]?.id !== n.id);
+}
+
 /** The longest wait of setTimeout, about 24.8 days: a scheduled job further away sleeps again. */
 const maxTimeout = 2 ** 31 - 1;
 
@@ -655,28 +671,52 @@ export class Bot {
     }
   }
 
-  /** Receives the event stream until signal aborts or the server refuses it, catching up after every connection. */
+  /**
+   * Receives the event stream until signal aborts or the server refuses it, catching up after every connection. While
+   * a catch-up runs, the notifications of the stream wait for it, and both are then handed out oldest first, so that
+   * the handlers see the notifications in the order of time; the position holds still until the catch-up succeeds,
+   * which it tries again until it does.
+   */
   async #stream(signal: AbortSignal, runtime: Runtime, tokenSource: TokenSource): Promise<void> {
+    let catching = false;
+    let waiting: Notification[] = [];
     let again = false;
-    const takeAgain = (): boolean => {
-      const a = again;
-      again = false;
-      return a;
+    // Whether a connection asked for another catch-up meanwhile; a function, as the flag changes across the awaits.
+    const catchUpAgain = (): boolean => again && !signal.aborted;
+    // Holds back the notifications of the stream, and the position, until the next catch-up succeeds.
+    const begin = () => {
+      if (catching) return;
+      catching = true;
+      this.#tracker.hold();
     };
     const catchUp = () => {
+      // Hold from the connection on: a notification of the new stream that is processed before the catch-up reads the
+      // position must not move it past those the catch-up has yet to list.
+      begin();
       if (this.#catchUpTask !== null) {
         again = true;
         return;
       }
       this.#catchUpTask = (async () => {
-        do {
-          try {
-            await this.#catchUp(signal);
-          } catch (error) {
-            if (!signal.aborted) this.#logger.warn("mybot: the catch-up failed; it runs again on the next connection", { error });
-          }
-        } while (takeAgain() && !signal.aborted);
-        this.#catchUpTask = null;
+        try {
+          do {
+            again = false;
+            begin();
+            let found: Notification[];
+            try {
+              found = await this.#missedUntilFound(signal);
+            } catch {
+              // signal aborted: the next start catches up.
+              return;
+            }
+            for (const n of mergeNotifications(found, waiting)) this.#submitNotification(n);
+            catching = false;
+            waiting = [];
+            await this.#releaseHold();
+          } while (catchUpAgain());
+        } finally {
+          this.#catchUpTask = null;
+        }
       })();
     };
     await runStream({
@@ -691,7 +731,8 @@ export class Bot {
       },
       onEvent: (event) => {
         if (event.type === "notification") {
-          this.#submitNotification(event.notification);
+          if (catching) waiting.push(event.notification);
+          else this.#submitNotification(event.notification);
         } else if (event.type === "update" && this.#handlers.status !== undefined && event.status.account.id !== runtime.me.id) {
           this.#dispatcher?.submit({ status: event.status, sender: senderOf(event.status.account) });
         }
@@ -722,11 +763,39 @@ export class Bot {
   }
 
   /**
-   * Reads the notifications newest first back to the store's position, or to the catch-up limit, and hands them to
-   * the handlers oldest first (ADR-0094 §3).
+   * Hands the missed notifications to the handlers oldest first (ADR-0094 §3), holding the position while it does.
+   * When reading them fails, it hands out none.
    */
   async #catchUp(signal: AbortSignal): Promise<void> {
-    if (this.#settings.catchUpLimit <= 0) return;
+    this.#tracker.hold();
+    try {
+      for (const n of await this.#missed(signal)) this.#submitNotification(n);
+    } finally {
+      await this.#releaseHold();
+    }
+  }
+
+  /** Reads the missed notifications, trying again after a failure until it succeeds or signal aborts. */
+  async #missedUntilFound(signal: AbortSignal): Promise<Notification[]> {
+    let wait = retryFirstWait;
+    for (;;) {
+      try {
+        return await this.#missed(signal);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        this.#logger.warn("mybot: the catch-up failed; trying again", { error, wait });
+      }
+      await this.#sleep(wait, signal);
+      wait = Math.min(2 * wait, retryLongestWait);
+    }
+  }
+
+  /**
+   * Reads the notifications newest first back to the store's position, or to the catch-up limit, and returns them
+   * oldest first.
+   */
+  async #missed(signal: AbortSignal): Promise<Notification[]> {
+    if (this.#settings.catchUpLimit <= 0) return [];
     const { api } = this.#running();
     let position: string | null;
     try {
@@ -734,22 +803,22 @@ export class Bot {
     } catch (error) {
       throw new Error("mybot: read the position from the store", { cause: error });
     }
-    this.#tracker.hold();
-    try {
-      const cutoff = this.#now() - this.#settings.catchUpLimit;
-      const found: Notification[] = [];
-      for await (const n of all(async (cursor) => {
-        const { data } = await api.GET("/notifications", { params: { query: { limit: 40, ...(cursor === undefined ? {} : { cursor }) } }, signal });
-        return answered(data, "listNotifications");
-      })) {
-        if ((position !== null && n.id <= position) || Date.parse(n.created_at) < cutoff) break;
-        found.push(n);
-      }
-      for (const n of found.reverse()) this.#submitNotification(n);
-    } finally {
-      const p = this.#tracker.release();
-      if (p !== null) await this.#setPosition(p);
+    const cutoff = this.#now() - this.#settings.catchUpLimit;
+    const found: Notification[] = [];
+    for await (const n of all(async (cursor) => {
+      const { data } = await api.GET("/notifications", { params: { query: { limit: 40, ...(cursor === undefined ? {} : { cursor }) } }, signal });
+      return answered(data, "listNotifications");
+    })) {
+      if ((position !== null && n.id <= position) || Date.parse(n.created_at) < cutoff) break;
+      found.push(n);
     }
+    return found.reverse();
+  }
+
+  /** Ends a hold of the tracker and saves the position it moves to. */
+  async #releaseHold(): Promise<void> {
+    const p = this.#tracker.release();
+    if (p !== null) await this.#setPosition(p);
   }
 
   /** Hands a notification to the dispatcher. */
@@ -767,9 +836,14 @@ export class Bot {
     const runtime = this.#running();
     const n = job.notification;
     try {
-      if (n !== undefined && (await this.store.isProcessed(n.id))) {
-        await this.#completed(n.id);
-        return;
+      if (n !== undefined) {
+        const done = await this.#retryStore(signal, "read the store", n.id, () => this.store.isProcessed(n.id));
+        // Stopped: handled again by the next start.
+        if (done === null) return;
+        if (done.value) {
+          await this.#completed(n.id);
+          return;
+        }
       }
       const ctx = new Context(runtime, job, signal);
       if (!this.#isMe(ctx.account)) {
@@ -784,10 +858,40 @@ export class Bot {
       }
       // Aborted by the shutdown: handled again by the next start.
       if (n === undefined || this.#abandoned || signal.aborted) return;
-      await this.store.markProcessed(n.id, this.#now());
+      const marked = await this.#retryStore(signal, "record the notification processed", n.id, () => this.store.markProcessed(n.id, this.#now()));
+      // Stopped: handled again by the next start.
+      if (marked === null) return;
       await this.#completed(n.id);
     } catch (error) {
-      this.#logger.error("mybot: record the notification processed", { notification: n?.id, error });
+      this.#logger.error("mybot: process the notification", { notification: n?.id, error });
+    }
+  }
+
+  /** Whether the bot stops: the shutdown aborted signal, or its grace period is over. */
+  #stopped(signal: AbortSignal): boolean {
+    return this.#abandoned || signal.aborted;
+  }
+
+  /**
+   * Calls op until it resolves, waiting longer after each failure, and returns its value; null when the bot stops
+   * first. A notification whose Store calls fail stays pending, which holds the position, until the Store works again.
+   */
+  async #retryStore<T>(signal: AbortSignal, what: string, id: string, op: () => Promise<T>): Promise<{ value: T } | null> {
+    let wait = retryFirstWait;
+    for (;;) {
+      if (this.#stopped(signal)) return null;
+      try {
+        return { value: await op() };
+      } catch (error) {
+        if (this.#stopped(signal)) return null;
+        this.#logger.error(`mybot: ${what}; trying again`, { notification: id, error, wait });
+      }
+      try {
+        await this.#sleep(wait, signal);
+      } catch {
+        return null;
+      }
+      wait = Math.min(2 * wait, retryLongestWait);
     }
   }
 

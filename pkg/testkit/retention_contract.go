@@ -478,6 +478,15 @@ func retentionFederationRecords(t *testing.T, e *retentionEnv) {
 		return r
 	}
 	fresh, week, month := write("fresh", day), write("week", 8*day), write("month", 31*day)
+	// A stale tombstone that another actor left for the URI of a fresh one goes alone.
+	if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		_, err := e.rh.Inbox.InsertRemoteObjectTombstone(ctx, tx, federation.RemoteObjectTombstone{
+			URI: fresh.received + "/object", ActorURI: "https://remote.example/users/bob", ActivityURI: fresh.received + "#bob", ReceivedAt: remoteNow.Add(-31 * day),
+		})
+		return err
+	}); err != nil {
+		t.Fatalf("record another actor's tombstone: %v", err)
+	}
 	purger := appfederation.NewPurger(appfederation.PurgeDeps{UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Purges, Clock: e.clock, Batch: 1})
 	if _, err := purger.Run(ctx); err != nil {
 		t.Fatalf("Run = %v", err)
@@ -523,6 +532,9 @@ func retentionFederationRecords(t *testing.T, e *retentionEnv) {
 				t.Errorf("kept %+v, want %+v", got, tc.want)
 			}
 		})
+	}
+	if ok, err := e.rh.Inbox.RemoteObjectTombstoned(ctx, fresh.received+"/object", "https://remote.example/users/bob"); err != nil || ok {
+		t.Errorf("RemoteObjectTombstoned(another actor's stale tombstone) = %t, %v; want false", ok, err)
 	}
 }
 

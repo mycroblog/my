@@ -26,6 +26,7 @@
 - `kv_entries` は `KeyValueStore` ポートの値です。`expires_at` を過ぎた行は無いものとして扱い、1 時間ごとの消去ジョブ `kv.cleanup` が `DeleteExpired` で物理削除します。
   `DeleteExpired` は 1 回（1 トランザクション）で消す件数に上限を取り、ジョブは上限の回数まで繰り返して、残りを次の回に回します（FR-803）。
   カウンタ（`IncrBy`、レート制限）は値を 10 進の文字列で持ち、1 文の upsert で加算します。
+  `CompareAndSwap` は、期待した値（または期限内の行が無いこと）のときだけ書き換えか削除をし、PostgreSQL では条件付きの 1 文、SQLite では `BEGIN IMMEDIATE` の中の読み取りと書き込みで行います。
 - `kv = memory` と `kv = valkey` は `kv_entries` を使わず、同じポートの値をプロセスのメモリか Valkey に持ちます。
   `kv/valkey` は 1 件を値と期限のハッシュにし、TTL のある件をサーバーの TTL と期限順のソート済み集合にも入れて、`kv.cleanup` がサーバーの消し残しを消します。
 - `locked_by` と `locked_until` はワーカーのリース（ADR-0004）で、取得時に両方を設定し、結果の記録時に両方を NULL に戻します（`CHECK` で同時性を保証）。

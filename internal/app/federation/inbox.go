@@ -82,8 +82,9 @@ type InboxRepository interface {
 	// one. An activity of trust signed stays.
 	ReleaseUnconfirmedActivity(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (bool, error)
 
-	// InsertRemoteObjectTombstone records a tombstone unless its URI has one, and reports whether
-	// it did: the first tombstone stays.
+	// InsertRemoteObjectTombstone records a tombstone unless its actor has one for its URI, and
+	// reports whether it did: the first tombstone of the pair stays, and another actor's
+	// tombstone of the URI does not stop it.
 	InsertRemoteObjectTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteObjectTombstone) (bool, error)
 	// RemoteObjectTombstoned reports whether uri has a tombstone that actorURI left: a tombstone
 	// holds back only the objects and activities of the actor whose Delete or Undo left it.

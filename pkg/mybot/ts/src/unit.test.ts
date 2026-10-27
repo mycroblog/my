@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { missingScopes } from "./bot.js";
@@ -121,6 +121,23 @@ describe("FileStore", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  test("a change whose save fails leaves the store as it was", async () => {
+    const root = await mkdtemp(join(tmpdir(), "mybot-"));
+    try {
+      const dir = join(root, "state");
+      const s = new FileStore(join(dir, "state.json"));
+      expect(s.markProcessed("lost", Date.now())).rejects.toThrow(/write the state file/);
+      expect(await s.isProcessed("lost")).toBe(false);
+      await mkdir(dir, { mode: 0o700 });
+      await s.setPosition("p");
+      const r = new FileStore(s.path);
+      expect(await r.isProcessed("lost")).toBe(false);
+      expect(await r.position()).toBe("p");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 test("Tracker moves the position past the processed notifications older than every pending one", () => {
@@ -152,6 +169,17 @@ test("Budget delays writes, drops those that would wait too long, and follows th
   const b2 = new Budget(defaultPostRate, defaultWriteRate);
   b2.observe(new Headers({ "RateLimit-Policy": `"api";q=300;w=300`, RateLimit: `"api";r=30;t=120` }), now);
   expect(b2.reserve("write", now, 60_000)).toBe(0);
+});
+
+// The writes that wait for a pause of the server go out spaced by the budget after it, not all at its end.
+test("Budget spaces the writes after a pause", () => {
+  const b = new Budget(defaultPostRate, { n: 1, per: 1000 });
+  const now = 1_000_000_000;
+  b.observe(new Headers({ "RateLimit-Policy": `"api";q=300;w=300`, RateLimit: `"api";r=0;t=10` }), now);
+  expect([0, 1, 2].map(() => b.reserve("write", now, 60_000))).toEqual([10_000, 11_000, 12_000]);
+  expect(b.reserve("write", now, 12_000)).toBeNull();
+  // After the pause, the bucket goes on from where the reservations left it.
+  expect(b.reserve("write", now + 10_000, 60_000)).toBe(3000);
 });
 
 test("ReplyLimiter allows 5 replies in 10 minutes and 15 in an hour", () => {

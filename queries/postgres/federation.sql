@@ -52,15 +52,15 @@ WHERE activity_uri IN (
 -- name: InsertRemoteObjectTombstone :execrows
 INSERT INTO remote_object_tombstones (uri, actor_uri, activity_uri, received_at)
 VALUES (@uri, @actor_uri, @activity_uri, @received_at)
-ON CONFLICT (uri) DO NOTHING;
+ON CONFLICT (uri, actor_uri) DO NOTHING;
 
 -- name: HasRemoteObjectTombstone :one
 SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = @uri AND actor_uri = @actor_uri);
 
 -- name: DeleteRemoteObjectTombstonesBefore :execrows
 DELETE FROM remote_object_tombstones
-WHERE uri IN (
-  SELECT t.uri FROM remote_object_tombstones t
+WHERE (uri, actor_uri) IN (
+  SELECT t.uri, t.actor_uri FROM remote_object_tombstones t
   WHERE t.received_at < @received_before ORDER BY t.received_at LIMIT @batch_limit
 );
 
