@@ -114,6 +114,8 @@ export class FakeServer {
   scope = "read write";
   /** Serves a connection of GET /streaming; absent keeps it open until the client leaves. */
   stream: ((c: StreamConnection) => void | Promise<void>) | undefined;
+  /** Runs before the n-th call (from 1) of listNotifications, which fails when it resolves to false. */
+  list: ((n: number) => boolean | Promise<boolean>) | undefined;
   /** The User-Agent of every request. */
   userAgents: string[] = [];
 
@@ -151,6 +153,9 @@ export class FakeServer {
     }
     if (route === "GET /api/v1/notifications") {
       this.listCalls++;
+      if (this.list !== undefined && !(await this.list(this.listCalls))) {
+        return json({ type: "about:blank", title: "failed", status: 500 }, 500, "application/problem+json");
+      }
       const start = Number(url.searchParams.get("cursor") ?? "0");
       // Small pages, so that the catch-up follows the cursor.
       const end = Math.min(start + 2, this.notifications.length);
