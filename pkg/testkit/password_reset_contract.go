@@ -67,7 +67,7 @@ func passwordResetWorksOnce(t *testing.T, e *accountEnv) {
 	reg := e.sessionUser(t)
 	const address = "Alice@Example.com" // the stored address of the session user
 	e.registerPasskey(t, reg.User.ID, "phone")
-	e.enableTOTP(t, reg)
+	u := e.enableTOTP(t, reg)
 	tokens, _ := e.webTokensFor(t, reg.User.ID)
 	_, err := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword})
 	if !errors.Is(err, appidentity.ErrSecondFactorRequired) {
@@ -105,6 +105,14 @@ func passwordResetWorksOnce(t *testing.T, e *accountEnv) {
 		t.Errorf("ResetPassword(short) = %v, want ErrInvalidPassword", err)
 	}
 
+	// A sign-in waiting for its second factor, and a code authorized in a browser session.
+	pending := e.signInFirstStep(t)
+	signedIn, err := e.completeSignIn(e.signInFirstStep(t), u.code(e))
+	if err != nil {
+		t.Fatalf("CompleteSignIn = %v", err)
+	}
+	sessionCode := e.codeInSession(t, webAuthorizationRequest(), signedIn.Session)
+
 	// Concurrent resets with one token: exactly one wins.
 	e.clock.Advance(time.Second)
 	const tries = 5
@@ -133,6 +141,13 @@ func passwordResetWorksOnce(t *testing.T, e *accountEnv) {
 	// The grant ended, the old password no longer works, the new one does, and the passkey and
 	// the two-factor authentication stay.
 	e.wantAccess(t, tokens.AccessToken, false, "a token from before the reset")
+	_, err = e.identity.ExchangeAuthorizationCode(ctx, appidentity.CodeExchange{
+		ClientCredentials: webCreds, Code: sessionCode, RedirectURI: contractWebRedirect, CodeVerifier: contractCodeVerifier,
+	})
+	wantOAuthError(t, err, appidentity.OAuthInvalidGrant, "exchanging a code of a session that the reset ended")
+	if _, err := e.completeSignIn(pending, u.code(e)); !errors.Is(err, appidentity.ErrSecondFactorExpired) {
+		t.Errorf("CompleteSignIn(a challenge from before the reset) = %v, want ErrSecondFactorExpired", err)
+	}
 	if _, err := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword}); !errors.Is(err, appidentity.ErrInvalidCredentials) {
 		t.Errorf("SignIn with the old password = %v, want ErrInvalidCredentials", err)
 	}

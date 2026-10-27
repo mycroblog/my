@@ -117,6 +117,9 @@ INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason), sqlc.arg(revoked_at) FROM oauth_access_tokens t WHERE t.family_id = sqlc.arg(family_id)
 ON CONFLICT (token_id) DO NOTHING;
 
+-- name: SessionRevoked :one
+SELECT EXISTS (SELECT 1 FROM session_revocations r WHERE r.session_id = sqlc.arg(session_id)) AS revoked;
+
 -- name: RevokeSessionOfTokenFamily :exec
 INSERT INTO session_revocations (session_id, reason, revoked_at)
 SELECT c.session_id, sqlc.arg(reason), sqlc.arg(revoked_at)

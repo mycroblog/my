@@ -843,6 +843,17 @@ func (q *Queries) ListUnusedDynamicOAuthClients(ctx context.Context, arg ListUnu
 	return items, nil
 }
 
+const lockUserTokenGrants = `-- name: LockUserTokenGrants :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// LockUserTokenGrants takes a transaction-scoped advisory lock on a user's OAuth grants, so that
+// issuing a token to the user and revoking the user's tokens serialize under READ COMMITTED.
+func (q *Queries) LockUserTokenGrants(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockUserTokenGrants, lockKey)
+	return err
+}
+
 const oAuthClientHostDenied = `-- name: OAuthClientHostDenied :one
 SELECT EXISTS (
   SELECT 1 FROM oauth_client_host_denials d
@@ -991,6 +1002,17 @@ func (q *Queries) RevokeTokensOfUserAndClient(ctx context.Context, arg RevokeTok
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const sessionRevoked = `-- name: SessionRevoked :one
+SELECT EXISTS (SELECT 1 FROM session_revocations r WHERE r.session_id = $1::uuid) AS revoked
+`
+
+func (q *Queries) SessionRevoked(ctx context.Context, sessionID string) (bool, error) {
+	row := q.db.QueryRow(ctx, sessionRevoked, sessionID)
+	var revoked bool
+	err := row.Scan(&revoked)
+	return revoked, err
 }
 
 const tokenFamilyActive = `-- name: TokenFamilyActive :one

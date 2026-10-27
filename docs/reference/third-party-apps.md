@@ -85,6 +85,7 @@ curl -X POST https://my.example/oauth/register \
   -d '{"client_name":"Example","redirect_uris":["http://127.0.0.1/callback"],"scope":"read"}'
 ```
 
+- The body is a single JSON object of at most 16 KiB; anything after the object, or a larger body, is rejected with `invalid_client_metadata`.
 - Only **public clients**. `token_endpoint_auth_method` defaults to `none`; any other value is rejected with `invalid_client_metadata`.
 - Accepted metadata: `client_name`, `client_uri`, `logo_uri`, `redirect_uris`, `scope`, `grant_types`, `response_types`. A `software_statement` is not accepted.
   `scope` is narrowed to what a third party may hold; the response states the scope that was granted.

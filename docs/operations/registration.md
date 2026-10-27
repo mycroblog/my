@@ -60,6 +60,7 @@ The confirmation token is recorded nowhere except this log line (access logs do 
 - `mail = none`: the page says that it cannot send a link and tells the user to ask an administrator. The administrator issues a link on the account page of the admin screens, or with `my admin account password-reset-link @alice`, and gives it to the user ([moderation](moderation.md)).
 - A signed-in user can change the password under "Password" in settings by entering the current password (wrong entries are limited to 5 per hour per user).
 - A reset or a change revokes the user's other sessions and app tokens (a change from settings keeps only the app that made the change). Passkeys and two-factor authentication stay.
+  A sign-in that waits for its two-factor code, and an app authorization not yet completed, stop working too: the user starts them again.
   With `mail = smtp`, the server also emails the user to say the password changed.
 
 ## Invite codes
