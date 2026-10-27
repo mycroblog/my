@@ -42,6 +42,8 @@ so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-b
 
 ### Error reports
 
+The [Error reporting](error-reporting.md) guide covers where to read these lines on each platform, the Errors screen, notifications, and sending reports to an error tracker.
+
 The server reports the errors that need the operator's attention as one `error report` line each:
 
 - a panic in an HTTP handler, a job, or a background task;

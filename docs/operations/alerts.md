@@ -51,7 +51,7 @@ scrape_configs:
 With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud Logging already have:
 
 - **HTTP errors and latency**: the Cloud Run request count by response code class and the request latency metric of the service.
-- **Errors**: the `error report` lines go to Error Reporting, which groups them and can notify you of new and recurring errors.
+- **Errors**: the `error report` lines go to Error Reporting, which groups them and can notify you of new and recurring errors ([Error reporting](error-reporting.md#google-cloud-cloud-run)).
 - **Jobs and requests**: the server writes one log line per HTTP request (`msg` = `http request`) and per job run (`msg` = `job`), with the
   same labels as the metrics. Make log-based metrics from them, for example a counter of `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   for failed jobs, or a distribution of `jsonPayload.duration_seconds` filtered on `jsonPayload."my.surface"="client_api"` for the latency.
@@ -128,6 +128,7 @@ These tools come back in most of the runbook entries below.
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``
+- **Error reports**: the `error report` lines and the Errors screen (Administration → Errors, `/admin/errors`, needs `manage_errors`) ([Error reporting](error-reporting.md)).
 - **Traces**, when `traces_exporter = otlp`: the log lines carry `trace_id`; open it in your trace backend to see where a slow request spent its time.
 - **The maintenance mode** ([Maintenance](maintenance.md)): answers every request with a maintenance page and touches no adapter. Use it while you repair the database
   or the KV store.
