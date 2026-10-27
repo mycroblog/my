@@ -1,6 +1,6 @@
 # ADR-0103: エラーの報告（ErrorReporter port・指紋・報告先・運営者への通知）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-27
 - Deciders: @rosylilly
 - Issue: #1432
@@ -20,7 +20,8 @@
 - **落ちたプロセスは理由を残さない**: recover しない goroutine（`go func()` が 12 か所ほど）で panic すると、プロセスが落ち、外からは再起動（`MyProcessRestarting`）しか見えない
 - **Web クライアントのエラーは届かない**: `AppLayout.tsx` の `ErrorBoundary` は `fallback={null}` で何も報告せず、`window.onerror`・`unhandledrejection` も拾わない
 - **知らせる経路がない**: instance webhook（[ADR-0060](0060-instance-webhooks.md)）と管理者の通知（FR-712）にシステムの出来事がない。Sentry・Datadog などへ送る口もない
-- **Cloud Logging が深刻度を読めない**: slog の JSON は `level` を書き、Cloud Logging の構造化ログの特別なフィールド `severity` を書かない（要検証: Cloud Run の構造化ログの文書）
+- **Cloud Logging が深刻度を読めない**: slog の JSON は `level` と `msg` を書き、Cloud Logging の構造化ログの特別なフィールド `severity`・`message` を書かないので、どの行も深刻度 `DEFAULT` になる。
+  また `cmd/my/configerror.go` の `warnReadiness` は設定の検査の結果を属性 `severity`（`error` / `warning`）として WARN の行に書いており、`severity` を足すとキーが重なる
 
 関連する要件と決定:
 
@@ -36,21 +37,54 @@
 
 ### 一次情報で確かめた事実（2026-10-27 確認）
 
-- **Google Cloud Error Reporting** は Cloud Logging の構造化ログからエラーを拾う。`jsonPayload` の `stack_trace`・`exception`・`message` の順にスタックトレースを探し、
-  `@type` を `type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent` にすると `message` だけでも拾う。
-  `ReportedErrorEvent` は `serviceContext.service`（必須）・`serviceContext.version`・`message`（必須）・`context.reportLocation`（スタックがないとき必須）を持つ
-  （[Formatting errors in logs](https://docs.cloud.google.com/error-reporting/docs/formatting-error-messages)）。
-  Cloud Run ではスタックトレースを含み、深刻度が未設定か `ERROR` 以上のログからエラーを作る（[Go の設定](https://docs.cloud.google.com/error-reporting/docs/setup/go)）。
-  受け付ける Go のスタックの形（`debug.Stack` の形）は文書に明記がなく **要検証**。Error Reporting そのものの料金は公式の料金ページを確かめられず **要検証**（ログの取り込みと保存は Cloud Logging の料金）
-- **sentry-go** は MIT で、v0.50.0 は 2026-10-08 公開（[pkg.go.dev](https://pkg.go.dev/github.com/getsentry/sentry-go)）
-- **Datadog Error Tracking** は Sentry の SDK のイベントを Datadog 専用の DSN（`https://<TOKEN>@sentry-intake.<DD_SITE>/1`）で受ける。試験済みの Go の SDK は `sentry-go` v0.32.0 で、
-  エラーのイベントとメッセージだけを受け（トレース・添付・セッションは受けない）、全イベントに `service` のタグが要る。Error Tracking for Logs を有効にする必要がある
-  （[Datadog: Sentry SDK](https://docs.datadoghq.com/error_tracking/guides/sentry_sdk/)）。提供の段階（preview か GA か）と料金は文書になく **要検証**
-- **GlitchTip** は Sentry の取り込みの API を実装し、Sentry の SDK を DSN の差し替えだけで使えるとされ、ライセンスは MIT とされる（二次情報。**要検証**: GlitchTip のリポジトリの LICENSE）
+調査の詳細は spike #1434 の報告にある。
+
+- **Google Cloud Error Reporting**（[Formatting errors in logs](https://docs.cloud.google.com/error-reporting/docs/formatting-error-messages)、
+  [`projects.events.report`](https://docs.cloud.google.com/error-reporting/reference/rest/v1beta1/projects.events/report)、
+  [Notifications](https://docs.cloud.google.com/error-reporting/docs/notifications)、[Quotas](https://docs.cloud.google.com/error-reporting/quotas)、
+  [Grouping](https://docs.cloud.google.com/error-reporting/docs/grouping-errors)、[Pricing](https://cloud.google.com/stackdriver/pricing)）:
+  - Cloud Logging の `jsonPayload` の `stack_trace`・`exception`・`message` の順に（なければ全フィールドから）スタックを探す。
+    `@type` を `type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent` にすると必須の項目があるものとして扱う。必須は `serviceContext.service` と `message`
+  - `message` は「ヘッダー（エラーの型と文言）+ スタック」で、Go のスタックは **`debug.Stack()` の戻り値そのもの** とされる。
+    Google の Go のライブラリ（`cloud.google.com/go/errorreporting` v0.11.0）は `err.Error() + "\n" + stack` とし、`goroutine N [running]:` の行を残して `runtime/debug.Stack` と自身のフレームを削る
+  - Cloud Run ではスタックを含み、深刻度が未設定か `ERROR` 以上の行からエラーを作る（[Go の設定](https://docs.cloud.google.com/error-reporting/docs/setup/go)）
+  - グルーピングは「型と上位 5 フレーム」（スタックがなければ文言の先頭 3 語と関数名）で、指紋を指定するフィールドはない。グループの保持は 30 日、service と版とグループの組は 10,000 まで
+  - 通知は新しいグループと Resolved のグループの再発だけで、プロジェクトあたり 60 分に 20 件まで（超えると 6 時間止まる）。状態は Open・Acknowledged・Resolved・Muted
+  - Error Reporting は無料で、ログの取り込みと保存が Cloud Logging の料金（取り込み $0.50/GiB、毎月 50 GiB まで無料）
+- **Cloud Logging の特別なフィールド**（[Cloud Run logging](https://docs.cloud.google.com/run/docs/logging)、[special fields](https://docs.cloud.google.com/logging/docs/agent/configuration#special-fields)）:
+  `severity`・`message`・`httpRequest`・`time`・`logging.googleapis.com/trace`・`logging.googleapis.com/spanId` などを LogEntry に移し、`level`・`msg` は読まない。
+  `severity` のない行は `DEFAULT`。値は LogSeverity の名前（`DEBUG`・`INFO`・`WARNING`・`ERROR`・`CRITICAL` など）にする（[LogEntry](https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)）。LogEntry は 1 件 256 KiB まで
+- **AWS**: Lambda の JSON のログ形式はアプリの行の `level`（`WARN`・`ERROR` など）を読む（[Lambda log level](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-log-level.html)）。
+  CloudWatch Logs の異常検知は「これまでにないパターン」を検出してアラームと SNS で知らせられるが、各行の先頭 1,500 文字だけを見る（[Log anomaly detection](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/LogsAnomalyDetection.html)）。
+  メトリクスフィルターは次元の値ごとに課金され、エラーの種類をまとめる仕組みや解決・再発の状態はない
+- **Sentry のプロトコル**（[Envelopes](https://develop.sentry.dev/sdk/data-model/envelopes/)、[Event payloads](https://develop.sentry.dev/sdk/data-model/event-payloads/)、
+  [Authentication](https://develop.sentry.dev/sdk/foundations/transport/authentication/)、[Rate limiting](https://develop.sentry.dev/sdk/expected-features/rate-limiting/)）:
+  `POST {base}/api/{project}/envelope/` に `X-Sentry-Auth: Sentry sentry_version=7, sentry_key=<key>` を付けて送る。イベントの必須の項目は `event_id`・`timestamp`・`platform` で、event の item は 1 MiB まで。
+  `Event.fingerprint` は既定のグルーピングを置き換える。429 と `Retry-After`、またはカテゴリごとの `X-Sentry-Rate-Limits` で止まり、SDK は自動で再送しない
+- **sentry-go**（v0.50.0、2026-10-08、MIT、cgo なし）: ビルドに入る依存は `golang.org/x/text`・`golang.org/x/sys` だけで、増分は約 2.0 MB（spike の計測）。
+  ただし v0.48〜v0.50 の毎回に破壊的な変更があり、v1.0.0-alpha.1 が出ている。`Dsn`・`Environment`・`Release` が空だと `SENTRY_*` などの環境変数を読み、最後に `git describe` を実行する。
+  `ServerName` が空だと hostname で埋め、`NewClient` はバッチ処理の goroutine を 2 つ起動し、`Transport.SendEvent` は送信の成否を返さない（v0.50.0 のソースで確認）
+- **Sentry の通知と料金**: issue alert は「新しい issue」と「解決した issue の再発」をトリガーにできる（[Issue alerts](https://docs.sentry.io/product/alerts/create-alerts/issue-alert-config/)）。
+  無料の Developer は 5k errors・保持 30 日・1 ユーザー（[Pricing](https://sentry.io/pricing/)）。Sentry の OTLP の受け付けは open beta で、ログとトレースとして入り、issue にはならない（[OTLP](https://docs.sentry.io/concepts/otlp/)）
+- **Sentry 互換のサービス**: GlitchTip は MIT（[LICENSE](https://gitlab.com/glitchtip/glitchtip-backend/-/raw/master/LICENSE)）で、`/envelope/`・`/store/` と `Event.fingerprint` を扱う。
+  Bugsink は Sentry の SDK と互換とするが、ライセンスは PolyForm Shield 1.0.0 で OSS ではない
+- **Datadog Error Tracking** は Sentry のイベントを専用の DSN（`https://<TOKEN>@sentry-intake.<DD_SITE>/1`）で受け、ログとして取り込む。試験済みの Go の SDK は `sentry-go` v0.32.0、
+  全イベントに `service` のタグが要り、Error Tracking for Logs を有効にする必要がある（[Datadog: Sentry SDK](https://docs.datadoghq.com/error_tracking/guides/sentry_sdk/)）。
+  グルーピングは `error.fingerprint` があればそれを使う（[Error grouping](https://docs.datadoghq.com/error_tracking/error_grouping/)）。料金は 5 万件未満が月 $25 の定額で、それ以上は 1,000 件ごとの従量（[Pricing](https://www.datadoghq.com/pricing/?product=error-tracking)）
 - **OpenTelemetry の例外の意味規約**: 例外は LogRecord の属性として記録する（SHOULD）。属性 `exception.type`・`exception.message`・`exception.stacktrace` は Stable で、
-  `exception.message` は機微な情報を含みうると注記されている。span のイベントとしての記録は既定のまま残り、`OTEL_SEMCONV_EXCEPTION_SIGNAL_OPT_IN` でログへ移す段階にある
-  （[Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/)）。
-  OTel Go のログの SDK（`go.opentelemetry.io/otel/sdk/log`）と OTLP/HTTP のログのエクスポーター（`otlploghttp`）の安定性と版は **要検証**
+  `exception.message` は機微な情報を含みうると注記されている。span の例外の規約は Deprecated で、ログへ移す（[Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/)、
+  [Exceptions on spans](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/)）
+- **OTel Go のログ**: `go.opentelemetry.io/otel/log` と `sdk/log` は v1.47.0（2026-10-02）が最初の Stable で、`go.mod` の otel と同じ版。
+  OTLP/HTTP のエクスポーター `otlploghttp` は v0.23.0（同日）で experimental-logs の組にあり、v0.x の間は破壊的な変更がありうる（モジュールの CHANGELOG.md・versions.yaml）。
+  `Record.SetErr` は `exception.message` を `err.Error()` から自動で作る。trace_id・span_id は `Emit` の ctx の span から付く。BatchProcessor はあふれると古いものから上書きし、捨てた数は外から数えにくい。
+  trace と metric の OTLP/HTTP があるバイナリに足す増分は約 356 KB（spike の計測）
+- **OTLP の例外からエラーを追跡するバックエンド**: SigNoz の Exceptions の画面は span のイベントだけから作る。Uptrace は例外のログをまとめる。Grafana Alloy の `otelcol.connector.exceptions`（experimental）は名前 `exception` のログを扱う。
+  Datadog の Error Tracking for Logs は `error.stack` か `error.kind` を要し、`exception.*` からの対応は文書にない。Sentry の OTLP はログとして入るだけ
+- **ブラウザ**: React 19 の `createRoot` の `onUncaughtError` の既定は `reportError` で window の `error` に届き、境界が捕まえたもの（`onCaughtError`）は `console.error` だけ（[createRoot](https://react.dev/reference/react-dom/client/createRoot)）。
+  このアプリの画面のエラーの大半は TanStack Router の `errorComponent` が受け、`defaultOnCatch` / ルートの `onCatch` が `(error, errorInfo)` で呼ばれる（router-core 1.171 のソース）。
+  `sendBeacon` はヘッダーを付けられず（このクライアントの bearer を送れない）、keepalive の本文は同じ fetch group で合計 64 KiB まで（[Beacon](https://w3c.github.io/beacon/)、[Fetch](https://fetch.spec.whatwg.org/)）。
+  Vite 8 の既定の圧縮（oxc）は関数名を短くし、チャンクの名前にハッシュが付く
+- **他の実装**: Misskey は設定 `sentryForBackend`・`sentryForFrontend`（既定は無効）でサーバーとブラウザから Sentry へ直接送る。Mastodon と GoToSocial は OTLP のトレースだけで、エラーの報告はない
 
 ## Decision Drivers（判断基準）
 
@@ -70,16 +104,15 @@
 
 ## Decision（決定）
 
-> Proposed の間は「推奨案」として書く。Accepted にするのは人間の Decider のみ。
-
-**推奨案: A。** エラーは「スタックと指紋を持つ 1 つの出来事」として port に渡し、
+**決定: A。** エラーは「スタックと指紋を持つ 1 つの出来事」として port に渡し、
 (1) 必ずログに 1 行書き、(2) DB のエラーのグループに数えて新しいグループと再発を管理者の通知と webhook で知らせ、(3) 設定したときだけ外部（Sentry 互換・OTLP）へ転送する。
 ADR-0063 §4（span に `RecordError` とエラーの文字列を出さない）は変えない。エラーの報告は span と別の信号で、除去の規則（§3）を通ったものだけを出す。
 
 B を選ばない理由: B の最も強い利点は、グルーピング・再発の検知・画面・ソースマップ・通知の規則が完成していて、Datadog も同じ SDK と DSN で受けられることである。
 ただし外部のサービスを使わない運営者には何も届かず（判断基準 1）、コアが SDK を import して ADR-0002 に例外を作る。A は Sentry 互換の転送を持つので、B の利点の多くを含む。
 
-C を選ばない理由: 費用は最も小さく、Cloud Run では Error Reporting がほぼそのまま使える。ただし AWS と Self-hosted には同じ水準のグルーピングと通知が基盤にない。
+C を選ばない理由: 費用は最も小さく、Cloud Run では Error Reporting が無料で新しいグループと再発を知らせる。
+ただしグループの保持は 30 日で、指紋を指定できず、通知は毎時 20 件までである。AWS は CloudWatch Logs の異常検知で「新しいパターン」までは知らせられるが、解決・再発の状態がなく、Self-hosted には基盤の仕組みがない。
 C の考え方（スタック付きの 1 行のログ、Error Reporting が拾う形）は A の §4 の既定の出力として取り込む。
 
 D を選ばない理由: どのバックエンドにも出せるが、コレクターなどが要り、既定の構成では何も届かない。A の転送のアダプタの 1 つ（`otlp`）として取り込む。
@@ -117,7 +150,9 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 
 - 除去（scrub）は port の実装の入口で 1 回行い、ログ・DB・外部のどの出力にも除去した後の値だけを渡す（今のリクエスト・ジョブの 1 行のログの `error` は今のまま）:
   - `Message` の URL・メールアドレス・`@user@host` の形・IP アドレス・UUID と ULID・10 桁以上の数字を `<url>`・`<email>`・`<acct>`・`<ip>`・`<id>`・`<n>` に置き換え、1 KiB で切る
-  - `Stack` は関数名とファイルの位置だけで、引数の値（Go のスタックの 16 進の引数）を消す
+  - `Stack` は `debug.Stack()` の形を保ち、関数の行の末尾の引数の並び（`(0x1, {0x55d070?, …})` のような 16 進の値）を、Go がインライン化したフレームに出す形と同じ `(...)` に置き換える。
+    `goroutine N [running]:` の行・ファイルの位置・`+0x` のオフセットは残し、報告の仕組み自身のフレーム（`runtime/debug.Stack`・`Recover`・`panic(...)`）は削る。16 KiB で切る。
+    ビルドは `-trimpath` なので、ファイルの位置はモジュールからの相対で、ビルドしたマシンのパスを含まない
   - リクエストの本文・ヘッダー・クエリ・クッキー・アカウントの ID・ユーザー名・IP・User-Agent は持たない（ADR-0055 §6 と同じ）
 - 量の上限: プロセスごとに、同じ指紋は 60 秒に 1 回だけ外部へ転送し、残りは数だけ数える。外部への転送は全体で毎分 60 件まで。上限を超えた分は DB の数とログには残る
 
@@ -126,13 +161,20 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 **(1) ログ（常に）**: 出来事ごとに 1 行の JSON を stderr に書く。Cloud Error Reporting が拾う形にする（他の基盤では普通の JSON の 1 行として扱える）:
 
 ```json
-{"level":"ERROR","severity":"ERROR","msg":"error report","@type":"type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent",
- "message":"<Type>: <除去した Message>\n\n<Stack>","serviceContext":{"service":"my","version":"<service.version>"},
+{"time":"…","level":"ERROR","severity":"ERROR","msg":"error report",
+ "@type":"type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent",
+ "serviceContext":{"service":"my","version":"<service.version>"},
  "my.error.fingerprint":"…","my.error.source":"server","my.error.kind":"panic","my.error.where":"client_api GET /api/v1/statuses/{id}",
- "request_id":"…","trace_id":"…"}
+ "request_id":"…","trace_id":"…","span_id":"…",
+ "message":"<Type>: <除去した Message>\ngoroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32\n…"}
 ```
 
-- あわせて、すべてのログの行に Cloud Logging の `severity`（`DEBUG`・`INFO`・`WARNING`・`ERROR`）を足す。`level` は今のまま残す（アラートとログベースの指標の例が使っている）
+- `message` は Google の Go のライブラリと同じく、ヘッダーとスタックを改行 1 つでつなぐ。短いフィールドを前に、`message` を最後に置く（CloudWatch Logs の異常検知が行の先頭 1,500 文字だけを見るため）
+- `serviceContext.version` には版だけを入れる（service と版の組はグループの数の上限に効く）。`context.httpRequest`・`context.user` は個人情報になるので出さない。
+  `logging.googleapis.com/trace` の形（`projects/<id>/traces/<trace_id>`）は ADR-0063 §6 の未決の点と同じくデプロイのテンプレートで決める
+- Error Reporting は `jsonPayload` の全フィールドからスタックを探すので、ほかのログの行にはスタックを書かない
+- すべてのログの行に、slog の `ReplaceAttr` で Cloud Logging の `severity` を足す（`DEBUG`・`INFO`・`WARN`→`WARNING`・`ERROR`、`ERROR` より上→`CRITICAL`）。
+  `level` は今のまま残す（Lambda の JSON のログ形式・アラートとログベースの指標の例が読む）。キーが重なる `warnReadiness` の属性 `severity` は `finding_severity` に改める
 
 **(2) エラーのグループ（常に。DB）**: §7 の表に指紋ごとに数え、新しいグループと、解決したグループの再発を §8 で知らせる。
 
@@ -145,11 +187,15 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 | 値 | 送り先 | 実装 |
 | --- | --- | --- |
 | `none` | 送らない | — |
-| `sentry` | Sentry 互換の DSN（設定 `errors_sentry_dsn`、秘密）: Sentry（SaaS・セルフホスト）、GlitchTip、Datadog Error Tracking の Sentry 用の DSN | `internal/adapter/errorreport/sentry`。`sentry-go` の `sentry.NewClient` をグローバルな hub なしで使い、既定の統合（integrations）を切り、`BeforeSend` で §3 を通ったことを確かめる。タグ `service`（Datadog に必須）・`environment`・`release`・`my.role`・`my.error.where` を付ける。build tag `no_sentry` で外せる |
-| `otlp` | OpenTelemetry Collector など（宛先は OTel の標準の環境変数） | `internal/adapter/errorreport/otlp`。OTel の例外の意味規約に従う LogRecord（`exception.type`・`exception.message`・`exception.stacktrace`、深刻度 `ERROR`、span のコンテキスト）を OTLP/HTTP で送る。ADR-0055 の `no_otel` で外れる |
+| `sentry` | Sentry 互換の DSN（設定 `errors_sentry_dsn`、秘密）: Sentry（SaaS・セルフホスト）、GlitchTip、Datadog Error Tracking の Sentry 用の DSN | `internal/adapter/errorreport/sentry`。`sentry-go` を使わず、envelope（`sentry_version=7`）を自前で組み立てて送る小さなクライアント（DSN の解析・イベント・envelope・状態コード・レート制限で 300 行ほど）。イベントは `event_id`・`timestamp`・`platform: go`・`level`・`environment`・`release`・`fingerprint`（§1 の指紋）・`exception`（型・除去した文言・スタックのフレーム。本リポジトリのフレームは `in_app`）・`contexts.trace`（§1 の `trace_id`・`span_id`）・タグ `service`（Datadog に必須）・`my.role`・`my.error.where`・`error.fingerprint` を持ち、`server_name`・`user`・`request` を持たない。429 の `Retry-After` と `X-Sentry-Rate-Limits` の `error` のカテゴリに従って止め、再送しない |
+| `otlp` | OpenTelemetry Collector など（宛先は OTel の標準の環境変数） | `internal/adapter/errorreport/otlp`。`otel/sdk/log` と `otlploghttp` で、例外の意味規約の LogRecord を送る: イベント名 `exception`、深刻度 `ERROR`（プロセスが落ちるものは `FATAL`）、`exception.type`・除去した `exception.message`・`exception.stacktrace`（§3 の形）・`my.error.fingerprint`・`my.error.where`。`SetErr` は除去の前の文言を入れるので使わない。trace_id・span_id は ctx の span から付ける。resource は ADR-0055 の `otel` のアダプタと同じものを使う。span のイベントには出さない（ADR-0063 §4、OTel の非推奨化） |
 
-- 転送はトランザクションの外で、送信のキューを持つ非同期の送信者が行う（キューの上限 1,000 件。あふれたら捨てて数える）。プロセスの終わりに最大 2 秒待って送り切る
-- 宛先は運営者が設定するサービスの API なので、`kernel.HTTPClient`（SSRF のガード）でなく、アダプタの中の SDK・エクスポーターの HTTP クライアントを使う（AGENTS.md の外向きの HTTP の規則）
+- 転送はトランザクションの外で、送信のキューを持つ非同期の送信者が 1 件ずつ送る（キューの上限 1,000 件。あふれたら捨てて数える）。`otlp` も BatchProcessor でなく SimpleProcessor をこのキューから呼び、捨てた数と成否を同じ指標で数える。
+  プロセスの終わりに最大 2 秒待って送り切る
+- `otlp` で受けた側がエラーをまとめるかはバックエンドによる（SigNoz は span のイベントだけ、Datadog は `error.stack` への写し替えが要る）。Sentry・GlitchTip・Datadog には `sentry` を使うよう文書で勧める
+- 宛先は運営者が設定するサービスの API なので、`kernel.HTTPClient`（SSRF のガード）でなく、アダプタの中の HTTP クライアント・エクスポーターのものを使う（AGENTS.md の外向きの HTTP の規則）
+- `sentry-go` を使わない理由: §1〜§3 の除去・指紋・量の上限・送信のキュー・成否の数を自前で持つので、SDK に残る利点はプロトコルの実装だけである。
+  一方で SDK は版ごとに API を壊し、環境変数の暗黙の読み込みと `git` の実行、hostname の自動の付与、`kernel.Go` を通らない goroutine を持ち、送信の成否を返さない。プロトコルの版 7 と envelope は安定している
 - 転送の成否は指標 `my.errors.exported`（Counter、`my.outcome` = `success` / `dropped` / `failed`）で見る
 
 ### 5. goroutine の起動
@@ -160,12 +206,19 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 ### 6. Web クライアントのエラー
 
 - 報告の API `POST /api/v1/client_errors` を足す（クライアント API・ADR-0029 の部分集合。ログインしていなくても呼べる）。本文は 16 KiB まで:
-  `name`・`message`・`stack`（ブラウザの文字列）・`release`（ビルドの版）・`route`（TanStack Router のルートの ID。URL でなくパターン）・`kind`（`error_boundary` / `onerror` / `unhandledrejection`）
-- サーバーは本文を `Source = web` の `ErrorEvent` にして §3 を通す。指紋はスタックの自分の origin のファイルの関数名（なければ正規化した `message`）と `route` から作る。
-  応答は常に `204`（失敗の理由を返さない）
+  `name`・`message`・`stack`（ブラウザの文字列）・`release`（ビルドの版）・`route`（TanStack Router のルートの ID。`router.state.matches.at(-1)?.routeId` で、URL でなくパターン）・
+  `kind`（`route_error` / `boundary_error` / `uncaught` / `unhandledrejection`）。`Content-Type: application/json` だけを受ける（他の origin からの `text/plain` の単純なリクエストでの水増しを preflight で止める）
+- サーバーは本文を `Source = web` の `ErrorEvent` にして §3 を通す。スタックは V8 の `at fn (url:line:col)` と Firefox・Safari の `fn@url:line:col` の 2 つの形を読む。
+  最小化した関数名とチャンクのハッシュはリリースごとに変わるので、指紋は `name`・正規化した `message`・`route`・ハッシュを除いた最初の自分のチャンクの名前から作る。応答は常に `204`（失敗の理由を返さない）
 - 乱用の対策: IP ごとのレート制限（毎分 10 件、ADR-0019 のレート制限の仕組み）。ログインしていない呼び出しは数とログに残すが、新しいグループの通知（§8）を起こさない
-- クライアントは `ErrorBoundary` の `onError`・`window.onerror`・`unhandledrejection` で捕まえ、同じエラーは画面の表示 1 回につき 1 回だけ、`navigator.sendBeacon`（なければ `fetch` の `keepalive`）で送る。
-  自分の origin のファイルがスタックにないエラーは送らない
+- 捕捉の入り口:
+  - 主: TanStack Router の `defaultOnCatch`（ルートの `onCatch` は既定を上書きするので、ルートで `onCatch` を書くときも報告を呼ぶ）。notFound・redirect は報告しない
+  - `react-error-boundary` の `onError`（ルートの外の境界）
+  - `createRoot` の `onUncaughtError`（境界の外のもの）と `unhandledrejection`。`onUncaughtError` を置くと既定の `reportError` が呼ばれないので、window の `error` と二重に数えない
+  - デプロイの後のチャンクの欠け（`vite:preloadError`。今の再読み込みの処理が受ける）と、自分の origin のファイルがスタックにないエラーは送らない
+- 送り方: 同じエラーは画面の表示 1 回につき 1 回だけ、`fetch` の `keepalive` で `Authorization` を付けて送る（ログインした人からの報告を区別する）。
+  ページを離れるときだけ `navigator.sendBeacon`（`application/json` の `Blob`）を使い、これはヘッダーを付けられないので「ログインしていない呼び出し」になる。
+  keepalive の 64 KiB の枠は通話の退出の送信と分け合うので、本文の上限 16 KiB を守る
 - 送り先は自分のサーバーだけで、CSP の `connect-src` を増やさない。ソースマップを使った復元は持たない（§10）
 
 ### 7. データモデル（ADR-0020）
@@ -211,7 +264,7 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 ### この決定を見直す条件
 
 - 組み込みのグループの DB の書き込みが、小さな構成の DB の費用か負荷に目立って効くと分かった場合は、グループを持たず §4 (1) のログと外部への転送だけにする（C に寄せる）
-- `sentry-go` の依存かライセンスが変わり、AGPL と両立しなくなった場合は、Sentry の envelope の形式を自前で送るアダプタにする
+- Sentry が envelope の形式か認証の版（`sentry_version=7`）を変えた場合、またはソースマップやセッションなど自前で持つと大きくなる機能が要る場合は、`sentry-go` を使うアダプタにする
 
 ## Consequences（影響）
 
@@ -225,14 +278,16 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
   - エラーごとに DB へ書く（貯めて 60 秒ごと）。DB の障害のときはグループに数えられない
   - 除去は正規表現の置き換えで、文字列に埋め込まれた個人情報をすべて消せる保証はない。外部への転送は運営者が選んだときだけにし、文書に書く
   - 指紋は関数名から作るので、関数の名前の変更やリファクタリングで別のグループになる
-  - `sentry-go` の依存が増える（build tag `no_sentry` で外せる）
+  - Sentry の envelope のクライアントを自前で保守する。Sentry・GlitchTip・Datadog の取り込みの違いは、spike の模擬のサーバーでの契約テストと、利用する運営者の確認に頼る
+  - Cloud Error Reporting のグループ（指紋を指定できない）と DB のグループ（§1 の指紋）は、同じエラーを別の単位でまとめることがある
 - 後続で必要になる作業（Epic #1430 の Sub-issue にする）:
   - port・`ErrorEvent`・指紋・除去・ログの出力（`severity` を含む）と、HTTP・ジョブ・起動の捕捉
   - `kernel.Go` と既存の `go` 文の置き換え
   - `diagnostics` モジュールの表・グループの集計・期限切れの削除
   - 権限 `manage_errors`・管理者の通知・webhook のイベント・管理 API と管理画面
   - Web クライアントの報告の API と捕捉
-  - `sentry` と `otlp` のアダプタ
+  - `sentry`（自前の envelope のクライアント）と `otlp` のアダプタ
+  - Cloud Run の実機で、§3 の引数を `(...)` にしたスタックを Error Reporting が読み、グループにすることを確かめる
   - 運営者の文書（`docs/operations/` のエラーの報告の章、`alerts.md`、`docs/reference/webhooks.md`、設定のリファレンス）と `context-map.yaml` の項目
 
 ## Pros and Cons of the Options（詳細比較・任意）
@@ -248,9 +303,6 @@ D を選ばない理由: どのバックエンドにも出せるが、コレク�
 
 ## Open Questions / 要検証
 
-- 権限: 新しい `manage_errors` にするか、既存の `manage_jobs`（ジョブ画面の最後のエラーを見る権限）に含めるか（推奨: 新しい `manage_errors`。スタックとエラーの文言はジョブより広い）
-- Cloud Error Reporting が `debug.Stack()` の形の Go のスタックを `message` から読めるか、`stack_trace` のフィールドに分ける必要があるか（実装の issue で Cloud Run で確かめる）
-- Cloud Logging が `jsonPayload` の `severity` を深刻度として読むことの確認と、Error Reporting の料金
-- Datadog の Sentry 用の DSN の提供の段階・料金と、`sentry-go` の新しい版（v0.50 系）での動作
-- GlitchTip のライセンス（MIT）の一次情報
-- OTel Go のログの SDK と `otlploghttp` の安定性と版（2 週間以上前の版）
+- 引数を `(...)` にしたスタックを Cloud Error Reporting が読むか（実装の issue で Cloud Run の実機で確かめる）
+- Datadog の Sentry 用の DSN の提供の段階（preview か GA か）、Sentry の `fingerprint` とタグ `error.fingerprint` のどちらがグルーピングに効くか、ログの取り込みの料金が別にかかるか
+- GlitchTip の通知が「新しい issue」「再発」だけを対象にできるか（しきい値の通知だけか）
