@@ -95,7 +95,7 @@ func (s *Service) needExternalLoginDeps() error {
 
 // externalLoginKind reports whether users sign in with providers of kind k.
 func externalLoginKind(k identity.LoginProviderKind) bool {
-	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub
+	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub || k == identity.LoginProviderMastodon
 }
 
 // ExternalLoginProvider is a provider that the sign-in page offers.
@@ -121,6 +121,13 @@ func (s *Service) ExternalLoginProviders(ctx context.Context) ([]ExternalLoginPr
 	var out []ExternalLoginProvider
 	for _, p := range slices.Backward(ps) {
 		if p.State == identity.LoginProviderEnabled && externalLoginKind(p.Settings.Kind) {
+			// A Mastodon server under a domain action has no button.
+			switch err := s.checkLoginProviderServer(ctx, p); {
+			case errors.Is(err, ErrLoginProviderUnavailable):
+				continue
+			case err != nil:
+				return nil, err
+			}
 			out = append(out, ExternalLoginProvider{
 				ID: p.ID, Kind: p.Settings.Kind, DisplayName: p.Settings.DisplayName, AllowSignup: p.Settings.AllowSignup,
 			})
@@ -143,6 +150,9 @@ func (s *Service) enabledLoginProvider(ctx context.Context, id string) (identity
 	}
 	if p.State != identity.LoginProviderEnabled || !externalLoginKind(p.Settings.Kind) {
 		return identity.LoginProvider{}, ErrLoginProviderUnavailable
+	}
+	if err := s.checkLoginProviderServer(ctx, p); err != nil {
+		return identity.LoginProvider{}, err
 	}
 	return p, nil
 }
@@ -213,8 +223,11 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 // beginAuthorization seals t for the cookie and returns the authorization request of provider p
 // for it, which asks the user to sign in again at the provider when t has AuthAfter.
 func (s *Service) beginAuthorization(ctx context.Context, p identity.LoginProvider, t externalLoginToken) (ExternalLoginStart, error) {
-	if p.Settings.Kind == identity.LoginProviderGitHub {
+	switch p.Settings.Kind {
+	case identity.LoginProviderGitHub:
 		return s.beginGitHub(ctx, p, t)
+	case identity.LoginProviderMastodon:
+		return s.beginMastodonLogin(ctx, p, t)
 	}
 	op, err := s.d.OIDC.Discover(ctx, p.Settings.Issuer)
 	if err != nil {
@@ -403,10 +416,13 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 }
 
 // externalIdentity redeems code at provider p and returns the account there as the claims of an
-// ID token: the verified ID token of an OpenID Connect provider, or GitHub's account.
+// ID token: the verified ID token of an OpenID Connect provider, or the GitHub or Mastodon account.
 func (s *Service) externalIdentity(ctx context.Context, p identity.LoginProvider, code string, t externalLoginToken) (IDToken, error) {
-	if p.Settings.Kind == identity.LoginProviderGitHub {
+	switch p.Settings.Kind {
+	case identity.LoginProviderGitHub:
 		return s.gitHubIdentity(ctx, p, code, t)
+	case identity.LoginProviderMastodon:
+		return s.mastodonAccount(ctx, p, code, t)
 	}
 	return s.oidcIDToken(ctx, p, code, t)
 }

@@ -404,15 +404,13 @@ func (s *Service) BeginExternalIntent(ctx context.Context, providerID, intent, s
 	return s.beginAuthorization(ctx, p, lt)
 }
 
-// reauthenticationParams adds to the authorization request of a provider of kind k what asks
-// the user to sign in again (ADR-0106 §3.7). GitHub has no way to ask.
+// reauthenticationParams adds to the authorization request of an OpenID Connect provider what
+// asks the user to sign in again (ADR-0106 §3.7). A Mastodon provider gets force_login=true
+// (mastodonAuthorizationURL), and GitHub has no way to ask.
 func reauthenticationParams(k identity.LoginProviderKind, q url.Values) {
-	switch k {
-	case identity.LoginProviderOIDC:
+	if k == identity.LoginProviderOIDC {
 		q.Set("max_age", "0")
 		q.Set("prompt", "login")
-	case identity.LoginProviderMastodon:
-		q.Set("force_login", "true")
 	}
 }
 

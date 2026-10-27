@@ -6103,7 +6103,9 @@ export interface paths {
         /**
          * Set up a login provider
          * @description Sets up an external login provider, enabled, with the client ID and secret that the
-         *     provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+         *     provider gave for the answer's `callback_url`. The secret is never shown again. For
+         *     `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+         *     secret, registers a client there with the `profile` scope. Settings
          *     that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
          *     says which. The setup is recorded in the audit log under the display name.
          *     Needs the `manage_login_providers` permission.
@@ -7204,7 +7206,11 @@ export interface components {
          * @enum {string}
          */
         AdminLoginProviderState: "enabled" | "disabled";
-        /** @description A new login provider. `allow_signup` is false and `allow_link` true unless given. */
+        /**
+         * @description A new login provider. `allow_signup` is false and `allow_link` true unless given.
+         *     `client_id` and `client_secret` are required, except for `mastodon`: without both, the
+         *     server registers a client at the Mastodon server.
+         */
         CreateLoginProviderRequest: {
             kind: components["schemas"]["LoginProviderKind"];
             /**
@@ -7219,7 +7225,7 @@ export interface components {
              */
             issuer?: string;
             /** @description The client ID that the provider gave, up to 512 bytes. */
-            client_id: string;
+            client_id?: string;
             /**
              * @description Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
              *     Organizations of `github`); none for `mastodon`.
@@ -7234,7 +7240,7 @@ export interface components {
             /** @description The GitHub Organizations a user must belong to one of, for `github` only, at most 50. */
             organizations?: string[];
             /** @description The client secret that the provider gave, up to 1024 bytes. It is never shown again. */
-            client_secret: string;
+            client_secret?: string;
         };
         /**
          * @description The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
@@ -7841,8 +7847,10 @@ export interface components {
          * @description Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
          *     than 100 characters, or with control characters. `issuer`: not what the kind takes (an
          *     `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-         *     for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
-         *     control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+         *     for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+         *     authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
+         *     longer than 512 bytes, or with control characters, or a Mastodon server that refused to
+         *     register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
          *     characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
          *     claims for another kind than `oidc`, Organizations for another kind than `github`, or
          *     ones that are not valid.

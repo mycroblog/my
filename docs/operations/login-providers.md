@@ -14,7 +14,7 @@ admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` pe
 | --- | --- | --- |
 | `oidc` | The issuer URL (`https`), exactly as the provider's ID tokens name it, such as `https://accounts.google.com` | `-claim <claim>=<value>`: only users whose ID token has the claim with one of the values given for it |
 | `github` | None: the server knows github.com's endpoints | `-org <organization>`: only members of one of the Organizations (add `-scope read:org`) |
-| `mastodon` | The server's domain, such as `mastodon.example` | None |
+| `mastodon` | The server's web domain, such as `mastodon.example` (Mastodon 4.3 or later) | None |
 
 For Google Workspace, limit the users to your organization with `-claim hd=<your domain>`. Do not rely on the domain of the
 email address.
@@ -24,8 +24,8 @@ email address.
 The redirect URI that the provider needs is the provider's callback URL, `https://<host>/auth/external/<id>/callback`,
 which contains the ID that the server gives the provider. So:
 
-1. Register an OAuth client at the provider (an "OAuth App" on GitHub, an application with the `profile` scope on
-   Mastodon) with any redirect URI for now, and note the client ID and the client secret it gives.
+1. Register an OAuth client at the provider (an "OAuth App" on GitHub) with any redirect URI for now, and note the
+   client ID and the client secret it gives.
 2. Run `my login-provider add` with them. It prints the callback URL.
 3. Change the redirect URI of the client at the provider to that callback URL.
 
@@ -36,6 +36,28 @@ printf '%s\n' "$CLIENT_SECRET" | my login-provider add -kind oidc -name "Example
 printf '%s\n' "$GITHUB_SECRET" | my login-provider add -kind github -name GitHub \
   -client-id Iv1.0123456789abcdef -org example-org -scope read:org
 ```
+
+### Mastodon
+
+A `mastodon` provider is one Mastodon server that you name; users of other servers cannot sign in with it. The server
+must be Mastodon 4.3 or later: `add` reads its authorization server metadata
+(`/.well-known/oauth-authorization-server`) and refuses a server without it. Without `-client-id`, `add` registers a client
+at the server itself, with the callback URL and the `profile` scope, and stores the client ID and secret it gets, so
+there is nothing to do at the server:
+
+```sh
+my login-provider add -kind mastodon -name mastodon.example -issuer mastodon.example
+```
+
+If the server does not let others register clients, `add` fails. Create an application with the `profile` scope and the
+callback URL in the server's development settings instead, and give its client ID and secret as for the other kinds
+(the callback URL contains the provider's ID, so follow the three steps above).
+
+Users sign in with the `profile` scope only, which reads their account and nothing else. Mastodon gives no email
+address, so someone who signs up with it confirms the address by mail. The sign-up form suggests the account's username.
+While the server's domain, or a parent domain, has a domain action ([domain actions](moderation.md#domain-actions)), its button is gone and
+nobody signs in, signs up, or links an account with it. The server of a provider does not change; set up a new provider
+for another server.
 
 The client secret is stored encrypted with the key encryption key ([key management](key-management.md)) and is never shown
 again, by the command or by the admin API.
