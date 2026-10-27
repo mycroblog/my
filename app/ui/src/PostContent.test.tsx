@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { ariaSnapshot } from "../test/aria-snapshot";
 import { ExternalLinkContext } from "./ExternalLink";
 import { PostContent, sanitizedHtmlText, serverSanitizedHtml } from "./PostContent";
@@ -77,6 +77,15 @@ describe("PostContent", () => {
       '<p><a href="https://example.com/tags/cats" target="_blank"><span>#</span>cats</a> <a href="https://example.com/x" target="_blank">x</a> <a href="https://example.com/tags/dogs" download>y</a></p>',
     );
     render(<PostContent html={html} onLinkClick={onLinkClick} />, { wrapper: ({ children }) => withLinks(children) });
+    // The links left to the browser would make jsdom log "Not implemented: navigation"; stop them once React has seen
+    // them, after onLinkClick would have been called.
+    const stayOnThePage = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+    document.addEventListener("click", stayOnThePage);
+    onTestFinished(() => {
+      document.removeEventListener("click", stayOnThePage);
+    });
 
     await user.click(screen.getByText("cats"));
     await user.click(screen.getByText("#"));
