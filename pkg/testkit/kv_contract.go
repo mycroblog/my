@@ -5,6 +5,7 @@ package testkit
 import (
 	"bytes"
 	"errors"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -20,8 +21,10 @@ type KeyValueStoreFactory func(t *testing.T, clock *Clock) kernel.KeyValueStore
 // copied, namespaces are separate, Set replaces the value and the expiry, Delete is idempotent,
 // entries expire after their TTL and never without one, IncrBy starts missing and expired
 // counters and keeps the expiry of live ones, concurrent IncrBy calls lose no increment,
-// DeleteExpired removes only expired entries and at most its limit per call, and a
-// kernel.RateLimiter on the store enforces a limit.
+// CompareAndSwap writes and deletes only an entry that holds the value it expects (absent when
+// it expects nil), and exactly one of concurrent swaps from one value wins, DeleteExpired removes
+// only expired entries and at most its limit per call, and a kernel.RateLimiter on the store
+// enforces a limit.
 func KeyValueStoreContract(t *testing.T, newStore KeyValueStoreFactory) {
 	t.Helper()
 	cases := []struct {
@@ -35,6 +38,8 @@ func KeyValueStoreContract(t *testing.T, newStore KeyValueStoreFactory) {
 		{"Expires", kvExpires},
 		{"Increments", kvIncrements},
 		{"IncrementsConcurrently", kvIncrementsConcurrently},
+		{"ComparesAndSwaps", kvComparesAndSwaps},
+		{"SwapsOnceConcurrently", kvSwapsOnceConcurrently},
 		{"DeletesExpired", kvDeletesExpired},
 		{"BacksARateLimiter", kvBacksARateLimiter},
 	}
@@ -176,6 +181,93 @@ func kvIncrementsConcurrently(t *testing.T, s kernel.KeyValueStore, _ *Clock) {
 		t.Fatalf("concurrent IncrBy: %v", err)
 	}
 	kvWant(t, s, "ns", "c", "80")
+}
+
+func kvSwap(t *testing.T, s kernel.KeyValueStore, key string, old, value []byte, ttl time.Duration) bool {
+	t.Helper()
+	ok, err := s.CompareAndSwap(t.Context(), "ns", key, old, value, ttl)
+	if err != nil {
+		t.Fatalf("CompareAndSwap(%s, %q, %q): %v", key, old, value, err)
+	}
+	return ok
+}
+
+func kvComparesAndSwaps(t *testing.T, s kernel.KeyValueStore, clock *Clock) {
+	// Absent: only a swap that expects absence writes.
+	if kvSwap(t, s, "k", []byte("a"), []byte("b"), 0) {
+		t.Fatal("swap from a value of an absent entry succeeded")
+	}
+	kvWantMissing(t, s, "ns", "k")
+	if !kvSwap(t, s, "k", nil, []byte("a"), time.Minute) {
+		t.Fatal("swap of an absent entry failed")
+	}
+	kvWant(t, s, "ns", "k", "a")
+	if kvSwap(t, s, "k", nil, []byte("x"), 0) {
+		t.Fatal("swap expecting absence of a live entry succeeded")
+	}
+	// Present: only a swap that expects its value writes, with the new expiry.
+	if kvSwap(t, s, "k", []byte("z"), []byte("x"), 0) {
+		t.Fatal("swap from another value succeeded")
+	}
+	if !kvSwap(t, s, "k", []byte("a"), []byte("b"), time.Hour) {
+		t.Fatal("swap from the value failed")
+	}
+	kvWant(t, s, "ns", "k", "b")
+	clock.Advance(30 * time.Minute)
+	kvWant(t, s, "ns", "k", "b")
+	// A nil value deletes the entry when it holds old.
+	if kvSwap(t, s, "k", []byte("a"), nil, 0) {
+		t.Fatal("delete from another value succeeded")
+	}
+	if !kvSwap(t, s, "k", []byte("b"), nil, 0) {
+		t.Fatal("delete from the value failed")
+	}
+	kvWantMissing(t, s, "ns", "k")
+	// An expired entry is absent.
+	kvSet(t, s, "ns", "e", "old", time.Minute)
+	clock.Advance(2 * time.Minute)
+	if kvSwap(t, s, "e", []byte("old"), []byte("new"), 0) {
+		t.Fatal("swap from the value of an expired entry succeeded")
+	}
+	if !kvSwap(t, s, "e", nil, []byte("new"), 0) {
+		t.Fatal("swap of an expired entry failed")
+	}
+	kvWant(t, s, "ns", "e", "new")
+	clock.Advance(24 * time.Hour)
+	kvWant(t, s, "ns", "e", "new")
+}
+
+func kvSwapsOnceConcurrently(t *testing.T, s kernel.KeyValueStore, _ *Clock) {
+	kvSet(t, s, "ns", "k", "0", time.Hour)
+	const workers = 8
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		wins int
+	)
+	errs := make(chan error, workers)
+	for i := range workers {
+		wg.Go(func() {
+			ok, err := s.CompareAndSwap(t.Context(), "ns", "k", []byte("0"), []byte(strconv.Itoa(i+1)), time.Hour)
+			if err != nil {
+				errs <- err
+				return
+			}
+			if ok {
+				mu.Lock()
+				wins++
+				mu.Unlock()
+			}
+		})
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Fatalf("concurrent CompareAndSwap: %v", err)
+	}
+	if wins != 1 {
+		t.Fatalf("%d concurrent swaps from one value won, want 1", wins)
+	}
 }
 
 func kvDeletesExpired(t *testing.T, s kernel.KeyValueStore, clock *Clock) {

@@ -88,6 +88,25 @@ if (not e) or (e ~= '0' and tonumber(e) <= tonumber(ARGV[5])) then
 end
 return redis.call('HINCRBY', KEYS[1], 'v', ARGV[4])
 `)
+	// swapScript writes the entry KEYS[1] as writeEntry does, or removes it when ARGV[6] is
+	// '1', only while it holds ARGV[5] (when ARGV[4] is '1') or no live entry at ARGV[7] (when
+	// ARGV[4] is '0'); it returns 1 when it did.
+	swapScript = valkeygo.NewLuaScript(`
+local f = redis.call('HMGET', KEYS[1], 'v', 'e')
+local live = f[1] and f[2] and (f[2] == '0' or tonumber(f[2]) > tonumber(ARGV[7]))
+if ARGV[4] == '1' then
+  if (not live) or f[1] ~= ARGV[5] then return 0 end
+elseif live then
+  return 0
+end
+if ARGV[6] == '1' then
+  redis.call('ZREM', KEYS[2], KEYS[1])
+  redis.call('DEL', KEYS[1])
+  return 1
+end
+` + writeEntry + `
+return 1
+`)
 	deleteScript = valkeygo.NewLuaScript(`
 redis.call('ZREM', KEYS[2], KEYS[1])
 return redis.call('DEL', KEYS[1])
@@ -158,6 +177,24 @@ func (s *Store) IncrBy(ctx context.Context, namespace, key string, n int64, ttl 
 		return 0, fmt.Errorf("kv/valkey: %s/%s is not a counter or the server failed: %w", namespace, key, err)
 	}
 	return v, nil
+}
+
+// CompareAndSwap implements kernel.KeyValueStore.
+func (s *Store) CompareAndSwap(ctx context.Context, namespace, key string, old, value []byte, ttl time.Duration) (bool, error) {
+	expiresAt, ttlMillis := s.expiry(ttl)
+	hasOld, del := "0", "0"
+	if old != nil {
+		hasOld = "1"
+	}
+	if value == nil {
+		del = "1"
+	}
+	args := []string{string(value), expiresAt, ttlMillis, hasOld, string(old), del, millis(s.clock.Now())}
+	n, err := swapScript.Exec(ctx, s.client, []string{s.key(namespace, key), s.index}, args).AsInt64()
+	if err != nil {
+		return false, fmt.Errorf("kv/valkey: compare and swap %s/%s: %w", namespace, key, err)
+	}
+	return n == 1, nil
 }
 
 // DeleteExpired implements kernel.KeyValueStore. It removes the entries that the server has

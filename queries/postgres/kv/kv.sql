@@ -37,3 +37,21 @@ WHERE expires_at <= @now::timestamptz
     ORDER BY expires_at
     LIMIT @batch_limit::integer
   );
+
+-- SwapEntry replaces a live entry that holds @old with @value and expiry @expires_at.
+-- name: SwapEntry :execrows
+UPDATE kv_entries SET value = @value, expires_at = @expires_at
+WHERE namespace = @namespace AND key = @key AND value = @old
+  AND (expires_at IS NULL OR expires_at > @now::timestamptz);
+
+-- SwapAbsentEntry writes @value with expiry @expires_at at a key without a live entry.
+-- name: SwapAbsentEntry :execrows
+INSERT INTO kv_entries (namespace, key, value, expires_at) VALUES (@namespace, @key, @value, @expires_at)
+ON CONFLICT (namespace, key) DO UPDATE SET value = excluded.value, expires_at = excluded.expires_at
+WHERE kv_entries.expires_at <= @now::timestamptz;
+
+-- DeleteEntryIf removes a live entry that holds @old.
+-- name: DeleteEntryIf :execrows
+DELETE FROM kv_entries
+WHERE namespace = @namespace AND key = @key AND value = @old
+  AND (expires_at IS NULL OR expires_at > @now::timestamptz);
