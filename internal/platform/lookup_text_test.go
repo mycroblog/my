@@ -194,6 +194,11 @@ func sweepRequests(doc *openapi3.T) []sweepRequest {
 				if fieldFormat(schema, field) == "date-time" {
 					want = http.StatusBadRequest
 				}
+				// The error reports of the web client are always a 204: the endpoint drops the NUL
+				// and looks nothing up.
+				if op.OperationID == "reportClientError" {
+					want = http.StatusNoContent
+				}
 				add(sweepRequest{
 					name:   fmt.Sprintf("%s %s NUL in body %s", method, path, field),
 					method: method, target: pathWith(placeholderID), header: jsonHeader.Clone(), body: string(b), api: true,

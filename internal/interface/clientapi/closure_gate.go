@@ -29,7 +29,7 @@ func (s *Server) serviceClosingProblem(ctx context.Context) problem {
 
 // closureOperations are the operations, by operationId, that the users need to take their data
 // away from a closed server (instance.ClosureOwnData): their own account and its settings to
-// read, the exports, their sessions, and the instance; and the administrators' operations that
+// read, the exports, their sessions, the instance, and the errors of the web client they use for it; and the administrators' operations that
 // follow the closure's deliveries (its state and the queue, whose dead jobs they may retry,
 // ADR-0088 §3). Every other operation is instance.ClosureClientAPI, and the streaming endpoints
 // instance.ClosureStream.
@@ -38,7 +38,7 @@ var closureOperations = map[string]bool{
 	"getTwoFactor": true, "listPasskeys": true,
 	"listDataExports": true, "requestDataExport": true, "downloadDataExport": true, "exportCsv": true,
 	"listAuthorizedApps": true, "revokeAuthorizedApp": true,
-	"getInstance": true, "getServerHealth": true, "getInstanceDocument": true,
+	"getInstance": true, "getServerHealth": true, "getInstanceDocument": true, "reportClientError": true,
 	"getAdminServiceClosure": true, "getAdminServiceClosureCheck": true, "closeService": true,
 	"getAdminQueue": true, "listAdminJobs": true, "listAdminJobAttempts": true, "retryAdminJob": true,
 }

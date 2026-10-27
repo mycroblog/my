@@ -17,13 +17,14 @@
 | `api/openapi.yaml` | 生成物。`scripts/task.sh api:generate` が `api/spec/` を Redocly CLI の `bundle` でまとめた OpenAPI 3.1 の 1 ファイル。生成器・照合ヘルパー・第三者が読む。手で編集しない |
 | `api/redocly.yaml` | `api/spec/` の lint 設定（Redocly CLI）。推奨ルールと、使える 3.1 の部分集合・命名規約を強制する独自ルール |
 | `api/api.go` | バンドルの `openapi.yaml` を埋め込む Go パッケージ（`api.Spec`）。テストの照合ヘルパーが読む |
-| `internal/interface/clientapi/oapi-codegen.yaml` | oapi-codegen の設定（strict server、`net/http`。`streamEvents` は生成から除く） |
+| `internal/interface/clientapi/oapi-codegen.yaml` | oapi-codegen の設定（strict server、`net/http`。`streamEvents`・`streamVoiceRoom`・`reportClientError` は生成から除く） |
 | `internal/interface/clientapi/api.gen.go` | 生成物。手で編集しない |
 | `internal/interface/clientapi/security.gen.go` | 生成物。spec の `security` から作る操作ごとの認証・スコープの表（`internal/securitygen`）。手で編集しない |
 | `internal/interface/clientapi/auth.go`, `ratelimit.go` | 認証・認可・レート制限（§4.2） |
 | `internal/interface/clientapi/*.go` | 生成された `StrictServerInterface` の実装。アプリケーション層のユースケースを呼ぶ |
 | `internal/interface/clientapi/openapi.go` | 手書きの `GET /openapi.yaml`。バンドルした spec（`api.Spec`）をそのまま返す（§2.6） |
 | `internal/interface/clientapi/streaming.go` | 手書きの `GET /streaming`（SSE、§5） |
+| `internal/interface/clientapi/client_errors.go` | 手書きの `POST /client_errors`（Web クライアントのエラーの報告。ADR-0103 §6）。読めない本文にも 400・422 を返さず常に 204 にするため、strict server を使わない |
 | `internal/interface/clientapi/apitest` | ハンドラの応答を spec と照合するテストヘルパー |
 | `pkg/mykit/api.gen.go`, `pkg/mykit/ts/src/schema.gen.ts` | 生成物。API クライアントライブラリ `pkg/mykit` の Go のクライアントと型（oapi-codegen）と、`@mycroblog/mykit` の TS の型（openapi-typescript）。コミットする。Web クライアントは `@mycroblog/mykit` の型を使う（[ADR-0093](../adr/0093-api-client-library-mykit.md) §3） |
 | `scripts/api-spec-check.sh` | ルートが `api/spec/` のすべてのファイルを列挙し、各ファイルが `SPDX-License-Identifier: MIT` の見出しで始まることの検査（`scripts/task.sh api:spec-check`、`scripts/task.sh api:check` に含む） |
@@ -257,6 +258,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 5. **本文の上限**: リクエスト本文は 1 MiB まで、`uploadMedia` だけはアップロードの上限（`media_max_image_bytes`）に 64 KiB を足した大きさまでです。
    `Content-Length` が上限を超える要求は本文を読まずに 413 にし、長さのない要求は `http.MaxBytesReader` で上限で打ち切ります（413）。
    `uploadMedia` の 413 は `/api/v1/problems/media-too-large`、ほかは `about:blank` です。
+   `reportClientError` はハンドラが 16 KiB を超える本文を読まずに捨て、204 を返します。
 
 `security` の書き方は 3 つです（`internal/securitygen` がこれ以外を拒否します）。
 

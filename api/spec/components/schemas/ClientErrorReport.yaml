@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+description: An uncaught error of the web client.
+type: object
+required: [name, message, stack, kind]
+properties:
+  name:
+    description: The error's `name`, such as `TypeError`.
+    type: string
+    maxLength: 256
+  message:
+    description: The error's `message`.
+    type: string
+    maxLength: 4096
+  stack:
+    description: The error's `stack` as the browser formats it.
+    type: string
+    maxLength: 16384
+  release:
+    description: The version of the web client's build.
+    type: string
+    maxLength: 64
+  route:
+    description: |
+      The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the
+      URL).
+    type: string
+    maxLength: 256
+  kind:
+    description: |
+      How the error was caught: `route_error` by the router, `boundary_error` by an error
+      boundary outside the routes, `uncaught` outside every boundary, and
+      `unhandledrejection` as a promise rejection that nothing handled.
+    type: string
+    enum: [route_error, boundary_error, uncaught, unhandledrejection]

@@ -304,6 +304,11 @@ type Options struct {
 	// Meter records my.stream.connections (ADR-0055 §3); nil records nothing. The HTTP
 	// metrics of every operation are recorded around the Router.
 	Meter kernel.Meter
+	// ErrorReporter receives the errors that the web client reports (client_errors.go); nil
+	// drops them.
+	ErrorReporter kernel.ErrorReporter
+	// ClientErrorLimit overrides the package's ClientErrorLimit when its Max is set.
+	ClientErrorLimit kernel.Limit
 }
 
 // Server implements the generated StrictServerInterface by calling application use cases.
@@ -329,6 +334,9 @@ func New(o Options) *Server {
 	if o.AccountLimit.Max == 0 {
 		o.AccountLimit = AccountLimit
 	}
+	if o.ClientErrorLimit.Max == 0 {
+		o.ClientErrorLimit = ClientErrorLimit
+	}
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
@@ -341,7 +349,7 @@ type Router interface {
 }
 
 // Register registers every operation of the spec on r under BasePath, the generated ones and
-// the hand-written streaming endpoints (streaming.go, voice_stream.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
+// the hand-written streaming endpoints (streaming.go, voice_stream.go) and error reports (client_errors.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
 // match no operation are left to r, which answers them with its own 404 or 405 problem.
 func (s *Server) Register(r Router) {
 	strict := NewStrictHandlerWithOptions(s, []StrictMiddlewareFunc{s.rejectInvalidBodyText}, StrictHTTPServerOptions{
@@ -356,6 +364,7 @@ func (s *Server) Register(r Router) {
 	})
 	s.registerStreaming(r)
 	s.registerVoiceStream(r)
+	s.registerClientErrors(r)
 	s.registerOpenAPI(r)
 }
 

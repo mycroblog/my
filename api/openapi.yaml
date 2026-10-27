@@ -91,6 +91,8 @@ tags:
       invitations, and the rooms the user hosted. The operations need
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it, and answer 404 while the voice chat is off on the server.
+  - name: client-errors
+    description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -4913,6 +4915,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VoiceRoomHistoryPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /client_errors:
+    post:
+      operationId: reportClientError
+      summary: Report an uncaught error of the web client
+      description: |
+        Reports an error that the web client did not handle, for the operators of the server. The
+        body is at most 16 KiB of `application/json`. The answer is always 204 and never tells
+        whether the report was kept: the server ignores a body of another content type or over the
+        size, a body it cannot read, and a report whose `stack` has no frame of a script that this
+        server serves, such as the errors of a browser extension. It keeps at most 10 reports a
+        minute from each client IP and ignores the rest.
+
+        The `stack` is the browser's `Error.stack`, in either the V8 form
+        (`at fn (https://host/assets/app-1a2B3c4D.js:1:23)`) or the Firefox and Safari form
+        (`fn@https://host/assets/app-1a2B3c4D.js:1:23`). Only the frames of this server's scripts
+        are kept, without their query or fragment. The server groups the reports by `name`,
+        `message` (with the URLs, addresses, and long numbers in it left out), `route`, and the
+        name of the first script of the stack without its content hash.
+
+        A report may be sent without an access token, with `navigator.sendBeacon` while the page
+        is left: the server counts it but never notifies the administrators of a new error from
+        it. An access token that is sent must be valid, as for every operation.
+      tags:
+        - client-errors
+      security:
+        - {}
+        - oauth2:
+            - write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientErrorReport'
+      responses:
+        '204':
+          description: The report was received, or ignored.
         default:
           $ref: '#/components/responses/Problem'
   /admin/queue:
@@ -12309,6 +12350,48 @@ components:
           minimum: 0
         deliveries:
           $ref: '#/components/schemas/AdminServiceClosureDeliveries'
+    ClientErrorReport:
+      description: An uncaught error of the web client.
+      type: object
+      required:
+        - name
+        - message
+        - stack
+        - kind
+      properties:
+        name:
+          description: The error's `name`, such as `TypeError`.
+          type: string
+          maxLength: 256
+        message:
+          description: The error's `message`.
+          type: string
+          maxLength: 4096
+        stack:
+          description: The error's `stack` as the browser formats it.
+          type: string
+          maxLength: 16384
+        release:
+          description: The version of the web client's build.
+          type: string
+          maxLength: 64
+        route:
+          description: |
+            The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the
+            URL).
+          type: string
+          maxLength: 256
+        kind:
+          description: |
+            How the error was caught: `route_error` by the router, `boundary_error` by an error
+            boundary outside the routes, `uncaught` outside every boundary, and
+            `unhandledrejection` as a promise rejection that nothing handled.
+          type: string
+          enum:
+            - route_error
+            - boundary_error
+            - uncaught
+            - unhandledrejection
     CloseServiceRequest:
       description: The confirmation of the closure of the server.
       type: object
