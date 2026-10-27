@@ -11,6 +11,10 @@ import (
 // its service and the notifications of the moderators, the service closure, and the supporters. It comes after the
 // graph and content projectors, whose events these projectors turn into notifications.
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
+	a.Notifications = notification.NewService(notification.Deps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
+	})
+	a.Notifications.RegisterErrorGroupJobs(a.Handlers, a.Scheduler)
 	pusher, err := a.setUpPush(cfg, pushes)
 	if err != nil {
 		return err
@@ -20,10 +24,6 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	}
 	notification.RegisterProjectors(a.Projectors, deps)
 	a.voiceNotifier = notification.NewVoiceNotifier(deps)
-	a.Notifications = notification.NewService(notification.Deps{
-		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
-	})
-	a.Notifications.RegisterErrorGroupJobs(a.Handlers, a.Scheduler)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
 	a.setUpClosureNotifications(repo, moderators, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)

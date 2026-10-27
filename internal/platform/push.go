@@ -8,6 +8,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/app/account"
+	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
 	domainaccount "github.com/mycroblog/my/internal/domain/account"
@@ -22,7 +23,10 @@ import (
 func (a *App) setUpPush(cfg *config.Config, repo notification.PushRepository) (*notification.Pusher, error) {
 	deps := notification.PushDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs, Audience: pushAudience{a},
-		Messages: a.Messages, Host: cfg.Host, InstanceName: a.instanceName,
+		// A message goes out only while the recipient still sees its notification (built by
+		// setUpNotification before this).
+		Notifications: a.Notifications,
+		Messages:      a.Messages, Host: cfg.Host, InstanceName: a.instanceName,
 		// The closure of the service stops Web Push (ADR-0088 §2).
 		Stopped: func(ctx context.Context) (bool, error) { return a.Instance.PushStopped(ctx) },
 	}
@@ -90,6 +94,19 @@ func (p pushAudience) Account(ctx context.Context, accountID string) (notificati
 		out.DisplayName = actor.Profile.DisplayName
 	}
 	return out, nil
+}
+
+// StatusVisible implements notification.PushAudience through the content module's visibility
+// policy, as the local account sees the status.
+func (p pushAudience) StatusVisible(ctx context.Context, accountID, statusID string) (bool, error) {
+	_, err := p.a.Statuses.Visible(ctx, content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}, statusID)
+	switch {
+	case errors.Is(err, content.ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return true, nil
 }
 
 var _ notification.PushAudience = pushAudience{}
