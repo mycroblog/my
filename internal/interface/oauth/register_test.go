@@ -70,6 +70,9 @@ func TestRegisterRefusals(t *testing.T) {
 	}{
 		{"not json content type", `redirect_uris=x`, "application/x-www-form-urlencoded", nil, http.StatusBadRequest, "invalid_client_metadata"},
 		{"malformed json", `{`, "application/json", nil, http.StatusBadRequest, "invalid_client_metadata"},
+		{"trailing value", `{} {}`, "application/json", nil, http.StatusBadRequest, "invalid_client_metadata"},
+		{"trailing garbage", `{}x`, "application/json", nil, http.StatusBadRequest, "invalid_client_metadata"},
+		{"oversized body", `{}` + strings.Repeat(" ", 16<<10), "application/json", nil, http.StatusBadRequest, "invalid_client_metadata"},
 		{"wrong type", `{"redirect_uris":"https://app.example/cb"}`, "application/json", nil, http.StatusBadRequest, "invalid_client_metadata"},
 		{"invalid metadata", `{}`, "application/json", &appidentity.OAuthError{Code: appidentity.OAuthInvalidClientMetadata}, http.StatusBadRequest, "invalid_client_metadata"},
 		{"invalid redirect uri", `{}`, "application/json", &appidentity.OAuthError{Code: appidentity.OAuthInvalidRedirectURI}, http.StatusBadRequest, "invalid_redirect_uri"},

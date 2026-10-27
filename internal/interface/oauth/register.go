@@ -5,6 +5,7 @@ package oauth
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"mime"
 	"net/http"
 
@@ -68,8 +69,13 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, &appidentity.OAuthError{Code: appidentity.OAuthInvalidClientMetadata, Description: "the body must be application/json"})
 		return
 	}
+	// The whole body counts against the limit, and it must be exactly one JSON value.
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxFormBytes))
 	var req registrationRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxFormBytes)).Decode(&req); err != nil {
+	if err == nil {
+		err = json.Unmarshal(body, &req)
+	}
+	if err != nil {
 		writeError(w, http.StatusBadRequest, &appidentity.OAuthError{Code: appidentity.OAuthInvalidClientMetadata, Description: "the body is not a JSON object of client metadata"})
 		return
 	}
