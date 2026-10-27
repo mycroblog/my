@@ -641,8 +641,19 @@ func inboxRecordsTombstonesOnce(t *testing.T, e *inboxEnv) {
 		}
 		return inserted
 	}
+	// Another actor of the same origin records a tombstone of the URI first: it holds back only
+	// that actor's objects, and the owner's own tombstone of the URI is still recorded.
+	carol := federation.IRI("https://remote.example/users/carol")
+	if !insert(federation.RemoteObjectTombstone{
+		URI: note, ActorURI: carol, ActivityURI: carol + "/activities/delete-1", ReceivedAt: e.clock.Now(),
+	}) {
+		t.Error("InsertRemoteObjectTombstone(another actor) = false, want it recorded")
+	}
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || ok {
+		t.Errorf("RemoteObjectTombstoned after another actor's tombstone = %t, %v; want false", ok, err)
+	}
 	if !insert(first) {
-		t.Error("InsertRemoteObjectTombstone = false, want the first tombstone recorded")
+		t.Error("InsertRemoteObjectTombstone = false, want the first tombstone of the owner recorded")
 	}
 	again := first
 	again.ActivityURI = inboxAlice + "/activities/delete-2"
@@ -657,7 +668,7 @@ func inboxRecordsTombstonesOnce(t *testing.T, e *inboxEnv) {
 		t.Errorf("RemoteObjectTombstoned(other) = %t, %v; want false", ok, err)
 	}
 	// The tombstone holds back only what its actor owns.
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, "https://remote.example/users/carol"); err != nil || ok {
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, "https://remote.example/users/dave"); err != nil || ok {
 		t.Errorf("RemoteObjectTombstoned(another actor) = %t, %v; want false", ok, err)
 	}
 }
