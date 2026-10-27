@@ -8182,7 +8182,9 @@ paths:
       summary: Set up a login provider
       description: |
         Sets up an external login provider, enabled, with the client ID and secret that the
-        provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+        provider gave for the answer's `callback_url`. The secret is never shown again. For
+        `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+        secret, registers a client there with the `profile` scope. Settings
         that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
         says which. The setup is recorded in the audit log under the display name.
         Needs the `manage_login_providers` permission.
@@ -10480,12 +10482,12 @@ components:
     CreateLoginProviderRequest:
       description: |
         A new login provider. `allow_signup` is false and `allow_link` true unless given.
+        `client_id` and `client_secret` are required, except for `mastodon`: without both, the
+        server registers a client at the Mastodon server.
       type: object
       required:
         - kind
         - display_name
-        - client_id
-        - client_secret
       properties:
         kind:
           $ref: '#/components/schemas/LoginProviderKind'
@@ -11620,8 +11622,10 @@ components:
         Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
         than 100 characters, or with control characters. `issuer`: not what the kind takes (an
         `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-        for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
-        control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+        for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+        authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
+        longer than 512 bytes, or with control characters, or a Mastodon server that refused to
+        register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
         characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
         claims for another kind than `oidc`, Organizations for another kind than `github`, or
         ones that are not valid.

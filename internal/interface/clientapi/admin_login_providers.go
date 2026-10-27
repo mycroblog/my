@@ -87,9 +87,9 @@ func (s *Server) loginProviderProblem(ctx context.Context, err error) (LoginProv
 		reason = LoginProviderProblemReasonKind
 	case errors.Is(err, identity.ErrInvalidLoginProviderName):
 		reason = LoginProviderProblemReasonDisplayName
-	case errors.Is(err, identity.ErrInvalidLoginProviderURL):
+	case errors.Is(err, identity.ErrInvalidLoginProviderURL), errors.Is(err, appidentity.ErrMastodonServer):
 		reason = LoginProviderProblemReasonIssuer
-	case errors.Is(err, identity.ErrInvalidLoginProviderClientID):
+	case errors.Is(err, identity.ErrInvalidLoginProviderClientID), errors.Is(err, appidentity.ErrMastodonRegistration):
 		reason = LoginProviderProblemReasonClientId
 	case errors.Is(err, identity.ErrInvalidLoginProviderClientSecret):
 		reason = LoginProviderProblemReasonClientSecret
@@ -156,7 +156,15 @@ func (s *Server) CreateLoginProvider(ctx context.Context, req CreateLoginProvide
 	}
 	b := req.Body
 	settings := identity.NewLoginProviderSettings(identity.LoginProviderKind(b.Kind))
-	settings.DisplayName, settings.ClientID = b.DisplayName, b.ClientId
+	settings.DisplayName = b.DisplayName
+	// A mastodon provider without a client ID and secret registers a client at its server.
+	var clientSecret string
+	if b.ClientId != nil {
+		settings.ClientID = *b.ClientId
+	}
+	if b.ClientSecret != nil {
+		clientSecret = *b.ClientSecret
+	}
 	if b.Issuer != nil {
 		settings.Issuer = *b.Issuer
 	}
@@ -175,7 +183,7 @@ func (s *Server) CreateLoginProvider(ctx context.Context, req CreateLoginProvide
 	if b.Organizations != nil {
 		settings.Organizations = *b.Organizations
 	}
-	created, err := s.o.LoginProviders.CreateLoginProvider(ctx, settings, b.ClientSecret, v.UserID)
+	created, err := s.o.LoginProviders.CreateLoginProvider(ctx, settings, clientSecret, v.UserID)
 	if lp, ok := s.loginProviderProblem(ctx, err); ok {
 		return CreateLoginProvider422ApplicationProblemPlusJSONResponse{lp}, nil
 	}
