@@ -97,7 +97,7 @@ func TestErrorReporterRecover(t *testing.T) {
 
 func TestErrorExporterNotImplemented(t *testing.T) {
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
-	cfg.ErrorsExporter = "otlp" // validation refuses it; NewApp must too
+	cfg.ErrorsExporter = "bogus" // validation refuses it; NewApp must too
 	if _, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{}); err == nil || !strings.Contains(err.Error(), "errors_exporter") {
 		t.Fatalf("NewApp = %v, want the errors_exporter error", err)
 	}

@@ -19,7 +19,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments_provider = payjp` |
 | `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
 | `no_voice_sora` | The Sora adapter of the voice chat and the endpoints of its auth, event, and session webhooks (no third-party library) | `voice = sora` |
-| `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics and of the traces | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp` |
+| `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
 
 Leave out the database that the instance does not use, but keep at least one of `no_sqlite` and `no_postgres` off:
 a binary without a database adapter cannot start.

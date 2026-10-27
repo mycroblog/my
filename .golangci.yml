@@ -417,11 +417,13 @@ linters:
               desc: run WebAuthn ceremonies through identity.PasskeyCeremonies (internal/adapter/webauthn)
         # The OpenTelemetry SDK and the Prometheus client stay inside the adapters of kernel.Meter and kernel.Tracer
         # (ADR-0055 §1, ADR-0063 §1), so that the core, the interfaces, and the other adapters measure and trace through the ports.
+        # The otlp error exporter (ADR-0103 §4 (3)) sends the error reports as OpenTelemetry log records.
         opentelemetry:
           list-mode: lax
           files:
             - $all
             - "!**/internal/adapter/telemetry/**"
+            - "!**/internal/adapter/errorreport/otlp/**"
           deny:
             - pkg: go.opentelemetry.io
               desc: measure and trace through kernel.Meter and kernel.Tracer (internal/adapter/telemetry)
