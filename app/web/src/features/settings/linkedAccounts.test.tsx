@@ -145,15 +145,15 @@ describe("a user who signs in only with a linked account", () => {
       http.post(oauthPaths.revoke, () => new HttpResponse(null, { status: 200 })),
     );
     // Before the round trip, the page offers the provider instead of the deletion.
-    const first = await renderApp({ path: "/settings/account" });
+    const view = await renderApp({ path: "/settings/account" });
     const section = await screen.findByRole("region", { name: "Delete your account" });
     expect(within(section).queryByRole("button", { name: "Delete account…" })).not.toBeInTheDocument();
-    await first.user.click(within(section).getByRole("button", { name: "Sign in again with Corp SSO" }));
+    await view.user.click(within(section).getByRole("button", { name: "Sign in again with Corp SSO" }));
     await waitFor(() => {
-      expect(first.leftTo.map(String)).toEqual([`https://social.example/auth/external/${corp}/start?intent=y`]);
+      expect(view.leftTo.map(String)).toEqual([`https://social.example/auth/external/${corp}/start?intent=y`]);
     });
     expect(api.confirmations).toEqual([{ provider_id: corp, operation: "account_deletion", return_to: "/settings/account" }]);
-    first.unmount();
+    view.unmount();
 
     // The provider sends the browser back with the confirmation.
     const { user } = await renderApp({ path: `/settings/account#external_confirmation=tok-1&operation=account_deletion&provider=${corp}` });

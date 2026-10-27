@@ -1836,7 +1836,7 @@
     "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
   },
   "settings.linked_accounts.unlink.failed": {
-    "defaultMessage": "連携を解除できませんでした: {reason}",
+    "defaultMessage": "連携を解除できませんでした：{reason}",
     "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
   },
   "settings.linked_accounts.unlinked": {
@@ -1896,7 +1896,7 @@
     "description": "Button that closes the dialog that links an account."
   },
   "settings.linked_accounts.link.failed": {
-    "defaultMessage": "連携を始められませんでした: {reason}",
+    "defaultMessage": "連携を始められませんでした：{reason}",
     "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
   },
   "settings.linked_accounts.linked": {
@@ -1944,7 +1944,7 @@
     "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
   },
   "settings.external_confirmation.start_failed": {
-    "defaultMessage": "確認を始められませんでした: {reason}",
+    "defaultMessage": "確認を始められませんでした：{reason}",
     "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
   },
   "settings.external_confirmation.failed.mismatch": {
