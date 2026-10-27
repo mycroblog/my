@@ -332,14 +332,14 @@ func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federat
 	// What a relay brought in passes its gate before it costs a fetch.
 	if relayID != "" && p.d.Relays != nil {
 		if in.Relay, err = p.d.Relays.Admit(ctx, relayID, act); err != nil {
-			return p.dropped(ctx, in, err)
+			return p.unconfirmed(ctx, in, err)
 		}
 	}
 
 	// 2. The activity confirmed at its origin when someone else signed it.
 	if trust == federation.TrustRefetch {
 		if err := p.refetch(ctx, in); err != nil {
-			return p.dropped(ctx, in, err)
+			return p.unconfirmed(ctx, in, err)
 		}
 	}
 
@@ -459,7 +459,10 @@ func (p *InboxProcessor) tombstoned(ctx context.Context, in *InboxActivity) erro
 		uris = append(uris, act.Object().ID)
 	}
 	for _, uri := range uris {
-		ok, err := p.d.Repository.RemoteObjectTombstoned(ctx, uri)
+		// A tombstone holds back only what the actor whose Delete or Undo left it owns: the
+		// activity is the actor's, and so is the post of a Create or Update, which its handler
+		// takes only when it is attributed to the actor.
+		ok, err := p.d.Repository.RemoteObjectTombstoned(ctx, uri, act.Actor)
 		if err != nil {
 			return err
 		}
@@ -564,6 +567,22 @@ func (p *InboxProcessor) tombstone(ctx context.Context, in *InboxActivity) (Inbo
 		return "", fmt.Errorf("record tombstone of %s: %w", t.URI, err)
 	}
 	return InboxTombstoned, nil
+}
+
+// unconfirmed is dropped for an activity that is dropped before its origin confirmed it. An
+// activity of trust refetch that is dropped for good gives up its record, so that the activity
+// that its origin serves is taken in when it arrives later, signed or relayed again.
+func (p *InboxProcessor) unconfirmed(ctx context.Context, in *InboxActivity, err error) (InboxOutcome, error) {
+	if in.Received.Trust == federation.TrustRefetch && dropping(err) {
+		uri := in.Received.ActivityURI
+		if terr := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			_, err := p.d.Repository.ReleaseUnconfirmedActivity(ctx, tx, uri)
+			return err
+		}); terr != nil {
+			return "", fmt.Errorf("release unconfirmed activity %s: %w", uri, terr)
+		}
+	}
+	return p.dropped(ctx, in, err)
 }
 
 // dropped turns err into the outcome of an activity that is not processed: InboxDropped for an

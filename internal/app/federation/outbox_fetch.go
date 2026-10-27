@@ -329,7 +329,7 @@ func (h *StatusHandlers) collectionPost(ctx context.Context, b *fetchBudget, aut
 		if !federation.SameOrigin(ref.ID, author) {
 			return appcontent.Status{}, false, fmt.Errorf("%w: %s has another origin than its author %s", ErrNotTaken, ref.ID, author)
 		}
-		if err := h.untombstoned(ctx, ref.ID); err != nil {
+		if err := h.untombstoned(ctx, ref.ID, author); err != nil {
 			return appcontent.Status{}, false, err
 		}
 		var err error

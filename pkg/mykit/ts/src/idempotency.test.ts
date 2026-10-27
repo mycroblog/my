@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: MIT
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
-import { acceptsIdempotencyKey, idempotencyKeyOperations } from "./idempotency.js";
+import { acceptsIdempotencyKey, acceptsIdempotencyKeyAt, idempotencyKeyOperations } from "./idempotency.js";
 
 describe("idempotencyKeyOperations", () => {
   test("match by method and spec path", () => {
     expect(acceptsIdempotencyKey("post", "/statuses")).toBe(true);
     expect(acceptsIdempotencyKey("GET", "/statuses")).toBe(false);
     expect(acceptsIdempotencyKey("POST", "/statuses/{id}/reblog")).toBe(false);
+  });
+
+  test("match a request path, a spec parameter matching one segment", () => {
+    expect(acceptsIdempotencyKeyAt("POST", "/statuses")).toBe(true);
+    expect(acceptsIdempotencyKeyAt("POST", "/statuses/")).toBe(false);
+    expect(acceptsIdempotencyKeyAt("POST", "/accounts/a1/follow")).toBe(false);
+    expect(acceptsIdempotencyKeyAt("GET", "/statuses")).toBe(false);
   });
 
   test("lists the operations of schema.gen.ts that take an Idempotency-Key", () => {

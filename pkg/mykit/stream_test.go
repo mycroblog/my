@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -254,6 +255,24 @@ func TestStreamWaitsForRetryAfter(t *testing.T) {
 	}
 }
 
+// A Retry-After beyond what a time.Duration holds is the longest wait, not a wrapped short one.
+func TestStreamWaitsForAHugeRetryAfter(t *testing.T) {
+	srv := newStreamServer(t,
+		refusal(http.StatusTooManyRequests, "/api/v1/problems/too-many-streams", "18446744073"),
+		sse(true, ": connected\n\n"),
+	)
+	api, waits := newTestAPI(t, srv.Server, Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var rec streamRecorder
+	if err := runStream(ctx, t, api, rec.options(cancel, 0)); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Stream = %v, want context.Canceled", err)
+	}
+	if len(*waits) != 1 || (*waits)[0] != math.MaxInt64 {
+		t.Errorf("waits = %v, want the longest wait", *waits)
+	}
+}
+
 // refreshingSource hands out a<n> and renews it to a<n+1> on Refresh.
 type refreshingSource struct {
 	mu        sync.Mutex
@@ -339,13 +358,49 @@ func TestEventParserFollowsTheStandard(t *testing.T) {
 	var p eventParser
 	var got []rawEvent
 	for sc.Scan() {
-		if ev, ok := p.line(sc.Text()); ok {
+		ev, ok, err := p.line(sc.Text())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
 			got = append(got, ev)
 		}
 	}
 	want := []rawEvent{{"a", "one\n two"}, {"message", ""}, {"message", "x"}}
 	if !slices.Equal(got, want) {
 		t.Errorf("events = %q, want %q", got, want)
+	}
+}
+
+// An event whose data lines add up to more than maxEventBytes fails the stream, which connects again, even when
+// each line is within the bound.
+func TestStreamFailsOnAnEventTooLarge(t *testing.T) {
+	line := "data: " + strings.Repeat("x", 1<<20) + "\n"
+	srv := newStreamServer(t,
+		sse(true, ": connected\n\n", strings.Repeat(line, maxEventBytes>>20+1)+"\n"),
+		sse(true, "event: update\ndata: {\"id\":\"s1\"}\n\n"),
+	)
+	api, _ := newTestAPI(t, srv.Server, Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var rec streamRecorder
+	opts := rec.options(cancel, 2)
+	opts.OnEvent = func(e StreamEvent) {
+		rec.mu.Lock()
+		defer rec.mu.Unlock()
+		rec.events = append(rec.events, e)
+		cancel()
+	}
+	if err := runStream(ctx, t, api, opts); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Stream = %v, want context.Canceled", err)
+	}
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	if len(rec.errs) != 1 || !errors.Is(rec.errs[0], errEventTooLarge) || !IsNetworkError(rec.errs[0]) {
+		t.Errorf("errs = %v, want the event too large", rec.errs)
+	}
+	if len(rec.events) != 1 || rec.events[0].EventName() != "update" {
+		t.Errorf("events = %v, want only the update after the reconnection", rec.events)
 	}
 }
 

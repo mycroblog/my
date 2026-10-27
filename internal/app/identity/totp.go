@@ -199,14 +199,15 @@ func (s *Service) EnableTOTP(ctx context.Context, userID, setupToken, code strin
 	if err != nil {
 		return nil, err
 	}
+	// The code that confirmed the setup cannot sign in too. It is marked before the enrollment
+	// is stored, so that a failure here enrolls nothing rather than codes nobody has seen.
+	if _, err := s.useStep(ctx, e.ID, step); err != nil {
+		return nil, err
+	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		return s.d.Repository.InsertTOTPEnrollment(ctx, tx, e, hashes)
 	})
 	if err != nil {
-		return nil, err
-	}
-	// The code that confirmed the setup cannot sign in too.
-	if _, err := s.useStep(ctx, e.ID, step); err != nil {
 		return nil, err
 	}
 	return codes, nil

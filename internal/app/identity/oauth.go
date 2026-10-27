@@ -112,6 +112,13 @@ type OAuthRepository interface {
 	// InsertTokenRevocation records that a token stopped working and reports whether it did;
 	// false means the token had a revocation already, which keeps its first reason.
 	InsertTokenRevocation(ctx context.Context, tx uow.Tx, r identity.TokenRevocation) (bool, error)
+	// LockTokenGrants holds the OAuth grants of a user in tx until it ends, so that the
+	// transactions that issue tokens to the user (a code exchange, a rotation) and those that
+	// revoke the user's tokens serialize: a revocation sees every token issued before it, and
+	// an issue sees every revocation before it.
+	LockTokenGrants(ctx context.Context, tx uow.Tx, userID string) error
+	// SessionRevoked reports inside tx whether a browser session has a revocation.
+	SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error)
 	// RevokeTokenFamily revokes every token of a family that has no revocation yet.
 	RevokeTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.TokenRevocationReason, at time.Time) error
 	// RevokeTokensOfUser revokes every token of a user whose access or refresh token has not
@@ -554,7 +561,8 @@ type CodeExchange struct {
 
 // ExchangeAuthorizationCode exchanges a code for an access token and a refresh token. The
 // code must belong to the client, not have expired, come with the redirect_uri it was issued
-// for, and come with the code_verifier of its S256 challenge; otherwise it fails with an
+// for, come with the code_verifier of its S256 challenge, and come from a browser session
+// that has not ended since; otherwise it fails with an
 // *OAuthError invalid_grant. A code works once: presenting it again fails and revokes every
 // token issued from it (RFC 6749 §4.1.2).
 func (s *Service) ExchangeAuthorizationCode(ctx context.Context, in CodeExchange) (IssuedTokens, error) {
@@ -578,7 +586,7 @@ func (s *Service) ExchangeAuthorizationCode(ctx context.Context, in CodeExchange
 	}
 	switch red, err := s.d.Repository.FindAuthorizationCodeRedemption(ctx, codeHash); {
 	case err == nil:
-		return IssuedTokens{}, s.revokeFamily(ctx, red.TokenID, identity.TokenRevokedCodeReuse)
+		return IssuedTokens{}, s.revokeFamily(ctx, code.UserID, red.TokenID, identity.TokenRevokedCodeReuse)
 	case !errors.Is(err, ErrNotFound):
 		return IssuedTokens{}, err
 	}
@@ -590,6 +598,19 @@ func (s *Service) ExchangeAuthorizationCode(ctx context.Context, in CodeExchange
 	red := identity.AuthorizationCodeRedemption{CodeHash: codeHash, TokenID: issued.Token.ID, RedeemedAt: now}
 	var reused bool
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, code.UserID); err != nil {
+			return err
+		}
+		// A code stops working when the session that authorized it ends, as when a password
+		// change or reset ends every session of the user.
+		if code.SessionID != "" {
+			switch revoked, err := s.d.Repository.SessionRevoked(ctx, tx, code.SessionID); {
+			case err != nil:
+				return err
+			case revoked:
+				return errInvalidGrant
+			}
+		}
 		ok, err := s.d.Repository.InsertAuthorizationCodeRedemption(ctx, tx, red)
 		if err != nil || !ok {
 			reused = !ok
@@ -605,7 +626,7 @@ func (s *Service) ExchangeAuthorizationCode(ctx context.Context, in CodeExchange
 		if err != nil {
 			return IssuedTokens{}, err
 		}
-		return IssuedTokens{}, s.revokeFamily(ctx, red.TokenID, identity.TokenRevokedCodeReuse)
+		return IssuedTokens{}, s.revokeFamily(ctx, code.UserID, red.TokenID, identity.TokenRevokedCodeReuse)
 	}
 	return issued, nil
 }
@@ -661,7 +682,7 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 		return IssuedTokens{}, errInvalidGrant
 	}
 	if state.Revoked {
-		return IssuedTokens{}, s.revokeFamily(ctx, old.FamilyID, identity.TokenRevokedRefreshReuse)
+		return IssuedTokens{}, s.revokeFamily(ctx, old.UserID, old.FamilyID, identity.TokenRevokedRefreshReuse)
 	}
 	now := s.d.Clock.Now()
 	if old.RefreshExpired(now) {
@@ -682,6 +703,11 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 	rev := identity.TokenRevocation{TokenID: old.ID, Reason: identity.TokenRevokedRotation, RevokedAt: now}
 	var reused bool
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		// Under the lock, a revocation of the family that committed first makes the insert below
+		// find the old token revoked, and one that comes later sees the new token.
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, old.UserID); err != nil {
+			return err
+		}
 		ok, err := s.d.Repository.InsertTokenRevocation(ctx, tx, rev)
 		if err != nil || !ok {
 			reused = !ok
@@ -693,7 +719,7 @@ func (s *Service) rotate(ctx context.Context, client identity.OAuthClient, refre
 		return IssuedTokens{}, err
 	}
 	if reused { // a concurrent refresh with the same token won the race
-		return IssuedTokens{}, s.revokeFamily(ctx, old.FamilyID, identity.TokenRevokedRefreshReuse)
+		return IssuedTokens{}, s.revokeFamily(ctx, old.UserID, old.FamilyID, identity.TokenRevokedRefreshReuse)
 	}
 	return issued, nil
 }
@@ -719,11 +745,14 @@ func (s *Service) newTokens(client identity.OAuthClient, userID string, scope id
 	}
 }
 
-// revokeFamily revokes a token family and returns errInvalidGrant, the answer to the request
-// that revealed the reuse.
-func (s *Service) revokeFamily(ctx context.Context, familyID string, reason identity.TokenRevocationReason) error {
+// revokeFamily revokes a token family of a user and returns errInvalidGrant, the answer to the
+// request that revealed the reuse.
+func (s *Service) revokeFamily(ctx context.Context, userID, familyID string, reason identity.TokenRevocationReason) error {
 	now := s.d.Clock.Now()
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, userID); err != nil {
+			return err
+		}
 		return s.d.Repository.RevokeTokenFamily(ctx, tx, familyID, reason, now)
 	})
 	if err != nil {
@@ -776,6 +805,9 @@ func (s *Service) RevokeToken(ctx context.Context, in RevokeRequest) error {
 		now := s.d.Clock.Now()
 		web := client.ClientID == s.d.WebClient.ClientID
 		return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			if err := s.d.Repository.LockTokenGrants(ctx, tx, tok.UserID); err != nil {
+				return err
+			}
 			if err := s.d.Repository.RevokeTokenFamily(ctx, tx, tok.FamilyID, identity.TokenRevokedUser, now); err != nil {
 				return err
 			}

@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -151,6 +153,38 @@ func TestNetworkError(t *testing.T) {
 	api2, _ := newTestAPI(t, srv2, Config{})
 	if _, err := api2.GetInstanceWithResponse(ctx); !errors.Is(err, context.Canceled) || !IsNetworkError(err) {
 		t.Errorf("err of a cancelled request = %v", err)
+	}
+}
+
+// TestNetworkErrorCarriesTheIdempotencyKey checks that a post that got no answer reports the key it was sent
+// with, so that the caller can send it again with the same key.
+func TestNetworkErrorCarriesTheIdempotencyKey(t *testing.T) {
+	var mu sync.Mutex
+	var keys []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		keys = append(keys, r.Header.Get("Idempotency-Key"))
+		mu.Unlock()
+		// The connection ends without an answer.
+		conn, _, err := w.(http.Hijacker).Hijack()
+		if err == nil {
+			_ = conn.Close()
+		}
+	}))
+	defer srv.Close()
+	api, _ := newTestAPI(t, srv, Config{})
+	_, err := api.CreateStatusWithResponse(context.Background(), nil, CreateStatusJSONRequestBody{})
+	var ne *NetworkError
+	if !errors.As(err, &ne) {
+		t.Fatalf("err = %v, want a *NetworkError", err)
+	}
+	mu.Lock()
+	if len(keys) != 1 || keys[0] == "" || ne.IdempotencyKey != keys[0] {
+		t.Errorf("IdempotencyKey = %q, keys sent %q; want the key sent", ne.IdempotencyKey, keys)
+	}
+	mu.Unlock()
+	if _, err := api.GetInstanceWithResponse(context.Background()); !errors.As(err, &ne) || ne.IdempotencyKey != "" {
+		t.Errorf("err of a GET = %v, want a *NetworkError without a key", err)
 	}
 }
 
@@ -311,6 +345,47 @@ func TestTokenRenewsAnExpiredToken(t *testing.T) {
 	}
 }
 
+// TestTokenRetriesAFailedSave checks that the tokens of a renewal whose save failed are saved again before the
+// source hands them out, and that the source does not renew them again meanwhile.
+func TestTokenRetriesAFailedSave(t *testing.T) {
+	ts := newTokenServer(t)
+	defer ts.Close()
+	saveErr := errors.New("disk full")
+	failing := 2
+	var saved []string
+	src := NewRefreshingTokenSource(OAuthConfig{Server: ts.URL, ClientID: "app", HTTPClient: ts.Client()},
+		&Token{AccessToken: "at1", RefreshToken: "rt1", Expiry: time.Now().Add(-time.Minute)},
+		func(_ context.Context, tok *Token) error {
+			if failing > 0 {
+				failing--
+				return saveErr
+			}
+			saved = append(saved, tok.RefreshToken)
+			return nil
+		})
+	for i := range 2 {
+		if tok, err := src.Token(context.Background()); !errors.Is(err, saveErr) {
+			t.Fatalf("Token %d = %+v, %v; want the error of the save", i, tok, err)
+		}
+	}
+	if _, err := src.Refresh(context.Background(), &Token{AccessToken: "at1"}); err != nil {
+		t.Fatalf("Refresh after the saves failed: %v", err)
+	}
+	if n := ts.refreshes.Load(); n != 1 {
+		t.Errorf("refreshes = %d, want 1: the renewed token is valid until it is saved", n)
+	}
+	if !slices.Equal(saved, []string{"rt2"}) {
+		t.Errorf("saved = %v, want the rotated rt2 once", saved)
+	}
+	tok, err := src.Token(context.Background())
+	if err != nil || tok.AccessToken != "at2" {
+		t.Errorf("Token after the save = %+v, %v; want at2", tok, err)
+	}
+	if len(saved) != 1 {
+		t.Errorf("saved = %v, want no save of tokens already saved", saved)
+	}
+}
+
 func TestRetryAfter(t *testing.T) {
 	var calls atomic.Int32
 	var keys sync.Map
@@ -375,6 +450,23 @@ func TestRetryAfter(t *testing.T) {
 		}
 	})
 
+	t.Run("an Idempotency-Key on an operation that takes none does not make it retried", func(t *testing.T) {
+		calls.Store(0)
+		api, waits := newTestAPI(t, srv, Config{})
+		withKey := func(_ context.Context, req *http.Request) error {
+			req.Header.Set("Idempotency-Key", "my-key")
+			return nil
+		}
+		_, err := api.FavouriteStatusWithResponse(context.Background(), "01890a5d-ac96-774b-bcce-b302099a8057", withKey)
+		var p *Problem
+		if !errors.As(err, &p) || p.Status != http.StatusTooManyRequests {
+			t.Fatalf("err = %v, want the 429 problem", err)
+		}
+		if calls.Load() != 1 || len(*waits) != 0 {
+			t.Errorf("calls = %d, waits = %v; want no retry", calls.Load(), *waits)
+		}
+	})
+
 	t.Run("disabled", func(t *testing.T) {
 		calls.Store(0)
 		api, waits := newTestAPI(t, srv, Config{Retry: RetryPolicy{Disabled: true}})
@@ -431,6 +523,11 @@ func TestRetryDelay(t *testing.T) {
 		{"0", 0, true},
 		{now.Add(10 * time.Second).Format(http.TimeFormat), 10 * time.Second, true},
 		{"120", 120 * time.Second, false},
+		// Seconds beyond what a time.Duration holds wait for the longest one, never a wrapped short one.
+		{"9223372037", math.MaxInt64, false},
+		{"18446744073", math.MaxInt64, false},
+		{"9223372036854775807", math.MaxInt64, false},
+		{"99999999999999999999", math.MaxInt64, false},
 	} {
 		got, ok := retryDelay(tc.header, 0, time.Minute, now)
 		if got != tc.want || ok != tc.ok {

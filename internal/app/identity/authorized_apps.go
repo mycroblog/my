@@ -161,6 +161,9 @@ func (s *Service) RevokeAuthorizedApp(ctx context.Context, userID, clientID stri
 	}
 	web := client.FirstParty()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, userID); err != nil {
+			return err
+		}
 		if _, err := s.d.Repository.RevokeTokensOfUserAndClient(ctx, tx, userID, clientID, identity.TokenRevokedUser, now); err != nil {
 			return err
 		}

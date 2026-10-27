@@ -35,6 +35,11 @@ class Bucket {
     this.#tokens = rate.n;
   }
 
+  /** When the bucket was last refilled, null before the first wait. */
+  get last(): number | null {
+    return this.#last;
+  }
+
   /** Refills the bucket at now and returns how long until it holds one token. */
   wait(now: number): number {
     const { n, per } = this.#rate;
@@ -65,14 +70,18 @@ export class Budget {
 
   /**
    * Reserves a send of kind at now and returns how long to wait before sending it; null, reserving nothing, when the
-   * wait would be longer than maxWait.
+   * wait would be longer than maxWait. During a pause of the server the bucket counts from the end of the pause, so
+   * that the writes waiting for it go out spaced by the budget, not all at its end.
    */
   reserve(kind: SendKind, now: number, maxWait: number): number | null {
     const bucket = this.#buckets[kind];
-    const wait = Math.max(bucket.wait(now), this.#pause - now);
+    let from = Math.max(now, this.#pause);
+    // Never count back from the bucket's last refill, which would drain it.
+    if (bucket.last !== null && bucket.last > from) from = bucket.last;
+    const wait = from - now + bucket.wait(from);
     if (wait > maxWait) return null;
     bucket.take();
-    return Math.max(wait, 0);
+    return wait;
   }
 
   /**

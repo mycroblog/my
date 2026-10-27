@@ -209,6 +209,15 @@ func (q *Queries) DeleteReceivedActivitiesBefore(ctx context.Context, arg Delete
 	return result.RowsAffected(), nil
 }
 
+const deleteReceivedActivityDocument = `-- name: DeleteReceivedActivityDocument :exec
+DELETE FROM received_activity_documents WHERE activity_uri = $1
+`
+
+func (q *Queries) DeleteReceivedActivityDocument(ctx context.Context, activityUri string) error {
+	_, err := q.db.Exec(ctx, deleteReceivedActivityDocument, activityUri)
+	return err
+}
+
 const deleteReceivedActivityDocumentsBefore = `-- name: DeleteReceivedActivityDocumentsBefore :execrows
 DELETE FROM received_activity_documents
 WHERE activity_uri IN (
@@ -269,6 +278,20 @@ type DeleteRemoteObjectTombstonesBeforeParams struct {
 
 func (q *Queries) DeleteRemoteObjectTombstonesBefore(ctx context.Context, arg DeleteRemoteObjectTombstonesBeforeParams) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteRemoteObjectTombstonesBefore, arg.ReceivedBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteUnconfirmedReceivedActivity = `-- name: DeleteUnconfirmedReceivedActivity :execrows
+DELETE FROM received_activities WHERE activity_uri = $1 AND trust = 'refetch'
+`
+
+// DeleteUnconfirmedReceivedActivity removes an activity received with trust refetch, which its
+// origin did not confirm; zero rows means there is none.
+func (q *Queries) DeleteUnconfirmedReceivedActivity(ctx context.Context, activityUri string) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUnconfirmedReceivedActivity, activityUri)
 	if err != nil {
 		return 0, err
 	}
@@ -417,11 +440,16 @@ func (q *Queries) GetReceivedActivityDocument(ctx context.Context, activityUri s
 }
 
 const hasRemoteObjectTombstone = `-- name: HasRemoteObjectTombstone :one
-SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = $1)
+SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = $1 AND actor_uri = $2)
 `
 
-func (q *Queries) HasRemoteObjectTombstone(ctx context.Context, uri string) (bool, error) {
-	row := q.db.QueryRow(ctx, hasRemoteObjectTombstone, uri)
+type HasRemoteObjectTombstoneParams struct {
+	Uri      string
+	ActorUri string
+}
+
+func (q *Queries) HasRemoteObjectTombstone(ctx context.Context, arg HasRemoteObjectTombstoneParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasRemoteObjectTombstone, arg.Uri, arg.ActorUri)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

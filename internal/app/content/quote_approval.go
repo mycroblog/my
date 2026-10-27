@@ -30,8 +30,9 @@ type QuoteRequestInput struct {
 // server's QuoteAuthorization of the quote, with the quoted status: the one given before when
 // the quote was approved already. The quote is approved when the quoter is a remote account
 // that may see the status as an ActivityPub fetch would (content.CanView in
-// ContextObjectFetch), is not under the interaction restriction (FR-708), and the policy of the
-// status includes them (content.MayQuote); a local-only status refuses every remote quoter.
+// ContextObjectFetch), is not under the interaction restriction (FR-708), the policy of the
+// status includes them (content.MayQuote), and a quoting status that is stored already is
+// theirs; a local-only status refuses every remote quoter.
 // A refused quote, and one whose approval was revoked, fail with ErrQuoteRefused. A quoted
 // status that is not local, missing, or deleted fails with ErrNotFound.
 func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestInput) (content.QuoteAuthorization, content.Status, error) {
@@ -53,6 +54,13 @@ func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestIn
 	actor, err := s.d.Accounts.FindByID(ctx, in.QuoterAccountID)
 	if err != nil || actor.Account.IsLocal() || in.QuotingURI == "" {
 		return content.QuoteAuthorization{}, quoted, errors.Join(refused, err)
+	}
+	// Only the author of the quoting status asks for its quote.
+	switch quoting, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotingURI); {
+	case err == nil && quoting.AuthorAccountID != in.QuoterAccountID:
+		return content.QuoteAuthorization{}, quoted, refused
+	case err != nil && !errors.Is(err, ErrNotFound):
+		return content.QuoteAuthorization{}, quoted, err
 	}
 	r, err := s.d.Restrictions.Restrictions(ctx, in.QuoterAccountID)
 	if err != nil {
@@ -158,9 +166,10 @@ func (s *Interactions) FindQuoteAuthorization(ctx context.Context, id string) (c
 }
 
 // VerifyLocalQuoteAuthorization reports whether the QuoteAuthorization id of this server, not
-// revoked, approves the quote quotingURI of the local status quotedStatusID (ADR-0069 §2): how a
-// remote quote of a local status that names it is approved.
-func (s *Interactions) VerifyLocalQuoteAuthorization(ctx context.Context, id, quotingURI, quotedStatusID string) (bool, error) {
+// revoked, approves the quote quotingURI by the account quotingAccountID of the local status
+// quotedStatusID (ADR-0069 §2): how a remote quote of a local status that names it is approved.
+// An authorization approves only the quote of the account it was given to.
+func (s *Interactions) VerifyLocalQuoteAuthorization(ctx context.Context, id, quotingURI, quotingAccountID, quotedStatusID string) (bool, error) {
 	auth, err := s.FindQuoteAuthorization(ctx, id)
 	if errors.Is(err, ErrNotFound) {
 		return false, nil
@@ -168,5 +177,6 @@ func (s *Interactions) VerifyLocalQuoteAuthorization(ctx context.Context, id, qu
 	if err != nil {
 		return false, err
 	}
-	return auth.RevokedAt == nil && auth.QuotingURI == quotingURI && auth.QuotedStatusID == quotedStatusID, nil
+	return auth.RevokedAt == nil && auth.QuotingURI == quotingURI && auth.QuotingAccountID == quotingAccountID &&
+		auth.QuotedStatusID == quotedStatusID, nil
 }

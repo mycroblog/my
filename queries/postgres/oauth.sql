@@ -117,6 +117,14 @@ INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz FROM oauth_access_tokens t WHERE t.family_id = sqlc.arg(family_id)
 ON CONFLICT (token_id) DO NOTHING;
 
+-- LockUserTokenGrants takes a transaction-scoped advisory lock on a user's OAuth grants, so that
+-- issuing a token to the user and revoking the user's tokens serialize under READ COMMITTED.
+-- name: LockUserTokenGrants :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
+-- name: SessionRevoked :one
+SELECT EXISTS (SELECT 1 FROM session_revocations r WHERE r.session_id = sqlc.arg(session_id)::uuid) AS revoked;
+
 -- name: RevokeSessionOfTokenFamily :exec
 INSERT INTO session_revocations (session_id, reason, revoked_at)
 SELECT c.session_id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz

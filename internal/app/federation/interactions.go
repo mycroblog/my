@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -284,7 +285,7 @@ func (h interactionHandlers) like(ctx context.Context, in *InboxActivity) error 
 	if id == "" || !h.d.Statuses.isLocal(id) {
 		return fmt.Errorf("%w: %s of %q, not of a local post", ErrDropActivity, in.Activity.RawType, id)
 	}
-	emoji, isReaction := reactionOf(in.Activity, in.Actor.Account.Domain)
+	emoji, isReaction := reactionOf(in.Activity, in.Actor.Account.Domain, h.d.Statuses.isLocal)
 	if in.Activity.Type == federation.ActivityEmojiReact && !isReaction {
 		return fmt.Errorf("%w: EmojiReact of %q, not an emoji", ErrDropActivity, in.Activity.Content)
 	}
@@ -307,8 +308,10 @@ func (h interactionHandlers) like(ctx context.Context, in *InboxActivity) error 
 // reactionOf returns the emoji of a Like or an EmojiReact, and whether it is an emoji reaction
 // (ADR-0052 §1): its _misskey_reaction, or else its content, is one Unicode emoji or the
 // ":shortcode:" of a custom emoji with exactly one Emoji tag of that name (with or without
-// colons). A custom emoji is of the server of its Emoji's id, or of actorDomain without one.
-func reactionOf(a *federation.Activity, actorDomain string) (appcontent.RemoteReactionEmoji, bool) {
+// colons). A custom emoji is of the server of its Emoji's id, or of actorDomain without one. An
+// emoji of another server than actorDomain is borrowed (RemoteReactionEmoji.Borrowed): one of this
+// server (isLocal) is the local emoji, with the domain "".
+func reactionOf(a *federation.Activity, actorDomain string, isLocal func(federation.IRI) bool) (appcontent.RemoteReactionEmoji, bool) {
 	text := a.Reaction
 	if text == "" {
 		text = a.Content
@@ -340,9 +343,13 @@ func reactionOf(a *federation.Activity, actorDomain string) (appcontent.RemoteRe
 	if h := found.ID.Host(); h != "" {
 		domain = h
 	}
+	borrowed := !strings.EqualFold(domain, actorDomain)
+	if borrowed && isLocal(found.ID) {
+		domain = ""
+	}
 	return appcontent.RemoteReactionEmoji{
 		Custom: &appcontent.RemoteEmojiInput{URI: string(found.ID), Shortcode: code, ImageURL: string(found.IconURL)},
-		Domain: domain,
+		Domain: domain, Borrowed: borrowed,
 	}, true
 }
 
@@ -399,7 +406,7 @@ func (h interactionHandlers) undoLike(ctx context.Context, in *InboxActivity) er
 		}
 	}
 	if statusID != "" {
-		if emoji, ok := reactionOf(like, in.Actor.Account.Domain); ok {
+		if emoji, ok := reactionOf(like, in.Actor.Account.Domain, h.d.Statuses.isLocal); ok {
 			err = h.d.Interactions.RemoveRemoteReaction(ctx, appcontent.RemoteReactionUndo{
 				URI: string(id), AccountID: account, StatusID: statusID, Emoji: emoji,
 			})
@@ -440,7 +447,7 @@ func (h *StatusHandlers) boosted(ctx context.Context, in *InboxActivity) (appcon
 	if !followed {
 		return appcontent.Status{}, fmt.Errorf("%w: Announce of %s by %s, whom no local account follows (ADR-0034)", ErrDropActivity, ref.ID, act.Actor)
 	}
-	if err := h.untombstoned(ctx, ref.ID); err != nil {
+	if err := h.untombstoned(ctx, ref.ID, ""); err != nil {
 		return appcontent.Status{}, fmt.Errorf("%w: %w", ErrDropActivity, err)
 	}
 	got := &Fetched{}

@@ -198,8 +198,9 @@ type Repository interface {
 	ListPollVotesTx(ctx context.Context, tx uow.Tx, pollID, accountID string) ([]content.PollVote, error)
 	// PollStatusID returns the ID of the status whose revision has the poll.
 	PollStatusID(ctx context.Context, pollID string) (string, error)
-	// LockPoll locks the poll until tx ends, so that the votes of a local poll are counted one
-	// transaction at a time (a no-op where write transactions are serialized already).
+	// LockPoll locks the poll, local or remote, until tx ends, so that the votes in it are
+	// checked and counted one transaction at a time (a no-op where write transactions are
+	// serialized already).
 	LockPoll(ctx context.Context, tx uow.Tx, pollID string) error
 	// CountPollVotes returns, in tx, the votes of each choice of a poll by position (choices
 	// without votes are left out) and the number of accounts that voted.

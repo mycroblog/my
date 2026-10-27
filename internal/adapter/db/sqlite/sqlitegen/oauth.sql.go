@@ -1011,6 +1011,17 @@ func (q *Queries) RevokeTokensOfUserAndClient(ctx context.Context, arg RevokeTok
 	return result.RowsAffected()
 }
 
+const sessionRevoked = `-- name: SessionRevoked :one
+SELECT EXISTS (SELECT 1 FROM session_revocations r WHERE r.session_id = ?1) AS revoked
+`
+
+func (q *Queries) SessionRevoked(ctx context.Context, sessionID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, sessionRevoked, sessionID)
+	var revoked bool
+	err := row.Scan(&revoked)
+	return revoked, err
+}
+
 const tokenFamilyActive = `-- name: TokenFamilyActive :one
 SELECT EXISTS (
   SELECT 1 FROM oauth_access_tokens t

@@ -255,7 +255,7 @@ func (h *StatusHandlers) Delete(ctx context.Context, a *InboxActivity) error {
 	})
 	switch {
 	case errors.Is(err, appcontent.ErrNotFound):
-		if revoked, err := h.revokeQuoteAuthorization(ctx, id); err != nil || revoked {
+		if revoked, err := h.revokeQuoteAuthorization(ctx, id, a.Actor); err != nil || revoked {
 			return err
 		}
 		return fmt.Errorf("%w: %s", ErrUnknownObject, id)
@@ -396,7 +396,7 @@ func (h *StatusHandlers) RelayedAnnounce(ctx context.Context, in *InboxActivity)
 	case !errors.Is(err, appcontent.ErrNotFound):
 		return err
 	}
-	if err := h.untombstoned(ctx, ref.ID); err != nil {
+	if err := h.untombstoned(ctx, ref.ID, ""); err != nil {
 		return fmt.Errorf("%w: %w", ErrDropActivity, err)
 	}
 	got, err := h.d.Fetcher.Fetch(ctx, string(ref.ID))
@@ -520,9 +520,15 @@ func (h *StatusHandlers) resolveMentions(ctx context.Context, m *postMentions) e
 func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() == h.origin }
 
 // input maps a normalized post that activity a carried to what the content module stores
-// (federation.md §4).
+// (federation.md §4). A post without addressing takes the addressing of the activity only when
+// the post's author signed the activity: the addressing of an activity that someone else signed
+// is not the author's, even when the post itself was fetched from its origin.
 func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, followers federation.IRI, m *postMentions) appcontent.RemoteStatusInput {
-	return h.inputOf(a.Actor, a.Activity.Audience, string(a.Received.ActivityURI), obj, followers, m)
+	var fallback federation.Audience
+	if a.Received.Trust == federation.TrustSigned {
+		fallback = a.Activity.Audience
+	}
+	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, followers, m)
 }
 
 // inputOf maps a normalized post by author to what the content module stores (federation.md

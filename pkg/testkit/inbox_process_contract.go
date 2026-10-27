@@ -49,8 +49,10 @@ func InboxProcessingContract(t *testing.T, newHarness InboxFactory) {
 		{"DropsAFollowAfterItsUndo", inboxDropsFollowAfterUndo},
 		{"DropsTheNextFollowOfAnUndonePair", inboxDropsFollowOfUndonePair},
 		{"TombstonesOnlyObjectsOfTheActor", inboxTombstonesOnlyOwnObjects},
+		{"HoldsBackOnlyTheObjectsOfTheTombstonesActor", inboxTombstonesBindTheActor},
 		{"DropsRestrictedActors", inboxDropsRestrictedActors},
 		{"ConfirmsActivitiesOfOtherSigners", inboxConfirmsRefetched},
+		{"ReleasesActivitiesItsOriginDoesNotConfirm", inboxReleasesUnconfirmed},
 		{"FailsWhatCanNeverBeProcessed", inboxFailsUnprocessable},
 		{"RoutesTheOwnActorsUpdateAndDelete", inboxRoutesOwnActor},
 		{"RoutesUndoByTheUndoneType", inboxRoutesUndo},
@@ -171,9 +173,10 @@ func (e *inboxProcessEnv) processAs(t *testing.T, doc []byte, trust federation.T
 	return got
 }
 
+// tombstoned reports whether uri has a tombstone that alice left.
 func (e *inboxProcessEnv) tombstoned(t *testing.T, uri federation.IRI) bool {
 	t.Helper()
-	ok, err := e.h.Inbox.RemoteObjectTombstoned(t.Context(), uri)
+	ok, err := e.h.Inbox.RemoteObjectTombstoned(t.Context(), uri, inboxAlice)
 	if err != nil {
 		t.Fatalf("RemoteObjectTombstoned(%s): %v", uri, err)
 	}
@@ -464,6 +467,33 @@ func inboxTombstonesOnlyOwnObjects(t *testing.T, e *inboxProcessEnv) {
 	}
 }
 
+// inboxTombstonesBindTheActor checks that the tombstone of an unknown object that one actor
+// deleted does not hold back the object of another actor of the same origin, nor its activities.
+func inboxTombstonesBindTheActor(t *testing.T, e *inboxProcessEnv) {
+	carol := "https://remote.example/users/carol"
+	e.actors.known[federation.IRI(carol)] = true
+	note := inboxAlice + "/notes/later"
+	if got := e.process(t, inboxDoc(t, "Delete", carol+"#delete-1", carol, note)); got != appfederation.InboxTombstoned {
+		t.Fatalf("Delete of an unknown note of the same origin = %q, want %q", got, appfederation.InboxTombstoned)
+	}
+	if got := e.process(t, inboxDoc(t, "Undo", carol+"#undo-1", carol, inboxAlice+"#follow-later")); got != appfederation.InboxTombstoned {
+		t.Fatalf("Undo of an unknown activity of the same origin = %q, want %q", got, appfederation.InboxTombstoned)
+	}
+	if got := e.process(t, inboxDoc(t, "Create", note+"/activity", "", inboxNote(note))); got != appfederation.InboxHandled || !e.notes.live[federation.IRI(note)] {
+		t.Errorf("alice's Create after another actor's Delete = %q, want %q", got, appfederation.InboxHandled)
+	}
+	local := "https://" + contractHost + "/ap/actors/x"
+	if got := e.process(t, inboxDoc(t, "Follow", inboxAlice+"#follow-later", "", local)); got != appfederation.InboxHandled {
+		t.Errorf("alice's Follow after another actor's Undo = %q, want %q", got, appfederation.InboxHandled)
+	}
+	// The deleting actor's own Create of the URI stays held back.
+	carolNote := inboxNote(note)
+	carolNote["attributedTo"] = carol
+	if got := e.process(t, inboxDoc(t, "Create", note+"/activity-carol", carol, carolNote)); got != appfederation.InboxDropped {
+		t.Errorf("Create by the deleting actor = %q, want %q", got, appfederation.InboxDropped)
+	}
+}
+
 func inboxDropsRestrictedActors(t *testing.T, e *inboxProcessEnv) {
 	e.domains["remote.example"] = true
 	note := inboxAlice + "/notes/1"
@@ -557,6 +587,38 @@ func inboxConfirmsRefetched(t *testing.T, e *inboxProcessEnv) {
 	}
 	if obj := announced.Activity.Object(); obj.ID != federation.IRI(note) || obj.Trusted() != nil {
 		t.Errorf("relayed Announce object = %s (trusted %v), want %s untrusted", obj.ID, obj.Trusted() != nil, note)
+	}
+}
+
+// inboxReleasesUnconfirmed checks that an activity of trust refetch that its origin does not
+// confirm gives up its record, so that the activity arriving later is taken in, while an activity
+// dropped by a rule after it was confirmed keeps its record.
+func inboxReleasesUnconfirmed(t *testing.T, e *inboxProcessEnv) {
+	ctx := t.Context()
+	note := inboxAlice + "/notes/later"
+	activity := note + "/activity"
+	if got := e.processAs(t, inboxDoc(t, "Create", activity, "", inboxNote(note)), federation.TrustRefetch); got != appfederation.InboxDropped {
+		t.Fatalf("Create its origin does not serve = %q, want %q", got, appfederation.InboxDropped)
+	}
+	if _, err := e.h.Inbox.FindReceivedActivity(ctx, federation.IRI(activity)); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("FindReceivedActivity after the drop = %v, want ErrNotFound", err)
+	}
+	if _, err := e.h.Inbox.FindReceivedDocument(ctx, federation.IRI(activity)); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("FindReceivedDocument after the drop = %v, want ErrNotFound", err)
+	}
+	// The same activity signed by its actor is taken in.
+	if got := e.process(t, inboxDoc(t, "Create", activity, "", inboxNote(note))); got != appfederation.InboxHandled || !e.notes.live[federation.IRI(note)] {
+		t.Errorf("Create signed by its actor after the drop = %q, want %q", got, appfederation.InboxHandled)
+	}
+
+	// A signed activity dropped by a rule keeps its record.
+	e.domains["remote.example"] = true
+	dropped := inboxAlice + "/notes/dropped"
+	if got := e.process(t, inboxDoc(t, "Create", dropped+"/activity", "", inboxNote(dropped))); got != appfederation.InboxDropped {
+		t.Fatalf("Create of a suspended domain = %q, want %q", got, appfederation.InboxDropped)
+	}
+	if _, err := e.h.Inbox.FindReceivedActivity(ctx, federation.IRI(dropped+"/activity")); err != nil {
+		t.Errorf("FindReceivedActivity of a signed activity dropped by a rule = %v, want the record kept", err)
 	}
 }
 

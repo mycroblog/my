@@ -210,6 +210,13 @@ func remoteRevokesAndDetachesQuotes(t *testing.T, e *remoteStatusEnv) {
 	if _, s := e.quoteOf(t, quote); s.Approval != content.QuoteApprovalAccepted {
 		t.Errorf("state after a Delete from another server = %+v, want accepted", s)
 	}
+	// Nor does another actor of the quoted author's server.
+	const dave = "https://mastodon.example/ap/users/117454922805771616"
+	e.actor(t, dave)
+	e.expect(t, remoteActivity(t, "Delete", dave+"#delete", dave, authorization), appfederation.InboxTombstoned)
+	if _, s := e.quoteOf(t, quote); s.Approval != content.QuoteApprovalAccepted {
+		t.Errorf("state after a Delete by another actor of the same server = %+v, want accepted", s)
+	}
 	e.expect(t, remoteActivity(t, "Delete", authorization+"#delete", carol, authorization), appfederation.InboxHandled)
 	if _, s := e.quoteOf(t, quote); s.Approval != content.QuoteApprovalRevoked {
 		t.Errorf("state after the Delete of the QuoteAuthorization = %+v, want revoked", s)

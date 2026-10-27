@@ -89,10 +89,14 @@ func (v PollView) VotesCount() int64 {
 // VotePoll makes accountID vote for choices, the positions of options, in the poll pollID of
 // statusID, and returns the votes, one per choice. The poll must be the one of the status's
 // current revision: one that an edit replaced fails with content.ErrPollChanged, and a status
-// without a poll with content.ErrNoPoll. A poll whose end has passed fails with
-// content.ErrPollClosed, choices that the poll does not take with content.ErrInvalidPollChoices,
-// and an account that voted in the poll already with content.ErrAlreadyVoted. Like the other
-// interactions, it needs a status the account may see and an account that may interact.
+// without a poll with content.ErrNoPoll. Choices that the poll does not take fail with
+// content.ErrInvalidPollChoices. Like the other interactions, it needs a status the account may
+// see and an account that may interact.
+//
+// The rest is decided in the transaction with the poll locked (Repository.LockPoll), local or
+// remote, so that the votes in one poll are decided one at a time: a poll whose end has passed
+// when the vote commits fails with content.ErrPollClosed, and an account that voted in the poll
+// already, with any choices, fails with content.ErrAlreadyVoted.
 func (s *Interactions) VotePoll(ctx context.Context, accountID, statusID, pollID string, choices []int) ([]content.PollVote, error) {
 	if err := s.checkRestrictions(ctx, accountID, false); err != nil {
 		return nil, err
@@ -116,31 +120,21 @@ func (s *Interactions) VotePoll(ctx context.Context, accountID, statusID, pollID
 	if err != nil {
 		return nil, err
 	}
-	now := s.d.Clock.Now()
-	if poll.Closed(now) {
-		return nil, fmt.Errorf("poll %s: %w", pollID, content.ErrPollClosed)
-	}
 	positions, err := poll.Choices(choices)
 	if err != nil {
 		return nil, err
 	}
-	votes := make([]content.PollVote, len(positions))
-	for i, p := range positions {
-		id := s.d.IDs.NewID()
-		votes[i] = content.PollVote{ID: id, PollID: poll.ID, AccountID: accountID, Position: p, VotedAt: now}
-		if !st.IsLocal {
-			votes[i].URI = content.PollVoteURI(s.d.Host, id)
-		}
-	}
-	tallyID := s.d.IDs.NewID()
+	var votes []content.PollVote
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.ensureLive(ctx, tx, st.ID); err != nil {
 			return err
 		}
-		if st.IsLocal {
-			if err := s.d.Statuses.LockPoll(ctx, tx, poll.ID); err != nil {
-				return err
-			}
+		if err := s.d.Statuses.LockPoll(ctx, tx, poll.ID); err != nil {
+			return err
+		}
+		now := s.d.Clock.Now()
+		if poll.Closed(now) {
+			return fmt.Errorf("poll %s: %w", poll.ID, content.ErrPollClosed)
 		}
 		prior, err := s.d.Statuses.ListPollVotesTx(ctx, tx, poll.ID, accountID)
 		if err != nil {
@@ -149,16 +143,24 @@ func (s *Interactions) VotePoll(ctx context.Context, accountID, statusID, pollID
 		if len(prior) > 0 {
 			return fmt.Errorf("poll %s: %w", poll.ID, content.ErrAlreadyVoted)
 		}
+		votes = make([]content.PollVote, len(positions))
+		for i, p := range positions {
+			id := s.d.IDs.NewID()
+			votes[i] = content.PollVote{ID: id, PollID: poll.ID, AccountID: accountID, Position: p, VotedAt: now}
+			if !st.IsLocal {
+				votes[i].URI = content.PollVoteURI(s.d.Host, id)
+			}
+		}
 		for _, v := range votes {
 			ok, err := s.d.Statuses.InsertPollVote(ctx, tx, v)
 			if err != nil {
 				return err
 			}
-			if !ok { // a concurrent vote of the account committed first
+			if !ok { // a vote of the account committed first
 				return fmt.Errorf("poll %s: %w", poll.ID, content.ErrAlreadyVoted)
 			}
 		}
-		return s.voted(ctx, tx, PollVoted{Votes: votes, Poll: *poll, Status: RefOf(st), AuthorURI: author.Account.URI}, tallyID)
+		return s.voted(ctx, tx, PollVoted{Votes: votes, Poll: *poll, Status: RefOf(st), AuthorURI: author.Account.URI})
 	})
 	if err != nil {
 		return nil, err
@@ -167,16 +169,18 @@ func (s *Interactions) VotePoll(ctx context.Context, accountID, statusID, pollID
 }
 
 // voted counts the votes of a local poll again after ev's votes, inside tx and with the poll
-// locked (Repository.LockPoll), records the counts as a new tally observation with the ID
-// tallyID (data-model §4.4), and emits ev.
-func (s *Interactions) voted(ctx context.Context, tx uow.Tx, ev PollVoted, tallyID string) error {
+// locked (Repository.LockPoll), records the counts as a new tally observation (data-model
+// §4.4), and emits ev. The observation's ID is taken with the lock held, so that the IDs of a
+// poll's observations sort in the order of their counts, which the rebuild of poll_tallies
+// follows.
+func (s *Interactions) voted(ctx context.Context, tx uow.Tx, ev PollVoted) error {
 	if ev.Status.IsLocal {
 		counts, voters, err := s.d.Statuses.CountPollVotes(ctx, tx, ev.Poll.ID)
 		if err != nil {
 			return err
 		}
 		o := content.PollTallyObservation{
-			ID: tallyID, PollID: ev.Poll.ID, VotersCount: &voters, ObservedAt: ev.Votes[0].VotedAt,
+			ID: s.d.IDs.NewID(), PollID: ev.Poll.ID, VotersCount: &voters, ObservedAt: ev.Votes[0].VotedAt,
 			Votes: make([]int64, len(ev.Poll.Options)),
 		}
 		for pos, n := range counts {
@@ -212,7 +216,7 @@ type RemotePollVoteInput struct {
 // reports whether it is new; a Note recorded already, or a choice the account voted for
 // already, records nothing and reports false. The status must be one the account may see, with
 // a poll in its current revision (content.ErrNoPoll otherwise), the poll must not have ended
-// (content.ErrPollClosed), the title must name a choice (content.ErrInvalidPollChoices), and a
+// when the vote commits, which is checked with the poll locked (content.ErrPollClosed), the title must name a choice (content.ErrInvalidPollChoices), and a
 // single-choice poll takes one vote per account (content.ErrAlreadyVoted). The counts of the
 // poll are recorded again, and PollVoted is emitted, as for a local account's vote.
 func (s *Interactions) RecordRemotePollVote(ctx context.Context, in RemotePollVoteInput) (bool, error) {
@@ -232,15 +236,11 @@ func (s *Interactions) RecordRemotePollVote(ctx context.Context, in RemotePollVo
 		return false, fmt.Errorf("status %s: %w", st.ID, content.ErrNoPoll)
 	}
 	at := s.remoteTime(in.VotedAt)
-	if poll.Closed(s.d.Clock.Now()) {
-		return false, fmt.Errorf("poll %s: %w", poll.ID, content.ErrPollClosed)
-	}
 	position, ok := poll.OptionByTitle(in.Title)
 	if !ok {
 		return false, fmt.Errorf("%w: no choice %q in poll %s", content.ErrInvalidPollChoices, in.Title, poll.ID)
 	}
 	vote := content.PollVote{ID: s.d.IDs.NewIDAt(at), PollID: poll.ID, AccountID: in.AccountID, Position: position, URI: in.URI, VotedAt: at}
-	tallyID := s.d.IDs.NewID()
 	var inserted bool
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		inserted = false
@@ -249,6 +249,9 @@ func (s *Interactions) RecordRemotePollVote(ctx context.Context, in RemotePollVo
 		}
 		if err := s.d.Statuses.LockPoll(ctx, tx, poll.ID); err != nil {
 			return err
+		}
+		if poll.Closed(s.d.Clock.Now()) {
+			return fmt.Errorf("poll %s: %w", poll.ID, content.ErrPollClosed)
 		}
 		if !poll.Multiple {
 			prior, err := s.d.Statuses.ListPollVotesTx(ctx, tx, poll.ID, in.AccountID)
@@ -267,7 +270,7 @@ func (s *Interactions) RecordRemotePollVote(ctx context.Context, in RemotePollVo
 			return err
 		}
 		inserted = true
-		return s.voted(ctx, tx, PollVoted{Votes: []content.PollVote{vote}, Poll: *poll, Status: RefOf(st)}, tallyID)
+		return s.voted(ctx, tx, PollVoted{Votes: []content.PollVote{vote}, Poll: *poll, Status: RefOf(st)})
 	})
 	if err != nil {
 		return false, err

@@ -51,8 +51,10 @@ function basename(path: string): string {
 /**
  * A Store in one JSON file, the default Store of a Bot. It reads the file on first use (a missing file is an empty
  * state, created on the first change). Every change rewrites the file: the new content goes to a temporary file in
- * the same directory, which then replaces the file, so that a crash never leaves half of it. The file holds the
- * refresh token: it is created readable by its owner only. The document is that of the Go library's FileStore.
+ * the same directory, flushed to the disk, which then replaces the file, so that a crash never leaves half of it; the
+ * directory is flushed too where the system allows it. A change that resolves is on the disk; one that rejects changed
+ * neither the file nor the store. The file holds the refresh token: it is created readable by its owner only. The
+ * document is that of the Go library's FileStore.
  */
 export class FileStore extends StateStore {
   /** The file of the store. */
@@ -111,5 +113,22 @@ export class FileStore extends StateStore {
       await f.rm(tmp, { force: true }).catch(() => undefined);
       throw new Error(`mybot: write the state file ${this.path}`, { cause: error });
     }
+    await syncDir(f, dirname(this.path));
   }
+}
+
+/**
+ * Flushes the directory dir, so that a rename in it outlasts a crash of the system. It does its best: a system that
+ * cannot open a directory to flush it, such as Windows, keeps the rename in its own time.
+ */
+async function syncDir(f: Fs, dir: string): Promise<void> {
+  if ((globalThis as { process?: { platform?: string } }).process?.platform === "win32") return;
+  let handle: FileHandle;
+  try {
+    handle = await f.open(dir, "r", 0);
+  } catch {
+    return;
+  }
+  await handle.sync().catch(() => undefined);
+  await handle.close().catch(() => undefined);
 }

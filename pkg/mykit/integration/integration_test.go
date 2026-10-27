@@ -5,11 +5,13 @@ package integration_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"net/http"
 	"slices"
 	"sync"
@@ -333,4 +335,61 @@ func TestRetryAfterTooManyRequests(t *testing.T) {
 		return
 	}
 	t.Fatal("40 requests never reached the rate limit")
+}
+
+// lostAnswer is a RoundTripper that loses the answer to the first POST /statuses after the server applied it,
+// as a connection that drops before the answer arrives does; it keeps the body of that answer in lost.
+type lostAnswer struct {
+	mu   sync.Mutex
+	lost []byte
+}
+
+func (l *lostAnswer) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil || req.Method != http.MethodPost || req.URL.Path != "/api/v1/statuses" {
+		return resp, err
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.lost != nil {
+		return resp, nil
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if l.lost, err = io.ReadAll(resp.Body); err != nil {
+		return nil, err
+	}
+	return nil, errors.New("connection reset before the answer")
+}
+
+// TestRetryAfterALostAnswer posts a status whose answer is lost, and sends it again with the Idempotency-Key that
+// the *NetworkError reports: the server answers with the status that the first request posted, and posts no
+// second one.
+func TestRetryAfterALostAnswer(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	alice := srv.User(t, "alice")
+	rt := &lostAnswer{}
+	api := signIn(t, srv, alice, mykit.Config{HTTPClient: &http.Client{Transport: rt}})
+
+	req := mykit.CreateStatusRequest{Text: "once", Visibility: mykit.VisibilityPublic}
+	_, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{}, req)
+	var ne *mykit.NetworkError
+	if !errors.As(err, &ne) || ne.IdempotencyKey == "" {
+		t.Fatalf("post with a lost answer = %v, want a *NetworkError with the Idempotency-Key", err)
+	}
+	var first mykit.Status
+	if err := json.Unmarshal(rt.lost, &first); err != nil || first.Id == "" {
+		t.Fatalf("lost answer %s: %v, want the posted status", rt.lost, err)
+	}
+
+	resp, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{IdempotencyKey: &ne.IdempotencyKey}, req)
+	if err != nil || resp.JSON200 == nil {
+		t.Fatalf("retry = %v, want 200 with the status", err)
+	}
+	if resp.JSON200.Id != first.Id {
+		t.Errorf("retry answered status %s, want %s that the first request posted", resp.JSON200.Id, first.Id)
+	}
+	if other := post(t, api, "once"); other.Id == first.Id {
+		t.Error("a post without the key answered the earlier status")
+	}
 }

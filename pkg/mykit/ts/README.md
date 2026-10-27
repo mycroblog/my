@@ -77,6 +77,8 @@ const api = createClient({
 
 The server rotates the refresh token on every use, and a refresh token used twice revokes the whole token family, so
 `onTokens` must save the new tokens. The source renews the token when it expires or after a 401, once per request.
+When `onTokens` throws, the source hands the new tokens to no request until a later request's call of `onTokens` saves
+them.
 
 A `TokenSource` is any object with `getAccessToken()` and, optionally, `refresh(refused)`.
 
@@ -123,8 +125,9 @@ event stream.
 ## Retries, idempotency keys, uploads, admin operations, stability
 
 These work as in the [mykit README](../README.md): 429 and 503 are retried after `Retry-After` for `GET`, `HEAD`, and
-requests with an `Idempotency-Key` (`retry: { disabled, maxRetries, maxWait }`; `maxWait` is in milliseconds); the key
-of a new status is added for you and kept across retries; `uploadMedia(api, { file: blob, description })` uploads a
+the operations that take an `Idempotency-Key` (`retry: { disabled, maxRetries, maxWait }`; `maxWait` is in
+milliseconds); the key of a new status is added for you and kept across retries, and a `NetworkError` carries it as
+`idempotencyKey` to send the post again with; `uploadMedia(api, { file: blob, description })` uploads a
 `Blob`; the `admin` operations answer 403 to a token of a third-party app; and `/api/v1` follows the
 [stability policy](../README.md#versions-and-api-stability) (a `@deprecated` tag marks what will go).
 
