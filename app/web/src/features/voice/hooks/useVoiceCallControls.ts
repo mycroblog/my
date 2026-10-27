@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The controls that the room's page and the call bar share (ADR-0100 §5, §6; ADR-0101 §7): the call's state, the
 // microphone (only a speaker has it; the browser's refusal says why), the sound that the browser blocked, and leaving,
-// where the host of a room with others in it gives the next host or ends the room. Null while there is no call.
+// where the host of a room with others in it gives the next host or ends the room, and who is talking ("{name} is
+// talking"). Null while there is no call.
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useState } from "react";
@@ -26,6 +27,11 @@ export type VoiceCallControls = {
   setMicrophone: (on: boolean) => void;
   playbackBlocked: boolean;
   resumePlayback: () => void;
+  /**
+   * The participants talking now, in the order of the room's participants (the user too, while the microphone
+   * sends); empty while nobody talks. The call changes it only when who talks changes, not on each sample.
+   */
+  talking: readonly VoiceRoomParticipant[];
   /** Whether leaving asks the host for the next host or the end of the room. */
   mustChoose: boolean;
   /** The participants who may become the host when the user, the host, leaves. */
@@ -69,6 +75,7 @@ export function useVoiceCallControls(): VoiceCallControls | null {
     resumePlayback: () => {
       void call.resumePlayback();
     },
+    talking: snapshot.talking.size === 0 ? [] : room.participants.filter((p) => p.session !== undefined && snapshot.talking.has(p.session)),
     mustChoose: isHost && others.length > 0,
     nextHosts: others,
     leave: state.leave,

@@ -54,12 +54,25 @@ export type RemoteAudio = {
   close: () => void;
 };
 
+/** The level of the audio of one stream, for telling who is talking. */
+export type LevelMeter = {
+  /** The level now: the RMS of the latest samples, from 0 (silence) to 1. */
+  level: () => number;
+  /** Releases what measures it (the analyser and its source). */
+  close: () => void;
+};
+
 /** What a connection takes from the browser; the tests give fakes. */
 export type VoiceEnvironment = {
   createPeerConnection: (configuration: RTCConfiguration) => RTCPeerConnection;
   /** The microphone, with echo cancellation, noise suppression, and automatic gain control, audio only. */
   getMicrophone: () => Promise<MediaStream>;
   createRemoteAudio: () => RemoteAudio;
+  /**
+   * Measures the level of `stream` (Web Audio, on the call's one AudioContext). Absent, or null, where the browser
+   * cannot: then nobody shows as talking (P2P, Sora).
+   */
+  createLevelMeter?: ((stream: MediaStream) => LevelMeter | null) | undefined;
 };
 
 /** What a connection tells the hooks. */
@@ -68,6 +81,11 @@ type VoiceConnectionEvents = {
   sendSignal: (signal: OutgoingVoiceSignal) => Promise<void>;
   /** The browser did not let the audio play: the user starts it with `resumePlayback` from a button. */
   onPlaybackBlocked: () => void;
+  /**
+   * The sessions talking now, the user's own among them while the microphone sends: called only when the set changes,
+   * and with an empty set when the connection closes or goes away.
+   */
+  onTalking?: ((sessions: ReadonlySet<string>) => void) | undefined;
 };
 
 /**
