@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/language"
 )
 
 // SourceLocale is the locale every catalog is written in and the last fallback.
@@ -62,39 +64,27 @@ func FallbackChain(locale string) []string {
 	return chain
 }
 
-// Canonicalize normalizes the case and separators of a BCP 47 tag: "zh_hant_tw" -> "zh-Hant-TW".
-// It returns "" for an empty or malformed tag.
+// Canonicalize normalizes the case and separators of a BCP 47 tag and replaces deprecated
+// subtags by their preferred ones: "zh_hant_tw" -> "zh-Hant-TW", "iw" -> "he". It returns ""
+// for an empty tag and for a tag that is not well-formed or has no language subtag
+// ("123", "en-u", "en-US-US", "und-JP", "x-foo"); "und" stays "und". It parses with golang.org/x/text/language,
+// as the language preferences of the accounts do, so that the same tag means the same everywhere.
 func Canonicalize(tag string) string {
 	tag = strings.TrimSpace(strings.ReplaceAll(tag, "_", "-"))
 	if tag == "" {
 		return ""
 	}
-	parts := strings.Split(tag, "-")
-	extension := false // subtags after a singleton ("u", "x", ...) are lower case
-	for i, p := range parts {
-		if p == "" || len(p) > 8 || strings.IndexFunc(p, func(r rune) bool {
-			return (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9')
-		}) >= 0 {
-			return ""
-		}
-		switch {
-		case i == 0 || extension:
-			parts[i] = strings.ToLower(p)
-		case len(p) == 1:
-			extension = true
-			parts[i] = strings.ToLower(p)
-		case len(p) == 4 && !isDigit(p[0]):
-			parts[i] = strings.ToUpper(p[:1]) + strings.ToLower(p[1:])
-		case len(p) == 2 || (len(p) == 3 && isDigit(p[0])):
-			parts[i] = strings.ToUpper(p)
-		default:
-			parts[i] = strings.ToLower(p)
-		}
+	t, err := language.Parse(tag)
+	if err != nil {
+		return ""
 	}
-	return strings.Join(parts, "-")
+	c := t.String()
+	// Base guesses a language for "und-JP" or "x-foo"; only an explicit one is Exact.
+	if _, conf := t.Base(); conf != language.Exact && c != "und" {
+		return ""
+	}
+	return c
 }
-
-func isDigit(b byte) bool { return b >= '0' && b <= '9' }
 
 // ParseAcceptLanguage returns the language tags of an Accept-Language header value,
 // highest quality first (ties keep header order). Tags with q=0, the wildcard "*",

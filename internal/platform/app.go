@@ -379,6 +379,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.Sealer = kernel.NewSealer(a.KeyManager)
 	repos, err := a.openDatabase(ctx, cfg)
 	if err != nil {
+		_ = a.Close() // releases the telemetry set up above
 		return nil, err
 	}
 	// From here on, a failure releases what the App holds.

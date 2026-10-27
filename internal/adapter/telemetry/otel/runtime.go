@@ -7,6 +7,7 @@ import (
 	"errors"
 	"math"
 	"runtime/metrics"
+	"slices"
 	"sync"
 	"time"
 
@@ -108,12 +109,13 @@ func histogramPoints(h *metrics.Float64Histogram, start, ts time.Time) []metricd
 	if h == nil || len(h.Buckets) < 2 || len(h.Buckets) != len(h.Counts)+1 {
 		return nil
 	}
-	bounds := h.Buckets[1:]
-	counts := h.Counts
+	// The runtime may reuse the slices of the histogram on the next read, so the data point owns copies.
+	bounds := slices.Clone(h.Buckets[1:])
+	counts := slices.Clone(h.Counts)
 	if math.IsInf(bounds[len(bounds)-1], 1) {
 		bounds = bounds[:len(bounds)-1]
 	} else {
-		counts = append(counts[:len(counts):len(counts)], 0)
+		counts = append(counts, 0)
 	}
 	var count uint64
 	var sum float64

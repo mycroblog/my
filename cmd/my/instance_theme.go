@@ -81,6 +81,10 @@ func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 			_, _ = fmt.Fprintf(stderr, "%s: the theme is not JSON of {\"tokens\": [...], \"custom_css\": \"...\"}: %v\n", name, err)
 			return 1
 		}
+		if _, err := dec.Token(); err != io.EOF {
+			_, _ = fmt.Fprintf(stderr, "%s: the theme must be exactly one JSON value, found more content after it\n", name)
+			return 1
+		}
 	}
 
 	cfg, _, err := config.Load(config.Source{File: *file})

@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 
 	valkeygo "github.com/valkey-io/valkey-go"
@@ -52,6 +53,10 @@ func CheckURL(raw string) error {
 func parseURL(raw string) (valkeygo.ClientOption, error) {
 	opt, err := valkeygo.ParseURL(raw)
 	if err != nil {
+		// A *url.Error quotes the URL, which may carry the password.
+		if ue, ok := errors.AsType[*url.Error](err); ok {
+			err = fmt.Errorf("valkey: invalid URL: %w", ue.Err)
+		}
 		return opt, err
 	}
 	if opt.TLSConfig != nil && opt.TLSConfig.InsecureSkipVerify {
