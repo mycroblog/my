@@ -3,6 +3,7 @@
 package testkit
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -53,6 +54,8 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"EnsuresTags", statusEnsuresTags},
 		{"ListsLiveRemoteStatusesOfAnAuthor", statusListsLiveRemote},
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
+		{"LinksAParentAndAReplyCreatedConcurrently", statusLinksConcurrentParentAndReply},
+		{"KeepsADeletionOverAConcurrentRevision", statusDeletionWinsOverConcurrentRevision},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newStatusEnv(t, newHarness)) })
@@ -65,15 +68,158 @@ type statusEnv struct {
 	h     StatusHarness
 	clock *Clock
 	ids   *IDGenerator
+	// before and after, when set, run in the transaction of every status event, before and
+	// after the content module's projectors; tests set them before starting the transactions
+	// that they schedule.
+	before, after func(e uow.Event)
 }
 
 func newStatusEnv(t *testing.T, newHarness StatusFactory) *statusEnv {
 	t.Helper()
 	projectors := &uow.Projectors{}
 	h := newHarness(t, uow.Options{Retry: uow.RetryPolicy{MaxAttempts: 20}, Projectors: projectors})
-	appcontent.RegisterProjectors(projectors, h.Statuses)
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
-	return &statusEnv{h: h, clock: clock, ids: NewIDGenerator(clock)}
+	e := &statusEnv{h: h, clock: clock, ids: NewIDGenerator(clock)}
+	events := []string{appcontent.EventStatusCreated, appcontent.EventStatusRevised, appcontent.EventStatusDeleted}
+	hook := func(fn *func(uow.Event)) uow.Projector {
+		return func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+			if *fn != nil {
+				(*fn)(ev)
+			}
+			return nil
+		}
+	}
+	for _, name := range events {
+		projectors.Register(name, hook(&e.before))
+	}
+	appcontent.RegisterProjectors(projectors, h.Statuses)
+	for _, name := range events {
+		projectors.Register(name, hook(&e.after))
+	}
+	return e
+}
+
+// rendezvous lets each of n transactions wait, inside the transaction, until all n reach it or
+// patience runs out. A transaction that waits for a lock that another one holds never reaches
+// it, so patience bounds the wait; the transactions then go on in the order the database allows.
+type rendezvous struct {
+	arrived  chan struct{}
+	n        int
+	patience time.Duration
+}
+
+func newRendezvous(n int) *rendezvous {
+	return &rendezvous{arrived: make(chan struct{}, n), n: n, patience: 300 * time.Millisecond}
+}
+
+func (r *rendezvous) wait() {
+	r.arrived <- struct{}{}
+	deadline := time.After(r.patience)
+	for {
+		if len(r.arrived) == r.n {
+			return
+		}
+		select {
+		case <-deadline:
+			return
+		case <-time.After(time.Millisecond):
+		}
+	}
+}
+
+// statusConvergesToRebuild fails the test unless the incremental projections equal a rebuild.
+func statusConvergesToRebuild(t *testing.T, e *statusEnv) {
+	t.Helper()
+	incremental := snapshotStatusProjections(t, e.h.Statuses)
+	if err := appcontent.RebuildProjections(t.Context(), e.h.UnitOfWork, e.h.Statuses); err != nil {
+		t.Fatalf("RebuildProjections = %v", err)
+	}
+	if rebuilt := snapshotStatusProjections(t, e.h.Statuses); !reflect.DeepEqual(incremental, rebuilt) {
+		t.Errorf("incremental projections differ from a rebuild:\nincremental %+v\nrebuilt     %+v", incremental, rebuilt)
+	}
+}
+
+// statusLinksConcurrentParentAndReply creates a parent and its reply in concurrent transactions
+// that each read the projections before the other commits, when the database lets them: the
+// reply is linked and counted all the same.
+func statusLinksConcurrentParentAndReply(t *testing.T, e *statusEnv) {
+	parent := e.newStatus(e.ids.NewID(), content.VisibilityPublic)
+	reply := e.newStatus(e.ids.NewID(), content.VisibilityPublic)
+	reply.InReplyToURI = parent.URI
+	revs := []content.Revision{e.firstRevision(parent), e.firstRevision(reply)}
+	meet := newRendezvous(2)
+	e.after = func(ev uow.Event) {
+		if _, ok := ev.(appcontent.StatusCreated); ok {
+			meet.wait()
+		}
+	}
+	var wg sync.WaitGroup
+	for i, s := range []content.Status{parent, reply} {
+		wg.Go(func() {
+			if err := e.create(t, s, nil, revs[i]); err != nil {
+				t.Errorf("create %s = %v", s.URI, err)
+			}
+		})
+	}
+	wg.Wait()
+	e.after = nil
+	if links, err := e.h.Statuses.ListReplyLinks(t.Context()); err != nil || len(links) != 1 || links[0] != (content.ReplyLink{
+		StatusID: reply.ID, ParentStatusID: parent.ID, ParentAuthorAccountID: parent.AuthorAccountID,
+	}) {
+		t.Errorf("reply links = %+v, %v; want the reply linked to the parent", links, err)
+	}
+	if c := e.counters(t, parent.ID); c.RepliesCount != 1 {
+		t.Errorf("replies count = %d, want 1", c.RepliesCount)
+	}
+	statusConvergesToRebuild(t, e)
+}
+
+// statusDeletionWinsOverConcurrentRevision revises a status while its deletion is being
+// projected, when the database lets it: the revision does not bring the deleted status back into
+// the projections.
+func statusDeletionWinsOverConcurrentRevision(t *testing.T, e *statusEnv) {
+	ctx := t.Context()
+	mentioned := e.ids.NewID()
+	s := e.newStatus(e.ids.NewID(), content.VisibilityPublic)
+	e.mustCreate(t, s, mentioned)
+	reviseStarted := make(chan struct{})
+	var once sync.Once
+	e.before = func(ev uow.Event) {
+		if _, ok := ev.(appcontent.StatusRevised); ok {
+			once.Do(func() { close(reviseStarted) })
+		}
+	}
+	e.after = func(ev uow.Event) {
+		if _, ok := ev.(appcontent.StatusDeleted); ok {
+			// Let the revision read the projections before the deletion commits.
+			select {
+			case <-reviseStarted:
+				time.Sleep(100 * time.Millisecond)
+			case <-time.After(300 * time.Millisecond):
+			}
+		}
+	}
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		if _, err := e.remove(t, s); err != nil {
+			t.Errorf("delete = %v", err)
+		}
+	})
+	wg.Go(func() {
+		time.Sleep(20 * time.Millisecond)
+		if _, err := e.revise(t, s.ID, mentioned); err != nil && !errors.Is(err, appcontent.ErrNotFound) {
+			t.Errorf("revise = %v", err)
+		}
+	})
+	wg.Wait()
+	e.before, e.after = nil, nil
+	if _, err := e.h.Statuses.FindCurrentRevision(ctx, s.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindCurrentRevision of the deleted status = %v, want ErrNotFound", err)
+	}
+	if mentions, err := e.h.Statuses.ListMentions(ctx); err != nil || len(mentions) != 0 {
+		t.Errorf("mentions = %+v, %v; want none", mentions, err)
+	}
+	statusConvergesToRebuild(t, e)
 }
 
 // newStatus returns a status with a fresh ID, published now.

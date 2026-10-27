@@ -56,6 +56,11 @@ type Repository interface {
 	UpsertHead(ctx context.Context, tx uow.Tx, h content.Head) error
 	// ReplaceMentions makes accountIDs the mentions of a status in status_mention_index.
 	ReplaceMentions(ctx context.Context, tx uow.Tx, statusID string, accountIDs []string) error
+	// LockStatusKeys takes a lock on each of keys, in order, that the transaction holds until it
+	// ends, so that the projections of the statuses that share a key are written one transaction
+	// at a time under READ COMMITTED. The keys are the strings of statusLockKeys. On SQLite,
+	// whose write transactions already run one at a time, it does nothing.
+	LockStatusKeys(ctx context.Context, tx uow.Tx, keys []string) error
 	// IsDeleted reports whether a status has a deletion.
 	IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
 	// FindLiveStatusByURI returns the status with uri unless it is deleted.

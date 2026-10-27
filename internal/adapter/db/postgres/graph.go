@@ -228,26 +228,34 @@ func (r *GraphRepository) InsertEdge(ctx context.Context, tx uow.Tx, e graph.Edg
 }
 
 // UpdateEdge implements graph.Repository.
-func (r *GraphRepository) UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edge) error {
+func (r *GraphRepository) UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edge, from graph.State) (bool, error) {
 	q, err := queries(tx)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return wrap(q.UpdateFollowEdge(ctx, postgresgen.UpdateFollowEdgeParams{
+	n, err := q.UpdateFollowEdge(ctx, postgresgen.UpdateFollowEdgeParams{
 		FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID, FollowID: e.FollowID,
-		State: string(e.State), Since: e.Since,
-	}), "update follow edge")
+		State: string(e.State), Since: e.Since, FromState: string(from),
+	})
+	if err != nil {
+		return false, wrap(err, "update follow edge")
+	}
+	return n == 1, nil
 }
 
 // DeleteEdge implements graph.Repository.
-func (r *GraphRepository) DeleteEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID, followID string) error {
+func (r *GraphRepository) DeleteEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID, followID string, state graph.State) (bool, error) {
 	q, err := queries(tx)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return wrap(q.DeleteFollowEdge(ctx, postgresgen.DeleteFollowEdgeParams{
-		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID, FollowID: followID,
-	}), "delete follow edge")
+	n, err := q.DeleteFollowEdge(ctx, postgresgen.DeleteFollowEdgeParams{
+		FollowerAccountID: followerAccountID, FolloweeAccountID: followeeAccountID, FollowID: followID, State: string(state),
+	})
+	if err != nil {
+		return false, wrap(err, "delete follow edge")
+	}
+	return n == 1, nil
 }
 
 // DeleteAllEdges implements graph.Repository.

@@ -19,6 +19,10 @@ var (
 	errEdgeExists = errors.New("graph: the pair already has a live follow")
 	// errBlockEdgeExists is errEdgeExists for block_edges.
 	errBlockEdgeExists = errors.New("graph: the pair already has a block in force")
+	// errEdgeChanged reports that a concurrent transaction changed the edge that a command read
+	// (accepted, rejected, or ended the follow). It is retryable: the next attempt reads the edge
+	// again, so that only one outcome is recorded and the counters move once.
+	errEdgeChanged = errors.New("graph: the follow changed concurrently")
 )
 
 // RegisterProjectors registers the graph module's synchronous projectors (data-model §9):
@@ -38,20 +42,37 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	})
 	r.Register(EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(FollowAccepted)
-		if err := repo.UpdateEdge(ctx, tx, graph.ActiveEdge(ev.Follow, ev.Acceptance)); err != nil {
+		updated, err := repo.UpdateEdge(ctx, tx, graph.ActiveEdge(ev.Follow, ev.Acceptance), graph.StatePending)
+		if err != nil {
 			return err
+		}
+		if !updated {
+			return uow.MarkRetryable(errEdgeChanged)
 		}
 		return countFollow(ctx, tx, repo, ev.Follow, 1)
 	})
 	r.Register(EventFollowRejected, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		f := e.(FollowRejected).Follow
-		return repo.DeleteEdge(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID, f.ID)
+		ev := e.(FollowRejected)
+		f := ev.Follow
+		deleted, err := repo.DeleteEdge(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID, f.ID, graph.StatePending)
+		if err != nil {
+			return err
+		}
+		// A follow that the system rejects at once never had an edge.
+		if !deleted && ev.Rejection.RejectedBy != graph.RejectedBySystem {
+			return uow.MarkRetryable(errEdgeChanged)
+		}
+		return nil
 	})
 	r.Register(EventFollowTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(FollowTerminated)
 		f := ev.Follow
-		if err := repo.DeleteEdge(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID, f.ID); err != nil {
+		deleted, err := repo.DeleteEdge(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID, f.ID, ev.PreviousState)
+		if err != nil {
 			return err
+		}
+		if !deleted {
+			return uow.MarkRetryable(errEdgeChanged)
 		}
 		if ev.PreviousState != graph.StateActive {
 			return nil
