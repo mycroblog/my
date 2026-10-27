@@ -61,4 +61,7 @@ type LoginProviderRepository interface {
 	FindLinkedExternalIdentity(ctx context.Context, providerID, subject string) (identity.LinkedExternalIdentity, error)
 	// ListLinkedExternalIdentities returns the current links of a user, oldest first.
 	ListLinkedExternalIdentities(ctx context.Context, userID string) ([]identity.LinkedExternalIdentity, error)
+	// CountLoginProviderLinks returns the number of users with a current link to each provider
+	// that has one.
+	CountLoginProviderLinks(ctx context.Context) (map[string]int, error)
 }

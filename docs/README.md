@@ -5,6 +5,7 @@
 - [Administrators and roles](operations/admin-cli.md)
 - [Instance settings](operations/instance-settings.md)
 - [Registration (registration modes, invitations, approval, email verification)](operations/registration.md)
+- [External login providers (OpenID Connect, GitHub, Mastodon)](operations/login-providers.md)
 - [Sending email (SMTP settings, SPF/DKIM/DMARC, failures and suppressions, unsubscribing)](operations/email.md)
 - [CAPTCHA against bots (Turnstile / hCaptcha / reCAPTCHA)](operations/captcha.md)
 - [Domain blocks and handling reports](operations/moderation.md)

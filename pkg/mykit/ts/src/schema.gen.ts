@@ -5973,6 +5973,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/login_providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the login providers
+         * @description The external login providers that are not deleted, enabled or not, newest first.
+         *     Needs the `manage_login_providers` permission.
+         */
+        get: operations["listAdminLoginProviders"];
+        put?: never;
+        /**
+         * Set up a login provider
+         * @description Sets up an external login provider, enabled, with the client ID and secret that the
+         *     provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+         *     that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+         *     says which. The setup is recorded in the audit log under the display name.
+         *     Needs the `manage_login_providers` permission.
+         */
+        post: operations["createLoginProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/login_providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a login provider
+         * @description An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        get: operations["getAdminLoginProvider"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a login provider
+         * @description Deletes the provider for good: the users linked to it no longer sign in with it. The
+         *     deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        delete: operations["deleteLoginProvider"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a login provider
+         * @description Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+         *     `organizations` remove them. A refused change is a 422
+         *     `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+         *     unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        patch: operations["updateLoginProvider"];
+        trace?: never;
+    };
+    "/admin/login_providers/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable a login provider
+         * @description Users sign in, sign up, and link their accounts with the provider again. Enabling an
+         *     enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+         *     deleted ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        post: operations["enableLoginProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/login_providers/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable a login provider
+         * @description Nobody signs in, signs up, or links an account with the provider until it is enabled
+         *     again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+         *     answer is the number of users that can no longer sign in with it. Disabling a disabled
+         *     provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+         *     ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        post: operations["disableLoginProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/login_providers/{id}/rotate_secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give a login provider a new client secret
+         * @description Replaces the client secret with the one the request gives, which the provider issued;
+         *     the previous one is no longer used. The secret is never shown again. A secret that
+         *     breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+         *     recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+         */
+        post: operations["rotateLoginProviderSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/webhooks": {
         parameters: {
             query?: never;
@@ -6897,6 +7030,100 @@ export interface components {
             state_changed_at: string;
         };
         /**
+         * @description An external login provider that users sign in, sign up, and link their accounts with.
+         *     Its client secret is never shown.
+         */
+        AdminLoginProvider: {
+            id: components["schemas"]["Id"];
+            kind: components["schemas"]["LoginProviderKind"];
+            /**
+             * @description The name of the provider on the administration screens, and on the sign-in button of
+             *     an `oidc` provider as it is written.
+             */
+            display_name: string;
+            /**
+             * @description The OpenID Connect issuer of an `oidc` provider, or the server's URL
+             *     (`https://<host>`) of a `mastodon` one; omitted for `github`.
+             */
+            issuer?: string;
+            client_id: string;
+            /** @description The scopes asked for besides the ones the kind needs, sorted. */
+            scopes: string[];
+            /** @description Whether new users may sign up with the provider. */
+            allow_signup: boolean;
+            /** @description Whether users may link their account to the provider. */
+            allow_link: boolean;
+            /** @description The conditions of an `oidc` provider, by claim; empty lets every user in. */
+            claims: components["schemas"]["LoginProviderClaimCondition"][];
+            /**
+             * @description The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
+             *     provider must belong to; empty lets every GitHub user in.
+             */
+            organizations: string[];
+            state: components["schemas"]["AdminLoginProviderState"];
+            /** Format: date-time */
+            state_changed_at: string;
+            /**
+             * @description The redirect URI to register at the provider:
+             *     `https://<host>/auth/external/<id>/callback`.
+             */
+            callback_url: string;
+            /**
+             * @description The number of users whose accounts are linked to the provider; disabling or deleting it
+             *     keeps them from signing in with it.
+             */
+            linked_users: number;
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the settings last changed.
+             */
+            updated_at: string;
+        };
+        /** @description The login providers, newest first. */
+        AdminLoginProviderList: {
+            items: components["schemas"]["AdminLoginProvider"][];
+        };
+        /**
+         * @description Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+         *     screen shows only the enabled providers.
+         * @enum {string}
+         */
+        AdminLoginProviderState: "enabled" | "disabled";
+        /** @description A new login provider. `allow_signup` is false and `allow_link` true unless given. */
+        CreateLoginProviderRequest: {
+            kind: components["schemas"]["LoginProviderKind"];
+            /**
+             * @description The name on the administration screens and on the sign-in button of an `oidc`
+             *     provider, 1 to 100 characters without control characters.
+             */
+            display_name: string;
+            /**
+             * @description For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+             *     exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+             *     `https://<host>`. None for `github`.
+             */
+            issuer?: string;
+            /** @description The client ID that the provider gave, up to 512 bytes. */
+            client_id: string;
+            /**
+             * @description Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+             *     Organizations of `github`); none for `mastodon`.
+             */
+            scopes?: string[];
+            /** @description Whether new users may sign up with the provider. */
+            allow_signup?: boolean;
+            /** @description Whether users may link their account to the provider. */
+            allow_link?: boolean;
+            /** @description The conditions on the claims of the ID token, for `oidc` only, at most 10. */
+            claims?: components["schemas"]["LoginProviderClaimCondition"][];
+            /** @description The GitHub Organizations a user must belong to one of, for `github` only, at most 50. */
+            organizations?: string[];
+            /** @description The client secret that the provider gave, up to 1024 bytes. It is never shown again. */
+            client_secret: string;
+        };
+        /**
          * @description The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
          *     after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
          *     email) stops every email but the verification email that the user asks for; verifying the
@@ -7473,6 +7700,42 @@ export interface components {
             /** @description The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased. */
             host: string;
         };
+        /**
+         * @description A condition of an `oidc` provider: a user signs in only when the claim of the ID token
+         *     has one of the values, such as `hd` for the domain of a Google Workspace organization.
+         */
+        LoginProviderClaimCondition: {
+            /** @description The name of the claim, up to 100 bytes. */
+            claim: string;
+            /** @description The allowed values, 1 to 50 of up to 256 characters each, sorted. */
+            values: string[];
+        };
+        /**
+         * @description The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+         *     its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+         * @enum {string}
+         */
+        LoginProviderKind: "oidc" | "github" | "mastodon";
+        /**
+         * @description The problem of a login provider that breaks a rule (422,
+         *     `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
+         *     request) has none.
+         */
+        LoginProviderProblem: components["schemas"]["Problem"] & {
+            reason?: components["schemas"]["LoginProviderProblemReason"];
+        };
+        /**
+         * @description Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+         *     than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+         *     `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+         *     for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+         *     control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+         *     characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+         *     claims for another kind than `oidc`, Organizations for another kind than `github`, or
+         *     ones that are not valid.
+         * @enum {string}
+         */
+        LoginProviderProblemReason: "kind" | "display_name" | "issuer" | "client_id" | "client_secret" | "scopes" | "conditions";
         /**
          * @description The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
          *     server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
@@ -8272,6 +8535,11 @@ export interface components {
             export_until?: string;
             /** @description The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none. */
             message?: string;
+        };
+        /** @description A new client secret of a login provider. */
+        RotateLoginProviderSecretRequest: {
+            /** @description The client secret that the provider gave, up to 1024 bytes. It is never shown again. */
+            client_secret: string;
         };
         /**
          * @description Where the server is in its closure (ADR-0088 §1):
@@ -12055,6 +12323,38 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /**
+         * @description The changes to a login provider; what is omitted stays. The kind does not change, and the
+         *     client secret changes only by a rotation.
+         */
+        UpdateLoginProviderRequest: {
+            /**
+             * @description The name on the administration screens and on the sign-in button of an `oidc`
+             *     provider, 1 to 100 characters without control characters.
+             */
+            display_name?: string;
+            /**
+             * @description For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+             *     exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+             *     `https://<host>`. None for `github`.
+             */
+            issuer?: string;
+            /** @description The client ID that the provider gave, up to 512 bytes. */
+            client_id?: string;
+            /**
+             * @description Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+             *     Organizations of `github`); none for `mastodon`.
+             */
+            scopes?: string[];
+            /** @description Whether new users may sign up with the provider. */
+            allow_signup?: boolean;
+            /** @description Whether users may link their account to the provider. */
+            allow_link?: boolean;
+            /** @description The conditions on the claims of the ID token, for `oidc` only, at most 10. */
+            claims?: components["schemas"]["LoginProviderClaimCondition"][];
+            /** @description The GitHub Organizations a user must belong to one of, for `github` only, at most 50. */
+            organizations?: string[];
+        };
         /** @description The changes to an OAuth app, checked as for a new one; what is omitted stays. */
         UpdateOAuthAppRequest: {
             name?: string;
@@ -12638,6 +12938,16 @@ export interface components {
                 "application/json": components["schemas"]["AdminCustomEmojiRequest"];
             };
         };
+        /** @description The login provider. */
+        AdminLoginProvider: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminLoginProvider"];
+            };
+        };
         /** @description The error group. */
         ErrorGroup: {
             headers: {
@@ -12882,6 +13192,18 @@ export interface components {
                 "application/problem+json": components["schemas"]["CustomEmojiRequestProblem"];
             };
         };
+        /** @description The login provider breaks a rule; nothing was changed. */
+        LoginProviderProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["LoginProviderProblem"];
+            };
+        };
         /** @description The OAuth app. */
         OAuthApp: {
             headers: {
@@ -13043,6 +13365,8 @@ export interface components {
         InstanceTextKey: components["schemas"]["InstanceTextKey"];
         /** @description The ID of the invite. */
         InviteId: components["schemas"]["Id"];
+        /** @description The ID of the login provider. */
+        LoginProviderId: components["schemas"]["Id"];
         /** @description The ID of the OAuth client (not its `client_id`). */
         OAuthClientId: components["schemas"]["Id"];
         /** @description The denied host, in lowercase and without a port. */
@@ -19473,6 +19797,158 @@ export interface operations {
                 };
                 content?: never;
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAdminLoginProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The login providers. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLoginProviderList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLoginProviderRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            422: components["responses"]["LoginProviderProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The login provider is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLoginProviderRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            422: components["responses"]["LoginProviderProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    enableLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    disableLoginProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    rotateLoginProviderSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the login provider. */
+                id: components["parameters"]["LoginProviderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotateLoginProviderSecretRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminLoginProvider"];
+            422: components["responses"]["LoginProviderProblem"];
             default: components["responses"]["Problem"];
         };
     };

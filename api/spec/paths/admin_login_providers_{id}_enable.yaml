@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: enableLoginProvider
+  summary: Enable a login provider
+  description: |
+    Users sign in, sign up, and link their accounts with the provider again. Enabling an
+    enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+    deleted ID is a 404. Needs the `manage_login_providers` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/LoginProviderId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminLoginProvider.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

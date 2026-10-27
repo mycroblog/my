@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+  screen shows only the enabled providers.
+type: string
+enum: [enabled, disabled]

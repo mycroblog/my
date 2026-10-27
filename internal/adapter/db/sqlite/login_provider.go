@@ -294,6 +294,19 @@ func (r *IdentityRepository) ListLinkedExternalIdentities(ctx context.Context, u
 	return out, nil
 }
 
+// CountLoginProviderLinks implements appidentity.LoginProviderRepository.
+func (r *IdentityRepository) CountLoginProviderLinks(ctx context.Context) (map[string]int, error) {
+	rows, err := r.db.reader().CountLoginProviderLinks(ctx)
+	if err != nil {
+		return nil, wrap(err, "count login provider links")
+	}
+	out := make(map[string]int, len(rows))
+	for _, row := range rows {
+		out[row.ProviderID] = int(row.Users)
+	}
+	return out, nil
+}
+
 // RebuildLoginProviderHeads implements appidentity.ProjectionRepository.
 func (r *IdentityRepository) RebuildLoginProviderHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild login provider heads",

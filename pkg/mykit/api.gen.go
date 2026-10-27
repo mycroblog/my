@@ -872,6 +872,24 @@ func (e AdminJobState) Valid() bool {
 	}
 }
 
+// Defines values for AdminLoginProviderState.
+const (
+	AdminLoginProviderStateDisabled AdminLoginProviderState = "disabled"
+	AdminLoginProviderStateEnabled  AdminLoginProviderState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the AdminLoginProviderState enum.
+func (e AdminLoginProviderState) Valid() bool {
+	switch e {
+	case AdminLoginProviderStateDisabled:
+		return true
+	case AdminLoginProviderStateEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminReportCategory.
 const (
 	AdminReportCategoryLegal     AdminReportCategory = "legal"
@@ -2216,6 +2234,60 @@ func (e InstanceTextKey) Valid() bool {
 	case InstanceTextKeyTerms:
 		return true
 	case InstanceTextKeyThumbnailAlt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginProviderKind.
+const (
+	LoginProviderKindGithub   LoginProviderKind = "github"
+	LoginProviderKindMastodon LoginProviderKind = "mastodon"
+	LoginProviderKindOidc     LoginProviderKind = "oidc"
+)
+
+// Valid indicates whether the value is a known member of the LoginProviderKind enum.
+func (e LoginProviderKind) Valid() bool {
+	switch e {
+	case LoginProviderKindGithub:
+		return true
+	case LoginProviderKindMastodon:
+		return true
+	case LoginProviderKindOidc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginProviderProblemReason.
+const (
+	LoginProviderProblemReasonClientId     LoginProviderProblemReason = "client_id"
+	LoginProviderProblemReasonClientSecret LoginProviderProblemReason = "client_secret"
+	LoginProviderProblemReasonConditions   LoginProviderProblemReason = "conditions"
+	LoginProviderProblemReasonDisplayName  LoginProviderProblemReason = "display_name"
+	LoginProviderProblemReasonIssuer       LoginProviderProblemReason = "issuer"
+	LoginProviderProblemReasonKind         LoginProviderProblemReason = "kind"
+	LoginProviderProblemReasonScopes       LoginProviderProblemReason = "scopes"
+)
+
+// Valid indicates whether the value is a known member of the LoginProviderProblemReason enum.
+func (e LoginProviderProblemReason) Valid() bool {
+	switch e {
+	case LoginProviderProblemReasonClientId:
+		return true
+	case LoginProviderProblemReasonClientSecret:
+		return true
+	case LoginProviderProblemReasonConditions:
+		return true
+	case LoginProviderProblemReasonDisplayName:
+		return true
+	case LoginProviderProblemReasonIssuer:
+		return true
+	case LoginProviderProblemReasonKind:
+		return true
+	case LoginProviderProblemReasonScopes:
 		return true
 	default:
 		return false
@@ -4857,6 +4929,70 @@ type AdminJobPage struct {
 // failed for good (its handler gave up, or it used up its attempts).
 type AdminJobState string
 
+// AdminLoginProvider An external login provider that users sign in, sign up, and link their accounts with.
+// Its client secret is never shown.
+type AdminLoginProvider struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink bool `json:"allow_link"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup bool `json:"allow_signup"`
+
+	// CallbackUrl The redirect URI to register at the provider:
+	// `https://<host>/auth/external/<id>/callback`.
+	CallbackUrl string `json:"callback_url"`
+
+	// Claims The conditions of an `oidc` provider, by claim; empty lets every user in.
+	Claims    []LoginProviderClaimCondition `json:"claims"`
+	ClientId  string                        `json:"client_id"`
+	CreatedAt time.Time                     `json:"created_at"`
+
+	// DisplayName The name of the provider on the administration screens, and on the sign-in button of
+	// an `oidc` provider as it is written.
+	DisplayName string `json:"display_name"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Issuer The OpenID Connect issuer of an `oidc` provider, or the server's URL
+	// (`https://<host>`) of a `mastodon` one; omitted for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+
+	// LinkedUsers The number of users whose accounts are linked to the provider; disabling or deleting it
+	// keeps them from signing in with it.
+	LinkedUsers int `json:"linked_users"`
+
+	// Organizations The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
+	// provider must belong to; empty lets every GitHub user in.
+	Organizations []string `json:"organizations"`
+
+	// Scopes The scopes asked for besides the ones the kind needs, sorted.
+	Scopes []string `json:"scopes"`
+
+	// State Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+	// screen shows only the enabled providers.
+	State          AdminLoginProviderState `json:"state"`
+	StateChangedAt time.Time               `json:"state_changed_at"`
+
+	// UpdatedAt When the settings last changed.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AdminLoginProviderList The login providers, newest first.
+type AdminLoginProviderList struct {
+	Items []AdminLoginProvider `json:"items"`
+}
+
+// AdminLoginProviderState Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+// screen shows only the enabled providers.
+type AdminLoginProviderState string
+
 // AdminOAuthClient An OAuth client, as the administrators see it.
 type AdminOAuthClient struct {
 	// ClientId The identifier that the client sends, or the URL of its metadata document.
@@ -6609,6 +6745,44 @@ type CreateInviteRequest struct {
 	MaxUses *int `json:"max_uses,omitempty"`
 }
 
+// CreateLoginProviderRequest A new login provider. `allow_signup` is false and `allow_link` true unless given.
+type CreateLoginProviderRequest struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink *bool `json:"allow_link,omitempty"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup *bool `json:"allow_signup,omitempty"`
+
+	// Claims The conditions on the claims of the ID token, for `oidc` only, at most 10.
+	Claims *[]LoginProviderClaimCondition `json:"claims,omitempty"`
+
+	// ClientId The client ID that the provider gave, up to 512 bytes.
+	ClientId string `json:"client_id"`
+
+	// ClientSecret The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+	ClientSecret string `json:"client_secret"`
+
+	// DisplayName The name on the administration screens and on the sign-in button of an `oidc`
+	// provider, 1 to 100 characters without control characters.
+	DisplayName string `json:"display_name"`
+
+	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+	// `https://<host>`. None for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+
+	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+	Organizations *[]string `json:"organizations,omitempty"`
+
+	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+	// Organizations of `github`); none for `mastodon`.
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
 // CreateOAuthAppRequest A new OAuth app.
 type CreateOAuthAppRequest struct {
 	// ClientType `public`: the app has no secret (a single-page, native, or command-line app).
@@ -8292,6 +8466,62 @@ type LinkCardImage struct {
 	Width int `json:"width"`
 }
 
+// LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
+// has one of the values, such as `hd` for the domain of a Google Workspace organization.
+type LoginProviderClaimCondition struct {
+	// Claim The name of the claim, up to 100 bytes.
+	Claim string `json:"claim"`
+
+	// Values The allowed values, 1 to 50 of up to 256 characters each, sorted.
+	Values []string `json:"values"`
+}
+
+// LoginProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+type LoginProviderKind string
+
+// LoginProviderProblem The problem of a login provider that breaks a rule (422,
+// `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
+// request) has none.
+type LoginProviderProblem struct {
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+	// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+	// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+	// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+	// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+	// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+	// ones that are not valid.
+	Reason *LoginProviderProblemReason `json:"reason,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type                 string                 `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// LoginProviderProblemReason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+// ones that are not valid.
+type LoginProviderProblemReason string
+
 // MediaAnimatedVariants The moving renditions of an animation, absent for a still image: animated WebP for
 // `small` and `medium`, and a GIF for `large`.
 type MediaAnimatedVariants struct {
@@ -9951,6 +10181,12 @@ type RoleProblem struct {
 // characters on one line. `badge_color`: an unknown badge color.
 type RoleProblemReason string
 
+// RotateLoginProviderSecretRequest A new client secret of a login provider.
+type RotateLoginProviderSecretRequest struct {
+	// ClientSecret The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+	ClientSecret string `json:"client_secret"`
+}
+
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
 // `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
@@ -10806,6 +11042,38 @@ type UpdateInstanceSettingsRequest struct {
 	Values map[string]string `json:"values"`
 }
 
+// UpdateLoginProviderRequest The changes to a login provider; what is omitted stays. The kind does not change, and the
+// client secret changes only by a rotation.
+type UpdateLoginProviderRequest struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink *bool `json:"allow_link,omitempty"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup *bool `json:"allow_signup,omitempty"`
+
+	// Claims The conditions on the claims of the ID token, for `oidc` only, at most 10.
+	Claims *[]LoginProviderClaimCondition `json:"claims,omitempty"`
+
+	// ClientId The client ID that the provider gave, up to 512 bytes.
+	ClientId *string `json:"client_id,omitempty"`
+
+	// DisplayName The name on the administration screens and on the sign-in button of an `oidc`
+	// provider, 1 to 100 characters without control characters.
+	DisplayName *string `json:"display_name,omitempty"`
+
+	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+	// `https://<host>`. None for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+	Organizations *[]string `json:"organizations,omitempty"`
+
+	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+	// Organizations of `github`); none for `mastodon`.
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
 // UpdateOAuthAppRequest The changes to an OAuth app, checked as for a new one; what is omitted stays.
 type UpdateOAuthAppRequest struct {
 	Name         *string   `json:"name,omitempty"`
@@ -11575,6 +11843,11 @@ type InviteId = Id
 
 // Limit defines model for Limit.
 type Limit = int
+
+// LoginProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type LoginProviderId = Id
 
 // OAuthAppId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -12444,6 +12717,15 @@ type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody = CreateInviteRequest
 
+// CreateLoginProviderJSONRequestBody defines body for CreateLoginProvider for application/json ContentType.
+type CreateLoginProviderJSONRequestBody = CreateLoginProviderRequest
+
+// UpdateLoginProviderJSONRequestBody defines body for UpdateLoginProvider for application/json ContentType.
+type UpdateLoginProviderJSONRequestBody = UpdateLoginProviderRequest
+
+// RotateLoginProviderSecretJSONRequestBody defines body for RotateLoginProviderSecret for application/json ContentType.
+type RotateLoginProviderSecretJSONRequestBody = RotateLoginProviderSecretRequest
+
 // DenyOAuthClientHostJSONRequestBody defines body for DenyOAuthClientHost for application/json ContentType.
 type DenyOAuthClientHostJSONRequestBody = DenyOAuthClientHostRequest
 
@@ -12847,6 +13129,143 @@ func (a *CustomEmojiRequestProblem) UnmarshalJSON(b []byte) error {
 
 // Override default JSON handling for CustomEmojiRequestProblem to handle AdditionalProperties
 func (a CustomEmojiRequestProblem) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Detail != nil {
+		object["detail"], err = json.Marshal(a.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'detail': %w", err)
+		}
+	}
+
+	if a.Reason != nil {
+		object["reason"], err = json.Marshal(a.Reason)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'reason': %w", err)
+		}
+	}
+
+	if a.RequestId != nil {
+		object["request_id"], err = json.Marshal(a.RequestId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'request_id': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for LoginProviderProblem. Returns the specified
+// element and whether it was found
+func (a LoginProviderProblem) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for LoginProviderProblem
+func (a *LoginProviderProblem) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for LoginProviderProblem to handle AdditionalProperties
+func (a *LoginProviderProblem) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["detail"]; found {
+		err = json.Unmarshal(raw, &a.Detail)
+		if err != nil {
+			return fmt.Errorf("error reading 'detail': %w", err)
+		}
+		delete(object, "detail")
+	}
+
+	if raw, found := object["reason"]; found {
+		err = json.Unmarshal(raw, &a.Reason)
+		if err != nil {
+			return fmt.Errorf("error reading 'reason': %w", err)
+		}
+		delete(object, "reason")
+	}
+
+	if raw, found := object["request_id"]; found {
+		err = json.Unmarshal(raw, &a.RequestId)
+		if err != nil {
+			return fmt.Errorf("error reading 'request_id': %w", err)
+		}
+		delete(object, "request_id")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for LoginProviderProblem to handle AdditionalProperties
+func (a LoginProviderProblem) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
@@ -15514,6 +15933,123 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 	RetryAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAdminLoginProviders List the login providers
+	//
+	// The external login providers that are not deleted, enabled or not, newest first.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Corresponds with GET /admin/login_providers (the `ListAdminLoginProviders` operationId).
+	ListAdminLoginProviders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateLoginProviderWithBody Set up a login provider
+	//
+	// Sets up an external login provider, enabled, with the client ID and secret that the
+	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+	// says which. The setup is recorded in the audit log under the display name.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+	CreateLoginProviderWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateLoginProvider Set up a login provider
+	//
+	// Sets up an external login provider, enabled, with the client ID and secret that the
+	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+	// says which. The setup is recorded in the audit log under the display name.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+	CreateLoginProvider(ctx context.Context, body CreateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteLoginProvider Delete a login provider
+	//
+	// Deletes the provider for good: the users linked to it no longer sign in with it. The
+	// deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Corresponds with DELETE /admin/login_providers/{id} (the `DeleteLoginProvider` operationId).
+	DeleteLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminLoginProvider Get a login provider
+	//
+	// An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Corresponds with GET /admin/login_providers/{id} (the `GetAdminLoginProvider` operationId).
+	GetAdminLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateLoginProviderWithBody Change a login provider
+	//
+	// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+	// `organizations` remove them. A refused change is a 422
+	// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+	// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+	UpdateLoginProviderWithBody(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateLoginProvider Change a login provider
+	//
+	// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+	// `organizations` remove them. A refused change is a 422
+	// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+	// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+	UpdateLoginProvider(ctx context.Context, id LoginProviderId, body UpdateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisableLoginProvider Disable a login provider
+	//
+	// Nobody signs in, signs up, or links an account with the provider until it is enabled
+	// again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+	// answer is the number of users that can no longer sign in with it. Disabling a disabled
+	// provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+	// ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Corresponds with POST /admin/login_providers/{id}/disable (the `DisableLoginProvider` operationId).
+	DisableLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableLoginProvider Enable a login provider
+	//
+	// Users sign in, sign up, and link their accounts with the provider again. Enabling an
+	// enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+	// deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Corresponds with POST /admin/login_providers/{id}/enable (the `EnableLoginProvider` operationId).
+	EnableLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RotateLoginProviderSecretWithBody Give a login provider a new client secret
+	//
+	// Replaces the client secret with the one the request gives, which the provider issued;
+	// the previous one is no longer used. The secret is never shown again. A secret that
+	// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+	// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+	RotateLoginProviderSecretWithBody(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RotateLoginProviderSecret Give a login provider a new client secret
+	//
+	// Replaces the client secret with the one the request gives, which the provider issued;
+	// the previous one is no longer used. The secret is never shown again. A secret that
+	// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+	// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+	RotateLoginProviderSecret(ctx context.Context, id LoginProviderId, body RotateLoginProviderSecretJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
 	//
@@ -21570,6 +22106,233 @@ func (c *Client) ListAdminJobAttempts(ctx context.Context, id Id, params *ListAd
 // Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 func (c *Client) RetryAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRetryAdminJobRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAdminLoginProviders List the login providers
+//
+// The external login providers that are not deleted, enabled or not, newest first.
+// Needs the `manage_login_providers` permission.
+//
+// Corresponds with GET /admin/login_providers (the `ListAdminLoginProviders` operationId).
+func (c *Client) ListAdminLoginProviders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAdminLoginProvidersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateLoginProviderWithBody Set up a login provider
+//
+// Sets up an external login provider, enabled, with the client ID and secret that the
+// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+// says which. The setup is recorded in the audit log under the display name.
+// Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+func (c *Client) CreateLoginProviderWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateLoginProviderRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateLoginProvider Set up a login provider
+//
+// Sets up an external login provider, enabled, with the client ID and secret that the
+// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+// says which. The setup is recorded in the audit log under the display name.
+// Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+func (c *Client) CreateLoginProvider(ctx context.Context, body CreateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateLoginProviderRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteLoginProvider Delete a login provider
+//
+// Deletes the provider for good: the users linked to it no longer sign in with it. The
+// deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Corresponds with DELETE /admin/login_providers/{id} (the `DeleteLoginProvider` operationId).
+func (c *Client) DeleteLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteLoginProviderRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminLoginProvider Get a login provider
+//
+// An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Corresponds with GET /admin/login_providers/{id} (the `GetAdminLoginProvider` operationId).
+func (c *Client) GetAdminLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminLoginProviderRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateLoginProviderWithBody Change a login provider
+//
+// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+// `organizations` remove them. A refused change is a 422
+// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+func (c *Client) UpdateLoginProviderWithBody(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLoginProviderRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateLoginProvider Change a login provider
+//
+// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+// `organizations` remove them. A refused change is a 422
+// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+func (c *Client) UpdateLoginProvider(ctx context.Context, id LoginProviderId, body UpdateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLoginProviderRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisableLoginProvider Disable a login provider
+//
+// Nobody signs in, signs up, or links an account with the provider until it is enabled
+// again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+// answer is the number of users that can no longer sign in with it. Disabling a disabled
+// provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+// ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Corresponds with POST /admin/login_providers/{id}/disable (the `DisableLoginProvider` operationId).
+func (c *Client) DisableLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableLoginProviderRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableLoginProvider Enable a login provider
+//
+// Users sign in, sign up, and link their accounts with the provider again. Enabling an
+// enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+// deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Corresponds with POST /admin/login_providers/{id}/enable (the `EnableLoginProvider` operationId).
+func (c *Client) EnableLoginProvider(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableLoginProviderRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RotateLoginProviderSecretWithBody Give a login provider a new client secret
+//
+// Replaces the client secret with the one the request gives, which the provider issued;
+// the previous one is no longer used. The secret is never shown again. A secret that
+// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+func (c *Client) RotateLoginProviderSecretWithBody(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateLoginProviderSecretRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RotateLoginProviderSecret Give a login provider a new client secret
+//
+// Replaces the client secret with the one the request gives, which the provider issued;
+// the previous one is no longer used. The secret is never shown again. A secret that
+// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+func (c *Client) RotateLoginProviderSecret(ctx context.Context, id LoginProviderId, body RotateLoginProviderSecretJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateLoginProviderSecretRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -32070,6 +32833,303 @@ func NewRetryAdminJobRequest(server string, id Id) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListAdminLoginProvidersRequest constructs an http.Request for the ListAdminLoginProviders method
+func NewListAdminLoginProvidersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateLoginProviderRequest calls the generic CreateLoginProvider builder with application/json body
+func NewCreateLoginProviderRequest(server string, body CreateLoginProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateLoginProviderRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateLoginProviderRequestWithBody constructs an http.Request for the CreateLoginProvider method, with any body, and a specified content type
+func NewCreateLoginProviderRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteLoginProviderRequest constructs an http.Request for the DeleteLoginProvider method
+func NewDeleteLoginProviderRequest(server string, id LoginProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAdminLoginProviderRequest constructs an http.Request for the GetAdminLoginProvider method
+func NewGetAdminLoginProviderRequest(server string, id LoginProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateLoginProviderRequest calls the generic UpdateLoginProvider builder with application/json body
+func NewUpdateLoginProviderRequest(server string, id LoginProviderId, body UpdateLoginProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateLoginProviderRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateLoginProviderRequestWithBody constructs an http.Request for the UpdateLoginProvider method, with any body, and a specified content type
+func NewUpdateLoginProviderRequestWithBody(server string, id LoginProviderId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDisableLoginProviderRequest constructs an http.Request for the DisableLoginProvider method
+func NewDisableLoginProviderRequest(server string, id LoginProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s/disable", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEnableLoginProviderRequest constructs an http.Request for the EnableLoginProvider method
+func NewEnableLoginProviderRequest(server string, id LoginProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s/enable", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRotateLoginProviderSecretRequest calls the generic RotateLoginProviderSecret builder with application/json body
+func NewRotateLoginProviderSecretRequest(server string, id LoginProviderId, body RotateLoginProviderSecretJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRotateLoginProviderSecretRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewRotateLoginProviderSecretRequestWithBody constructs an http.Request for the RotateLoginProviderSecret method, with any body, and a specified content type
+func NewRotateLoginProviderSecretRequestWithBody(server string, id LoginProviderId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/login_providers/%s/rotate_secret", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListOAuthClientHostDenialsRequest constructs an http.Request for the ListOAuthClientHostDenials method
 func NewListOAuthClientHostDenialsRequest(server string, params *ListOAuthClientHostDenialsParams) (*http.Request, error) {
 	var err error
@@ -42553,6 +43613,133 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 	RetryAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*RetryAdminJobResponse, error)
 
+	// ListAdminLoginProvidersWithResponse List the login providers
+	//
+	// The external login providers that are not deleted, enabled or not, newest first.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/login_providers (the `ListAdminLoginProviders` operationId).
+	ListAdminLoginProvidersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminLoginProvidersResponse, error)
+
+	// CreateLoginProviderWithBodyWithResponse Set up a login provider
+	//
+	// Sets up an external login provider, enabled, with the client ID and secret that the
+	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+	// says which. The setup is recorded in the audit log under the display name.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+	CreateLoginProviderWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateLoginProviderResponse, error)
+
+	// CreateLoginProviderWithResponse Set up a login provider
+	//
+	// Sets up an external login provider, enabled, with the client ID and secret that the
+	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+	// says which. The setup is recorded in the audit log under the display name.
+	// Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+	CreateLoginProviderWithResponse(ctx context.Context, body CreateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateLoginProviderResponse, error)
+
+	// DeleteLoginProviderWithResponse Delete a login provider
+	//
+	// Deletes the provider for good: the users linked to it no longer sign in with it. The
+	// deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/login_providers/{id} (the `DeleteLoginProvider` operationId).
+	DeleteLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*DeleteLoginProviderResponse, error)
+
+	// GetAdminLoginProviderWithResponse Get a login provider
+	//
+	// An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/login_providers/{id} (the `GetAdminLoginProvider` operationId).
+	GetAdminLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*GetAdminLoginProviderResponse, error)
+
+	// UpdateLoginProviderWithBodyWithResponse Change a login provider
+	//
+	// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+	// `organizations` remove them. A refused change is a 422
+	// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+	// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+	UpdateLoginProviderWithBodyWithResponse(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLoginProviderResponse, error)
+
+	// UpdateLoginProviderWithResponse Change a login provider
+	//
+	// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+	// `organizations` remove them. A refused change is a 422
+	// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+	// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+	UpdateLoginProviderWithResponse(ctx context.Context, id LoginProviderId, body UpdateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLoginProviderResponse, error)
+
+	// DisableLoginProviderWithResponse Disable a login provider
+	//
+	// Nobody signs in, signs up, or links an account with the provider until it is enabled
+	// again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+	// answer is the number of users that can no longer sign in with it. Disabling a disabled
+	// provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+	// ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers/{id}/disable (the `DisableLoginProvider` operationId).
+	DisableLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*DisableLoginProviderResponse, error)
+
+	// EnableLoginProviderWithResponse Enable a login provider
+	//
+	// Users sign in, sign up, and link their accounts with the provider again. Enabling an
+	// enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+	// deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers/{id}/enable (the `EnableLoginProvider` operationId).
+	EnableLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*EnableLoginProviderResponse, error)
+
+	// RotateLoginProviderSecretWithBodyWithResponse Give a login provider a new client secret
+	//
+	// Replaces the client secret with the one the request gives, which the provider issued;
+	// the previous one is no longer used. The secret is never shown again. A secret that
+	// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+	// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+	RotateLoginProviderSecretWithBodyWithResponse(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RotateLoginProviderSecretResponse, error)
+
+	// RotateLoginProviderSecretWithResponse Give a login provider a new client secret
+	//
+	// Replaces the client secret with the one the request gives, which the provider issued;
+	// the previous one is no longer used. The secret is never shown again. A secret that
+	// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+	// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+	RotateLoginProviderSecretWithResponse(ctx context.Context, id LoginProviderId, body RotateLoginProviderSecretJSONRequestBody, reqEditors ...RequestEditorFn) (*RotateLoginProviderSecretResponse, error)
+
 	// ListOAuthClientHostDenialsWithResponse List the denied hosts of client metadata documents
 	//
 	// The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
@@ -52493,6 +53680,557 @@ func (r RetryAdminJobResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RetryAdminJobResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAdminLoginProvidersResponse200Headers the declared response headers of an HTTP 200 response for ListAdminLoginProviders
+type ListAdminLoginProvidersResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAdminLoginProvidersResponseDefaultHeaders the declared response headers of an HTTP default response for ListAdminLoginProviders
+type ListAdminLoginProvidersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAdminLoginProvidersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProviderList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAdminLoginProvidersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAdminLoginProvidersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAdminLoginProvidersResponse) GetJSON200() *AdminLoginProviderList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAdminLoginProvidersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAdminLoginProvidersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAdminLoginProvidersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAdminLoginProvidersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAdminLoginProvidersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for CreateLoginProvider
+type CreateLoginProviderResponse200Headers struct {
+	CacheControl *string
+}
+
+// CreateLoginProviderResponse422Headers the declared response headers of an HTTP 422 response for CreateLoginProvider
+type CreateLoginProviderResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// CreateLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for CreateLoginProvider
+type CreateLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *LoginProviderProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CreateLoginProviderResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *CreateLoginProviderResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateLoginProviderResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CreateLoginProviderResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateLoginProviderResponse) GetApplicationproblemJSON422() *LoginProviderProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteLoginProvider
+type DeleteLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteLoginProviderResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for GetAdminLoginProvider
+type GetAdminLoginProviderResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminLoginProvider
+type GetAdminLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminLoginProviderResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminLoginProviderResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminLoginProviderResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for UpdateLoginProvider
+type UpdateLoginProviderResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateLoginProviderResponse422Headers the declared response headers of an HTTP 422 response for UpdateLoginProvider
+type UpdateLoginProviderResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// UpdateLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateLoginProvider
+type UpdateLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *LoginProviderProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateLoginProviderResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *UpdateLoginProviderResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateLoginProviderResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateLoginProviderResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r UpdateLoginProviderResponse) GetApplicationproblemJSON422() *LoginProviderProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DisableLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for DisableLoginProvider
+type DisableLoginProviderResponse200Headers struct {
+	CacheControl *string
+}
+
+// DisableLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for DisableLoginProvider
+type DisableLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DisableLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DisableLoginProviderResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DisableLoginProviderResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DisableLoginProviderResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DisableLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DisableLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisableLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisableLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisableLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// EnableLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for EnableLoginProvider
+type EnableLoginProviderResponse200Headers struct {
+	CacheControl *string
+}
+
+// EnableLoginProviderResponseDefaultHeaders the declared response headers of an HTTP default response for EnableLoginProvider
+type EnableLoginProviderResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type EnableLoginProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *EnableLoginProviderResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *EnableLoginProviderResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EnableLoginProviderResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r EnableLoginProviderResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r EnableLoginProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableLoginProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableLoginProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EnableLoginProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RotateLoginProviderSecretResponse200Headers the declared response headers of an HTTP 200 response for RotateLoginProviderSecret
+type RotateLoginProviderSecretResponse200Headers struct {
+	CacheControl *string
+}
+
+// RotateLoginProviderSecretResponse422Headers the declared response headers of an HTTP 422 response for RotateLoginProviderSecret
+type RotateLoginProviderSecretResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// RotateLoginProviderSecretResponseDefaultHeaders the declared response headers of an HTTP default response for RotateLoginProviderSecret
+type RotateLoginProviderSecretResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RotateLoginProviderSecretResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminLoginProvider
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *LoginProviderProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RotateLoginProviderSecretResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *RotateLoginProviderSecretResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RotateLoginProviderSecretResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RotateLoginProviderSecretResponse) GetJSON200() *AdminLoginProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RotateLoginProviderSecretResponse) GetApplicationproblemJSON422() *LoginProviderProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RotateLoginProviderSecretResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RotateLoginProviderSecretResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RotateLoginProviderSecretResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RotateLoginProviderSecretResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RotateLoginProviderSecretResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -68195,6 +69933,199 @@ func (c *ClientWithResponses) RetryAdminJobWithResponse(ctx context.Context, id 
 	return ParseRetryAdminJobResponse(rsp)
 }
 
+// ListAdminLoginProvidersWithResponse List the login providers
+//
+// The external login providers that are not deleted, enabled or not, newest first.
+// Needs the `manage_login_providers` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/login_providers (the `ListAdminLoginProviders` operationId).
+func (c *ClientWithResponses) ListAdminLoginProvidersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAdminLoginProvidersResponse, error) {
+	rsp, err := c.ListAdminLoginProviders(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAdminLoginProvidersResponse(rsp)
+}
+
+// CreateLoginProviderWithBodyWithResponse Set up a login provider
+//
+// Sets up an external login provider, enabled, with the client ID and secret that the
+// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+// says which. The setup is recorded in the audit log under the display name.
+// Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+func (c *ClientWithResponses) CreateLoginProviderWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateLoginProviderResponse, error) {
+	rsp, err := c.CreateLoginProviderWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateLoginProviderResponse(rsp)
+}
+
+// CreateLoginProviderWithResponse Set up a login provider
+//
+// Sets up an external login provider, enabled, with the client ID and secret that the
+// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+// says which. The setup is recorded in the audit log under the display name.
+// Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers (the `CreateLoginProvider` operationId).
+func (c *ClientWithResponses) CreateLoginProviderWithResponse(ctx context.Context, body CreateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateLoginProviderResponse, error) {
+	rsp, err := c.CreateLoginProvider(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateLoginProviderResponse(rsp)
+}
+
+// DeleteLoginProviderWithResponse Delete a login provider
+//
+// Deletes the provider for good: the users linked to it no longer sign in with it. The
+// deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/login_providers/{id} (the `DeleteLoginProvider` operationId).
+func (c *ClientWithResponses) DeleteLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*DeleteLoginProviderResponse, error) {
+	rsp, err := c.DeleteLoginProvider(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteLoginProviderResponse(rsp)
+}
+
+// GetAdminLoginProviderWithResponse Get a login provider
+//
+// An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/login_providers/{id} (the `GetAdminLoginProvider` operationId).
+func (c *ClientWithResponses) GetAdminLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*GetAdminLoginProviderResponse, error) {
+	rsp, err := c.GetAdminLoginProvider(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminLoginProviderResponse(rsp)
+}
+
+// UpdateLoginProviderWithBodyWithResponse Change a login provider
+//
+// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+// `organizations` remove them. A refused change is a 422
+// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+func (c *ClientWithResponses) UpdateLoginProviderWithBodyWithResponse(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLoginProviderResponse, error) {
+	rsp, err := c.UpdateLoginProviderWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateLoginProviderResponse(rsp)
+}
+
+// UpdateLoginProviderWithResponse Change a login provider
+//
+// Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+// `organizations` remove them. A refused change is a 422
+// `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+// unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /admin/login_providers/{id} (the `UpdateLoginProvider` operationId).
+func (c *ClientWithResponses) UpdateLoginProviderWithResponse(ctx context.Context, id LoginProviderId, body UpdateLoginProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLoginProviderResponse, error) {
+	rsp, err := c.UpdateLoginProvider(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateLoginProviderResponse(rsp)
+}
+
+// DisableLoginProviderWithResponse Disable a login provider
+//
+// Nobody signs in, signs up, or links an account with the provider until it is enabled
+// again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+// answer is the number of users that can no longer sign in with it. Disabling a disabled
+// provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+// ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers/{id}/disable (the `DisableLoginProvider` operationId).
+func (c *ClientWithResponses) DisableLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*DisableLoginProviderResponse, error) {
+	rsp, err := c.DisableLoginProvider(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableLoginProviderResponse(rsp)
+}
+
+// EnableLoginProviderWithResponse Enable a login provider
+//
+// Users sign in, sign up, and link their accounts with the provider again. Enabling an
+// enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+// deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers/{id}/enable (the `EnableLoginProvider` operationId).
+func (c *ClientWithResponses) EnableLoginProviderWithResponse(ctx context.Context, id LoginProviderId, reqEditors ...RequestEditorFn) (*EnableLoginProviderResponse, error) {
+	rsp, err := c.EnableLoginProvider(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableLoginProviderResponse(rsp)
+}
+
+// RotateLoginProviderSecretWithBodyWithResponse Give a login provider a new client secret
+//
+// Replaces the client secret with the one the request gives, which the provider issued;
+// the previous one is no longer used. The secret is never shown again. A secret that
+// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+func (c *ClientWithResponses) RotateLoginProviderSecretWithBodyWithResponse(ctx context.Context, id LoginProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RotateLoginProviderSecretResponse, error) {
+	rsp, err := c.RotateLoginProviderSecretWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRotateLoginProviderSecretResponse(rsp)
+}
+
+// RotateLoginProviderSecretWithResponse Give a login provider a new client secret
+//
+// Replaces the client secret with the one the request gives, which the provider issued;
+// the previous one is no longer used. The secret is never shown again. A secret that
+// breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+// recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/login_providers/{id}/rotate_secret (the `RotateLoginProviderSecret` operationId).
+func (c *ClientWithResponses) RotateLoginProviderSecretWithResponse(ctx context.Context, id LoginProviderId, body RotateLoginProviderSecretJSONRequestBody, reqEditors ...RequestEditorFn) (*RotateLoginProviderSecretResponse, error) {
+	rsp, err := c.RotateLoginProviderSecret(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRotateLoginProviderSecretResponse(rsp)
+}
+
 // ListOAuthClientHostDenialsWithResponse List the denied hosts of client metadata documents
 //
 // The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
@@ -80995,6 +82926,680 @@ func ParseRetryAdminJobResponse(rsp *http.Response) (*RetryAdminJobResponse, err
 	switch {
 	case true:
 		var headers RetryAdminJobResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAdminLoginProvidersResponse parses an HTTP response from a ListAdminLoginProvidersWithResponse call
+func ParseListAdminLoginProvidersResponse(rsp *http.Response) (*ListAdminLoginProvidersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAdminLoginProvidersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProviderList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAdminLoginProvidersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAdminLoginProvidersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateLoginProviderResponse parses an HTTP response from a CreateLoginProviderWithResponse call
+func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest LoginProviderProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CreateLoginProviderResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers CreateLoginProviderResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers CreateLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteLoginProviderResponse parses an HTTP response from a DeleteLoginProviderWithResponse call
+func ParseDeleteLoginProviderResponse(rsp *http.Response) (*DeleteLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminLoginProviderResponse parses an HTTP response from a GetAdminLoginProviderWithResponse call
+func ParseGetAdminLoginProviderResponse(rsp *http.Response) (*GetAdminLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminLoginProviderResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateLoginProviderResponse parses an HTTP response from a UpdateLoginProviderWithResponse call
+func ParseUpdateLoginProviderResponse(rsp *http.Response) (*UpdateLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest LoginProviderProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateLoginProviderResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers UpdateLoginProviderResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers UpdateLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDisableLoginProviderResponse parses an HTTP response from a DisableLoginProviderWithResponse call
+func ParseDisableLoginProviderResponse(rsp *http.Response) (*DisableLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisableLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DisableLoginProviderResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers DisableLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseEnableLoginProviderResponse parses an HTTP response from a EnableLoginProviderWithResponse call
+func ParseEnableLoginProviderResponse(rsp *http.Response) (*EnableLoginProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableLoginProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers EnableLoginProviderResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers EnableLoginProviderResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRotateLoginProviderSecretResponse parses an HTTP response from a RotateLoginProviderSecretWithResponse call
+func ParseRotateLoginProviderSecretResponse(rsp *http.Response) (*RotateLoginProviderSecretResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RotateLoginProviderSecretResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminLoginProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest LoginProviderProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RotateLoginProviderSecretResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers RotateLoginProviderSecretResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers RotateLoginProviderSecretResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

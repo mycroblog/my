@@ -211,6 +211,9 @@ entries:
   - name: cli-registration
     paths: ["cmd/my/registration.go", "cmd/my/signup_block.go", "cmd/my/password_reset.go"]
     userdocs: ["docs/operations/registration.md", "docs/operations/moderation.md"]
+  - name: cli-login-provider
+    paths: ["cmd/my/login_provider.go", "internal/app/identity/login_provider_admin.go", "internal/interface/clientapi/admin_login_providers.go"]
+    userdocs: ["docs/operations/login-providers.md"]
   - name: cli-instance
     paths: ["cmd/my/instance*.go", "cmd/my/emoji*.go", "cmd/my/federation.go"]
     userdocs: ["docs/operations/instance-settings.md"]

@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The changes to a login provider; what is omitted stays. The kind does not change, and the
+  client secret changes only by a rotation.
+type: object
+properties:
+  display_name:
+    description: |
+      The name on the administration screens and on the sign-in button of an `oidc`
+      provider, 1 to 100 characters without control characters.
+    type: string
+    maxLength: 100
+  issuer:
+    description: |
+      For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+      exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+      `https://<host>`. None for `github`.
+    type: string
+    maxLength: 2048
+  client_id:
+    description: The client ID that the provider gave, up to 512 bytes.
+    type: string
+    maxLength: 512
+  scopes:
+    description: |
+      Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+      Organizations of `github`); none for `mastodon`.
+    type: array
+    maxItems: 20
+    items:
+      type: string
+  allow_signup:
+    description: Whether new users may sign up with the provider.
+    type: boolean
+  allow_link:
+    description: Whether users may link their account to the provider.
+    type: boolean
+  claims:
+    description: The conditions on the claims of the ID token, for `oidc` only, at most 10.
+    type: array
+    maxItems: 10
+    items:
+      $ref: ./LoginProviderClaimCondition.yaml
+  organizations:
+    description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+    type: array
+    maxItems: 50
+    items:
+      type: string

@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+  its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+type: string
+enum: [oidc, github, mastodon]

@@ -874,6 +874,24 @@ func (e AdminJobState) Valid() bool {
 	}
 }
 
+// Defines values for AdminLoginProviderState.
+const (
+	AdminLoginProviderStateDisabled AdminLoginProviderState = "disabled"
+	AdminLoginProviderStateEnabled  AdminLoginProviderState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the AdminLoginProviderState enum.
+func (e AdminLoginProviderState) Valid() bool {
+	switch e {
+	case AdminLoginProviderStateDisabled:
+		return true
+	case AdminLoginProviderStateEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminReportCategory.
 const (
 	AdminReportCategoryLegal     AdminReportCategory = "legal"
@@ -2218,6 +2236,60 @@ func (e InstanceTextKey) Valid() bool {
 	case InstanceTextKeyTerms:
 		return true
 	case InstanceTextKeyThumbnailAlt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginProviderKind.
+const (
+	LoginProviderKindGithub   LoginProviderKind = "github"
+	LoginProviderKindMastodon LoginProviderKind = "mastodon"
+	LoginProviderKindOidc     LoginProviderKind = "oidc"
+)
+
+// Valid indicates whether the value is a known member of the LoginProviderKind enum.
+func (e LoginProviderKind) Valid() bool {
+	switch e {
+	case LoginProviderKindGithub:
+		return true
+	case LoginProviderKindMastodon:
+		return true
+	case LoginProviderKindOidc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginProviderProblemReason.
+const (
+	LoginProviderProblemReasonClientId     LoginProviderProblemReason = "client_id"
+	LoginProviderProblemReasonClientSecret LoginProviderProblemReason = "client_secret"
+	LoginProviderProblemReasonConditions   LoginProviderProblemReason = "conditions"
+	LoginProviderProblemReasonDisplayName  LoginProviderProblemReason = "display_name"
+	LoginProviderProblemReasonIssuer       LoginProviderProblemReason = "issuer"
+	LoginProviderProblemReasonKind         LoginProviderProblemReason = "kind"
+	LoginProviderProblemReasonScopes       LoginProviderProblemReason = "scopes"
+)
+
+// Valid indicates whether the value is a known member of the LoginProviderProblemReason enum.
+func (e LoginProviderProblemReason) Valid() bool {
+	switch e {
+	case LoginProviderProblemReasonClientId:
+		return true
+	case LoginProviderProblemReasonClientSecret:
+		return true
+	case LoginProviderProblemReasonConditions:
+		return true
+	case LoginProviderProblemReasonDisplayName:
+		return true
+	case LoginProviderProblemReasonIssuer:
+		return true
+	case LoginProviderProblemReasonKind:
+		return true
+	case LoginProviderProblemReasonScopes:
 		return true
 	default:
 		return false
@@ -4854,6 +4926,70 @@ type AdminJobPage struct {
 // failed for good (its handler gave up, or it used up its attempts).
 type AdminJobState string
 
+// AdminLoginProvider An external login provider that users sign in, sign up, and link their accounts with.
+// Its client secret is never shown.
+type AdminLoginProvider struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink bool `json:"allow_link"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup bool `json:"allow_signup"`
+
+	// CallbackUrl The redirect URI to register at the provider:
+	// `https://<host>/auth/external/<id>/callback`.
+	CallbackUrl string `json:"callback_url"`
+
+	// Claims The conditions of an `oidc` provider, by claim; empty lets every user in.
+	Claims    []LoginProviderClaimCondition `json:"claims"`
+	ClientId  string                        `json:"client_id"`
+	CreatedAt time.Time                     `json:"created_at"`
+
+	// DisplayName The name of the provider on the administration screens, and on the sign-in button of
+	// an `oidc` provider as it is written.
+	DisplayName string `json:"display_name"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Issuer The OpenID Connect issuer of an `oidc` provider, or the server's URL
+	// (`https://<host>`) of a `mastodon` one; omitted for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+
+	// LinkedUsers The number of users whose accounts are linked to the provider; disabling or deleting it
+	// keeps them from signing in with it.
+	LinkedUsers int `json:"linked_users"`
+
+	// Organizations The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
+	// provider must belong to; empty lets every GitHub user in.
+	Organizations []string `json:"organizations"`
+
+	// Scopes The scopes asked for besides the ones the kind needs, sorted.
+	Scopes []string `json:"scopes"`
+
+	// State Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+	// screen shows only the enabled providers.
+	State          AdminLoginProviderState `json:"state"`
+	StateChangedAt time.Time               `json:"state_changed_at"`
+
+	// UpdatedAt When the settings last changed.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AdminLoginProviderList The login providers, newest first.
+type AdminLoginProviderList struct {
+	Items []AdminLoginProvider `json:"items"`
+}
+
+// AdminLoginProviderState Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+// screen shows only the enabled providers.
+type AdminLoginProviderState string
+
 // AdminOAuthClient An OAuth client, as the administrators see it.
 type AdminOAuthClient struct {
 	// ClientId The identifier that the client sends, or the URL of its metadata document.
@@ -6604,6 +6740,44 @@ type CreateInviteRequest struct {
 	MaxUses *int `json:"max_uses,omitempty"`
 }
 
+// CreateLoginProviderRequest A new login provider. `allow_signup` is false and `allow_link` true unless given.
+type CreateLoginProviderRequest struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink *bool `json:"allow_link,omitempty"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup *bool `json:"allow_signup,omitempty"`
+
+	// Claims The conditions on the claims of the ID token, for `oidc` only, at most 10.
+	Claims *[]LoginProviderClaimCondition `json:"claims,omitempty"`
+
+	// ClientId The client ID that the provider gave, up to 512 bytes.
+	ClientId string `json:"client_id"`
+
+	// ClientSecret The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+	ClientSecret string `json:"client_secret"`
+
+	// DisplayName The name on the administration screens and on the sign-in button of an `oidc`
+	// provider, 1 to 100 characters without control characters.
+	DisplayName string `json:"display_name"`
+
+	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+	// `https://<host>`. None for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+
+	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+	Organizations *[]string `json:"organizations,omitempty"`
+
+	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+	// Organizations of `github`); none for `mastodon`.
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
 // CreateOAuthAppRequest A new OAuth app.
 type CreateOAuthAppRequest struct {
 	// ClientType `public`: the app has no secret (a single-page, native, or command-line app).
@@ -8274,6 +8448,61 @@ type LinkCardImage struct {
 	Width int `json:"width"`
 }
 
+// LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
+// has one of the values, such as `hd` for the domain of a Google Workspace organization.
+type LoginProviderClaimCondition struct {
+	// Claim The name of the claim, up to 100 bytes.
+	Claim string `json:"claim"`
+
+	// Values The allowed values, 1 to 50 of up to 256 characters each, sorted.
+	Values []string `json:"values"`
+}
+
+// LoginProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+type LoginProviderKind string
+
+// LoginProviderProblem The problem of a login provider that breaks a rule (422,
+// `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
+// request) has none.
+type LoginProviderProblem struct {
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+	// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+	// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+	// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+	// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+	// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+	// ones that are not valid.
+	Reason *LoginProviderProblemReason `json:"reason,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
+}
+
+// LoginProviderProblemReason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+// ones that are not valid.
+type LoginProviderProblemReason string
+
 // MediaAnimatedVariants The moving renditions of an animation, absent for a still image: animated WebP for
 // `small` and `medium`, and a GIF for `large`.
 type MediaAnimatedVariants struct {
@@ -9901,6 +10130,12 @@ type RoleProblem struct {
 // characters on one line. `badge_color`: an unknown badge color.
 type RoleProblemReason string
 
+// RotateLoginProviderSecretRequest A new client secret of a login provider.
+type RotateLoginProviderSecretRequest struct {
+	// ClientSecret The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+	ClientSecret string `json:"client_secret"`
+}
+
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
 // `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
@@ -10751,6 +10986,38 @@ type UpdateInstanceSettingsRequest struct {
 	Values map[string]string `json:"values"`
 }
 
+// UpdateLoginProviderRequest The changes to a login provider; what is omitted stays. The kind does not change, and the
+// client secret changes only by a rotation.
+type UpdateLoginProviderRequest struct {
+	// AllowLink Whether users may link their account to the provider.
+	AllowLink *bool `json:"allow_link,omitempty"`
+
+	// AllowSignup Whether new users may sign up with the provider.
+	AllowSignup *bool `json:"allow_signup,omitempty"`
+
+	// Claims The conditions on the claims of the ID token, for `oidc` only, at most 10.
+	Claims *[]LoginProviderClaimCondition `json:"claims,omitempty"`
+
+	// ClientId The client ID that the provider gave, up to 512 bytes.
+	ClientId *string `json:"client_id,omitempty"`
+
+	// DisplayName The name on the administration screens and on the sign-in button of an `oidc`
+	// provider, 1 to 100 characters without control characters.
+	DisplayName *string `json:"display_name,omitempty"`
+
+	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+	// `https://<host>`. None for `github`.
+	Issuer *string `json:"issuer,omitempty"`
+
+	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+	Organizations *[]string `json:"organizations,omitempty"`
+
+	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+	// Organizations of `github`); none for `mastodon`.
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
 // UpdateOAuthAppRequest The changes to an OAuth app, checked as for a new one; what is omitted stays.
 type UpdateOAuthAppRequest struct {
 	Name         *string   `json:"name,omitempty"`
@@ -11520,6 +11787,11 @@ type InviteId = Id
 
 // Limit defines model for Limit.
 type Limit = int
+
+// LoginProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type LoginProviderId = Id
 
 // OAuthAppId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -12389,6 +12661,15 @@ type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody = CreateInviteRequest
 
+// CreateLoginProviderJSONRequestBody defines body for CreateLoginProvider for application/json ContentType.
+type CreateLoginProviderJSONRequestBody = CreateLoginProviderRequest
+
+// UpdateLoginProviderJSONRequestBody defines body for UpdateLoginProvider for application/json ContentType.
+type UpdateLoginProviderJSONRequestBody = UpdateLoginProviderRequest
+
+// RotateLoginProviderSecretJSONRequestBody defines body for RotateLoginProviderSecret for application/json ContentType.
+type RotateLoginProviderSecretJSONRequestBody = RotateLoginProviderSecretRequest
+
 // DenyOAuthClientHostJSONRequestBody defines body for DenyOAuthClientHost for application/json ContentType.
 type DenyOAuthClientHostJSONRequestBody = DenyOAuthClientHostRequest
 
@@ -12880,6 +13161,30 @@ type ServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id)
+	// ListAdminLoginProviders List the login providers
+	// (GET /admin/login_providers)
+	ListAdminLoginProviders(w http.ResponseWriter, r *http.Request)
+	// CreateLoginProvider Set up a login provider
+	// (POST /admin/login_providers)
+	CreateLoginProvider(w http.ResponseWriter, r *http.Request)
+	// DeleteLoginProvider Delete a login provider
+	// (DELETE /admin/login_providers/{id})
+	DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	// GetAdminLoginProvider Get a login provider
+	// (GET /admin/login_providers/{id})
+	GetAdminLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	// UpdateLoginProvider Change a login provider
+	// (PATCH /admin/login_providers/{id})
+	UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	// DisableLoginProvider Disable a login provider
+	// (POST /admin/login_providers/{id}/disable)
+	DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	// EnableLoginProvider Enable a login provider
+	// (POST /admin/login_providers/{id}/enable)
+	EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	// RotateLoginProviderSecret Give a login provider a new client secret
+	// (POST /admin/login_providers/{id}/rotate_secret)
+	RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId)
 	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
 	// (GET /admin/oauth_client_host_denials)
 	ListOAuthClientHostDenials(w http.ResponseWriter, r *http.Request, params ListOAuthClientHostDenialsParams)
@@ -16797,6 +17102,190 @@ func (siw *ServerInterfaceWrapper) RetryAdminJob(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RetryAdminJob(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdminLoginProviders operation middleware
+func (siw *ServerInterfaceWrapper) ListAdminLoginProviders(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdminLoginProviders(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) CreateLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateLoginProvider(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) DeleteLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteLoginProvider(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminLoginProvider(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) UpdateLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateLoginProvider(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisableLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) DisableLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableLoginProvider(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableLoginProvider operation middleware
+func (siw *ServerInterfaceWrapper) EnableLoginProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableLoginProvider(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateLoginProviderSecret operation middleware
+func (siw *ServerInterfaceWrapper) RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LoginProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateLoginProviderSecret(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22785,6 +23274,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/oauth_client_host_denials", wrapper.ListOAuthClientHostDenials)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/oauth_client_host_denials", wrapper.DenyOAuthClientHost)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/oauth_client_host_denials/{host}", wrapper.AllowOAuthClientHost)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/login_providers", wrapper.ListAdminLoginProviders)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/login_providers", wrapper.CreateLoginProvider)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/login_providers/{id}", wrapper.DeleteLoginProvider)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/login_providers/{id}", wrapper.GetAdminLoginProvider)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/login_providers/{id}", wrapper.UpdateLoginProvider)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/login_providers/{id}/enable", wrapper.EnableLoginProvider)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/login_providers/{id}/disable", wrapper.DisableLoginProvider)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/login_providers/{id}/rotate_secret", wrapper.RotateLoginProviderSecret)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/webhooks", wrapper.ListAdminWebhooks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks", wrapper.CreateWebhook)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/webhooks/{id}", wrapper.DeleteWebhook)
@@ -22924,6 +23421,15 @@ type AdminInviteJSONResponse struct {
 	Body AdminInvite
 
 	Headers AdminInviteResponseHeaders
+}
+
+type AdminLoginProviderResponseHeaders struct {
+	CacheControl *string
+}
+type AdminLoginProviderJSONResponse struct {
+	Body AdminLoginProvider
+
+	Headers AdminLoginProviderResponseHeaders
 }
 
 type AdminOAuthClientResponseHeaders struct {
@@ -23115,6 +23621,16 @@ type ErrorGroupJSONResponse struct {
 	Body ErrorGroup
 
 	Headers ErrorGroupResponseHeaders
+}
+
+type LoginProviderProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type LoginProviderProblemApplicationProblemPlusJSONResponse struct {
+	Body LoginProviderProblem
+
+	Headers LoginProviderProblemResponseHeaders
 }
 
 type OAuthAppResponseHeaders struct {
@@ -29212,6 +29728,511 @@ type RetryAdminJobdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RetryAdminJobdefaultApplicationProblemPlusJSONResponse) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminLoginProvidersRequestObject struct {
+}
+
+type ListAdminLoginProvidersResponseObject interface {
+	VisitListAdminLoginProvidersResponse(w http.ResponseWriter) error
+}
+
+type ListAdminLoginProviders200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAdminLoginProviders200JSONResponse struct {
+	Body    AdminLoginProviderList
+	Headers ListAdminLoginProviders200ResponseHeaders
+}
+
+func (response ListAdminLoginProviders200JSONResponse) VisitListAdminLoginProvidersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminLoginProvidersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAdminLoginProvidersdefaultApplicationProblemPlusJSONResponse) VisitListAdminLoginProvidersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLoginProviderRequestObject struct {
+	Body *CreateLoginProviderJSONRequestBody
+}
+
+type CreateLoginProviderResponseObject interface {
+	VisitCreateLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type CreateLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLoginProvider422ApplicationProblemPlusJSONResponse struct {
+	LoginProviderProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateLoginProvider422ApplicationProblemPlusJSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteLoginProviderRequestObject struct {
+	Id LoginProviderId `json:"id"`
+}
+
+type DeleteLoginProviderResponseObject interface {
+	VisitDeleteLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type DeleteLoginProvider204Response struct {
+}
+
+func (response DeleteLoginProvider204Response) VisitDeleteLoginProviderResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitDeleteLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminLoginProviderRequestObject struct {
+	Id LoginProviderId `json:"id"`
+}
+
+type GetAdminLoginProviderResponseObject interface {
+	VisitGetAdminLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type GetAdminLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response GetAdminLoginProvider200JSONResponse) VisitGetAdminLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitGetAdminLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLoginProviderRequestObject struct {
+	Id   LoginProviderId `json:"id"`
+	Body *UpdateLoginProviderJSONRequestBody
+}
+
+type UpdateLoginProviderResponseObject interface {
+	VisitUpdateLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type UpdateLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response UpdateLoginProvider200JSONResponse) VisitUpdateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLoginProvider422ApplicationProblemPlusJSONResponse struct {
+	LoginProviderProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateLoginProvider422ApplicationProblemPlusJSONResponse) VisitUpdateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitUpdateLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableLoginProviderRequestObject struct {
+	Id LoginProviderId `json:"id"`
+}
+
+type DisableLoginProviderResponseObject interface {
+	VisitDisableLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type DisableLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response DisableLoginProvider200JSONResponse) VisitDisableLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DisableLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitDisableLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableLoginProviderRequestObject struct {
+	Id LoginProviderId `json:"id"`
+}
+
+type EnableLoginProviderResponseObject interface {
+	VisitEnableLoginProviderResponse(w http.ResponseWriter) error
+}
+
+type EnableLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response EnableLoginProvider200JSONResponse) VisitEnableLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableLoginProviderdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EnableLoginProviderdefaultApplicationProblemPlusJSONResponse) VisitEnableLoginProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateLoginProviderSecretRequestObject struct {
+	Id   LoginProviderId `json:"id"`
+	Body *RotateLoginProviderSecretJSONRequestBody
+}
+
+type RotateLoginProviderSecretResponseObject interface {
+	VisitRotateLoginProviderSecretResponse(w http.ResponseWriter) error
+}
+
+type RotateLoginProviderSecret200JSONResponse struct{ AdminLoginProviderJSONResponse }
+
+func (response RotateLoginProviderSecret200JSONResponse) VisitRotateLoginProviderSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateLoginProviderSecret422ApplicationProblemPlusJSONResponse struct {
+	LoginProviderProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RotateLoginProviderSecret422ApplicationProblemPlusJSONResponse) VisitRotateLoginProviderSecretResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateLoginProviderSecretdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RotateLoginProviderSecretdefaultApplicationProblemPlusJSONResponse) VisitRotateLoginProviderSecretResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -41688,6 +42709,30 @@ type StrictServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(ctx context.Context, request RetryAdminJobRequestObject) (RetryAdminJobResponseObject, error)
+	// ListAdminLoginProviders List the login providers
+	// (GET /admin/login_providers)
+	ListAdminLoginProviders(ctx context.Context, request ListAdminLoginProvidersRequestObject) (ListAdminLoginProvidersResponseObject, error)
+	// CreateLoginProvider Set up a login provider
+	// (POST /admin/login_providers)
+	CreateLoginProvider(ctx context.Context, request CreateLoginProviderRequestObject) (CreateLoginProviderResponseObject, error)
+	// DeleteLoginProvider Delete a login provider
+	// (DELETE /admin/login_providers/{id})
+	DeleteLoginProvider(ctx context.Context, request DeleteLoginProviderRequestObject) (DeleteLoginProviderResponseObject, error)
+	// GetAdminLoginProvider Get a login provider
+	// (GET /admin/login_providers/{id})
+	GetAdminLoginProvider(ctx context.Context, request GetAdminLoginProviderRequestObject) (GetAdminLoginProviderResponseObject, error)
+	// UpdateLoginProvider Change a login provider
+	// (PATCH /admin/login_providers/{id})
+	UpdateLoginProvider(ctx context.Context, request UpdateLoginProviderRequestObject) (UpdateLoginProviderResponseObject, error)
+	// DisableLoginProvider Disable a login provider
+	// (POST /admin/login_providers/{id}/disable)
+	DisableLoginProvider(ctx context.Context, request DisableLoginProviderRequestObject) (DisableLoginProviderResponseObject, error)
+	// EnableLoginProvider Enable a login provider
+	// (POST /admin/login_providers/{id}/enable)
+	EnableLoginProvider(ctx context.Context, request EnableLoginProviderRequestObject) (EnableLoginProviderResponseObject, error)
+	// RotateLoginProviderSecret Give a login provider a new client secret
+	// (POST /admin/login_providers/{id}/rotate_secret)
+	RotateLoginProviderSecret(ctx context.Context, request RotateLoginProviderSecretRequestObject) (RotateLoginProviderSecretResponseObject, error)
 	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
 	// (GET /admin/oauth_client_host_denials)
 	ListOAuthClientHostDenials(ctx context.Context, request ListOAuthClientHostDenialsRequestObject) (ListOAuthClientHostDenialsResponseObject, error)
@@ -45202,6 +46247,231 @@ func (sh *strictHandler) RetryAdminJob(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RetryAdminJobResponseObject); ok {
 		if err := validResponse.VisitRetryAdminJobResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAdminLoginProviders operation middleware
+func (sh *strictHandler) ListAdminLoginProviders(w http.ResponseWriter, r *http.Request) {
+	var request ListAdminLoginProvidersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAdminLoginProviders(ctx, request.(ListAdminLoginProvidersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAdminLoginProviders")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAdminLoginProvidersResponseObject); ok {
+		if err := validResponse.VisitListAdminLoginProvidersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateLoginProvider operation middleware
+func (sh *strictHandler) CreateLoginProvider(w http.ResponseWriter, r *http.Request) {
+	var request CreateLoginProviderRequestObject
+
+	var body CreateLoginProviderJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateLoginProvider(ctx, request.(CreateLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateLoginProviderResponseObject); ok {
+		if err := validResponse.VisitCreateLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteLoginProvider operation middleware
+func (sh *strictHandler) DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request DeleteLoginProviderRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteLoginProvider(ctx, request.(DeleteLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteLoginProviderResponseObject); ok {
+		if err := validResponse.VisitDeleteLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminLoginProvider operation middleware
+func (sh *strictHandler) GetAdminLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request GetAdminLoginProviderRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminLoginProvider(ctx, request.(GetAdminLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminLoginProviderResponseObject); ok {
+		if err := validResponse.VisitGetAdminLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateLoginProvider operation middleware
+func (sh *strictHandler) UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request UpdateLoginProviderRequestObject
+
+	request.Id = id
+
+	var body UpdateLoginProviderJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateLoginProvider(ctx, request.(UpdateLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateLoginProviderResponseObject); ok {
+		if err := validResponse.VisitUpdateLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableLoginProvider operation middleware
+func (sh *strictHandler) DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request DisableLoginProviderRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableLoginProvider(ctx, request.(DisableLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableLoginProviderResponseObject); ok {
+		if err := validResponse.VisitDisableLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableLoginProvider operation middleware
+func (sh *strictHandler) EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request EnableLoginProviderRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableLoginProvider(ctx, request.(EnableLoginProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableLoginProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableLoginProviderResponseObject); ok {
+		if err := validResponse.VisitEnableLoginProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RotateLoginProviderSecret operation middleware
+func (sh *strictHandler) RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+	var request RotateLoginProviderSecretRequestObject
+
+	request.Id = id
+
+	var body RotateLoginProviderSecretJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RotateLoginProviderSecret(ctx, request.(RotateLoginProviderSecretRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RotateLoginProviderSecret")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RotateLoginProviderSecretResponseObject); ok {
+		if err := validResponse.VisitRotateLoginProviderSecretResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

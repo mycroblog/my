@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: The login provider breaks a rule; nothing was changed.
+headers:
+  Content-Language:
+    description: The locale of `title` and `detail`.
+    schema:
+      type: string
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/problem+json:
+    schema:
+      $ref: ../schemas/LoginProviderProblem.yaml
