@@ -119,6 +119,43 @@ func TestDisconnectCatchUp(t *testing.T) {
 	}
 }
 
+// An event stream that the bot sees open is subscribed already: a notification added the moment it opens, after
+// the catch-up has read the list, comes on the stream, however late the server goroutine runs.
+func TestStreamIsSubscribedWhenItOpens(t *testing.T) {
+	srv := newServer(t)
+	mybottest.SetOpened(srv, func() { time.Sleep(100 * time.Millisecond) })
+	api, err := mykit.New(mykit.Config{Server: srv.URL(), TokenSource: mykit.StaticToken(mybottest.Token)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	var injected mykit.Notification
+	got := make(chan string, 1)
+	err = api.Stream(ctx, mykit.StreamOptions{
+		OnOpen: func(bool) {
+			injected = srv.Inject(srv.Mention(srv.Account("alice"), "now", mykit.VisibilityPublic))
+		},
+		OnEvent: func(e mykit.StreamEvent) {
+			if n, ok := e.(*mykit.NotificationEvent); ok {
+				got <- n.Notification.Id
+				cancel()
+			}
+		},
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Stream: %v", err)
+	}
+	select {
+	case id := <-got:
+		if id != injected.Id {
+			t.Errorf("stream sent %s, want %s", id, injected.Id)
+		}
+	default:
+		t.Fatal("the notification added when the stream opened did not come on it")
+	}
+}
+
 // The server posts once per Idempotency-Key, as the real one does.
 func TestCreateStatusIdempotencyKey(t *testing.T) {
 	srv := newServer(t)
