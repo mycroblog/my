@@ -81,7 +81,7 @@ describe("the list of the open rooms", () => {
     server.use(signedInHandler);
   });
 
-  test("opens from the navigation and shows each room with its host, count, description, and hashtags", async () => {
+  test("opens from the navigation and shows each room with the Live pill, its count and time open, host, description, and hashtags", async () => {
     voiceOn([voiceRoomFixture(), voiceRoomFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f2", name: "Quiet study", description: "", hashtags: [], participants_count: 1 })]);
     const { user } = await renderApp({ path: "/home" });
     await user.click(await screen.findByRole("link", { name: "Voice chat" }));
@@ -94,7 +94,9 @@ describe("the list of the open rooms", () => {
     expect(within(list).getAllByRole("link", { name: /Bob/u })[0]).toHaveAttribute("href", "/@bob");
     expect(within(list).getByText("Talking about the week's music.")).toHaveAttribute("dir", "auto");
     expect(within(list).getByText("#music")).toBeInTheDocument();
-    expect(within(list).getAllByText("1 person")).toHaveLength(2);
+    expect(within(list).getAllByText(/^1 person · \d+ (min|hr)/u)).toHaveLength(2);
+    expect(within(list).getAllByText("Live")).toHaveLength(2);
+    expect(within(list).getAllByText("Host")).toHaveLength(2);
   });
 
   test("says so when no room is open", async () => {

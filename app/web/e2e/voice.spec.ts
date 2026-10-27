@@ -169,6 +169,8 @@ test.describe("the voice chat pages", () => {
   test("lists the open rooms, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
     const list = page.getByRole("list", { name: message("voice.list.label") });
     await expect(list.getByRole("heading", { level: 2, name: room.name })).toBeVisible();
+    await expect(list.getByText(message("voice.room.live"), { exact: true }).first()).toBeVisible();
+    await expect(list.getByText(message("voice.role.host"), { exact: true }).first()).toBeVisible();
     await expect(list.getByText(room.hashtags.map((tag) => `#${tag}`)[0] ?? "")).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

@@ -243,6 +243,7 @@ export { PostExcerpt, PostExcerptText, QuoteBlock, type PostExcerptProps, type P
 // The app shell (web-client/09-app-shell.md §9): the frame, the navigation, the page heading and the routes' states.
 export { AppShell, AsidePanel, ShellDock, type AppShellProps, type AsidePanelProps, type ShellDockProps } from "./AppShell";
 export { CallBar, type CallBarProps } from "./CallBar";
+export { AvatarStack, type AvatarStackItem, type AvatarStackProps } from "./AvatarStack";
 export { MiniPlayer, type MiniPlayerAvatar, type MiniPlayerProps } from "./MiniPlayer";
 export {
   AppNav,

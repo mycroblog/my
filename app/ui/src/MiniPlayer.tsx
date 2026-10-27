@@ -8,16 +8,12 @@
 // focused elements clear of it.
 import { type ReactNode, useRef } from "react";
 import { tv } from "tailwind-variants";
-import { Avatar } from "./Avatar";
+import { AvatarStack, type AvatarStackItem } from "./AvatarStack";
 import { useCallBarBlockSize } from "./callBarBlockSize";
-import type { ImageSources } from "./Picture";
 
 const miniPlayer = tv({
   slots: {
     base: "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-border bg-surface-raised p-2 ps-3 shadow-lg",
-    // The avatars only decorate: the room's name and the status line say what they show.
-    avatars: "flex shrink-0 items-center",
-    avatar: "relative ring-2 ring-surface-raised not-first:-ms-2",
     // The room's name and the status take the room left and are cut short rather than push the controls off the
     // card: the link (a flex item, `min-w-0`) shrinks to the room left, so its target never reaches under the
     // controls (WCAG 2.5.8), and the element of its text ends in an ellipsis.
@@ -27,24 +23,10 @@ const miniPlayer = tv({
     actions: "flex shrink-0 items-center gap-2",
     notice: "basis-full",
   },
-  variants: {
-    speaking: {
-      true: { avatar: "outline-2 outline-offset-2 outline-accent outline-solid" },
-    },
-  },
 });
 
 /** A speaker in the mini-player's stack. */
-export type MiniPlayerAvatar = {
-  /** What keeps the avatar's place in the stack: the account's ID. Also picks the tint of its initial. */
-  id: string;
-  /** The speaker's display name: the source of the fallback letter. */
-  name: string;
-  src?: string | undefined;
-  sources?: ImageSources | undefined;
-  /** Whether the speaker is talking now: the coral ring. The status line says it in words. */
-  speaking?: boolean;
-};
+export type MiniPlayerAvatar = AvatarStackItem;
 
 export type MiniPlayerProps = {
   /** The card's accessible name ("Voice chat call"). */
@@ -61,35 +43,15 @@ export type MiniPlayerProps = {
   notice?: ReactNode;
 };
 
-/** The most avatars the stack shows. */
-const shownAvatars = 3;
-
 /** The floating card of the call, in `ShellDock`. */
 export function MiniPlayer({ label, avatars, title, status, children, notice }: MiniPlayerProps) {
   const slots = miniPlayer();
   const ref = useRef<HTMLElement>(null);
   useCallBarBlockSize(ref);
-  const shown = avatars.slice(0, shownAvatars);
   return (
     <section ref={ref} aria-label={label} data-call-bar="" className={slots.base()}>
-      {shown.length > 0 && (
-        <span aria-hidden="true" className={slots.avatars()}>
-          {shown.map((avatar, index) => (
-            <Avatar
-              key={avatar.id}
-              name={avatar.name}
-              seed={avatar.id}
-              src={avatar.src}
-              sources={avatar.sources}
-              decorative
-              size="sm"
-              // The first is on top, so each overlaps the next one along the line.
-              style={{ zIndex: shown.length - index }}
-              className={slots.avatar({ speaking: avatar.speaking === true })}
-            />
-          ))}
-        </span>
-      )}
+      {/* The avatars only decorate: the room's name and the status line say what they show. */}
+      <AvatarStack avatars={avatars} />
       <div className={slots.heading()}>
         <div className={slots.title()}>{title}</div>
         {status !== undefined && status !== null && <div className={slots.status()}>{status}</div>}
