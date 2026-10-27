@@ -264,7 +264,7 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedC
 // resync re-reads a user's linked subscription from the provider after a command and applies
 // it, so that the answer shows the new state.
 func (s *Service) resync(ctx context.Context, rec SubscriptionRecord) (SubscriptionView, error) {
-	snap, err := s.d.Provider.GetSubscription(ctx, rec.Link)
+	snap, err := readSubscription(ctx, s.d.Provider, s.d.Clock, rec.Link)
 	if err != nil {
 		return SubscriptionView{}, err
 	}

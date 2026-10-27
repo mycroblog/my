@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -277,6 +278,19 @@ type SubscriptionSnapshot struct {
 	// LatestPaymentFailed is when the latest invoice's payment failed while it is still unpaid;
 	// zero otherwise.
 	LatestPaymentFailed time.Time
+	// ReadAt is when the supporters module began to read the snapshot from the provider; the
+	// adapters leave it zero, which means the time it is applied. A snapshot read before the one
+	// applied last to its subscription is not applied (ADR-0074 §3).
+	ReadAt time.Time
+}
+
+// readSubscription reads a subscription from prov and stamps the snapshot with the time the
+// read began.
+func readSubscription(ctx context.Context, prov PaymentProvider, clock kernel.Clock, ref SubscriptionRef) (SubscriptionSnapshot, error) {
+	at := kernel.Normalize(clock.Now())
+	snap, err := prov.GetSubscription(ctx, ref)
+	snap.ReadAt = at
+	return snap, err
 }
 
 // MoneyKind is the kind of a money movement (ADR-0073 §1).

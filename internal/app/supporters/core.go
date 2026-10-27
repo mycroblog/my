@@ -138,6 +138,13 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 				slog.String("subscription", rec.ID), slog.String("provider_subscription", string(snap.Ref)))
 			return nil
 		}
+		readAt := snap.ReadAt
+		if readAt.IsZero() {
+			readAt = now
+		}
+		if fresh, err := s.d.Repository.MarkSubscriptionRead(ctx, tx, rec.ID, readAt); err != nil || !fresh {
+			return err // a snapshot read later is applied already
+		}
 		if snap.Customer != "" {
 			if err := s.d.Repository.InsertCustomer(ctx, tx, Customer{
 				ID: s.d.IDs.NewID(), UserID: rec.UserID, Provider: provider, Ref: snap.Customer, CreatedAt: now,
@@ -482,7 +489,7 @@ func (s *Service) Sync(ctx context.Context, id string) queue.Result {
 		}
 		return queue.Done()
 	}
-	snap, err := prov.GetSubscription(ctx, link)
+	snap, err := readSubscription(ctx, prov, s.d.Clock, link)
 	if err != nil {
 		return s.providerFailure(ctx, "get subscription", err)
 	}
@@ -561,7 +568,7 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 	if err != nil {
 		return s.providerFailure(ctx, string(p.Command)+" "+rec.ID, err)
 	}
-	snap, err := prov.GetSubscription(ctx, rec.Link)
+	snap, err := readSubscription(ctx, prov, s.d.Clock, rec.Link)
 	if err != nil {
 		return s.providerFailure(ctx, "get subscription", err)
 	}

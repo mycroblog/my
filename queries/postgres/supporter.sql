@@ -310,3 +310,10 @@ UNION ALL
 SELECT h.subscription_id, 'grace', g.ends_at
 FROM supporter_subscription_heads h JOIN supporter_grace_periods g ON g.transition_id = h.transition_id
 WHERE h.state = 'past_due';
+
+-- MarkSupporterSubscriptionRead records that a snapshot read at read_at is applied to a
+-- subscription, unless a snapshot read later was: it changes no row then.
+-- name: MarkSupporterSubscriptionRead :execrows
+INSERT INTO supporter_subscription_reads (subscription_id, read_at) VALUES ($1, $2)
+ON CONFLICT (subscription_id) DO UPDATE SET read_at = excluded.read_at
+WHERE supporter_subscription_reads.read_at <= excluded.read_at;
