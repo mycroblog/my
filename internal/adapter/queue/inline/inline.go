@@ -110,7 +110,11 @@ func (q *Queue) Enqueue(ctx context.Context, jobs ...queue.NewJob) error {
 		return nil
 	}
 	q.mu.Unlock()
-	return q.RunDue(ctx)
+	// The jobs are enqueued: an error of the run (a claim, or the record of a result) is not
+	// an error of Enqueue, which reports only jobs it did not enqueue. A job whose result was
+	// not recorded runs again once its lease expires, as with any queue.
+	_ = q.RunDue(ctx)
+	return nil
 }
 
 // RunDue runs the due jobs with the runner of RunSynchronously, like an Enqueue of no job: it
