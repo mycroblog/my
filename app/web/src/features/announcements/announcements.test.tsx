@@ -38,9 +38,11 @@ describe("the announcements above the home timeline", () => {
 
   test("marks the unread ones in words and marks one read", async () => {
     const reads: string[] = [];
+    // The list reads as the server keeps it: the default event stream ends at once, and the app reads the list
+    // again on every reconnect, which can come after the click.
     server.use(
       resumableSession(),
-      http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [maintenance, welcome] })),
+      http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [{ ...maintenance, read: reads.includes(maintenance.id) }, welcome] })),
       http.post(`${apiBase}/announcements/:id/read`, ({ params }) => {
         reads.push(String(params["id"]));
         return HttpResponse.json({ ...maintenance, read: true });
