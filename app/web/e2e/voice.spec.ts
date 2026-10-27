@@ -2,7 +2,7 @@
 // The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
 // from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room, a room's page with
 // its stage (the speakers and the listeners) and the notice before joining, the call after joining (its dock clear of
-// the tab bar, a raised hand, and the call bar that it keeps on other pages), all
+// the tab bar, a raised hand, and the mini-player that it keeps on other pages), all
 // axe-clean and without horizontal scroll; and the room's page of a visitor who is not signed in. `vite preview` has
 // no API, so the spec answers the token refresh and the client API with `page.route`, as a server with voice chat on
 // would (a call between two browsers needs a server with voice chat on, which e2e/server.ts does not configure).
@@ -236,12 +236,13 @@ test.describe("the call of a room", () => {
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
   });
 
-  test("goes on across pages with the call bar, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
+  test("goes on across pages with the mini-player, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
     await expect(page.getByRole("toolbar", { name: message("voice.dock.label") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     await openFromNavigation(page, "/home", hasTouch);
     const bar = page.getByRole("region", { name: message("voice.bar.label"), exact: true });
     await expect(bar.getByRole("link", { name: room.name })).toBeVisible();
-    // The bar stays in view, above the tab bar of phones (the projects below md have touch).
+    await expect(bar.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+    // The mini-player stays in view, above the tab bar of phones (the projects below md have touch).
     const barBox = await bar.boundingBox();
     expect(barBox).not.toBeNull();
     const barBottom = (barBox?.y ?? 0) + (barBox?.height ?? 0);

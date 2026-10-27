@@ -96,7 +96,7 @@ export function CallDockControls({ room, call, controls, moderation, hands }: Ca
       </Stack>
     ) : undefined;
   return (
-    <CallDock label={t("client:voice.dock.label")} end={<LeaveCallButton controls={controls} withError={false} look="dock" />} notice={notice}>
+    <CallDock label={t("client:voice.dock.label")} end={<LeaveCallButton controls={controls} look="dock" />} notice={notice}>
       {call.isSpeaker ? (
         <CallDockButton
           label={t("client:voice.call.microphone")}

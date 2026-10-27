@@ -741,7 +741,11 @@
   },
   "voice.bar.label": {
     "defaultMessage": "Voice chat call",
-    "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
+    "description": "Accessible name of the mini-player of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.bar.talking": {
+    "defaultMessage": "{others, plural, =0 {{name} is talking} one {{name} and # other are talking} other {{name} and # others are talking}}",
+    "description": "Status line of the voice chat call's mini-player while someone talks. {name} is the first one talking; {others} is how many others talk with them."
   },
   "voice.call.microphone_denied": {
     "defaultMessage": "This site may not use the microphone. Allow it in your browser's settings, then try again.",

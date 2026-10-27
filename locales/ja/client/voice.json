@@ -741,7 +741,11 @@
   },
   "voice.bar.label": {
     "defaultMessage": "参加中の通話",
-    "description": "Accessible name of the bar of the voice chat call that shows on every page while the user is in a call."
+    "description": "Accessible name of the mini-player of the voice chat call that shows on every page while the user is in a call."
+  },
+  "voice.bar.talking": {
+    "defaultMessage": "{others, plural, =0 {{name}さんが話しています} other {{name}さんほか # 人が話しています}}",
+    "description": "Status line of the voice chat call's mini-player while someone talks. {name} is the first one talking; {others} is how many others talk with them."
   },
   "voice.call.microphone_denied": {
     "defaultMessage": "このサイトはマイクを使えません。ブラウザの設定で許可してから、もう一度試してください。",
