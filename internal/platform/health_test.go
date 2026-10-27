@@ -132,10 +132,12 @@ func TestInstanceHealth(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			// The answer may come from a check that ran while the server started (the cache of the
+			// check), so the earliest time it may name is taken before the start, however slow it is.
+			before := time.Now()
 			cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, tt.applied)})
 			s := start(t, cfg, platform.ServeOptions{}, nil)
 
-			before := time.Now().Add(-time.Second)
 			resp, body := s.do(t, http.MethodGet, platform.PathInstanceHealth, map[string]string{"Accept-Language": "ja"})
 			if resp.StatusCode != tt.wantStatus {
 				t.Fatalf("GET %s = %d %q, want %d", platform.PathInstanceHealth, resp.StatusCode, body, tt.wantStatus)
