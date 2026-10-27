@@ -165,6 +165,11 @@ func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) 
 	if err := fn(tx); err != nil {
 		return err
 	}
+	// A failed COMMIT (SQLITE_BUSY under the rollback journal) leaves SQLite inside the
+	// transaction, and database/sql marks sqlTx done, so the deferred Rollback is a no-op. The
+	// driver rolls the connection back itself before returning the error (modernc.org/sqlite
+	// tx.Commit), so the connection returns to the pool clean, and Tx retries the whole of fn
+	// in a new transaction (TestRetriesACommitThatFailsWithBusy).
 	if err := sqlTx.Commit(); err != nil {
 		return fmt.Errorf("sqlite: commit: %w", err)
 	}
