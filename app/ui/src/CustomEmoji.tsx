@@ -4,9 +4,8 @@
 // (ADR-0019 §2): its alternative text is the `:shortcode:` it replaces, so a screen reader reads what the
 // author wrote. An animated emoji moves only when the user allows motion: the still image is the `<img>`,
 // and the animated one a `<source>` for `(prefers-reduced-motion: no-preference)` (ADR-0054 §3).
-import { use } from "react";
 import { tv } from "tailwind-variants";
-import { AutoplayContext } from "./Picture";
+import { useAnimationsPlay } from "./Picture";
 
 /**
  * A custom emoji that a text may use: its shortcode without colons, its image, and a still image of it. The
@@ -69,15 +68,15 @@ export type CustomEmojiProps = {
   emoji: CustomEmojiImage;
   /**
    * Whether an animated emoji may move when the user allows motion; false shows the still image only. The default
-   * is the app's `AutoplayContext`.
+   * is the app's `AutoplayContext`, or the post or profile it is in while that plays (`AnimationsPlayContext`).
    */
   allowMotion?: boolean | undefined;
 };
 
 /** One custom emoji: its image, read as its `:shortcode:`. */
 export function CustomEmoji({ emoji, allowMotion: allowed }: CustomEmojiProps) {
-  const autoplay = use(AutoplayContext);
-  const allowMotion = allowed ?? autoplay;
+  const plays = useAnimationsPlay();
+  const allowMotion = allowed ?? plays;
   const label = labelOf(emoji);
   const image = <img src={emoji.static_url} alt={label} title={label} draggable={false} decoding="async" className={customEmoji()} />;
   if (!animates(emoji, allowMotion)) return image;

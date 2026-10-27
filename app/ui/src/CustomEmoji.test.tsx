@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CustomEmoji, type CustomEmojiImage, EmojiText, insertCustomEmojis, splitCustomEmoji } from "./CustomEmoji";
-import { AutoplayContext } from "./Picture";
+import { AnimationsPlayContext, AutoplayContext } from "./Picture";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
 const blobcat: CustomEmojiImage = { shortcode: "blobcat", url: "https://example.com/blobcat.gif", static_url: "https://example.com/blobcat.png" };
@@ -59,6 +59,19 @@ describe("CustomEmoji", () => {
     const off = (children: ReactNode) => renderToStaticMarkup(<AutoplayContext value={false}>{children}</AutoplayContext>);
     expect(off(<CustomEmoji emoji={blobcat} />)).not.toContain("<picture");
     expect(off(<CustomEmoji emoji={blobcat} allowMotion />)).toContain("<picture");
+  });
+
+  it("moves while the post or profile it is in plays, still behind the reduced-motion query", () => {
+    const view = renderToStaticMarkup(
+      <AutoplayContext value={false}>
+        <AnimationsPlayContext value>
+          <CustomEmoji emoji={blobcat} />
+          <CustomEmoji emoji={blobcat} allowMotion={false} />
+        </AnimationsPlayContext>
+      </AutoplayContext>,
+    );
+    expect(view.match(/<picture>/gu)).toHaveLength(1);
+    expect(view).toContain('media="(prefers-reduced-motion: no-preference)"');
   });
 });
 

@@ -47,6 +47,37 @@ export const LongLink: Story = {
   },
 };
 
+/**
+ * A URL link as the server writes it: the scheme and the cut rest are hidden spans that take no room (the link
+ * starts right after the text), and the shown part ends in an ellipsis. The hidden parts stay in the copied text.
+ */
+export const ShortenedLink: Story = {
+  args: {
+    html: serverSanitizedHtml(
+      '<p>Read <a href="https://example.com/a/very/long/path/that/is/cut/short" rel="nofollow noopener" target="_blank"><span class="invisible">https://</span><span class="ellipsis">example.com/a/very/long/path/t</span><span class="invisible">hat/is/cut/short</span></a></p>',
+    ),
+  },
+  play: async ({ canvas }) => {
+    const link = canvas.getByRole("link");
+    for (const hidden of link.querySelectorAll(".invisible")) {
+      const box = hidden.getBoundingClientRect();
+      await expect(box.width).toBe(0);
+      await expect(box.height).toBe(0);
+    }
+    const shown = link.querySelector(".ellipsis");
+    if (shown === null) throw new Error("no ellipsis span");
+    await expect(getComputedStyle(shown, "::after").content).toBe('"…"');
+    // The link's text, and so what a copy of it takes, is still the whole URL.
+    await expect(link.textContent).toBe("https://example.com/a/very/long/path/that/is/cut/short");
+    // The link starts right after the text before it: no room is left for the hidden scheme.
+    const read = link.parentElement?.firstChild;
+    if (read === null || read === undefined) throw new Error("no text before the link");
+    const range = document.createRange();
+    range.selectNodeContents(read);
+    await expect(Math.abs(link.getBoundingClientRect().left - range.getBoundingClientRect().right)).toBeLessThan(1);
+  },
+};
+
 /** `size="sm" lineClamp={3}`: an excerpt of a post in a form, cut after three lines. */
 export const Excerpt: Story = {
   args: { size: "sm", lineClamp: 3, html: serverSanitizedHtml("<p>One</p><p>Two</p><p>Three</p><p>Four</p><p>Five</p>") },

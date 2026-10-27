@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { AutoplayContext, type ImageSources, Picture } from "./Picture";
+import { AnimationsPlayContext, AutoplayContext, type ImageSources, Picture } from "./Picture";
 
 const still = [
   { url: "/s.webp", width: 96 },
@@ -52,11 +52,28 @@ describe("Picture", () => {
     );
     const img = screen.getByRole("img", { name: "A dance" });
     // eslint-disable-next-line testing-library/no-node-access -- <picture> and <source> have no role.
-    expect(img.closest("picture")).toBeNull();
+    const source = () => img.closest("picture")?.querySelector("source");
+    expect(source()).toBeNull();
     expect(img).toHaveAttribute("srcset", "/s.webp 96w, /m.webp 192w, /l.jpg 400w");
     await user.hover(img);
-    expect(img).toHaveAttribute("srcset", "/s-a.webp 96w, /m-a.webp 192w, /l-a.gif 400w");
+    // The moving rendition comes in behind the reduced-motion query, and the <img> stays the same element.
+    expect(source()).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
+    expect(source()).toHaveAttribute("srcset", "/s-a.webp 96w, /m-a.webp 192w, /l-a.gif 400w");
+    expect(screen.getByRole("img", { name: "A dance" })).toBe(img);
     await user.unhover(img);
-    expect(img).toHaveAttribute("src", "/s.webp");
+    expect(source()).toBeNull();
+  });
+
+  it("moves while the scope it is in plays", () => {
+    render(
+      <AutoplayContext value={false}>
+        <AnimationsPlayContext value>
+          <Picture sources={{ still, animated }} sizes="48px" alt="A dance" />
+        </AnimationsPlayContext>
+      </AutoplayContext>,
+    );
+    // eslint-disable-next-line testing-library/no-node-access -- <picture> and <source> have no role.
+    const source = screen.getByRole("img", { name: "A dance" }).closest("picture")?.querySelector("source");
+    expect(source).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
   });
 });

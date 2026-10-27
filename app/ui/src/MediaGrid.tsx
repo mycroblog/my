@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { type ComponentPropsWithRef, use, useState, useSyncExternalStore } from "react";
+import { type ComponentPropsWithRef, useState, useSyncExternalStore } from "react";
 import { Button, ToggleButton, useLocale } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { AudioPlayer, type AudioPlayerLabels } from "./AudioPlayer";
@@ -7,7 +7,7 @@ import { Blurhash } from "./Blurhash";
 import { formatClock } from "./clock";
 import { AltTextIcon, HideMediaIcon, PlayIcon } from "./Icons";
 import { MediaViewer, type MediaViewerLabels } from "./MediaViewer";
-import { AutoplayContext, type ImageSources, Picture } from "./Picture";
+import { type ImageSources, Picture, useAnimationsPlay } from "./Picture";
 import { VisuallyHidden } from "./VisuallyHidden";
 
 const mediaGrid = tv({
@@ -52,7 +52,7 @@ const mediaGrid = tv({
 
 /**
  * A video or audio file that a cell plays (ADR-0054 §6). A `video` never plays by itself and has the browser's controls, and an `audio` file never plays by itself and has an `AudioPlayer`; a `gifv` (a short silent video in place of an animated image) loops muted without controls while animations
- * play by themselves (`AutoplayContext`) and the system does not ask for reduced motion, and has controls otherwise.
+ * play by themselves (`AutoplayContext`) or the post plays them (`AnimationsPlayContext`) and the system does not ask for reduced motion, and has controls otherwise.
  */
 export type MediaPlayback = { kind: "video" | "audio" | "gifv"; url: string };
 
@@ -155,7 +155,7 @@ function PlaybackCell({ item, playback, revealed, count, noDescriptionLabel, aud
   const [playing, setPlaying] = useState(false);
   const [length, setLength] = useState(0);
   const { locale } = useLocale();
-  const autoplay = use(AutoplayContext);
+  const autoplay = useAnimationsPlay();
   const reducedMotion = usePrefersReducedMotion();
   const slots = mediaGrid({ count, revealed });
   const name = item.alt ?? noDescriptionLabel;
