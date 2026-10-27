@@ -270,11 +270,13 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 	// job removes the account's row of the first; the second leaves a row of the timelines whose
 	// end has passed, as does the limit on dave below, whose rows also stay in
 	// account_restrictions, since the expiry job does not run again.
-	time.Sleep(5 * time.Millisecond)
+	// The wait starts after the actions are issued, so that a slow machine cannot make it too short.
+	waitPast(time.Now().Add(5 * time.Millisecond))
 	if _, err := a.Moderation.ExpireAccountRestrictions(ctx); err != nil {
 		t.Fatalf("ExpireAccountRestrictions = %v", err)
 	}
 	issue(appmoderation.AccountActionInput{TargetAccountID: dave, Kind: moderation.ActionLimit, Duration: 20 * time.Millisecond})
+	limitEnds := time.Now().Add(25 * time.Millisecond)
 
 	r, _, err := a.Moderation.FileRemoteReport(ctx, appmoderation.RemoteReportInput{
 		URI: "https://remote.example/flags/1", ReporterAccountID: dave, TargetAccountID: alice, Comment: "spam",
@@ -315,7 +317,14 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 		t.Fatalf("DecideAppeal = %v", err)
 	}
 	// The limit on dave ends.
-	time.Sleep(25 * time.Millisecond)
+	waitPast(limitEnds)
+}
+
+// waitPast blocks until the wall clock is past t, however long the machine took to get here.
+func waitPast(t time.Time) {
+	for d := time.Until(t); d > 0; d = time.Until(t) {
+		time.Sleep(d)
+	}
 }
 
 // fillIdentity fills the identity projections: a role grant, a revoked one, and sign-ups
