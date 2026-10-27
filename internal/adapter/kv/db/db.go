@@ -46,11 +46,17 @@ type Store struct {
 
 var _ kernel.KeyValueStore = (*Store)(nil)
 
+// expiry returns the expiry of an entry written now with ttl, rounded up to the next
+// millisecond (SQLite keeps milliseconds), so that a positive TTL never expires early; nil for
+// an entry that never expires.
 func (s *Store) expiry(ttl time.Duration) *time.Time {
 	if ttl <= 0 {
 		return nil
 	}
 	t := s.clock.Now().Add(ttl)
+	if c := t.Truncate(time.Millisecond); c.Before(t) {
+		t = c.Add(time.Millisecond)
+	}
 	return &t
 }
 
