@@ -5,6 +5,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -81,6 +82,20 @@ func (s sqliteStore) incr(ctx context.Context, tx uow.Tx, namespace, key string,
 		return nil, err
 	}
 	return q.IncrEntry(ctx, sqlitekv.IncrEntryParams{Namespace: namespace, Key: key, Initial: initial, ExpiresAt: nullMillis(expiresAt)})
+}
+
+// swap reads and writes in one transaction, which BEGIN IMMEDIATE makes atomic.
+func (s sqliteStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
+	cur, found, err := s.get(ctx, tx, namespace, key, now)
+	switch {
+	case err != nil:
+		return false, err
+	case old == nil && found, old != nil && (!found || !bytes.Equal(cur, old)):
+		return false, nil
+	case value == nil:
+		return true, s.del(ctx, tx, namespace, key)
+	}
+	return true, s.set(ctx, tx, namespace, key, value, expiresAt)
 }
 
 func (s sqliteStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {

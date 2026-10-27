@@ -46,7 +46,7 @@ PostgreSQL の並行性の挙動（READ COMMITTED、`SELECT ... FOR UPDATE`、`F
 | 対象 | キー | 用途 |
 | --- | --- | --- |
 | 受信アクティビティ | `received_activities (activity_uri)` | Inbox の受信時の重複排除（[ADR-0033](../../adr/0033-inbox-processing-model.md)）。`id` を持たないものは `actor` と本文の SHA-256 から `urn:my:digest:<hex>` を合成する（[federation §3.1](../federation.md#31-同期の部分)） |
-| 順序の入れ替わり | `remote_object_tombstones (uri)`、`remote_follow_tombstones (activity_uri)`、`status_deletions (uri)` | 先に届いた `Delete` / `Undo` の後に届いた `Create` / `Follow` などを捨てる |
+| 順序の入れ替わり | `remote_object_tombstones (uri, actor_uri)`、`remote_follow_tombstones (activity_uri)`、`status_deletions (uri)` | 先に届いた `Delete` / `Undo` の後に届いた `Create` / `Follow` などを捨てる |
 | AP オブジェクト | `accounts (uri)`, `statuses (uri)`, `boosts (uri)`, `follows (uri)`, `follow_resends (uri)`, `blocks (uri)`, `reports (uri)`, `poll_votes (uri)`, `custom_emojis (uri)` | 受信・取得の重複排除 |
 | 版 | `status_revisions (status_id, seq)`, `account_profile_revisions (account_id, seq)` | 同じ `Update` の再処理を no-op にする。リモートの `updated` が現在版以下なら版を作らない |
 | 状態遷移イベント | `follow_acceptances (follow_id)`, `follow_rejections (follow_id)`, `follow_terminations (follow_id)`, `boost_retractions (boost_id)`, `block_retractions (block_id)`, `moderation_action_lifts (action_id)` | 同じ遷移の二重記録を防ぐ（1 リソースにつき 1 回だけ起きる遷移は PK にする） |

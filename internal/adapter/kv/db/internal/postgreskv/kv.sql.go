@@ -26,6 +26,33 @@ func (q *Queries) DeleteEntry(ctx context.Context, arg DeleteEntryParams) error 
 	return err
 }
 
+const deleteEntryIf = `-- name: DeleteEntryIf :execrows
+DELETE FROM kv_entries
+WHERE namespace = $1 AND key = $2 AND value = $3
+  AND (expires_at IS NULL OR expires_at > $4::timestamptz)
+`
+
+type DeleteEntryIfParams struct {
+	Namespace string
+	Key       string
+	Old       []byte
+	Now       time.Time
+}
+
+// DeleteEntryIf removes a live entry that holds @old.
+func (q *Queries) DeleteEntryIf(ctx context.Context, arg DeleteEntryIfParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteEntryIf,
+		arg.Namespace,
+		arg.Key,
+		arg.Old,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteExpiredEntries = `-- name: DeleteExpiredEntries :execrows
 DELETE FROM kv_entries
 WHERE expires_at <= $1::timestamptz
@@ -129,4 +156,64 @@ func (q *Queries) SetEntry(ctx context.Context, arg SetEntryParams) error {
 		arg.ExpiresAt,
 	)
 	return err
+}
+
+const swapAbsentEntry = `-- name: SwapAbsentEntry :execrows
+INSERT INTO kv_entries (namespace, key, value, expires_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (namespace, key) DO UPDATE SET value = excluded.value, expires_at = excluded.expires_at
+WHERE kv_entries.expires_at <= $5::timestamptz
+`
+
+type SwapAbsentEntryParams struct {
+	Namespace string
+	Key       string
+	Value     []byte
+	ExpiresAt *time.Time
+	Now       time.Time
+}
+
+// SwapAbsentEntry writes @value with expiry @expires_at at a key without a live entry.
+func (q *Queries) SwapAbsentEntry(ctx context.Context, arg SwapAbsentEntryParams) (int64, error) {
+	result, err := q.db.Exec(ctx, swapAbsentEntry,
+		arg.Namespace,
+		arg.Key,
+		arg.Value,
+		arg.ExpiresAt,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const swapEntry = `-- name: SwapEntry :execrows
+UPDATE kv_entries SET value = $1, expires_at = $2
+WHERE namespace = $3 AND key = $4 AND value = $5
+  AND (expires_at IS NULL OR expires_at > $6::timestamptz)
+`
+
+type SwapEntryParams struct {
+	Value     []byte
+	ExpiresAt *time.Time
+	Namespace string
+	Key       string
+	Old       []byte
+	Now       time.Time
+}
+
+// SwapEntry replaces a live entry that holds @old with @value and expiry @expires_at.
+func (q *Queries) SwapEntry(ctx context.Context, arg SwapEntryParams) (int64, error) {
+	result, err := q.db.Exec(ctx, swapEntry,
+		arg.Value,
+		arg.ExpiresAt,
+		arg.Namespace,
+		arg.Key,
+		arg.Old,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

@@ -265,8 +265,8 @@ func (q *Queries) DeleteRemoteFollowTombstonesBefore(ctx context.Context, arg De
 
 const deleteRemoteObjectTombstonesBefore = `-- name: DeleteRemoteObjectTombstonesBefore :execrows
 DELETE FROM remote_object_tombstones
-WHERE uri IN (
-  SELECT t.uri FROM remote_object_tombstones t
+WHERE (uri, actor_uri) IN (
+  SELECT t.uri, t.actor_uri FROM remote_object_tombstones t
   WHERE t.received_at < $1 ORDER BY t.received_at LIMIT $2
 )
 `
@@ -748,7 +748,7 @@ func (q *Queries) InsertRemoteInstance(ctx context.Context, arg InsertRemoteInst
 const insertRemoteObjectTombstone = `-- name: InsertRemoteObjectTombstone :execrows
 INSERT INTO remote_object_tombstones (uri, actor_uri, activity_uri, received_at)
 VALUES ($1, $2, $3, $4)
-ON CONFLICT (uri) DO NOTHING
+ON CONFLICT (uri, actor_uri) DO NOTHING
 `
 
 type InsertRemoteObjectTombstoneParams struct {

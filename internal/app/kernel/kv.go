@@ -34,6 +34,10 @@ type KeyValueStore interface {
 	// Counters are stored as their decimal representation, which is what Get returns for them;
 	// IncrBy on an entry written by Set with anything else is undefined.
 	IncrBy(ctx context.Context, namespace, key string, n int64, ttl time.Duration) (int64, error)
+	// CompareAndSwap atomically replaces the entry at key with value and expiry ttl, or removes
+	// it when value is nil, only while it holds old, and reports whether it did. A nil old
+	// expects no live entry (absent or expired); an empty, non-nil old expects an empty value.
+	CompareAndSwap(ctx context.Context, namespace, key string, old, value []byte, ttl time.Duration) (bool, error)
 	// DeleteExpired removes at most limit expired entries and returns how many it removed;
 	// fewer than limit means none are left. A limit <= 0 removes nothing.
 	DeleteExpired(ctx context.Context, limit int) (int64, error)

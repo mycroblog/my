@@ -28,13 +28,15 @@ CREATE TABLE received_activity_documents (
   document BLOB NOT NULL
 ) STRICT;
 
--- Event: a Delete of an unknown object or an Undo of an unknown target. A Create, Update, or
--- Follow of the uri that arrives later is dropped.
+-- Event: a Delete of an unknown object or an Undo of an unknown target, by the actor that sent
+-- it. A Create, Update, or Follow of the uri by the same actor that arrives later is dropped;
+-- another actor's tombstone of the uri holds back nothing of that actor's.
 CREATE TABLE remote_object_tombstones (
-  uri TEXT NOT NULL PRIMARY KEY,
+  uri TEXT NOT NULL,
   actor_uri TEXT NOT NULL,
   activity_uri TEXT NOT NULL,
-  received_at INTEGER NOT NULL
+  received_at INTEGER NOT NULL,
+  PRIMARY KEY (uri, actor_uri)
 ) STRICT;
 CREATE INDEX remote_object_tombstones_received_at ON remote_object_tombstones (received_at);
 

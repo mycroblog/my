@@ -71,6 +71,26 @@ func (s postgresStore) incr(ctx context.Context, tx uow.Tx, namespace, key strin
 	return q.IncrEntry(ctx, postgreskv.IncrEntryParams{Namespace: namespace, Key: key, Initial: initial, ExpiresAt: expiresAt, Now: now})
 }
 
+func (s postgresStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	var n int64
+	switch {
+	case old == nil && value == nil:
+		_, found, err := s.get(ctx, tx, namespace, key, now)
+		return !found, err
+	case old == nil:
+		n, err = q.SwapAbsentEntry(ctx, postgreskv.SwapAbsentEntryParams{Namespace: namespace, Key: key, Value: value, ExpiresAt: expiresAt, Now: now})
+	case value == nil:
+		n, err = q.DeleteEntryIf(ctx, postgreskv.DeleteEntryIfParams{Namespace: namespace, Key: key, Old: old, Now: now})
+	default:
+		n, err = q.SwapEntry(ctx, postgreskv.SwapEntryParams{Namespace: namespace, Key: key, Old: old, Value: value, ExpiresAt: expiresAt, Now: now})
+	}
+	return n == 1, err
+}
+
 func (s postgresStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {
 	q, err := s.queries(tx)
 	if err != nil {
