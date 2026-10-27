@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
@@ -39,7 +40,33 @@ type ProfileUpdate struct {
 // account.ErrInvalidProfile (a *account.ProfileError) for invalid content or an image that
 // the account cannot use, with ErrNotLocal for an account that is not a local user's, and
 // with ErrNotFound for an unknown account.
+//
+// The update applies to the current revision when it commits: when another revision becomes
+// current while the update is prepared, it starts again from that revision, so that concurrent
+// partial updates do not discard each other's changes.
 func (s *Service) UpdateProfile(ctx context.Context, accountID string, in ProfileUpdate) (Actor, error) {
+	var a Actor
+	err := uow.Retry(ctx, uow.RetryPolicy{MaxAttempts: maxProfileUpdateAttempts}, func() error {
+		var err error
+		a, err = s.updateProfile(ctx, accountID, in)
+		if errors.Is(err, errProfileChanged) {
+			return uow.MarkRetryable(err)
+		}
+		return err
+	})
+	if err != nil {
+		return Actor{}, err
+	}
+	return a, nil
+}
+
+// maxProfileUpdateAttempts bounds how often UpdateProfile starts again after a concurrent
+// revision.
+const maxProfileUpdateAttempts = 8
+
+// updateProfile is one attempt of UpdateProfile. It fails with errProfileChanged when another
+// revision became current after it read the profile.
+func (s *Service) updateProfile(ctx context.Context, accountID string, in ProfileUpdate) (Actor, error) {
 	a, err := s.FindByID(ctx, accountID)
 	if err != nil {
 		return Actor{}, err
@@ -114,7 +141,7 @@ func (s *Service) UpdateProfile(ctx context.Context, accountID string, in Profil
 		}
 	}
 
-	rev, err := s.ReviseProfile(ctx, accountID, next)
+	rev, err := s.reviseProfile(ctx, accountID, next, &cur.Seq)
 	if err != nil {
 		return Actor{}, err
 	}

@@ -77,6 +77,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"ReportsMissingAccounts", accountReportsMissing},
 		{"RevisesProfiles", accountRevisesProfiles},
 		{"UpdatesLocalProfiles", accountUpdatesLocalProfiles},
+		{"KeepsConcurrentPartialProfileUpdates", accountKeepsConcurrentProfileUpdates},
 		{"RecordsLifecycleEvents", accountRecordsLifecycle},
 		{"ExecutesScheduledDeletions", accountExecutesDeletions},
 		{"DeletesAccountsAtTheOwnersRequest", accountDeletesAtTheOwnersRequest},
@@ -633,6 +634,50 @@ func accountUpdatesLocalProfiles(t *testing.T, e *accountEnv) {
 	}
 	if _, err := e.accounts.UpdateProfile(ctx, ia.ID, appaccount.ProfileUpdate{DisplayName: ptr("x")}); !errors.Is(err, appaccount.ErrNotLocal) {
 		t.Errorf("UpdateProfile(instance actor) = %v, want ErrNotLocal", err)
+	}
+}
+
+// accountKeepsConcurrentProfileUpdates checks that a partial profile update that commits while
+// another one is being prepared is kept: the later update builds on it instead of restoring the
+// values that it read before.
+func accountKeepsConcurrentProfileUpdates(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	reg := e.register(t, "gale")
+	ptr := func(s string) *string { return &s }
+	rendering, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	slow := appaccount.NewService(appaccount.Deps{
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Accounts, Clock: e.clock, IDs: e.ids,
+		Sealer: kernel.NewSealer(NewKeyManager("contract")), Host: contractHost, GenerateKey: cachedKey,
+		RenderProfileText: func(_ context.Context, text string) (string, error) {
+			// The first rendering waits for the concurrent update to commit.
+			once.Do(func() {
+				close(rendering)
+				<-release
+			})
+			return "<p>rendered " + text + "</p>", nil
+		},
+	})
+	done := make(chan error, 1)
+	go func() {
+		_, err := slow.UpdateProfile(ctx, reg.AccountID, appaccount.ProfileUpdate{Note: ptr("hello")})
+		done <- err
+	}()
+	<-rendering
+	yes := true
+	if _, err := e.accounts.UpdateProfile(ctx, reg.AccountID, appaccount.ProfileUpdate{DisplayName: ptr("Gale"), Locked: &yes}); err != nil {
+		t.Fatalf("UpdateProfile(display name, locked) = %v", err)
+	}
+	close(release)
+	if err := <-done; err != nil {
+		t.Fatalf("UpdateProfile(note) = %v", err)
+	}
+	got, err := e.accounts.FindByID(ctx, reg.AccountID)
+	if err != nil || got.Profile == nil {
+		t.Fatalf("FindByID = %+v, %v", got, err)
+	}
+	if p := got.Profile; p.DisplayName != "Gale" || !p.Locked || p.NoteHTML != "<p>rendered hello</p>" || p.Source == nil || p.Source.Note != "hello" {
+		t.Errorf("profile after concurrent updates = %+v, want both updates kept", p)
 	}
 }
 
