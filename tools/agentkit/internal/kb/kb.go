@@ -213,8 +213,8 @@ func (k *KB) splitDoc(ref string) ([]store.Node, error) {
 // limit tokens prints its outline instead, so that the caller picks the part it needs.
 func (k *KB) Show(w io.Writer, ref string, limit int) error {
 	if m := reLineRange.FindStringSubmatch(ref); m != nil {
-		if _, err := os.Stat(filepath.Join(k.S.Repo.Root, m[1])); err == nil {
-			b, err := os.ReadFile(filepath.Join(k.S.Repo.Root, m[1]))
+		if full, err := k.contained(m[1]); err == nil {
+			b, err := os.ReadFile(full)
 			if err != nil {
 				return err
 			}
@@ -232,7 +232,7 @@ func (k *KB) Show(w io.Writer, ref string, limit int) error {
 		return err
 	}
 	if len(ns) == 0 {
-		if _, err := os.Stat(filepath.Join(k.S.Repo.Root, ref)); err == nil {
+		if _, err := k.contained(ref); err == nil {
 			return k.showFile(w, ref, limit)
 		}
 		return fmt.Errorf("nothing matches %q; try `agentkit find %s`", ref, ref)
@@ -263,8 +263,32 @@ func (k *KB) Show(w io.Writer, ref string, limit int) error {
 	return nil
 }
 
+// contained returns the absolute path of the existing file p (relative to the repository root) and refuses a
+// path that leaves the root, by `..`, an absolute path, or a symlink.
+func (k *KB) contained(p string) (string, error) {
+	if !filepath.IsLocal(p) {
+		return "", fmt.Errorf("%q is outside the repository", p)
+	}
+	root, err := filepath.EvalSymlinks(k.S.Repo.Root)
+	if err != nil {
+		return "", err
+	}
+	full, err := filepath.EvalSymlinks(filepath.Join(k.S.Repo.Root, p))
+	if err != nil {
+		return "", err
+	}
+	if rel, err := filepath.Rel(root, full); err != nil || !filepath.IsLocal(rel) {
+		return "", fmt.Errorf("%q is outside the repository", p)
+	}
+	return full, nil
+}
+
 func (k *KB) showFile(w io.Writer, p string, limit int) error {
-	b, err := os.ReadFile(filepath.Join(k.S.Repo.Root, p))
+	full, err := k.contained(p)
+	if err != nil {
+		return err
+	}
+	b, err := os.ReadFile(full)
 	if err != nil {
 		return err
 	}

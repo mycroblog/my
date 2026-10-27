@@ -128,7 +128,7 @@ func (s *Store) sync() error {
 	var view []int64
 	var todo []repo.File
 	for _, f := range files {
-		if extract.Kind(f.Path) == "" {
+		if extract.Kind(f.Path) == "" || s.isSymlink(f.Path) {
 			continue
 		}
 		if id, ok := known[[2]string{f.Path, f.SHA}]; ok {
@@ -164,6 +164,13 @@ func (s *Store) sync() error {
 		return err
 	}
 	return s.touch()
+}
+
+// isSymlink reports whether p is a symlink: indexing follows none, so that a link out of the repository cannot
+// bring the files it points at into the index.
+func (s *Store) isSymlink(p string) bool {
+	fi, err := os.Lstat(filepath.Join(s.Repo.Root, p))
+	return err == nil && fi.Mode()&os.ModeSymlink != 0
 }
 
 // index extracts files in parallel and stores the results in one transaction.
