@@ -11,6 +11,8 @@ const badge = tv({
       accent: "bg-accent-fill text-accent-fill-fg",
       danger: "bg-danger text-danger-fg",
       neutral: "bg-surface-sunken text-fg",
+      /** The raised hands of a voice chat call. */
+      hand: "bg-hand text-hand-fg",
     },
   },
   defaultVariants: { tone: "accent" },

@@ -37,6 +37,13 @@ import {
   PiChartBarHorizontal,
   PiChartBarHorizontalFill,
   PiCoins,
+  PiExport,
+  PiHandPalm,
+  PiHandPalmFill,
+  PiMicrophone,
+  PiMicrophoneFill,
+  PiMicrophoneSlash,
+  PiSignOut,
   PiDotsThreeBold,
   PiEye,
   PiEyeSlash,
@@ -165,6 +172,16 @@ export const iconTable = {
   FinanceIcon: { off: glyph(PiCoins, "PiCoins") },
   // Voice chat (ADR-0100): a headset, which has no direction.
   VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
+  // The controls of a call. The microphone and the raised hand close, so they fill while on.
+  MicrophoneIcon: { off: glyph(PiMicrophone, "PiMicrophone"), on: glyph(PiMicrophoneFill, "PiMicrophoneFill") },
+  // The slash is the mark of a microphone that is off (a badge), not a direction, so it does not mirror.
+  MicrophoneOffIcon: { off: glyph(PiMicrophoneSlash, "PiMicrophoneSlash") },
+  RaiseHandIcon: { off: glyph(PiHandPalm, "PiHandPalm"), on: glyph(PiHandPalmFill, "PiHandPalmFill") },
+  // An arrow up out of a tray: up is not a direction along the line, so it does not mirror.
+  ShareIcon: { off: glyph(PiExport, "PiExport") },
+  InviteIcon: { off: glyph(PiUserPlus, "PiUserPlus") },
+  // The arrow points out of the door along the line, so it mirrors in right-to-left text.
+  LeaveIcon: { off: glyph(PiSignOut, "PiSignOut"), directional: true },
   MenuIcon: { off: glyph(PiList, "PiList") },
   AboutIcon: { off: glyph(PiInfo, "PiInfo") },
   // The arrow points into the door along the line, so it mirrors in right-to-left text.
@@ -423,6 +440,36 @@ export function FinanceIcon() {
 /** A headset, for the voice chat rooms. */
 export function VoiceIcon() {
   return renderIcon(iconTable.VoiceIcon);
+}
+
+/** A microphone, for the switch of the user's microphone in a call; filled while it is on. */
+export function MicrophoneIcon({ filled = false }: ToggleIconProps) {
+  return renderIcon(iconTable.MicrophoneIcon, filled);
+}
+
+/** A microphone with a slash, for a participant whose microphone is off. */
+export function MicrophoneOffIcon() {
+  return renderIcon(iconTable.MicrophoneOffIcon);
+}
+
+/** An open hand, for raising a hand to ask to speak; filled while it is raised. */
+export function RaiseHandIcon({ filled = false }: ToggleIconProps) {
+  return renderIcon(iconTable.RaiseHandIcon, filled);
+}
+
+/** An arrow out of a tray, for sharing a link. */
+export function ShareIcon() {
+  return renderIcon(iconTable.ShareIcon);
+}
+
+/** A person with a plus, for inviting someone. */
+export function InviteIcon() {
+  return renderIcon(iconTable.InviteIcon);
+}
+
+/** An arrow out of a door, for leaving a call. */
+export function LeaveIcon() {
+  return renderIcon(iconTable.LeaveIcon);
 }
 
 /** Three lines, for the button that opens the menu with the rest of the navigation. */

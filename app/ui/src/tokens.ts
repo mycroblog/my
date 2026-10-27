@@ -69,6 +69,7 @@ export const colorPairs: readonly ColorPair[] = [
   { fg: "fg", bg: "warning-bg", use: "text" },
   { fg: "warning", bg: "warning-bg", use: "text" },
   { fg: "pressed-fg", bg: "pressed", use: "text" },
+  { fg: "hand-fg", bg: "hand", use: "text" },
   ...highlightKinds.map((k): ColorPair => ({ fg: "fg", bg: `highlight-${k}`, use: "text" })),
   { fg: "toast-fg", bg: "toast", use: "text" },
   { fg: "toast-action", bg: "toast", use: "text" },
@@ -126,9 +127,10 @@ export const tokenRules: readonly TokenRule[] = [
  * Tokens of theme.css that a server theme cannot override: the primitive palette, an implementation
  * detail of the semantic colors (override those instead), `--shadow-*`, whose values Tailwind copies
  * into its utilities (override `--elevation-*`, which they refer to), the badge and avatar colors, whose
- * pairs keep their contrast only as they are (ADR-0071), and `--radius-avatar`, a percentage of the avatar's side.
+ * pairs keep their contrast only as they are (ADR-0071), the mango of a raised hand in a voice chat call, a brand mark
+ * like the logo's spark, and `--radius-avatar`, a percentage of the avatar's side.
  */
-export const fixedTokens: readonly RegExp[] = [/^palette-/, /^shadow-/, /^color-badge-/, /^color-avatar-/, /^radius-avatar$/];
+export const fixedTokens: readonly RegExp[] = [/^palette-/, /^shadow-/, /^color-badge-/, /^color-avatar-/, /^color-hand(?:-fg)?$/, /^radius-avatar$/];
 
 /**
  * The pairs of colorPairs that a server theme can change, which the server checks when it saves a theme
