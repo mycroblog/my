@@ -135,6 +135,8 @@ type Options struct {
 	// Logger receives the failures that the Bus survives (a receive that fails and is retried, a
 	// batch that could not be deleted); nil discards them.
 	Logger *slog.Logger
+	// Reporter receives a panic of a listener's goroutine (kernel.Go); nil only panics again.
+	Reporter kernel.ErrorReporter
 }
 
 // Bus is the SNS → SQS stream.Bus and its stream.Sweeper. It is safe for concurrent use.
@@ -147,6 +149,7 @@ type Bus struct {
 	processID   string
 	clock       kernel.Clock
 	log         *slog.Logger
+	reporter    kernel.ErrorReporter
 	listeners   atomic.Uint64
 }
 
@@ -201,7 +204,7 @@ func New(topics TopicClient, queues QueueClient, o Options) (*Bus, error) {
 		topicARN:    o.TopicARN,
 		queueARN:    "arn:" + topic.Partition + ":sqs:" + topic.Region + ":" + topic.AccountID + ":",
 		queuePrefix: o.QueuePrefix, processID: processID,
-		clock: o.Clock, log: o.Logger,
+		clock: o.Clock, log: o.Logger, reporter: o.Reporter,
 	}
 	if b.clock == nil {
 		b.clock = systemClock{}
@@ -305,7 +308,7 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 	l.subscription = aws.ToString(sub.SubscriptionArn)
 	var run context.Context
 	run, l.cancel = context.WithCancel(context.WithoutCancel(ctx))
-	go l.run(run)
+	kernel.Go(run, "stream.sns.receive", b.reporter, l.run)
 	return l, nil
 }
 

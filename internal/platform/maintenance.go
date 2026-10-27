@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/system"
 	"github.com/mycroblog/my/internal/adapter/telemetry/none"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/interface/maintenance"
@@ -135,7 +136,7 @@ func ServeMaintenance(ctx context.Context, m *MaintenanceApp, opts ServeOptions)
 		ErrorLog:          slog.NewLogLogger(a.Logger.Handler(), slog.LevelWarn),
 	}
 	serveErr := make(chan error, 1)
-	go func() { serveErr <- srv.Serve(ln) }()
+	kernel.Go(ctx, "http.serve_maintenance", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
 	a.Logger.InfoContext(ctx, "started in maintenance mode", slog.String("addr", ln.Addr().String()))
 	var err error
 	select {

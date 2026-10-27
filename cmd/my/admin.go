@@ -18,6 +18,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -156,7 +157,8 @@ func promptPassword(fd int, stderr io.Writer) (string, error) {
 		signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
 		done := make(chan struct{})
 		defer func() { signal.Stop(interrupts); close(done) }()
-		go func() {
+		// The prompt runs before any App, so nothing reports a panic: kernel.Go only panics again.
+		kernel.Go(context.Background(), "cli.password.restore_terminal", nil, func(context.Context) {
 			select {
 			case <-interrupts:
 				_ = term.Restore(fd, state)
@@ -164,7 +166,7 @@ func promptPassword(fd int, stderr io.Writer) (string, error) {
 				os.Exit(130)
 			case <-done:
 			}
-		}()
+		})
 	}
 	read := func(prompt string) (string, error) {
 		_, _ = fmt.Fprint(stderr, prompt)

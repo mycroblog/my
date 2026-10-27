@@ -23,6 +23,7 @@ import (
 	valkeygo "github.com/valkey-io/valkey-go"
 
 	"github.com/mycroblog/my/internal/adapter/valkey"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/stream"
 )
 
@@ -31,16 +32,18 @@ func Channel(keyPrefix string) string { return keyPrefix + "stream" }
 
 // Bus is the Valkey Pub/Sub bus. It is safe for concurrent use.
 type Bus struct {
-	client  valkey.Client
-	channel string
+	client   valkey.Client
+	channel  string
+	reporter kernel.ErrorReporter
 }
 
 var _ stream.Bus = (*Bus)(nil)
 
 // New returns the bus on client whose channel is Channel(keyPrefix). Buses with different
-// prefixes on one server do not receive each other's payloads.
-func New(client valkey.Client, keyPrefix string) *Bus {
-	return &Bus{client: client, channel: Channel(keyPrefix)}
+// prefixes on one server do not receive each other's payloads. reporter receives the panics of
+// the Bus's goroutines (kernel.Go); nil only panics again.
+func New(client valkey.Client, keyPrefix string, reporter kernel.ErrorReporter) *Bus {
+	return &Bus{client: client, channel: Channel(keyPrefix), reporter: reporter}
 }
 
 // Send implements stream.Bus with a PUBLISH on a pooled connection. valkey-go retries no
@@ -67,10 +70,10 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 	// The pool may dial a new connection without ctx; the start runs aside so that Listen
 	// returns by ctx's deadline, and a start that ends late closes what it opened.
 	done := make(chan result, 1)
-	go func() {
+	kernel.Go(ctx, "stream.valkey.subscribe", b.reporter, func(ctx context.Context) {
 		l, err := b.listen(ctx, receive)
 		done <- result{l, err}
-	}()
+	})
 	select {
 	case r := <-done:
 		if r.err != nil {
@@ -79,11 +82,11 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 		return r.l, nil
 	case <-ctx.Done():
 		base := context.WithoutCancel(ctx)
-		go func() {
+		kernel.Go(base, "stream.valkey.close_late", b.reporter, func(context.Context) {
 			if r := <-done; r.l != nil {
 				r.l.closeAside(base)
 			}
-		}()
+		})
 		return nil, fmt.Errorf("stream/valkey: subscribe %s: %w", b.channel, ctx.Err())
 	}
 }
@@ -98,7 +101,7 @@ func (b *Bus) listen(ctx context.Context, receive func(payload []byte)) (*listen
 			}
 		},
 	})
-	go l.watch(hooks)
+	kernel.Go(context.WithoutCancel(ctx), "stream.valkey.watch", b.reporter, func(context.Context) { l.watch(hooks) })
 	if err := conn.Do(ctx, conn.B().Subscribe().Channel(b.channel).Build()).Error(); err != nil {
 		l.closeAside(context.WithoutCancel(ctx))
 		return nil, fmt.Errorf("stream/valkey: subscribe %s: %w", b.channel, err)

@@ -55,11 +55,11 @@ func TestBusContract(t *testing.T) {
 		broker := stream.NewMemoryBroker()
 		m := recordingMeter(t)
 		return testkit.StreamBus{
-			NewBus: func(*testing.T) stream.Bus { return sysmetrics.Bus(broker.Bus(), m, "stream.memory") },
+			NewBus: func(*testing.T) stream.Bus { return sysmetrics.Bus(broker.Bus(), m, "stream.memory", nil) },
 			Unreachable: func(*testing.T) stream.Bus {
 				unreachable := stream.NewMemoryBroker()
 				unreachable.SetUnreachable(true)
-				return sysmetrics.Bus(unreachable.Bus(), m, "stream.memory")
+				return sysmetrics.Bus(unreachable.Bus(), m, "stream.memory", nil)
 			},
 			Break:     func(*testing.T) { broker.Break() },
 			Resources: func(*testing.T) int { return broker.Listeners() },

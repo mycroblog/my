@@ -54,6 +54,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/stream"
 )
 
@@ -129,6 +130,8 @@ type Options struct {
 	// Now returns the current time, for the creation label of a subscription and the age of a
 	// swept one; nil means time.Now.
 	Now func() time.Time
+	// Reporter receives a panic of a listener's goroutine (kernel.Go); nil only panics again.
+	Reporter kernel.ErrorReporter
 }
 
 // Bus is a stream.Bus and a stream.Sweeper on a Pub/Sub topic. It is safe for concurrent use.
@@ -222,7 +225,7 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 
 	recvCtx, cancel := context.WithCancel(context.Background())
 	l := &listener{bus: b, name: name, cancel: cancel, broken: make(chan struct{}), done: make(chan struct{}), receive: receive}
-	go l.run(recvCtx, sub)
+	kernel.Go(recvCtx, "stream.pubsub.receive", b.o.Reporter, func(ctx context.Context) { l.run(ctx, sub) })
 	return l, nil
 }
 

@@ -27,6 +27,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/stream"
 )
 
@@ -47,13 +48,16 @@ type Options struct {
 	// Channel is the notification channel; empty means DefaultChannel. Every process of an
 	// instance uses the same one.
 	Channel string
+	// Reporter receives the panics of the Bus's goroutines (kernel.Go); nil only panics again.
+	Reporter kernel.ErrorReporter
 }
 
 // Bus is a stream.Bus on PostgreSQL LISTEN / NOTIFY. It is safe for concurrent use.
 type Bus struct {
-	pool    *pgxpool.Pool
-	listen  *pgx.ConnConfig
-	channel string
+	pool     *pgxpool.Pool
+	listen   *pgx.ConnConfig
+	channel  string
+	reporter kernel.ErrorReporter
 }
 
 var _ stream.Bus = (*Bus)(nil)
@@ -81,7 +85,7 @@ func New(o Options) (*Bus, error) {
 	if channel == "" {
 		channel = DefaultChannel
 	}
-	return &Bus{pool: o.Pool, listen: cfg, channel: channel}, nil
+	return &Bus{pool: o.Pool, listen: cfg, channel: channel, reporter: o.Reporter}, nil
 }
 
 // Send implements stream.Bus.
@@ -103,8 +107,8 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 		return nil, fmt.Errorf("stream/postgres: listen: %w", err)
 	}
 	loopCtx, stop := context.WithCancel(context.Background())
-	l := &listener{conn: conn, stop: stop, broken: make(chan struct{}), done: make(chan struct{})}
-	go l.run(loopCtx, receive)
+	l := &listener{conn: conn, stop: stop, broken: make(chan struct{}), done: make(chan struct{}), reporter: b.reporter}
+	kernel.Go(loopCtx, "stream.postgres.listen", b.reporter, func(ctx context.Context) { l.run(ctx, receive) })
 	return l, nil
 }
 
@@ -115,6 +119,8 @@ type listener struct {
 	stop   context.CancelFunc
 	broken chan struct{}
 	done   chan struct{} // closed when run returns
+	// reporter receives a panic of the goroutine that closes the connection late.
+	reporter kernel.ErrorReporter
 
 	closeOnce sync.Once
 	closeErr  error
@@ -147,10 +153,10 @@ func (l *listener) Close(ctx context.Context) error {
 		case <-l.done:
 		case <-ctx.Done():
 			// A pgx.Conn is not safe for concurrent use: close it once the goroutine is gone.
-			go func() {
+			kernel.Go(context.WithoutCancel(ctx), "stream.postgres.close_late", l.reporter, func(context.Context) {
 				<-l.done
 				_ = l.conn.Close(context.Background())
-			}()
+			})
 			l.closeErr = fmt.Errorf("stream/postgres: close the listener: %w", ctx.Err())
 			return
 		}

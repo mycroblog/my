@@ -94,7 +94,7 @@ func TestSourceSkipsIdleClaims(t *testing.T) {
 func TestBusCountsTheListener(t *testing.T) {
 	m := testkit.NewMeter()
 	broker := stream.NewMemoryBroker()
-	b := sysmetrics.Bus(broker.Bus(), m, "stream.memory")
+	b := sysmetrics.Bus(broker.Bus(), m, "stream.memory", nil)
 	ctx := t.Context()
 	conns := func() float64 {
 		return m.Sum(sysmetrics.AdapterConnections.Name, map[string]string{"my.adapter": "stream.memory"})
