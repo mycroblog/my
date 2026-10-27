@@ -27,6 +27,11 @@ type Repository interface {
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.
 	InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error)
+	// AddErrorGroupNotice adds one admin_error_group notice to the hour that starts at hour, in
+	// tx, and returns the hour's notices with it; concurrent transactions each add theirs.
+	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)
+	// ErrorGroupNotices returns the admin_error_group notices of the hour that starts at hour.
+	ErrorGroupNotices(ctx context.Context, hour time.Time) (int64, error)
 	// Notification returns a notification by ID.
 	Notification(ctx context.Context, tx uow.Tx, id string) (notification.Notification, error)
 	// InsertDismissal inserts a dismissal and reports false, writing nothing, when the

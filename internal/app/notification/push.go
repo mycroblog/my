@@ -136,6 +136,9 @@ type pushJob struct {
 	ServiceClosureChange notification.ClosureChange `json:"service_closure_change,omitempty"`
 	// VoiceRoomID is the room of a voice_room_started or a voice_room_invited.
 	VoiceRoomID string `json:"voice_room_id,omitempty"`
+	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
+	ErrorGroupChange notification.ErrorGroupChange `json:"error_group_change,omitempty"`
+	ErrorGroupID     string                        `json:"error_group_id,omitempty"`
 }
 
 // PushTTL is how long a push service keeps a message for a browser that is offline.
@@ -165,6 +168,7 @@ func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notifica
 			SubscriptionID: id, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
 			SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
 			ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
+			ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID,
 		})
 		if err != nil {
 			return err
@@ -489,6 +493,16 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		}
 	case notification.TypeAdminServiceClosureDue:
 		p.Title = l.ServerPushAdminServiceClosureDue(instance)
+	case notification.TypeAdminErrorGroup:
+		p.Path = "/admin/errors"
+		switch job.ErrorGroupChange {
+		case notification.ErrorGroupCreated:
+			p.Title, p.Path = l.ServerPushAdminErrorGroupCreated(instance), "/admin/errors/"+job.ErrorGroupID
+		case notification.ErrorGroupRegressed:
+			p.Title, p.Path = l.ServerPushAdminErrorGroupRegressed(instance), "/admin/errors/"+job.ErrorGroupID
+		default:
+			p.Title = l.ServerPushAdminErrorGroupOthers(instance)
+		}
 	case notification.TypeSupporterServiceClosure:
 		p.Title = l.ServerPushSupporterServiceClosure(instance)
 	case notification.TypeVoiceRoomStarted:

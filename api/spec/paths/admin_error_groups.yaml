@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listErrorGroups
+  summary: List the error groups
+  description: |
+    The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+    most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
+    and `source` keep the groups of that state and source. Needs the `manage_errors`
+    permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: state
+      in: query
+      required: false
+      description: Keep the groups in this state; every state by default.
+      schema:
+        $ref: ../components/schemas/ErrorGroupState.yaml
+    - name: source
+      in: query
+      required: false
+      description: Keep the groups of this source; both by default.
+      schema:
+        $ref: ../components/schemas/ErrorGroupSource.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the groups.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorGroupPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

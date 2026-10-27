@@ -70,7 +70,7 @@ func (s *Service) RecordFirst(ctx context.Context, ev kernel.ErrorEvent) error {
 				return err
 			}
 			if confirmed {
-				if err := tx.Emit(ctx, GroupConfirmed{Group: cur.Group, ConfirmedAt: ev.Time}); err != nil {
+				if err := tx.Emit(ctx, GroupConfirmed{Group: cur.Group, Head: cur.Head, ConfirmedAt: ev.Time}); err != nil {
 					return err
 				}
 			}
@@ -171,6 +171,35 @@ func (s *Service) change(ctx context.Context, groupID string, kind diagnostics.E
 // Group returns a group with its state; it fails with ErrNotFound for an unknown group.
 func (s *Service) Group(ctx context.Context, id string) (Group, Head, error) {
 	return s.d.Repository.FindGroup(ctx, id)
+}
+
+// WindowAt returns the window of the summaries at now: the 24 hours and the 7 days that end
+// with the hour of now, that hour included.
+func WindowAt(now time.Time) Window {
+	h := diagnostics.Hour(now)
+	return Window{SinceDay: h.Add(-23 * time.Hour), SinceWeek: h.Add(-(7*24 - 1) * time.Hour)}
+}
+
+// Summaries returns a page of the summaries of q, counted over the window of now (q.Window is
+// ignored), at most q.Limit of them.
+func (s *Service) Summaries(ctx context.Context, q SummaryQuery) ([]Summary, error) {
+	q.Window = WindowAt(s.d.Clock.Now())
+	out, err := s.d.Repository.ListSummaries(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("diagnostics: list the error groups: %w", err)
+	}
+	return out, nil
+}
+
+// Summary returns the summary of a group, counted over the window of now; it fails with
+// ErrNotFound for an unknown group.
+func (s *Service) Summary(ctx context.Context, id string) (Summary, error) {
+	return s.d.Repository.FindSummary(ctx, nil, id, WindowAt(s.d.Clock.Now()))
+}
+
+// SummaryTx is Summary read in tx, with what tx has written: the data of the webhook messages.
+func (s *Service) SummaryTx(ctx context.Context, tx uow.Tx, id string) (Summary, error) {
+	return s.d.Repository.FindSummary(ctx, tx, id, WindowAt(s.d.Clock.Now()))
 }
 
 // Sample returns the latest occurrence of a group; it fails with ErrNotFound when none is

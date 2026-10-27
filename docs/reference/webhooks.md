@@ -58,12 +58,18 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 | `custom_emoji.created` | An administrator registers a custom emoji | `WebhookCustomEmoji`: `AdminCustomEmoji` and the `operation` | `manage_custom_emojis` |
 | `custom_emoji.updated` | An administrator replaces the image of a custom emoji, changes its settings or aliases, or enables or disables it | `WebhookCustomEmoji` (`operation` says which) | `manage_custom_emojis` |
 | `custom_emoji.deleted` | An administrator deletes a custom emoji | `WebhookCustomEmoji`, the emoji as it was before the deletion | `manage_custom_emojis` |
+| `error_group.created` | The server or the web client reports an error of a new kind | `ErrorGroup`, as `GET /admin/error_groups` lists it | `manage_errors` |
+| `error_group.regressed` | An error group that an administrator resolved happens again on another version of the server | `ErrorGroup` (state `open`) | `manage_errors` |
 | `webhook.test` | An administrator sends a test message to the endpoint | `WebhookTest` | — (not subscribable) |
 
 - `status.created` is sent for `public` posts only: `unlisted`, `local`, `private`, and `direct` posts never leave the server
   this way, and neither do remote posts.
 - `account.updated` is sent for local accounts only, and not for the profile an account is created with.
 - `custom_emoji.*` follows the administrators' operations only, never the remote emoji that posts and profiles bring.
+- `error_group.*` never follows a web client report sent without a session: a group that only such reports have seen is sent
+  as `error_group.created` when the first report from a signed-in user arrives, unless it is muted by then, and a recurrence
+  reported without a session is not sent. Its `data` is presented when the group is recorded, before the occurrence is counted,
+  so `count_24h` and `count_7d` may be `0`. A recurrence on the same version of the server is only counted.
 - The `data` of the admin types embeds what the admin API embeds: the reporter's and the target's `Account` in `AdminReport`,
   the account's `Account` in `AdminAccount`, the action in `AdminAppeal`, the image URLs in `AdminCustomEmoji`. A registration
   carries the applicant's email address, and a report the reporter's comment: the messages are kept 14 days (below).

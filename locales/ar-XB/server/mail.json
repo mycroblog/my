@@ -31,6 +31,14 @@
     "defaultMessage": "‮∀ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ ɐʍɐıʇs ɹǝʌıǝʍ ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_error_group.body": {
+    "defaultMessage": "‮⊥ɥǝ sǝɹʌǝɹ oɹ ʇɥǝ ʍǝq ɔʅıǝuʇ oɟ {instance} ɹǝdoɹʇǝp ɐ uǝʍ ǝɹɹoɹ, oɹ ɐu ǝɹɹoɹ ʇɥɐʇ ʍɐs ɯɐɹʞǝp ɹǝsoʅʌǝp ɥɐddǝuǝp ɐƃɐıu. Sǝǝ ʇɥǝ ǝɹɹoɹs ıu ʇɥǝ ɐpɯıuısʇɹɐʇıou sɔɹǝǝus.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_error_group.subject": {
+    "defaultMessage": "‮Ǝɹɹoɹs ʍǝɹǝ ɹǝdoɹʇǝp ou {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_report.body": {
     "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}.‬",
     "description": "Generated from en by tools/i18n; do not edit."

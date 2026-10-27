@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of error groups, the most recently seen first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./ErrorGroup.yaml

@@ -33,6 +33,8 @@ const (
 	EventCustomEmojiCreated            EventType = "custom_emoji.created"
 	EventCustomEmojiUpdated            EventType = "custom_emoji.updated"
 	EventCustomEmojiDeleted            EventType = "custom_emoji.deleted"
+	EventErrorGroupCreated             EventType = "error_group.created"
+	EventErrorGroupRegressed           EventType = "error_group.regressed"
 	// EventTest is the test message of the administration screen, sent to one endpoint whatever
 	// it subscribes to; an endpoint cannot subscribe to it.
 	EventTest EventType = "webhook.test"
@@ -49,6 +51,7 @@ const (
 	PermissionManageDomains      Permission = "manage_domains"
 	PermissionManageCustomEmojis Permission = "manage_custom_emojis"
 	PermissionManageWebhooks     Permission = "manage_webhooks"
+	PermissionManageErrors       Permission = "manage_errors"
 )
 
 // subscribable lists the events an endpoint can subscribe to, in the order of the schema's
@@ -72,6 +75,8 @@ var subscribable = []struct {
 	{EventCustomEmojiCreated, PermissionManageCustomEmojis},
 	{EventCustomEmojiUpdated, PermissionManageCustomEmojis},
 	{EventCustomEmojiDeleted, PermissionManageCustomEmojis},
+	{EventErrorGroupCreated, PermissionManageErrors},
+	{EventErrorGroupRegressed, PermissionManageErrors},
 }
 
 // EventTypes returns the events an endpoint can subscribe to, in a stable order.

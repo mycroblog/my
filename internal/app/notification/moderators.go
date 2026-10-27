@@ -24,7 +24,8 @@ import (
 // The moderator notifications (FR-712, data-model §4.7): admin_report of the first open report
 // of an account, admin_sign_up of a registration that awaits approval, admin_appeal of an
 // appeal of a moderation action, admin_webhook_disabled of a webhook endpoint that the server
-// disabled, and admin_custom_emoji_request of a custom emoji request, to the local accounts
+// disabled, admin_custom_emoji_request of a custom emoji request, and admin_error_group of a
+// new or regressed error group (errors.go), to the local accounts
 // whose users' roles grant the permission the type needs (notification.ModeratorPermission).
 // The recipients are those who hold it in the transaction that creates the notifications; the
 // list leaves out the notifications of a recipient who no longer holds it (Service.List). A
@@ -122,9 +123,12 @@ type ModeratorDeps struct {
 //     holders of manage_custom_emojis other than the requester (ADR-0070 §9).
 //   - account.moved of an account that moderation limits: admin_account_moved, to the holders
 //     of manage_accounts, since the target does not inherit the limit (ADR-0089).
+//   - diagnostics.error_group_created, _confirmed, and _regressed: admin_error_group, to the
+//     holders of manage_errors, with the hourly cap of errors.go (ADR-0103 §8).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey) make projecting an event again
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminErrorGroupKey,
+// AdminErrorGroupOthersKey) make projecting an event again
 // create nothing more. For each recipient who wants them by email and whose notification is
 // new, the projector enqueues JobModeratorEmail through d.Outbox.
 func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
@@ -177,6 +181,7 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 			DedupeKey: notification.AdminCustomEmojiRequestKey(ev.Request.ID), CreatedAt: ev.At,
 		}, ev.RequesterAccountID)
 	})
+	p.registerErrorGroupProjectors(r)
 }
 
 type moderatorProjector struct {
@@ -320,6 +325,8 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 		draft.Subject, draft.Paragraphs = l.ServerMailAdminAccountMovedSubject(name), []string{l.ServerMailAdminAccountMovedBody(name)}
 	case notification.TypeAdminServiceClosureDue:
 		draft.Subject, draft.Paragraphs = l.ServerMailAdminServiceClosureDueSubject(name), []string{l.ServerMailAdminServiceClosureDueBody(name)}
+	case notification.TypeAdminErrorGroup:
+		draft.Subject, draft.Paragraphs = l.ServerMailAdminErrorGroupSubject(name), []string{l.ServerMailAdminErrorGroupBody(name)}
 	default:
 		return nil
 	}

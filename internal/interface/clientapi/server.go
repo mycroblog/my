@@ -194,6 +194,9 @@ type Options struct {
 	// CustomEmojiRequests runs the requests of the holders of create_custom_emojis and their
 	// own emoji (ADR-0070); nil answers those operations 404.
 	CustomEmojiRequests CustomEmojiRequests
+	// ErrorGroups runs the error groups of /admin/error_groups and presents the data of the
+	// webhook events error_group.* (admin_errors.go); nil answers 404 to those operations.
+	ErrorGroups ErrorGroups
 	// Webhooks runs the admin operations on the instance's webhooks (admin_webhooks.go); nil
 	// answers 404 to them.
 	Webhooks Webhooks

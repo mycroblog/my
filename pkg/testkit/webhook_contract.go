@@ -16,10 +16,12 @@ import (
 	"testing"
 	"time"
 
+	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	appwebhook "github.com/mycroblog/my/internal/app/webhook"
+	"github.com/mycroblog/my/internal/domain/diagnostics"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/webhook"
 )
@@ -44,7 +46,9 @@ type WebhookFactory func(t *testing.T, opts uow.Options) WebhookHarness
 // current secret (and the previous one for a day after a rotation), is not sent again after it
 // succeeded unless redelivered with the same webhook-id, is retried after a failure, and 410
 // Gone or a run of failures disables its endpoint as the system and emits EndpointDisabled; and
-// the messages are purged after webhook.Retention.
+// the messages are purged after webhook.Retention. The error groups are sent as
+// error_group.created and error_group.regressed, which need manage_errors, only once a report
+// with a session has seen them, and a group muted by then is not sent.
 func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
 	t.Helper()
 	cases := []struct {
@@ -54,6 +58,7 @@ func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
 		{"ManagesEndpointsAndAudits", webhookManage},
 		{"ChecksThePermissionsOfTheEvents", webhookPermissions},
 		{"SendsEventsToTheSubscribedEndpoints", webhookSources},
+		{"SendsTheErrorGroupsWithASession", webhookErrorGroups},
 		{"DeliversSignedOnceAndRedelivers", webhookDeliver},
 		{"RetriesAndDisablesAGoneEndpoint", webhookGone},
 		{"DisablesAnEndpointThatKeepsFailing", webhookFailing},
@@ -112,6 +117,10 @@ func (p webhookPresenter) WebhookDomainAction(ctx context.Context, tx uow.Tx, id
 
 func (p webhookPresenter) WebhookCustomEmoji(ctx context.Context, tx uow.Tx, id string) (any, error) {
 	return p.present(ctx, tx, "custom_emoji", id)
+}
+
+func (p webhookPresenter) WebhookErrorGroup(ctx context.Context, tx uow.Tx, id string) (any, error) {
+	return p.present(ctx, tx, "error_group", id)
 }
 
 // webhookHTTP is a kernel.HTTPClient that answers with the next status code (200 when none is
@@ -753,6 +762,69 @@ func webhookRebuild(t *testing.T, e *webhookEnv) {
 			(g.Failures != nil && (g.Failures.FirstFailureAttemptID != w.Failures.FirstFailureAttemptID ||
 				!g.Failures.FirstFailureAt.Equal(w.Failures.FirstFailureAt) || g.Failures.Consecutive != w.Failures.Consecutive)) {
 			t.Errorf("rebuilt %s = %+v %+v, want %+v %+v", id, g.Head, g.Failures, w.Head, w.Failures)
+		}
+	}
+}
+
+func webhookErrorGroups(t *testing.T, e *webhookEnv) {
+	ctx := t.Context()
+	user := e.ids.NewID()
+	e.granted[user] = []webhook.Permission{webhook.PermissionManageWebhooks}
+	events := []webhook.EventType{webhook.EventErrorGroupCreated, webhook.EventErrorGroupRegressed}
+	_, err := e.svc.Create(ctx, webhook.EndpointSettings{URL: "https://errors.example/hook", Events: events}, user)
+	var missing *appwebhook.MissingPermissionError
+	if !errors.As(err, &missing) || len(missing.Missing) != 1 || missing.Missing[0] != webhook.PermissionManageErrors {
+		t.Fatalf("Create without manage_errors = %v, want the missing manage_errors", err)
+	}
+	e.granted[user] = append(e.granted[user], webhook.PermissionManageErrors)
+	if _, err := e.svc.Create(ctx, webhook.EndpointSettings{URL: "https://errors.example/hook", Events: events}, user); err != nil {
+		t.Fatalf("Create with manage_errors: %v", err)
+	}
+	emit := func(ev uow.Event) {
+		t.Helper()
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return tx.Emit(ctx, ev) }); err != nil {
+			t.Fatalf("emit %s: %v", ev.EventType(), err)
+		}
+	}
+	group := func(unauthenticated bool) appdiagnostics.Group {
+		return appdiagnostics.Group{ID: e.ids.NewID(), Fingerprint: e.ids.NewID(), Unauthenticated: unauthenticated, FirstSeenAt: e.clock.Now()}
+	}
+	regressed := func(g appdiagnostics.Group, unauthenticated bool) appdiagnostics.GroupRegressed {
+		return appdiagnostics.GroupRegressed{Group: g, Unauthenticated: unauthenticated, Event: appdiagnostics.Event{
+			ID: e.ids.NewID(), GroupID: g.ID, Kind: diagnostics.EventRegressed, OccurredAt: e.clock.Now(),
+		}}
+	}
+	anonymous, muted, signed := group(true), group(true), group(false)
+	emit(appdiagnostics.GroupCreated{Group: anonymous})
+	emit(regressed(anonymous, true))
+	emit(appdiagnostics.GroupCreated{Group: muted})
+	emit(appdiagnostics.GroupConfirmed{Group: muted, Head: appdiagnostics.Head{GroupID: muted.ID, State: diagnostics.StateMuted}})
+	if jobs := e.deliveryJobs(t); len(jobs) != 0 {
+		t.Fatalf("jobs of the reports without a session and of a muted group = %v", jobs)
+	}
+	emit(appdiagnostics.GroupConfirmed{Group: anonymous, Head: appdiagnostics.Head{GroupID: anonymous.ID, State: diagnostics.StateOpen}})
+	emit(appdiagnostics.GroupCreated{Group: signed})
+	emit(regressed(signed, false))
+	jobs := e.deliveryJobs(t)
+	if len(jobs) != 3 {
+		t.Fatalf("jobs = %v, want 3", jobs)
+	}
+	want := []struct {
+		typ string
+		id  string
+	}{{"error_group.created", anonymous.ID}, {"error_group.created", signed.ID}, {"error_group.regressed", signed.ID}}
+	for i, j := range jobs {
+		if res := e.svc.Deliver(ctx, j, false); !res.IsDone() {
+			t.Fatalf("Deliver = %+v", res)
+		}
+		reqs := e.http.take()
+		var body struct {
+			Type string         `json:"type"`
+			Data map[string]any `json:"data"`
+		}
+		if len(reqs) != 1 || json.Unmarshal(reqs[0].Body, &body) != nil || body.Type != want[i].typ ||
+			body.Data["kind"] != "error_group" || body.Data["id"] != want[i].id || body.Data["in_transaction"] != true {
+			t.Errorf("delivery %d = %d requests, %+v; want %s of %s", i, len(reqs), body, want[i].typ, want[i].id)
 		}
 	}
 }

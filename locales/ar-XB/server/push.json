@@ -15,6 +15,18 @@
     "defaultMessage": "‮∀ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ ɐʍɐıʇs ɹǝʌıǝʍ ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.admin_error_group.created": {
+    "defaultMessage": "‮∀ uǝʍ ǝɹɹoɹ ʍɐs ɹǝdoɹʇǝp ou {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.admin_error_group.others": {
+    "defaultMessage": "‮Woɹǝ ǝɹɹoɹs ʍǝɹǝ ɹǝdoɹʇǝp ou {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.admin_error_group.regressed": {
+    "defaultMessage": "‮∀ ɹǝsoʅʌǝp ǝɹɹoɹ ɥɐddǝuǝp ɐƃɐıu ou {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_report": {
     "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."

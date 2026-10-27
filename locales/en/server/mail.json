@@ -47,6 +47,14 @@
     "defaultMessage": "The closing date of {instance} has passed",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.admin_error_group.body": {
+    "defaultMessage": "The server or the web client of {instance} reported a new error, or an error that was marked resolved happened again. See the errors in the administration screens.",
+    "description": "Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_error_group.subject": {
+    "defaultMessage": "Errors were reported on {instance}",
+    "description": "Subject of the email to an administrator who chose to get moderator notifications by email: a new error, or a resolved error that happened again. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_sign_up.body": {
     "defaultMessage": "A new user signed up on {instance} and awaits approval.",
     "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."

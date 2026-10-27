@@ -155,6 +155,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
+  admin_error_group: "client:notifications.type.admin_error_group",
 };
 
 /** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */

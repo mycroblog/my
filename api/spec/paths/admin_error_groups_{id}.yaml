@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/ErrorGroupId.yaml
+get:
+  operationId: getErrorGroup
+  summary: Get an error group
+  description: |
+    An error group with its latest occurrence (the scrubbed stack, `request_id`, and
+    `trace_id`), its hourly counts, and the changes of its state. An unknown group is a 404.
+    Needs the `manage_errors` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The group.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorGroupDetail.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

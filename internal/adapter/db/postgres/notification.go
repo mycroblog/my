@@ -22,6 +22,22 @@ var _ appnotification.Repository = (*NotificationRepository)(nil)
 // NotificationRepository returns the notification module's repository on d.
 func (d *DB) NotificationRepository() *NotificationRepository { return &NotificationRepository{db: d} }
 
+// AddErrorGroupNotice implements notification.Repository.
+func (r *NotificationRepository) AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.AddErrorGroupNotice(ctx, hour)
+	return n, wrap(err, "add error group notice")
+}
+
+// ErrorGroupNotices implements notification.Repository.
+func (r *NotificationRepository) ErrorGroupNotices(ctx context.Context, hour time.Time) (int64, error) {
+	n, err := r.db.reader().GetErrorGroupNotices(ctx, hour)
+	return n, wrap(err, "get error group notices")
+}
+
 // InsertNotification implements notification.Repository.
 func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error) {
 	q, err := queries(tx)
@@ -36,7 +52,9 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		CustomEmojiRequestID: toNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: toNullString(n.SupporterSubscriptionID),
 		ReactionEmoji: toNullString(n.ReactionEmoji), ReactionCustomEmojiID: toNullString(n.ReactionCustomEmojiID),
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
-		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID),
+		ErrorGroupChange: toNullString(string(n.ErrorGroupChange)), ErrorGroupID: toNullString(n.ErrorGroupID), ErrorGroupHour: toNullTime(n.ErrorGroupHour),
+		DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -195,7 +213,9 @@ func notificationFrom(row postgresgen.Notification) notification.Notification {
 		CustomEmojiRequestID: fromNullString(row.CustomEmojiRequestID), SupporterSubscriptionID: fromNullString(row.SupporterSubscriptionID),
 		ReactionEmoji: fromNullString(row.ReactionEmoji), ReactionCustomEmojiID: fromNullString(row.ReactionCustomEmojiID),
 		AccountMoveID: fromNullString(row.AccountMoveID), AccountMoveOutcome: notification.MoveOutcome(fromNullString(row.AccountMoveOutcome)),
-		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), VoiceRoomID: fromNullString(row.VoiceRoomID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
+		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), VoiceRoomID: fromNullString(row.VoiceRoomID),
+		ErrorGroupChange: notification.ErrorGroupChange(fromNullString(row.ErrorGroupChange)), ErrorGroupID: fromNullString(row.ErrorGroupID), ErrorGroupHour: fromNullTime(row.ErrorGroupHour),
+		DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
 	}
 }
 

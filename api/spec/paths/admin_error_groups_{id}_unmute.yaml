@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/ErrorGroupId.yaml
+post:
+  operationId: unmuteErrorGroup
+  summary: Unmute an error group
+  description: |
+    Opens a muted group again (also one that was resolved before it was muted). Unmuting a group that is not muted changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  responses:
+    "200":
+      $ref: ../components/responses/ErrorGroup.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

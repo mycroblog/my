@@ -1693,6 +1693,108 @@ func (e EmailSuppressionKind) Valid() bool {
 	}
 }
 
+// Defines values for ErrorGroupEventActor.
+const (
+	ErrorGroupEventActorCli    ErrorGroupEventActor = "cli"
+	ErrorGroupEventActorSystem ErrorGroupEventActor = "system"
+	ErrorGroupEventActorUser   ErrorGroupEventActor = "user"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupEventActor enum.
+func (e ErrorGroupEventActor) Valid() bool {
+	switch e {
+	case ErrorGroupEventActorCli:
+		return true
+	case ErrorGroupEventActorSystem:
+		return true
+	case ErrorGroupEventActorUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupEventKind.
+const (
+	ErrorGroupEventKindMuted     ErrorGroupEventKind = "muted"
+	ErrorGroupEventKindRegressed ErrorGroupEventKind = "regressed"
+	ErrorGroupEventKindResolved  ErrorGroupEventKind = "resolved"
+	ErrorGroupEventKindUnmuted   ErrorGroupEventKind = "unmuted"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupEventKind enum.
+func (e ErrorGroupEventKind) Valid() bool {
+	switch e {
+	case ErrorGroupEventKindMuted:
+		return true
+	case ErrorGroupEventKindRegressed:
+		return true
+	case ErrorGroupEventKindResolved:
+		return true
+	case ErrorGroupEventKindUnmuted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupKind.
+const (
+	ErrorGroupKindError ErrorGroupKind = "error"
+	ErrorGroupKindPanic ErrorGroupKind = "panic"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupKind enum.
+func (e ErrorGroupKind) Valid() bool {
+	switch e {
+	case ErrorGroupKindError:
+		return true
+	case ErrorGroupKindPanic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupSource.
+const (
+	ErrorGroupSourceServer ErrorGroupSource = "server"
+	ErrorGroupSourceWeb    ErrorGroupSource = "web"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupSource enum.
+func (e ErrorGroupSource) Valid() bool {
+	switch e {
+	case ErrorGroupSourceServer:
+		return true
+	case ErrorGroupSourceWeb:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupState.
+const (
+	ErrorGroupStateMuted    ErrorGroupState = "muted"
+	ErrorGroupStateOpen     ErrorGroupState = "open"
+	ErrorGroupStateResolved ErrorGroupState = "resolved"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupState enum.
+func (e ErrorGroupState) Valid() bool {
+	switch e {
+	case ErrorGroupStateMuted:
+		return true
+	case ErrorGroupStateOpen:
+		return true
+	case ErrorGroupStateResolved:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FinanceViewerIncome.
 const (
 	FinanceViewerIncomePlans  FinanceViewerIncome = "plans"
@@ -2194,12 +2296,34 @@ func (e ModerationAppealState) Valid() bool {
 	}
 }
 
+// Defines values for NotificationErrorGroupChange.
+const (
+	NotificationErrorGroupChangeCreated   NotificationErrorGroupChange = "created"
+	NotificationErrorGroupChangeOthers    NotificationErrorGroupChange = "others"
+	NotificationErrorGroupChangeRegressed NotificationErrorGroupChange = "regressed"
+)
+
+// Valid indicates whether the value is a known member of the NotificationErrorGroupChange enum.
+func (e NotificationErrorGroupChange) Valid() bool {
+	switch e {
+	case NotificationErrorGroupChangeCreated:
+		return true
+	case NotificationErrorGroupChangeOthers:
+		return true
+	case NotificationErrorGroupChangeRegressed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NotificationType.
 const (
 	NotificationTypeAccountMoved               NotificationType = "account_moved"
 	NotificationTypeAdminAccountMoved          NotificationType = "admin_account_moved"
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
+	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
@@ -2237,6 +2361,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminAppeal:
 		return true
 	case NotificationTypeAdminCustomEmojiRequest:
+		return true
+	case NotificationTypeAdminErrorGroup:
 		return true
 	case NotificationTypeAdminReport:
 		return true
@@ -2459,6 +2585,7 @@ const (
 	PermissionManageAnnouncements  Permission = "manage_announcements"
 	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
 	PermissionManageDomains        Permission = "manage_domains"
+	PermissionManageErrors         Permission = "manage_errors"
 	PermissionManageFinance        Permission = "manage_finance"
 	PermissionManageInvites        Permission = "manage_invites"
 	PermissionManageJobs           Permission = "manage_jobs"
@@ -2488,6 +2615,8 @@ func (e Permission) Valid() bool {
 	case PermissionManageCustomEmojis:
 		return true
 	case PermissionManageDomains:
+		return true
+	case PermissionManageErrors:
 		return true
 	case PermissionManageFinance:
 		return true
@@ -3350,6 +3479,8 @@ const (
 	WebhookEventTypeCustomEmojiUpdated            WebhookEventType = "custom_emoji.updated"
 	WebhookEventTypeDomainModerationActionCreated WebhookEventType = "domain_moderation_action.created"
 	WebhookEventTypeDomainModerationActionLifted  WebhookEventType = "domain_moderation_action.lifted"
+	WebhookEventTypeErrorGroupCreated             WebhookEventType = "error_group.created"
+	WebhookEventTypeErrorGroupRegressed           WebhookEventType = "error_group.regressed"
 	WebhookEventTypeModerationActionCreated       WebhookEventType = "moderation_action.created"
 	WebhookEventTypeModerationActionLifted        WebhookEventType = "moderation_action.lifted"
 	WebhookEventTypeRegistrationPending           WebhookEventType = "registration.pending"
@@ -3377,6 +3508,10 @@ func (e WebhookEventType) Valid() bool {
 	case WebhookEventTypeDomainModerationActionCreated:
 		return true
 	case WebhookEventTypeDomainModerationActionLifted:
+		return true
+	case WebhookEventTypeErrorGroupCreated:
+		return true
+	case WebhookEventTypeErrorGroupRegressed:
 		return true
 	case WebhookEventTypeModerationActionCreated:
 		return true
@@ -3407,6 +3542,8 @@ const (
 	WebhookMessageTypeCustomEmojiUpdated            WebhookMessageType = "custom_emoji.updated"
 	WebhookMessageTypeDomainModerationActionCreated WebhookMessageType = "domain_moderation_action.created"
 	WebhookMessageTypeDomainModerationActionLifted  WebhookMessageType = "domain_moderation_action.lifted"
+	WebhookMessageTypeErrorGroupCreated             WebhookMessageType = "error_group.created"
+	WebhookMessageTypeErrorGroupRegressed           WebhookMessageType = "error_group.regressed"
 	WebhookMessageTypeModerationActionCreated       WebhookMessageType = "moderation_action.created"
 	WebhookMessageTypeModerationActionLifted        WebhookMessageType = "moderation_action.lifted"
 	WebhookMessageTypeRegistrationPending           WebhookMessageType = "registration.pending"
@@ -3435,6 +3572,10 @@ func (e WebhookMessageType) Valid() bool {
 	case WebhookMessageTypeDomainModerationActionCreated:
 		return true
 	case WebhookMessageTypeDomainModerationActionLifted:
+		return true
+	case WebhookMessageTypeErrorGroupCreated:
+		return true
+	case WebhookMessageTypeErrorGroupRegressed:
 		return true
 	case WebhookMessageTypeModerationActionCreated:
 		return true
@@ -7167,6 +7308,197 @@ type EnableTotpRequest struct {
 	SetupToken string `json:"setup_token"`
 }
 
+// ErrorGroup An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+// what its first occurrence told about the error, and how often it happened. The text is
+// scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
+// `error_group.created` and `error_group.regressed` carry it as their `data`.
+type ErrorGroup struct {
+	// Count24h The occurrences in the last 24 hours, by the hour, the current hour included.
+	Count24h int64 `json:"count_24h"`
+
+	// Count7d The occurrences in the last 7 days, by the hour, the current hour included.
+	Count7d int64 `json:"count_7d"`
+
+	// Fingerprint The fingerprint of the errors, 32 hexadecimal digits; the same in the logs and the exporters.
+	Fingerprint string    `json:"fingerprint"`
+	FirstSeenAt time.Time `json:"first_seen_at"`
+
+	// FirstVersion The version of the server (`service.version`) of the first occurrence.
+	FirstVersion string `json:"first_version"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Kind Whether the errors of a group are panics (and uncaught errors of the web client) or errors.
+	Kind       ErrorGroupKind `json:"kind"`
+	LastSeenAt time.Time      `json:"last_seen_at"`
+
+	// LastVersion The version of the server of the last occurrence.
+	LastVersion string `json:"last_version"`
+
+	// Message The first line of the scrubbed message of the first occurrence, at most 200 characters.
+	Message string `json:"message"`
+
+	// ResolvedVersion The version of the server that a `resolved` group was resolved with; omitted for the other states.
+	ResolvedVersion *string `json:"resolved_version,omitempty"`
+
+	// Source What reported the errors of a group, the server or the web client.
+	Source ErrorGroupSource `json:"source"`
+
+	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
+	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
+	State ErrorGroupState `json:"state"`
+
+	// StateSince When the group entered its state; its first occurrence while it has always been open.
+	StateSince time.Time `json:"state_since"`
+
+	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
+	Type string `json:"type"`
+
+	// Where Where the errors happened, a finite name: the surface and the route pattern of an HTTP
+	// request, the type of a job, the name of a goroutine, or the route of the web client.
+	Where string `json:"where"`
+}
+
+// ErrorGroupDetail An error group with its latest occurrence, its hourly counts, and the changes of its state.
+type ErrorGroupDetail struct {
+	// Count24h The occurrences in the last 24 hours, by the hour, the current hour included.
+	Count24h int64 `json:"count_24h"`
+
+	// Count7d The occurrences in the last 7 days, by the hour, the current hour included.
+	Count7d int64 `json:"count_7d"`
+
+	// Events The changes of the state of the group, oldest first.
+	Events []ErrorGroupEvent `json:"events"`
+
+	// Fingerprint The fingerprint of the errors, 32 hexadecimal digits; the same in the logs and the exporters.
+	Fingerprint string    `json:"fingerprint"`
+	FirstSeenAt time.Time `json:"first_seen_at"`
+
+	// FirstVersion The version of the server (`service.version`) of the first occurrence.
+	FirstVersion string `json:"first_version"`
+
+	// HourlyCounts The occurrences of each hour that had any, oldest first, for the last 90 days.
+	HourlyCounts []ErrorGroupHourCount `json:"hourly_counts"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Kind Whether the errors of a group are panics (and uncaught errors of the web client) or errors.
+	Kind       ErrorGroupKind `json:"kind"`
+	LastSeenAt time.Time      `json:"last_seen_at"`
+
+	// LastVersion The version of the server of the last occurrence.
+	LastVersion string `json:"last_version"`
+
+	// Message The first line of the scrubbed message of the first occurrence, at most 200 characters.
+	Message string `json:"message"`
+
+	// ResolvedVersion The version of the server that a `resolved` group was resolved with; omitted for the other states.
+	ResolvedVersion *string `json:"resolved_version,omitempty"`
+
+	// Sample The latest occurrence of an error group, scrubbed. `request_id` and `trace_id` find it in
+	// the logs and the traces.
+	Sample *ErrorGroupSample `json:"sample,omitempty"`
+
+	// Source What reported the errors of a group, the server or the web client.
+	Source ErrorGroupSource `json:"source"`
+
+	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
+	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
+	State ErrorGroupState `json:"state"`
+
+	// StateSince When the group entered its state; its first occurrence while it has always been open.
+	StateSince time.Time `json:"state_since"`
+
+	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
+	Type string `json:"type"`
+
+	// Where Where the errors happened, a finite name: the surface and the route pattern of an HTTP
+	// request, the type of a job, the name of a goroutine, or the route of the web client.
+	Where string `json:"where"`
+}
+
+// ErrorGroupEvent A change of the state of an error group: `resolved`, `muted`, and `unmuted` by an
+// administrator (`actor` `user`) or the CLI (`cli`), and `regressed` by the server (`system`)
+// when a resolved group happened again on another version, which `version` names. A
+// `resolved` names the version of the last occurrence then.
+type ErrorGroupEvent struct {
+	Actor      ErrorGroupEventActor `json:"actor"`
+	Kind       ErrorGroupEventKind  `json:"kind"`
+	OccurredAt time.Time            `json:"occurred_at"`
+
+	// Version The version that a `resolved` or a `regressed` names; omitted for the others.
+	Version *string `json:"version,omitempty"`
+}
+
+// ErrorGroupEventActor defines model for ErrorGroupEvent.Actor.
+type ErrorGroupEventActor string
+
+// ErrorGroupEventKind defines model for ErrorGroupEvent.Kind.
+type ErrorGroupEventKind string
+
+// ErrorGroupHourCount The occurrences of an error group in one hour.
+type ErrorGroupHourCount struct {
+	Count int64 `json:"count"`
+
+	// Hour The start of the hour, in UTC.
+	Hour time.Time `json:"hour"`
+
+	// LastVersion The version of the server of the last occurrence of the hour.
+	LastVersion string `json:"last_version"`
+}
+
+// ErrorGroupKind Whether the errors of a group are panics (and uncaught errors of the web client) or errors.
+type ErrorGroupKind string
+
+// ErrorGroupPage A page of error groups, the most recently seen first.
+type ErrorGroupPage struct {
+	Items []ErrorGroup `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// ErrorGroupSample The latest occurrence of an error group, scrubbed. `request_id` and `trace_id` find it in
+// the logs and the traces.
+type ErrorGroupSample struct {
+	Message    string    `json:"message"`
+	OccurredAt time.Time `json:"occurred_at"`
+
+	// RequestId The request ID of the occurrence; omitted when it had none.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Role The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them.
+	Role string `json:"role"`
+
+	// Stack The stack, in the form of the runtime that reported it, without the arguments of the frames.
+	Stack string `json:"stack"`
+
+	// TraceId The trace ID of the occurrence; omitted when it had none.
+	TraceId *string `json:"trace_id,omitempty"`
+
+	// Type The chain of the types of the error, outermost first.
+	Type string `json:"type"`
+
+	// Version The version of the server of the occurrence.
+	Version string `json:"version"`
+}
+
+// ErrorGroupSource What reported the errors of a group, the server or the web client.
+type ErrorGroupSource string
+
+// ErrorGroupState The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
+// it to `open`), or `muted` (it notifies nobody until it is unmuted).
+type ErrorGroupState string
+
 // FinanceCostItemLine The amount of a cost item, or of a service of the imported costs, in a currency over a
 // period, with the provider and the category of its breakdown line. `provider` is the spelling
 // that the period's breakdown lines of the item's grouped provider show (`CostBreakdownLine`).
@@ -8293,6 +8625,9 @@ type Notification struct {
 	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
 	CustomEmojiRequest *CustomEmojiRequest `json:"custom_emoji_request,omitempty"`
 
+	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
+	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -8387,6 +8722,9 @@ type Notification struct {
 	// opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
 	// host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
 	// carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
+	// `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
+	// resolved one that happened again, at most 10 times an hour for the whole server, with the
+	// rest of the hour folded into one; its `error_group` says which, and it has no `account`.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -8396,6 +8734,23 @@ type Notification struct {
 	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
+
+// NotificationErrorGroup What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
+// resolved group that happened again on another version (`regressed`, with `group_id`), or the
+// new and regressed groups of an hour beyond the 10 that the server notifies of one by one
+// (`others`, with how many so far in `count`).
+type NotificationErrorGroup struct {
+	Change NotificationErrorGroupChange `json:"change"`
+
+	// Count How many groups an `others` stands for.
+	Count *int64 `json:"count,omitempty"`
+
+	// GroupId The error group of a `created` or a `regressed`.
+	GroupId *Id `json:"group_id,omitempty"`
+}
+
+// NotificationErrorGroupChange defines model for NotificationErrorGroup.Change.
+type NotificationErrorGroupChange string
 
 // NotificationMarker How far the authenticated user has read the notifications.
 type NotificationMarker struct {
@@ -8476,6 +8831,9 @@ type NotificationPage struct {
 // opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
 // host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
 // carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
+// `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
+// resolved one that happened again, at most 10 times an hour for the whole server, with the
+// rest of the hour folded into one; its `error_group` says which, and it has no `account`.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -8806,8 +9164,10 @@ type PaymentStatusWarnings string
 // of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
 // admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
 // instance setting `voice_room_starters` is `permitted`, a member permission (only the
-// built-in admin role by default, ADR-0100). The others guard no client API operation
-// yet.
+// built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+// and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
+// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
+// others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
@@ -10951,7 +11311,8 @@ type WebhookCustomEmoji struct {
 // `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
 // `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
 // `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
-// `custom_emoji.*`; and nothing more for `status.created`. `report.created`: a report,
+// `custom_emoji.*`; `manage_errors` for `error_group.*`; and nothing more for
+// `status.created`. `report.created`: a report,
 // local or from another server. `report.resolved`, `report.reopened`. `registration.pending`:
 // a registration awaits a moderator. `account.created`: a registration was approved, at
 // the sign-up or by a moderator. `account.updated`: a local account changed its profile.
@@ -10960,6 +11321,9 @@ type WebhookCustomEmoji struct {
 // `status.created`: a public post of a local account. `custom_emoji.created`,
 // `custom_emoji.updated` (its image, settings, aliases, or whether it is enabled), and
 // `custom_emoji.deleted`: an administrator's operation on a custom emoji.
+// `error_group.created`: a new error group, and `error_group.regressed`: a resolved group
+// happened again on another version; a group that only web reports without a session have
+// seen is sent when a report with one comes, unless it is muted by then.
 type WebhookEventType string
 
 // WebhookMessage The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
@@ -10969,7 +11333,8 @@ type WebhookEventType string
 // `AdminRegistration` for `registration.pending` and `account.created`, `AdminAccount`
 // for `account.updated`, `AdminAccountAction` for `moderation_action.*`, `AdminAppeal`
 // for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
-// `WebhookCustomEmoji` for `custom_emoji.*`, `WebhookStatus` for `status.created`, and
+// `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
+// `WebhookStatus` for `status.created`, and
 // `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
 // describes it.
 type WebhookMessage struct {
@@ -11102,6 +11467,11 @@ type CustomEmojiRequestId = Id
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type DomainActionId = Id
+
+// ErrorGroupId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ErrorGroupId = Id
 
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
@@ -11408,6 +11778,21 @@ type ListDomainActionsParams struct {
 
 	// Active Keep only the actions in effect now, neither lifted nor expired.
 	Active *bool `form:"active,omitempty" json:"active,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListErrorGroupsParams defines parameters for ListErrorGroups.
+type ListErrorGroupsParams struct {
+	// State Keep the groups in this state; every state by default.
+	State *ErrorGroupState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Source Keep the groups of this source; both by default.
+	Source *ErrorGroupSource `form:"source,omitempty" json:"source,omitempty"`
 
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -12401,6 +12786,21 @@ type ServerInterface interface {
 	// LiftDomainAction Lift a moderation action on a domain
 	// (POST /admin/domain_actions/{id}/lift)
 	LiftDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId)
+	// ListErrorGroups List the error groups
+	// (GET /admin/error_groups)
+	ListErrorGroups(w http.ResponseWriter, r *http.Request, params ListErrorGroupsParams)
+	// GetErrorGroup Get an error group
+	// (GET /admin/error_groups/{id})
+	GetErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// MuteErrorGroup Mute an error group
+	// (POST /admin/error_groups/{id}/mute)
+	MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// ResolveErrorGroup Resolve an error group
+	// (POST /admin/error_groups/{id}/resolve)
+	ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// UnmuteErrorGroup Unmute an error group
+	// (POST /admin/error_groups/{id}/unmute)
+	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(w http.ResponseWriter, r *http.Request, params ListIncomeMovementsParams)
@@ -15559,6 +15959,182 @@ func (siw *ServerInterfaceWrapper) LiftDomainAction(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.LiftDomainAction(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListErrorGroups operation middleware
+func (siw *ServerInterfaceWrapper) ListErrorGroups(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListErrorGroupsParams
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "source" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "source", r.URL.Query(), &params.Source, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "source"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "source", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListErrorGroups(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetErrorGroup operation middleware
+func (siw *ServerInterfaceWrapper) GetErrorGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ErrorGroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MuteErrorGroup operation middleware
+func (siw *ServerInterfaceWrapper) MuteErrorGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ErrorGroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MuteErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveErrorGroup operation middleware
+func (siw *ServerInterfaceWrapper) ResolveErrorGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ErrorGroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnmuteErrorGroup operation middleware
+func (siw *ServerInterfaceWrapper) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ErrorGroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnmuteErrorGroup(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22086,6 +22662,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions", wrapper.ListDomainActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions", wrapper.CreateDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/{id}", wrapper.GetDomainAction)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups", wrapper.ListErrorGroups)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups/{id}", wrapper.GetErrorGroup)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/resolve", wrapper.ResolveErrorGroup)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/mute", wrapper.MuteErrorGroup)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/unmute", wrapper.UnmuteErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/{id}/lift", wrapper.LiftDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports", wrapper.ListReports)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports/{id}", wrapper.GetReport)
@@ -22491,6 +23072,15 @@ type CustomEmojiRequestProblemApplicationProblemPlusJSONResponse struct {
 	Body CustomEmojiRequestProblem
 
 	Headers CustomEmojiRequestProblemResponseHeaders
+}
+
+type ErrorGroupResponseHeaders struct {
+	CacheControl *string
+}
+type ErrorGroupJSONResponse struct {
+	Body ErrorGroup
+
+	Headers ErrorGroupResponseHeaders
 }
 
 type OAuthAppResponseHeaders struct {
@@ -27423,6 +28013,295 @@ type LiftDomainActiondefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response LiftDomainActiondefaultApplicationProblemPlusJSONResponse) VisitLiftDomainActionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListErrorGroupsRequestObject struct {
+	Params ListErrorGroupsParams
+}
+
+type ListErrorGroupsResponseObject interface {
+	VisitListErrorGroupsResponse(w http.ResponseWriter) error
+}
+
+type ListErrorGroups200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListErrorGroups200JSONResponse struct {
+	Body    ErrorGroupPage
+	Headers ListErrorGroups200ResponseHeaders
+}
+
+func (response ListErrorGroups200JSONResponse) VisitListErrorGroupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListErrorGroupsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListErrorGroupsdefaultApplicationProblemPlusJSONResponse) VisitListErrorGroupsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetErrorGroupRequestObject struct {
+	Id ErrorGroupId `json:"id"`
+}
+
+type GetErrorGroupResponseObject interface {
+	VisitGetErrorGroupResponse(w http.ResponseWriter) error
+}
+
+type GetErrorGroup200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetErrorGroup200JSONResponse struct {
+	Body    ErrorGroupDetail
+	Headers GetErrorGroup200ResponseHeaders
+}
+
+func (response GetErrorGroup200JSONResponse) VisitGetErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitGetErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MuteErrorGroupRequestObject struct {
+	Id ErrorGroupId `json:"id"`
+}
+
+type MuteErrorGroupResponseObject interface {
+	VisitMuteErrorGroupResponse(w http.ResponseWriter) error
+}
+
+type MuteErrorGroup200JSONResponse struct{ ErrorGroupJSONResponse }
+
+func (response MuteErrorGroup200JSONResponse) VisitMuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MuteErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response MuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitMuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveErrorGroupRequestObject struct {
+	Id ErrorGroupId `json:"id"`
+}
+
+type ResolveErrorGroupResponseObject interface {
+	VisitResolveErrorGroupResponse(w http.ResponseWriter) error
+}
+
+type ResolveErrorGroup200JSONResponse struct{ ErrorGroupJSONResponse }
+
+func (response ResolveErrorGroup200JSONResponse) VisitResolveErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ResolveErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitResolveErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmuteErrorGroupRequestObject struct {
+	Id ErrorGroupId `json:"id"`
+}
+
+type UnmuteErrorGroupResponseObject interface {
+	VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error
+}
+
+type UnmuteErrorGroup200JSONResponse struct{ ErrorGroupJSONResponse }
+
+func (response UnmuteErrorGroup200JSONResponse) VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40715,6 +41594,21 @@ type StrictServerInterface interface {
 	// LiftDomainAction Lift a moderation action on a domain
 	// (POST /admin/domain_actions/{id}/lift)
 	LiftDomainAction(ctx context.Context, request LiftDomainActionRequestObject) (LiftDomainActionResponseObject, error)
+	// ListErrorGroups List the error groups
+	// (GET /admin/error_groups)
+	ListErrorGroups(ctx context.Context, request ListErrorGroupsRequestObject) (ListErrorGroupsResponseObject, error)
+	// GetErrorGroup Get an error group
+	// (GET /admin/error_groups/{id})
+	GetErrorGroup(ctx context.Context, request GetErrorGroupRequestObject) (GetErrorGroupResponseObject, error)
+	// MuteErrorGroup Mute an error group
+	// (POST /admin/error_groups/{id}/mute)
+	MuteErrorGroup(ctx context.Context, request MuteErrorGroupRequestObject) (MuteErrorGroupResponseObject, error)
+	// ResolveErrorGroup Resolve an error group
+	// (POST /admin/error_groups/{id}/resolve)
+	ResolveErrorGroup(ctx context.Context, request ResolveErrorGroupRequestObject) (ResolveErrorGroupResponseObject, error)
+	// UnmuteErrorGroup Unmute an error group
+	// (POST /admin/error_groups/{id}/unmute)
+	UnmuteErrorGroup(ctx context.Context, request UnmuteErrorGroupRequestObject) (UnmuteErrorGroupResponseObject, error)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(ctx context.Context, request ListIncomeMovementsRequestObject) (ListIncomeMovementsResponseObject, error)
@@ -43742,6 +44636,136 @@ func (sh *strictHandler) LiftDomainAction(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LiftDomainActionResponseObject); ok {
 		if err := validResponse.VisitLiftDomainActionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListErrorGroups operation middleware
+func (sh *strictHandler) ListErrorGroups(w http.ResponseWriter, r *http.Request, params ListErrorGroupsParams) {
+	var request ListErrorGroupsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListErrorGroups(ctx, request.(ListErrorGroupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListErrorGroups")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListErrorGroupsResponseObject); ok {
+		if err := validResponse.VisitListErrorGroupsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetErrorGroup operation middleware
+func (sh *strictHandler) GetErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+	var request GetErrorGroupRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetErrorGroup(ctx, request.(GetErrorGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetErrorGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetErrorGroupResponseObject); ok {
+		if err := validResponse.VisitGetErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MuteErrorGroup operation middleware
+func (sh *strictHandler) MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+	var request MuteErrorGroupRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MuteErrorGroup(ctx, request.(MuteErrorGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MuteErrorGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MuteErrorGroupResponseObject); ok {
+		if err := validResponse.VisitMuteErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveErrorGroup operation middleware
+func (sh *strictHandler) ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+	var request ResolveErrorGroupRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveErrorGroup(ctx, request.(ResolveErrorGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveErrorGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveErrorGroupResponseObject); ok {
+		if err := validResponse.VisitResolveErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnmuteErrorGroup operation middleware
+func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+	var request UnmuteErrorGroupRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnmuteErrorGroup(ctx, request.(UnmuteErrorGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnmuteErrorGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnmuteErrorGroupResponseObject); ok {
+		if err := validResponse.VisitUnmuteErrorGroupResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

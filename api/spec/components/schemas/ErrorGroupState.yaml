@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+  `resolved` (an administrator marked it fixed; an occurrence on another version regresses
+  it to `open`), or `muted` (it notifies nobody until it is unmuted).
+type: string
+enum:
+  - open
+  - resolved
+  - muted

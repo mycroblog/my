@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+name: id
+in: path
+required: true
+description: The ID of the error group.
+schema:
+  $ref: ../schemas/Id.yaml

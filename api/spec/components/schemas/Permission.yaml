@@ -22,8 +22,10 @@ description: |
   of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
   admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
   instance setting `voice_room_starters` is `permitted`, a member permission (only the
-  built-in admin role by default, ADR-0100). The others guard no client API operation
-  yet.
+  built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+  and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
+  the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
+  others guard no client API operation yet.
 type: string
 enum:
   - manage_reports
@@ -46,3 +48,4 @@ enum:
   - manage_oauth_apps
   - manage_service_closure
   - start_voice_rooms
+  - manage_errors

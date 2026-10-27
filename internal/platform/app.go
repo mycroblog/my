@@ -420,6 +420,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpGraph(cfg, repos.follows)
 	a.setUpContent(cfg, repos.statuses, repos.quotes, repos.interactions, repos.medias)
 	a.setUpTimeline(repos.feeds, repos.statuses)
+	// The error groups' projector of their states runs before the notifications and the webhooks
+	// that read the states of the groups in the same transactions.
+	a.setUpDiagnostics(repos.diagnostics)
 	if err := a.setUpNotification(cfg, repos.notifs, repos.pushes); err != nil {
 		return nil, err
 	}
@@ -462,7 +465,6 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
 		return nil, err
 	}
-	a.setUpDiagnostics(repos.diagnostics)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

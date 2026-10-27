@@ -6,6 +6,7 @@ import (
 	"errors"
 	"slices"
 	"testing"
+	"time"
 )
 
 func TestTypes(t *testing.T) {
@@ -207,13 +208,14 @@ func TestHiddenTypes(t *testing.T) {
 		granted []Permission
 		want    []Type
 	}{
-		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
-		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
-		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminServiceClosureDue}},
-		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
-		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
-		{[]Permission{PermissionManageServiceClosure}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved}},
-		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, PermissionManageServiceClosure, "view_audit"}, nil},
+		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageServiceClosure}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminErrorGroup}},
+		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, PermissionManageServiceClosure, PermissionManageErrors, "view_audit"}, nil},
+		{[]Permission{PermissionManageErrors}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue}},
 	} {
 		if got := HiddenTypes(tc.granted); !slices.Equal(got, tc.want) {
 			t.Errorf("HiddenTypes(%v) = %v, want %v", tc.granted, got, tc.want)
@@ -253,5 +255,43 @@ func TestValidateServiceClosureNotifications(t *testing.T) {
 	}
 	if p, ok := ModeratorPermission(TypeAdminServiceClosureDue); !ok || p != PermissionManageServiceClosure {
 		t.Errorf("ModeratorPermission(admin_service_closure_due) = %s, %v", p, ok)
+	}
+}
+
+func TestValidateErrorGroupNotifications(t *testing.T) {
+	const idA, idB, idN, idG = "a", "b", "n", "g"
+	hour := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupCreated, ErrorGroupID: idG, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupRegressed, ErrorGroupID: idG, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupOthers, ErrorGroupHour: hour, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err != nil {
+			t.Errorf("Validate(%+v) = %v", n, err)
+		}
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupID: idG, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupCreated, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: "fixed", ErrorGroupID: idG, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupCreated, ErrorGroupID: idG, ErrorGroupHour: hour, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupOthers, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupOthers, ErrorGroupID: idG, ErrorGroupHour: hour, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeAdminErrorGroup, ErrorGroupChange: ErrorGroupCreated, ErrorGroupID: idG, SourceAccountID: idB, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, ErrorGroupID: idG, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+	if p, ok := ModeratorPermission(TypeAdminErrorGroup); !ok || p != PermissionManageErrors {
+		t.Errorf("ModeratorPermission(admin_error_group) = %s, %v", p, ok)
+	}
+	if AdminErrorGroupKey(ErrorGroupCreated, idG) == AdminErrorGroupKey(ErrorGroupRegressed, idG) ||
+		AdminErrorGroupOthersKey(hour) == AdminErrorGroupOthersKey(hour.Add(time.Hour)) {
+		t.Error("the dedupe keys of admin_error_group collide")
+	}
+	if got := ErrorGroupHour(hour.Add(59 * time.Minute)); !got.Equal(hour) {
+		t.Errorf("ErrorGroupHour = %v, want %v", got, hour)
 	}
 }

@@ -63,3 +63,6 @@ properties:
       The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
       it is open and the user sees it; omitted otherwise.
     $ref: ./VoiceRoom.yaml
+  error_group:
+    description: What an `admin_error_group` tells of; omitted for the other types.
+    $ref: ./NotificationErrorGroup.yaml

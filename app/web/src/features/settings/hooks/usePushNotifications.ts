@@ -21,10 +21,10 @@ type PushAlertGroup = { id: string; label: ClientMessageKey; types: readonly Not
 
 /**
  * The permissions whose holders get moderator notifications (admin_report, admin_sign_up, admin_appeal,
- * admin_webhook_disabled for manage_webhooks, admin_custom_emoji_request for manage_custom_emojis, and
- * admin_service_closure_due for manage_service_closure).
+ * admin_webhook_disabled for manage_webhooks, admin_custom_emoji_request for manage_custom_emojis,
+ * admin_service_closure_due for manage_service_closure, and admin_error_group for manage_errors).
  */
-const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis", "manage_service_closure"];
+const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis", "manage_service_closure", "manage_errors"];
 
 /** The kinds that every user chooses from, in the order of the notifications' filter. */
 const userGroups: readonly PushAlertGroup[] = [
@@ -59,7 +59,7 @@ const supporterGroup: PushAlertGroup = {
 const moderatorGroup: PushAlertGroup = {
   id: "admin",
   label: "client:settings.push.type.admin",
-  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request", "admin_account_moved", "admin_service_closure_due"],
+  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request", "admin_account_moved", "admin_service_closure_due", "admin_error_group"],
 };
 
 /** What the preferences show of Web Push on this device. */

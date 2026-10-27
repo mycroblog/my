@@ -418,6 +418,16 @@ paths:
     $ref: ./paths/admin_domain_actions.yaml
   /admin/domain_actions/{id}:
     $ref: ./paths/admin_domain_actions_{id}.yaml
+  /admin/error_groups:
+    $ref: ./paths/admin_error_groups.yaml
+  /admin/error_groups/{id}:
+    $ref: ./paths/admin_error_groups_{id}.yaml
+  /admin/error_groups/{id}/resolve:
+    $ref: ./paths/admin_error_groups_{id}_resolve.yaml
+  /admin/error_groups/{id}/mute:
+    $ref: ./paths/admin_error_groups_{id}_mute.yaml
+  /admin/error_groups/{id}/unmute:
+    $ref: ./paths/admin_error_groups_{id}_unmute.yaml
   /admin/domain_actions/{id}/lift:
     $ref: ./paths/admin_domain_actions_{id}_lift.yaml
   /admin/reports:
@@ -687,6 +697,8 @@ components:
       $ref: ./components/parameters/CustomEmojiId.yaml
     CustomEmojiRequestId:
       $ref: ./components/parameters/CustomEmojiRequestId.yaml
+    ErrorGroupId:
+      $ref: ./components/parameters/ErrorGroupId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     IdempotencyKey:
@@ -752,6 +764,8 @@ components:
       $ref: ./components/responses/AdminCustomEmoji.yaml
     AdminCustomEmojiRequest:
       $ref: ./components/responses/AdminCustomEmojiRequest.yaml
+    ErrorGroup:
+      $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
       $ref: ./components/responses/AdminDomainAction.yaml
     AdminInstanceHealth:
@@ -1241,6 +1255,26 @@ components:
       $ref: ./components/schemas/EditStatusRequest.yaml
     EnableTotpRequest:
       $ref: ./components/schemas/EnableTotpRequest.yaml
+    ErrorGroup:
+      $ref: ./components/schemas/ErrorGroup.yaml
+    ErrorGroupDetail:
+      $ref: ./components/schemas/ErrorGroupDetail.yaml
+    ErrorGroupEvent:
+      $ref: ./components/schemas/ErrorGroupEvent.yaml
+    ErrorGroupHourCount:
+      $ref: ./components/schemas/ErrorGroupHourCount.yaml
+    ErrorGroupKind:
+      $ref: ./components/schemas/ErrorGroupKind.yaml
+    ErrorGroupPage:
+      $ref: ./components/schemas/ErrorGroupPage.yaml
+    ErrorGroupSample:
+      $ref: ./components/schemas/ErrorGroupSample.yaml
+    ErrorGroupSource:
+      $ref: ./components/schemas/ErrorGroupSource.yaml
+    ErrorGroupState:
+      $ref: ./components/schemas/ErrorGroupState.yaml
+    NotificationErrorGroup:
+      $ref: ./components/schemas/NotificationErrorGroup.yaml
     FinanceCostItemLine:
       $ref: ./components/schemas/FinanceCostItemLine.yaml
     FinanceCostPeriodTotal:

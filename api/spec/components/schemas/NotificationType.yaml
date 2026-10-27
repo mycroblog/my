@@ -52,6 +52,9 @@ description: |
   opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
   host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
   carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
+  `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
+  resolved one that happened again, at most 10 times an hour for the whole server, with the
+  rest of the hour folded into one; its `error_group` says which, and it has no `account`.
 type: string
 enum:
   - follow
@@ -83,3 +86,4 @@ enum:
   - supporter_service_closure
   - voice_room_started
   - voice_room_invited
+  - admin_error_group

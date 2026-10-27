@@ -144,6 +144,52 @@ func (r *DiagnosticsRepository) FindGroup(ctx context.Context, id string) (appdi
 	return c.Group, c.Head, nil
 }
 
+// ListSummaries implements appdiagnostics.Repository.
+func (r *DiagnosticsRepository) ListSummaries(ctx context.Context, q appdiagnostics.SummaryQuery) ([]appdiagnostics.Summary, error) {
+	p := postgresgen.ListErrorGroupSummariesParams{
+		SinceDay: q.Window.SinceDay, SinceWeek: q.Window.SinceWeek, State: string(q.State), Source: q.Source,
+		BeforeSeen: q.BeforeSeen, RowLimit: int32(min(q.Limit, 1<<30)), //nolint:gosec // bounded above
+	}
+	if q.BeforeID != "" {
+		id := q.BeforeID
+		p.BeforeID = &id
+	}
+	rows, err := r.db.reader().ListErrorGroupSummaries(ctx, p)
+	if err != nil {
+		return nil, wrap(err, "list error group summaries")
+	}
+	out := make([]appdiagnostics.Summary, len(rows))
+	for i, row := range rows {
+		out[i] = summaryFromRow(postgresgen.GetErrorGroupSummaryRow(row))
+	}
+	return out, nil
+}
+
+// FindSummary implements appdiagnostics.Repository.
+func (r *DiagnosticsRepository) FindSummary(ctx context.Context, tx uow.Tx, id string, w appdiagnostics.Window) (appdiagnostics.Summary, error) {
+	q := r.db.reader()
+	if tx != nil {
+		var err error
+		if q, err = queries(tx); err != nil {
+			return appdiagnostics.Summary{}, err
+		}
+	}
+	row, err := q.GetErrorGroupSummary(ctx, postgresgen.GetErrorGroupSummaryParams{SinceDay: w.SinceDay, SinceWeek: w.SinceWeek, ID: id})
+	if err != nil {
+		return appdiagnostics.Summary{}, notFound(err, appdiagnostics.ErrNotFound, "error group "+id)
+	}
+	return summaryFromRow(row), nil
+}
+
+func summaryFromRow(row postgresgen.GetErrorGroupSummaryRow) appdiagnostics.Summary {
+	c := currentFromRow(row.ID, row.Fingerprint, row.Source, row.Kind, row.ErrorType, row.Message, row.WhereName,
+		row.FirstVersion, row.Unauthenticated, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion)
+	return appdiagnostics.Summary{
+		Group: c.Group, Head: c.Head, LastSeenAt: utc(row.LastSeenAt), LastVersion: row.LastVersion,
+		CountDay: row.CountDay, CountWeek: row.CountWeek,
+	}
+}
+
 // FindSample implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) FindSample(ctx context.Context, groupID string) (appdiagnostics.Sample, error) {
 	row, err := r.db.reader().GetErrorGroupSample(ctx, groupID)

@@ -115,6 +115,18 @@
     "defaultMessage": "{instance} の閉鎖日を過ぎました。サーバーをクローズしてください",
     "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_error_group.created": {
+    "defaultMessage": "{instance} で新しいエラーが報告されました",
+    "description": "Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.regressed": {
+    "defaultMessage": "{instance} で解決したエラーが再び起きました",
+    "description": "Web Push notification to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.others": {
+    "defaultMessage": "{instance} でさらにエラーが報告されました",
+    "description": "Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.supporter_service_closure": {
     "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."

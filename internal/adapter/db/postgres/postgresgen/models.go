@@ -621,6 +621,9 @@ type Notification struct {
 	ServiceClosureEventID   *string
 	ServiceClosureChange    *string
 	VoiceRoomID             *string
+	ErrorGroupChange        *string
+	ErrorGroupID            *string
+	ErrorGroupHour          *time.Time
 	DedupeKey               string
 	CreatedAt               time.Time
 }
