@@ -76,10 +76,6 @@ const (
 // the provider's extra scopes.
 var oidcScopes = []string{"openid", "email", "profile"}
 
-// loginProviderSecretColumn binds a sealed client secret to its column, with the secret's ID
-// (login_provider_secrets.sealed_secret, ADR-0019 §6).
-const loginProviderSecretColumn = "login_provider_secrets.sealed_secret"
-
 // AADs that bind the sealed state of a sign-in and the ticket of a sign-up to their purpose.
 var (
 	externalLoginAAD  = kernel.AAD("external_login")
@@ -408,7 +404,7 @@ func (s *Service) loginProviderClientSecret(ctx context.Context, providerID stri
 	if err != nil {
 		return "", fmt.Errorf("identity: the client secret of login provider %s: %w", providerID, err)
 	}
-	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, kernel.AAD(sec.ID, loginProviderSecretColumn))
+	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, kernel.AAD(sec.ID, identity.LoginProviderSecretColumn))
 	if err != nil {
 		return "", fmt.Errorf("identity: open the client secret of login provider %s: %w", providerID, err)
 	}
