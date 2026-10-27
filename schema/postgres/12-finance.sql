@@ -103,6 +103,19 @@ CREATE TABLE billing_import_runs (
 CREATE INDEX billing_import_runs_source_occurred_at ON billing_import_runs (source, occurred_at);
 CREATE INDEX billing_import_runs_run_key ON billing_import_runs (run_key);
 
+-- Event: the billed requests that an attempt of a billing import reserved before it called the
+-- provider (ADR-0068 §4), at most what the caps left. id is the attempt's billing_import_runs.id:
+-- until the attempt is recorded, its reservation counts toward the caps in place of its
+-- requests, so that attempts running at the same time cannot together exceed the caps.
+CREATE TABLE billing_import_reservations (
+  id uuid NOT NULL PRIMARY KEY,
+  source text NOT NULL CHECK (source IN ('aws', 'gcp')),
+  run_key text COLLATE "C" NOT NULL,
+  requests integer NOT NULL CHECK (requests >= 0),
+  reserved_at timestamptz NOT NULL
+);
+CREATE INDEX billing_import_reservations_source_reserved_at ON billing_import_reservations (source, reserved_at);
+
 -- Event (revision): the amount of a provider's charges of one billing month (YYYY-MM in the
 -- provider's time zone), service, and charge type, spread over [starts_on, ends_on], recorded
 -- when the value or its kind changed. The newest row of a key is current (imported_cost_heads).

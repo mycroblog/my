@@ -14,6 +14,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const billingImportRunKeySucceeded = `-- name: BillingImportRunKeySucceeded :one
+SELECT EXISTS (
+  SELECT 1 FROM billing_import_runs WHERE source = $1 AND run_key = $2 AND outcome = 'succeeded'
+) AS succeeded
+`
+
+type BillingImportRunKeySucceededParams struct {
+	Source string
+	RunKey string
+}
+
+// BillingImportRunKeySucceeded reports whether an attempt of a source with the run key succeeded.
+func (q *Queries) BillingImportRunKeySucceeded(ctx context.Context, arg BillingImportRunKeySucceededParams) (bool, error) {
+	row := q.db.QueryRow(ctx, billingImportRunKeySucceeded, arg.Source, arg.RunKey)
+	var succeeded bool
+	err := row.Scan(&succeeded)
+	return succeeded, err
+}
+
 const countBillingImportRunsByKey = `-- name: CountBillingImportRunsByKey :one
 SELECT COUNT(*) FROM billing_import_runs WHERE source = $1 AND run_key = $2
 `
@@ -82,6 +101,31 @@ func (q *Queries) GetCostItemCurrentForUpdate(ctx context.Context, costItemID st
 		&i.Name,
 	)
 	return i, err
+}
+
+const insertBillingImportReservation = `-- name: InsertBillingImportReservation :exec
+INSERT INTO billing_import_reservations (id, source, run_key, requests, reserved_at) VALUES ($1, $2, $3, $4, $5)
+`
+
+type InsertBillingImportReservationParams struct {
+	ID         string
+	Source     string
+	RunKey     string
+	Requests   int32
+	ReservedAt time.Time
+}
+
+// InsertBillingImportReservation records the requests that an attempt reserved before it calls
+// the provider.
+func (q *Queries) InsertBillingImportReservation(ctx context.Context, arg InsertBillingImportReservationParams) error {
+	_, err := q.db.Exec(ctx, insertBillingImportReservation,
+		arg.ID,
+		arg.Source,
+		arg.RunKey,
+		arg.Requests,
+		arg.ReservedAt,
+	)
+	return err
 }
 
 const insertBillingImportRun = `-- name: InsertBillingImportRun :exec
@@ -730,6 +774,17 @@ func (q *Queries) ListIncomeMovementsInWindow(ctx context.Context, arg ListIncom
 	return items, nil
 }
 
+const lockBillingImportSource = `-- name: LockBillingImportSource :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// LockBillingImportSource takes a transaction-scoped advisory lock on the imports of a source, so
+// that attempts reserve requests one at a time.
+func (q *Queries) LockBillingImportSource(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockBillingImportSource, lockKey)
+	return err
+}
+
 const lockImportedCostHeads = `-- name: LockImportedCostHeads :exec
 SELECT 1 FROM imported_cost_heads
 WHERE source = $1 AND billing_month = ANY($2::text[])
@@ -748,10 +803,38 @@ func (q *Queries) LockImportedCostHeads(ctx context.Context, arg LockImportedCos
 	return err
 }
 
+const pendingBillingImportReservation = `-- name: PendingBillingImportReservation :one
+SELECT EXISTS (
+  SELECT 1 FROM billing_import_reservations r
+  WHERE r.source = $1 AND r.reserved_at >= $2
+    AND NOT EXISTS (SELECT 1 FROM billing_import_runs u WHERE u.id = r.id)
+) AS pending
+`
+
+type PendingBillingImportReservationParams struct {
+	Source string
+	Since  time.Time
+}
+
+// PendingBillingImportReservation reports whether an attempt of a source reserved requests at or
+// after since and is not recorded yet: it is still running.
+func (q *Queries) PendingBillingImportReservation(ctx context.Context, arg PendingBillingImportReservationParams) (bool, error) {
+	row := q.db.QueryRow(ctx, pendingBillingImportReservation, arg.Source, arg.Since)
+	var pending bool
+	err := row.Scan(&pending)
+	return pending, err
+}
+
 const sumBillingImportRuns = `-- name: SumBillingImportRuns :one
 SELECT COALESCE(SUM(requests), 0)::bigint AS requests, COALESCE(SUM(bytes_billed), 0)::bigint AS bytes_billed
-FROM billing_import_runs
-WHERE source = $1 AND occurred_at >= $2 AND occurred_at < $3
+FROM (
+  SELECT u.requests, u.bytes_billed FROM billing_import_runs u
+  WHERE u.source = $1 AND u.occurred_at >= $2 AND u.occurred_at < $3
+  UNION ALL
+  SELECT r.requests, 0 FROM billing_import_reservations r
+  WHERE r.source = $1 AND r.reserved_at >= $2 AND r.reserved_at < $3
+    AND NOT EXISTS (SELECT 1 FROM billing_import_runs u WHERE u.id = r.id)
+) AS usage
 `
 
 type SumBillingImportRunsParams struct {
@@ -766,7 +849,8 @@ type SumBillingImportRunsRow struct {
 }
 
 // SumBillingImportRuns sums the requests and the bytes billed of the attempts of a source that
-// occurred in [from, until).
+// occurred in [from, until), counting the reservation of an attempt that is not recorded yet in
+// place of its requests.
 func (q *Queries) SumBillingImportRuns(ctx context.Context, arg SumBillingImportRunsParams) (SumBillingImportRunsRow, error) {
 	row := q.db.QueryRow(ctx, sumBillingImportRuns, arg.Source, arg.FromAt, arg.UntilAt)
 	var i SumBillingImportRunsRow

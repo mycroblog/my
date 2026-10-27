@@ -172,24 +172,91 @@ func (s *Service) usage(ctx context.Context, source string, now time.Time) (day,
 	return day, month, bytes, err
 }
 
-// remaining returns the billed requests that an attempt of source may make now: the smaller of
-// what the day and the month leave, and math.MaxInt for a source without caps.
-func (s *Service) remaining(ctx context.Context, source string, now time.Time) (int, error) {
-	caps, ok := s.d.Caps[source]
-	if !ok {
-		return math.MaxInt, nil
-	}
-	day, month, _, err := s.usage(ctx, source, now)
+// ReservationHold is how long the reservation of an attempt that is not recorded yet keeps the
+// other attempts of its source waiting (ADR-0068 §4): longer than a job may run
+// (queue.DefaultLease), so that an attempt that stopped before it recorded anything holds the
+// source back for a while only. Its requests count toward the caps all the same.
+const ReservationHold = 15 * time.Minute
+
+// importRunningRetry is when an attempt that found another attempt of its source running tries
+// again.
+const importRunningRetry = time.Minute
+
+// ErrImportRunning reports an attempt of a source while another attempt of it is running.
+var ErrImportRunning = errors.New("finance: another import of the source is running")
+
+// reservation is how reserve ends.
+type reservation int
+
+const (
+	// reserved: the attempt may call the provider, up to the requests that reserve returns.
+	reserved reservation = iota
+	// capped: the caps leave the attempt no request.
+	capped
+	// alreadySucceeded: an attempt of the same job succeeded, so this one calls nothing.
+	alreadySucceeded
+	// running: another attempt of the source is running.
+	running
+)
+
+// reserve reserves the billed requests of the attempt run before it calls the provider, in one
+// transaction that runs alone for the source (ADR-0068 §4): the smaller of what the day and the
+// month leave, or no limit (math.MaxInt) for a source without caps. The reservation counts toward
+// the caps until the attempt is recorded, so that attempts at the same time cannot together
+// exceed them, and it keeps the other attempts of the source waiting for ReservationHold at
+// most. An attempt of a job (run key) that already succeeded reserves nothing.
+func (s *Service) reserve(ctx context.Context, run Run) (reservation, int, error) {
+	caps, hasCaps := s.d.Caps[run.Source]
+	outcome, allowed := reserved, 0
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		outcome, allowed = reserved, 0
+		repo := s.d.Repository
+		if err := repo.LockSource(ctx, tx, run.Source); err != nil {
+			return err
+		}
+		if done, err := repo.RunKeySucceeded(ctx, tx, run.Source, run.RunKey); err != nil || done {
+			outcome = alreadySucceeded
+			return err
+		}
+		if busy, err := repo.ImportRunning(ctx, tx, run.Source, run.OccurredAt.Add(-ReservationHold)); err != nil || busy {
+			outcome = running
+			return err
+		}
+		allowed = math.MaxInt
+		requests := 0
+		if hasCaps {
+			from, until := utcDay(run.OccurredAt)
+			day, _, err := repo.SumRunsTx(ctx, tx, run.Source, from, until)
+			if err != nil {
+				return err
+			}
+			from, until = utcMonth(run.OccurredAt)
+			month, _, err := repo.SumRunsTx(ctx, tx, run.Source, from, until)
+			if err != nil {
+				return err
+			}
+			allowed = max(0, min(caps.PerDay-day, caps.PerMonth-month))
+			requests = allowed
+		}
+		if allowed == 0 {
+			outcome = capped
+			return nil
+		}
+		return repo.InsertReservation(ctx, tx, Reservation{
+			ID: run.ID, Source: run.Source, RunKey: run.RunKey, Requests: requests, ReservedAt: run.OccurredAt,
+		})
+	})
 	if err != nil {
-		return 0, err
+		return reserved, 0, fmt.Errorf("finance: reserve the requests of the billing import of %s: %w", run.Source, err)
 	}
-	return max(0, min(caps.PerDay-day, caps.PerMonth-month)), nil
+	return outcome, allowed, nil
 }
 
-// Import runs one attempt of the import of source for the job runKey (ADR-0068 §2): it fetches
-// the months that RefetchMonths gives, outside any transaction and within the request caps, and
-// records the attempt and, when it succeeds, a revision for every key whose value or kind changed,
-// in one transaction. A key of a fetched month that the source no longer reports gets a revision
+// Import runs one attempt of the import of source for the job runKey (ADR-0068 §2): it reserves
+// its requests within the caps (reserve), fetches the months that RefetchMonths gives outside any
+// transaction, and records the attempt and, when it succeeds, a revision for every key whose
+// value or kind changed, in one transaction. An attempt of a job that already succeeded calls
+// nothing, and one that finds another attempt of the source running tries again later. A key of a fetched month that the source no longer reports gets a revision
 // of 0. An attempt that the caps leave no request to calls nothing, is recorded as request_cap,
 // and is not retried; throttling and unavailability are retried, and the other failures wait for
 // the next scheduled import.
@@ -211,12 +278,17 @@ func (s *Service) Import(ctx context.Context, source, runKey string) queue.Resul
 		previousFinal = previousFinal && h.Kind.Closed()
 	}
 	months := RefetchMonths(today, previousFinal)
-	allowed, err := s.remaining(ctx, source, now)
-	if err != nil {
-		return queue.Retry(0, err)
-	}
 	run := Run{ID: s.d.IDs.NewID(), Source: source, RunKey: runKey, ErrorKind: ImportErrorNone, OccurredAt: now}
-	if allowed == 0 {
+	outcome, allowed, err := s.reserve(ctx, run)
+	switch {
+	case err != nil:
+		return queue.Retry(0, err)
+	case outcome == alreadySucceeded:
+		s.logger().InfoContext(ctx, "billing import of a job that already succeeded", slog.String("source", source))
+		return queue.Done()
+	case outcome == running:
+		return queue.Retry(importRunningRetry, fmt.Errorf("%w: %s", ErrImportRunning, source))
+	case outcome == capped:
 		return s.failed(ctx, run, fmt.Errorf("%w: no request left today or this month", ErrRequestCap))
 	}
 	snap, err := src.Fetch(ctx, FetchRequest{Months: months, MaxRequests: allowed})
