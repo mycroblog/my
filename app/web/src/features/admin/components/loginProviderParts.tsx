@@ -31,6 +31,8 @@ type LoginProviderFieldsProps = {
 export function LoginProviderFields({ draft, change, error, withSecret, autoFocus = false }: LoginProviderFieldsProps) {
   const t = useT();
   const fieldError = (field: LoginProviderField) => (error?.field === field ? { isInvalid: true, errorMessage: error.message } : {});
+  // A new Mastodon provider registers its client at the server unless the administrator enters one.
+  const registers = withSecret && draft.kind === "mastodon";
   return (
     <>
       <TextField
@@ -79,11 +81,12 @@ export function LoginProviderFields({ draft, change, error, withSecret, autoFocu
       )}
       <TextField
         label={t("client:admin.login_providers.client_id")}
+        {...(registers && { description: t("client:admin.login_providers.client_id.description_mastodon") })}
         value={draft.clientId}
         onChange={(clientId) => {
           change({ clientId });
         }}
-        isRequired
+        isRequired={!registers}
         maxLength={loginProviderLimits.clientId}
         autoComplete="off"
         spellCheck="false"
@@ -96,6 +99,7 @@ export function LoginProviderFields({ draft, change, error, withSecret, autoFocu
             change({ clientSecret });
           }}
           error={error}
+          isRequired={!registers}
         />
       )}
       {draft.kind !== "mastodon" && (
@@ -167,11 +171,14 @@ export function SecretField({
   onChange,
   error,
   autoFocus = false,
+  isRequired = true,
 }: {
   value: string;
   onChange: (value: string) => void;
   error: LoginProviderFieldError | undefined;
   autoFocus?: boolean;
+  /** False for a new Mastodon provider, which may register its client itself. */
+  isRequired?: boolean;
 }) {
   const t = useT();
   return (
@@ -181,7 +188,7 @@ export function SecretField({
       description={t("client:admin.login_providers.client_secret.description")}
       value={value}
       onChange={onChange}
-      isRequired
+      isRequired={isRequired}
       maxLength={loginProviderLimits.clientSecret}
       autoComplete="off"
       spellCheck="false"

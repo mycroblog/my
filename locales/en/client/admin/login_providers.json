@@ -79,6 +79,10 @@
     "defaultMessage": "Client ID",
     "description": "Label of the client ID of a login provider."
   },
+  "admin.login_providers.client_id.description_mastodon": {
+    "defaultMessage": "Leave the client ID and secret empty to register a client at the server; enter them when the server restricts registration.",
+    "description": "Description of the client ID of a new Mastodon provider."
+  },
   "admin.login_providers.client_secret": {
     "defaultMessage": "Client secret",
     "description": "Label of the client secret of a login provider."

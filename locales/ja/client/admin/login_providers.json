@@ -79,6 +79,10 @@
     "defaultMessage": "クライアント ID",
     "description": "Label of the client ID of a login provider."
   },
+  "admin.login_providers.client_id.description_mastodon": {
+    "defaultMessage": "クライアント ID とシークレットを空にすると、サーバーにクライアントを登録します。サーバーが登録を制限しているときは入力してください。",
+    "description": "Description of the client ID of a new Mastodon provider."
+  },
   "admin.login_providers.client_secret": {
     "defaultMessage": "クライアントシークレット",
     "description": "Label of the client secret of a login provider."

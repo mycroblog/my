@@ -142,14 +142,29 @@ describe("the login providers screen", () => {
     });
   });
 
-  test("asks a Mastodon provider for its server and no scopes", async () => {
+  test("asks a Mastodon provider for its server, and lets the server register its client", async () => {
+    let sent: Schemas["CreateLoginProviderRequest"] | undefined;
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
+        sent = (await request.json()) as Schemas["CreateLoginProviderRequest"];
+        return HttpResponse.json(loginProviderFixture(providerId, { kind: "mastodon", display_name: "Social", issuer: "https://social.example" }));
+      }),
+    );
     const { user } = await renderApp({ path: "/admin/login-providers" });
     const form = await screen.findByRole("region", { name: "Set up a login provider" });
 
     await user.click(within(form).getByRole("radio", { name: "Mastodon" }));
     expect(within(form).getByRole("textbox", { name: "Server" })).toBeRequired();
+    expect(within(form).getByRole("textbox", { name: "Client ID" })).not.toBeRequired();
+    expect(within(form).getByLabelText(/^Client secret/u)).not.toBeRequired();
     expect(within(form).queryByRole("textbox", { name: "Extra scopes" })).not.toBeInTheDocument();
     expect(within(form).getByText("Every user of the server can sign in with it.")).toBeInTheDocument();
+    await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Social");
+    await user.type(within(form).getByRole("textbox", { name: "Server" }), "social.example");
+    await user.click(within(form).getByRole("button", { name: "Set up" }));
+
+    expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
+    expect(sent).toEqual({ kind: "mastodon", display_name: "Social", issuer: "social.example", allow_signup: false, allow_link: true });
   });
 
   test("shows the server's refusal on its field and keeps the draft", async () => {

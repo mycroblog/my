@@ -186,7 +186,10 @@ export function useLoginProviderForm() {
         return;
       }
       setInvalid(undefined);
-      const body: NewLoginProvider = { ...settings, kind: draft.kind, display_name: settings.display_name ?? "", client_id: settings.client_id ?? "", client_secret: draft.clientSecret };
+      const { client_id: clientId = "", ...rest } = settings;
+      // Without a client ID and secret, a Mastodon provider registers its client at the server.
+      const registers = draft.kind === "mastodon" && clientId === "" && draft.clientSecret === "";
+      const body: NewLoginProvider = { ...rest, kind: draft.kind, display_name: settings.display_name ?? "", ...(!registers && { client_id: clientId, client_secret: draft.clientSecret }) };
       mutation.mutate(body);
     },
     isPending: mutation.isPending,

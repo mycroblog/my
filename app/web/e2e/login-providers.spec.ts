@@ -84,13 +84,13 @@ async function administratorServer(page: Page) {
     if (key === "GET /admin/login_providers") return json(route, { items: providers });
     if (key === "POST /admin/login_providers") {
       const body = request.postDataJSON() as Schemas["CreateLoginProviderRequest"];
-      sent.push(`create ${body.kind} ${body.issuer ?? ""} ${body.client_id}`);
+      sent.push(`create ${body.kind} ${body.issuer ?? ""} ${body.client_id ?? ""}`);
       const provider: Schemas["AdminLoginProvider"] = {
         id: providerId,
         kind: body.kind,
         display_name: body.display_name,
         ...(body.issuer === undefined ? {} : { issuer: body.issuer }),
-        client_id: body.client_id,
+        client_id: body.client_id ?? "",
         scopes: body.scopes ?? [],
         allow_signup: body.allow_signup ?? false,
         allow_link: body.allow_link ?? true,
