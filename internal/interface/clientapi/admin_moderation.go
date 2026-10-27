@@ -158,7 +158,7 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	}
 	in.Obfuscate = b.Obfuscate != nil && *b.Obfuscate
 	if b.ExpiresIn != nil {
-		if *b.ExpiresIn < 1 {
+		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
 			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second

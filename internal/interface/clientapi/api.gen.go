@@ -6494,8 +6494,8 @@ type CreateAccountActionRequest struct {
 	// blocked.
 	BlockEmail *bool `json:"block_email,omitempty"`
 
-	// ExpiresIn The seconds the action lasts; omitted, it lasts until it is lifted. A `ban` and the
-	// actions on posts take none.
+	// ExpiresIn The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted. A `ban` and the actions on posts take none.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -6551,7 +6551,8 @@ type CreateDomainActionRequest struct {
 	// accepted. The action covers its subdomains.
 	Domain string `json:"domain"`
 
-	// ExpiresIn The seconds the action lasts; omitted, it lasts until it is lifted.
+	// ExpiresIn The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -6671,7 +6672,8 @@ type CreateRoleRequest struct {
 type CreateSignupBlockRequest struct {
 	Comment *string `json:"comment,omitempty"`
 
-	// ExpiresIn The seconds the block lasts; omitted, it lasts until it is lifted.
+	// ExpiresIn The seconds the block lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
@@ -7623,7 +7625,8 @@ type ImportSignupBlocksRequest struct {
 	// Comment The comment of every block added.
 	Comment *string `json:"comment,omitempty"`
 
-	// ExpiresIn The seconds each block lasts; omitted, they last until they are lifted.
+	// ExpiresIn The seconds each block lasts, at most ten years (315360000); omitted, they last until
+	// they are lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
