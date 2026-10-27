@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"sync"
+
+	"github.com/mycroblog/my/internal/app/kernel"
 )
 
 // memoryListenerBuffer is the number of payloads a MemoryBroker holds for a listener whose
@@ -108,7 +110,8 @@ func (m memoryBus) Listen(ctx context.Context, receive func(payload []byte)) (Li
 	m.b.mu.Lock()
 	m.b.listeners[l] = struct{}{}
 	m.b.mu.Unlock()
-	go l.run(receive)
+	// A test's broker reports nowhere: a panic of receive fails the test as it would without kernel.Go.
+	kernel.Go(ctx, "stream.memory.listen", nil, func(context.Context) { l.run(receive) })
 	return l, nil
 }
 

@@ -1110,7 +1110,7 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "Only the log line and the error groups in the database."},
-			{value: "sentry", doc: "Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking."},
+			{value: "sentry", inV0: true, doc: "Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking."},
 			{value: "otlp", doc: "Also as OpenTelemetry log records of exceptions over OTLP/HTTP, to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`."},
 		},
 		set: func(c *Config, v string) { c.ErrorsExporter = v },

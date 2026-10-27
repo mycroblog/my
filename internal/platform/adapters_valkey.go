@@ -47,5 +47,5 @@ func (a *App) newValkeyBus(ctx context.Context, cfg *config.Config) (stream.Bus,
 	if err != nil {
 		return nil, err
 	}
-	return valkeystream.New(c, cfg.ValkeyKeyPrefix), nil
+	return valkeystream.New(c, cfg.ValkeyKeyPrefix, a.ErrorReporter), nil
 }

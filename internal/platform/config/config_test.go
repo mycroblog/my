@@ -391,10 +391,15 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "error exporters not yet available",
-			env:  with(minimal(), "MY_ERRORS_EXPORTER", "sentry"),
+			env:  with(minimal(), "MY_ERRORS_EXPORTER", "otlp"),
 			want: []string{
-				`errors_exporter (MY_ERRORS_EXPORTER): "sentry" is not available in v0; want one of none`,
+				`errors_exporter (MY_ERRORS_EXPORTER): "otlp" is not available in v0; want one of none, sentry`,
 			},
+		},
+		{
+			name: "sentry exporter without a DSN",
+			env:  with(minimal(), "MY_ERRORS_EXPORTER", "sentry"),
+			want: []string{"errors_sentry_dsn (MY_ERRORS_SENTRY_DSN): required when errors_exporter is sentry"},
 		},
 		{
 			name: "invalid error environment",
