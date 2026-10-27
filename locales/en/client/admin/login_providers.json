@@ -1,0 +1,334 @@
+{
+  "admin.login_providers.allow_link": {
+    "defaultMessage": "Users may link their accounts",
+    "description": "Checkbox: whether users may link their accounts to the provider."
+  },
+  "admin.login_providers.allow_link.description": {
+    "defaultMessage": "Signed-in users link the provider from their account settings and then sign in with it.",
+    "description": "Description of the checkbox that allows linking accounts to a login provider."
+  },
+  "admin.login_providers.allow_signup": {
+    "defaultMessage": "New users may sign up",
+    "description": "Checkbox: whether new users may sign up with the provider."
+  },
+  "admin.login_providers.allow_signup.description": {
+    "defaultMessage": "Someone without an account signs up with the provider, within the server's sign-up mode.",
+    "description": "Description of the checkbox that allows signing up with a login provider."
+  },
+  "admin.login_providers.callback": {
+    "defaultMessage": "Callback URL",
+    "description": "Label of a login provider's callback URL."
+  },
+  "admin.login_providers.callback.copied": {
+    "defaultMessage": "Callback URL copied.",
+    "description": "Toast after copying a callback URL."
+  },
+  "admin.login_providers.callback.copy": {
+    "defaultMessage": "Copy",
+    "description": "Button that copies a login provider's callback URL."
+  },
+  "admin.login_providers.callback.copy_failed": {
+    "defaultMessage": "Could not copy the callback URL.",
+    "description": "Toast when copying a callback URL failed."
+  },
+  "admin.login_providers.callback.copy_of": {
+    "defaultMessage": "Copy the callback URL of {name}",
+    "description": "Accessible name of the button that copies a login provider's callback URL. {name} is its display name."
+  },
+  "admin.login_providers.callback.notice": {
+    "defaultMessage": "Register this callback URL as the redirect URI at the provider.",
+    "description": "Notice after setting up a login provider, above its callback URL."
+  },
+  "admin.login_providers.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes a dialog of a login provider without changing it."
+  },
+  "admin.login_providers.change_failed": {
+    "defaultMessage": "Could not change the login provider: {reason}",
+    "description": "Error of a change of a login provider. {reason} is the server's reason."
+  },
+  "admin.login_providers.claims": {
+    "defaultMessage": "Conditions",
+    "description": "Legend of the conditions on the claims of an OpenID Connect provider."
+  },
+  "admin.login_providers.claims.add": {
+    "defaultMessage": "Add a condition",
+    "description": "Button that adds a row of a claim condition."
+  },
+  "admin.login_providers.claims.claim": {
+    "defaultMessage": "Claim of condition {number}",
+    "description": "Label of the claim name of a condition row. {number} is the row's number."
+  },
+  "admin.login_providers.claims.description": {
+    "defaultMessage": "Only users whose ID token has one of the values of each claim sign in, such as hd for a Google Workspace domain. With no condition, every user of the provider signs in.",
+    "description": "Description of the claim conditions of an OpenID Connect provider."
+  },
+  "admin.login_providers.claims.remove": {
+    "defaultMessage": "Remove condition {number}",
+    "description": "Button that removes a condition row. {number} is the row's number."
+  },
+  "admin.login_providers.claims.row": {
+    "defaultMessage": "Condition {number}",
+    "description": "Heading of a condition row. {number} is its number."
+  },
+  "admin.login_providers.claims.values": {
+    "defaultMessage": "Allowed values of condition {number}",
+    "description": "Label of the allowed values of a condition row, separated by commas. {number} is the row's number."
+  },
+  "admin.login_providers.client_id": {
+    "defaultMessage": "Client ID",
+    "description": "Label of the client ID of a login provider."
+  },
+  "admin.login_providers.client_id.description_mastodon": {
+    "defaultMessage": "Leave the client ID and secret empty to register a client at the server; enter them when the server restricts registration.",
+    "description": "Description of the client ID of a new Mastodon provider."
+  },
+  "admin.login_providers.client_secret": {
+    "defaultMessage": "Client secret",
+    "description": "Label of the client secret of a login provider."
+  },
+  "admin.login_providers.client_secret.description": {
+    "defaultMessage": "The secret the provider issued. It is never shown again.",
+    "description": "Description of the client secret field."
+  },
+  "admin.login_providers.close": {
+    "defaultMessage": "Close",
+    "description": "Accessible name of the button that closes a dialog of a login provider."
+  },
+  "admin.login_providers.conditions.incomplete": {
+    "defaultMessage": "Each condition needs a claim and at least one value.",
+    "description": "Error of a condition row without its claim or values."
+  },
+  "admin.login_providers.created": {
+    "defaultMessage": "{name} is set up.",
+    "description": "Status after setting up a login provider. {name} is its display name."
+  },
+  "admin.login_providers.delete": {
+    "defaultMessage": "Delete",
+    "description": "Button that deletes a login provider, and the confirming button of its dialog."
+  },
+  "admin.login_providers.delete.description": {
+    "defaultMessage": "{count, plural, =0 {No user has linked an account to it. This cannot be undone.} one {# linked user can no longer sign in with it; without a password, a passkey or another provider, they cannot sign in at all. This cannot be undone.} other {# linked users can no longer sign in with it; those without a password, a passkey or another provider cannot sign in at all. This cannot be undone.}}",
+    "description": "Description of the dialog that confirms deleting a login provider. {count} is the number of linked users."
+  },
+  "admin.login_providers.delete.title": {
+    "defaultMessage": "Delete {name}?",
+    "description": "Title of the dialog that confirms deleting a login provider."
+  },
+  "admin.login_providers.delete_provider": {
+    "defaultMessage": "Delete {name}",
+    "description": "Accessible name of the button that deletes a login provider."
+  },
+  "admin.login_providers.deleted": {
+    "defaultMessage": "{name} is deleted.",
+    "description": "Status after deleting a login provider."
+  },
+  "admin.login_providers.disable": {
+    "defaultMessage": "Disable",
+    "description": "Button that disables a login provider, and the confirming button of its dialog."
+  },
+  "admin.login_providers.disable.description": {
+    "defaultMessage": "{count, plural, =0 {Nobody signs in, signs up or links an account with it until it is enabled again. No user has linked an account to it.} one {Nobody signs in, signs up or links an account with it until it is enabled again. # linked user can no longer sign in with it; without a password, a passkey or another provider, they cannot sign in at all.} other {Nobody signs in, signs up or links an account with it until it is enabled again. # linked users can no longer sign in with it; those without a password, a passkey or another provider cannot sign in at all.}}",
+    "description": "Description of the dialog that confirms disabling a login provider. {count} is the number of linked users."
+  },
+  "admin.login_providers.disable.title": {
+    "defaultMessage": "Disable {name}?",
+    "description": "Title of the dialog that confirms disabling a login provider."
+  },
+  "admin.login_providers.disable_provider": {
+    "defaultMessage": "Disable {name}",
+    "description": "Accessible name of the button that disables a login provider."
+  },
+  "admin.login_providers.disabled_status": {
+    "defaultMessage": "{name} is disabled.",
+    "description": "Status after disabling a login provider."
+  },
+  "admin.login_providers.display_name": {
+    "defaultMessage": "Display name",
+    "description": "Label of the display name of a login provider."
+  },
+  "admin.login_providers.display_name.description": {
+    "defaultMessage": "The name on the administration screens.",
+    "description": "Description of the display name of a GitHub or Mastodon provider."
+  },
+  "admin.login_providers.display_name.description_oidc": {
+    "defaultMessage": "The name on the administration screens and, as written, on the sign-in button.",
+    "description": "Description of the display name of an OpenID Connect provider."
+  },
+  "admin.login_providers.edit": {
+    "defaultMessage": "Edit",
+    "description": "Button that opens the dialog that changes a login provider."
+  },
+  "admin.login_providers.edit.kind": {
+    "defaultMessage": "Kind: {kind}",
+    "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
+  },
+  "admin.login_providers.edit.title": {
+    "defaultMessage": "Edit {name}",
+    "description": "Title of the dialog that changes a login provider."
+  },
+  "admin.login_providers.edit_provider": {
+    "defaultMessage": "Edit {name}",
+    "description": "Accessible name of the button that changes a login provider."
+  },
+  "admin.login_providers.empty": {
+    "defaultMessage": "No login providers yet",
+    "description": "Heading of the empty list of login providers."
+  },
+  "admin.login_providers.empty.description": {
+    "defaultMessage": "Users sign in with a password or a passkey only.",
+    "description": "Description of the empty list of login providers."
+  },
+  "admin.login_providers.enable": {
+    "defaultMessage": "Enable",
+    "description": "Button that enables a login provider."
+  },
+  "admin.login_providers.enable_provider": {
+    "defaultMessage": "Enable {name}",
+    "description": "Accessible name of the button that enables a login provider."
+  },
+  "admin.login_providers.enabled_status": {
+    "defaultMessage": "{name} is enabled.",
+    "description": "Status after enabling a login provider."
+  },
+  "admin.login_providers.issuer": {
+    "defaultMessage": "Issuer",
+    "description": "Label of the OpenID Connect issuer URL of a login provider."
+  },
+  "admin.login_providers.issuer.description": {
+    "defaultMessage": "The https URL that the ID tokens name as their issuer, such as https://accounts.google.com.",
+    "description": "Description of the issuer field."
+  },
+  "admin.login_providers.kind": {
+    "defaultMessage": "Kind",
+    "description": "Label of the kind of a login provider, and the column of the list."
+  },
+  "admin.login_providers.kind.github": {
+    "defaultMessage": "GitHub",
+    "description": "Kind of login provider: github.com."
+  },
+  "admin.login_providers.kind.mastodon": {
+    "defaultMessage": "Mastodon",
+    "description": "Kind of login provider: one Mastodon server."
+  },
+  "admin.login_providers.kind.oidc": {
+    "defaultMessage": "OpenID Connect",
+    "description": "Kind of login provider: an OpenID Connect provider."
+  },
+  "admin.login_providers.linked_users": {
+    "defaultMessage": "Linked users",
+    "description": "Column of the list: the number of users linked to a login provider."
+  },
+  "admin.login_providers.linked_users.count": {
+    "defaultMessage": "{count, plural, one {# user} other {# users}}",
+    "description": "The number of users linked to a login provider."
+  },
+  "admin.login_providers.list.title": {
+    "defaultMessage": "Login providers of this server",
+    "description": "Heading of the list of login providers."
+  },
+  "admin.login_providers.mastodon.conditions": {
+    "defaultMessage": "Every user of the server can sign in with it.",
+    "description": "Note that a Mastodon provider has no conditions."
+  },
+  "admin.login_providers.new.title": {
+    "defaultMessage": "Set up a login provider",
+    "description": "Heading of the form that sets up a login provider."
+  },
+  "admin.login_providers.organizations": {
+    "defaultMessage": "Organizations",
+    "description": "Label of the GitHub Organizations a user must belong to."
+  },
+  "admin.login_providers.organizations.description": {
+    "defaultMessage": "Only members of one of these GitHub Organizations sign in; separate them with commas or spaces. Leave it empty to let every GitHub user in.",
+    "description": "Description of the Organizations field."
+  },
+  "admin.login_providers.provider": {
+    "defaultMessage": "Provider",
+    "description": "Column of the list: the display name, issuer and callback URL of a login provider."
+  },
+  "admin.login_providers.rotate": {
+    "defaultMessage": "New secret",
+    "description": "Button that opens the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotate.description": {
+    "defaultMessage": "Enter the new client secret that the provider issued. The previous one is no longer used.",
+    "description": "Description of the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotate.submit": {
+    "defaultMessage": "Save the secret",
+    "description": "Button that saves a new client secret."
+  },
+  "admin.login_providers.rotate.title": {
+    "defaultMessage": "New client secret for {name}",
+    "description": "Title of the dialog that gives a login provider a new client secret."
+  },
+  "admin.login_providers.rotate_provider": {
+    "defaultMessage": "New secret for {name}",
+    "description": "Accessible name of the button that opens the new secret dialog."
+  },
+  "admin.login_providers.rotated": {
+    "defaultMessage": "{name} has a new client secret.",
+    "description": "Status after giving a login provider a new client secret."
+  },
+  "admin.login_providers.save": {
+    "defaultMessage": "Save",
+    "description": "Button that saves the changes of a login provider."
+  },
+  "admin.login_providers.save_failed": {
+    "defaultMessage": "Could not save the login provider: {reason}",
+    "description": "Error of a refused login provider. {reason} is the server's reason."
+  },
+  "admin.login_providers.scopes": {
+    "defaultMessage": "Extra scopes",
+    "description": "Label of the extra scopes of a login provider."
+  },
+  "admin.login_providers.scopes.description": {
+    "defaultMessage": "Scopes to ask for besides the ones the kind needs, separated by spaces.",
+    "description": "Description of the extra scopes field."
+  },
+  "admin.login_providers.server": {
+    "defaultMessage": "Server",
+    "description": "Label of the Mastodon server of a login provider."
+  },
+  "admin.login_providers.server.description": {
+    "defaultMessage": "The domain of the Mastodon server, such as mastodon.social.",
+    "description": "Description of the Mastodon server field."
+  },
+  "admin.login_providers.state": {
+    "defaultMessage": "State",
+    "description": "Column of the list: whether a login provider is enabled."
+  },
+  "admin.login_providers.state.disabled": {
+    "defaultMessage": "Disabled",
+    "description": "State of a disabled login provider."
+  },
+  "admin.login_providers.state.enabled": {
+    "defaultMessage": "Enabled",
+    "description": "State of an enabled login provider."
+  },
+  "admin.login_providers.state.signup_allowed": {
+    "defaultMessage": "Sign-up allowed",
+    "description": "Note that new users may sign up with a login provider."
+  },
+  "admin.login_providers.state.signup_closed": {
+    "defaultMessage": "Sign-in only",
+    "description": "Note that new users may not sign up with a login provider."
+  },
+  "admin.login_providers.submit": {
+    "defaultMessage": "Set up",
+    "description": "Button that sets up a login provider."
+  },
+  "admin.login_providers.summary": {
+    "defaultMessage": "Let users sign in with OpenID Connect, GitHub or a Mastodon server.",
+    "description": "Description of the login providers screen in the administration menu."
+  },
+  "admin.login_providers.title": {
+    "defaultMessage": "Login providers",
+    "description": "Heading of the login providers screen, and its link in the administration menu."
+  },
+  "admin.login_providers.updated": {
+    "defaultMessage": "{name} is saved.",
+    "description": "Status after changing a login provider."
+  }
+}

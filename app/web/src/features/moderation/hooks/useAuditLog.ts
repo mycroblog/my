@@ -190,6 +190,9 @@ export function auditTargetHref(entry: Pick<AuditEntry, "target_kind" | "target_
       // The supporters screen shows the program, every plan (retired ones too), the subscriptions and the
       // state of the payment provider.
       return "/admin/supporters";
+    case "login_provider":
+      // A provider has no screen of its own: the list of providers shows it.
+      return "/admin/login-providers";
     case "custom_emoji_request":
       // A request has no screen of its own: the requests of the custom emoji screen, in every state.
       return "/admin/custom-emojis?tab=requests";

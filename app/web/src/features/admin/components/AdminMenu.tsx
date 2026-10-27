@@ -34,6 +34,12 @@ export const adminPages: readonly StaffPage[] = [
     label: "client:admin.supporters.title",
     description: "client:admin.supporters.summary",
   },
+  {
+    href: "/admin/login-providers",
+    permission: "manage_login_providers",
+    label: "client:admin.login_providers.title",
+    description: "client:admin.login_providers.summary",
+  },
   { href: "/admin/oauth-apps", permission: "manage_oauth_apps", label: "client:admin.oauth_apps.title", description: "client:admin.oauth_apps.summary" },
   {
     href: "/admin/closure",

@@ -347,6 +347,7 @@ describe("the link of an entry's target", () => {
     expect(auditTargetHref({ target_kind: "role", target_id: "role1", target_label: "helper", target_exists: true })).toBe("/admin/roles");
     expect(auditTargetHref({ target_kind: "invite", target_id: "inv1", target_label: "ABCD…", target_exists: true })).toBe("/moderation/invites");
     expect(auditTargetHref({ target_kind: "webhook", target_id: "w1", target_label: "Chat (hooks.example)", target_exists: true })).toBe("/admin/webhooks/w1");
+    expect(auditTargetHref({ target_kind: "login_provider", target_id: "lp1", target_label: "Google", target_exists: true })).toBe("/admin/login-providers");
   });
 
   test("is not there for a target that is gone or deleted", () => {
