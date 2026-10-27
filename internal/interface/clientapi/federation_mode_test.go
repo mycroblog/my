@@ -37,6 +37,10 @@ func (g followGraph) Follow(_ context.Context, _, followeeID string) (appgraph.R
 	return appgraph.Relationship{TargetAccountID: followeeID, Following: graph.StateActive}, nil
 }
 
+func (g followGraph) FollowWith(ctx context.Context, followerID, followeeID string, _ appgraph.FollowOptions) (appgraph.Relationship, error) {
+	return g.Follow(ctx, followerID, followeeID)
+}
+
 // TestFederationModeRestrictsRemoteOperations checks that, in each federation mode, following
 // a remote account, resolving one, and quoting a remote status pass or are the 403 of
 // federation-restricted as ADR-0076 says, and that a refused resolution fetches nothing.

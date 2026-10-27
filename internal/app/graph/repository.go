@@ -83,10 +83,12 @@ type Repository interface {
 	ListEdgesOf(ctx context.Context, tx uow.Tx, accountID string) ([]graph.Edge, error)
 	// InsertEdge inserts an edge and reports false, writing nothing, when the pair already has one.
 	InsertEdge(ctx context.Context, tx uow.Tx, e graph.Edge) (bool, error)
-	// UpdateEdge replaces the state and since of the pair's edge when it belongs to e.FollowID.
-	UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edge) error
-	// DeleteEdge deletes the pair's edge when it belongs to followID.
-	DeleteEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID, followID string) error
+	// UpdateEdge replaces the state and since of the pair's edge when it belongs to e.FollowID
+	// and is in state from, and reports whether it did.
+	UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edge, from graph.State) (bool, error)
+	// DeleteEdge deletes the pair's edge when it belongs to followID and is in state, and
+	// reports whether it did.
+	DeleteEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID, followID string, state graph.State) (bool, error)
 	DeleteAllEdges(ctx context.Context, tx uow.Tx) error
 	// AddCounters adds the deltas to an account's counters, creating the row from zero, and
 	// deletes the row when both counters reach zero: no row means zero.

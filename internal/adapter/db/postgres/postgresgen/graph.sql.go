@@ -69,19 +69,29 @@ func (q *Queries) DeleteAllFollowEdges(ctx context.Context) error {
 	return err
 }
 
-const deleteFollowEdge = `-- name: DeleteFollowEdge :exec
-DELETE FROM follow_edges WHERE follower_account_id = $1 AND followee_account_id = $2 AND follow_id = $3
+const deleteFollowEdge = `-- name: DeleteFollowEdge :execrows
+DELETE FROM follow_edges
+WHERE follower_account_id = $1 AND followee_account_id = $2 AND follow_id = $3 AND state = $4
 `
 
 type DeleteFollowEdgeParams struct {
 	FollowerAccountID string
 	FolloweeAccountID string
 	FollowID          string
+	State             string
 }
 
-func (q *Queries) DeleteFollowEdge(ctx context.Context, arg DeleteFollowEdgeParams) error {
-	_, err := q.db.Exec(ctx, deleteFollowEdge, arg.FollowerAccountID, arg.FolloweeAccountID, arg.FollowID)
-	return err
+func (q *Queries) DeleteFollowEdge(ctx context.Context, arg DeleteFollowEdgeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteFollowEdge,
+		arg.FollowerAccountID,
+		arg.FolloweeAccountID,
+		arg.FollowID,
+		arg.State,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteZeroFollowCounters = `-- name: DeleteZeroFollowCounters :exec
@@ -570,9 +580,9 @@ func (q *Queries) ListFollowingPage(ctx context.Context, arg ListFollowingPagePa
 	return items, nil
 }
 
-const updateFollowEdge = `-- name: UpdateFollowEdge :exec
+const updateFollowEdge = `-- name: UpdateFollowEdge :execrows
 UPDATE follow_edges SET state = $4, since = $5
-WHERE follower_account_id = $1 AND followee_account_id = $2 AND follow_id = $3
+WHERE follower_account_id = $1 AND followee_account_id = $2 AND follow_id = $3 AND state = $6
 `
 
 type UpdateFollowEdgeParams struct {
@@ -581,17 +591,24 @@ type UpdateFollowEdgeParams struct {
 	FollowID          string
 	State             string
 	Since             time.Time
+	FromState         string
 }
 
-func (q *Queries) UpdateFollowEdge(ctx context.Context, arg UpdateFollowEdgeParams) error {
-	_, err := q.db.Exec(ctx, updateFollowEdge,
+// UpdateFollowEdge and DeleteFollowEdge change the edge only in the state that the command read,
+// so that a projector learns from the rows affected that a concurrent transaction changed it.
+func (q *Queries) UpdateFollowEdge(ctx context.Context, arg UpdateFollowEdgeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateFollowEdge,
 		arg.FollowerAccountID,
 		arg.FolloweeAccountID,
 		arg.FollowID,
 		arg.State,
 		arg.Since,
+		arg.FromState,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertFollowCounters = `-- name: UpsertFollowCounters :exec
