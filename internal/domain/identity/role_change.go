@@ -8,8 +8,9 @@ import (
 )
 
 // Granting and revoking roles (FR-720). A user who manages roles may grant and revoke only the
-// roles at or below the highest position of their own; the command line may grant and revoke
-// any role. The admin role always keeps at least one holder.
+// roles at or below the highest position of their own, and grant only the roles whose every
+// permission they hold (CheckPermissionsHeld); the command line may grant and revoke any role.
+// The admin role always keeps at least one holder.
 
 // RoleRevocation ends a role grant (data-model §4.1, user_role_revocations).
 type RoleRevocation struct {

@@ -45,6 +45,13 @@ type Repository interface {
 
 	// Projections, written only by this module's commands.
 
+	// LockAccountRestrictions serializes inside tx the commands that change the restrictions of
+	// an account: a second transaction waits until the first ends, so that the restrictions it
+	// reads and projects are the committed ones (SELECT ... FOR UPDATE or an advisory lock where
+	// the database needs it).
+	LockAccountRestrictions(ctx context.Context, tx uow.Tx, accountID string) error
+	// LockDomainRestrictions is LockAccountRestrictions for the restrictions of a domain.
+	LockDomainRestrictions(ctx context.Context, tx uow.Tx, domain string) error
 	InsertAccountRestriction(ctx context.Context, tx uow.Tx, r moderation.RestrictionRow) error
 	// DeleteAccountRestrictionsOf deletes the rows that an action on an account imposes.
 	DeleteAccountRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error

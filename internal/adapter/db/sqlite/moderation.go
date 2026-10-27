@@ -208,6 +208,18 @@ func (r *ModerationRepository) DeleteAccountRestrictionsOf(ctx context.Context, 
 	return wrap(q.DeleteAccountRestrictionsOfAction(ctx, actionID), "delete account restrictions")
 }
 
+// LockAccountRestrictions implements moderation.Repository. SQLite runs one write transaction at
+// a time, so there is nothing to lock.
+func (r *ModerationRepository) LockAccountRestrictions(context.Context, uow.Tx, string) error {
+	return nil
+}
+
+// LockDomainRestrictions implements moderation.Repository. SQLite runs one write transaction at
+// a time, so there is nothing to lock.
+func (r *ModerationRepository) LockDomainRestrictions(context.Context, uow.Tx, string) error {
+	return nil
+}
+
 // AccountRestrictionRows implements moderation.Repository.
 func (r *ModerationRepository) AccountRestrictionRows(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.RestrictionRow, error) {
 	q, err := queries(tx)

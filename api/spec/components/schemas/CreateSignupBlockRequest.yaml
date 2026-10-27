@@ -19,6 +19,9 @@ properties:
     type: string
     maxLength: 1000
   expires_in:
-    description: The seconds the block lasts; omitted, it lasts until it is lifted.
+    description: |
+      The seconds the block lasts, at most ten years (315360000); omitted, it lasts until it
+      is lifted.
     type: integer
     minimum: 1
+    maximum: 315360000

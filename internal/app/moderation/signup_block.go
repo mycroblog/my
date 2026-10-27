@@ -92,7 +92,8 @@ type SignupBlockInput struct {
 	Value    string
 	Severity moderation.SignupBlockSeverity
 	Comment  string
-	// Duration is how long the block lasts; zero lasts until it is lifted.
+	// Duration is how long the block lasts, at most moderation.MaxDuration; zero lasts until it
+	// is lifted.
 	Duration time.Duration
 	// CreatedByUserID is the moderator; "" for the CLI.
 	CreatedByUserID string
@@ -101,8 +102,8 @@ type SignupBlockInput struct {
 // AddSignupBlock records a new sign-up block, in effect at once, and its audit log entry. It
 // fails with an error wrapping ErrInvalidSignupBlock for an invalid field.
 func (s *Service) AddSignupBlock(ctx context.Context, in SignupBlockInput) (moderation.SignupBlock, error) {
-	if in.Duration < 0 {
-		return moderation.SignupBlock{}, fmt.Errorf("%w: a negative duration", ErrInvalidSignupBlock)
+	if !moderation.ValidDuration(in.Duration) {
+		return moderation.SignupBlock{}, fmt.Errorf("%w: duration %s", ErrInvalidSignupBlock, in.Duration)
 	}
 	value, err := s.canonicalBlockValue(in.Kind, in.Value)
 	if err != nil {
@@ -143,7 +144,8 @@ type SignupBlockImportInput struct {
 	Text     string
 	Severity moderation.SignupBlockSeverity
 	Comment  string
-	// Duration is how long the blocks last; zero lasts until each is lifted.
+	// Duration is how long the blocks last, at most moderation.MaxDuration; zero lasts until
+	// each is lifted.
 	Duration time.Duration
 	// CreatedByUserID is the moderator; "" for the CLI.
 	CreatedByUserID string
@@ -178,8 +180,8 @@ func (s *Service) ImportSignupBlocks(ctx context.Context, in SignupBlockImportIn
 		return res, fmt.Errorf("%w: kind %q", ErrInvalidSignupBlock, in.Kind)
 	case !in.Severity.Valid():
 		return res, fmt.Errorf("%w: severity %q", ErrInvalidSignupBlock, in.Severity)
-	case in.Duration < 0:
-		return res, fmt.Errorf("%w: a negative duration", ErrInvalidSignupBlock)
+	case !moderation.ValidDuration(in.Duration):
+		return res, fmt.Errorf("%w: duration %s", ErrInvalidSignupBlock, in.Duration)
 	}
 	comment := strings.TrimSpace(in.Comment)
 	if err := moderation.CheckSignupBlockComment(comment); err != nil {

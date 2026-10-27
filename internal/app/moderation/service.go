@@ -244,7 +244,8 @@ type DomainActionInput struct {
 	Obfuscate     bool
 	// IssuedByUserID is the moderator; "" for the CLI.
 	IssuedByUserID string
-	// Duration is how long the action lasts; zero lasts until it is lifted.
+	// Duration is how long the action lasts, at most moderation.MaxDuration; zero lasts until
+	// it is lifted.
 	Duration time.Duration
 }
 
@@ -253,6 +254,9 @@ type DomainActionInput struct {
 // DomainRestrictionsChanged and its audit log entry. A suspension also enqueues JobSeverDomain,
 // which cuts the follows with the domain (SeverDomain).
 func (s *Service) IssueDomainAction(ctx context.Context, in DomainActionInput) (moderation.DomainAction, error) {
+	if !moderation.ValidDuration(in.Duration) {
+		return moderation.DomainAction{}, fmt.Errorf("%w: duration %s", moderation.ErrInvalidAction, in.Duration)
+	}
 	now := kernel.Normalize(s.d.Clock.Now())
 	a := moderation.DomainAction{
 		ID: s.d.IDs.NewID(), Domain: in.Domain, Kind: in.Kind, PublicComment: in.PublicComment,
@@ -277,6 +281,9 @@ func (s *Service) IssueDomainAction(ctx context.Context, in DomainActionInput) (
 // entry auditID.
 func (s *Service) insertDomainAction(ctx context.Context, tx uow.Tx, a moderation.DomainAction, auditID string) error {
 	repo := s.d.Repository
+	if err := repo.LockDomainRestrictions(ctx, tx, a.Domain); err != nil {
+		return err
+	}
 	if err := repo.InsertDomainAction(ctx, tx, a); err != nil {
 		return err
 	}
@@ -310,6 +317,9 @@ func (s *Service) LiftDomainAction(ctx context.Context, actionID, liftedByUserID
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		a, err := repo.DomainAction(ctx, tx, actionID)
 		if err != nil {
+			return err
+		}
+		if err := repo.LockDomainRestrictions(ctx, tx, a.Domain); err != nil {
 			return err
 		}
 		lift := moderation.DomainLift{ActionID: a.ID, LiftedByUserID: liftedByUserID, LiftedAt: now}
@@ -373,7 +383,8 @@ type AccountActionInput struct {
 	NotifyTarget bool
 	// IssuedByUserID is the moderator; "" for the CLI.
 	IssuedByUserID string
-	// Duration is how long the action lasts; zero lasts until it is lifted.
+	// Duration is how long the action lasts, at most moderation.MaxDuration; zero lasts until
+	// it is lifted.
 	Duration time.Duration
 	// StatusIDs are the statuses of the target that an action on statuses (delete_statuses,
 	// mark_statuses_sensitive) acts on: from 1 to moderation.MaxActionStatuses of them, and
@@ -407,6 +418,9 @@ type AccountActionInput struct {
 func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput) (moderation.Action, error) {
 	if !in.Kind.Valid() {
 		return moderation.Action{}, fmt.Errorf("%w: kind %q", moderation.ErrInvalidAction, in.Kind)
+	}
+	if !moderation.ValidDuration(in.Duration) {
+		return moderation.Action{}, fmt.Errorf("%w: duration %s", moderation.ErrInvalidAction, in.Duration)
 	}
 	target, err := s.d.Accounts.FindByID(ctx, in.TargetAccountID)
 	switch {
@@ -471,6 +485,9 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 	auditID, resolutionID, resolutionAuditID := s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID()
 	blockAuditID := s.d.IDs.NewID()
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := repo.LockAccountRestrictions(ctx, tx, a.TargetAccountID); err != nil {
+			return err
+		}
 		before, err := repo.AccountRestrictionRows(ctx, tx, a.TargetAccountID)
 		if err != nil {
 			return err
@@ -609,6 +626,11 @@ func (s *Service) LiftAccountAction(ctx context.Context, actionID, liftedByUserI
 // target's display name for the audit log.
 func (s *Service) liftAction(ctx context.Context, tx uow.Tx, a moderation.Action, lift moderation.Lift, label, auditID string) error {
 	repo := s.d.Repository
+	// The lifts and actions on one account run one after another, so that the restrictions that
+	// this lift projects are those that the others committed.
+	if err := repo.LockAccountRestrictions(ctx, tx, a.TargetAccountID); err != nil {
+		return err
+	}
 	err := repo.InsertActionLift(ctx, tx, lift)
 	if errors.Is(err, ErrAlreadyRecorded) {
 		return nil

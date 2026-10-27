@@ -312,6 +312,8 @@ func TestCreateAccountActionRejectsInvalidInput(t *testing.T) {
 		{bob, `{"kind":"warn","report_id":"` + reportTwo + `"}`, "report_id"},
 		{bob, `{"kind":"warn","report_id":"` + reportThree + `"}`, "report_id"},
 		{bob, `{"kind":"warn","expires_in":0,"x":"invalid-on-purpose"}`, "expires_in"},
+		{bob, `{"kind":"suspend","expires_in":315360001,"x":"invalid-on-purpose"}`, "expires_in"},
+		{bob, `{"kind":"suspend","expires_in":10000000000000,"x":"invalid-on-purpose"}`, "expires_in"},
 		{bob, `{"kind":"warn","x":"invalid-on-purpose","private_note":"` + strings.Repeat("a", moderation.MaxActionText+1) + `"}`, "private_note"},
 		{bob, `{"kind":"warn","public_reason":"spam\u0000"}`, "public_reason"},
 	} {
