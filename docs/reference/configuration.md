@@ -106,6 +106,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`profile`](#profile) | `MY_PROFILE` | `production` | no | no |
 | [`http_allow_private_networks`](#http_allow_private_networks) | `MY_HTTP_ALLOW_PRIVATE_NETWORKS` | `false` | no | no |
 | [`webhook_allowed_destinations`](#webhook_allowed_destinations) | `MY_WEBHOOK_ALLOWED_DESTINATIONS` | none | no | no |
+| [`login_provider_allowed_destinations`](#login_provider_allowed_destinations) | `MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS` | none | no | no |
 | [`remote_status_retention`](#remote_status_retention) | `MY_REMOTE_STATUS_RETENTION` | `2160h` | no | no |
 | [`remote_status_max_retention`](#remote_status_max_retention) | `MY_REMOTE_STATUS_MAX_RETENTION` | none | no | no |
 | [`relay_status_retention`](#relay_status_retention) | `MY_RELAY_STATUS_RETENTION` | `168h` | no | no |
@@ -739,6 +740,14 @@ Lets outbound HTTP (federation, media, link previews) reach loopback, private, a
 Destinations on loopback or a private network that the instance's webhooks may reach, such as an automation tool on the same host or in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `n8n.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the webhooks alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.
 
 - Environment variable: `MY_WEBHOOK_ALLOWED_DESTINATIONS`
+- Default: none
+- Required: no
+
+### `login_provider_allowed_destinations`
+
+Destinations on loopback or a private network that the external sign-in providers may be on, such as an OpenID Connect provider in the same VPC: comma-separated host names, IP addresses, and CIDRs such as `keycloak.internal, 10.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the requests to sign-in providers alone, it also allows plain `http` and any port. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Only the operator can change it: the administrators of the web client cannot reach an internal network on their own. Empty allows none.
+
+- Environment variable: `MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS`
 - Default: none
 - Required: no
 

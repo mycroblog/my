@@ -122,7 +122,10 @@ func TestTimeout(t *testing.T) {
 	}
 }
 
-func TestWebhookDestinations(t *testing.T) {
+// TestExemptDestinations checks the destinations that the operator exempts from the guard for
+// the webhooks (webhook_allowed_destinations) and for the identity providers
+// (login_provider_allowed_destinations): each list serves its own purpose alone.
+func TestExemptDestinations(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/moved" {
 			http.Redirect(w, r, "/end", http.StatusFound)
@@ -138,47 +141,64 @@ func TestWebhookDestinations(t *testing.T) {
 		}
 		return nil, errors.New("no such host")
 	}
-	byName := New(Options{Webhook: WebhookDestinations{Hosts: []string{"n8n.internal"}}, LookupNetIP: resolve})
-	byRange := New(Options{Webhook: WebhookDestinations{Prefixes: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")}}, LookupNetIP: resolve})
-	none := New(Options{LookupNetIP: resolve})
 	port := ":" + strconv.Itoa(int(addr.Port()))
-	for _, tc := range []struct {
+	for _, p := range []struct {
 		name    string
-		c       *Client
-		url     string
 		purpose kernel.HTTPPurpose
-		ok      bool
+		other   kernel.HTTPPurpose
+		set     func(*Options, Destinations)
 	}{
-		{"exempt name", byName, "http://n8n.internal" + port + "/", kernel.HTTPPurposeWebhook, true},
-		{"exempt name, other purpose", byName, "http://n8n.internal" + port + "/", kernel.HTTPPurposeJSON, false},
-		{"exempt range", byRange, "http://127.0.0.1" + port + "/", kernel.HTTPPurposeWebhook, true},
-		{"name resolving into the exempt range", byRange, "http://hooks.example.com" + port + "/", kernel.HTTPPurposeWebhook, false},
-		{"exempt range, other purpose", byRange, "http://127.0.0.1" + port + "/", kernel.HTTPPurposeImage, false},
-		{"no exemption", none, "http://127.0.0.1" + port + "/", kernel.HTTPPurposeWebhook, false},
-		{"other name", byName, "https://other.internal/", kernel.HTTPPurposeWebhook, false},
+		{"webhook", kernel.HTTPPurposeWebhook, kernel.HTTPPurposeLoginProvider, func(o *Options, d Destinations) { o.Webhook = d }},
+		{"login provider", kernel.HTTPPurposeLoginProvider, kernel.HTTPPurposeWebhook, func(o *Options, d Destinations) { o.LoginProvider = d }},
 	} {
-		resp, err := tc.c.Do(t.Context(), &kernel.HTTPRequest{Method: http.MethodPost, URL: tc.url, Body: []byte("{}"), Purpose: tc.purpose})
-		if tc.ok {
-			if err != nil {
-				t.Errorf("%s: Do = %v", tc.name, err)
+		newClient := func(d Destinations) *Client {
+			o := Options{LookupNetIP: resolve}
+			p.set(&o, d)
+			return New(o)
+		}
+		byName := newClient(Destinations{Hosts: []string{"n8n.internal"}})
+		byRange := newClient(Destinations{Prefixes: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")}})
+		none := newClient(Destinations{})
+		for _, tc := range []struct {
+			name    string
+			c       *Client
+			url     string
+			purpose kernel.HTTPPurpose
+			ok      bool
+		}{
+			{"exempt name", byName, "http://n8n.internal" + port + "/", p.purpose, true},
+			{"exempt name, other purpose", byName, "http://n8n.internal" + port + "/", kernel.HTTPPurposeJSON, false},
+			{"exempt name, other exempting purpose", byName, "http://n8n.internal" + port + "/", p.other, false},
+			{"exempt range", byRange, "http://127.0.0.1" + port + "/", p.purpose, true},
+			{"name resolving into the exempt range", byRange, "http://hooks.example.com" + port + "/", p.purpose, false},
+			{"exempt range, other purpose", byRange, "http://127.0.0.1" + port + "/", kernel.HTTPPurposeImage, false},
+			{"exempt range, other exempting purpose", byRange, "http://127.0.0.1" + port + "/", p.other, false},
+			{"no exemption", none, "http://127.0.0.1" + port + "/", p.purpose, false},
+			{"other name", byName, "https://other.internal/", p.purpose, false},
+		} {
+			resp, err := tc.c.Do(t.Context(), &kernel.HTTPRequest{Method: http.MethodPost, URL: tc.url, Body: []byte("{}"), Purpose: tc.purpose})
+			if tc.ok {
+				if err != nil {
+					t.Errorf("%s: %s: Do = %v", p.name, tc.name, err)
+					continue
+				}
+				_, _ = resp.ReadAll()
 				continue
 			}
-			_, _ = resp.ReadAll()
-			continue
+			if !errors.Is(err, kernel.ErrForbiddenDestination) {
+				t.Errorf("%s: %s: Do = %v, want ErrForbiddenDestination", p.name, tc.name, err)
+			}
 		}
-		if !errors.Is(err, kernel.ErrForbiddenDestination) {
-			t.Errorf("%s: Do = %v, want ErrForbiddenDestination", tc.name, err)
+		// Neither purpose follows a redirect: the 3xx is the answer.
+		resp, err := byRange.Do(t.Context(), &kernel.HTTPRequest{
+			Method: http.MethodPost, URL: "http://127.0.0.1" + port + "/moved", Purpose: p.purpose,
+		})
+		if err != nil {
+			t.Fatalf("%s: Do(redirect) = %v", p.name, err)
 		}
-	}
-	// A webhook never follows a redirect: the 3xx is the answer.
-	resp, err := byRange.Do(t.Context(), &kernel.HTTPRequest{
-		Method: http.MethodPost, URL: "http://127.0.0.1" + port + "/moved", Purpose: kernel.HTTPPurposeWebhook,
-	})
-	if err != nil {
-		t.Fatalf("Do(redirect) = %v", err)
-	}
-	_, _ = resp.ReadAll()
-	if resp.StatusCode != http.StatusFound {
-		t.Errorf("status = %d, want the 302 itself", resp.StatusCode)
+		_, _ = resp.ReadAll()
+		if resp.StatusCode != http.StatusFound {
+			t.Errorf("%s: status = %d, want the 302 itself", p.name, resp.StatusCode)
+		}
 	}
 }
