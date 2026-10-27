@@ -136,6 +136,10 @@ redirect URI, so `http://127.0.0.1/callback` matches.
   it). After every connection, the first and each reconnection, it reads the notifications newest first back to the
   position in its Store, or to `Config.CatchUpLimit` (24 hours; zero turns the catch-up off), and handles those it
   missed, oldest first.
+- The notifications reach the handlers in the order of time. Those that the event stream brings while a catch-up
+  runs wait for it, and the bot then hands out the missed ones and the waiting ones together, oldest first. When the
+  catch-up fails, the bot tries it again, waiting longer each time up to a minute, and the stream's notifications
+  keep waiting.
 - Every notification is recorded in the Store after its handler returns, and one recorded before is not handled again.
   A process that stops in the middle of a handler handles that notification again on the next start: replies carry an
   `Idempotency-Key` derived from the notification (`mybot.ReplyIdempotencyKey`), so the server posts each of them once.
@@ -147,7 +151,9 @@ redirect URI, so `http://127.0.0.1/callback` matches.
   proxies do not pass an event stream.
 - `OnStatus` receives the new posts of the home timeline from the event stream alone: they are not caught up after a
   disconnection or a restart, and the polling mode does not receive them.
-- Up to `Config.Concurrency` (4) handlers run at once; the events of one sender run one after the other.
+- Up to `Config.Concurrency` (4) handlers run at once; the events of one sender run one after the other, in the
+  order the bot hands them out. The handlers of different senders run side by side, so one may end before an older
+  one of another sender.
 
 ## Handlers
 
@@ -235,7 +241,11 @@ the last runs of the scheduled jobs, and the rotated refresh token.
 
 - `FileStore` (the default, at `./mybot-state.json`) is one JSON file, rewritten through a temporary file and a rename,
   readable by its owner alone, in the same format as the TypeScript library's. Put it on a disk that outlives the
-  process, such as a volume of the container.
+  process, such as a volume of the container. A change that succeeds is flushed to the disk, the directory too
+  except on Windows; a change that fails leaves both the file and the store as they were.
+- When the Store fails, such as on a full disk, the bot logs the error and tries the call again, waiting longer each
+  time up to a minute. The notification stays unprocessed meanwhile, and the position of the catch-up does not move
+  past it.
 - `MemoryStore` is for tests. A restart loses the rotated refresh token, so the next start sends the used one, the
   server revokes the token family, and the bot can no longer sign in until you issue a new token.
 - Implement `Store` to keep the state elsewhere, such as in a database.

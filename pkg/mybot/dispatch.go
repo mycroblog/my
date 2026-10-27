@@ -133,27 +133,34 @@ func (d *dispatcher) done() <-chan struct{} {
 // position only when no older one is still pending; while a catch-up hands out notifications, the position holds
 // still, so that a restart in the middle of it reads them again.
 type tracker struct {
-	mu      sync.Mutex
-	pending map[string]struct{}
+	mu sync.Mutex
+	// pending counts the hand-outs of each notification that has yet to be processed: the catch-up and the event
+	// stream may hand out one notification at once, and the dispatcher takes it once.
+	pending map[string]int
 	// done are the processed notifications above the position, in order.
 	done  []string
 	holds int
 }
 
-func newTracker() *tracker { return &tracker{pending: map[string]struct{}{}} }
+func newTracker() *tracker { return &tracker{pending: map[string]int{}} }
 
-// add marks the notification id pending.
+// add marks the notification id pending, before it is handed out.
 func (t *tracker) add(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.pending[id] = struct{}{}
+	t.pending[id]++
 }
 
-// forget drops a pending notification that was not handed out after all.
+// forget undoes an add whose hand-out the dispatcher refused, such as that of a notification it runs already,
+// which stays pending until it is processed.
 func (t *tracker) forget(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.pending, id)
+	if t.pending[id] <= 1 {
+		delete(t.pending, id)
+		return
+	}
+	t.pending[id]--
 }
 
 // complete marks the notification id processed and returns the new position, "" when it does not move.

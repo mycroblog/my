@@ -490,7 +490,24 @@ func (b *Bot) shutdown(cancelHandlers context.CancelFunc) {
 }
 
 // stream receives the event stream until ctx ends or the server refuses it, catching up after every connection.
+// While a catch-up runs, the notifications of the stream wait for it, and both are then handed out oldest first,
+// so that the handlers see the notifications in the order of time; the position holds still until the catch-up
+// succeeds, which it tries again until it does.
 func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
+	var (
+		mu       sync.Mutex
+		catching bool
+		waiting  []mykit.Notification
+	)
+	// begin holds back the notifications of the stream, and the position, until the next catch-up succeeds.
+	begin := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		if !catching {
+			catching = true
+			b.tracker.hold()
+		}
+	}
 	catchUp := make(chan struct{}, 1)
 	wg.Go(func() {
 		for {
@@ -498,11 +515,21 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 			case <-ctx.Done():
 				return
 			case <-catchUp:
-				if err := b.catchUp(ctx); err != nil && ctx.Err() == nil {
-					b.logger.Warn("mybot: the catch-up failed; it runs again on the next connection", "error", err)
-				}
-				b.releaseHold()
 			}
+			begin()
+			found, err := b.missedUntilFound(ctx)
+			if err != nil {
+				// ctx ended: the next start catches up.
+				return
+			}
+			mu.Lock()
+			all := mergeNotifications(found, waiting)
+			for i := range all {
+				b.submitNotification(&all[i])
+			}
+			catching, waiting = false, nil
+			mu.Unlock()
+			b.releaseHold()
 		}
 	})
 	return b.api.Stream(ctx, mykit.StreamOptions{
@@ -510,21 +537,26 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 			if reconnected {
 				b.logger.Info("mybot: the event stream reconnected")
 			}
-			// Hold the position from the connection on: a notification of the new stream that is processed
-			// before the catch-up reads the position must not move it past those the catch-up has yet to list.
-			b.tracker.hold()
+			// Hold from the connection on: a notification of the new stream that is processed before the catch-up
+			// reads the position must not move it past those the catch-up has yet to list.
+			begin()
 			select {
 			case catchUp <- struct{}{}:
 			default:
-				// A catch-up is pending already, with its own hold.
-				b.releaseHold()
+				// A catch-up is pending already.
 			}
 		},
 		OnEvent: func(e mykit.StreamEvent) {
 			switch e := e.(type) {
 			case *mykit.NotificationEvent:
 				n := e.Notification
-				b.submitNotification(&n)
+				mu.Lock()
+				if catching {
+					waiting = append(waiting, n)
+				} else {
+					b.submitNotification(&n)
+				}
+				mu.Unlock()
 			case *mykit.UpdateEvent:
 				if b.h.status != nil {
 					st := e.Status
@@ -536,6 +568,40 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 			b.logger.Warn("mybot: the event stream failed; connecting again", "error", err)
 		},
 	})
+}
+
+// The waits between the tries of a catch-up or of a Store call that failed: the first, doubled after each
+// failure up to the longest.
+const (
+	retryFirstWait   = time.Second
+	retryLongestWait = time.Minute
+)
+
+// missedUntilFound reads the missed notifications, trying again after a failure until it succeeds or ctx ends.
+func (b *Bot) missedUntilFound(ctx context.Context) ([]mykit.Notification, error) {
+	wait := retryFirstWait
+	for {
+		found, err := b.missed(ctx)
+		if err == nil {
+			return found, nil
+		}
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		b.logger.Warn("mybot: the catch-up failed; trying again", "error", err, "wait", wait)
+		if err := b.sleep(ctx, wait); err != nil {
+			return nil, err
+		}
+		wait = min(2*wait, retryLongestWait)
+	}
+}
+
+// mergeNotifications is the notifications of a and b oldest first, each once. Notification IDs are UUIDv7
+// strings, whose order is the order of time.
+func mergeNotifications(a, b []mykit.Notification) []mykit.Notification {
+	all := slices.Concat(a, b)
+	slices.SortStableFunc(all, func(x, y mykit.Notification) int { return strings.Compare(x.Id, y.Id) })
+	return slices.CompactFunc(all, func(x, y mykit.Notification) bool { return x.Id == y.Id })
 }
 
 // poll catches up every PollInterval until ctx ends.
@@ -554,18 +620,31 @@ func (b *Bot) poll(ctx context.Context) error {
 	}
 }
 
-// catchUp reads the notifications newest first back to the Store's position, or to CatchUpLimit, and hands them
-// to the handlers oldest first (ADR-0094 §3).
+// catchUp hands the missed notifications to the handlers oldest first (ADR-0094 §3), holding the position while
+// it does. When reading them fails, it hands out none.
 func (b *Bot) catchUp(ctx context.Context) error {
+	b.tracker.hold()
+	defer b.releaseHold()
+	found, err := b.missed(ctx)
+	if err != nil {
+		return err
+	}
+	for i := range found {
+		b.submitNotification(&found[i])
+	}
+	return nil
+}
+
+// missed reads the notifications newest first back to the Store's position, or to CatchUpLimit, and returns them
+// oldest first.
+func (b *Bot) missed(ctx context.Context) ([]mykit.Notification, error) {
 	if *b.cfg.CatchUpLimit <= 0 {
-		return nil
+		return nil, nil
 	}
 	pos, err := b.store.Position(ctx)
 	if err != nil {
-		return fmt.Errorf("mybot: read the position from the store: %w", err)
+		return nil, fmt.Errorf("mybot: read the position from the store: %w", err)
 	}
-	b.tracker.hold()
-	defer b.releaseHold()
 	cutoff := b.now().Add(-*b.cfg.CatchUpLimit)
 	limit := 40
 	var found []mykit.Notification
@@ -580,17 +659,15 @@ func (b *Bot) catchUp(ctx context.Context) error {
 		return r.JSON200.Items, r.JSON200.NextCursor, nil
 	}) {
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if (pos != "" && n.Id <= pos) || n.CreatedAt.Before(cutoff) {
 			break
 		}
 		found = append(found, n)
 	}
-	for i := len(found) - 1; i >= 0; i-- {
-		b.submitNotification(&found[i])
-	}
-	return nil
+	slices.Reverse(found)
+	return found, nil
 }
 
 // releaseHold ends a hold of the tracker and saves the position it moves to.
@@ -616,9 +693,13 @@ func (b *Bot) process(ctx context.Context, j job) {
 	}
 	n := j.notification
 	if n != nil {
-		done, err := b.store.IsProcessed(ctx, n.Id)
+		var done bool
+		err := b.retryStore(ctx, "read the store", n.Id, func() (err error) {
+			done, err = b.store.IsProcessed(ctx, n.Id)
+			return err
+		})
 		if err != nil {
-			b.logger.Error("mybot: read the store", "notification", n.Id, "error", err)
+			// Stopped: handled again by the next start.
 			return
 		}
 		if done {
@@ -637,17 +718,43 @@ func (b *Bot) process(ctx context.Context, j job) {
 	if n == nil {
 		return
 	}
-	b.abandonMu.RLock()
-	defer b.abandonMu.RUnlock()
-	if b.abandoned || ctx.Err() != nil {
+	err := b.retryStore(ctx, "record the notification processed", n.Id, func() error {
+		b.abandonMu.RLock()
+		defer b.abandonMu.RUnlock()
+		if b.abandoned || ctx.Err() != nil {
+			return errStopped
+		}
+		return b.store.MarkProcessed(ctx, n.Id, b.now())
+	})
+	if err != nil {
 		// Cancelled by the shutdown: handled again by the next start.
 		return
 	}
-	if err := b.store.MarkProcessed(ctx, n.Id, b.now()); err != nil {
-		b.logger.Error("mybot: record the notification processed", "notification", n.Id, "error", err)
-		return
-	}
 	b.completed(n.Id)
+}
+
+// errStopped ends the tries of retryStore when the bot stops.
+var errStopped = errors.New("mybot: stopped")
+
+// retryStore calls op until it succeeds, waiting longer after each failure, and returns nil; or the error of ctx,
+// or errStopped, when the bot stops first. A notification whose Store calls fail stays pending, which holds the
+// position, until the Store works again.
+func (b *Bot) retryStore(ctx context.Context, what, id string, op func() error) error {
+	wait := retryFirstWait
+	for {
+		err := op()
+		if err == nil || errors.Is(err, errStopped) {
+			return err
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		b.logger.Error("mybot: "+what+"; trying again", "notification", id, "error", err, "wait", wait)
+		if err := b.sleep(ctx, wait); err != nil {
+			return err
+		}
+		wait = min(2*wait, retryLongestWait)
+	}
 }
 
 // completed moves the position after a processed notification.

@@ -571,6 +571,28 @@ func TestSendBudget(t *testing.T) {
 	}
 }
 
+// The writes that wait for a pause of the server go out spaced by the budget after it, not all at its end.
+func TestSendBudgetSpacesTheWritesAfterAPause(t *testing.T) {
+	b := newBudget(DefaultPostRate, Rate{N: 1, Per: time.Second})
+	now := time.Unix(1_000_000, 0)
+	h := http.Header{}
+	h.Set("RateLimit-Policy", `"api";q=300;w=300`)
+	h.Set("RateLimit", `"api";r=0;t=10`)
+	b.observe(h, now)
+	for i, want := range []time.Duration{10 * time.Second, 11 * time.Second, 12 * time.Second} {
+		if w, ok := b.reserve(sendWrite, now, time.Minute); !ok || w != want {
+			t.Errorf("write %d: wait %v, %v; want %v", i, w, ok, want)
+		}
+	}
+	if _, ok := b.reserve(sendWrite, now, 12*time.Second); ok {
+		t.Error("a write that waits past the limit was reserved")
+	}
+	// After the pause, the bucket goes on from where the reservations left it.
+	if w, ok := b.reserve(sendWrite, now.Add(10*time.Second), time.Minute); !ok || w != 3*time.Second {
+		t.Errorf("write after the pause: wait %v, %v; want 3s", w, ok)
+	}
+}
+
 func TestReplyLimiter(t *testing.T) {
 	l := newReplyLimiter(DefaultReplyLimits)
 	now := time.Unix(1_000_000, 0)
