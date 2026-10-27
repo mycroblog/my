@@ -7,6 +7,20 @@ An external login provider lets users sign in with an account they have elsewher
 You set providers up with the `my login-provider` command on a host that has the server's configuration, or through the
 admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` permission, which only the built-in
 `admin` role has. The command works before any administrator can sign in, so you can use it for the first setup.
+In the web client, administrators with that permission use "Login providers" in the administration menu: "Set up a
+login provider" creates one (and shows its callback URL), and the list below it shows each provider's state, whether
+sign-up is allowed, and how many users are linked, with buttons to edit, enable, disable, and delete it.
+
+## What external sign-in does
+
+- A provider only proves who someone is at that provider. An account is never linked to a user by email address: a user
+  links an account under "Linked accounts" in settings, or signs up with it as a new user. An email address that matches
+  an existing user never links that user.
+- A linked user still enters the two-factor code (TOTP) after signing in with a provider, and a user whose account is
+  not active cannot sign in.
+- New users can sign up with a provider only when you allow it for that provider (`-allow-signup`) and the
+  [registration mode](registration.md) lets them register; the invite code, CAPTCHA, sign-up blocks, and network limit
+  apply as on the password form. Someone who signs up this way has no password and signs in with the provider only.
 
 ## Kinds
 
@@ -18,6 +32,33 @@ admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` pe
 
 For Google Workspace, limit the users to your organization with `-claim hd=<your domain>`. Do not rely on the domain of the
 email address.
+
+## Examples
+
+### Google
+
+In the Google Cloud console, create an OAuth client of type "Web application". To keep it to your organization, set the
+user type of the OAuth consent screen to "Internal" (available when the project belongs to a Google Workspace
+organization), and also add the `hd` condition: the user type restricts who Google lets in, and the condition makes this
+server check the `hd` claim of every ID token.
+
+```sh
+printf '%s\n' "$CLIENT_SECRET" | my login-provider add -kind oidc -name Google \
+  -issuer https://accounts.google.com -client-id 123.apps.googleusercontent.com -claim hd=example.com
+```
+
+### Keycloak and other OpenID Connect providers
+
+The issuer is the realm URL, such as `https://sso.example.com/realms/main`, exactly as the provider's ID tokens name it.
+Create a confidential client with the standard flow, and the `openid`, `email`, and `profile` scopes. If the provider
+is on a private network, list it in `login_provider_allowed_destinations` ([below](#providers-on-an-internal-network)).
+Use `-claim` to require a claim, such as a group claim, with one of the values given.
+
+### GitHub
+
+Create an OAuth App (Settings, Developer settings, OAuth Apps) and give it the client ID and secret. The server asks
+for the `user:email` scope, and also `read:org` when you list Organizations with `-org`. With `-org`, the server checks
+on every sign-in that the user belongs to one of the Organizations, so members of other Organizations are refused.
 
 ## Set up a provider
 
@@ -86,8 +127,29 @@ my login-provider delete <id>
   sign in with the provider.
 - `delete` removes the provider for good.
 
+### Users who sign in only through a provider
+
+Disabling or deleting a provider does not touch the users. A user who has a password or a passkey, or has another linked
+account, signs in that way. A user who has none of these can no longer sign in at all: `disable` and `delete` print how
+many linked users lose the provider, and the web client shows the number in the confirmation. `enable` restores the
+users of a disabled provider; a deleted provider cannot come back.
+
+To recover such a user, issue a password reset link for the account on its page of the admin screens, or with
+`my admin account password-reset-link @alice`, and give it to the user ([registration](registration.md#password-reset-and-change)).
+The user then signs in with the new password.
+
 Every change is recorded in the audit log under the provider's display name, as the CLI or as the administrator who made
 it through the admin API.
+
+## Re-authentication
+
+Operations that ask for the password or a passkey (setting a password, adding a passkey, deleting or moving the account,
+linking another account) ask a user who has neither to sign in again at a linked provider ([registration](registration.md)).
+An OpenID Connect provider is asked to authenticate the user again (`max_age=0` and `prompt=login`) and the server
+refuses an earlier authentication; a Mastodon server is asked with `force_login=true`. GitHub has no way to ask for a
+fresh sign-in, so a user who is still signed in at GitHub is confirmed without entering anything. The server still checks
+that the account is the linked one, but this is weaker proof that the person is at the keyboard. Prefer an OpenID
+Connect provider, or have users keep a password or a passkey, when this matters.
 
 ## Providers on an internal network
 
