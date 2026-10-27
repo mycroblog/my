@@ -96,11 +96,24 @@ export abstract class StateStore implements Store {
   /** Persists the state after a change. */
   protected abstract save(state: StoreState): Promise<void>;
 
-  /** Applies f to the state and saves it. */
-  async #change(f: (s: StoreState) => void): Promise<void> {
-    const s = await this.load();
-    f(s);
-    await this.save(s);
+  /** The changes in order: each starts from the state that the one before left. */
+  #changes: Promise<void> = Promise.resolve();
+
+  /**
+   * Applies f to a copy of the state and saves it, then keeps the copy. When the save fails, the state stays as it
+   * was, so that it never holds what the file does not.
+   */
+  #change(f: (s: StoreState) => void): Promise<void> {
+    const change = this.#changes.then(async () => {
+      const s = await this.load();
+      const next: StoreState = { ...s, processed: new Map(s.processed), lastRuns: new Map(s.lastRuns) };
+      f(next);
+      await this.save(next);
+      Object.assign(s, next);
+    });
+    // A failed change fails its caller, not the next change.
+    this.#changes = change.catch(() => undefined);
+    return change;
   }
 
   async isProcessed(id: string): Promise<boolean> {
