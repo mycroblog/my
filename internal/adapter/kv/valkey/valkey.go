@@ -7,16 +7,18 @@
 //
 // An entry is a hash, at <prefix>{kv}:e:<namespace>:<key>, of its value (field v) and its
 // expiry in Unix milliseconds by the store's Clock (field e, 0 for never). Entries expire by that
-// Clock, as in the other adapters: an entry whose expiry has passed behaves as absent. An entry
-// with a TTL also carries the TTL on the server (PEXPIRE), so that the server frees it by itself,
-// and its key is in the sorted set <prefix>{kv}:expiry, scored by its expiry, from which
-// DeleteExpired removes the entries that the server has not freed yet. Every key has the hash tag
-// {kv}, so that the scripts that write an entry and the sorted set together work on a cluster.
+// Clock, rounded up to the next millisecond, as in the other adapters: an entry whose expiry
+// has passed behaves as absent. An entry with a TTL also carries the TTL and a grace on the
+// server (PEXPIRE), so that the server frees it by itself but not before the store's Clock
+// would, and its key is in the sorted set <prefix>{kv}:expiry, scored by its expiry, from
+// which DeleteExpired removes the entries that the server has not freed yet. Every key has the
+// hash tag {kv}, so that the scripts that write an entry and the sorted set together work on a cluster.
 package valkey
 
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -53,14 +55,38 @@ func (s *Store) key(namespace, key string) string {
 
 func millis(t time.Time) string { return strconv.FormatInt(t.UnixMilli(), 10) }
 
+// serverGrace lengthens the TTL of an entry on the server past its expiry by the store's
+// Clock, so that the server, whose clock may run apart from the store's, never frees a live
+// entry; the store's Clock alone tells whether an entry is live.
+const serverGrace = time.Second
+
+// ceilMillis returns d rounded up to whole milliseconds.
+func ceilMillis(d time.Duration) int64 {
+	ms := d / time.Millisecond
+	if d%time.Millisecond != 0 {
+		ms++
+	}
+	return int64(ms)
+}
+
 // expiry returns an entry's expiry and its TTL on the server, both in milliseconds, or "0" and
-// "0" for an entry that never expires.
+// "0" for an entry that never expires. The expiry is rounded up to the next millisecond, so
+// that a positive TTL never expires early (it compares with the current time truncated to
+// the millisecond).
 func (s *Store) expiry(ttl time.Duration) (expiresAt, ttlMillis string) {
 	if ttl <= 0 {
 		return "0", "0"
 	}
-	ms := max(ttl.Milliseconds(), 1)
-	return millis(s.clock.Now().Add(ttl)), strconv.FormatInt(ms, 10)
+	at := s.clock.Now().Add(ttl)
+	ms := at.UnixMilli()
+	if !at.Equal(time.UnixMilli(ms)) {
+		ms++
+	}
+	serverTTL := ttl
+	if serverTTL <= math.MaxInt64-serverGrace {
+		serverTTL += serverGrace
+	}
+	return strconv.FormatInt(ms, 10), strconv.FormatInt(ceilMillis(serverTTL), 10)
 }
 
 // writeEntry is the Lua that replaces the entry KEYS[1] with value ARGV[1] and expiry ARGV[2]
@@ -198,22 +224,32 @@ func (s *Store) CompareAndSwap(ctx context.Context, namespace, key string, old, 
 }
 
 // DeleteExpired implements kernel.KeyValueStore. It removes the entries that the server has
-// not freed by their TTL yet and the sorted set's records of those it has.
+// not freed by their TTL yet and the sorted set's records of those it has. It lists a batch
+// and removes the listed entries that are still expired; when a concurrent write renewed some
+// of them meanwhile, it lists again, so that a short batch still means that none are left.
 func (s *Store) DeleteExpired(ctx context.Context, limit int) (int64, error) {
 	if limit <= 0 {
 		return 0, nil
 	}
 	now := millis(s.clock.Now())
-	keys, err := s.client.Do(ctx, s.client.B().Zrange().Key(s.index).Min("-inf").Max(now).Byscore().Limit(0, int64(limit)).Build()).AsStrSlice()
-	if err != nil {
-		return 0, fmt.Errorf("kv/valkey: list expired entries: %w", err)
+	var total int64
+	for total < int64(limit) {
+		want := int64(limit) - total
+		keys, err := s.client.Do(ctx, s.client.B().Zrange().Key(s.index).Min("-inf").Max(now).Byscore().Limit(0, want).Build()).AsStrSlice()
+		if err != nil {
+			return total, fmt.Errorf("kv/valkey: list expired entries: %w", err)
+		}
+		if len(keys) == 0 {
+			break
+		}
+		n, err := deleteExpiredScript.Exec(ctx, s.client, append([]string{s.index}, keys...), []string{now}).AsInt64()
+		if err != nil {
+			return total, fmt.Errorf("kv/valkey: delete expired entries: %w", err)
+		}
+		total += n
+		if int64(len(keys)) < want {
+			break // the listing held every expired entry
+		}
 	}
-	if len(keys) == 0 {
-		return 0, nil
-	}
-	n, err := deleteExpiredScript.Exec(ctx, s.client, append([]string{s.index}, keys...), []string{now}).AsInt64()
-	if err != nil {
-		return 0, fmt.Errorf("kv/valkey: delete expired entries: %w", err)
-	}
-	return n, nil
+	return total, nil
 }
