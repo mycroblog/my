@@ -32,6 +32,14 @@ export function moderationReportPath(id: string): string {
   return `/moderation/reports/${id}`;
 }
 
+/** The administration page of the error groups, which an `admin_error_group` of more groups than are told one by one leads to. */
+export const adminErrorsPath = "/admin/errors";
+
+/** The administration page of one error group, which the list and an `admin_error_group` notification lead to. */
+export function adminErrorGroupPath(id: string): string {
+  return `/admin/errors/${encodeURIComponent(id)}`;
+}
+
 /**
  * The prefixes of the server's own paths (internal/interface/web/handler.go, reservedPrefixes): the client API,
  * the server-rendered pages (sign-in, sign-up, the terms of service and the privacy policy under /auth, OAuth

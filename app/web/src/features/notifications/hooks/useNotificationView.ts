@@ -5,7 +5,7 @@ import { type CustomEmojiImage, type ImageSources, sanitizedHtmlText, serverSani
 import { useIntl } from "react-intl";
 import type { ClientMessageKey } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
-import { accountStatusPath, moderationAppealPath, moderationReportPath, followListPath, profilePath } from "../../../lib/paths";
+import { accountStatusPath, adminErrorGroupPath, adminErrorsPath, moderationAppealPath, moderationReportPath, followListPath, profilePath } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useViewer } from "../../session";
 import { statusPath } from "../../status";
@@ -170,6 +170,19 @@ function closureSentenceOf(notification: Notification): ClientMessageKey | null 
   return change === undefined ? null : (closureSentences[change] ?? null);
 }
 
+/** The sentences of an `admin_error_group` by what it tells of (ADR-0103 §8). */
+const errorGroupSentences: Readonly<Record<string, ClientMessageKey>> = {
+  created: "client:notifications.type.admin_error_group_created",
+  regressed: "client:notifications.type.admin_error_group_regressed",
+  others: "client:notifications.type.admin_error_group_others",
+};
+
+/** The sentence of an `admin_error_group` by what it tells of; null for the other types, which keep their own. */
+function errorGroupSentenceOf(notification: Notification): ClientMessageKey | null {
+  const change = notification.type === "admin_error_group" ? notification.error_group?.change : undefined;
+  return change === undefined ? null : (errorGroupSentences[change] ?? null);
+}
+
 /**
  * What a row shows of the supporter subscription that a supporter notification tells of (ADR-0072 §16), as it is
  * now: the plan's name (the administrators' text), and for a failed payment that is still overdue, when the grace
@@ -313,6 +326,13 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/moderation/registrations", label: "client:notifications.link.registrations" }];
     case "admin_webhook_disabled":
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
+    // A new or regressed group leads to its page; the groups beyond the hour's limit, to the list.
+    case "admin_error_group": {
+      const groupId = notification.error_group?.group_id;
+      return groupId === undefined
+        ? [{ href: adminErrorsPath, label: "client:notifications.link.errors" }]
+        : [{ href: adminErrorGroupPath(groupId), label: "client:notifications.link.error_group" }];
+    }
     case "admin_custom_emoji_request":
       return [{ href: "/admin/custom-emojis?tab=requests", label: "client:notifications.link.custom_emoji_requests" }];
     case "custom_emoji_request_decided":
@@ -373,6 +393,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       severed?.sentence ??
       requested.sentence ??
       closureSentenceOf(notification) ??
+      errorGroupSentenceOf(notification) ??
       (target === undefined ? null : "client:notifications.report_resolved.account") ??
       (others.length > 0 && groupSentence !== undefined ? groupSentence : sentences[notification.type]),
     actor: account === undefined ? null : actorOf(account),
