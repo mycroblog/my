@@ -28,6 +28,6 @@ func (a *App) newSNSBus(ctx context.Context, cfg *config.Config, processID strin
 	}
 	return snsstream.NewFromConfig(awsCfg, snsstream.Options{
 		TopicARN: cfg.StreamSNSTopicARN, QueuePrefix: cfg.StreamSQSQueuePrefix, ProcessID: processID,
-		Logger: a.Logger.With(slog.String("component", "stream")),
+		Logger: a.Logger.With(slog.String("component", "stream")), Reporter: a.ErrorReporter,
 	})
 }

@@ -94,6 +94,9 @@ type ExportDeps struct {
 	IDs     kernel.IDGenerator
 	// Logger logs the blobs that could not be removed; nil means slog.Default().
 	Logger *slog.Logger
+	// Reporter receives a panic of the goroutine that writes an archive (kernel.Go); nil only
+	// panics again.
+	Reporter kernel.ErrorReporter
 }
 
 // Exports runs the data exports.
@@ -224,7 +227,7 @@ func (x *Exports) BuildExport(ctx context.Context, exportID string) error {
 	}
 	key := exportKey(e)
 	pr, pw := io.Pipe()
-	go func() { pw.CloseWithError(x.writeArchive(ctx, la.AccountID, pw)) }()
+	kernel.Go(ctx, "identity.export.write", x.d.Reporter, func(ctx context.Context) { pw.CloseWithError(x.writeArchive(ctx, la.AccountID, pw)) })
 	info, err := x.d.Blobs.Put(ctx, key, pr, blob.PutOptions{ContentType: exportContentType})
 	_ = pr.CloseWithError(errors.New("identity: the archive was not read to its end"))
 	if err != nil {

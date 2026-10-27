@@ -58,11 +58,11 @@ func (a *App) setUpStreams(ctx context.Context, cfg *config.Config, bus stream.B
 			return err
 		}
 	}
-	o := stream.RelayOptions{ProcessID: processID, Logger: a.Logger.With(slog.String("component", "stream"))}
+	o := stream.RelayOptions{ProcessID: processID, Logger: a.Logger.With(slog.String("component", "stream")), Reporter: a.ErrorReporter}
 	sweeper, sweeps := bus.(stream.Sweeper)
 	if measured {
 		// The adapter operations and the listener's connection of ADR-0056 §1.
-		bus = sysmetrics.Bus(bus, a.Meter, "stream."+cfg.Stream)
+		bus = sysmetrics.Bus(bus, a.Meter, "stream."+cfg.Stream, a.ErrorReporter)
 	}
 	if sweeps {
 		// The sweep keeps the resources of the processes whose marker is in the shared KV.

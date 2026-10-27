@@ -61,6 +61,8 @@ type RelayOptions struct {
 	Liveness kernel.KeyValueStore
 	// Logger receives the dropped signals, broken listeners, and failures; nil discards them.
 	Logger *slog.Logger
+	// Reporter receives the panics of the Relay's goroutines (kernel.Go); nil only panics again.
+	Reporter kernel.ErrorReporter
 }
 
 // RelayStats counts the signals a Relay dropped instead of sending them on its Bus, since it
@@ -176,7 +178,7 @@ func NewRelay(bus Bus, o RelayOptions) *Relay {
 		base: base, cancel: cancel,
 		sendCh: make(chan []byte, o.SendBuffer), stopSend: make(chan struct{}), sendDone: make(chan struct{}),
 	}
-	go r.send()
+	kernel.Go(context.Background(), "stream.relay.send", o.Reporter, func(context.Context) { r.send() })
 	return r
 }
 
@@ -354,9 +356,10 @@ func (r *Relay) startLocked() *listening {
 	cur := &listening{ready: make(chan struct{}), stop: make(chan struct{})}
 	r.cur = cur
 	if r.o.Liveness != nil {
-		go r.heartbeat(cur) // the marker precedes the resources that Listen creates
+		// The marker precedes the resources that Listen creates.
+		kernel.Go(context.Background(), "stream.relay.heartbeat", r.o.Reporter, func(context.Context) { r.heartbeat(cur) })
 	}
-	go r.listen(cur)
+	kernel.Go(context.Background(), "stream.relay.listen", r.o.Reporter, func(context.Context) { r.listen(cur) })
 	return cur
 }
 

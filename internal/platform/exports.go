@@ -39,7 +39,7 @@ func (a *App) setUpExports(repo identity.Repository) {
 	}
 	a.Exports = identity.NewExports(identity.ExportDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Blobs: a.Blobs, Outbox: outbox, Accounts: a.Accounts,
-		Entries: entries, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
+		Entries: entries, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger, Reporter: a.ErrorReporter,
 	})
 	a.Exports.RegisterJobs(a.Handlers, a.Scheduler)
 }

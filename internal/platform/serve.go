@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -104,21 +105,21 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		default: // a shutdown has already been asked for
 		}
 	})()
-	go func() { serveErr <- srv.Serve(ln) }()
+	kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
 	if metricsSrv != nil {
-		go func() {
+		kernel.Go(ctx, "http.serve_metrics", a.ErrorReporter, func(context.Context) {
 			if err := metricsSrv.srv.Serve(metricsSrv.ln); !errors.Is(err, http.ErrServerClosed) {
 				serveErr <- fmt.Errorf("metrics: %w", err)
 			}
-		}()
+		})
 	}
 
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
 	if a.Config.Role != config.RoleWeb {
-		jobs.Go(func() { _ = a.runJobs(hardCtx, stopJobs) })
+		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) { _ = a.runJobs(ctx, stopJobs) })
 		if a.Scheduler != nil {
-			jobs.Go(func() { a.Scheduler.RunUntil(hardCtx, stopJobs, 0) })
+			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })
 		}
 	}
 	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()))
@@ -142,7 +143,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		_ = metricsSrv.srv.Shutdown(graceCtx)
 	}
 	jobsDone := make(chan struct{})
-	go func() { jobs.Wait(); close(jobsDone) }()
+	kernel.Go(graceCtx, "serve.wait_jobs", a.ErrorReporter, func(context.Context) { jobs.Wait(); close(jobsDone) })
 	select {
 	case <-jobsDone:
 	case <-graceCtx.Done():
@@ -189,4 +190,13 @@ func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*metricsServer
 		},
 		ln: ln,
 	}, nil
+}
+
+// goJob runs fn in a goroutine of kernel.Go named name that wg waits for.
+func goJob(ctx context.Context, wg *sync.WaitGroup, name string, reporter kernel.ErrorReporter, fn func(ctx context.Context)) {
+	wg.Add(1)
+	kernel.Go(ctx, name, reporter, func(ctx context.Context) {
+		defer wg.Done()
+		fn(ctx)
+	})
 }
