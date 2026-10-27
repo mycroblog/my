@@ -116,6 +116,10 @@ func (s *store) IncrBy(_ context.Context, ns, key string, n int64, ttl time.Dura
 	return v, nil
 }
 
+func (s *store) CompareAndSwap(context.Context, string, string, []byte, []byte, time.Duration) (bool, error) {
+	panic("unused")
+}
+
 func (s *store) DeleteExpired(context.Context, int) (int64, error) { return 0, nil }
 
 // database counts the computations and answers them with fixed values. When block is set, a

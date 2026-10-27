@@ -122,17 +122,13 @@ func (s *Service) forgetAll(ctx context.Context, ps []Participant) {
 	}
 }
 
-// joined returns the room and the grant of a new session.
-func (s *Service) joined(ctx context.Context, roomID string, session Session, canSpeak bool) (Joined, error) {
-	g, err := s.grant(ctx, roomID, session, canSpeak)
-	if err != nil {
-		return Joined{}, err
-	}
+// joined returns the room with the grant of a new session, issued before the session started.
+func (s *Service) joined(ctx context.Context, roomID, session string, g Grant) (Joined, error) {
 	v, err := s.view(ctx, roomID)
 	if err != nil {
 		return Joined{}, err
 	}
-	return Joined{Room: v, Session: session.ID, Grant: g}, nil
+	return Joined{Room: v, Session: session, Grant: g}, nil
 }
 
 // Join joins accountID to a room that it sees, as a listener, with a new session (ADR-0100 §5,
@@ -140,6 +136,13 @@ func (s *Service) joined(ctx context.Context, roomID string, session Session, ca
 // participation with a new session, and the previous session is disconnected. A participation
 // in another room ends (moved), but a host of an open room leaves it first
 // (ErrHostingElsewhere). A room as full as the operator allows fails with ErrRoomFull.
+//
+// The grant of the session is issued before anything is written, so that a transport that
+// gives no grant (ErrTransportUnavailable) leaves no participation behind and the caller can
+// try again. The transaction decides the admission again on what committed: the host, the
+// settings, the invitation, the ban, and the blocks with the host and the co-hosts that it
+// reads; a block that commits after the transaction read the blocks takes the account out
+// once the join committed (ErrNotFound).
 func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, error) {
 	if err := s.enabled(); err != nil {
 		return Joined{}, err
@@ -147,9 +150,20 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	if err := s.evaluate(ctx, roomID, false); err != nil {
 		return Joined{}, err
 	}
-	v, err := s.visibleRoom(ctx, accountID, roomID)
+	v, err := s.view(ctx, roomID)
 	if err != nil {
 		return Joined{}, err
+	}
+	viewer, m, err := s.viewer(ctx, accountID)
+	if err != nil {
+		return Joined{}, err
+	}
+	f, err := s.facts(ctx, v, viewer, m)
+	if err != nil {
+		return Joined{}, err
+	}
+	if !voice.CanSee(policyRoom(v), viewer, f) {
+		return Joined{}, ErrNotFound
 	}
 	for _, p := range v.Participants {
 		if p.AccountID == accountID {
@@ -171,6 +185,10 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	now := s.now()
 	part := Participation{ID: s.d.IDs.NewID(), RoomID: roomID, AccountID: accountID, JoinedAt: now}
 	session := newSessionID()
+	g, err := s.grant(ctx, roomID, Session{ID: session, AccountID: accountID}, false)
+	if err != nil {
+		return Joined{}, err
+	}
 	if err := s.d.Heartbeats.start(ctx, part.ID, session); err != nil {
 		return Joined{}, err
 	}
@@ -182,18 +200,17 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 		if rec.Head.State != voice.StateOpen {
 			return ErrNotFound
 		}
-		// A block with the host or a co-host, or a ban, that committed after the visibility
-		// was read keeps the account out (ADR-0100 §4).
-		blocked, err := s.guardTx(ctx, tx, rec, accountID, blocks)
-		if err != nil {
-			return err
+		if rec.Head.HostAccountID != v.Head.HostAccountID {
+			// The relations with the host were read for another host.
+			return ErrConflict
 		}
-		banned, err := s.d.Repository.Banned(ctx, tx, roomID, accountID)
-		if err != nil {
+		// A block with the host or a co-host, a ban, an invitation revoked, or settings that
+		// changed after the visibility was read keep the account out (ADR-0100 §4).
+		if ok, err := s.admitTx(ctx, tx, rec, viewer, f, blocks); err != nil || !ok {
+			if err == nil {
+				err = ErrNotFound
+			}
 			return err
-		}
-		if blocked || banned {
-			return ErrNotFound
 		}
 		if capacity > 0 {
 			ps, err := s.d.Repository.Participants(ctx, tx, roomID)
@@ -213,24 +230,83 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 		return Joined{}, s.joinFailed(ctx, part.ID, session, err)
 	}
 	s.forget(ctx, prev)
-	return s.joined(ctx, roomID, Session{ID: session, AccountID: accountID}, false)
+	if err := s.recheckBlocks(ctx, roomID, accountID); err != nil {
+		return Joined{}, err
+	}
+	return s.joined(ctx, roomID, session, g)
+}
+
+// admitTx reports, in tx, whether viewer still sees the room of rec as a new participant: the
+// relations with the host (f) are those read before the transaction, and the blocks with the
+// host and the co-hosts, the ban, the invitation, and the settings are those of tx.
+func (s *Service) admitTx(ctx context.Context, tx uow.Tx, rec RoomRecord, viewer voice.Viewer, f voice.Facts, blocks map[string]bool) (bool, error) {
+	blocked, err := s.guardTx(ctx, tx, rec, viewer.AccountID, blocks)
+	if err != nil {
+		return false, err
+	}
+	banned, err := s.d.Repository.Banned(ctx, tx, rec.ID, viewer.AccountID)
+	if err != nil {
+		return false, err
+	}
+	invited := false
+	switch inv, err := s.d.Repository.FindInvitation(ctx, tx, rec.ID, viewer.AccountID); {
+	case err == nil:
+		invited = !inv.Revoked
+	case !errors.Is(err, ErrNotFound):
+		return false, err
+	}
+	f.Participant, f.Cohost = false, false
+	f.Blocked, f.Banned, f.Invited = blocked, banned, invited
+	return voice.CanSee(policyRoom(RoomView{RoomRecord: rec}), viewer, f), nil
+}
+
+// recheckBlocks reads, after a join committed, the blocks of accountID with the host and the
+// co-hosts of the room. A block that committed while the join decided, whose projector did not
+// see the participation yet, takes the account out (blocked) and fails with ErrNotFound; the
+// projector of a block that commits later sees the participation.
+func (s *Service) recheckBlocks(ctx context.Context, roomID, accountID string) error {
+	v, err := s.view(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	for _, id := range guards(v, accountID) {
+		blocked, err := s.d.Relations.Blocked(ctx, accountID, id)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			if err := s.CheckBlock(ctx, id, accountID); err != nil {
+				return err
+			}
+			return ErrNotFound
+		}
+	}
+	return nil
 }
 
 // rejoin gives a participant a new session, which replaces the previous one: the previous
-// session is disconnected from the media path (ADR-0101 §2).
+// session is disconnected from the media path (ADR-0101 §2). The grant is issued first, so
+// that a transport that gives no grant leaves the previous session current; a session that
+// changed since it was read (another device, or an evaluation of the expiry that ends the
+// participation) fails with ErrConflict.
 func (s *Service) rejoin(ctx context.Context, p Participant) (Joined, error) {
 	old, err := s.d.Heartbeats.current(ctx, p.ParticipationID)
 	if err != nil {
 		return Joined{}, err
 	}
 	session := newSessionID()
-	if err := s.d.Heartbeats.start(ctx, p.ParticipationID, session); err != nil {
+	g, err := s.grant(ctx, p.RoomID, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker)
+	if err != nil {
 		return Joined{}, err
 	}
+	ok, err := s.d.Heartbeats.replace(ctx, p.ParticipationID, old, session)
+	if err != nil {
+		return Joined{}, err
+	}
+	if !ok {
+		return Joined{}, ErrConflict
+	}
 	if old != "" {
-		if err := s.d.Heartbeats.kv.Delete(ctx, kvHeartbeats, old); err != nil {
-			return Joined{}, err
-		}
 		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 			return s.enqueueApply(ctx, tx, applyPayload{Op: applyRemove, Room: p.RoomID, Session: old, Account: p.AccountID}, "replace:"+old)
 		})
@@ -240,7 +316,7 @@ func (s *Service) rejoin(ctx context.Context, p Participant) (Joined, error) {
 		// The stream of the previous session ends (replaced) once it reads the room again.
 		s.publishRoom(p.RoomID)
 	}
-	return s.joined(ctx, p.RoomID, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker)
+	return s.joined(ctx, p.RoomID, session, g)
 }
 
 // LeaveInput is the choice of a host who leaves a room with participants (ADR-0100 §6): the
@@ -433,6 +509,8 @@ func (s *Service) Heartbeat(ctx context.Context, accountID, roomID, session stri
 	if err != nil {
 		return err
 	}
+	// A session that another one replaced, or that was taken away, since it was checked stays
+	// replaced (ErrNotFound).
 	if err := s.d.Heartbeats.beat(ctx, p.ParticipationID, session); err != nil {
 		return err
 	}

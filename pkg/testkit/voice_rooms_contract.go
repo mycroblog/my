@@ -25,8 +25,9 @@ import (
 // of the host, voice.sweep (time_limit, disabled, and concurrent sweeps that apply once), the
 // visibility and the order of the list, the reaction to suspensions and lost eligibility, the
 // operations of the participants, the host, and the co-hosts with their permissions, the
-// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), and, on a
-// media server, the reconciliation of voice.sweep and the events of voice.media_event
+// co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport
+// that gives no grant leaving nothing behind, admissions and sessions that a change committed
+// meanwhile does not undo, and, on a media server, the reconciliation of voice.sweep and the events of voice.media_event
 // (ADR-0102 §4).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
@@ -55,6 +56,9 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"DecidesInTheTransaction", roomsRaces, ""},
 		{"SerializesConcurrentCommands", roomsConcurrent, ""},
 		{"FailsWithoutAGrant", roomsNoGrant, ""},
+		{"AdmitsOnWhatCommitted", roomsAdmission, ""},
+		{"KeepsTheNewerSession", roomsNewerSession, ""},
+		{"KeepsTheNewerSessionOnTheMediaPath", roomsNewerMediaSession, voice.TransportLiveKit},
 		{"StreamsTheRoom", roomsStream, ""},
 		{"RelaysSignals", roomsSignals, ""},
 		{"SendsMicReactionsAndGrants", roomsMicReactions, ""},
@@ -222,6 +226,8 @@ type roomsTransport struct {
 	conns map[string]string
 	// grantErr fails the grants when set, as a TURN source that cannot be reached does.
 	grantErr error
+	// onSessions runs once, at the next call of Sessions, outside the lock.
+	onSessions func()
 }
 
 func (r *roomsTransport) add(c string) {
@@ -351,6 +357,13 @@ func (r *roomsTransport) Close(_ context.Context, room appvoice.RoomRef) error {
 }
 func (r *roomsTransport) Sessions(_ context.Context, room appvoice.RoomRef) ([]appvoice.SessionRef, error) {
 	r.mu.Lock()
+	hook := r.onSessions
+	r.onSessions = nil
+	r.mu.Unlock()
+	if hook != nil {
+		hook()
+	}
+	r.mu.Lock()
 	defer r.mu.Unlock()
 	var out []appvoice.SessionRef
 	for _, id := range r.media[room.ID] {
@@ -373,6 +386,10 @@ type roomsEnv struct {
 	audits    *roomsAudits
 	svc       *appvoice.Service
 	newSvc    func(cfg appvoice.Config) *appvoice.Service
+	// kv and repo are the store and the repository of the service, with hooks that commit a
+	// change between the steps of a command.
+	kv   *hookKV
+	repo *hookRepo
 }
 
 func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *roomsEnv {
@@ -390,11 +407,13 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 			follows: map[[2]string]bool{}, blocks: map[[2]string]bool{},
 		},
 	}
-	kv := NewKeyValueStore(clock)
+	kv := &hookKV{KeyValueStore: NewKeyValueStore(clock)}
+	repo := &hookRepo{Repository: h.Voice}
+	e.kv, e.repo = kv, repo
 	e.newSvc = func(cfg appvoice.Config) *appvoice.Service {
 		d := appvoice.Deps{
-			Repository: h.Voice, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
-			Heartbeats: appvoice.NewHeartbeats(kv, h.Voice), Members: e.members, Relations: e.members, Config: cfg,
+			Repository: repo, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
+			Heartbeats: appvoice.NewHeartbeats(kv, repo), Members: e.members, Relations: e.members, Config: cfg,
 			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost, Retention: e.retention,
 		}
 		if cfg.Transport != "" {
@@ -1265,10 +1284,36 @@ func roomsConnect(t *testing.T, e *roomsEnv) {
 // roomsNoGrant checks that a join whose transport gives no grant (a TURN source that cannot be
 // reached, ADR-0101 §5) fails with ErrTransportUnavailable, which the API answers with 503.
 func roomsNoGrant(t *testing.T, e *roomsEnv) {
-	room := e.open(t, e.account(true), appvoice.SettingsInput{}).Room.ID
-	e.transport.mu.Lock()
-	e.transport.grantErr = errors.New("the TURN service is down")
-	e.transport.mu.Unlock()
-	_, err := e.svc.Join(t.Context(), e.account(false), room)
+	ctx := t.Context()
+	host := e.account(true)
+	hj := e.open(t, host, appvoice.SettingsInput{})
+	room := hj.Room.ID
+	fail := func(err error) {
+		e.transport.mu.Lock()
+		e.transport.grantErr = err
+		e.transport.mu.Unlock()
+	}
+	fail(errors.New("the TURN service is down"))
+	joiner, opener := e.account(false), e.account(true)
+	_, err := e.svc.Join(ctx, joiner, room)
 	wantErr(t, "Join without a grant", err, appvoice.ErrTransportUnavailable)
+	e.wantParticipant(t, room, joiner, false)
+	_, err = e.svc.Open(ctx, opener, appvoice.SettingsInput{Name: "Retry"})
+	wantErr(t, "Open without a grant", err, appvoice.ErrTransportUnavailable)
+	if open, err := e.h.Voice.OpenRooms(ctx, nil, ""); err != nil || len(open) != 1 {
+		t.Fatalf("open rooms after a failed Open = %d, %v; want only the first", len(open), err)
+	}
+	_, err = e.svc.Join(ctx, host, room)
+	wantErr(t, "Join from another device without a grant", err, appvoice.ErrTransportUnavailable)
+	// The session that the failed join would have replaced is still the current one.
+	e.beat(t, host, room, hj.Session)
+
+	// Once the transport gives grants again, the same calls succeed.
+	fail(nil)
+	if j := e.open(t, opener, appvoice.SettingsInput{Name: "Retry"}); j.Session == "" {
+		t.Errorf("Open again = %+v, want a session", j)
+	}
+	if j := e.join(t, joiner, room); j.Session == "" {
+		t.Errorf("Join again = %+v, want a session", j)
+	}
 }

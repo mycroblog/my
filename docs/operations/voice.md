@@ -107,7 +107,7 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 
 #### Cloudflare TURN
 
-Set `voice_turn = cloudflare`, `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`, from a TURN key created in Cloudflare's dashboard. The server asks Cloudflare for each participant's credentials when they join (if that fails, joining answers `503`) and revokes them when the participant leaves or is removed.
+Set `voice_turn = cloudflare`, `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`, from a TURN key created in Cloudflare's dashboard. The server asks Cloudflare for each participant's credentials when they open or join a room (if that fails, the request answers `503` and opens or joins nothing, so it can be tried again) and revokes them when the participant leaves or is removed.
 
 - Credentials last at most 48 hours, so `voice_turn_credential_ttl` may not exceed `48h` (the server refuses to start otherwise).
 - **Cloudflare disconnects a relay shortly after its credentials expire.** The web client renews them before that, so keep `voice_turn_credential_ttl` well above ten minutes.

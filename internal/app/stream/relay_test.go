@@ -290,6 +290,10 @@ func (s *kvStore) IncrBy(context.Context, string, string, int64, time.Duration) 
 	return 0, errors.ErrUnsupported
 }
 
+func (s *kvStore) CompareAndSwap(context.Context, string, string, []byte, []byte, time.Duration) (bool, error) {
+	panic("unused")
+}
+
 func (s *kvStore) DeleteExpired(context.Context, int) (int64, error) { return 0, nil }
 
 func (s *kvStore) setCount() int {

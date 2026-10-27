@@ -25,6 +25,10 @@ func (rememberingKV) Delete(context.Context, string, string) error              
 func (rememberingKV) IncrBy(context.Context, string, string, int64, time.Duration) (int64, error) {
 	return 0, nil
 }
+func (rememberingKV) CompareAndSwap(context.Context, string, string, []byte, []byte, time.Duration) (bool, error) {
+	panic("unused")
+}
+
 func (rememberingKV) DeleteExpired(context.Context, int) (int64, error) { return 0, nil }
 
 type availableInstances struct{}

@@ -59,6 +59,13 @@ func (s *kv) IncrBy(ctx context.Context, namespace, key string, n int64, ttl tim
 	return v, err
 }
 
+func (s *kv) CompareAndSwap(ctx context.Context, namespace, key string, old, value []byte, ttl time.Duration) (bool, error) {
+	start := time.Now()
+	ok, err := s.next.CompareAndSwap(ctx, namespace, key, old, value, ttl)
+	s.ops.done(ctx, "compare_and_swap", start, err, nil)
+	return ok, err
+}
+
 func (s *kv) DeleteExpired(ctx context.Context, limit int) (int64, error) {
 	start := time.Now()
 	v, err := s.next.DeleteExpired(ctx, limit)

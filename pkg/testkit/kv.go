@@ -89,6 +89,24 @@ func (s *KeyValueStore) IncrBy(_ context.Context, namespace, key string, n int64
 	return cur, nil
 }
 
+// CompareAndSwap implements kernel.KeyValueStore.
+func (s *KeyValueStore) CompareAndSwap(_ context.Context, namespace, key string, old, value []byte, ttl time.Duration) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	k := [2]string{namespace, key}
+	e, ok := s.entries[k]
+	ok = ok && e.live(s.clock.Now())
+	switch {
+	case old == nil && ok, old != nil && (!ok || !bytes.Equal(e.value, old)):
+		return false, nil
+	case value == nil:
+		delete(s.entries, k)
+	default:
+		s.entries[k] = kvEntry{value: bytes.Clone(value), expiresAt: s.expiry(ttl)}
+	}
+	return true, nil
+}
+
 // DeleteExpired implements kernel.KeyValueStore.
 func (s *KeyValueStore) DeleteExpired(_ context.Context, limit int) (int64, error) {
 	s.mu.Lock()

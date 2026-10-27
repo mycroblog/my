@@ -52,7 +52,21 @@ func NewHeartbeats(kv kernel.KeyValueStore, repo Repository) *Heartbeats {
 // newSessionID returns a new opaque, unguessable session ID.
 func newSessionID() string { return rand.Text() }
 
-// start makes sessionID the current, live session of participationID.
+// sessionEnding is the value of kvSessions for a participation whose session an evaluation of
+// the expiry claimed, to end the participation (claim): a join from another device does not
+// replace it and a heartbeat does not renew it until the claim is released or expires.
+const sessionEnding = "-"
+
+// sessionValue is the value of kvSessions that holds session, nil for none.
+func sessionValue(session string) []byte {
+	if session == "" {
+		return nil
+	}
+	return []byte(session)
+}
+
+// start makes sessionID the current, live session of participationID, a participation that
+// starts now.
 func (h *Heartbeats) start(ctx context.Context, participationID, sessionID string) error {
 	if err := h.kv.Set(ctx, kvSessions, participationID, []byte(sessionID), sessionLease); err != nil {
 		return err
@@ -60,13 +74,42 @@ func (h *Heartbeats) start(ctx context.Context, participationID, sessionID strin
 	return h.kv.Set(ctx, kvHeartbeats, sessionID, []byte(participationID), HeartbeatLease)
 }
 
-// current returns the current session of a participation, "" without one.
-func (h *Heartbeats) current(ctx context.Context, participationID string) (string, error) {
+// replace makes sessionID the current, live session of participationID in place of old ("" for
+// none), and reports whether old was still the current session: a join from another device
+// that raced another one, or an evaluation that claimed the participation, replaces nothing.
+func (h *Heartbeats) replace(ctx context.Context, participationID, old, sessionID string) (bool, error) {
+	ok, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, sessionValue(old), []byte(sessionID), sessionLease)
+	if err != nil || !ok {
+		return false, err
+	}
+	if err := h.kv.Set(ctx, kvHeartbeats, sessionID, []byte(participationID), HeartbeatLease); err != nil {
+		return false, err
+	}
+	if old != "" {
+		if err := h.kv.Delete(ctx, kvHeartbeats, old); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+// raw returns the value of kvSessions of a participation, "" without one.
+func (h *Heartbeats) raw(ctx context.Context, participationID string) (string, error) {
 	b, err := h.kv.Get(ctx, kvSessions, participationID)
 	if errors.Is(err, kernel.ErrKeyNotFound) {
 		return "", nil
 	}
 	return string(b), err
+}
+
+// current returns the current session of a participation, "" without one or while an
+// evaluation claims it.
+func (h *Heartbeats) current(ctx context.Context, participationID string) (string, error) {
+	s, err := h.raw(ctx, participationID)
+	if err != nil || s == sessionEnding {
+		return "", err
+	}
+	return s, nil
 }
 
 // alive reports whether a session sent a heartbeat within HeartbeatLease.
@@ -84,25 +127,72 @@ func (h *Heartbeats) alive(ctx context.Context, sessionID string) (bool, error) 
 	return false, err
 }
 
-// beat renews the session of a participation.
+// beat renews the session of a participation while it is the current one; ErrNotFound for a
+// session that another one replaced, that was taken away, or that an evaluation claimed. The
+// heartbeat is written first, so that an evaluation that claims the session meanwhile sees it
+// alive and releases the claim.
 func (h *Heartbeats) beat(ctx context.Context, participationID, sessionID string) error {
-	return h.start(ctx, participationID, sessionID)
+	if err := h.kv.Set(ctx, kvHeartbeats, sessionID, []byte(participationID), HeartbeatLease); err != nil {
+		return err
+	}
+	ok, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, []byte(sessionID), []byte(sessionID), sessionLease)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotFound
+	}
+	return nil
 }
 
-// stop forgets the session of a participation.
+// stop forgets sessionID, a session of a participation, and its place as the current session
+// while it holds it: a session that replaced it stays.
 func (h *Heartbeats) stop(ctx context.Context, participationID, sessionID string) error {
-	if sessionID != "" {
-		if err := h.kv.Delete(ctx, kvHeartbeats, sessionID); err != nil {
-			return err
-		}
+	if sessionID == "" {
+		return nil
 	}
-	return h.kv.Delete(ctx, kvSessions, participationID)
+	if err := h.kv.Delete(ctx, kvHeartbeats, sessionID); err != nil {
+		return err
+	}
+	_, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, []byte(sessionID), nil, 0)
+	return err
+}
+
+// claim marks the session of a participation that an evaluation read as raw (the value of
+// kvSessions) and found expired, so that no join from another device replaces it and no
+// heartbeat renews it while the evaluation ends the participation. It reports false, and
+// claims nothing, when the session changed or came back since the read.
+func (h *Heartbeats) claim(ctx context.Context, participationID, raw string) (bool, error) {
+	ok, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, sessionValue(raw), []byte(sessionEnding), HeartbeatLease)
+	if err != nil || !ok {
+		return false, err
+	}
+	if raw == "" || raw == sessionEnding {
+		return true, nil
+	}
+	back, err := h.alive(ctx, raw)
+	if err != nil || !back {
+		return err == nil, err
+	}
+	// A heartbeat landed since the read: the session stays.
+	return false, h.release(ctx, participationID, raw)
+}
+
+// release gives back the session that claim marked, raw as claim read it.
+func (h *Heartbeats) release(ctx context.Context, participationID, raw string) error {
+	if raw == sessionEnding {
+		return nil // another evaluation claimed it first
+	}
+	_, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, []byte(sessionEnding), sessionValue(raw), sessionLease)
+	return err
 }
 
 // liveness is what the heartbeats tell of the participants of a room at one time.
 type liveness struct {
 	// session is the current session of each participation read, "" without one.
 	session map[string]string
+	// raw is the value of kvSessions of each participation read (Heartbeats.raw).
+	raw map[string]string
 	// alive holds the participations whose session is alive.
 	alive map[string]bool
 }
@@ -116,11 +206,16 @@ func (l liveness) expired(participationID string) bool {
 
 // read reads the liveness of participants.
 func (h *Heartbeats) read(ctx context.Context, participants []Participant) (liveness, error) {
-	l := liveness{session: make(map[string]string, len(participants)), alive: make(map[string]bool, len(participants))}
+	l := liveness{session: make(map[string]string, len(participants)), raw: make(map[string]string, len(participants)), alive: make(map[string]bool, len(participants))}
 	for _, p := range participants {
-		s, err := h.current(ctx, p.ParticipationID)
+		raw, err := h.raw(ctx, p.ParticipationID)
 		if err != nil {
 			return liveness{}, err
+		}
+		l.raw[p.ParticipationID] = raw
+		s := raw
+		if s == sessionEnding {
+			s = ""
 		}
 		ok, err := h.alive(ctx, s)
 		if err != nil {
