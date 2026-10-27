@@ -87,17 +87,26 @@ func newBudget(post, write Rate) *budget {
 }
 
 // reserve reserves a send of kind at now and returns how long to wait before sending it. It reports false, and
-// reserves nothing, when the wait would be longer than maxWait.
+// reserves nothing, when the wait would be longer than maxWait. During a pause of the server the bucket counts
+// from the end of the pause, so that the writes waiting for it go out spaced by the budget, not all at its end.
 func (b *budget) reserve(kind sendKind, now time.Time, maxWait time.Duration) (time.Duration, bool) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	bk := b.buckets[kind]
-	wait := max(bk.wait(now), b.pause.Sub(now))
+	from := now
+	if b.pause.After(from) {
+		from = b.pause
+	}
+	// Never count back from the bucket's last refill, which would drain it.
+	if bk.last.After(from) {
+		from = bk.last
+	}
+	wait := from.Sub(now) + bk.wait(from)
 	if wait > maxWait {
 		return 0, false
 	}
 	bk.take()
-	return max(wait, 0), true
+	return wait, true
 }
 
 // observe reads the RateLimit and RateLimit-Policy fields of an answer (draft-ietf-httpapi-ratelimit-headers,
