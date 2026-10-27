@@ -40,6 +40,7 @@ func (h *Handler) authorize(w http.ResponseWriter, r *http.Request, requesterMat
 	af, err := h.o.Objects.AuthorizedFetch(ctx)
 	if err != nil {
 		h.o.Logger.ErrorContext(ctx, "activitypub authorized fetch setting failed", slog.Any("error", err))
+		h.report(ctx, err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return access{}, false
 	}
@@ -50,6 +51,7 @@ func (h *Handler) authorize(w http.ResponseWriter, r *http.Request, requesterMat
 	origin := &url.URL{Scheme: "https", Host: h.o.Host}
 	if a.requester, err = h.o.Objects.Authenticate(ctx, appfederation.NewSignedRequest(origin, r, nil)); err != nil {
 		h.o.Logger.ErrorContext(ctx, "activitypub authenticate failed", slog.Any("error", err))
+		h.report(ctx, err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return access{}, false
 	}

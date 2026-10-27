@@ -6,9 +6,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	randv2 "math/rand/v2"
+	"runtime/debug"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -77,6 +79,9 @@ type RunnerOptions struct {
 	// Attempts records the runs that did not succeed (ADR-0064 §1); nil records nothing. A
 	// failure to record is logged and does not change the job's result.
 	Attempts AttemptLog
+	// Errors receives the panics of the handlers and the jobs that become dead (ADR-0103 §2),
+	// except those of RetryRemote; nil reports nothing.
+	Errors kernel.ErrorReporter
 }
 
 // PullRunner claims jobs from a Source, runs their handlers, and records the results. It
@@ -113,6 +118,9 @@ func NewPullRunner(src Source, reg *JobHandlerRegistry, opts RunnerOptions) *Pul
 	}
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
+	}
+	if opts.Errors == nil {
+		opts.Errors = kernel.NopErrorReporter{}
 	}
 	if reg == nil {
 		reg = &JobHandlerRegistry{}
@@ -221,7 +229,7 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	started := time.Now() // the monotonic clock: Clock.Now has millisecond precision
 	var res Result
 	if found {
-		res = r.call(mctx, handler, j)
+		res = r.call(mctx, handler, j, jobType)
 	} else {
 		res = Retry(0, fmt.Errorf("%w: %s", ErrNoHandler, j.Type))
 	}
@@ -250,11 +258,13 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	case res.IsFail():
 		ran(OutcomeDead)
 		lastErr := errorText(res.Err(), "failed")
+		r.reportDead(recordCtx, j, jobType, res)
 		r.recordAttempt(recordCtx, j, OutcomeDead, lastErr, now, done)
 		return true, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
 	case j.Attempt >= policy.MaxAttempts:
 		ran(OutcomeDead)
 		lastErr := errorText(res.Err(), "retried") + fmt.Sprintf(" (gave up after %d attempts)", j.Attempt)
+		r.reportDead(recordCtx, j, jobType, res)
 		r.recordAttempt(recordCtx, j, OutcomeDead, lastErr, now, done)
 		return true, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
 	default:
@@ -321,12 +331,34 @@ func (r *PullRunner) logRun(ctx context.Context, j Job, jobType, outcome string,
 	kernel.LogUnit(ctx, r.opts.Logger, level, "job", r.metrics.meter, attrs, JobDuration, JobWait)
 }
 
-// call runs h with a context bounded by the lease, turning a panic into a retry.
-func (r *PullRunner) call(ctx context.Context, h Handler, j Job) (res Result) {
+// reportDead reports the job j of jobType that becomes dead with res (ADR-0103 §2), unless a
+// remote server caused it (RetryRemote).
+func (r *PullRunner) reportDead(ctx context.Context, j Job, jobType string, res Result) {
+	if res.IsRemote() {
+		return
+	}
+	err := res.Err()
+	if err == nil {
+		err = errDeadWithoutCause
+	}
+	ev := kernel.NewErrorEvent(err, jobType)
+	ev.JobID, ev.Attempt = j.ID, j.Attempt
+	r.opts.Errors.Report(ctx, ev)
+}
+
+// errDeadWithoutCause stands for the cause of a dead job whose handler gave none.
+var errDeadWithoutCause = errors.New("queue: the job failed without an error")
+
+// call runs h with a context bounded by the lease, turning a panic into a retry after reporting
+// it at the job's type (ADR-0103 §2).
+func (r *PullRunner) call(ctx context.Context, h Handler, j Job, jobType string) (res Result) {
 	ctx, cancel := context.WithTimeout(ctx, r.opts.Lease)
 	defer cancel()
 	defer func() {
 		if p := recover(); p != nil {
+			ev := kernel.PanicEvent(p, debug.Stack(), jobType)
+			ev.JobID, ev.Attempt = j.ID, j.Attempt
+			r.opts.Errors.Report(ctx, ev)
 			res = Retry(0, fmt.Errorf("handler panicked: %v", p))
 		}
 	}()

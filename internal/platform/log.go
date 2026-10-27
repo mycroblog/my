@@ -9,9 +9,46 @@ import (
 )
 
 // NewLogger returns the process logger: JSON lines on w at level and above. Every record
-// logged with a request's context carries that request's ID as request_id.
+// logged with a request's context carries that request's ID as request_id, and every record
+// carries the severity of Cloud Logging next to its level (logSeverity).
 func NewLogger(w io.Writer, level slog.Leveler) *slog.Logger {
-	return slog.New(requestIDHandler{slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})})
+	return slog.New(requestIDHandler{slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level, ReplaceAttr: logSeverity})})
+}
+
+// logSeverity is the ReplaceAttr of the process logger: it writes the record's level as level,
+// as before (the JSON log format of Lambda and the examples of alerts read it), followed by
+// severity, which Cloud Logging reads instead (ADR-0103 §4 (1)): DEBUG, INFO, WARNING, ERROR,
+// and CRITICAL above ERROR. Only the record's own level is a slog.Level at the top level.
+func logSeverity(groups []string, a slog.Attr) slog.Attr {
+	if len(groups) > 0 || a.Key != slog.LevelKey {
+		return a
+	}
+	level, ok := a.Value.Any().(slog.Level)
+	if !ok {
+		return a
+	}
+	// A group without a key is written inline, as two attributes; their values are strings,
+	// so that ReplaceAttr leaves them alone.
+	return slog.Attr{Value: slog.GroupValue(slog.String(slog.LevelKey, level.String()), slog.String(logSeverityKey, severityOf(level)))}
+}
+
+// logSeverityKey is the key of the severity of Cloud Logging.
+const logSeverityKey = "severity"
+
+// severityOf returns the Cloud Logging severity of level.
+func severityOf(level slog.Level) string {
+	switch {
+	case level > slog.LevelError:
+		return "CRITICAL"
+	case level > slog.LevelWarn:
+		return "ERROR"
+	case level > slog.LevelInfo:
+		return "WARNING"
+	case level > slog.LevelDebug:
+		return "INFO"
+	default:
+		return "DEBUG"
+	}
 }
 
 // requestIDHandler adds the request ID found in the context to every record.

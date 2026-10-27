@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"log/slog"
 	"mime"
@@ -304,8 +303,9 @@ func (b *bufferedResponse) Header() http.Header         { return b.header }
 func (b *bufferedResponse) Write(p []byte) (int, error) { return b.body.Write(p) }
 func (b *bufferedResponse) WriteHeader(status int)      { b.status = status }
 
-// recoverPanics turns a handler panic into a 500 problem and logs it. http.ErrAbortHandler
-// keeps its meaning (abort the response silently).
+// recoverPanics turns a handler panic into a 500 problem and reports it as an error at the
+// request's route (ADR-0103 §2). http.ErrAbortHandler keeps its meaning (abort the response
+// silently).
 func (a *App) recoverPanics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -313,10 +313,7 @@ func (a *App) recoverPanics(next http.Handler) http.Handler {
 			if p == nil {
 				return
 			}
-			if err, ok := p.(error); ok && errors.Is(err, http.ErrAbortHandler) {
-				panic(p)
-			}
-			a.Logger.ErrorContext(r.Context(), "handler panicked", slog.Any("panic", p))
+			kernel.RecoverPanic(r.Context(), a.ErrorReporter, p, "") // the reporter names the route
 			if rw, ok := w.(*responseWriter); ok && rw.wroteHeader {
 				return // too late for an error response
 			}
@@ -404,7 +401,7 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-		rr := &requestRoute{}
+		rr := &requestRoute{method: methodLabel(r.Method)}
 		r, endSpan := a.startHTTPSpan(r)
 		if endSpan != nil {
 			defer func() { endSpan(rr, rw.status) }()

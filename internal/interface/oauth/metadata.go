@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
@@ -60,12 +61,14 @@ func (h *Handler) authorizationServerMetadata(w http.ResponseWriter, r *http.Req
 	dynamic, err := h.o.Identity.DynamicClientRegistrationEnabled(r.Context())
 	if err != nil {
 		h.o.Logger.ErrorContext(r.Context(), "oauth: read the dynamic registration setting", "error", err)
+		h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, ""))
 		writeError(w, http.StatusInternalServerError, &appidentity.OAuthError{Code: "server_error"})
 		return
 	}
 	cimd, err := h.o.Identity.MetadataDocumentClientsEnabled(r.Context())
 	if err != nil {
 		h.o.Logger.ErrorContext(r.Context(), "oauth: read the metadata document setting", "error", err)
+		h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, ""))
 		writeError(w, http.StatusInternalServerError, &appidentity.OAuthError{Code: "server_error"})
 		return
 	}

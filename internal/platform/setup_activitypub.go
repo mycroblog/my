@@ -24,7 +24,7 @@ func (a *App) setUpActivityPub(cfg *config.Config, version string) {
 			return mode == domaininstance.RegistrationOpen || mode == domaininstance.RegistrationApproval, err
 		},
 		Accounts: a.Accounts, Objects: a.newObjects(cfg), Graph: a.Graph, Inbox: a.Inbox,
-		HTML: a.page, Problem: a.writeStatusProblem, Logger: a.Logger,
+		HTML: a.page, Problem: a.writeStatusProblem, Logger: a.Logger, Errors: a.ErrorReporter,
 		Suspensions: a.ModerationPolicy,
 		LocalPosts:  a.Content.LocalPostCount,
 		Images:      a.Media.Images,

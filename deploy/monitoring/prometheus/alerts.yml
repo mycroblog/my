@@ -137,6 +137,25 @@ groups:
           description: '{{ $value | humanizePercentage }} of the POSTs to the inboxes ended in an internal error.'
           runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myinboxerrors
 
+  - name: my-errors
+    rules:
+      # More than 10 error reports in 15 minutes, and three times as many as in an average 15 minutes
+      # of the day before: a new bug or a broken dependency, not the usual background.
+      - alert: MyErrorReportsIncreasing
+        expr: >-
+          sum(increase(my_errors_reported_total[15m])) > 10
+          and sum(increase(my_errors_reported_total[15m]))
+            > 3 * (sum(increase(my_errors_reported_total[1d] offset 15m)) / 96 or vector(0))
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The server reports many more errors than usual
+          description: >-
+            {{ $value | humanize }} errors were reported in the last 15 minutes, more than three times the average of
+            the day before.
+          runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myerrorreportsincreasing
+
   - name: my-http
     rules:
       - alert: MyHTTPErrorsHigh

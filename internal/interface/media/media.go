@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/mycroblog/my/internal/app/blob"
+	"github.com/mycroblog/my/internal/app/kernel"
 )
 
 // PathPrefix is the URL path under which the public blobs are served: the blob of key
@@ -37,6 +38,8 @@ type Options struct {
 	Problem ProblemWriter
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
+	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
+	Errors kernel.ErrorReporter
 }
 
 // Handler serves GET and HEAD requests for public blobs, with range requests and conditional
@@ -49,6 +52,9 @@ type Handler struct {
 func New(o Options) *Handler {
 	if o.Logger == nil {
 		o.Logger = slog.Default()
+	}
+	if o.Errors == nil {
+		o.Errors = kernel.NopErrorReporter{}
 	}
 	if o.Problem == nil {
 		o.Problem = func(w http.ResponseWriter, _ *http.Request, status int) {
@@ -83,6 +89,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		h.o.Logger.ErrorContext(r.Context(), "read media blob", slog.String("key", key), slog.Any("error", err))
+		h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return
 	}

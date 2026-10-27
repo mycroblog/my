@@ -349,3 +349,28 @@ tests:
               summary: Most email sends fail and wait for a retry
               description: 90.36% of the email job runs failed and will be retried.
               runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailretrying
+
+  - name: error reports
+    interval: 1m
+    input_series:
+      # One report a minute for a day, the usual background, then ten a minute.
+      - series: my_errors_reported_total{job="my", instance="a:9464", my_error_source="server", my_error_kind="error"}
+        values: 0+1x1440 1440+10x60
+      # Steady reports of another process do not fire on their own.
+      - series: my_errors_reported_total{job="my", instance="b:9464", my_error_source="server", my_error_kind="panic"}
+        values: 0+1x1500
+    alert_rule_test:
+      - eval_time: 1d
+        alertname: MyErrorReportsIncreasing
+        exp_alerts: []
+      - eval_time: 1d40m
+        alertname: MyErrorReportsIncreasing
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+            exp_annotations:
+              summary: The server reports many more errors than usual
+              description: >-
+                165 errors were reported in the last 15 minutes, more than three times the average of the day
+                before.
+              runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myerrorreportsincreasing

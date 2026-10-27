@@ -11,6 +11,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -161,6 +162,9 @@ func (s *Server) requestError(w http.ResponseWriter, r *http.Request, err error)
 // written, with a 500 problem that reveals nothing about the error.
 func (s *Server) responseError(w http.ResponseWriter, r *http.Request, err error) {
 	s.o.Logger.ErrorContext(r.Context(), "client api handler failed", slog.Any("error", err))
+	if s.o.ErrorReporter != nil {
+		s.o.ErrorReporter.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
+	}
 	l := s.localizer(r)
 	s.writeProblem(w, r, http.StatusInternalServerError, ProblemTypeBlank, l.ServerErrorsInternal(), "")
 }

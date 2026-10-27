@@ -31,6 +31,8 @@ type Result struct {
 	outcome outcome
 	after   time.Duration
 	err     error
+	// remote marks a failure that a remote server causes (RetryRemote).
+	remote bool
 }
 
 // Done reports that the job finished; the runner removes it.
@@ -41,6 +43,13 @@ func Done() Result { return Result{outcome: outcomeDone} }
 // policy's attempts are used up, the job becomes a dead job instead.
 func Retry(after time.Duration, cause error) Result {
 	return Result{outcome: outcomeRetry, after: after, err: cause}
+}
+
+// RetryRemote is Retry for a failure that a remote server causes, such as a delivery that the
+// inbox refused for now: once the attempts are used up, the dead job is not reported as an
+// error to the operator (ADR-0103 §2), since nothing here is broken.
+func RetryRemote(after time.Duration, cause error) Result {
+	return Result{outcome: outcomeRetry, after: after, err: cause, remote: true}
 }
 
 // Fail reports that the job can never succeed; the runner moves it to the dead jobs at once.
@@ -60,6 +69,9 @@ func (r Result) After() time.Duration { return r.after }
 
 // Err returns the cause given to Retry or Fail.
 func (r Result) Err() error { return r.err }
+
+// IsRemote reports whether r is a RetryRemote.
+func (r Result) IsRemote() bool { return r.remote }
 
 // JobHandlerRegistry maps job types to handlers and their retry policies. The zero value is
 // empty and ready to use. It is safe for concurrent use; register every handler at startup,

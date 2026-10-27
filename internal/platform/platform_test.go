@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -339,17 +340,92 @@ func TestPanicIsAProblem(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "web"})
 	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) {
-		a.Handle("GET /panic", http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }))
+		a.Handle("GET /panic/{id}", http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom at https://remote.example/x") }))
+		a.Handle("GET /missing", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNotFound) }))
 	})
-	resp, body := s.do(t, http.MethodGet, "/panic", nil)
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", resp.StatusCode)
+	for _, path := range []string{"/panic/1", "/panic/2"} {
+		resp, body := s.do(t, http.MethodGet, path, nil)
+		if resp.StatusCode != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", resp.StatusCode)
+		}
+		if p := decodeProblem(t, resp, body); strings.Contains(p.Title, "boom") {
+			t.Errorf("title %q reveals the panic", p.Title)
+		}
 	}
-	if p := decodeProblem(t, resp, body); strings.Contains(p.Title, "boom") {
-		t.Errorf("title %q reveals the panic", p.Title)
+	for _, path := range []string{"/missing", "/panic/1?x=%ff"} {
+		if resp, _ := s.do(t, http.MethodGet, path, nil); resp.StatusCode < 400 || resp.StatusCode >= 500 {
+			t.Errorf("GET %s = %d, want a 4xx", path, resp.StatusCode)
+		}
 	}
-	if !strings.Contains(s.logs.String(), "handler panicked") {
-		t.Errorf("the panic is not logged:\n%s", s.logs.String())
+	// One scrubbed report line for each panic, with the same fingerprint, and none for a 4xx.
+	reports := errorReportLines(t, s.logs.String())
+	if len(reports) != 2 {
+		t.Fatalf("%d report lines, want 2:\n%s", len(reports), s.logs.String())
+	}
+	for _, rep := range reports {
+		msg, _ := rep["message"].(string)
+		if rep["my.error.kind"] != "panic" || rep["my.error.where"] != "web GET /panic/{id}" || rep["severity"] != "ERROR" ||
+			!strings.HasPrefix(msg, "string: boom at <url>\ngoroutine ") || rep["request_id"] == nil {
+			t.Errorf("report = %v", rep)
+		}
+	}
+	if reports[0]["my.error.fingerprint"] != reports[1]["my.error.fingerprint"] {
+		t.Errorf("fingerprints %v and %v differ", reports[0]["my.error.fingerprint"], reports[1]["my.error.fingerprint"])
+	}
+}
+
+// errorReportLines returns the error report lines of logs.
+func errorReportLines(t *testing.T, logs string) []map[string]any {
+	t.Helper()
+	var reports []map[string]any
+	for line := range strings.Lines(logs) {
+		if !strings.Contains(line, `"msg":"error report"`) {
+			continue
+		}
+		var rep map[string]any
+		if err := json.Unmarshal([]byte(line), &rep); err != nil {
+			t.Fatalf("%v: %s", err, line)
+		}
+		reports = append(reports, rep)
+	}
+	return reports
+}
+
+// A dead job writes one scrubbed report line, with the same fingerprint for each such job, and
+// a job that only retries writes none.
+func TestDeadJobIsReported(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) {
+		a.Handlers.Register("test.dead", func(context.Context, queue.Job) queue.Result {
+			return queue.Fail(errors.New("mail to bob@example.com refused"))
+		})
+		a.Handlers.Register("test.retry", func(context.Context, queue.Job) queue.Result {
+			return queue.Retry(time.Hour, errors.New("try later"))
+		})
+	})
+	for _, typ := range []string{"test.retry", "test.dead", "test.dead"} {
+		if err := s.app.Jobs.Enqueue(t.Context(), queue.NewJob{Type: typ}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) && strings.Count(s.logs.String(), `"my.outcome":"dead"`) < 2 {
+		time.Sleep(10 * time.Millisecond)
+	}
+	reports := errorReportLines(t, s.logs.String())
+	if len(reports) != 2 {
+		t.Fatalf("%d report lines, want 2:\n%s", len(reports), s.logs.String())
+	}
+	for _, rep := range reports {
+		msg, _ := rep["message"].(string)
+		if rep["my.error.kind"] != "error" || rep["my.error.where"] != "test.dead" || rep["job_id"] == nil ||
+			!strings.HasPrefix(msg, "*errors.errorString: mail to <email> refused\ngoroutine ") {
+			t.Errorf("report = %v", rep)
+		}
+	}
+	if reports[0]["my.error.fingerprint"] != reports[1]["my.error.fingerprint"] {
+		t.Errorf("fingerprints %v and %v differ", reports[0]["my.error.fingerprint"], reports[1]["my.error.fingerprint"])
 	}
 }
 

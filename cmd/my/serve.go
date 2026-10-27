@@ -54,16 +54,17 @@ func runServe(args []string, stderr io.Writer) int {
 	if *maint {
 		return serveMaintenance(src, *pseudo, stderr)
 	}
+	v := resolveVersion(version, debug.ReadBuildInfo)
 	cfg, _, err := config.Load(src)
 	if err != nil {
 		printLoadError(stderr, err)
+		platform.ReportStartupFailure(context.Background(), platform.NewLogger(stderr, slog.LevelInfo), v, "", "", err)
 		return 1
 	}
 	logger := platform.NewLogger(stderr, slog.LevelInfo)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
-	v := resolveVersion(version, debug.ReadBuildInfo)
 	logger.InfoContext(ctx, "starting", slog.String("version", v), slog.Any("config", cfg))
 	warnUnknownEnv(ctx, logger, src)
 	warnReadiness(ctx, logger, cfg)
@@ -72,6 +73,7 @@ func runServe(args []string, stderr io.Writer) int {
 	})
 	if err != nil {
 		logger.ErrorContext(ctx, "start failed", slog.Any("error", err))
+		platform.ReportStartupFailure(ctx, logger, v, string(cfg.Role), cfg.ErrorsEnvironment, err)
 		return 1
 	}
 	defer func() { _ = app.Close() }()

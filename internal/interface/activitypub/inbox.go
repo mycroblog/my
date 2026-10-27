@@ -73,6 +73,7 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) {
 	switch rej := got.Rejection; {
 	case err != nil:
 		h.o.Logger.ErrorContext(r.Context(), "inbox failed", slog.Any("error", err))
+		h.report(r.Context(), err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 	case rej != nil:
 		if rej.RetryAfter > 0 {

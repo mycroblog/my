@@ -166,6 +166,8 @@ type Options struct {
 	StatusPageURL string
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
+	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
+	Errors kernel.ErrorReporter
 	// Moderation lists the actions that keep a signed-in user out of the app on the status
 	// page; nil lists none. UserLocales words the status page in the user's saved locale; nil
 	// words it in the request's.
@@ -224,6 +226,9 @@ const (
 func New(o Options) *Handler {
 	if o.Logger == nil {
 		o.Logger = slog.Default()
+	}
+	if o.Errors == nil {
+		o.Errors = kernel.NopErrorReporter{}
 	}
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
@@ -371,6 +376,7 @@ func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int
 
 func (h *Handler) internalError(w http.ResponseWriter, r *http.Request, err error) {
 	h.o.Logger.ErrorContext(r.Context(), "auth page failed", slog.Any("error", err))
+	h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
 	h.renderError(w, r, http.StatusInternalServerError, (*i18n.Localizer).ServerErrorsInternal)
 }
 
