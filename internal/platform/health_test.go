@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/adapter/system"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -134,7 +135,10 @@ func TestInstanceHealth(t *testing.T) {
 			t.Parallel()
 			// The answer may come from a check that ran while the server started (the cache of the
 			// check), so the earliest time it may name is taken before the start, however slow it is.
-			before := time.Now()
+			// The bounds come from the clock of the server: it never goes back within the process,
+			// whereas the wall clock may step back and leave the time of the check ahead of it.
+			var clock system.Clock
+			before := clock.Now()
 			cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, tt.applied)})
 			s := start(t, cfg, platform.ServeOptions{}, nil)
 
@@ -156,7 +160,7 @@ func TestInstanceHealth(t *testing.T) {
 				t.Errorf("body = %q, want only status %q and checked_at", body, tt.want)
 			}
 			at, err := time.Parse(time.RFC3339, got["checked_at"])
-			if err != nil || at.Before(before.Truncate(time.Second)) || at.After(time.Now()) {
+			if err != nil || at.Before(before.Truncate(time.Second)) || at.After(clock.Now()) {
 				t.Errorf("checked_at = %q (%v), want the RFC 3339 time of the check", got["checked_at"], err)
 			}
 			if !tt.applied && !strings.Contains(s.logs.String(), "schema not applied") {
