@@ -98,6 +98,19 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
     { id: "0192f0c4-7a8e-7000-8000-000000000cc2", client_id: "https://a-very-long-subdomain-name-for-the-narrowest-screens.example/client.json", name: "A reader app with a very long name for the narrowest phone screens", registration: "metadata_document", first_party: false, scope: "read:statuses read:accounts write:statuses", authorized_at: "2026-10-10T12:00:00Z" },
     { id: "0192f0c4-7a8e-7000-8000-000000000cc3", client_id: "my_ci_dyn", name: "Scribe", registration: "dynamic", first_party: false, scope: "read", authorized_at: "2026-10-12T12:00:00Z", last_used_at: "2026-10-20T08:00:00Z" },
   ];
+  // The accounts the user links at the login providers (FR-010): one at a provider with a long name, and a second
+  // provider that allows links.
+  const linkedProvider = "0192f0c4-7a8e-7000-8000-000000000dd1";
+  const linkableProvider = "0192f0c4-7a8e-7000-8000-000000000dd2";
+  const linkedIdentities = {
+    items: [
+      { id: "0192f0c4-7a8e-7000-8000-000000000de1", provider_id: linkedProvider, provider_kind: "oidc", provider_name: "Example Workspace with a very long name for narrow phones", linked_at: "2026-10-16T09:30:00Z", available: true },
+    ],
+    providers: [
+      { id: linkedProvider, kind: "oidc", display_name: "Example Workspace with a very long name for narrow phones", allow_link: true },
+      { id: linkableProvider, kind: "oidc", display_name: "Lab ID", allow_link: true },
+    ],
+  };
   const changes: unknown[] = [];
   await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
   await page.route("**/api/v1/**", async (route) => {
@@ -206,6 +219,17 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
       }
       case "POST /two_factor/totp/setup":
         return json(route, totpSetup);
+      case "GET /linked_identities":
+        return json(route, linkedIdentities);
+      case "POST /linked_identities": {
+        const body = request.postDataJSON() as { provider_id: string; password?: string; return_to?: string };
+        changes.push({ link: body });
+        // The provider's round trip: back to the page with the account linked.
+        const back = new URL(`${body.return_to ?? "/settings/linked-accounts"}#linked=${body.provider_id}&provider=${body.provider_id}`, request.url());
+        return json(route, { start_url: back.href, expires_at: "2026-10-21T09:40:00Z" });
+      }
+      case `DELETE /linked_identities/${linkedIdentities.items[0]?.id ?? ""}`:
+        return json(route, { type: "/api/v1/problems/last-sign-in-method", title: "This is your last way to sign in.", status: 409 }, 409);
       default:
         return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
     }
@@ -250,6 +274,7 @@ const pages = [
   "/settings/password",
   "/settings/two-factor",
   "/settings/passkeys",
+  "/settings/linked-accounts",
   "/settings/apps",
   "/settings/authorized-apps",
   "/settings/auto-delete",
@@ -286,6 +311,28 @@ const totpSetup = {
   setup_token: "e2e-setup",
   expires_at: "2026-10-20T00:15:00Z",
 };
+
+test("linking an account confirms with the password and comes back linked; unlinking the last way to sign in says why", async ({ page, makeAxeBuilder }) => {
+  const changes = await signedInServer(page, projectLocale());
+  await page.goto("/settings/linked-accounts");
+  const main = page.getByRole("main");
+  await main.getByRole("button", { name: message("settings.linked_accounts.link").replace("{provider}", "Lab ID"), exact: true }).click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.locator('input[type="password"][autocomplete="current-password"]').fill("correct horse");
+  await expectNoAxeViolations(makeAxeBuilder);
+  await dialog.getByRole("button", { name: message("settings.linked_accounts.link.continue"), exact: true }).click();
+  await expect(main.getByRole("status")).toHaveText(message("settings.linked_accounts.linked").replace("{provider}", "Lab ID"));
+  // The outcome leaves the address, so that a reload does not show it again.
+  await expect(page).toHaveURL(/\/settings\/linked-accounts$/);
+  expect(changes).toContainEqual({ link: { provider_id: "0192f0c4-7a8e-7000-8000-000000000dd2", password: "correct horse", return_to: "/settings/linked-accounts" } });
+
+  await main.getByRole("button", { name: new RegExp(message("settings.linked_accounts.unlink")) }).first().click();
+  const unlink = page.getByRole("alertdialog");
+  await unlink.getByRole("button", { name: message("settings.linked_accounts.unlink"), exact: true }).click();
+  await expect(unlink.getByRole("alert")).toHaveText(message("settings.linked_accounts.unlink.last"));
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+});
 
 test("two-factor setup shows the QR code and the key without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
   await signedInServer(page, projectLocale());

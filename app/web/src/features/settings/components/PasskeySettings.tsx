@@ -13,6 +13,7 @@ import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { type Passkey, passkeyNameLimit } from "../api/passkeys";
 import { type RemovePasskey, usePasskeyForm, usePasskeyList, useRemovePasskey } from "../hooks/usePasskeys";
+import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 export function PasskeySettings() {
   const t = useT();
@@ -46,9 +47,15 @@ function AddPasskeyForm() {
   const t = useT();
   const form = usePasskeyForm();
   if (!form.isSupported) return <p>{t("client:settings.passkeys.unsupported")}</p>;
+  // A user with neither a password nor a passkey signs in again at a linked provider first.
+  if (form.external.isPreferred && form.external.confirmed === undefined) return <ExternalConfirmationChoice confirmation={form.external} />;
   return (
     <Stack as="form" onSubmit={form.submit} align="start" gap="4">
-      <Hint>{t(form.hasPassword ? "client:settings.passkeys.add.description" : "client:settings.passkeys.add.description_passkey")}</Hint>
+      {form.external.isPreferred ? (
+        <ExternalConfirmationChoice confirmation={form.external} />
+      ) : (
+        <Hint>{t(form.hasPassword ? "client:settings.passkeys.add.description" : "client:settings.passkeys.add.description_passkey")}</Hint>
+      )}
       <Box width="sm">
         <TextField
           label={t("client:settings.passkeys.name")}

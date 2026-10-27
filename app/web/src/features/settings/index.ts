@@ -40,6 +40,9 @@ export { PasswordSettings } from "./components/PasswordSettings";
 // Passkeys, which sign in instead of the password (FR-004).
 export { passkeysQueryOptions } from "./api/passkeys";
 export { PasskeySettings } from "./components/PasskeySettings";
+// The accounts at the login providers that the administrators set up, which sign in and confirm operations (FR-010).
+export { linkedIdentitiesQueryOptions } from "./api/linkedIdentities";
+export { LinkedAccountSettings } from "./components/LinkedAccountSettings";
 // The user's own OAuth apps: registering, secrets, and tokens issued to the user (ADR-0090).
 export { oauthAppsQueryOptions } from "./api/oauthApps";
 export { OAuthAppSettings } from "./components/OAuthAppSettings";

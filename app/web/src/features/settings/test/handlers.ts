@@ -61,6 +61,11 @@ export const handlers = [
   }),
   // operationId listPasskeys: no passkeys; the tests that add or remove one play the server themselves.
   http.get(`${apiBase}/passkeys`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  // operationId listLinkedIdentities: no linked accounts and no login providers; the tests that link, unlink, or
+  // confirm with one play the server themselves.
+  http.get(`${apiBase}/linked_identities`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [], providers: [] } satisfies Schemas["LinkedIdentityList"])),
+  ),
   // operationId listOAuthApps: no apps; the tests that register, change or delete one play the server themselves.
   http.get(`${apiBase}/oauth_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationId listAuthorizedApps: no apps; the tests that revoke one play the server themselves.

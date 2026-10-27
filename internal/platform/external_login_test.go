@@ -152,15 +152,21 @@ func (e *externalEnv) id() string {
 // provider sets up an enabled provider at the fake issuer.
 func (e *externalEnv) provider(name string, allowSignup bool, claims ...domain.ClaimCondition) string {
 	e.t.Helper()
+	settings := domain.NewLoginProviderSettings(domain.LoginProviderOIDC)
+	settings.DisplayName, settings.AllowSignup, settings.Claims = name, allowSignup, claims
+	return e.providerWith(settings)
+}
+
+// providerWith sets up an enabled provider with settings at the fake issuer.
+func (e *externalEnv) providerWith(settings domain.LoginProviderSettings) string {
+	e.t.Helper()
 	ctx := e.t.Context()
 	id, revID, secretID, changeID := e.id(), e.id(), e.id(), e.id()
 	sealed, err := e.s.app.Sealer.Seal(ctx, []byte(idpClientSecret), kernel.AAD(secretID, "login_provider_secrets.sealed_secret"))
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	settings := domain.NewLoginProviderSettings(domain.LoginProviderOIDC)
-	settings.DisplayName, settings.Issuer, settings.ClientID = name, testkit.FakeOIDCIssuer, idpClientID
-	settings.AllowSignup, settings.Claims = allowSignup, claims
+	settings.Issuer, settings.ClientID = testkit.FakeOIDCIssuer, idpClientID
 	now := time.Now()
 	r := e.db.IdentityRepository()
 	err = e.db.Tx(ctx, func(tx uow.Tx) error {

@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -43,13 +44,10 @@ const (
 	gitHubOrgsMaxPages = 10
 )
 
-// beginGitHub starts a sign-in with a github provider.
-func (s *Service) beginGitHub(ctx context.Context, p identity.LoginProvider, returnTo string) (ExternalLoginStart, error) {
-	now := s.d.Clock.Now()
-	t := externalLoginToken{
-		IssuedAt: now.UnixMilli(), ProviderID: p.ID, ReturnTo: returnTo,
-		State: randomToken(), Nonce: randomToken(), Verifier: randomToken(),
-	}
+// beginGitHub starts a sign-in, a link, or a confirmation with a github provider, whose cookie
+// seals t. GitHub has no way to ask the user to sign in again, so a confirmation only shows that
+// the user is signed in at GitHub (ADR-0106 §3.7).
+func (s *Service) beginGitHub(ctx context.Context, p identity.LoginProvider, t externalLoginToken) (ExternalLoginStart, error) {
 	cookie, err := s.sealJSON(ctx, t, externalLoginAAD)
 	if err != nil {
 		return ExternalLoginStart{}, err
@@ -65,7 +63,7 @@ func (s *Service) beginGitHub(ctx context.Context, p identity.LoginProvider, ret
 		"scope": {strings.Join(slices.Compact(scopes), " ")}, "state": {t.State},
 		"code_challenge": {pkceChallenge(t.Verifier)}, "code_challenge_method": {"S256"},
 	}
-	return ExternalLoginStart{AuthorizationURL: gitHubAuthorizeURL + "?" + q.Encode(), Cookie: cookie, ExpiresAt: now.Add(ExternalLoginTTL)}, nil
+	return ExternalLoginStart{AuthorizationURL: gitHubAuthorizeURL + "?" + q.Encode(), Cookie: cookie, ExpiresAt: time.UnixMilli(t.IssuedAt).Add(ExternalLoginTTL)}, nil
 }
 
 // gitHubIdentity redeems code at GitHub and returns the account as the claims of an ID token

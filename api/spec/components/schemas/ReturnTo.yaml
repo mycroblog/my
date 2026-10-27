@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The path on this server, such as `/settings/linked-accounts`, that the login provider
+  sends the browser back to; the settings of the linked accounts when it is missing or not
+  such a path.
+type: string
+minLength: 1
+maxLength: 2048

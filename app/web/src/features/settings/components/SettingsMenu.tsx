@@ -18,6 +18,7 @@ const pages: readonly { href: string; label: ClientMessageKey; permission?: Perm
   { href: "/settings/password", label: "client:settings.password.title" },
   { href: "/settings/two-factor", label: "client:settings.two_factor.title" },
   { href: "/settings/passkeys", label: "client:settings.passkeys.title" },
+  { href: "/settings/linked-accounts", label: "client:settings.linked_accounts.title" },
   { href: "/settings/auto-delete", label: "client:settings.auto_delete.title" },
   { href: "/settings/follow-requests", label: "client:settings.follow_requests.title" },
   { href: "/settings/blocks", label: "client:settings.blocks.title" },

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: beginExternalConfirmation
+  x-first-party-only: true
+  summary: Start a confirmation with a linked login provider
+  description: |
+    Returns the `start_url` that the browser opens to sign in again at a provider that the
+    user links an account at, which confirms `operation` in place of the password or a
+    passkey. The browser must be signed in to the server's sign-in pages as the same user;
+    one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+    user again, and an authentication older than the request does not count. The provider
+    sends the browser back to `return_to` with the outcome in the fragment, next to
+    `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+    once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+    the reason is `mismatch` (the user signed in with an account that the user does not link),
+    `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+    that does not verify count against the wrong confirmations of the operation. A provider
+    that the user links no account at, or that is disabled, is a 422
+    `/api/v1/problems/login-provider-unavailable`.
+  tags: [linked_identities]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ExternalConfirmationRequest.yaml
+  responses:
+    "200":
+      description: Where the browser goes to sign in again at the provider.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ExternalAuthorizationStart.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

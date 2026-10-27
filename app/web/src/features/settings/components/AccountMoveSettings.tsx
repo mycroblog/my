@@ -22,6 +22,7 @@ import {
   useMovedTo,
   useOwnAddress,
 } from "../hooks/useAccountMove";
+import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 export function AccountMoveSettings() {
   const [status, setStatus] = useState<string | undefined>(undefined);
@@ -61,6 +62,9 @@ function MoveAccount({ onStatus }: { onStatus: (status: string | undefined) => v
           {/* The address is no running text: it reads left to right whatever the sentence around it (Y10). */}
           {intl.formatMessage({ id: "client:account_move.move.prerequisite" }, { url: <bdi key="url" dir="ltr">{url}</bdi> })}
         </p>
+        {/* A user with neither a password nor a passkey signs in again at a linked provider first. */}
+        {move.external.isPreferred && <ExternalConfirmationChoice confirmation={move.external} />}
+        {(!move.external.isPreferred || move.external.confirmed !== undefined) && (
         <Stack as="form" onSubmit={move.submit} align="start" gap="4">
           <Box width="sm">
             <TextField
@@ -86,6 +90,7 @@ function MoveAccount({ onStatus }: { onStatus: (status: string | undefined) => v
             {t("client:account_move.move.target.submit")}
           </Button>
         </Stack>
+        )}
       </Section>
       <MoveDialog move={move} />
     </>
@@ -114,7 +119,14 @@ function MoveDialog({ move }: { move: AccountMove }) {
         if (!isOpen) move.cancel();
       }}
       title={t("client:account_move.move.confirm.title", values)}
-      description={t(move.hasPassword ? "client:account_move.move.confirm.description" : "client:account_move.move.confirm.description_passkey", values)}
+      description={t(
+        move.hasPassword
+          ? "client:account_move.move.confirm.description"
+          : move.external.isPreferred
+            ? "client:account_move.move.confirm.description_external"
+            : "client:account_move.move.confirm.description_passkey",
+        values,
+      )}
       confirmLabel={t("client:account_move.move.confirm.submit")}
       cancelLabel={t("client:account_move.move.confirm.cancel")}
       tone="danger"

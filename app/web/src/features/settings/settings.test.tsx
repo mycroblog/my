@@ -837,6 +837,7 @@ describe("the settings page", () => {
       "/settings/password",
       "/settings/two-factor",
       "/settings/passkeys",
+      "/settings/linked-accounts",
       "/settings/auto-delete",
       "/settings/follow-requests",
       "/settings/blocks",

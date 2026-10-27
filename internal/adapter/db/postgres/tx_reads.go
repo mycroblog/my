@@ -232,3 +232,12 @@ func (r *IdentityRepository) ListActivePasskeyCredentialsTx(ctx context.Context,
 	}
 	return (&IdentityRepository{db: db}).ListActivePasskeyCredentials(ctx, userID)
 }
+
+// ListLinkedExternalIdentitiesTx implements the reads in a transaction.
+func (r *IdentityRepository) ListLinkedExternalIdentitiesTx(ctx context.Context, tx uow.Tx, userID string) ([]identity.LinkedExternalIdentity, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&IdentityRepository{db: db}).ListLinkedExternalIdentities(ctx, userID)
+}

@@ -32,6 +32,13 @@ my instance set registration_mode invite
   An email address that matches an existing user never links that user: the form says the address is taken.
   A user with two-factor authentication still enters the code after signing in with a provider.
   A GitHub provider asks GitHub for the `user:email` scope, and also `read:org` when you list allowed Organizations; the server then checks on every sign-in that the user belongs to one of them and refuses the sign-in otherwise. Register `https://<host>/auth/external/<provider ID>/callback` as the callback URL of your GitHub OAuth app.
+- A signed-in user links an account at a provider under "Linked accounts" in settings, after confirming with the password, a passkey, or another linked account, and only for providers that allow links.
+  The browser must be signed in to the sign-in pages as the same user; otherwise the server asks to sign in first.
+  An account at a provider that another user links is refused, and a user links at most one account per provider.
+  A user can unlink an account unless it is the last way to sign in (no password, no passkey, and no other linked account).
+- A user without a password and without passkeys confirms the operations that otherwise ask for them (setting a password, adding a passkey, deleting or moving the account, linking another account) by signing in again at a linked provider.
+  An OpenID Connect provider is asked to authenticate the user again (`max_age=0` and `prompt=login`), and an earlier authentication is refused.
+  The confirmation works once, for that operation only, within 10 minutes; signing in with an account that is not the linked one counts as a wrong attempt, against the same limit as a wrong password.
 - On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days
   (the instance settings `retention_session_origins` and `retention_registration_origins`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
   State this retention period in your privacy policy.

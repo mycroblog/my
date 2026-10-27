@@ -11,6 +11,7 @@ import { type ReactNode, useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { passwordMaxLength, passwordMinLength } from "../api/password";
 import { type PasswordChangeForm, type PasswordRemoval, usePasswordChangeForm, usePasswordRemoval } from "../hooks/usePasswordChange";
+import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 export function PasswordSettings() {
   const t = useT();
@@ -33,7 +34,16 @@ export function PasswordSettings() {
       ) : (
         <Section title={t("client:settings.password.set.title")}>
           <p>{t("client:settings.password.set.description")}</p>
-          {form.isPasskeySupported ? <ChangeForm form={form} /> : <p>{t("client:settings.password.passkeys_unsupported")}</p>}
+          {form.external.isPreferred ? (
+            <>
+              <ExternalConfirmationChoice confirmation={form.external} />
+              {form.external.confirmed !== undefined && <ChangeForm form={form} />}
+            </>
+          ) : form.isPasskeySupported ? (
+            <ChangeForm form={form} />
+          ) : (
+            <p>{t("client:settings.password.passkeys_unsupported")}</p>
+          )}
         </Section>
       )}
     </Stack>
@@ -102,11 +112,31 @@ function ChangeForm({ form }: { form: PasswordChangeForm }) {
 /** Removing the password: what it does, and its button and dialog; or why it cannot be removed here. */
 function RemovePassword({ removal }: { removal: PasswordRemoval }) {
   const t = useT();
+  if (removal.external.isPreferred) {
+    // A user without passkeys signs in again at a linked provider first.
+    return (
+      <Stack align="start" gap="4">
+        <p>{t("client:settings.password.remove.description")}</p>
+        <ExternalConfirmationChoice confirmation={removal.external} />
+        {removal.external.confirmed !== undefined && <RemovePasswordDialog removal={removal} />}
+      </Stack>
+    );
+  }
   if (!removal.hasPasskey) return <p>{t("client:settings.password.remove.no_passkey")}</p>;
   if (!removal.isSupported) return <p>{t("client:settings.password.passkeys_unsupported")}</p>;
   return (
     <Stack align="start" gap="4">
       <p>{t("client:settings.password.remove.description")}</p>
+      <RemovePasswordDialog removal={removal} />
+    </Stack>
+  );
+}
+
+/** The button that removes the password, and its alert dialog. */
+function RemovePasswordDialog({ removal }: { removal: PasswordRemoval }) {
+  const t = useT();
+  return (
+    <>
       <Button variant="danger" onPress={removal.open}>
         {t("client:settings.password.remove.open")}
       </Button>
@@ -126,6 +156,6 @@ function RemovePassword({ removal }: { removal: PasswordRemoval }) {
         isPending={removal.isPending}
         {...(removal.error === undefined ? {} : { errorMessage: removal.error })}
       />
-    </Stack>
+    </>
   );
 }

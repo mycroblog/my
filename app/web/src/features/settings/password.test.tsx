@@ -125,7 +125,7 @@ describe("password", () => {
       await screen.findByText("Your password is removed. Sign in with your passkeys from now on. Other browsers and apps are signed out."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    expect(api.removals[1]?.passkey.confirmation_token).toBe("conf-1");
+    expect(api.removals[1]?.passkey?.confirmation_token).toBe("conf-1");
     expect(credentials.get).toHaveBeenCalledTimes(2);
 
     // Without a password, the page sets one; a passkey confirms it.

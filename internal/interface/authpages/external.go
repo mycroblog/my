@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -26,6 +27,14 @@ import (
 // password form does, with the code step of two-factor authentication. An account that no user
 // links gets the registration form without a password, which carries the sealed sign-up in a
 // hidden field.
+//
+// The same start and callback link an account at a provider to a signed-in user and confirm an
+// operation of one: the web client's start URL carries the sealed intent, which the start takes
+// only in a browser signed in as the intent's user (sending a browser without a session to the
+// sign-in page first). The callback of an intent always goes back to the intent's return target
+// with the outcome in the fragment, which the web client reads (and which no server sees):
+// external_confirmation=<token> for a confirmation, linked=<provider ID> for a link, and
+// external_error=<reason> for a failure, with the provider and the operation of a confirmation.
 
 // Paths of the external sign-in.
 const (
@@ -46,6 +55,7 @@ const CookieExternal = "__Host-my_external"
 type ExternalLogins interface {
 	ExternalLoginProviders(ctx context.Context) ([]appidentity.ExternalLoginProvider, error)
 	BeginExternalLogin(ctx context.Context, providerID, returnTo string) (appidentity.ExternalLoginStart, error)
+	BeginExternalIntent(ctx context.Context, providerID, intent, sessionUserID string) (appidentity.ExternalLoginStart, error)
 	FinishExternalLogin(ctx context.Context, in appidentity.ExternalLoginInput) (appidentity.ExternalLogin, error)
 	ExternalSignUp(ctx context.Context, ticket string) (appidentity.ExternalSignUpView, error)
 	SignUpExternal(ctx context.Context, in appidentity.ExternalSignUpInput) (appidentity.SignedUp, error)
@@ -89,6 +99,10 @@ func (h *Handler) externalButtons(r *http.Request, returnTo string, signUp bool)
 
 // externalStart sends the browser to the provider.
 func (h *Handler) externalStart(w http.ResponseWriter, r *http.Request) {
+	if intent := r.URL.Query().Get(appidentity.ExternalIntentParam); intent != "" {
+		h.externalIntentStart(w, r, intent)
+		return
+	}
 	returnTo := safeReturnTo(r.URL.Query().Get("return_to"))
 	start, err := h.o.ExternalLogins.BeginExternalLogin(r.Context(), r.PathValue("id"), returnTo)
 	switch {
@@ -103,12 +117,108 @@ func (h *Handler) externalStart(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
+	redirectToProvider(w, r, start)
+}
+
+func redirectToProvider(w http.ResponseWriter, r *http.Request, start appidentity.ExternalLoginStart) {
 	http.SetCookie(w, &http.Cookie{
 		Name: CookieExternal, Value: start.Cookie, Path: "/", MaxAge: int(time.Until(start.ExpiresAt).Seconds()),
 		Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
 	})
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, start.AuthorizationURL, http.StatusSeeOther)
+}
+
+// externalIntentStart sends the browser of the intent's user to the provider to link an account
+// or confirm an operation. A browser without a session signs in first and comes back.
+func (h *Handler) externalIntentStart(w http.ResponseWriter, r *http.Request, intent string) {
+	sessionUserID := ""
+	switch session, err := h.o.Identity.Authenticate(r.Context(), cookieValue(r, CookieSession)); {
+	case err == nil:
+		sessionUserID = session.UserID
+	case errors.Is(err, appidentity.ErrInvalidSession):
+		w.Header().Set("Cache-Control", "no-store")
+		http.Redirect(w, r, withReturnTo(PathSignIn, safeReturnTo(r.URL.RequestURI())), http.StatusSeeOther)
+		return
+	default:
+		h.internalError(w, r, err)
+		return
+	}
+	start, err := h.o.ExternalLogins.BeginExternalIntent(r.Context(), r.PathValue("id"), intent, sessionUserID)
+	switch {
+	case errors.Is(err, appidentity.ErrLoginProviderUnavailable):
+		h.renderError(w, r, http.StatusNotFound, (*i18n.Localizer).ServerAuthExternalUnavailable)
+	case errors.Is(err, appidentity.ErrExternalLoginExpired):
+		h.renderError(w, r, http.StatusUnprocessableEntity, (*i18n.Localizer).ServerAuthExternalExpired)
+	case errors.Is(err, appidentity.ErrExternalSessionMismatch):
+		h.renderError(w, r, http.StatusForbidden, (*i18n.Localizer).ServerAuthExternalOtherUser)
+	case errors.Is(err, appidentity.ErrExternalLoginFailed):
+		h.o.Logger.WarnContext(r.Context(), "start an external link or confirmation", slog.Any("error", err))
+		h.renderError(w, r, http.StatusBadGateway, (*i18n.Localizer).ServerAuthExternalFailed)
+	case err != nil:
+		h.internalError(w, r, err)
+	default:
+		redirectToProvider(w, r, start)
+	}
+}
+
+// Reasons of the external_error fragment of an intent's return.
+const (
+	externalErrorRateLimited   = "rate_limited"
+	externalErrorUnavailable   = "unavailable"
+	externalErrorExpired       = "expired"
+	externalErrorDenied        = "denied"
+	externalErrorMismatch      = "mismatch"
+	externalErrorLinked        = "linked_elsewhere"
+	externalErrorProviderTaken = "already_linked"
+	externalErrorFailed        = "failed"
+)
+
+// pathIntentReturn is where an intent without a return target goes back to.
+const pathIntentReturn = "/settings/linked-accounts"
+
+// externalIntentDone sends the browser back to the return target of a link or a confirmation
+// with its outcome in the fragment.
+func (h *Handler) externalIntentDone(w http.ResponseWriter, r *http.Request, res appidentity.ExternalLogin, err error) {
+	var limited *kernel.RateLimitedError
+	fragment := url.Values{}
+	switch {
+	case errors.As(err, &limited):
+		fragment.Set("external_error", externalErrorRateLimited)
+	case errors.Is(err, appidentity.ErrLoginProviderUnavailable):
+		fragment.Set("external_error", externalErrorUnavailable)
+	case errors.Is(err, appidentity.ErrExternalLoginDenied):
+		fragment.Set("external_error", externalErrorDenied)
+	case errors.Is(err, appidentity.ErrExternalAccountMismatch):
+		fragment.Set("external_error", externalErrorMismatch)
+	case errors.Is(err, appidentity.ErrExternalIdentityLinked):
+		fragment.Set("external_error", externalErrorLinked)
+	case errors.Is(err, appidentity.ErrLoginProviderLinked):
+		fragment.Set("external_error", externalErrorProviderTaken)
+	case errors.Is(err, appidentity.ErrExternalLoginFailed), errors.Is(err, appidentity.ErrInvalidCredentials):
+		h.o.Logger.InfoContext(r.Context(), "an external link or confirmation failed", slog.Any("error", err))
+		fragment.Set("external_error", externalErrorFailed)
+	case err != nil:
+		h.internalError(w, r, err)
+		return
+	case res.Confirmation != "":
+		fragment.Set("external_confirmation", res.Confirmation)
+	case res.Linked:
+		fragment.Set("linked", r.PathValue("id"))
+	default:
+		h.internalError(w, r, errors.New("authpages: an external link or confirmation ended without an outcome"))
+		return
+	}
+	if res.Operation != "" {
+		fragment.Set("operation", string(res.Operation))
+	}
+	fragment.Set("provider", r.PathValue("id"))
+	returnTo := safeReturnTo(res.ReturnTo)
+	if returnTo == "" {
+		returnTo = pathIntentReturn
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	http.Redirect(w, r, returnTo+"#"+fragment.Encode(), http.StatusSeeOther)
 }
 
 // externalCallback takes the provider's answer.
@@ -123,6 +233,10 @@ func (h *Handler) externalCallback(w http.ResponseWriter, r *http.Request) {
 		State: q.Get("state"), Code: q.Get("code"), Error: q.Get("error"),
 		IP: kernel.RequestClientIP(r), UserAgent: r.UserAgent(), CurrentToken: cookieValue(r, CookieSession),
 	})
+	if res.Purpose != "" {
+		h.externalIntentDone(w, r, res, err)
+		return
+	}
 	returnTo := res.ReturnTo
 	var limited *kernel.RateLimitedError
 	switch {

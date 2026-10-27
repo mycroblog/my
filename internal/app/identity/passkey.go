@@ -185,7 +185,7 @@ func (s *Service) BeginPasskeyRegistration(ctx context.Context, userID, name str
 	if err != nil {
 		return PasskeyRegistration{}, err
 	}
-	if err := s.confirm(ctx, PasskeyPasswordLimit, userID, c); err != nil {
+	if err := s.confirm(ctx, OperationPasskeyRegistration, userID, c); err != nil {
 		return PasskeyRegistration{}, err
 	}
 	existing, err := s.d.Repository.ListActivePasskeyCredentials(ctx, userID)
@@ -306,7 +306,7 @@ func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, token s
 
 // RemovePasskey ends a passkey of a user, which then no longer signs in. It fails with
 // ErrNotFound when the user has no such passkey, and with ErrLastSignInMethod for the last passkey
-// of a user without a password.
+// of a user without a password or a linked identity.
 func (s *Service) RemovePasskey(ctx context.Context, userID, passkeyID string) error {
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		repo := s.d.Repository
@@ -327,7 +327,12 @@ func (s *Service) RemovePasskey(ctx context.Context, userID, passkeyID string) e
 		if len(existing) == 1 {
 			switch _, err := repo.FindCurrentPasswordCredentialTx(ctx, tx, userID); {
 			case errors.Is(err, ErrNotFound):
-				return ErrLastSignInMethod
+				switch links, err := s.signInLinks(ctx, tx, userID); {
+				case err != nil:
+					return err
+				case len(links) == 0:
+					return ErrLastSignInMethod
+				}
 			case err != nil:
 				return err
 			}

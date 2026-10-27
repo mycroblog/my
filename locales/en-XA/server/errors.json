@@ -75,6 +75,10 @@
     "defaultMessage": "[Ŧħīş ȧȧřƈħīṽḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ḓǿǿẇƞŀǿǿȧȧḓḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.external_confirmation.expired": {
+    "defaultMessage": "[Ŧħḗḗ ƈǿǿƞƒīřḿȧȧŧīǿǿƞ ẇīŧħ ŧħḗḗ ŀīƞķḗḗḓ ȧȧƈƈǿǿŭŭƞŧ ḗḗẋƥīřḗḗḓ ǿǿř ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ŭŭşḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.federation_restricted": {
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ḓǿǿḗḗş ƞǿǿŧ ƒḗḗḓḗḗřȧȧŧḗḗ īƞ ŧħḗḗ ḓīřḗḗƈŧīǿǿƞ ŧħȧȧŧ ŧħīş ƞḗḗḗḗḓş.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -137,6 +141,14 @@
   },
   "errors.invalid_value": {
     "defaultMessage": "[Ŧħḗḗ ṽȧȧŀŭŭḗḗ ǿǿƒ {name} īş īƞṽȧȧŀīḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.login_provider.linked": {
+    "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ ŀīƞķḗḗḓ ȧȧƞ ȧȧƈƈǿǿŭŭƞŧ ȧȧŧ ŧħȧȧŧ şīɠƞ-īƞ şḗḗřṽīƈḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.login_provider.unavailable": {
+    "defaultMessage": "[Ŧħȧȧŧ şīɠƞ-īƞ şḗḗřṽīƈḗḗ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.media_attached": {
@@ -236,7 +248,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.passkey.last_sign_in_method": {
-    "defaultMessage": "[Ŧħīş īş ẏǿǿŭŭř ŀȧȧşŧ ẇȧȧẏ ŧǿǿ şīɠƞ īƞ. Ȧḓḓ ȧȧ ƥȧȧşşķḗḗẏ ǿǿř şḗḗŧ ȧȧ ƥȧȧşşẇǿǿřḓ ƒīřşŧ.]",
+    "defaultMessage": "[Ŧħīş īş ẏǿǿŭŭř ŀȧȧşŧ ẇȧȧẏ ŧǿǿ şīɠƞ īƞ. Ȧḓḓ ȧȧ ƥȧȧşşķḗḗẏ, şḗḗŧ ȧȧ ƥȧȧşşẇǿǿřḓ, ǿǿř ŀīƞķ ȧȧƞ ȧȧƈƈǿǿŭŭƞŧ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.passkey.registration_expired": {

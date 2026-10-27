@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The linked login provider to confirm an operation with.
+type: object
+required: [provider_id, operation]
+properties:
+  provider_id:
+    $ref: ./Id.yaml
+  operation:
+    $ref: ./ConfirmedOperation.yaml
+  return_to:
+    $ref: ./ReturnTo.yaml

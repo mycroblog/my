@@ -1325,6 +1325,36 @@ func (e ClientErrorReportKind) Valid() bool {
 	}
 }
 
+// Defines values for ConfirmedOperation.
+const (
+	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
+	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
+	ConfirmedOperationLink                ConfirmedOperation = "link"
+	ConfirmedOperationPasskeyRegistration ConfirmedOperation = "passkey_registration"
+	ConfirmedOperationPasswordChange      ConfirmedOperation = "password_change"
+	ConfirmedOperationPasswordRemoval     ConfirmedOperation = "password_removal"
+)
+
+// Valid indicates whether the value is a known member of the ConfirmedOperation enum.
+func (e ConfirmedOperation) Valid() bool {
+	switch e {
+	case ConfirmedOperationAccountDeletion:
+		return true
+	case ConfirmedOperationAccountMove:
+		return true
+	case ConfirmedOperationLink:
+		return true
+	case ConfirmedOperationPasskeyRegistration:
+		return true
+	case ConfirmedOperationPasswordChange:
+		return true
+	case ConfirmedOperationPasswordRemoval:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CostBasis.
 const (
 	CostBasisAmortized CostBasis = "amortized"
@@ -6372,10 +6402,15 @@ type BillingSourceName string
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
 
-// ChangePasswordRequest A change of the user's password, confirmed with `current_password` or `passkey`.
+// ChangePasswordRequest A change of the user's password, confirmed with `current_password`, `passkey`, or
+// `external_confirmation`.
 type ChangePasswordRequest struct {
 	// CurrentPassword The user's current password, which confirms the change.
 	CurrentPassword *string `json:"current_password,omitempty"`
+
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
 
 	// NewPassword The new password, 8 to 128 characters.
 	NewPassword string `json:"new_password"`
@@ -6418,6 +6453,12 @@ type CloseServiceRequest struct {
 	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
 	ConfirmDomain string `json:"confirm_domain"`
 }
+
+// ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
+// changing or setting the password (`password_change`), removing it (`password_removal`),
+// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// account at a login provider (`link`).
+type ConfirmedOperation string
 
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
 type CopyCustomEmojiRequest struct {
@@ -7382,8 +7423,13 @@ type DecideAppealRequest struct {
 	PublicReason *string `json:"public_reason,omitempty"`
 }
 
-// DeleteOwnAccountRequest The confirmation of the deletion of the user's own account: `password` or `passkey`.
+// DeleteOwnAccountRequest The confirmation of the deletion of the user's own account: `password`, `passkey`, or
+// `external_confirmation`.
 type DeleteOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 
@@ -7725,6 +7771,38 @@ type ErrorGroupSource string
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
+
+// ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
+type ExternalAuthorizationStart struct {
+	// ExpiresAt When `start_url` stops working.
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// StartUrl The URL on this server that sends the browser on to the provider.
+	StartUrl string `json:"start_url"`
+}
+
+// ExternalConfirmationRequest The linked login provider to confirm an operation with.
+type ExternalConfirmationRequest struct {
+	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
+	// changing or setting the password (`password_change`), removing it (`password_removal`),
+	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// account at a login provider (`link`).
+	Operation ConfirmedOperation `json:"operation"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+	// sends the browser back to; the settings of the linked accounts when it is missing or not
+	// such a path.
+	ReturnTo *ReturnTo `json:"return_to,omitempty"`
+}
+
+// ExternalConfirmationToken The `external_confirmation` token of a re-authentication with a linked login provider
+// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+type ExternalConfirmationToken = string
 
 // FinanceCostItemLine The amount of a cost item, or of a service of the imported costs, in a currency over a
 // period, with the provider and the category of its breakdown line. `provider` is the spelling
@@ -8468,6 +8546,84 @@ type LinkCardImage struct {
 	Width int `json:"width"`
 }
 
+// LinkIdentityRequest The login provider to link an account at, and what confirms it: the user's `password`, a
+// `passkey` of the user, or an `external_confirmation`.
+type LinkIdentityRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+	// sends the browser back to; the settings of the linked accounts when it is missing or not
+	// such a path.
+	ReturnTo *ReturnTo `json:"return_to,omitempty"`
+}
+
+// LinkableLoginProvider An enabled login provider that users sign in with.
+type LinkableLoginProvider struct {
+	// AllowLink Whether users link accounts at the provider to their account.
+	AllowLink bool `json:"allow_link"`
+
+	// DisplayName The administrators' name for the provider, shown as written.
+	DisplayName string `json:"display_name"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+}
+
+// LinkedIdentity An account at an external login provider that the authenticated user links.
+type LinkedIdentity struct {
+	// Available Whether the provider is enabled: the account signs the user in and confirms the
+	// user's operations.
+	Available bool `json:"available"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LinkedAt When the user linked the account.
+	LinkedAt time.Time `json:"linked_at"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	ProviderKind LoginProviderKind `json:"provider_kind"`
+
+	// ProviderName The administrators' name for the provider, shown as written.
+	ProviderName string `json:"provider_name"`
+}
+
+// LinkedIdentityList The authenticated user's linked accounts and the login providers.
+type LinkedIdentityList struct {
+	// Items The linked accounts, oldest first; at most one per provider.
+	Items []LinkedIdentity `json:"items"`
+
+	// Providers The login providers that users sign in with, oldest first.
+	Providers []LinkableLoginProvider `json:"providers"`
+}
+
 // LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
 // has one of the values, such as `hd` for the domain of a Google Workspace organization.
 type LoginProviderClaimCondition struct {
@@ -8831,9 +8987,13 @@ type MoveInstanceRuleRequest struct {
 	Position int `json:"position"`
 }
 
-// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`
-// or `passkey`.
+// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`,
+// `passkey`, or `external_confirmation`.
 type MoveOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 
@@ -9368,9 +9528,13 @@ type PasskeyRegistration struct {
 	RegistrationToken string `json:"registration_token"`
 }
 
-// PasskeyRegistrationRequest The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
-// the user.
+// PasskeyRegistrationRequest The name of a new passkey and what confirms it: the user's `password`, a `passkey` of
+// the user, or an `external_confirmation`.
 type PasskeyRegistrationRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Name What the user calls the passkey; spaces around it are dropped.
 	Name string `json:"name"`
 
@@ -9707,7 +9871,14 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/too-many-passkeys` (409): the user already has the most passkeys
 //     allowed. Remove one first.
 //   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
-//     way to sign in: the password without a passkey, or the last passkey without a password.
+//     way to sign in: the password, the last passkey, or the last linked account when nothing
+//     else signs the user in.
+//   - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
+//     login provider is unknown, expired, used, or for another operation. Start a new one.
+//   - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
+//     disabled, does not allow links, or the user links no account at it.
+//   - `/api/v1/problems/login-provider-linked` (409): the user links an account at the login
+//     provider already.
 //   - `/api/v1/problems/too-many-oauth-apps` (409): the user already has the most OAuth apps
 //     allowed (25). Delete one first.
 //   - `/api/v1/problems/oauth-app-registration-disabled` (403): the server does not let users
@@ -10062,10 +10233,15 @@ type RemoveAccountAliasRequest struct {
 	Uri string `json:"uri"`
 }
 
-// RemovePasswordRequest The passkey that confirms the removal of the user's password.
+// RemovePasswordRequest What confirms the removal of the user's password: a `passkey` of the user or an
+// `external_confirmation`.
 type RemovePasswordRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
-	Passkey PasskeyAssertion `json:"passkey"`
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 }
 
 // ReplaceCustomEmojiImageRequest The new image of a local custom emoji.
@@ -10130,6 +10306,11 @@ type ResolveReportRequest struct {
 	// took an action on the target. `dismissed`: there was nothing to act on.
 	Outcome AdminReportOutcome `json:"outcome"`
 }
+
+// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+// sends the browser back to; the settings of the linked accounts when it is missing or not
+// such a path.
+type ReturnTo = string
 
 // RoleBadge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
 // the staff's own text, the same in every locale: clients show it as user content
@@ -12810,6 +12991,12 @@ type StartDataImportJSONRequestBody = DataImportRequest
 // PreviewDataImportJSONRequestBody defines body for PreviewDataImport for application/json ContentType.
 type PreviewDataImportJSONRequestBody = DataImportRequest
 
+// BeginLinkIdentityJSONRequestBody defines body for BeginLinkIdentity for application/json ContentType.
+type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
+
+// BeginExternalConfirmationJSONRequestBody defines body for BeginExternalConfirmation for application/json ContentType.
+type BeginExternalConfirmationJSONRequestBody = ExternalConfirmationRequest
+
 // UploadMediaMultipartRequestBody defines body for UploadMedia for multipart/form-data ContentType.
 type UploadMediaMultipartRequestBody = MediaUpload
 
@@ -14312,6 +14499,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14329,6 +14520,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -14380,6 +14575,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14411,6 +14610,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -14449,6 +14652,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 	// names `new_password`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14468,6 +14675,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 	// names `new_password`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -14476,16 +14687,20 @@ type ClientInterface interface {
 
 	// RemovePasswordWithBody Remove the authenticated user's password
 	//
-	// Removes the password of a user who has a passkey, after checking a `passkey` of the
-	// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+	// Removes the password of a user who has a passkey or a linked account, after checking a
+	// `passkey` of the user or an `external_confirmation` from a linked login provider
+	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
 	// when the server sends email. A user without a password gets a 204 and nothing changes.
-	// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+	// A user without a passkey and without a linked account gets a 409
+	// `/api/v1/problems/last-sign-in-method`; a passkey
 	// that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 	// confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 	// ones per user are accepted every hour.
+	// An unknown, expired, or used `external_confirmation` is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14494,16 +14709,20 @@ type ClientInterface interface {
 
 	// RemovePassword Remove the authenticated user's password
 	//
-	// Removes the password of a user who has a passkey, after checking a `passkey` of the
-	// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+	// Removes the password of a user who has a passkey or a linked account, after checking a
+	// `passkey` of the user or an `external_confirmation` from a linked login provider
+	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
 	// when the server sends email. A user without a password gets a 204 and nothing changes.
-	// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+	// A user without a passkey and without a linked account gets a 409
+	// `/api/v1/problems/last-sign-in-method`; a passkey
 	// that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 	// confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 	// ones per user are accepted every hour.
+	// An unknown, expired, or used `external_confirmation` is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -17561,6 +17780,107 @@ type ClientInterface interface {
 	// Corresponds with GET /instance/supporters (the `ListInstanceSupporters` operationId).
 	ListInstanceSupporters(ctx context.Context, params *ListInstanceSupportersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
+	//
+	// The accounts at external login providers that the user links, which sign the user in and
+	// confirm the user's operations, oldest first, and the login providers that users sign in
+	// with, which the user can link an account at (`allow_link`) or confirm with. A server
+	// without login providers answers two empty lists.
+	//
+	// Corresponds with GET /linked_identities (the `ListLinkedIdentities` operationId).
+	ListLinkedIdentities(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BeginLinkIdentityWithBody Start linking an account at a login provider
+	//
+	// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+	// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+	// provider. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. The provider sends the browser back to `return_to` with
+	// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+	// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+	// (another user links the account), `already_linked`, `unavailable`, `failed`,
+	// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+	// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+	// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+	// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+	// are accepted every hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+	BeginLinkIdentityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BeginLinkIdentity Start linking an account at a login provider
+	//
+	// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+	// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+	// provider. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. The provider sends the browser back to `return_to` with
+	// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+	// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+	// (another user links the account), `already_linked`, `unavailable`, `failed`,
+	// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+	// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+	// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+	// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+	// are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+	BeginLinkIdentity(ctx context.Context, body BeginLinkIdentityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BeginExternalConfirmationWithBody Start a confirmation with a linked login provider
+	//
+	// Returns the `start_url` that the browser opens to sign in again at a provider that the
+	// user links an account at, which confirms `operation` in place of the password or a
+	// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+	// user again, and an authentication older than the request does not count. The provider
+	// sends the browser back to `return_to` with the outcome in the fragment, next to
+	// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+	// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+	// the reason is `mismatch` (the user signed in with an account that the user does not link),
+	// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+	// that does not verify count against the wrong confirmations of the operation. A provider
+	// that the user links no account at, or that is disabled, is a 422
+	// `/api/v1/problems/login-provider-unavailable`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+	BeginExternalConfirmationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BeginExternalConfirmation Start a confirmation with a linked login provider
+	//
+	// Returns the `start_url` that the browser opens to sign in again at a provider that the
+	// user links an account at, which confirms `operation` in place of the password or a
+	// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+	// user again, and an authentication older than the request does not count. The provider
+	// sends the browser back to `return_to` with the outcome in the fragment, next to
+	// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+	// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+	// the reason is `mismatch` (the user signed in with an account that the user does not link),
+	// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+	// that does not verify count against the wrong confirmations of the operation. A provider
+	// that the user links no account at, or that is disabled, is a 422
+	// `/api/v1/problems/login-provider-unavailable`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+	BeginExternalConfirmation(ctx context.Context, body BeginExternalConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnlinkIdentity Unlink an account at a login provider
+	//
+	// The account no longer signs the user in or confirms the user's operations. An unknown
+	// or unlinked link is a 404, and the last way to sign in of a user without a password and
+	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+	//
+	// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
+	UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UploadMediaWithBody Upload a media file
 	//
 	// Uploads an image to attach to a post or to use as an avatar, a header, or a custom
@@ -17909,6 +18229,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A user with 20 passkeys gets a 409
 	// `/api/v1/problems/too-many-passkeys`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -17927,6 +18251,10 @@ type ClientInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A user with 20 passkeys gets a 409
 	// `/api/v1/problems/too-many-passkeys`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -17936,7 +18264,8 @@ type ClientInterface interface {
 	// DeletePasskey Remove a passkey
 	//
 	// The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-	// passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+	// passkey of a user without a password and without a linked account a 409
+	// `/api/v1/problems/last-sign-in-method`.
 	//
 	// Corresponds with DELETE /passkeys/{id} (the `DeletePasskey` operationId).
 	DeletePasskey(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19208,6 +19537,10 @@ func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAlias
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -19235,6 +19568,10 @@ func (c *Client) DeleteOwnAccountWithBody(ctx context.Context, contentType strin
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -19306,6 +19643,10 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -19347,6 +19688,10 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -19415,6 +19760,10 @@ func (c *Client) GetPasswordStatus(ctx context.Context, reqEditors ...RequestEdi
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 // names `new_password`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -19444,6 +19793,10 @@ func (c *Client) ChangePasswordWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 // names `new_password`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -19462,16 +19815,20 @@ func (c *Client) ChangePassword(ctx context.Context, body ChangePasswordJSONRequ
 
 // RemovePasswordWithBody Remove the authenticated user's password
 //
-// Removes the password of a user who has a passkey, after checking a `passkey` of the
-// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+// Removes the password of a user who has a passkey or a linked account, after checking a
+// `passkey` of the user or an `external_confirmation` from a linked login provider
+// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
 // when the server sends email. A user without a password gets a 204 and nothing changes.
-// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+// A user without a passkey and without a linked account gets a 409
+// `/api/v1/problems/last-sign-in-method`; a passkey
 // that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 // confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 // ones per user are accepted every hour.
+// An unknown, expired, or used `external_confirmation` is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -19490,16 +19847,20 @@ func (c *Client) RemovePasswordWithBody(ctx context.Context, contentType string,
 
 // RemovePassword Remove the authenticated user's password
 //
-// Removes the password of a user who has a passkey, after checking a `passkey` of the
-// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+// Removes the password of a user who has a passkey or a linked account, after checking a
+// `passkey` of the user or an `external_confirmation` from a linked login provider
+// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
 // when the server sends email. A user without a password gets a 204 and nothing changes.
-// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+// A user without a passkey and without a linked account gets a 409
+// `/api/v1/problems/last-sign-in-method`; a passkey
 // that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 // confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 // ones per user are accepted every hour.
+// An unknown, expired, or used `external_confirmation` is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -25117,6 +25478,167 @@ func (c *Client) ListInstanceSupporters(ctx context.Context, params *ListInstanc
 	return c.Client.Do(req)
 }
 
+// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
+//
+// The accounts at external login providers that the user links, which sign the user in and
+// confirm the user's operations, oldest first, and the login providers that users sign in
+// with, which the user can link an account at (`allow_link`) or confirm with. A server
+// without login providers answers two empty lists.
+//
+// Corresponds with GET /linked_identities (the `ListLinkedIdentities` operationId).
+func (c *Client) ListLinkedIdentities(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListLinkedIdentitiesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BeginLinkIdentityWithBody Start linking an account at a login provider
+//
+// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+// provider. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. The provider sends the browser back to `return_to` with
+// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+// (another user links the account), `already_linked`, `unavailable`, `failed`,
+// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+// are accepted every hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+func (c *Client) BeginLinkIdentityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBeginLinkIdentityRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BeginLinkIdentity Start linking an account at a login provider
+//
+// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+// provider. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. The provider sends the browser back to `return_to` with
+// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+// (another user links the account), `already_linked`, `unavailable`, `failed`,
+// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+// are accepted every hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+func (c *Client) BeginLinkIdentity(ctx context.Context, body BeginLinkIdentityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBeginLinkIdentityRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BeginExternalConfirmationWithBody Start a confirmation with a linked login provider
+//
+// Returns the `start_url` that the browser opens to sign in again at a provider that the
+// user links an account at, which confirms `operation` in place of the password or a
+// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+// user again, and an authentication older than the request does not count. The provider
+// sends the browser back to `return_to` with the outcome in the fragment, next to
+// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+// the reason is `mismatch` (the user signed in with an account that the user does not link),
+// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+// that does not verify count against the wrong confirmations of the operation. A provider
+// that the user links no account at, or that is disabled, is a 422
+// `/api/v1/problems/login-provider-unavailable`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+func (c *Client) BeginExternalConfirmationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBeginExternalConfirmationRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BeginExternalConfirmation Start a confirmation with a linked login provider
+//
+// Returns the `start_url` that the browser opens to sign in again at a provider that the
+// user links an account at, which confirms `operation` in place of the password or a
+// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+// user again, and an authentication older than the request does not count. The provider
+// sends the browser back to `return_to` with the outcome in the fragment, next to
+// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+// the reason is `mismatch` (the user signed in with an account that the user does not link),
+// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+// that does not verify count against the wrong confirmations of the operation. A provider
+// that the user links no account at, or that is disabled, is a 422
+// `/api/v1/problems/login-provider-unavailable`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+func (c *Client) BeginExternalConfirmation(ctx context.Context, body BeginExternalConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBeginExternalConfirmationRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnlinkIdentity Unlink an account at a login provider
+//
+// The account no longer signs the user in or confirms the user's operations. An unknown
+// or unlinked link is a 404, and the last way to sign in of a user without a password and
+// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+//
+// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
+func (c *Client) UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnlinkIdentityRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // UploadMediaWithBody Upload a media file
 //
 // Uploads an image to attach to a post or to use as an avatar, a header, or a custom
@@ -25735,6 +26257,10 @@ func (c *Client) BeginPasskeyConfirmation(ctx context.Context, reqEditors ...Req
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A user with 20 passkeys gets a 409
 // `/api/v1/problems/too-many-passkeys`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -25763,6 +26289,10 @@ func (c *Client) BeginPasskeyRegistrationWithBody(ctx context.Context, contentTy
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A user with 20 passkeys gets a 409
 // `/api/v1/problems/too-many-passkeys`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -25782,7 +26312,8 @@ func (c *Client) BeginPasskeyRegistration(ctx context.Context, body BeginPasskey
 // DeletePasskey Remove a passkey
 //
 // The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-// passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+// passkey of a user without a password and without a linked account a 409
+// `/api/v1/problems/last-sign-in-method`.
 //
 // Corresponds with DELETE /passkeys/{id} (the `DeletePasskey` operationId).
 func (c *Client) DeletePasskey(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -37418,6 +37949,147 @@ func NewListInstanceSupportersRequest(server string, params *ListInstanceSupport
 	return req, nil
 }
 
+// NewListLinkedIdentitiesRequest constructs an http.Request for the ListLinkedIdentities method
+func NewListLinkedIdentitiesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/linked_identities")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewBeginLinkIdentityRequest calls the generic BeginLinkIdentity builder with application/json body
+func NewBeginLinkIdentityRequest(server string, body BeginLinkIdentityJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBeginLinkIdentityRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewBeginLinkIdentityRequestWithBody constructs an http.Request for the BeginLinkIdentity method, with any body, and a specified content type
+func NewBeginLinkIdentityRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/linked_identities")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBeginExternalConfirmationRequest calls the generic BeginExternalConfirmation builder with application/json body
+func NewBeginExternalConfirmationRequest(server string, body BeginExternalConfirmationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBeginExternalConfirmationRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewBeginExternalConfirmationRequestWithBody constructs an http.Request for the BeginExternalConfirmation method, with any body, and a specified content type
+func NewBeginExternalConfirmationRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/linked_identities/confirmation")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnlinkIdentityRequest constructs an http.Request for the UnlinkIdentity method
+func NewUnlinkIdentityRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/linked_identities/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUploadMediaRequestWithBody constructs an http.Request for the UploadMedia method, with any body, and a specified content type
 func NewUploadMediaRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
@@ -41857,6 +42529,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -41874,6 +42550,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -41927,6 +42607,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -41958,6 +42642,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 	// accepted every hour.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -42000,6 +42688,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 	// names `new_password`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -42019,6 +42711,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 	// names `new_password`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -42027,16 +42723,20 @@ type ClientWithResponsesInterface interface {
 
 	// RemovePasswordWithBodyWithResponse Remove the authenticated user's password
 	//
-	// Removes the password of a user who has a passkey, after checking a `passkey` of the
-	// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+	// Removes the password of a user who has a passkey or a linked account, after checking a
+	// `passkey` of the user or an `external_confirmation` from a linked login provider
+	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
 	// when the server sends email. A user without a password gets a 204 and nothing changes.
-	// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+	// A user without a passkey and without a linked account gets a 409
+	// `/api/v1/problems/last-sign-in-method`; a passkey
 	// that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 	// confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 	// ones per user are accepted every hour.
+	// An unknown, expired, or used `external_confirmation` is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -42045,16 +42745,20 @@ type ClientWithResponsesInterface interface {
 
 	// RemovePasswordWithResponse Remove the authenticated user's password
 	//
-	// Removes the password of a user who has a passkey, after checking a `passkey` of the
-	// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+	// Removes the password of a user who has a passkey or a linked account, after checking a
+	// `passkey` of the user or an `external_confirmation` from a linked login provider
+	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
 	// when the server sends email. A user without a password gets a 204 and nothing changes.
-	// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+	// A user without a passkey and without a linked account gets a 409
+	// `/api/v1/problems/last-sign-in-method`; a passkey
 	// that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 	// confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 	// ones per user are accepted every hour.
+	// An unknown, expired, or used `external_confirmation` is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -45406,6 +46110,111 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /instance/supporters (the `ListInstanceSupporters` operationId).
 	ListInstanceSupportersWithResponse(ctx context.Context, params *ListInstanceSupportersParams, reqEditors ...RequestEditorFn) (*ListInstanceSupportersResponse, error)
 
+	// ListLinkedIdentitiesWithResponse List the authenticated user's linked accounts and the login providers
+	//
+	// The accounts at external login providers that the user links, which sign the user in and
+	// confirm the user's operations, oldest first, and the login providers that users sign in
+	// with, which the user can link an account at (`allow_link`) or confirm with. A server
+	// without login providers answers two empty lists.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /linked_identities (the `ListLinkedIdentities` operationId).
+	ListLinkedIdentitiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListLinkedIdentitiesResponse, error)
+
+	// BeginLinkIdentityWithBodyWithResponse Start linking an account at a login provider
+	//
+	// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+	// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+	// provider. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. The provider sends the browser back to `return_to` with
+	// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+	// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+	// (another user links the account), `already_linked`, `unavailable`, `failed`,
+	// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+	// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+	// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+	// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+	// are accepted every hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+	BeginLinkIdentityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BeginLinkIdentityResponse, error)
+
+	// BeginLinkIdentityWithResponse Start linking an account at a login provider
+	//
+	// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+	// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+	// provider. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. The provider sends the browser back to `return_to` with
+	// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+	// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+	// (another user links the account), `already_linked`, `unavailable`, `failed`,
+	// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+	// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+	// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+	// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+	// are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+	BeginLinkIdentityWithResponse(ctx context.Context, body BeginLinkIdentityJSONRequestBody, reqEditors ...RequestEditorFn) (*BeginLinkIdentityResponse, error)
+
+	// BeginExternalConfirmationWithBodyWithResponse Start a confirmation with a linked login provider
+	//
+	// Returns the `start_url` that the browser opens to sign in again at a provider that the
+	// user links an account at, which confirms `operation` in place of the password or a
+	// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+	// user again, and an authentication older than the request does not count. The provider
+	// sends the browser back to `return_to` with the outcome in the fragment, next to
+	// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+	// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+	// the reason is `mismatch` (the user signed in with an account that the user does not link),
+	// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+	// that does not verify count against the wrong confirmations of the operation. A provider
+	// that the user links no account at, or that is disabled, is a 422
+	// `/api/v1/problems/login-provider-unavailable`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+	BeginExternalConfirmationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BeginExternalConfirmationResponse, error)
+
+	// BeginExternalConfirmationWithResponse Start a confirmation with a linked login provider
+	//
+	// Returns the `start_url` that the browser opens to sign in again at a provider that the
+	// user links an account at, which confirms `operation` in place of the password or a
+	// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+	// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+	// user again, and an authentication older than the request does not count. The provider
+	// sends the browser back to `return_to` with the outcome in the fragment, next to
+	// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+	// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+	// the reason is `mismatch` (the user signed in with an account that the user does not link),
+	// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+	// that does not verify count against the wrong confirmations of the operation. A provider
+	// that the user links no account at, or that is disabled, is a 422
+	// `/api/v1/problems/login-provider-unavailable`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+	BeginExternalConfirmationWithResponse(ctx context.Context, body BeginExternalConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*BeginExternalConfirmationResponse, error)
+
+	// UnlinkIdentityWithResponse Unlink an account at a login provider
+	//
+	// The account no longer signs the user in or confirms the user's operations. An unknown
+	// or unlinked link is a 404, and the last way to sign in of a user without a password and
+	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
+	UnlinkIdentityWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*UnlinkIdentityResponse, error)
+
 	// UploadMediaWithBodyWithResponse Upload a media file
 	//
 	// Uploads an image to attach to a post or to use as an avatar, a header, or a custom
@@ -45778,6 +46587,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A user with 20 passkeys gets a 409
 	// `/api/v1/problems/too-many-passkeys`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -45796,6 +46609,10 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 	// accepted every hour. A user with 20 passkeys gets a 409
 	// `/api/v1/problems/too-many-passkeys`.
+	// An `external_confirmation` from a linked login provider
+	// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+	// expired, or used one, or one for another operation, is a 422
+	// `/api/v1/problems/external-confirmation-expired`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -45805,7 +46622,8 @@ type ClientWithResponsesInterface interface {
 	// DeletePasskeyWithResponse Remove a passkey
 	//
 	// The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-	// passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+	// passkey of a user without a password and without a linked account a 409
+	// `/api/v1/problems/last-sign-in-method`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -60802,6 +61620,252 @@ func (r ListInstanceSupportersResponse) ContentType() string {
 	return ""
 }
 
+// ListLinkedIdentitiesResponse200Headers the declared response headers of an HTTP 200 response for ListLinkedIdentities
+type ListLinkedIdentitiesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListLinkedIdentitiesResponseDefaultHeaders the declared response headers of an HTTP default response for ListLinkedIdentities
+type ListLinkedIdentitiesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListLinkedIdentitiesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LinkedIdentityList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListLinkedIdentitiesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListLinkedIdentitiesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListLinkedIdentitiesResponse) GetJSON200() *LinkedIdentityList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListLinkedIdentitiesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListLinkedIdentitiesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListLinkedIdentitiesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListLinkedIdentitiesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListLinkedIdentitiesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BeginLinkIdentityResponse200Headers the declared response headers of an HTTP 200 response for BeginLinkIdentity
+type BeginLinkIdentityResponse200Headers struct {
+	CacheControl *string
+}
+
+// BeginLinkIdentityResponseDefaultHeaders the declared response headers of an HTTP default response for BeginLinkIdentity
+type BeginLinkIdentityResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type BeginLinkIdentityResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ExternalAuthorizationStart
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BeginLinkIdentityResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *BeginLinkIdentityResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BeginLinkIdentityResponse) GetJSON200() *ExternalAuthorizationStart {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r BeginLinkIdentityResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BeginLinkIdentityResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BeginLinkIdentityResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BeginLinkIdentityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BeginLinkIdentityResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BeginExternalConfirmationResponse200Headers the declared response headers of an HTTP 200 response for BeginExternalConfirmation
+type BeginExternalConfirmationResponse200Headers struct {
+	CacheControl *string
+}
+
+// BeginExternalConfirmationResponseDefaultHeaders the declared response headers of an HTTP default response for BeginExternalConfirmation
+type BeginExternalConfirmationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type BeginExternalConfirmationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ExternalAuthorizationStart
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BeginExternalConfirmationResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *BeginExternalConfirmationResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BeginExternalConfirmationResponse) GetJSON200() *ExternalAuthorizationStart {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r BeginExternalConfirmationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BeginExternalConfirmationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BeginExternalConfirmationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BeginExternalConfirmationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BeginExternalConfirmationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnlinkIdentityResponseDefaultHeaders the declared response headers of an HTTP default response for UnlinkIdentity
+type UnlinkIdentityResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnlinkIdentityResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnlinkIdentityResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnlinkIdentityResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnlinkIdentityResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnlinkIdentityResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnlinkIdentityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnlinkIdentityResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // UploadMediaResponse202Headers the declared response headers of an HTTP 202 response for UploadMedia
 type UploadMediaResponse202Headers struct {
 	CacheControl *string
@@ -67407,6 +68471,10 @@ func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67430,6 +68498,10 @@ func (c *ClientWithResponses) DeleteOwnAccountWithBodyWithResponse(ctx context.C
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67495,6 +68567,10 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67532,6 +68608,10 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
 // accepted every hour.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67592,6 +68672,10 @@ func (c *ClientWithResponses) GetPasswordStatusWithResponse(ctx context.Context,
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 // names `new_password`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67617,6 +68701,10 @@ func (c *ClientWithResponses) ChangePasswordWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A new password that is not 8 to 128 characters is a 400 that
 // names `new_password`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67631,16 +68719,20 @@ func (c *ClientWithResponses) ChangePasswordWithResponse(ctx context.Context, bo
 
 // RemovePasswordWithBodyWithResponse Remove the authenticated user's password
 //
-// Removes the password of a user who has a passkey, after checking a `passkey` of the
-// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+// Removes the password of a user who has a passkey or a linked account, after checking a
+// `passkey` of the user or an `external_confirmation` from a linked login provider
+// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
 // when the server sends email. A user without a password gets a 204 and nothing changes.
-// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+// A user without a passkey and without a linked account gets a 409
+// `/api/v1/problems/last-sign-in-method`; a passkey
 // that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 // confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 // ones per user are accepted every hour.
+// An unknown, expired, or used `external_confirmation` is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -67655,16 +68747,20 @@ func (c *ClientWithResponses) RemovePasswordWithBodyWithResponse(ctx context.Con
 
 // RemovePasswordWithResponse Remove the authenticated user's password
 //
-// Removes the password of a user who has a passkey, after checking a `passkey` of the
-// user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+// Removes the password of a user who has a passkey or a linked account, after checking a
+// `passkey` of the user or an `external_confirmation` from a linked login provider
+// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
 // when the server sends email. A user without a password gets a 204 and nothing changes.
-// A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+// A user without a passkey and without a linked account gets a 409
+// `/api/v1/problems/last-sign-in-method`; a passkey
 // that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
 // confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
 // ones per user are accepted every hour.
+// An unknown, expired, or used `external_confirmation` is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -72552,6 +73648,147 @@ func (c *ClientWithResponses) ListInstanceSupportersWithResponse(ctx context.Con
 	return ParseListInstanceSupportersResponse(rsp)
 }
 
+// ListLinkedIdentitiesWithResponse List the authenticated user's linked accounts and the login providers
+//
+// The accounts at external login providers that the user links, which sign the user in and
+// confirm the user's operations, oldest first, and the login providers that users sign in
+// with, which the user can link an account at (`allow_link`) or confirm with. A server
+// without login providers answers two empty lists.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /linked_identities (the `ListLinkedIdentities` operationId).
+func (c *ClientWithResponses) ListLinkedIdentitiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListLinkedIdentitiesResponse, error) {
+	rsp, err := c.ListLinkedIdentities(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListLinkedIdentitiesResponse(rsp)
+}
+
+// BeginLinkIdentityWithBodyWithResponse Start linking an account at a login provider
+//
+// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+// provider. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. The provider sends the browser back to `return_to` with
+// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+// (another user links the account), `already_linked`, `unavailable`, `failed`,
+// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+// are accepted every hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+func (c *ClientWithResponses) BeginLinkIdentityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BeginLinkIdentityResponse, error) {
+	rsp, err := c.BeginLinkIdentityWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBeginLinkIdentityResponse(rsp)
+}
+
+// BeginLinkIdentityWithResponse Start linking an account at a login provider
+//
+// Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+// `link` operation) and returns the `start_url` that the browser opens to sign in at the
+// provider. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. The provider sends the browser back to `return_to` with
+// the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+// the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+// (another user links the account), `already_linked`, `unavailable`, `failed`,
+// `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+// links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+// links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+// wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+// are accepted every hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /linked_identities (the `BeginLinkIdentity` operationId).
+func (c *ClientWithResponses) BeginLinkIdentityWithResponse(ctx context.Context, body BeginLinkIdentityJSONRequestBody, reqEditors ...RequestEditorFn) (*BeginLinkIdentityResponse, error) {
+	rsp, err := c.BeginLinkIdentity(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBeginLinkIdentityResponse(rsp)
+}
+
+// BeginExternalConfirmationWithBodyWithResponse Start a confirmation with a linked login provider
+//
+// Returns the `start_url` that the browser opens to sign in again at a provider that the
+// user links an account at, which confirms `operation` in place of the password or a
+// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+// user again, and an authentication older than the request does not count. The provider
+// sends the browser back to `return_to` with the outcome in the fragment, next to
+// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+// the reason is `mismatch` (the user signed in with an account that the user does not link),
+// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+// that does not verify count against the wrong confirmations of the operation. A provider
+// that the user links no account at, or that is disabled, is a 422
+// `/api/v1/problems/login-provider-unavailable`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+func (c *ClientWithResponses) BeginExternalConfirmationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BeginExternalConfirmationResponse, error) {
+	rsp, err := c.BeginExternalConfirmationWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBeginExternalConfirmationResponse(rsp)
+}
+
+// BeginExternalConfirmationWithResponse Start a confirmation with a linked login provider
+//
+// Returns the `start_url` that the browser opens to sign in again at a provider that the
+// user links an account at, which confirms `operation` in place of the password or a
+// passkey. The browser must be signed in to the server's sign-in pages as the same user;
+// one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+// user again, and an authentication older than the request does not count. The provider
+// sends the browser back to `return_to` with the outcome in the fragment, next to
+// `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+// once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+// the reason is `mismatch` (the user signed in with an account that the user does not link),
+// `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+// that does not verify count against the wrong confirmations of the operation. A provider
+// that the user links no account at, or that is disabled, is a 422
+// `/api/v1/problems/login-provider-unavailable`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /linked_identities/confirmation (the `BeginExternalConfirmation` operationId).
+func (c *ClientWithResponses) BeginExternalConfirmationWithResponse(ctx context.Context, body BeginExternalConfirmationJSONRequestBody, reqEditors ...RequestEditorFn) (*BeginExternalConfirmationResponse, error) {
+	rsp, err := c.BeginExternalConfirmation(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBeginExternalConfirmationResponse(rsp)
+}
+
+// UnlinkIdentityWithResponse Unlink an account at a login provider
+//
+// The account no longer signs the user in or confirms the user's operations. An unknown
+// or unlinked link is a 404, and the last way to sign in of a user without a password and
+// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
+func (c *ClientWithResponses) UnlinkIdentityWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*UnlinkIdentityResponse, error) {
+	rsp, err := c.UnlinkIdentity(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnlinkIdentityResponse(rsp)
+}
+
 // UploadMediaWithBodyWithResponse Upload a media file
 //
 // Uploads an image to attach to a post or to use as an avatar, a header, or a custom
@@ -73086,6 +74323,10 @@ func (c *ClientWithResponses) BeginPasskeyConfirmationWithResponse(ctx context.C
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A user with 20 passkeys gets a 409
 // `/api/v1/problems/too-many-passkeys`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -73110,6 +74351,10 @@ func (c *ClientWithResponses) BeginPasskeyRegistrationWithBodyWithResponse(ctx c
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
 // accepted every hour. A user with 20 passkeys gets a 409
 // `/api/v1/problems/too-many-passkeys`.
+// An `external_confirmation` from a linked login provider
+// (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+// expired, or used one, or one for another operation, is a 422
+// `/api/v1/problems/external-confirmation-expired`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -73125,7 +74370,8 @@ func (c *ClientWithResponses) BeginPasskeyRegistrationWithResponse(ctx context.C
 // DeletePasskeyWithResponse Remove a passkey
 //
 // The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-// passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+// passkey of a user without a password and without a linked account a 409
+// `/api/v1/problems/last-sign-in-method`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -91531,6 +92777,300 @@ func ParseListInstanceSupportersResponse(rsp *http.Response) (*ListInstanceSuppo
 		response.Headers200 = &headers
 	case true:
 		var headers ListInstanceSupportersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListLinkedIdentitiesResponse parses an HTTP response from a ListLinkedIdentitiesWithResponse call
+func ParseListLinkedIdentitiesResponse(rsp *http.Response) (*ListLinkedIdentitiesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListLinkedIdentitiesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LinkedIdentityList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListLinkedIdentitiesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListLinkedIdentitiesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseBeginLinkIdentityResponse parses an HTTP response from a BeginLinkIdentityWithResponse call
+func ParseBeginLinkIdentityResponse(rsp *http.Response) (*BeginLinkIdentityResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BeginLinkIdentityResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExternalAuthorizationStart
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BeginLinkIdentityResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers BeginLinkIdentityResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseBeginExternalConfirmationResponse parses an HTTP response from a BeginExternalConfirmationWithResponse call
+func ParseBeginExternalConfirmationResponse(rsp *http.Response) (*BeginExternalConfirmationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BeginExternalConfirmationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExternalAuthorizationStart
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BeginExternalConfirmationResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers BeginExternalConfirmationResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnlinkIdentityResponse parses an HTTP response from a UnlinkIdentityWithResponse call
+func ParseUnlinkIdentityResponse(rsp *http.Response) (*UnlinkIdentityResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnlinkIdentityResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers UnlinkIdentityResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

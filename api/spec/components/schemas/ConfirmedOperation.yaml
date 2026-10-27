@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An operation that the user confirms: registering a passkey (`passkey_registration`),
+  changing or setting the password (`password_change`), removing it (`password_removal`),
+  deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+  account at a login provider (`link`).
+type: string
+enum: [passkey_registration, password_change, password_removal, account_deletion, account_move, link]

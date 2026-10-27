@@ -20,6 +20,7 @@ import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { DataExport, DataExportState } from "../api/account";
 import { type AccountDeletion, type DataExports, useAccountDeletion, useDataExports } from "../hooks/useOwnAccount";
+import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 const stateLabels: Readonly<Record<DataExportState, ClientMessageKey>> = {
   pending: "client:settings.account.export.state.pending",
@@ -158,9 +159,13 @@ function DeletionView({ deletion }: { deletion: AccountDeletion }) {
   return (
     <Stack align="start" gap="4">
       <p>{t("client:settings.account.delete.description")}</p>
-      <Button variant="danger" onPress={deletion.open}>
-        {t("client:settings.account.delete.open")}
-      </Button>
+      {/* A user with neither a password nor a passkey signs in again at a linked provider first. */}
+      {deletion.external.isPreferred && <ExternalConfirmationChoice confirmation={deletion.external} />}
+      {(!deletion.external.isPreferred || deletion.external.confirmed !== undefined) && (
+        <Button variant="danger" onPress={deletion.open}>
+          {t("client:settings.account.delete.open")}
+        </Button>
+      )}
       <ConfirmDialog
         isOpen={deletion.isOpen}
         onOpenChange={(isOpen) => {
@@ -168,7 +173,11 @@ function DeletionView({ deletion }: { deletion: AccountDeletion }) {
         }}
         title={t("client:settings.account.delete.confirm.title")}
         description={t(
-          deletion.hasPassword ? "client:settings.account.delete.confirm.description" : "client:settings.account.delete.confirm.description_passkey",
+          deletion.hasPassword
+            ? "client:settings.account.delete.confirm.description"
+            : deletion.external.isPreferred
+              ? "client:settings.account.delete.confirm.description_external"
+              : "client:settings.account.delete.confirm.description_passkey",
         )}
         confirmLabel={t("client:settings.account.delete.confirm")}
         cancelLabel={t("client:settings.account.delete.cancel")}

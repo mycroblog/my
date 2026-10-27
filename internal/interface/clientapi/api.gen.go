@@ -1327,6 +1327,36 @@ func (e ClientErrorReportKind) Valid() bool {
 	}
 }
 
+// Defines values for ConfirmedOperation.
+const (
+	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
+	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
+	ConfirmedOperationLink                ConfirmedOperation = "link"
+	ConfirmedOperationPasskeyRegistration ConfirmedOperation = "passkey_registration"
+	ConfirmedOperationPasswordChange      ConfirmedOperation = "password_change"
+	ConfirmedOperationPasswordRemoval     ConfirmedOperation = "password_removal"
+)
+
+// Valid indicates whether the value is a known member of the ConfirmedOperation enum.
+func (e ConfirmedOperation) Valid() bool {
+	switch e {
+	case ConfirmedOperationAccountDeletion:
+		return true
+	case ConfirmedOperationAccountMove:
+		return true
+	case ConfirmedOperationLink:
+		return true
+	case ConfirmedOperationPasskeyRegistration:
+		return true
+	case ConfirmedOperationPasswordChange:
+		return true
+	case ConfirmedOperationPasswordRemoval:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CostBasis.
 const (
 	CostBasisAmortized CostBasis = "amortized"
@@ -6367,10 +6397,15 @@ type BillingSourceName string
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
 
-// ChangePasswordRequest A change of the user's password, confirmed with `current_password` or `passkey`.
+// ChangePasswordRequest A change of the user's password, confirmed with `current_password`, `passkey`, or
+// `external_confirmation`.
 type ChangePasswordRequest struct {
 	// CurrentPassword The user's current password, which confirms the change.
 	CurrentPassword *string `json:"current_password,omitempty"`
+
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
 
 	// NewPassword The new password, 8 to 128 characters.
 	NewPassword string `json:"new_password"`
@@ -6413,6 +6448,12 @@ type CloseServiceRequest struct {
 	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
 	ConfirmDomain string `json:"confirm_domain"`
 }
+
+// ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
+// changing or setting the password (`password_change`), removing it (`password_removal`),
+// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// account at a login provider (`link`).
+type ConfirmedOperation string
 
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
 type CopyCustomEmojiRequest struct {
@@ -7367,8 +7408,13 @@ type DecideAppealRequest struct {
 	PublicReason *string `json:"public_reason,omitempty"`
 }
 
-// DeleteOwnAccountRequest The confirmation of the deletion of the user's own account: `password` or `passkey`.
+// DeleteOwnAccountRequest The confirmation of the deletion of the user's own account: `password`, `passkey`, or
+// `external_confirmation`.
 type DeleteOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 
@@ -7706,6 +7752,38 @@ type ErrorGroupSource string
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
+
+// ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
+type ExternalAuthorizationStart struct {
+	// ExpiresAt When `start_url` stops working.
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// StartUrl The URL on this server that sends the browser on to the provider.
+	StartUrl string `json:"start_url"`
+}
+
+// ExternalConfirmationRequest The linked login provider to confirm an operation with.
+type ExternalConfirmationRequest struct {
+	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
+	// changing or setting the password (`password_change`), removing it (`password_removal`),
+	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// account at a login provider (`link`).
+	Operation ConfirmedOperation `json:"operation"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+	// sends the browser back to; the settings of the linked accounts when it is missing or not
+	// such a path.
+	ReturnTo *ReturnTo `json:"return_to,omitempty"`
+}
+
+// ExternalConfirmationToken The `external_confirmation` token of a re-authentication with a linked login provider
+// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+type ExternalConfirmationToken = string
 
 // FinanceCostItemLine The amount of a cost item, or of a service of the imported costs, in a currency over a
 // period, with the provider and the category of its breakdown line. `provider` is the spelling
@@ -8450,6 +8528,84 @@ type LinkCardImage struct {
 	Width int `json:"width"`
 }
 
+// LinkIdentityRequest The login provider to link an account at, and what confirms it: the user's `password`, a
+// `passkey` of the user, or an `external_confirmation`.
+type LinkIdentityRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+	// sends the browser back to; the settings of the linked accounts when it is missing or not
+	// such a path.
+	ReturnTo *ReturnTo `json:"return_to,omitempty"`
+}
+
+// LinkableLoginProvider An enabled login provider that users sign in with.
+type LinkableLoginProvider struct {
+	// AllowLink Whether users link accounts at the provider to their account.
+	AllowLink bool `json:"allow_link"`
+
+	// DisplayName The administrators' name for the provider, shown as written.
+	DisplayName string `json:"display_name"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	Kind LoginProviderKind `json:"kind"`
+}
+
+// LinkedIdentity An account at an external login provider that the authenticated user links.
+type LinkedIdentity struct {
+	// Available Whether the provider is enabled: the account signs the user in and confirms the
+	// user's operations.
+	Available bool `json:"available"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LinkedAt When the user linked the account.
+	LinkedAt time.Time `json:"linked_at"`
+
+	// ProviderId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	ProviderId Id `json:"provider_id"`
+
+	// ProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	ProviderKind LoginProviderKind `json:"provider_kind"`
+
+	// ProviderName The administrators' name for the provider, shown as written.
+	ProviderName string `json:"provider_name"`
+}
+
+// LinkedIdentityList The authenticated user's linked accounts and the login providers.
+type LinkedIdentityList struct {
+	// Items The linked accounts, oldest first; at most one per provider.
+	Items []LinkedIdentity `json:"items"`
+
+	// Providers The login providers that users sign in with, oldest first.
+	Providers []LinkableLoginProvider `json:"providers"`
+}
+
 // LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
 // has one of the values, such as `hd` for the domain of a Google Workspace organization.
 type LoginProviderClaimCondition struct {
@@ -8802,9 +8958,13 @@ type MoveInstanceRuleRequest struct {
 	Position int `json:"position"`
 }
 
-// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`
-// or `passkey`.
+// MoveOwnAccountRequest The move of the user's own account: the account it moves to, and the confirmation, `password`,
+// `passkey`, or `external_confirmation`.
 type MoveOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 
@@ -9323,9 +9483,13 @@ type PasskeyRegistration struct {
 	RegistrationToken string `json:"registration_token"`
 }
 
-// PasskeyRegistrationRequest The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
-// the user.
+// PasskeyRegistrationRequest The name of a new passkey and what confirms it: the user's `password`, a `passkey` of
+// the user, or an `external_confirmation`.
 type PasskeyRegistrationRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Name What the user calls the passkey; spaces around it are dropped.
 	Name string `json:"name"`
 
@@ -9662,7 +9826,14 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/too-many-passkeys` (409): the user already has the most passkeys
 //     allowed. Remove one first.
 //   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
-//     way to sign in: the password without a passkey, or the last passkey without a password.
+//     way to sign in: the password, the last passkey, or the last linked account when nothing
+//     else signs the user in.
+//   - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
+//     login provider is unknown, expired, used, or for another operation. Start a new one.
+//   - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
+//     disabled, does not allow links, or the user links no account at it.
+//   - `/api/v1/problems/login-provider-linked` (409): the user links an account at the login
+//     provider already.
 //   - `/api/v1/problems/too-many-oauth-apps` (409): the user already has the most OAuth apps
 //     allowed (25). Delete one first.
 //   - `/api/v1/problems/oauth-app-registration-disabled` (403): the server does not let users
@@ -10012,10 +10183,15 @@ type RemoveAccountAliasRequest struct {
 	Uri string `json:"uri"`
 }
 
-// RemovePasswordRequest The passkey that confirms the removal of the user's password.
+// RemovePasswordRequest What confirms the removal of the user's password: a `passkey` of the user or an
+// `external_confirmation`.
 type RemovePasswordRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
-	Passkey PasskeyAssertion `json:"passkey"`
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 }
 
 // ReplaceCustomEmojiImageRequest The new image of a local custom emoji.
@@ -10080,6 +10256,11 @@ type ResolveReportRequest struct {
 	// took an action on the target. `dismissed`: there was nothing to act on.
 	Outcome AdminReportOutcome `json:"outcome"`
 }
+
+// ReturnTo The path on this server, such as `/settings/linked-accounts`, that the login provider
+// sends the browser back to; the settings of the linked accounts when it is missing or not
+// such a path.
+type ReturnTo = string
 
 // RoleBadge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
 // the staff's own text, the same in every locale: clients show it as user content
@@ -12754,6 +12935,12 @@ type StartDataImportJSONRequestBody = DataImportRequest
 // PreviewDataImportJSONRequestBody defines body for PreviewDataImport for application/json ContentType.
 type PreviewDataImportJSONRequestBody = DataImportRequest
 
+// BeginLinkIdentityJSONRequestBody defines body for BeginLinkIdentity for application/json ContentType.
+type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
+
+// BeginExternalConfirmationJSONRequestBody defines body for BeginExternalConfirmation for application/json ContentType.
+type BeginExternalConfirmationJSONRequestBody = ExternalConfirmationRequest
+
 // UploadMediaMultipartRequestBody defines body for UploadMedia for multipart/form-data ContentType.
 type UploadMediaMultipartRequestBody = MediaUpload
 
@@ -13491,6 +13678,18 @@ type ServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(w http.ResponseWriter, r *http.Request, params ListInstanceSupportersParams)
+	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
+	// (GET /linked_identities)
+	ListLinkedIdentities(w http.ResponseWriter, r *http.Request)
+	// BeginLinkIdentity Start linking an account at a login provider
+	// (POST /linked_identities)
+	BeginLinkIdentity(w http.ResponseWriter, r *http.Request)
+	// BeginExternalConfirmation Start a confirmation with a linked login provider
+	// (POST /linked_identities/confirmation)
+	BeginExternalConfirmation(w http.ResponseWriter, r *http.Request)
+	// UnlinkIdentity Unlink an account at a login provider
+	// (DELETE /linked_identities/{id})
+	UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id)
 	// UploadMedia Upload a media file
 	// (POST /media)
 	UploadMedia(w http.ResponseWriter, r *http.Request)
@@ -20093,6 +20292,74 @@ func (siw *ServerInterfaceWrapper) ListInstanceSupporters(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListLinkedIdentities operation middleware
+func (siw *ServerInterfaceWrapper) ListLinkedIdentities(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLinkedIdentities(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginLinkIdentity operation middleware
+func (siw *ServerInterfaceWrapper) BeginLinkIdentity(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginLinkIdentity(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginExternalConfirmation operation middleware
+func (siw *ServerInterfaceWrapper) BeginExternalConfirmation(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginExternalConfirmation(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlinkIdentity operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkIdentity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkIdentity(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UploadMedia operation middleware
 func (siw *ServerInterfaceWrapper) UploadMedia(w http.ResponseWriter, r *http.Request) {
 
@@ -23053,6 +23320,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/passkeys/registration", wrapper.BeginPasskeyRegistration)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/passkeys/confirmation", wrapper.BeginPasskeyConfirmation)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/passkeys/{id}", wrapper.DeletePasskey)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/linked_identities", wrapper.ListLinkedIdentities)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/linked_identities", wrapper.BeginLinkIdentity)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/linked_identities/confirmation", wrapper.BeginExternalConfirmation)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/linked_identities/{id}", wrapper.UnlinkIdentity)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/authorized_apps", wrapper.ListAuthorizedApps)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/authorized_apps/{id}", wrapper.RevokeAuthorizedApp)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/oauth_apps", wrapper.ListOAuthApps)
@@ -36325,6 +36596,237 @@ func (response ListInstanceSupportersdefaultApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListLinkedIdentitiesRequestObject struct {
+}
+
+type ListLinkedIdentitiesResponseObject interface {
+	VisitListLinkedIdentitiesResponse(w http.ResponseWriter) error
+}
+
+type ListLinkedIdentities200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListLinkedIdentities200JSONResponse struct {
+	Body    LinkedIdentityList
+	Headers ListLinkedIdentities200ResponseHeaders
+}
+
+func (response ListLinkedIdentities200JSONResponse) VisitListLinkedIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinkedIdentitiesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListLinkedIdentitiesdefaultApplicationProblemPlusJSONResponse) VisitListLinkedIdentitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginLinkIdentityRequestObject struct {
+	Body *BeginLinkIdentityJSONRequestBody
+}
+
+type BeginLinkIdentityResponseObject interface {
+	VisitBeginLinkIdentityResponse(w http.ResponseWriter) error
+}
+
+type BeginLinkIdentity200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type BeginLinkIdentity200JSONResponse struct {
+	Body    ExternalAuthorizationStart
+	Headers BeginLinkIdentity200ResponseHeaders
+}
+
+func (response BeginLinkIdentity200JSONResponse) VisitBeginLinkIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse) VisitBeginLinkIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginExternalConfirmationRequestObject struct {
+	Body *BeginExternalConfirmationJSONRequestBody
+}
+
+type BeginExternalConfirmationResponseObject interface {
+	VisitBeginExternalConfirmationResponse(w http.ResponseWriter) error
+}
+
+type BeginExternalConfirmation200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type BeginExternalConfirmation200JSONResponse struct {
+	Body    ExternalAuthorizationStart
+	Headers BeginExternalConfirmation200ResponseHeaders
+}
+
+func (response BeginExternalConfirmation200JSONResponse) VisitBeginExternalConfirmationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse) VisitBeginExternalConfirmationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkIdentityRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type UnlinkIdentityResponseObject interface {
+	VisitUnlinkIdentityResponse(w http.ResponseWriter) error
+}
+
+type UnlinkIdentity204Response struct {
+}
+
+func (response UnlinkIdentity204Response) VisitUnlinkIdentityResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkIdentitydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnlinkIdentitydefaultApplicationProblemPlusJSONResponse) VisitUnlinkIdentityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UploadMediaRequestObject struct {
 	Body *multipart.Reader
 }
@@ -43039,6 +43541,18 @@ type StrictServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(ctx context.Context, request ListInstanceSupportersRequestObject) (ListInstanceSupportersResponseObject, error)
+	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
+	// (GET /linked_identities)
+	ListLinkedIdentities(ctx context.Context, request ListLinkedIdentitiesRequestObject) (ListLinkedIdentitiesResponseObject, error)
+	// BeginLinkIdentity Start linking an account at a login provider
+	// (POST /linked_identities)
+	BeginLinkIdentity(ctx context.Context, request BeginLinkIdentityRequestObject) (BeginLinkIdentityResponseObject, error)
+	// BeginExternalConfirmation Start a confirmation with a linked login provider
+	// (POST /linked_identities/confirmation)
+	BeginExternalConfirmation(ctx context.Context, request BeginExternalConfirmationRequestObject) (BeginExternalConfirmationResponseObject, error)
+	// UnlinkIdentity Unlink an account at a login provider
+	// (DELETE /linked_identities/{id})
+	UnlinkIdentity(ctx context.Context, request UnlinkIdentityRequestObject) (UnlinkIdentityResponseObject, error)
 	// UploadMedia Upload a media file
 	// (POST /media)
 	UploadMedia(ctx context.Context, request UploadMediaRequestObject) (UploadMediaResponseObject, error)
@@ -49203,6 +49717,118 @@ func (sh *strictHandler) ListInstanceSupporters(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceSupportersResponseObject); ok {
 		if err := validResponse.VisitListInstanceSupportersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListLinkedIdentities operation middleware
+func (sh *strictHandler) ListLinkedIdentities(w http.ResponseWriter, r *http.Request) {
+	var request ListLinkedIdentitiesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLinkedIdentities(ctx, request.(ListLinkedIdentitiesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLinkedIdentities")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLinkedIdentitiesResponseObject); ok {
+		if err := validResponse.VisitListLinkedIdentitiesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginLinkIdentity operation middleware
+func (sh *strictHandler) BeginLinkIdentity(w http.ResponseWriter, r *http.Request) {
+	var request BeginLinkIdentityRequestObject
+
+	var body BeginLinkIdentityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginLinkIdentity(ctx, request.(BeginLinkIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginLinkIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginLinkIdentityResponseObject); ok {
+		if err := validResponse.VisitBeginLinkIdentityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginExternalConfirmation operation middleware
+func (sh *strictHandler) BeginExternalConfirmation(w http.ResponseWriter, r *http.Request) {
+	var request BeginExternalConfirmationRequestObject
+
+	var body BeginExternalConfirmationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginExternalConfirmation(ctx, request.(BeginExternalConfirmationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginExternalConfirmation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginExternalConfirmationResponseObject); ok {
+		if err := validResponse.VisitBeginExternalConfirmationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlinkIdentity operation middleware
+func (sh *strictHandler) UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id) {
+	var request UnlinkIdentityRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkIdentity(ctx, request.(UnlinkIdentityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkIdentity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkIdentityResponseObject); ok {
+		if err := validResponse.VisitUnlinkIdentityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

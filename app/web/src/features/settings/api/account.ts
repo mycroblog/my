@@ -4,7 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
-import { confirmWithPasskey } from "./passkeys";
+import { type Confirmation, confirmationBody } from "./linkedIdentities";
 
 type Schemas = components["schemas"];
 
@@ -51,9 +51,8 @@ export async function fetchExportArchive(api: Api, id: string): Promise<Blob> {
 export function deleteOwnAccountMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/delete"] as const,
-    mutationFn: async (password: string | undefined): Promise<void> => {
-      const body = password === undefined ? { passkey: await confirmWithPasskey(api) } : { password };
-      await api.fetch.POST("/accounts/delete", { body });
+    mutationFn: async (confirmation: Confirmation): Promise<void> => {
+      await api.fetch.POST("/accounts/delete", { body: await confirmationBody(api, confirmation) });
     },
   };
 }

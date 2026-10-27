@@ -287,7 +287,7 @@ func (s *Service) ChangePassword(ctx context.Context, in ChangePasswordInput) er
 	if err := identity.ValidatePassword(in.NewPassword); err != nil {
 		return err
 	}
-	if err := s.confirm(ctx, PasswordChangeLimit, in.UserID, in.Confirmation); err != nil {
+	if err := s.confirm(ctx, OperationPasswordChange, in.UserID, in.Confirmation); err != nil {
 		return err
 	}
 	hash, err := s.d.Passwords.Hash(ctx, in.NewPassword)

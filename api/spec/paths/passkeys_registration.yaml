@@ -14,6 +14,10 @@ post:
     `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
     accepted every hour. A user with 20 passkeys gets a 409
     `/api/v1/problems/too-many-passkeys`.
+    An `external_confirmation` from a linked login provider
+    (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+    expired, or used one, or one for another operation, is a 422
+    `/api/v1/problems/external-confirmation-expired`.
   tags: [passkeys]
   security:
     - oauth2: ["write:accounts"]

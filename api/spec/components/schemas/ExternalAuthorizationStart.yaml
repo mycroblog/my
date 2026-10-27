@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: Where the browser goes to sign in at a login provider.
+type: object
+required: [start_url, expires_at]
+properties:
+  start_url:
+    description: The URL on this server that sends the browser on to the provider.
+    type: string
+  expires_at:
+    description: When `start_url` stops working.
+    type: string
+    format: date-time

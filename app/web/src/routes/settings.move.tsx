@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
-import { AccountMoveSettings, passwordStatusQueryOptions } from "../features/settings";
+import { AccountMoveSettings, linkedIdentitiesQueryOptions, passkeysQueryOptions, passwordStatusQueryOptions } from "../features/settings";
 import { viewerQueryOptions } from "../features/session";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
@@ -14,6 +14,8 @@ export const Route = createFileRoute("/settings/move")({
     await Promise.all([
       context.queryClient.query({ ...viewerQueryOptions(context.api), staleTime: Infinity }),
       context.queryClient.query({ ...passwordStatusQueryOptions(context.api), staleTime: Infinity }),
+      context.queryClient.query({ ...passkeysQueryOptions(context.api), staleTime: Infinity }),
+      context.queryClient.query({ ...linkedIdentitiesQueryOptions(context.api), staleTime: Infinity }),
     ]);
   },
   component: MovePage,

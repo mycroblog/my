@@ -1790,5 +1790,189 @@
   "settings.push.type.service_closure": {
     "defaultMessage": "Closure of this server",
     "description": "Checkbox of the push notification kinds: the closure of the service was announced, rescheduled or withdrawn."
+  },
+  "settings.linked_accounts.title": {
+    "defaultMessage": "Linked accounts",
+    "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."
+  },
+  "settings.linked_accounts.description": {
+    "defaultMessage": "Accounts at these services sign you in instead of your password, and confirm changes to your account. Linking one never shares your posts with the service.",
+    "description": "Description at the top of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.list.title": {
+    "defaultMessage": "Your linked accounts",
+    "description": "Heading of the list of the user's linked accounts on the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.empty": {
+    "defaultMessage": "You have not linked any account.",
+    "description": "Empty state of the list of linked accounts."
+  },
+  "settings.linked_accounts.linked_at": {
+    "defaultMessage": "Linked {date}",
+    "description": "When an account was linked, under the service's name. {date} is a formatted date and time."
+  },
+  "settings.linked_accounts.unavailable": {
+    "defaultMessage": "This service is turned off for now: the account does not sign you in.",
+    "description": "Note under a linked account whose service the administrators turned off."
+  },
+  "settings.linked_accounts.unlink": {
+    "defaultMessage": "Unlink",
+    "description": "Button of a linked account that unlinks it, after a dialog."
+  },
+  "settings.linked_accounts.unlink.title": {
+    "defaultMessage": "Unlink your account at {provider}?",
+    "description": "Title of the dialog that confirms unlinking an account. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.unlink.description": {
+    "defaultMessage": "You can no longer sign in with that account. You can link it again later.",
+    "description": "Description of the dialog that confirms unlinking an account."
+  },
+  "settings.linked_accounts.unlink.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog that confirms unlinking an account, without unlinking it."
+  },
+  "settings.linked_accounts.unlink.last": {
+    "defaultMessage": "This is your last way to sign in. Set a password, add a passkey, or link another account first.",
+    "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
+  },
+  "settings.linked_accounts.unlink.failed": {
+    "defaultMessage": "The account could not be unlinked: {reason}",
+    "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.unlinked": {
+    "defaultMessage": "Unlinked your account at {provider}.",
+    "description": "Announcement after an account was unlinked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.add.title": {
+    "defaultMessage": "Link an account",
+    "description": "Heading of the section that links an account at a sign-in service."
+  },
+  "settings.linked_accounts.add.description": {
+    "defaultMessage": "You sign in at the service, which then sends you back here. An account linked to someone else on this server cannot be linked.",
+    "description": "Description of the section that links an account."
+  },
+  "settings.linked_accounts.add.none": {
+    "defaultMessage": "There is no service to link an account at.",
+    "description": "Note in the section that links an account when the server has no service that allows linking, or the user linked every one."
+  },
+  "settings.linked_accounts.link": {
+    "defaultMessage": "Link {provider}",
+    "description": "Button that starts linking an account at a service. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.link.title": {
+    "defaultMessage": "Link your account at {provider}",
+    "description": "Title of the dialog that confirms linking an account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description": {
+    "defaultMessage": "Enter your password to continue to {provider}.",
+    "description": "Description of the dialog that links an account, for a user with a password. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_passkey": {
+    "defaultMessage": "Your browser asks for one of your passkeys, then you continue to {provider}.",
+    "description": "Description of the dialog that links an account, for a user without a password who has passkeys. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_external": {
+    "defaultMessage": "You signed in again with a linked account. Continue to {provider}.",
+    "description": "Description of the dialog that links an account, once the user confirmed with another linked account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.password": {
+    "defaultMessage": "Current password",
+    "description": "Label of the password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.password.required": {
+    "defaultMessage": "Enter your password.",
+    "description": "Error of the empty password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.wrong_password": {
+    "defaultMessage": "The password is wrong.",
+    "description": "Error in the dialog that links an account when the password is wrong."
+  },
+  "settings.linked_accounts.link.continue": {
+    "defaultMessage": "Continue",
+    "description": "Button of the dialog that links an account: it leaves for the service."
+  },
+  "settings.linked_accounts.link.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog that links an account."
+  },
+  "settings.linked_accounts.link.failed": {
+    "defaultMessage": "The link could not be started: {reason}",
+    "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.linked": {
+    "defaultMessage": "Linked your account at {provider}.",
+    "description": "Status at the top of the page after the service sent the user back with the account linked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.failed.linked_elsewhere": {
+    "defaultMessage": "That account is linked to another user of this server.",
+    "description": "Alert when the account the user signed in with at the service is linked to another user already."
+  },
+  "settings.linked_accounts.failed.already_linked": {
+    "defaultMessage": "You have already linked an account at that service.",
+    "description": "Alert when the user links an account at a service where they already have one linked."
+  },
+  "settings.linked_accounts.failed.denied": {
+    "defaultMessage": "That service does not accept the account you signed in with.",
+    "description": "Alert when the account at the service does not meet the conditions that the administrators set (such as an organization)."
+  },
+  "settings.linked_accounts.failed.unavailable": {
+    "defaultMessage": "That service is not available.",
+    "description": "Alert when the service is turned off or no longer allows linking."
+  },
+  "settings.linked_accounts.failed.expired": {
+    "defaultMessage": "The link took too long. Try again.",
+    "description": "Alert when the link expired before the service sent the user back."
+  },
+  "settings.linked_accounts.failed.rate_limited": {
+    "defaultMessage": "Too many attempts. Try again later.",
+    "description": "Alert when the user tried too many times."
+  },
+  "settings.linked_accounts.failed.failed": {
+    "defaultMessage": "The service did not complete the sign-in. Try again.",
+    "description": "Alert when the user cancelled at the service, or the service answered an error."
+  },
+  "settings.external_confirmation.description": {
+    "defaultMessage": "Confirm that it is you by signing in again with a linked account.",
+    "description": "Text above the buttons that confirm an operation (such as deleting the account) by signing in again at a linked service, for a user without a password and passkeys."
+  },
+  "settings.external_confirmation.start": {
+    "defaultMessage": "Sign in again with {provider}",
+    "description": "Button that leaves for a linked service to confirm an operation. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.external_confirmation.confirmed": {
+    "defaultMessage": "You signed in again with {provider}. Finish within 10 minutes.",
+    "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
+  },
+  "settings.external_confirmation.start_failed": {
+    "defaultMessage": "The confirmation could not be started: {reason}",
+    "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
+  },
+  "settings.external_confirmation.failed.mismatch": {
+    "defaultMessage": "You signed in with an account that is not linked to yours. Try again with your linked account.",
+    "description": "Alert when the user confirmed at the service with another account than the linked one."
+  },
+  "settings.external_confirmation.failed.expired": {
+    "defaultMessage": "The confirmation took too long or was already used. Try again.",
+    "description": "Alert when the confirmation with a linked service expired (10 minutes) or was used."
+  },
+  "settings.external_confirmation.failed.rate_limited": {
+    "defaultMessage": "Too many attempts. Try again later.",
+    "description": "Alert when the user failed to confirm too many times."
+  },
+  "settings.external_confirmation.failed.unavailable": {
+    "defaultMessage": "That service is not available.",
+    "description": "Alert when the linked service is turned off."
+  },
+  "settings.external_confirmation.failed.denied": {
+    "defaultMessage": "That service does not accept the account you signed in with.",
+    "description": "Alert when the account at the service does not meet the administrators' conditions."
+  },
+  "settings.external_confirmation.failed.failed": {
+    "defaultMessage": "The service did not confirm the sign-in. Try again.",
+    "description": "Alert when the user cancelled at the service, the service answered an error, or it did not ask the user to sign in again."
+  },
+  "settings.account.delete.confirm.description_external": {
+    "defaultMessage": "Your account is deleted at once, and you are signed out. This cannot be undone.",
+    "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
   }
 }

@@ -71,7 +71,14 @@ description: |
   - `/api/v1/problems/too-many-passkeys` (409): the user already has the most passkeys
     allowed. Remove one first.
   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
-    way to sign in: the password without a passkey, or the last passkey without a password.
+    way to sign in: the password, the last passkey, or the last linked account when nothing
+    else signs the user in.
+  - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
+    login provider is unknown, expired, used, or for another operation. Start a new one.
+  - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
+    disabled, does not allow links, or the user links no account at it.
+  - `/api/v1/problems/login-provider-linked` (409): the user links an account at the login
+    provider already.
   - `/api/v1/problems/too-many-oauth-apps` (409): the user already has the most OAuth apps
     allowed (25). Delete one first.
   - `/api/v1/problems/oauth-app-registration-disabled` (403): the server does not let users

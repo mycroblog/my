@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+delete:
+  operationId: unlinkIdentity
+  x-first-party-only: true
+  summary: Unlink an account at a login provider
+  description: |
+    The account no longer signs the user in or confirms the user's operations. An unknown
+    or unlinked link is a 404, and the last way to sign in of a user without a password and
+    without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+  tags: [linked_identities]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the link.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  responses:
+    "204":
+      description: The account is unlinked.
+    default:
+      $ref: ../components/responses/Problem.yaml

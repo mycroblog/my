@@ -445,6 +445,13 @@ func (l *Localizer) ServerAuthExternalNotLinked() string {
 	return l.format("server:auth.external.not_linked", nil)
 }
 
+// ServerAuthExternalOtherUser formats "server:auth.external.other_user". Error page when the browser that opens the link or confirmation of an account at an external login provider is signed in as another user than the one who started it.
+//
+//	en: This link is for another account. Sign out, sign in with that account, and try again.
+func (l *Localizer) ServerAuthExternalOtherUser() string {
+	return l.format("server:auth.external.other_user", nil)
+}
+
 // ServerAuthExternalSignUpEmailHint formats "server:auth.external.sign_up.email_hint". Hint under the email address on the registration page of an account at an external login provider, when the provider did not confirm the address.
 //
 //	en: You receive email at this address. We send a link to confirm it.
@@ -1439,6 +1446,13 @@ func (l *Localizer) ServerErrorsExportNotReady() string {
 	return l.format("server:errors.export.not_ready", nil)
 }
 
+// ServerErrorsExternalConfirmationExpired formats "server:errors.external_confirmation.expired". Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation.
+//
+//	en: The confirmation with the linked account expired or was already used. Try again.
+func (l *Localizer) ServerErrorsExternalConfirmationExpired() string {
+	return l.format("server:errors.external_confirmation.expired", nil)
+}
+
 // ServerErrorsFederationRestricted formats "server:errors.federation_restricted". API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post.
 //
 //	en: This server does not federate in the direction that this needs.
@@ -1549,6 +1563,20 @@ func (l *Localizer) ServerErrorsInvalidToken() string {
 //	en: The value of {name} is invalid.
 func (l *Localizer) ServerErrorsInvalidValue(name string) string {
 	return l.format("server:errors.invalid_value", map[string]any{"name": name})
+}
+
+// ServerErrorsLoginProviderLinked formats "server:errors.login_provider.linked". Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account.
+//
+//	en: You have already linked an account at that sign-in service.
+func (l *Localizer) ServerErrorsLoginProviderLinked() string {
+	return l.format("server:errors.login_provider.linked", nil)
+}
+
+// ServerErrorsLoginProviderUnavailable formats "server:errors.login_provider.unavailable". Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at.
+//
+//	en: That sign-in service is not available.
+func (l *Localizer) ServerErrorsLoginProviderUnavailable() string {
+	return l.format("server:errors.login_provider.unavailable", nil)
 }
 
 // ServerErrorsMediaAttached formats "server:errors.media_attached". API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches.
@@ -1719,9 +1747,9 @@ func (l *Localizer) ServerErrorsPasskeyInvalid() string {
 	return l.format("server:errors.passkey.invalid", nil)
 }
 
-// ServerErrorsPasskeyLastSignInMethod formats "server:errors.passkey.last_sign_in_method". Title of the HTTP 409 API error when the user removes their password without a passkey, or their last passkey without a password, which would leave them no way to sign in.
+// ServerErrorsPasskeyLastSignInMethod formats "server:errors.passkey.last_sign_in_method". Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in.
 //
-//	en: This is your last way to sign in. Add a passkey or set a password first.
+//	en: This is your last way to sign in. Add a passkey, set a password, or link an account first.
 func (l *Localizer) ServerErrorsPasskeyLastSignInMethod() string {
 	return l.format("server:errors.passkey.last_sign_in_method", nil)
 }

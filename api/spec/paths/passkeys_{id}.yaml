@@ -5,7 +5,8 @@ delete:
   summary: Remove a passkey
   description: |
     The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-    passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+    passkey of a user without a password and without a linked account a 409
+    `/api/v1/problems/last-sign-in-method`.
   tags: [passkeys]
   security:
     - oauth2: ["write:accounts"]

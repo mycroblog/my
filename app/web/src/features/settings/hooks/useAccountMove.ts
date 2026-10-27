@@ -15,6 +15,7 @@ import { viewerQueryOptions } from "../../session";
 import { confirmationFailure } from "../api/password";
 import { cancelMoveMutation, lookupMoveTarget, type MoveTarget, moveAccountMutation, refreshAfterMove } from "../api/move";
 import { confirmationErrorMessage } from "./passkeyConfirmation";
+import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 import { useHasPassword } from "./usePasswordChange";
 
 /** The account that the viewer moved to, or undefined while the account has not moved. */
@@ -45,6 +46,8 @@ export type AccountMove = {
   targetHandle: string;
   /** Whether the user has a password, which confirms the move; without one, a passkey confirms it. */
   hasPassword: boolean;
+  /** The confirmation with a linked provider, for a user with neither a password nor a passkey. */
+  external: ExternalConfirmation;
   isOpen: boolean;
   cancel: () => void;
   password: string;
@@ -62,6 +65,7 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
   const t = useT();
   const queryClient = useQueryClient();
   const hasPassword = useHasPassword();
+  const external = useExternalConfirmation("account_move", hasPassword);
   const [input, setInput] = useState("");
   const [target, setTarget] = useState<MoveTarget | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +73,8 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
   const targetHandle = target === undefined ? "" : isolate(handleOf(target.acct));
   const move = useMutation({
     ...moveAccountMutation(api),
-    onSuccess: async () => {
+    onSuccess: async (_, { confirmation }) => {
+      if (confirmation.kind === "external") external.markUsed();
       await refreshAfterMove(queryClient);
       setIsOpen(false);
       setPassword("");
@@ -107,6 +112,7 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
     target,
     targetHandle,
     hasPassword,
+    external,
     isOpen,
     cancel: () => {
       setIsOpen(false);
@@ -116,8 +122,13 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
     changePassword: setPassword,
     confirm: () => {
       if (move.isPending || target === undefined) return;
-      if (!hasPassword) move.mutate({ targetId: target.id, password: undefined });
-      else if (password !== "") move.mutate({ targetId: target.id, password });
+      if (hasPassword) {
+        if (password !== "") move.mutate({ targetId: target.id, confirmation: { kind: "password", password } });
+      } else if (!external.isPreferred) {
+        move.mutate({ targetId: target.id, confirmation: { kind: "passkey" } });
+      } else if (external.confirmed !== undefined) {
+        move.mutate({ targetId: target.id, confirmation: { kind: "external", token: external.confirmed.token } });
+      }
     },
     isPending: move.isPending,
     error:

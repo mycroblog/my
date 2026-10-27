@@ -452,8 +452,8 @@
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used."
   },
   "errors.passkey.last_sign_in_method": {
-    "defaultMessage": "これはログインに使える最後の手段です。先にパスキーを追加するか、パスワードを設定してください。",
-    "description": "Title of the HTTP 409 API error when the user removes their password without a passkey, or their last passkey without a password, which would leave them no way to sign in."
+    "defaultMessage": "これはログインに使える最後の手段です。先にパスキーを追加するか、パスワードを設定するか、アカウントをひも付けてください。",
+    "description": "Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in."
   },
   "errors.passkey.registration_expired": {
     "defaultMessage": "パスキーの登録の有効期限が切れました。最初からやり直してください。",
@@ -622,5 +622,17 @@
   "errors.voice.already_invited": {
     "defaultMessage": "その利用者はこのルームに招待済みです。",
     "description": "API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation)."
+  },
+  "errors.external_confirmation.expired": {
+    "defaultMessage": "ひも付けたアカウントでの確認の有効期限が切れたか、すでに使われています。もう一度やり直してください。",
+    "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation."
+  },
+  "errors.login_provider.unavailable": {
+    "defaultMessage": "そのログインサービスは使えません。",
+    "description": "Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at."
+  },
+  "errors.login_provider.linked": {
+    "defaultMessage": "そのログインサービスのアカウントはすでにひも付けています。",
+    "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
   }
 }

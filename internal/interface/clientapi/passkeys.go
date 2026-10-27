@@ -45,10 +45,17 @@ type PasskeySettings interface {
 	BeginPasskeyConfirmation(ctx context.Context, userID string) (appidentity.PasskeyConfirmation, error)
 }
 
-// confirmationOf returns the confirmation of a request with password and passkey, the members
-// of its body that confirm it, or false with the name of the parameter to blame when it has
-// neither or a malformed passkey. A passkey takes the place of the password.
-func confirmationOf(password *string, passkey *PasskeyAssertion, passwordName string) (appidentity.Confirmation, string, bool) {
+// confirmationOf returns the confirmation of a request with password, passkey, and external
+// (external_confirmation), the members of its body that confirm it, or false with the name of
+// the parameter to blame when it has none or a malformed passkey. A confirmation with a linked
+// login provider takes the place of the others, and a passkey that of the password.
+func confirmationOf(password *string, passkey *PasskeyAssertion, external *string, passwordName string) (appidentity.Confirmation, string, bool) {
+	if external != nil {
+		if *external == "" {
+			return appidentity.Confirmation{}, "external_confirmation", false
+		}
+		return appidentity.Confirmation{External: *external}, "", true
+	}
 	if passkey != nil {
 		if passkey.ConfirmationToken == "" || len(passkey.Credential) == 0 {
 			return appidentity.Confirmation{}, "passkey", false
@@ -94,6 +101,8 @@ func (s *Server) passkeyProblem(ctx context.Context, err error) *problem {
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypePasskeyConfirmationExpired, l.ServerErrorsPasskeyConfirmationExpired(), "")
 	case errors.Is(err, appidentity.ErrLastSignInMethod):
 		p = s.problem(ctx, http.StatusConflict, ProblemTypeLastSignInMethod, l.ServerErrorsPasskeyLastSignInMethod(), "")
+	case errors.Is(err, appidentity.ErrExternalConfirmationExpired):
+		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeExternalConfirmationExpired, l.ServerErrorsExternalConfirmationExpired(), "")
 	default:
 		return nil
 	}
@@ -133,7 +142,7 @@ func (s *Server) BeginPasskeyRegistration(ctx context.Context, req BeginPasskeyR
 	if req.Body == nil {
 		return BeginPasskeyRegistrationdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "password")), nil
 	}
-	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, "password")
+	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
 		return BeginPasskeyRegistrationdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}

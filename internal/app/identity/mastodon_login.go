@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -200,13 +201,11 @@ func (s *Service) checkLoginProviderServer(ctx context.Context, p identity.Login
 	return nil
 }
 
-// beginMastodonLogin starts a sign-in with a mastodon provider, as BeginExternalLogin does.
-func (s *Service) beginMastodonLogin(ctx context.Context, p identity.LoginProvider, returnTo string) (ExternalLoginStart, error) {
-	now := s.d.Clock.Now()
-	t := externalLoginToken{
-		IssuedAt: now.UnixMilli(), ProviderID: p.ID, ReturnTo: returnTo, State: randomToken(), Verifier: randomToken(),
-	}
-	authURL, err := s.mastodonAuthorizationURL(ctx, p, t.State, t.Verifier, false)
+// beginMastodonLogin starts a sign-in, a link, or a confirmation with a mastodon provider, whose
+// cookie seals t.
+func (s *Service) beginMastodonLogin(ctx context.Context, p identity.LoginProvider, t externalLoginToken) (ExternalLoginStart, error) {
+	// A confirmation asks the server to have the user sign in again.
+	authURL, err := s.mastodonAuthorizationURL(ctx, p, t.State, t.Verifier, t.AuthAfter != 0)
 	if err != nil {
 		return ExternalLoginStart{}, err
 	}
@@ -214,7 +213,7 @@ func (s *Service) beginMastodonLogin(ctx context.Context, p identity.LoginProvid
 	if err != nil {
 		return ExternalLoginStart{}, err
 	}
-	return ExternalLoginStart{AuthorizationURL: authURL, Cookie: cookie, ExpiresAt: now.Add(ExternalLoginTTL)}, nil
+	return ExternalLoginStart{AuthorizationURL: authURL, Cookie: cookie, ExpiresAt: time.UnixMilli(t.IssuedAt).Add(ExternalLoginTTL)}, nil
 }
 
 // mastodonAuthorizationURL returns the authorization request of a mastodon provider with state and

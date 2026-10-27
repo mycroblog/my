@@ -71,7 +71,7 @@ func (s *Server) MoveOwnAccount(ctx context.Context, req MoveOwnAccountRequestOb
 	if req.Body == nil || req.Body.TargetAccountId == "" {
 		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "target_account_id")), nil
 	}
-	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, "password")
+	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
 		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}

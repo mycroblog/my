@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
-  the user.
+  The name of a new passkey and what confirms it: the user's `password`, a `passkey` of
+  the user, or an `external_confirmation`.
 type: object
 required: [name]
 properties:
@@ -17,3 +17,5 @@ properties:
     maxLength: 1024
   passkey:
     $ref: ./PasskeyAssertion.yaml
+  external_confirmation:
+    $ref: ./ExternalConfirmationToken.yaml

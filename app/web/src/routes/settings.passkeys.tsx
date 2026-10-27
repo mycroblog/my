@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
-import { PasskeySettings, passkeysQueryOptions, passwordStatusQueryOptions } from "../features/settings";
+import { linkedIdentitiesQueryOptions, PasskeySettings, passkeysQueryOptions, passwordStatusQueryOptions } from "../features/settings";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/settings/passkeys")({
     await Promise.all([
       context.queryClient.query({ ...passkeysQueryOptions(context.api), staleTime: Infinity }),
       context.queryClient.query({ ...passwordStatusQueryOptions(context.api), staleTime: Infinity }),
+      context.queryClient.query({ ...linkedIdentitiesQueryOptions(context.api), staleTime: Infinity }),
     ]);
   },
   component: PasskeysPage,

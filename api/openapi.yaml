@@ -45,6 +45,10 @@ tags:
     description: The authenticated user's two-factor authentication.
   - name: passkeys
     description: The authenticated user's passkeys, which sign in instead of the password.
+  - name: linked_identities
+    description: |
+      The accounts at external login providers that the authenticated user links, which sign
+      in and confirm operations instead of the password.
   - name: authorized_apps
     description: The apps the authenticated user authorized with OAuth, and revoking them.
   - name: oauth-apps
@@ -966,6 +970,10 @@ paths:
         `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
         `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
         accepted every hour.
+        An `external_confirmation` from a linked login provider
+        (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+        expired, or used one, or one for another operation, is a 422
+        `/api/v1/problems/external-confirmation-expired`.
       tags:
         - accounts
       security:
@@ -1011,6 +1019,10 @@ paths:
         `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
         `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
         accepted every hour.
+        An `external_confirmation` from a linked login provider
+        (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+        expired, or used one, or one for another operation, is a 422
+        `/api/v1/problems/external-confirmation-expired`.
       tags:
         - accounts
       security:
@@ -1089,6 +1101,10 @@ paths:
         `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
         accepted every hour. A new password that is not 8 to 128 characters is a 400 that
         names `new_password`.
+        An `external_confirmation` from a linked login provider
+        (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+        expired, or used one, or one for another operation, is a 422
+        `/api/v1/problems/external-confirmation-expired`.
       tags:
         - accounts
       security:
@@ -1111,16 +1127,20 @@ paths:
       x-first-party-only: true
       summary: Remove the authenticated user's password
       description: |
-        Removes the password of a user who has a passkey, after checking a `passkey` of the
-        user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+        Removes the password of a user who has a passkey or a linked account, after checking a
+        `passkey` of the user or an `external_confirmation` from a linked login provider
+        (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
         authentication still enters a code after one. A password reset link or
         `POST /accounts/password` with a passkey sets a password again. Every other session and
         grant of the user ends, as a change of the password does, and the user is told by email
         when the server sends email. A user without a password gets a 204 and nothing changes.
-        A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+        A user without a passkey and without a linked account gets a 409
+        `/api/v1/problems/last-sign-in-method`; a passkey
         that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
         confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
         ones per user are accepted every hour.
+        An unknown, expired, or used `external_confirmation` is a 422
+        `/api/v1/problems/external-confirmation-expired`.
       tags:
         - accounts
       security:
@@ -1586,6 +1606,10 @@ paths:
         `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
         accepted every hour. A user with 20 passkeys gets a 409
         `/api/v1/problems/too-many-passkeys`.
+        An `external_confirmation` from a linked login provider
+        (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+        expired, or used one, or one for another operation, is a 422
+        `/api/v1/problems/external-confirmation-expired`.
       tags:
         - passkeys
       security:
@@ -1644,7 +1668,8 @@ paths:
       summary: Remove a passkey
       description: |
         The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-        passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+        passkey of a user without a password and without a linked account a 409
+        `/api/v1/problems/last-sign-in-method`.
       tags:
         - passkeys
       security:
@@ -1660,6 +1685,141 @@ paths:
       responses:
         '204':
           description: The passkey is removed.
+        default:
+          $ref: '#/components/responses/Problem'
+  /linked_identities:
+    get:
+      operationId: listLinkedIdentities
+      x-first-party-only: true
+      summary: List the authenticated user's linked accounts and the login providers
+      description: |
+        The accounts at external login providers that the user links, which sign the user in and
+        confirm the user's operations, oldest first, and the login providers that users sign in
+        with, which the user can link an account at (`allow_link`) or confirm with. A server
+        without login providers answers two empty lists.
+      tags:
+        - linked_identities
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          description: The linked accounts and the login providers.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkedIdentityList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: beginLinkIdentity
+      x-first-party-only: true
+      summary: Start linking an account at a login provider
+      description: |
+        Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+        `link` operation) and returns the `start_url` that the browser opens to sign in at the
+        provider. The browser must be signed in to the server's sign-in pages as the same user;
+        one that is not signs in first. The provider sends the browser back to `return_to` with
+        the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+        the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+        (another user links the account), `already_linked`, `unavailable`, `failed`,
+        `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+        links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+        links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+        wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+        are accepted every hour.
+      tags:
+        - linked_identities
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkIdentityRequest'
+      responses:
+        '200':
+          description: Where the browser goes to sign in at the provider.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAuthorizationStart'
+        default:
+          $ref: '#/components/responses/Problem'
+  /linked_identities/confirmation:
+    post:
+      operationId: beginExternalConfirmation
+      x-first-party-only: true
+      summary: Start a confirmation with a linked login provider
+      description: |
+        Returns the `start_url` that the browser opens to sign in again at a provider that the
+        user links an account at, which confirms `operation` in place of the password or a
+        passkey. The browser must be signed in to the server's sign-in pages as the same user;
+        one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+        user again, and an authentication older than the request does not count. The provider
+        sends the browser back to `return_to` with the outcome in the fragment, next to
+        `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+        once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+        the reason is `mismatch` (the user signed in with an account that the user does not link),
+        `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+        that does not verify count against the wrong confirmations of the operation. A provider
+        that the user links no account at, or that is disabled, is a 422
+        `/api/v1/problems/login-provider-unavailable`.
+      tags:
+        - linked_identities
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalConfirmationRequest'
+      responses:
+        '200':
+          description: Where the browser goes to sign in again at the provider.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAuthorizationStart'
+        default:
+          $ref: '#/components/responses/Problem'
+  /linked_identities/{id}:
+    delete:
+      operationId: unlinkIdentity
+      x-first-party-only: true
+      summary: Unlink an account at a login provider
+      description: |
+        The account no longer signs the user in or confirms the user's operations. An unknown
+        or unlinked link is a 404, and the last way to sign in of a user without a password and
+        without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+      tags:
+        - linked_identities
+      security:
+        - oauth2:
+            - write:accounts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the link.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '204':
+          description: The account is unlinked.
         default:
           $ref: '#/components/responses/Problem'
   /authorized_apps:
@@ -13568,7 +13728,8 @@ components:
       pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
     ChangePasswordRequest:
       description: |
-        A change of the user's password, confirmed with `current_password` or `passkey`.
+        A change of the user's password, confirmed with `current_password`, `passkey`, or
+        `external_confirmation`.
       type: object
       required:
         - new_password
@@ -13580,11 +13741,27 @@ components:
           maxLength: 1024
         passkey:
           $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
         new_password:
           description: The new password, 8 to 128 characters.
           type: string
           minLength: 1
           maxLength: 1024
+    ConfirmedOperation:
+      description: |
+        An operation that the user confirms: registering a passkey (`passkey_registration`),
+        changing or setting the password (`password_change`), removing it (`password_removal`),
+        deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+        account at a login provider (`link`).
+      type: string
+      enum:
+        - passkey_registration
+        - password_change
+        - password_removal
+        - account_deletion
+        - account_move
+        - link
     CopyCustomEmojiRequest:
       description: The local custom emoji that a copy of a remote one becomes.
       type: object
@@ -14683,7 +14860,8 @@ components:
           maxLength: 2000
     DeleteOwnAccountRequest:
       description: |
-        The confirmation of the deletion of the user's own account: `password` or `passkey`.
+        The confirmation of the deletion of the user's own account: `password`, `passkey`, or
+        `external_confirmation`.
       type: object
       properties:
         password:
@@ -14693,10 +14871,12 @@ components:
           maxLength: 1024
         passkey:
           $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
     MoveOwnAccountRequest:
       description: |
-        The move of the user's own account: the account it moves to, and the confirmation, `password`
-        or `passkey`.
+        The move of the user's own account: the account it moves to, and the confirmation, `password`,
+        `passkey`, or `external_confirmation`.
       type: object
       required:
         - target_account_id
@@ -14710,6 +14890,8 @@ components:
           maxLength: 1024
         passkey:
           $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
     DomainBlock:
       description: |
         A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
@@ -15102,6 +15284,40 @@ components:
         - open
         - resolved
         - muted
+    ExternalAuthorizationStart:
+      description: Where the browser goes to sign in at a login provider.
+      type: object
+      required:
+        - start_url
+        - expires_at
+      properties:
+        start_url:
+          description: The URL on this server that sends the browser on to the provider.
+          type: string
+        expires_at:
+          description: When `start_url` stops working.
+          type: string
+          format: date-time
+    ExternalConfirmationRequest:
+      description: The linked login provider to confirm an operation with.
+      type: object
+      required:
+        - provider_id
+        - operation
+      properties:
+        provider_id:
+          $ref: '#/components/schemas/Id'
+        operation:
+          $ref: '#/components/schemas/ConfirmedOperation'
+        return_to:
+          $ref: '#/components/schemas/ReturnTo'
+    ExternalConfirmationToken:
+      description: |
+        The `external_confirmation` token of a re-authentication with a linked login provider
+        (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+      type: string
+      minLength: 1
+      maxLength: 4096
     NotificationErrorGroup:
       description: |
         What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
@@ -16011,6 +16227,46 @@ components:
         reason:
           type: string
           maxLength: 5000
+    LinkIdentityRequest:
+      description: |
+        The login provider to link an account at, and what confirms it: the user's `password`, a
+        `passkey` of the user, or an `external_confirmation`.
+      type: object
+      required:
+        - provider_id
+      properties:
+        provider_id:
+          $ref: '#/components/schemas/Id'
+        password:
+          description: The user's current password.
+          type: string
+          minLength: 1
+          maxLength: 1024
+        passkey:
+          $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
+        return_to:
+          $ref: '#/components/schemas/ReturnTo'
+    LinkableLoginProvider:
+      description: An enabled login provider that users sign in with.
+      type: object
+      required:
+        - id
+        - kind
+        - display_name
+        - allow_link
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        kind:
+          $ref: '#/components/schemas/LoginProviderKind'
+        display_name:
+          description: The administrators' name for the provider, shown as written.
+          type: string
+        allow_link:
+          description: Whether users link accounts at the provider to their account.
+          type: boolean
     LinkCard:
       description: |
         The card of the first link in a status (ADR-0062): the title, description, and image
@@ -16088,6 +16344,52 @@ components:
         description:
           description: The alternative text of the image (`og:image:alt`); omitted when it has none.
           type: string
+    LinkedIdentity:
+      description: An account at an external login provider that the authenticated user links.
+      type: object
+      required:
+        - id
+        - provider_id
+        - provider_kind
+        - provider_name
+        - linked_at
+        - available
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        provider_id:
+          $ref: '#/components/schemas/Id'
+        provider_kind:
+          $ref: '#/components/schemas/LoginProviderKind'
+        provider_name:
+          description: The administrators' name for the provider, shown as written.
+          type: string
+        linked_at:
+          description: When the user linked the account.
+          type: string
+          format: date-time
+        available:
+          description: |
+            Whether the provider is enabled: the account signs the user in and confirms the
+            user's operations.
+          type: boolean
+    LinkedIdentityList:
+      description: The authenticated user's linked accounts and the login providers.
+      type: object
+      required:
+        - items
+        - providers
+      properties:
+        items:
+          description: The linked accounts, oldest first; at most one per provider.
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedIdentity'
+        providers:
+          description: The login providers that users sign in with, oldest first.
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkableLoginProvider'
     MediaAnimatedVariants:
       description: |
         The moving renditions of an animation, absent for a still image: animated WebP for
@@ -17089,8 +17391,8 @@ components:
           format: date-time
     PasskeyRegistrationRequest:
       description: |
-        The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
-        the user.
+        The name of a new passkey and what confirms it: the user's `password`, a `passkey` of
+        the user, or an `external_confirmation`.
       type: object
       required:
         - name
@@ -17107,6 +17409,8 @@ components:
           maxLength: 1024
         passkey:
           $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
     PasswordStatus:
       description: Whether the authenticated user has a password.
       type: object
@@ -17568,7 +17872,14 @@ components:
         - `/api/v1/problems/too-many-passkeys` (409): the user already has the most passkeys
           allowed. Remove one first.
         - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
-          way to sign in: the password without a passkey, or the last passkey without a password.
+          way to sign in: the password, the last passkey, or the last linked account when nothing
+          else signs the user in.
+        - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
+          login provider is unknown, expired, used, or for another operation. Start a new one.
+        - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
+          disabled, does not allow links, or the user links no account at it.
+        - `/api/v1/problems/login-provider-linked` (409): the user links an account at the login
+          provider already.
         - `/api/v1/problems/too-many-oauth-apps` (409): the user already has the most OAuth apps
           allowed (25). Delete one first.
         - `/api/v1/problems/oauth-app-registration-disabled` (403): the server does not let users
@@ -18026,13 +18337,15 @@ components:
           minLength: 1
           maxLength: 2048
     RemovePasswordRequest:
-      description: The passkey that confirms the removal of the user's password.
+      description: |
+        What confirms the removal of the user's password: a `passkey` of the user or an
+        `external_confirmation`.
       type: object
-      required:
-        - passkey
       properties:
         passkey:
           $ref: '#/components/schemas/PasskeyAssertion'
+        external_confirmation:
+          $ref: '#/components/schemas/ExternalConfirmationToken'
     ReplaceCustomEmojiImageRequest:
       description: The new image of a local custom emoji.
       type: object
@@ -18124,6 +18437,14 @@ components:
       properties:
         outcome:
           $ref: '#/components/schemas/AdminReportOutcome'
+    ReturnTo:
+      description: |
+        The path on this server, such as `/settings/linked-accounts`, that the login provider
+        sends the browser back to; the settings of the linked accounts when it is missing or not
+        such a path.
+      type: string
+      minLength: 1
+      maxLength: 2048
     RoleBadge:
       description: |
         The badge of a role (ADR-0071), which its holders may show on their profile. The label is

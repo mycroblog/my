@@ -222,5 +222,9 @@
   "account_move.profile.moved_self": {
     "defaultMessage": "あなたは{target}へ移転しました。",
     "description": "Note on the profile of the signed-in user's own account after it moved. {target} is a link to the new account, with its handle."
+  },
+  "account_move.move.confirm.description_external": {
+    "defaultMessage": "フォロワーは{handle}をフォローし、このアカウントには移転したことが表示されます。30日間は再び移転できません。",
+    "description": "Description of the dialog that moves the account of a user who confirmed by signing in again at a linked service (an external login provider). {handle} is the new account's handle."
   }
 }

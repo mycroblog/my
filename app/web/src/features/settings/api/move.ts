@@ -6,7 +6,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
-import { confirmWithPasskey } from "./passkeys";
+import { type Confirmation, confirmationBody } from "./linkedIdentities";
 
 export type MoveTarget = components["schemas"]["Account"];
 
@@ -22,17 +22,14 @@ export async function lookupMoveTarget(api: Api, acct: string): Promise<MoveTarg
 }
 
 /**
- * Moves the account to `targetId` after checking the password, or a passkey when `password` is undefined (a user
- * without a password), (POST /accounts/move), as the options of useMutation.
+ * Moves the account to `targetId` after checking the password, a passkey, or a linked provider (POST /accounts/move),
+ * as the options of useMutation.
  */
 export function moveAccountMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/move"] as const,
-    mutationFn: async ({ targetId, password }: { targetId: string; password: string | undefined }): Promise<void> => {
-      const body =
-        password === undefined
-          ? { target_account_id: targetId, passkey: await confirmWithPasskey(api) }
-          : { target_account_id: targetId, password };
+    mutationFn: async ({ targetId, confirmation }: { targetId: string; confirmation: Confirmation }): Promise<void> => {
+      const body = { target_account_id: targetId, ...(await confirmationBody(api, confirmation)) };
       await api.fetch.POST("/accounts/move", { body });
     },
   };

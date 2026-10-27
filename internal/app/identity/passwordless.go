@@ -24,13 +24,15 @@ import (
 // them at once cannot remove both.
 //
 // The operations that a signed-in user confirms (registering a passkey, changing or removing the
-// password, deleting the account) take a Confirmation: the current password, or a passkey of the
-// user, whose ceremony BeginPasskeyConfirmation starts. A confirmation with a passkey works once,
-// like a sign-in, and a wrong one counts against the same limit as a wrong password.
+// password, deleting or moving the account, linking an external identity) take a Confirmation:
+// the current password, a passkey of the user, whose ceremony BeginPasskeyConfirmation starts, or
+// a re-authentication with a linked login provider, which BeginExternalConfirmation starts
+// (external_link.go). A confirmation with a passkey or a provider works once, like a sign-in,
+// and a wrong one counts against the same limit as a wrong password.
 
 var (
-	// ErrLastSignInMethod reports a removal of the password or of a passkey that would leave the
-	// user no way to sign in.
+	// ErrLastSignInMethod reports a removal of the password, a passkey, or a linked external
+	// identity that would leave the user no way to sign in.
 	ErrLastSignInMethod = errors.New("identity: the user would have no way to sign in")
 	// ErrPasskeyConfirmationExpired reports the state of a confirmation with a passkey that is
 	// malformed, expired, another user's, or used: the confirmation starts again.
@@ -57,14 +59,16 @@ func (s *Service) ConfirmMove(ctx context.Context, userID string, c Confirmation
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: ConfirmMove needs a RateLimiter")
 	}
-	return s.confirm(ctx, MoveConfirmationLimit, userID, c)
+	return s.confirm(ctx, OperationAccountMove, userID, c)
 }
 
-// Confirmation is how a signed-in user confirms an operation: the current password, or a passkey
-// when Passkey has a token.
+// Confirmation is how a signed-in user confirms an operation: the current password, a passkey
+// when Passkey has a token, or a re-authentication with a linked login provider when External
+// has the token of FinishExternalLogin.
 type Confirmation struct {
 	Password string
 	Passkey  PasskeyAssertion
+	External string
 }
 
 // PasskeyAssertion is the browser's answer to a confirmation with a passkey.
@@ -115,16 +119,19 @@ func (s *Service) HasPassword(ctx context.Context, userID string) (bool, error) 
 	return false, err
 }
 
-// confirm checks the confirmation of an operation by a user, counting wrong ones against limit.
-// It fails as confirmPasswordWith does for a password, and for a passkey with
+// confirm checks the confirmation of operation op by a user, counting wrong ones against the
+// operation's limit. It fails as confirmPasswordWith does for a password; for a passkey with
 // ErrPasskeyConfirmationExpired for a bad, expired, or used token, ErrInvalidPasskey for a
-// response that does not verify or a passkey that is not the user's, and a
-// *kernel.RateLimitedError after too many wrong ones.
-func (s *Service) confirm(ctx context.Context, limit kernel.Limit, userID string, c Confirmation) error {
-	if c.Passkey.Token == "" {
-		return s.confirmPasswordWith(ctx, limit, userID, c.Password)
+// response that does not verify or a passkey that is not the user's; for a provider as
+// confirmExternal does; and with a *kernel.RateLimitedError after too many wrong ones.
+func (s *Service) confirm(ctx context.Context, op ConfirmedOperation, userID string, c Confirmation) error {
+	switch {
+	case c.External != "":
+		return s.confirmExternal(ctx, op, userID, c.External)
+	case c.Passkey.Token != "":
+		return s.confirmPasskey(ctx, op.Limit(), userID, c.Passkey)
 	}
-	return s.confirmPasskey(ctx, limit, userID, c.Passkey)
+	return s.confirmPasswordWith(ctx, op.Limit(), userID, c.Password)
 }
 
 func (s *Service) confirmPasskey(ctx context.Context, limit kernel.Limit, userID string, a PasskeyAssertion) error {
@@ -172,30 +179,33 @@ func (s *Service) confirmPasskey(ctx context.Context, limit kernel.Limit, userID
 // RemovePasswordInput is a signed-in user's removal of their password.
 type RemovePasswordInput struct {
 	UserID string
-	// Passkey confirms the removal: a passkey that signs in now, which stays.
-	Passkey PasskeyAssertion
+	// Passkey confirms the removal: a passkey that signs in now, which stays. External, the
+	// token of a re-authentication with a linked login provider, takes its place.
+	Passkey  PasskeyAssertion
+	External string
 	// KeepFamilyID is the token family of the client that makes the removal, which keeps
 	// working; "" ends every grant.
 	KeepFamilyID string
 }
 
-// RemovePassword removes the password of a user who confirms it with one of their passkeys, so
-// that only the passkeys sign in from then on. It ends every session of the user and every grant
+// RemovePassword removes the password of a user who confirms it with one of their passkeys or a
+// linked login provider, so that only the passkeys and the linked identities sign in from then
+// on. It ends every session of the user and every grant
 // but in.KeepFamilyID (password_changed), as a change of the password does; the passkeys and the
 // two-factor authentication stay. A user without a password has nothing to remove: it succeeds
 // and changes nothing.
 //
-// It fails with ErrPasskeyRequired without a passkey, the errors of a confirmation with a passkey
-// (counted against PasswordRemovalLimit), and ErrLastSignInMethod when the user has no passkey
-// that signs in.
+// It fails with ErrPasskeyRequired without a passkey or a provider, the errors of a confirmation
+// with them (counted against PasswordRemovalLimit), and ErrLastSignInMethod when the user has no
+// passkey and no linked identity that signs in.
 func (s *Service) RemovePassword(ctx context.Context, in RemovePasswordInput) error {
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: RemovePassword needs a RateLimiter")
 	}
-	if in.Passkey.Token == "" {
+	if in.Passkey.Token == "" && in.External == "" {
 		return ErrPasskeyRequired
 	}
-	if err := s.confirmPasskey(ctx, PasswordRemovalLimit, in.UserID, in.Passkey); err != nil {
+	if err := s.confirm(ctx, OperationPasswordRemoval, in.UserID, Confirmation{Passkey: in.Passkey, External: in.External}); err != nil {
 		return err
 	}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -215,7 +225,12 @@ func (s *Service) RemovePassword(ctx context.Context, in RemovePasswordInput) er
 			return err
 		}
 		if len(passkeys) == 0 {
-			return ErrLastSignInMethod
+			switch links, err := s.signInLinks(ctx, tx, in.UserID); {
+			case err != nil:
+				return err
+			case len(links) == 0:
+				return ErrLastSignInMethod
+			}
 		}
 		now := s.d.Clock.Now()
 		if err := repo.InsertPasswordCredentialRemoval(ctx, tx, identity.PasswordCredentialRemoval{PasswordCredentialID: cred.ID, RemovedAt: now}); err != nil {

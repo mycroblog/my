@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+description: An account at an external login provider that the authenticated user links.
+type: object
+required: [id, provider_id, provider_kind, provider_name, linked_at, available]
+properties:
+  id:
+    $ref: ./Id.yaml
+  provider_id:
+    $ref: ./Id.yaml
+  provider_kind:
+    $ref: ./LoginProviderKind.yaml
+  provider_name:
+    description: The administrators' name for the provider, shown as written.
+    type: string
+  linked_at:
+    description: When the user linked the account.
+    type: string
+    format: date-time
+  available:
+    description: |
+      Whether the provider is enabled: the account signs the user in and confirms the
+      user's operations.
+    type: boolean
