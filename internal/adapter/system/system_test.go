@@ -43,11 +43,14 @@ func TestIDGeneratorContract(t *testing.T) {
 }
 
 func TestIDGeneratorStampsCurrentTime(t *testing.T) {
-	// NewID may hold over a step back of the system clock of up to a minute.
+	// NewID may hold over a step back of the system clock of up to a minute, and the IDs that
+	// other tests of the process made in a burst may have moved its floor past the clock: the
+	// ID before bounds that.
 	before := time.Now().Add(-time.Minute - time.Millisecond).UnixMilli()
+	floor, okFloor := testkit.UUIDv7Millis(system.IDGenerator{}.NewID())
 	ms, ok := testkit.UUIDv7Millis(system.IDGenerator{}.NewID())
-	after := time.Now().UnixMilli()
-	if !ok {
+	after := max(time.Now().UnixMilli(), floor)
+	if !ok || !okFloor {
 		t.Fatal("NewID() returned a non-UUID")
 	}
 	if ms < before || ms > after+1 {
