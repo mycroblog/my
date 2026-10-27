@@ -54,6 +54,9 @@ type Head struct {
 	Since time.Time
 }
 
+// Muted reports whether the group is muted: it notifies nobody.
+func (h Head) Muted() bool { return h.State == diagnostics.StateMuted }
+
 // Current is a group with its state and the version of its last occurrence (its first version
 // when no sample is recorded), read in the transaction of a change.
 type Current struct {
@@ -110,6 +113,37 @@ type Sample struct {
 	OccurredAt  time.Time
 }
 
+// Summary is a group as the admin list shows it: its state, its last occurrence (the sample's,
+// else the first), and its occurrences in the last day and week.
+type Summary struct {
+	Group       Group
+	Head        Head
+	LastSeenAt  time.Time
+	LastVersion string
+	CountDay    int64
+	CountWeek   int64
+}
+
+// Window is the hours whose occurrences a Summary counts: CountDay those of the hours that start
+// at or after SinceDay, and CountWeek at or after SinceWeek.
+type Window struct {
+	SinceDay  time.Time
+	SinceWeek time.Time
+}
+
+// SummaryQuery selects a page of the summaries, the most recently seen first.
+type SummaryQuery struct {
+	// State and Source keep the groups of that state and source; "" keeps every one.
+	State  diagnostics.State
+	Source string
+	// BeforeSeen and BeforeID are the last summary of the previous page: the page has the
+	// summaries after it. BeforeID "" starts at the first.
+	BeforeSeen time.Time
+	BeforeID   string
+	Window     Window
+	Limit      int
+}
+
 // Repository is the persistence port of the diagnostics module.
 type Repository interface {
 	// InsertGroup inserts g and reports whether it did: a group of the same fingerprint that
@@ -139,6 +173,11 @@ type Repository interface {
 
 	// FindGroup returns a group with its state; it fails with ErrNotFound for an unknown group.
 	FindGroup(ctx context.Context, id string) (Group, Head, error)
+	// ListSummaries returns a page of the summaries of q, at most q.Limit of them.
+	ListSummaries(ctx context.Context, q SummaryQuery) ([]Summary, error)
+	// FindSummary returns the summary of a group, read in tx (nil reads outside any
+	// transaction); it fails with ErrNotFound for an unknown group.
+	FindSummary(ctx context.Context, tx uow.Tx, id string, w Window) (Summary, error)
 	// FindSample returns the sample of a group; it fails with ErrNotFound when there is none.
 	FindSample(ctx context.Context, groupID string) (Sample, error)
 	// HourCounts returns the hourly counts of a group, oldest first.

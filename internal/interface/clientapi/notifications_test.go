@@ -96,6 +96,14 @@ func (f *fakeNotifications) MarkRead(ctx context.Context, accountID, lastReadID 
 	return f.ReadMarker(ctx, accountID)
 }
 
+// ErrorGroupOthers folds 4 groups into every notification of the others.
+func (f *fakeNotifications) ErrorGroupOthers(_ context.Context, n notification.Notification) (int64, error) {
+	if n.ErrorGroupChange != notification.ErrorGroupOthers {
+		return 0, nil
+	}
+	return 4, nil
+}
+
 func (f *fakeNotifications) Dismiss(_ context.Context, accountID, id string) error {
 	if err := f.own(accountID, id); err != nil {
 		return err
@@ -222,6 +230,41 @@ func TestListModeratorNotifications(t *testing.T) {
 	}
 	if report.Type != clientapi.NotificationTypeAdminReport || report.Account != nil || report.ReportId == nil || *report.ReportId != reportID {
 		t.Errorf("admin_report = %+v, want report %s and no account", report, reportID)
+	}
+}
+
+// TestListErrorGroupNotifications checks the admin_error_group notifications: a new and a
+// regressed group name the group, and the others say how many groups they fold.
+func TestListErrorGroupNotifications(t *testing.T) {
+	const groupID = "01890a5d-ac96-774b-bcce-b302099a9200"
+	at := time.Date(2026, 10, 15, 0, 0, 0, 0, time.UTC)
+	f := &fakeNotifications{dismissed: map[string]bool{}, markers: map[string]string{}, ns: []notification.Notification{
+		{ID: notificationID(1), RecipientAccountID: aliceAccountID, Type: notification.TypeAdminErrorGroup, ErrorGroupChange: notification.ErrorGroupCreated, ErrorGroupID: groupID, CreatedAt: at},
+		{ID: notificationID(2), RecipientAccountID: aliceAccountID, Type: notification.TypeAdminErrorGroup, ErrorGroupChange: notification.ErrorGroupRegressed, ErrorGroupID: groupID, CreatedAt: at},
+		{ID: notificationID(3), RecipientAccountID: aliceAccountID, Type: notification.TypeAdminErrorGroup, ErrorGroupChange: notification.ErrorGroupOthers, ErrorGroupHour: at, CreatedAt: at},
+	}}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Notifications = f })
+	res := e.send(t, http.MethodGet, "/notifications", "read", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", res.StatusCode)
+	}
+	page := decode[clientapi.NotificationPage](t, res)
+	if len(page.Items) != 3 {
+		t.Fatalf("items = %+v, want 3", page.Items)
+	}
+	others, regressed, created := page.Items[0], page.Items[1], page.Items[2]
+	if others.Type != clientapi.NotificationTypeAdminErrorGroup || others.Account != nil || others.ErrorGroup == nil ||
+		others.ErrorGroup.Change != clientapi.NotificationErrorGroupChangeOthers || others.ErrorGroup.GroupId != nil ||
+		others.ErrorGroup.Count == nil || *others.ErrorGroup.Count != 4 {
+		t.Errorf("others = %+v", others)
+	}
+	for _, n := range []clientapi.Notification{regressed, created} {
+		if n.ErrorGroup == nil || n.ErrorGroup.GroupId == nil || *n.ErrorGroup.GroupId != groupID || n.ErrorGroup.Count != nil {
+			t.Errorf("%s = %+v, want group %s", n.Type, n.ErrorGroup, groupID)
+		}
+	}
+	if regressed.ErrorGroup.Change != clientapi.NotificationErrorGroupChangeRegressed || created.ErrorGroup.Change != clientapi.NotificationErrorGroupChangeCreated {
+		t.Errorf("changes = %s, %s", regressed.ErrorGroup.Change, created.ErrorGroup.Change)
 	}
 }
 

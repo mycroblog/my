@@ -18,6 +18,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/webhook"
@@ -310,7 +311,7 @@ func TestWebhookData(t *testing.T) {
 		"url": srv.URL + "/hook", "events": []string{
 			"report.created", "report.resolved", "moderation_action.created", "moderation_action.lifted",
 			"appeal.created", "domain_moderation_action.created", "account.updated", "registration.pending",
-			"custom_emoji.created", "custom_emoji.deleted",
+			"custom_emoji.created", "custom_emoji.deleted", "error_group.created",
 		},
 	}, nil)
 	// message returns the data of the one message received since the last call, of type want.
@@ -458,4 +459,41 @@ func TestWebhookData(t *testing.T) {
 	}
 	delete(data, "operation")
 	same("custom_emoji.deleted", data, emoji)
+
+	// A new error group is ErrorGroup, presented before its first occurrence is counted; a web
+	// report without a session sends nothing.
+	reportError := func(fp string, unauthenticated bool) {
+		t.Helper()
+		err := app.Diagnostics.RecordFirst(ctx, kernel.ErrorEvent{
+			Time: time.Now(), Source: kernel.ErrorSourceWeb, Kind: kernel.ErrorKindError, Type: "TypeError",
+			Message: "x is undefined", Where: "/home", Fingerprint: fp, Version: "1.0.0", Unauthenticated: unauthenticated,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	reportError("fp-anonymous", true)
+	if _, bodies := recv.take(); len(bodies) != 0 {
+		t.Errorf("a report without a session sent %d messages", len(bodies))
+	}
+	reportError("fp-webhook", false)
+	data = message("error_group.created")
+	var groups struct {
+		Items []map[string]any `json:"items"`
+	}
+	api(adminToken, http.MethodGet, "/admin/error_groups?source=web", nil, &groups)
+	var group map[string]any
+	for _, g := range groups.Items {
+		if g["fingerprint"] == "fp-webhook" {
+			group = g
+		}
+	}
+	if group == nil || data["count_24h"] != float64(0) || group["count_24h"] != float64(1) {
+		t.Fatalf("error_group.created = %v, the group %v", data, group)
+	}
+	for _, k := range []string{"count_24h", "count_7d", "last_seen_at", "last_version"} {
+		delete(data, k)
+		delete(group, k)
+	}
+	same("error_group.created", data, group)
 }

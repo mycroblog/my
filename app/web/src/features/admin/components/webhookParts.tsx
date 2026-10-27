@@ -23,6 +23,8 @@ export const webhookEventLabels: Readonly<Record<WebhookMessageType, ClientMessa
   "custom_emoji.created": "client:admin.webhooks.event.custom_emoji_created",
   "custom_emoji.updated": "client:admin.webhooks.event.custom_emoji_updated",
   "custom_emoji.deleted": "client:admin.webhooks.event.custom_emoji_deleted",
+  "error_group.created": "client:admin.webhooks.event.error_group_created",
+  "error_group.regressed": "client:admin.webhooks.event.error_group_regressed",
   "webhook.test": "client:admin.webhooks.event.webhook_test",
 };
 

@@ -37,7 +37,9 @@ type DiagnosticsFactory func(t *testing.T, opts uow.Options) DiagnosticsHarness
 // created is confirmed once, by the first report with one; resolve, mute,
 // and unmute record only the changes they make; the counts older than 90 days are pruned; the
 // recorder of a process writes what it holds when it closes; and the projection of the states
-// rebuilds to what the events wrote.
+// rebuilds to what the events wrote. The summaries list the groups the most recently seen
+// first, page by page, filtered by state and source, with their occurrences of the last day
+// and week.
 func DiagnosticsRepositoryContract(t *testing.T, newHarness DiagnosticsFactory) {
 	t.Helper()
 	cases := []struct {
@@ -55,6 +57,7 @@ func DiagnosticsRepositoryContract(t *testing.T, newHarness DiagnosticsFactory) 
 		{"WritesWhatItHoldsOnClose", diagnosticsClose},
 		{"WritesReportsOfEndedContexts", diagnosticsEndedContext},
 		{"RebuildsItsProjection", diagnosticsRebuild},
+		{"ListsSummaries", diagnosticsSummaries},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newDiagnosticsEnv(t, newHarness)) })
@@ -610,4 +613,79 @@ func diagnosticsRebuild(t *testing.T, e *diagnosticsEnv) {
 
 func sameHead(a, b appdiagnostics.Head) bool {
 	return a.GroupID == b.GroupID && a.State == b.State && a.ResolvedVersion == b.ResolvedVersion && a.Since.Equal(b.Since)
+}
+
+func diagnosticsSummaries(t *testing.T, e *diagnosticsEnv) {
+	ctx := t.Context()
+	r := e.recorder(t)
+	// fp-old: 2 occurrences 3 days ago and 1 now; fp-web: a web report now; fp-mid: 1 an hour ago.
+	start := e.clock.Now()
+	r.ReceiveError(ctx, e.event("fp-old", "1.0.0"))
+	r.ReceiveError(ctx, e.event("fp-old", "1.0.0"))
+	r.Flush(ctx)
+	e.clock.Advance(3*24*time.Hour - time.Hour)
+	r.ReceiveError(ctx, e.event("fp-mid", "1.0.1"))
+	r.Flush(ctx)
+	e.clock.Advance(time.Hour)
+	web := e.event("fp-web", "1.0.2")
+	web.Source = kernel.ErrorSourceWeb
+	r.ReceiveError(ctx, web)
+	r.Flush(ctx)
+	e.clock.Advance(time.Minute)
+	r.ReceiveError(ctx, e.event("fp-old", "1.0.2"))
+	r.Flush(ctx)
+	old, _ := e.group(t, "fp-old")
+	mid, _ := e.group(t, "fp-mid")
+	webGroup, _ := e.group(t, "fp-web")
+
+	all, err := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{Limit: 10})
+	if err != nil {
+		t.Fatalf("Summaries: %v", err)
+	}
+	if len(all) != 3 || all[0].Group.ID != old.ID || all[1].Group.ID != webGroup.ID || all[2].Group.ID != mid.ID {
+		t.Fatalf("summaries = %+v, want fp-old, fp-web, fp-mid", all)
+	}
+	o := all[0]
+	if o.CountDay != 1 || o.CountWeek != 3 || o.LastVersion != "1.0.2" || !o.LastSeenAt.Equal(e.clock.Now()) ||
+		!o.Group.FirstSeenAt.Equal(start) || o.Head.State != diagnostics.StateOpen {
+		t.Errorf("fp-old = %+v", o)
+	}
+	// Page by page.
+	first, err := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{Limit: 2})
+	if err != nil || len(first) != 2 {
+		t.Fatalf("first page = %+v, %v", first, err)
+	}
+	last := first[1]
+	rest, err := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{Limit: 2, BeforeSeen: last.LastSeenAt, BeforeID: last.Group.ID})
+	if err != nil || len(rest) != 1 || rest[0].Group.ID != mid.ID {
+		t.Errorf("second page = %+v, %v", rest, err)
+	}
+	// Filtered by source and state.
+	if got, _ := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{Source: "web", Limit: 10}); len(got) != 1 || got[0].Group.ID != webGroup.ID {
+		t.Errorf("web summaries = %+v", got)
+	}
+	if _, err := e.svc.Mute(ctx, mid.ID, appdiagnostics.Actor{Kind: diagnostics.ActorCLI}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{State: diagnostics.StateMuted, Limit: 10}); len(got) != 1 || got[0].Group.ID != mid.ID {
+		t.Errorf("muted summaries = %+v", got)
+	}
+	// One summary, also in a transaction.
+	s, err := e.svc.Summary(ctx, mid.ID)
+	if err != nil || s.Head.State != diagnostics.StateMuted || s.CountDay != 1 || s.CountWeek != 1 {
+		t.Errorf("Summary = %+v, %v", s, err)
+	}
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		s, err := e.svc.SummaryTx(ctx, tx, old.ID)
+		if err == nil && s.CountWeek != 3 {
+			err = fmt.Errorf("SummaryTx = %+v", s)
+		}
+		return err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	if _, err := e.svc.Summary(ctx, OrderedID(999)); !errors.Is(err, appdiagnostics.ErrNotFound) {
+		t.Errorf("Summary of an unknown group: %v, want ErrNotFound", err)
+	}
 }

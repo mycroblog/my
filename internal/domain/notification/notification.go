@@ -22,8 +22,8 @@ type Type string
 // of the change of its dates, and of its withdrawal, and supporter_service_closure a subscriber
 // whose subscription the announcement cancels (ADR-0088 §2). voice_room_started and
 // voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
-// admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, and
-// admin_service_closure_due go to the staff whose roles grant the permission they need
+// admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
+// admin_service_closure_due, and admin_error_group go to the staff whose roles grant the permission they need
 // (ModeratorPermission).
 const (
 	TypeFollow         Type = "follow"
@@ -90,7 +90,50 @@ const (
 	// (ADR-0100 §7, §8): SourceAccountID is the account that invited it and VoiceRoomID the
 	// room.
 	TypeVoiceRoomInvited Type = "voice_room_invited"
+	// TypeAdminErrorGroup tells the holders of manage_errors of a new error group or of a
+	// resolved one that regressed (ADR-0103 §8): ErrorGroupChange says which, and ErrorGroupID is
+	// the group. At most ErrorGroupHourlyCap of them are made in an hour; the rest of the hour
+	// fold into one with ErrorGroupChange others and the hour in ErrorGroupHour.
+	TypeAdminErrorGroup Type = "admin_error_group"
 )
+
+// ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
+type ErrorGroupChange string
+
+// What an admin_error_group tells of.
+const (
+	// ErrorGroupCreated: a new error group.
+	ErrorGroupCreated ErrorGroupChange = "created"
+	// ErrorGroupRegressed: a resolved group that happened again with another version.
+	ErrorGroupRegressed ErrorGroupChange = "regressed"
+	// ErrorGroupOthers: the new and regressed groups of an hour beyond ErrorGroupHourlyCap.
+	ErrorGroupOthers ErrorGroupChange = "others"
+)
+
+// ErrorGroupHourlyCap is how many admin_error_group notifications of single groups the instance
+// makes in an hour (ADR-0103 §8); the rest fold into one of ErrorGroupOthers.
+const ErrorGroupHourlyCap = 10
+
+// Valid reports whether c is a known change.
+func (c ErrorGroupChange) Valid() bool {
+	return c == ErrorGroupCreated || c == ErrorGroupRegressed || c == ErrorGroupOthers
+}
+
+// ErrorGroupHour returns the hour (UTC) whose cap counts an admin_error_group made at t.
+func ErrorGroupHour(t time.Time) time.Time { return t.UTC().Truncate(time.Hour) }
+
+// AdminErrorGroupKey is the dedupe key of an admin_error_group notification of a single group:
+// one per new group (created, with the group's ID) and per regression (regressed, with the ID
+// of its regressed event).
+func AdminErrorGroupKey(change ErrorGroupChange, id string) string {
+	return string(TypeAdminErrorGroup) + ":" + string(change) + ":" + id
+}
+
+// AdminErrorGroupOthersKey is the dedupe key of the admin_error_group notification that folds
+// the groups of an hour beyond the cap: one per hour.
+func AdminErrorGroupOthersKey(hour time.Time) string {
+	return string(TypeAdminErrorGroup) + ":" + string(ErrorGroupOthers) + ":" + hour.UTC().Format(time.RFC3339)
+}
 
 // MoveOutcome is what became of a follow of an account that moved (notifications.account_move_outcome).
 type MoveOutcome string
@@ -147,7 +190,7 @@ var Types = []Type{
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-	TypeVoiceRoomStarted, TypeVoiceRoomInvited,
+	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup,
 }
 
 // Valid reports whether t is a known notification type.
@@ -160,7 +203,7 @@ func (t Type) Valid() bool {
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-		TypeVoiceRoomStarted, TypeVoiceRoomInvited:
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup:
 		return true
 	}
 	return false
@@ -209,8 +252,14 @@ type Notification struct {
 	// VoiceRoomID is the voice chat room of a voice_room_started or a voice_room_invited, ""
 	// for the other types.
 	VoiceRoomID string
-	DedupeKey   string
-	CreatedAt   time.Time
+	// ErrorGroupChange is what an admin_error_group tells of, "" for the other types;
+	// ErrorGroupID is its group, "" for one of ErrorGroupOthers, and ErrorGroupHour the hour that
+	// one of ErrorGroupOthers folds, zero for the others.
+	ErrorGroupChange ErrorGroupChange
+	ErrorGroupID     string
+	ErrorGroupHour   time.Time
+	DedupeKey        string
+	CreatedAt        time.Time
 }
 
 var (
@@ -269,6 +318,9 @@ func (n Notification) Validate() error {
 		(voice && n.SourceAccountID == "") {
 		return errors.New("notification: a voice_room_started or a voice_room_invited, and only they, name a voice chat room, and they have a source account")
 	}
+	if err := n.validateErrorGroup(); err != nil {
+		return err
+	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
 		n.Type == TypeAdminAccountMoved && n.SourceAccountID != "",
@@ -279,6 +331,20 @@ func (n Notification) Validate() error {
 		n.Type == TypeCustomEmojiRequestDecided && n.SourceAccountID != "",
 		n.Type == TypeAdminSignUp && (n.SubjectUserID == "" || n.SourceAccountID != ""):
 		return errors.New("notification: a moderator notification needs its subject and has no source account")
+	}
+	return nil
+}
+
+// validateErrorGroup checks the fields of an admin_error_group, which only it has.
+func (n Notification) validateErrorGroup() error {
+	errorGroup := n.Type == TypeAdminErrorGroup
+	switch {
+	case errorGroup != (n.ErrorGroupChange != ""), n.ErrorGroupChange != "" && !n.ErrorGroupChange.Valid(),
+		!errorGroup && (n.ErrorGroupID != "" || !n.ErrorGroupHour.IsZero()),
+		errorGroup && n.SourceAccountID != "",
+		errorGroup && (n.ErrorGroupChange == ErrorGroupOthers) != (n.ErrorGroupID == ""),
+		errorGroup && (n.ErrorGroupChange == ErrorGroupOthers) == n.ErrorGroupHour.IsZero():
+		return errors.New("notification: an admin_error_group, and only it, names a change and a group, or the hour of the others, and it has no source account")
 	}
 	return nil
 }
@@ -374,13 +440,16 @@ const (
 	PermissionManageCustomEmojis Permission = "manage_custom_emojis"
 	// PermissionManageServiceClosure is the identity module's manage_service_closure.
 	PermissionManageServiceClosure Permission = "manage_service_closure"
+	// PermissionManageErrors is the identity module's manage_errors.
+	PermissionManageErrors Permission = "manage_errors"
 )
 
 // ModeratorPermission returns the permission that the recipient of a notification of type t
 // needs, when they get it and while they read it, and whether t needs one: admin_report needs
 // manage_reports, admin_sign_up, admin_appeal, and admin_account_moved manage_accounts, admin_webhook_disabled
-// manage_webhooks, admin_custom_emoji_request manage_custom_emojis, and
-// admin_service_closure_due manage_service_closure. The other types need none.
+// manage_webhooks, admin_custom_emoji_request manage_custom_emojis,
+// admin_service_closure_due manage_service_closure, and admin_error_group manage_errors. The
+// other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
 	case TypeAdminReport:
@@ -393,6 +462,8 @@ func ModeratorPermission(t Type) (Permission, bool) {
 		return PermissionManageCustomEmojis, true
 	case TypeAdminServiceClosureDue:
 		return PermissionManageServiceClosure, true
+	case TypeAdminErrorGroup:
+		return PermissionManageErrors, true
 	}
 	return "", false
 }

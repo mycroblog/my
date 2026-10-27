@@ -335,6 +335,10 @@
     "defaultMessage": "閉鎖日を過ぎました。サーバーをクローズしてください",
     "description": "Notification sentence to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it."
   },
+  "notifications.type.admin_error_group": {
+    "defaultMessage": "新しいエラーが報告されたか、解決したエラーが再び起きました",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind, or an error that was marked resolved happened again."
+  },
   "notifications.type.supporter_service_closure": {
     "defaultMessage": "サーバーの終了のため、サポーターの加入が解約されます",
     "description": "Notification sentence: the announced closure of the server cancels the user's supporter subscription at the end of its period."

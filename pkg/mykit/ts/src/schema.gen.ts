@@ -4086,6 +4086,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/error_groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the error groups
+         * @description The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+         *     most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
+         *     and `source` keep the groups of that state and source. Needs the `manage_errors`
+         *     permission.
+         */
+        get: operations["listErrorGroups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/error_groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get an error group
+         * @description An error group with its latest occurrence (the scrubbed stack, `request_id`, and
+         *     `trace_id`), its hourly counts, and the changes of its state. An unknown group is a 404.
+         *     Needs the `manage_errors` permission.
+         */
+        get: operations["getErrorGroup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/error_groups/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve an error group
+         * @description Marks a group resolved with the version of its last occurrence: an occurrence on another version regresses it to `open` and notifies again; an occurrence on the same version is only counted. Resolving a resolved group changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.
+         */
+        post: operations["resolveErrorGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/error_groups/{id}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mute an error group
+         * @description Mutes a group: it notifies nobody and sends no webhook event until it is unmuted, and it is still counted. Muting a muted group changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.
+         */
+        post: operations["muteErrorGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/error_groups/{id}/unmute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unmute an error group
+         * @description Opens a muted group again (also one that was resolved before it was muted). Unmuting a group that is not muted changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.
+         */
+        post: operations["unmuteErrorGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/domain_actions/{id}/lift": {
         parameters: {
             query?: never;
@@ -9236,6 +9353,149 @@ export interface components {
             code: string;
         };
         /**
+         * @description An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+         *     what its first occurrence told about the error, and how often it happened. The text is
+         *     scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
+         *     `error_group.created` and `error_group.regressed` carry it as their `data`.
+         */
+        ErrorGroup: {
+            id: components["schemas"]["Id"];
+            /** @description The fingerprint of the errors, 32 hexadecimal digits; the same in the logs and the exporters. */
+            fingerprint: string;
+            state: components["schemas"]["ErrorGroupState"];
+            /**
+             * Format: date-time
+             * @description When the group entered its state; its first occurrence while it has always been open.
+             */
+            state_since: string;
+            /** @description The version of the server that a `resolved` group was resolved with; omitted for the other states. */
+            resolved_version?: string;
+            source: components["schemas"]["ErrorGroupSource"];
+            kind: components["schemas"]["ErrorGroupKind"];
+            /**
+             * @description Where the errors happened, a finite name: the surface and the route pattern of an HTTP
+             *     request, the type of a job, the name of a goroutine, or the route of the web client.
+             */
+            where: string;
+            /** @description The last type of the chain of the error (a Go type or the name of a JavaScript error). */
+            type: string;
+            /** @description The first line of the scrubbed message of the first occurrence, at most 200 characters. */
+            message: string;
+            /**
+             * Format: int64
+             * @description The occurrences in the last 24 hours, by the hour, the current hour included.
+             */
+            count_24h: number;
+            /**
+             * Format: int64
+             * @description The occurrences in the last 7 days, by the hour, the current hour included.
+             */
+            count_7d: number;
+            /** Format: date-time */
+            first_seen_at: string;
+            /** Format: date-time */
+            last_seen_at: string;
+            /** @description The version of the server (`service.version`) of the first occurrence. */
+            first_version: string;
+            /** @description The version of the server of the last occurrence. */
+            last_version: string;
+        };
+        /** @description An error group with its latest occurrence, its hourly counts, and the changes of its state. */
+        ErrorGroupDetail: components["schemas"]["ErrorGroup"] & {
+            sample?: components["schemas"]["ErrorGroupSample"];
+            /** @description The occurrences of each hour that had any, oldest first, for the last 90 days. */
+            hourly_counts: components["schemas"]["ErrorGroupHourCount"][];
+            /** @description The changes of the state of the group, oldest first. */
+            events: components["schemas"]["ErrorGroupEvent"][];
+        };
+        /**
+         * @description A change of the state of an error group: `resolved`, `muted`, and `unmuted` by an
+         *     administrator (`actor` `user`) or the CLI (`cli`), and `regressed` by the server (`system`)
+         *     when a resolved group happened again on another version, which `version` names. A
+         *     `resolved` names the version of the last occurrence then.
+         */
+        ErrorGroupEvent: {
+            /** @enum {string} */
+            kind: "resolved" | "regressed" | "muted" | "unmuted";
+            /** @enum {string} */
+            actor: "user" | "cli" | "system";
+            /** @description The version that a `resolved` or a `regressed` names; omitted for the others. */
+            version?: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        /** @description The occurrences of an error group in one hour. */
+        ErrorGroupHourCount: {
+            /**
+             * Format: date-time
+             * @description The start of the hour, in UTC.
+             */
+            hour: string;
+            /** Format: int64 */
+            count: number;
+            /** @description The version of the server of the last occurrence of the hour. */
+            last_version: string;
+        };
+        /**
+         * @description Whether the errors of a group are panics (and uncaught errors of the web client) or errors.
+         * @enum {string}
+         */
+        ErrorGroupKind: "panic" | "error";
+        /** @description A page of error groups, the most recently seen first. */
+        ErrorGroupPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["ErrorGroup"][];
+        };
+        /**
+         * @description The latest occurrence of an error group, scrubbed. `request_id` and `trace_id` find it in
+         *     the logs and the traces.
+         */
+        ErrorGroupSample: {
+            /** @description The chain of the types of the error, outermost first. */
+            type: string;
+            message: string;
+            /** @description The stack, in the form of the runtime that reported it, without the arguments of the frames. */
+            stack: string;
+            /** @description The request ID of the occurrence; omitted when it had none. */
+            request_id?: string;
+            /** @description The trace ID of the occurrence; omitted when it had none. */
+            trace_id?: string;
+            /** @description The version of the server of the occurrence. */
+            version: string;
+            /** @description The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them. */
+            role: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        /**
+         * @description What reported the errors of a group, the server or the web client.
+         * @enum {string}
+         */
+        ErrorGroupSource: "server" | "web";
+        /**
+         * @description The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+         *     `resolved` (an administrator marked it fixed; an occurrence on another version regresses
+         *     it to `open`), or `muted` (it notifies nobody until it is unmuted).
+         * @enum {string}
+         */
+        ErrorGroupState: "open" | "resolved" | "muted";
+        /**
+         * @description What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
+         *     resolved group that happened again on another version (`regressed`, with `group_id`), or the
+         *     new and regressed groups of an hour beyond the 10 that the server notifies of one by one
+         *     (`others`, with how many so far in `count`).
+         */
+        NotificationErrorGroup: {
+            /** @enum {string} */
+            change: "created" | "regressed" | "others";
+            /** @description The error group of a `created` or a `regressed`. */
+            group_id?: components["schemas"]["Id"];
+            /**
+             * Format: int64
+             * @description How many groups an `others` stands for.
+             */
+            count?: number;
+        };
+        /**
          * @description The amount of a cost item, or of a service of the imported costs, in a currency over a
          *     period, with the provider and the category of its breakdown line. `provider` is the spelling
          *     that the period's breakdown lines of the item's grouped provider show (`CostBreakdownLine`).
@@ -10155,6 +10415,8 @@ export interface components {
              *     it is open and the user sees it; omitted otherwise.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
+            /** @description What an `admin_error_group` tells of; omitted for the other types. */
+            error_group?: components["schemas"]["NotificationErrorGroup"];
         };
         /** @description How far the authenticated user has read the notifications. */
         NotificationMarker: {
@@ -10227,9 +10489,12 @@ export interface components {
          *     opened a voice chat room that the user sees, once per room; `voice_room_invited` that the
          *     host or a co-host of a room (`account`) invited the user to it, once per invitation. Both
          *     carry `voice_room_id`, and `voice_room` while the room is open and the user sees it.
+         *     `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
+         *     resolved one that happened again, at most 10 times an hour for the whole server, with the
+         *     rest of the hour folded into one; its `error_group` says which, and it has no `account`.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -10562,11 +10827,13 @@ export interface components {
          *     of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
          *     admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
          *     instance setting `voice_room_starters` is `permitted`, a member permission (only the
-         *     built-in admin role by default, ADR-0100). The others guard no client API operation
-         *     yet.
+         *     built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+         *     and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
+         *     the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103). The
+         *     others guard no client API operation yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors";
         /**
          * @description A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
          *     `:shortcode:` into the text.
@@ -12185,7 +12452,8 @@ export interface components {
          *     `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
          *     `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
          *     `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
-         *     `custom_emoji.*`; and nothing more for `status.created`. `report.created`: a report,
+         *     `custom_emoji.*`; `manage_errors` for `error_group.*`; and nothing more for
+         *     `status.created`. `report.created`: a report,
          *     local or from another server. `report.resolved`, `report.reopened`. `registration.pending`:
          *     a registration awaits a moderator. `account.created`: a registration was approved, at
          *     the sign-up or by a moderator. `account.updated`: a local account changed its profile.
@@ -12194,9 +12462,12 @@ export interface components {
          *     `status.created`: a public post of a local account. `custom_emoji.created`,
          *     `custom_emoji.updated` (its image, settings, aliases, or whether it is enabled), and
          *     `custom_emoji.deleted`: an administrator's operation on a custom emoji.
+         *     `error_group.created`: a new error group, and `error_group.regressed`: a resolved group
+         *     happened again on another version; a group that only web reports without a session have
+         *     seen is sent when a report with one comes, unless it is muted by then.
          * @enum {string}
          */
-        WebhookEventType: "report.created" | "report.resolved" | "report.reopened" | "registration.pending" | "account.created" | "account.updated" | "moderation_action.created" | "moderation_action.lifted" | "appeal.created" | "domain_moderation_action.created" | "domain_moderation_action.lifted" | "status.created" | "custom_emoji.created" | "custom_emoji.updated" | "custom_emoji.deleted";
+        WebhookEventType: "report.created" | "report.resolved" | "report.reopened" | "registration.pending" | "account.created" | "account.updated" | "moderation_action.created" | "moderation_action.lifted" | "appeal.created" | "domain_moderation_action.created" | "domain_moderation_action.lifted" | "status.created" | "custom_emoji.created" | "custom_emoji.updated" | "custom_emoji.deleted" | "error_group.created" | "error_group.regressed";
         /**
          * @description The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
          *     `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
@@ -12205,7 +12476,8 @@ export interface components {
          *     `AdminRegistration` for `registration.pending` and `account.created`, `AdminAccount`
          *     for `account.updated`, `AdminAccountAction` for `moderation_action.*`, `AdminAppeal`
          *     for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
-         *     `WebhookCustomEmoji` for `custom_emoji.*`, `WebhookStatus` for `status.created`, and
+         *     `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
+         *     `WebhookStatus` for `status.created`, and
          *     `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
          *     describes it.
          */
@@ -12223,7 +12495,7 @@ export interface components {
          *     `POST /admin/webhooks/{id}/test`.
          * @enum {string}
          */
-        WebhookMessageType: "report.created" | "report.resolved" | "report.reopened" | "registration.pending" | "account.created" | "account.updated" | "moderation_action.created" | "moderation_action.lifted" | "appeal.created" | "domain_moderation_action.created" | "domain_moderation_action.lifted" | "status.created" | "custom_emoji.created" | "custom_emoji.updated" | "custom_emoji.deleted" | "webhook.test";
+        WebhookMessageType: "report.created" | "report.resolved" | "report.reopened" | "registration.pending" | "account.created" | "account.updated" | "moderation_action.created" | "moderation_action.lifted" | "appeal.created" | "domain_moderation_action.created" | "domain_moderation_action.lifted" | "status.created" | "custom_emoji.created" | "custom_emoji.updated" | "custom_emoji.deleted" | "error_group.created" | "error_group.regressed" | "webhook.test";
         /**
          * @description The problem of a webhook that breaks a rule (422, `/api/v1/problems/invalid-webhook`);
          *     `reason` says which. Another 422 (a malformed request) has none.
@@ -12350,6 +12622,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminCustomEmojiRequest"];
+            };
+        };
+        /** @description The error group. */
+        ErrorGroup: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorGroup"];
             };
         };
         /** @description The domain action. */
@@ -12729,6 +13011,8 @@ export interface components {
         CustomEmojiId: components["schemas"]["Id"];
         /** @description The ID of the custom emoji request. */
         CustomEmojiRequestId: components["schemas"]["Id"];
+        /** @description The ID of the error group. */
+        ErrorGroupId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /**
@@ -17327,6 +17611,110 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminDomainAction"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listErrorGroups: {
+        parameters: {
+            query?: {
+                /** @description Keep the groups in this state; every state by default. */
+                state?: components["schemas"]["ErrorGroupState"];
+                /** @description Keep the groups of this source; both by default. */
+                source?: components["schemas"]["ErrorGroupSource"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the groups. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorGroupPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getErrorGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The group. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorGroupDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    resolveErrorGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ErrorGroup"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    muteErrorGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ErrorGroup"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unmuteErrorGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the error group. */
+                id: components["parameters"]["ErrorGroupId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ErrorGroup"];
             default: components["responses"]["Problem"];
         };
     };

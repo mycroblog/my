@@ -23,7 +23,7 @@ CREATE TABLE notifications (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -58,6 +58,11 @@ CREATE TABLE notifications (
   service_closure_change TEXT CHECK (service_closure_change IN ('announced', 'rescheduled', 'withdrawn')),
   -- voice_room_started, voice_room_invited: the voice_rooms row.
   voice_room_id TEXT,
+  -- admin_error_group: what it tells of; the error_groups row of created and regressed; the
+  -- hour (its start) that others folds the groups of beyond the hourly cap.
+  error_group_change TEXT CHECK (error_group_change IN ('created', 'regressed', 'others')),
+  error_group_id TEXT,
+  error_group_hour INTEGER,
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   -- nobody is notified of their own actions.
@@ -68,6 +73,15 @@ CREATE INDEX notifications_recipient_account_id_id ON notifications (recipient_a
 CREATE INDEX notifications_recipient_account_id_type_id ON notifications (recipient_account_id, type, id);
 -- The retention purge keeps a remote status that a notification is about (ADR-0034).
 CREATE INDEX notifications_status_id ON notifications (status_id);
+
+-- Current value: how many admin_error_group notices the instance made in the hour that starts
+-- at hour_start (ADR-0103 §8). Every new or regressed group that notifies adds one in the
+-- transaction of its event; the first 10 of the hour notify of their groups, the 11th makes the
+-- notification that folds the rest, whose count is notices - 10.
+CREATE TABLE error_group_notice_hours (
+  hour_start INTEGER NOT NULL PRIMARY KEY,
+  notices INTEGER NOT NULL CHECK (notices > 0)
+) STRICT;
 
 -- Event: the recipient dismissed a notification. A notification is dismissed at most once.
 CREATE TABLE notification_dismissals (
@@ -134,7 +148,7 @@ CREATE TABLE push_subscription_alerts (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;

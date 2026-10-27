@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+  what its first occurrence told about the error, and how often it happened. The text is
+  scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
+  `error_group.created` and `error_group.regressed` carry it as their `data`.
+type: object
+required:
+  - id
+  - fingerprint
+  - state
+  - state_since
+  - source
+  - kind
+  - where
+  - type
+  - message
+  - count_24h
+  - count_7d
+  - first_seen_at
+  - last_seen_at
+  - first_version
+  - last_version
+properties:
+  id:
+    $ref: ./Id.yaml
+  fingerprint:
+    description: The fingerprint of the errors, 32 hexadecimal digits; the same in the logs and the exporters.
+    type: string
+  state:
+    $ref: ./ErrorGroupState.yaml
+  state_since:
+    description: When the group entered its state; its first occurrence while it has always been open.
+    type: string
+    format: date-time
+  resolved_version:
+    description: The version of the server that a `resolved` group was resolved with; omitted for the other states.
+    type: string
+  source:
+    $ref: ./ErrorGroupSource.yaml
+  kind:
+    $ref: ./ErrorGroupKind.yaml
+  where:
+    description: |
+      Where the errors happened, a finite name: the surface and the route pattern of an HTTP
+      request, the type of a job, the name of a goroutine, or the route of the web client.
+    type: string
+  type:
+    description: The last type of the chain of the error (a Go type or the name of a JavaScript error).
+    type: string
+  message:
+    description: The first line of the scrubbed message of the first occurrence, at most 200 characters.
+    type: string
+  count_24h:
+    description: The occurrences in the last 24 hours, by the hour, the current hour included.
+    type: integer
+    format: int64
+  count_7d:
+    description: The occurrences in the last 7 days, by the hour, the current hour included.
+    type: integer
+    format: int64
+  first_seen_at:
+    type: string
+    format: date-time
+  last_seen_at:
+    type: string
+    format: date-time
+  first_version:
+    description: The version of the server (`service.version`) of the first occurrence.
+    type: string
+  last_version:
+    description: The version of the server of the last occurrence.
+    type: string

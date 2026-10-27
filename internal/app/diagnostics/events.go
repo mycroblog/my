@@ -50,9 +50,10 @@ type GroupRegressed struct {
 func (GroupRegressed) EventType() string { return EventGroupRegressed }
 
 // GroupConfirmed carries a group that a report without a session created, at the first
-// occurrence with one.
+// occurrence with one, and its state then (a muted group notifies nobody).
 type GroupConfirmed struct {
 	Group       Group
+	Head        Head
 	ConfirmedAt time.Time
 }
 

@@ -103,3 +103,42 @@ SELECT g.id,
 FROM error_groups g
 LEFT JOIN error_group_events e ON e.id = (
   SELECT x.id FROM error_group_events x WHERE x.group_id = g.id ORDER BY x.id DESC LIMIT 1);
+
+-- ListErrorGroupSummaries lists the groups with their states, their last occurrences (the
+-- sample, else the first), and their occurrences since since_day and since_week, the most
+-- recently seen first: the admin list of the error groups. state and source of '' keep every
+-- group; before_id (with before_seen) is the last group of the previous page.
+-- name: ListErrorGroupSummaries :many
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  COALESCE(sm.occurred_at, g.first_seen_at)::timestamptz AS last_seen_at,
+  COALESCE(sm.version, g.first_version)::text AS last_version,
+  (SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= @since_day::timestamptz)::bigint AS count_day,
+  (SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= @since_week::timestamptz)::bigint AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE (@state::text = '' OR s.state = @state::text)
+  AND (@source::text = '' OR g.source = @source::text)
+  AND (sqlc.narg(before_id)::uuid IS NULL
+    OR COALESCE(sm.occurred_at, g.first_seen_at) < @before_seen::timestamptz
+    OR (COALESCE(sm.occurred_at, g.first_seen_at) = @before_seen::timestamptz AND g.id < sqlc.narg(before_id)::uuid))
+ORDER BY COALESCE(sm.occurred_at, g.first_seen_at) DESC, g.id DESC
+LIMIT @row_limit;
+
+-- GetErrorGroupSummary is one group of ListErrorGroupSummaries.
+-- name: GetErrorGroupSummary :one
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  COALESCE(sm.occurred_at, g.first_seen_at)::timestamptz AS last_seen_at,
+  COALESCE(sm.version, g.first_version)::text AS last_version,
+  (SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= @since_day::timestamptz)::bigint AS count_day,
+  (SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= @since_week::timestamptz)::bigint AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE g.id = @id::uuid;

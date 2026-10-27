@@ -17,7 +17,8 @@
   - 挿入しなかったとき（既にあるグループ）は状態の行を読み（PostgreSQL は `FOR UPDATE`）、`resolved` で `resolved_version` と版が異なれば `regressed` のイベントを足して `diagnostics.error_group_regressed` を発行し、射影が `open` に戻します。
     同じ版での再発は数えるだけです（`diagnostics.Regresses`）。`muted` のグループは再発しません。
   - `unauthenticated` のグループにログインした報告が届いたときは、同じトランザクションで `error_group_confirmations` に挿入し（主キーの衝突は何もしない）、挿入したときだけ `diagnostics.error_group_confirmed` を発行します。
-    ログインしていない呼び出しは新しいグループの通知を起こさない（ADR-0103 §6）ので、通知はログインした報告が作ったグループの `diagnostics.error_group_created` か、`diagnostics.error_group_confirmed` で行います。
+    ログインしていない呼び出しは新しいグループの通知を起こさない（ADR-0103 §6）ので、通知はログインした報告が作ったグループの `diagnostics.error_group_created` か、`diagnostics.error_group_confirmed` で行います（[§4.7](07-notification.md) の `admin_error_group`。webhook の `error_group.*` も同じ規則）。
+    `diagnostics` の射影は `notification` と `webhook` の購読者より先に登録し、購読者が同じトランザクションで `error_group_states` を読めるようにします。
     プロセスの中の「最初の 1 件」は指紋・版・ログインの有無の組ごとです。
   - そのあと、トランザクションの外の 1 文ずつで `error_group_counts` に 1 を足し、`error_group_samples` をその 1 件にします。
 - 2 件目からはプロセスの中で指紋と 1 時間ごとに数を貯め、60 秒ごととプロセスの終わり（`App.Close`）に、時間ごとの数の加算と最新の 1 件の置き換えを、それぞれトランザクションの外の 1 文の upsert で書きます。

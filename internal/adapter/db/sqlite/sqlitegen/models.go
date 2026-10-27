@@ -619,6 +619,9 @@ type Notification struct {
 	ServiceClosureEventID   sql.NullString
 	ServiceClosureChange    sql.NullString
 	VoiceRoomID             sql.NullString
+	ErrorGroupChange        sql.NullString
+	ErrorGroupID            sql.NullString
+	ErrorGroupHour          sql.NullInt64
 	DedupeKey               string
 	CreatedAt               int64
 }

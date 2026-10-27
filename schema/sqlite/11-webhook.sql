@@ -35,7 +35,8 @@ CREATE TABLE webhook_endpoint_revision_events (
     'report.created', 'report.resolved', 'report.reopened', 'registration.pending',
     'account.created', 'account.updated', 'moderation_action.created', 'moderation_action.lifted',
     'appeal.created', 'domain_moderation_action.created', 'domain_moderation_action.lifted',
-    'status.created', 'custom_emoji.created', 'custom_emoji.updated', 'custom_emoji.deleted'
+    'status.created', 'custom_emoji.created', 'custom_emoji.updated', 'custom_emoji.deleted',
+    'error_group.created', 'error_group.regressed'
   )),
   PRIMARY KEY (revision_id, event_type)
 ) STRICT;
@@ -76,6 +77,7 @@ CREATE TABLE webhook_messages (
     'account.created', 'account.updated', 'moderation_action.created', 'moderation_action.lifted',
     'appeal.created', 'domain_moderation_action.created', 'domain_moderation_action.lifted',
     'status.created', 'custom_emoji.created', 'custom_emoji.updated', 'custom_emoji.deleted',
+    'error_group.created', 'error_group.regressed',
     'webhook.test'
   )),
   body BLOB NOT NULL,

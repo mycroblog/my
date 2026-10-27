@@ -61,6 +61,11 @@ const (
 	// (ADR-0070 §1): it opens the holder's own room and changes nothing of others or of the
 	// whole server, so a supporter plan may grant it (ADR-0072 §5).
 	PermStartVoiceRooms Permission = "start_voice_rooms"
+	// PermManageErrors: read the error groups of the server and the web client, resolve, mute,
+	// and unmute them, and get the notifications and the webhook events of the new and
+	// regressed groups (ADR-0103 §8). It is server administration (ADR-0058 §4): only the
+	// built-in admin role has it by default.
+	PermManageErrors Permission = "manage_errors"
 )
 
 // AllPermissions lists every permission.
@@ -70,7 +75,7 @@ func AllPermissions() []Permission {
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
-		PermManageServiceClosure, PermStartVoiceRooms,
+		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors,
 	}
 }
 

@@ -101,3 +101,42 @@ SELECT g.id,
 FROM error_groups g
 LEFT JOIN error_group_events e ON e.id = (
   SELECT x.id FROM error_group_events x WHERE x.group_id = g.id ORDER BY x.id DESC LIMIT 1);
+
+-- ListErrorGroupSummaries lists the groups with their states, their last occurrences (the
+-- sample, else the first), and their occurrences since since_day and since_week, the most
+-- recently seen first: the admin list of the error groups. state and source of '' keep every
+-- group; before_id (with before_seen) is the last group of the previous page, '' for none.
+-- name: ListErrorGroupSummaries :many
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  CAST(COALESCE(sm.occurred_at, g.first_seen_at) AS INTEGER) AS last_seen_at,
+  CAST(COALESCE(sm.version, g.first_version) AS TEXT) AS last_version,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(@since_day AS INTEGER)) AS INTEGER) AS count_day,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(@since_week AS INTEGER)) AS INTEGER) AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE (CAST(@state AS TEXT) = '' OR s.state = CAST(@state AS TEXT))
+  AND (CAST(@source AS TEXT) = '' OR g.source = CAST(@source AS TEXT))
+  AND (CAST(@before_id AS TEXT) = ''
+    OR COALESCE(sm.occurred_at, g.first_seen_at) < CAST(@before_seen AS INTEGER)
+    OR (COALESCE(sm.occurred_at, g.first_seen_at) = CAST(@before_seen AS INTEGER) AND g.id < CAST(@before_id AS TEXT)))
+ORDER BY COALESCE(sm.occurred_at, g.first_seen_at) DESC, g.id DESC
+LIMIT @row_limit;
+
+-- GetErrorGroupSummary is one group of ListErrorGroupSummaries.
+-- name: GetErrorGroupSummary :one
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  CAST(COALESCE(sm.occurred_at, g.first_seen_at) AS INTEGER) AS last_seen_at,
+  CAST(COALESCE(sm.version, g.first_version) AS TEXT) AS last_version,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(@since_day AS INTEGER)) AS INTEGER) AS count_day,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(@since_week AS INTEGER)) AS INTEGER) AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE g.id = CAST(@id AS TEXT);

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
+  resolved group that happened again on another version (`regressed`, with `group_id`), or the
+  new and regressed groups of an hour beyond the 10 that the server notifies of one by one
+  (`others`, with how many so far in `count`).
+type: object
+required: [change]
+properties:
+  change:
+    type: string
+    enum: [created, regressed, others]
+  group_id:
+    description: The error group of a `created` or a `regressed`.
+    allOf:
+      - $ref: ./Id.yaml
+  count:
+    description: How many groups an `others` stands for.
+    type: integer
+    format: int64

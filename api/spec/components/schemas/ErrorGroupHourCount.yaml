@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+description: The occurrences of an error group in one hour.
+type: object
+required: [hour, count, last_version]
+properties:
+  hour:
+    description: The start of the hour, in UTC.
+    type: string
+    format: date-time
+  count:
+    type: integer
+    format: int64
+  last_version:
+    description: The version of the server of the last occurrence of the hour.
+    type: string

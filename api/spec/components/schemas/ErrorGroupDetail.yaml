@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An error group with its latest occurrence, its hourly counts, and the changes of its state.
+allOf:
+  - $ref: ./ErrorGroup.yaml
+  - type: object
+    required: [hourly_counts, events]
+    properties:
+      sample:
+        $ref: ./ErrorGroupSample.yaml
+      hourly_counts:
+        description: The occurrences of each hour that had any, oldest first, for the last 90 days.
+        type: array
+        items:
+          $ref: ./ErrorGroupHourCount.yaml
+      events:
+        description: The changes of the state of the group, oldest first.
+        type: array
+        items:
+          $ref: ./ErrorGroupEvent.yaml

@@ -207,6 +207,14 @@
     "defaultMessage": "A custom emoji is changed",
     "description": "Name of a webhook event: an administrator changed a custom emoji."
   },
+  "admin.webhooks.event.error_group_created": {
+    "defaultMessage": "A new error is reported",
+    "description": "Name of a webhook event: the server or the web client reported an error of a new kind."
+  },
+  "admin.webhooks.event.error_group_regressed": {
+    "defaultMessage": "A resolved error happens again",
+    "description": "Name of a webhook event: an error that an administrator marked resolved happened again with a newer version of the server."
+  },
   "admin.webhooks.event.domain_moderation_action_created": {
     "defaultMessage": "A domain action is taken",
     "description": "Name of a webhook event: a moderation action on a domain was issued."

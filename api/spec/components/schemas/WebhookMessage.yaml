@@ -7,7 +7,8 @@ description: |
   `AdminRegistration` for `registration.pending` and `account.created`, `AdminAccount`
   for `account.updated`, `AdminAccountAction` for `moderation_action.*`, `AdminAppeal`
   for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
-  `WebhookCustomEmoji` for `custom_emoji.*`, `WebhookStatus` for `status.created`, and
+  `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
+  `WebhookStatus` for `status.created`, and
   `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
   describes it.
 type: object

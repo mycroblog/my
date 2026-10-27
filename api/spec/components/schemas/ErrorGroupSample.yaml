@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The latest occurrence of an error group, scrubbed. `request_id` and `trace_id` find it in
+  the logs and the traces.
+type: object
+required: [type, message, stack, version, role, occurred_at]
+properties:
+  type:
+    description: The chain of the types of the error, outermost first.
+    type: string
+  message:
+    type: string
+  stack:
+    description: The stack, in the form of the runtime that reported it, without the arguments of the frames.
+    type: string
+  request_id:
+    description: The request ID of the occurrence; omitted when it had none.
+    type: string
+  trace_id:
+    description: The trace ID of the occurrence; omitted when it had none.
+    type: string
+  version:
+    description: The version of the server of the occurrence.
+    type: string
+  role:
+    description: The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them.
+    type: string
+  occurred_at:
+    type: string
+    format: date-time

@@ -14,7 +14,8 @@ The built-in `admin` role has it.
 
 1. Create a webhook with a destination URL, a description, and the events to subscribe to. Each event also needs its own
    permission besides `manage_webhooks`: `manage_reports` for reports, `manage_accounts` for registrations, accounts,
-   moderation actions and appeals, `manage_domains` for domain actions, and `manage_custom_emojis` for custom emoji.
+   moderation actions and appeals, `manage_domains` for domain actions, `manage_custom_emojis` for custom emoji, and
+   `manage_errors` for error groups.
    Public posts need no extra permission. You cannot select an event whose permission you lack.
 2. The secret (`whsec_...`) is shown once, when the webhook is created. Set it on the receiver. It cannot be shown again.
 3. Choose "Send a test" to send `webhook.test`, and check in the deliveries that it arrived.

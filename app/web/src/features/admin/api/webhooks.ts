@@ -47,6 +47,8 @@ export const webhookEvents = [
   "custom_emoji.created",
   "custom_emoji.updated",
   "custom_emoji.deleted",
+  "error_group.created",
+  "error_group.regressed",
 ] as const satisfies readonly WebhookEventType[];
 
 /** The webhooks that are not deleted, newest first. */

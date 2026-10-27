@@ -26,6 +26,8 @@ type Notifications interface {
 	UnreadCount(ctx context.Context, accountID string) (int64, error)
 	MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error)
 	Dismiss(ctx context.Context, accountID, notificationID string) error
+	// ErrorGroupOthers returns how many error groups an admin_error_group of the others folds.
+	ErrorGroupOthers(ctx context.Context, n notification.Notification) (int64, error)
 }
 
 // Severances reads the follows that a local account lost to a suspension (FR-717).
@@ -261,6 +263,11 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		}
 		if item.Reaction, err = s.reactionEmojiOf(ctx, n); err != nil {
 			return nil, err
+		}
+		if n.ErrorGroupChange != "" {
+			if item.ErrorGroup, err = s.notifiedErrorGroup(ctx, n); err != nil {
+				return nil, err
+			}
 		}
 		if n.VoiceRoomID != "" {
 			id := n.VoiceRoomID
@@ -577,4 +584,22 @@ func (s *Server) DismissNotification(ctx context.Context, req DismissNotificatio
 		return nil, fmt.Errorf("clientapi: dismiss notification %s of %s: %w", req.Id, v.AccountID, err)
 	}
 	return DismissNotification204Response{}, nil
+}
+
+// notifiedErrorGroup presents what an admin_error_group tells of, with the count of the groups
+// that one of the others folds.
+func (s *Server) notifiedErrorGroup(ctx context.Context, n notification.Notification) (*NotificationErrorGroup, error) {
+	out := &NotificationErrorGroup{Change: NotificationErrorGroupChange(n.ErrorGroupChange)}
+	if n.ErrorGroupID != "" {
+		id := n.ErrorGroupID
+		out.GroupId = &id
+	}
+	if n.ErrorGroupChange == notification.ErrorGroupOthers {
+		count, err := s.o.Notifications.ErrorGroupOthers(ctx, n)
+		if err != nil {
+			return nil, err
+		}
+		out.Count = &count
+	}
+	return out, nil
 }

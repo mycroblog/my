@@ -4,7 +4,8 @@ description: |
   `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
   `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
   `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
-  `custom_emoji.*`; and nothing more for `status.created`. `report.created`: a report,
+  `custom_emoji.*`; `manage_errors` for `error_group.*`; and nothing more for
+  `status.created`. `report.created`: a report,
   local or from another server. `report.resolved`, `report.reopened`. `registration.pending`:
   a registration awaits a moderator. `account.created`: a registration was approved, at
   the sign-up or by a moderator. `account.updated`: a local account changed its profile.
@@ -13,6 +14,9 @@ description: |
   `status.created`: a public post of a local account. `custom_emoji.created`,
   `custom_emoji.updated` (its image, settings, aliases, or whether it is enabled), and
   `custom_emoji.deleted`: an administrator's operation on a custom emoji.
+  `error_group.created`: a new error group, and `error_group.regressed`: a resolved group
+  happened again on another version; a group that only web reports without a session have
+  seen is sent when a report with one comes, unless it is muted by then.
 type: string
 enum:
   - report.created
@@ -30,3 +34,5 @@ enum:
   - custom_emoji.created
   - custom_emoji.updated
   - custom_emoji.deleted
+  - error_group.created
+  - error_group.regressed

@@ -135,6 +135,10 @@
     "defaultMessage": "Start voice chat rooms",
     "description": "Name of the permission start_voice_rooms: opening voice chat rooms and hosting them, while the server lets only the holders of this permission open them."
   },
+  "admin.roles.permission.manage_errors": {
+    "defaultMessage": "Errors",
+    "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."
+  },
   "admin.roles.permission.manage_oauth_apps": {
     "defaultMessage": "OAuth apps",
     "description": "Name of the permission manage_oauth_apps: all the OAuth clients, disabling them, and denying the hosts of client metadata documents."

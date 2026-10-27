@@ -115,6 +115,18 @@
     "defaultMessage": "The closing date of {instance} has passed: close the server",
     "description": "Web Push notification to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_error_group.created": {
+    "defaultMessage": "A new error was reported on {instance}",
+    "description": "Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.regressed": {
+    "defaultMessage": "A resolved error happened again on {instance}",
+    "description": "Web Push notification to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_error_group.others": {
+    "defaultMessage": "More errors were reported on {instance}",
+    "description": "Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.supporter_service_closure": {
     "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."

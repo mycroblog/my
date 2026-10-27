@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A change of the state of an error group: `resolved`, `muted`, and `unmuted` by an
+  administrator (`actor` `user`) or the CLI (`cli`), and `regressed` by the server (`system`)
+  when a resolved group happened again on another version, which `version` names. A
+  `resolved` names the version of the last occurrence then.
+type: object
+required: [kind, actor, occurred_at]
+properties:
+  kind:
+    type: string
+    enum: [resolved, regressed, muted, unmuted]
+  actor:
+    type: string
+    enum: [user, cli, system]
+  version:
+    description: The version that a `resolved` or a `regressed` names; omitted for the others.
+    type: string
+  occurred_at:
+    type: string
+    format: date-time

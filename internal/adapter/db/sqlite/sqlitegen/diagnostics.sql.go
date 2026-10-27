@@ -241,6 +241,73 @@ func (q *Queries) GetErrorGroupSample(ctx context.Context, groupID string) (GetE
 	return i, err
 }
 
+const getErrorGroupSummary = `-- name: GetErrorGroupSummary :one
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  CAST(COALESCE(sm.occurred_at, g.first_seen_at) AS INTEGER) AS last_seen_at,
+  CAST(COALESCE(sm.version, g.first_version) AS TEXT) AS last_version,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(?1 AS INTEGER)) AS INTEGER) AS count_day,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(?2 AS INTEGER)) AS INTEGER) AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE g.id = CAST(?3 AS TEXT)
+`
+
+type GetErrorGroupSummaryParams struct {
+	SinceDay  int64
+	SinceWeek int64
+	ID        string
+}
+
+type GetErrorGroupSummaryRow struct {
+	ID              string
+	Fingerprint     string
+	Source          string
+	Kind            string
+	ErrorType       string
+	Message         string
+	WhereName       string
+	FirstVersion    string
+	Unauthenticated int64
+	FirstSeenAt     int64
+	State           string
+	ResolvedVersion string
+	Since           int64
+	LastSeenAt      int64
+	LastVersion     string
+	CountDay        int64
+	CountWeek       int64
+}
+
+// GetErrorGroupSummary is one group of ListErrorGroupSummaries.
+func (q *Queries) GetErrorGroupSummary(ctx context.Context, arg GetErrorGroupSummaryParams) (GetErrorGroupSummaryRow, error) {
+	row := q.db.QueryRowContext(ctx, getErrorGroupSummary, arg.SinceDay, arg.SinceWeek, arg.ID)
+	var i GetErrorGroupSummaryRow
+	err := row.Scan(
+		&i.ID,
+		&i.Fingerprint,
+		&i.Source,
+		&i.Kind,
+		&i.ErrorType,
+		&i.Message,
+		&i.WhereName,
+		&i.FirstVersion,
+		&i.Unauthenticated,
+		&i.FirstSeenAt,
+		&i.State,
+		&i.ResolvedVersion,
+		&i.Since,
+		&i.LastSeenAt,
+		&i.LastVersion,
+		&i.CountDay,
+		&i.CountWeek,
+	)
+	return i, err
+}
+
 const insertErrorGroup = `-- name: InsertErrorGroup :execrows
 
 
@@ -393,6 +460,110 @@ func (q *Queries) ListErrorGroupEvents(ctx context.Context, groupID string) ([]E
 			&i.ActorUserID,
 			&i.Version,
 			&i.OccurredAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listErrorGroupSummaries = `-- name: ListErrorGroupSummaries :many
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
+  s.state, s.resolved_version, s.since,
+  CAST(COALESCE(sm.occurred_at, g.first_seen_at) AS INTEGER) AS last_seen_at,
+  CAST(COALESCE(sm.version, g.first_version) AS TEXT) AS last_version,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(?1 AS INTEGER)) AS INTEGER) AS count_day,
+  CAST((SELECT COALESCE(SUM(c.occurrences), 0) FROM error_group_counts c
+    WHERE c.group_id = g.id AND c.hour_start >= CAST(?2 AS INTEGER)) AS INTEGER) AS count_week
+FROM error_groups g
+JOIN error_group_states s ON s.group_id = g.id
+LEFT JOIN error_group_samples sm ON sm.group_id = g.id
+WHERE (CAST(?3 AS TEXT) = '' OR s.state = CAST(?3 AS TEXT))
+  AND (CAST(?4 AS TEXT) = '' OR g.source = CAST(?4 AS TEXT))
+  AND (CAST(?5 AS TEXT) = ''
+    OR COALESCE(sm.occurred_at, g.first_seen_at) < CAST(?6 AS INTEGER)
+    OR (COALESCE(sm.occurred_at, g.first_seen_at) = CAST(?6 AS INTEGER) AND g.id < CAST(?5 AS TEXT)))
+ORDER BY COALESCE(sm.occurred_at, g.first_seen_at) DESC, g.id DESC
+LIMIT ?7
+`
+
+type ListErrorGroupSummariesParams struct {
+	SinceDay   int64
+	SinceWeek  int64
+	State      string
+	Source     string
+	BeforeID   string
+	BeforeSeen int64
+	RowLimit   int64
+}
+
+type ListErrorGroupSummariesRow struct {
+	ID              string
+	Fingerprint     string
+	Source          string
+	Kind            string
+	ErrorType       string
+	Message         string
+	WhereName       string
+	FirstVersion    string
+	Unauthenticated int64
+	FirstSeenAt     int64
+	State           string
+	ResolvedVersion string
+	Since           int64
+	LastSeenAt      int64
+	LastVersion     string
+	CountDay        int64
+	CountWeek       int64
+}
+
+// ListErrorGroupSummaries lists the groups with their states, their last occurrences (the
+// sample, else the first), and their occurrences since since_day and since_week, the most
+// recently seen first: the admin list of the error groups. state and source of ” keep every
+// group; before_id (with before_seen) is the last group of the previous page, ” for none.
+func (q *Queries) ListErrorGroupSummaries(ctx context.Context, arg ListErrorGroupSummariesParams) ([]ListErrorGroupSummariesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listErrorGroupSummaries,
+		arg.SinceDay,
+		arg.SinceWeek,
+		arg.State,
+		arg.Source,
+		arg.BeforeID,
+		arg.BeforeSeen,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListErrorGroupSummariesRow{}
+	for rows.Next() {
+		var i ListErrorGroupSummariesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Fingerprint,
+			&i.Source,
+			&i.Kind,
+			&i.ErrorType,
+			&i.Message,
+			&i.WhereName,
+			&i.FirstVersion,
+			&i.Unauthenticated,
+			&i.FirstSeenAt,
+			&i.State,
+			&i.ResolvedVersion,
+			&i.Since,
+			&i.LastSeenAt,
+			&i.LastVersion,
+			&i.CountDay,
+			&i.CountWeek,
 		); err != nil {
 			return nil, err
 		}

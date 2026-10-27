@@ -2391,6 +2391,20 @@ func (l *Localizer) ServerMailAdminCustomEmojiRequestSubject(instance string) st
 	return l.format("server:mail.admin_custom_emoji_request.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAdminErrorGroupBody formats "server:mail.admin_error_group.body". Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The server or the web client of {instance} reported a new error, or an error that was marked resolved happened again. See the errors in the administration screens.
+func (l *Localizer) ServerMailAdminErrorGroupBody(instance string) string {
+	return l.format("server:mail.admin_error_group.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminErrorGroupSubject formats "server:mail.admin_error_group.subject". Subject of the email to an administrator who chose to get moderator notifications by email: a new error, or a resolved error that happened again. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Errors were reported on {instance}
+func (l *Localizer) ServerMailAdminErrorGroupSubject(instance string) string {
+	return l.format("server:mail.admin_error_group.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminReportBody formats "server:mail.admin_report.body". Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new report awaits the moderators of {instance}.
@@ -3208,6 +3222,27 @@ func (l *Localizer) ServerPushAdminAppeal(instance string) string {
 //	en: A custom emoji request awaits review on {instance}
 func (l *Localizer) ServerPushAdminCustomEmojiRequest(instance string) string {
 	return l.format("server:push.admin_custom_emoji_request", map[string]any{"instance": instance})
+}
+
+// ServerPushAdminErrorGroupCreated formats "server:push.admin_error_group.created". Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A new error was reported on {instance}
+func (l *Localizer) ServerPushAdminErrorGroupCreated(instance string) string {
+	return l.format("server:push.admin_error_group.created", map[string]any{"instance": instance})
+}
+
+// ServerPushAdminErrorGroupOthers formats "server:push.admin_error_group.others". Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: More errors were reported on {instance}
+func (l *Localizer) ServerPushAdminErrorGroupOthers(instance string) string {
+	return l.format("server:push.admin_error_group.others", map[string]any{"instance": instance})
+}
+
+// ServerPushAdminErrorGroupRegressed formats "server:push.admin_error_group.regressed". Web Push notification to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A resolved error happened again on {instance}
+func (l *Localizer) ServerPushAdminErrorGroupRegressed(instance string) string {
+	return l.format("server:push.admin_error_group.regressed", map[string]any{"instance": instance})
 }
 
 // ServerPushAdminReport formats "server:push.admin_report". Web Push notification to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.

@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -49,6 +50,8 @@ type Presenter interface {
 	WebhookDomainAction(ctx context.Context, tx uow.Tx, id string) (any, error)
 	// WebhookCustomEmoji presents a custom emoji as AdminCustomEmoji.
 	WebhookCustomEmoji(ctx context.Context, tx uow.Tx, id string) (any, error)
+	// WebhookErrorGroup presents an error group as ErrorGroup.
+	WebhookErrorGroup(ctx context.Context, tx uow.Tx, id string) (any, error)
 }
 
 // SetPresenter sets the presenter of the messages' data. The composition root calls it once,
@@ -207,6 +210,30 @@ var sources = map[string]func(e uow.Event) source{
 		}
 		return source{Type: webhook.EventStatusCreated, At: st.PublishedAt, Data: d}
 	},
+	// The error groups (ADR-0103 §8) follow the rule of their notifications: a group that only
+	// web reports without a session have seen is sent when a report with one confirms it, unless
+	// it is muted by then, and a regression from such a report is not sent.
+	appdiagnostics.EventGroupCreated: func(e uow.Event) source {
+		g := e.(appdiagnostics.GroupCreated).Group
+		if g.Unauthenticated {
+			return source{}
+		}
+		return source{Type: webhook.EventErrorGroupCreated, At: g.FirstSeenAt, Present: errorGroup(g.ID)}
+	},
+	appdiagnostics.EventGroupConfirmed: func(e uow.Event) source {
+		ev := e.(appdiagnostics.GroupConfirmed)
+		if ev.Head.Muted() {
+			return source{}
+		}
+		return source{Type: webhook.EventErrorGroupCreated, At: ev.ConfirmedAt, Present: errorGroup(ev.Group.ID)}
+	},
+	appdiagnostics.EventGroupRegressed: func(e uow.Event) source {
+		ev := e.(appdiagnostics.GroupRegressed)
+		if ev.Unauthenticated {
+			return source{}
+		}
+		return source{Type: webhook.EventErrorGroupRegressed, At: ev.Event.OccurredAt, Present: errorGroup(ev.Group.ID)}
+	},
 	appcontent.EventCustomEmojiAdministered: func(e uow.Event) source {
 		ev := e.(appcontent.CustomEmojiAdministered)
 		t, ok := customEmojiEvents[ev.Action]
@@ -239,6 +266,12 @@ func registration(userID string) presentFunc {
 func accountAction(id string) presentFunc {
 	return func(ctx context.Context, tx uow.Tx, p Presenter) (any, error) {
 		return p.WebhookAccountAction(ctx, tx, id)
+	}
+}
+
+func errorGroup(id string) presentFunc {
+	return func(ctx context.Context, tx uow.Tx, p Presenter) (any, error) {
+		return p.WebhookErrorGroup(ctx, tx, id)
 	}
 }
 
