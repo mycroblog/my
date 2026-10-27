@@ -39,6 +39,9 @@ export { OAuthAppSettings, type OAuthAppTab } from "./components/OAuthAppSetting
 // The server's announcements to every local user (FR-726), for manage_announcements.
 export { adminAnnouncementsQueryOptions } from "./api/announcements";
 export { AnnouncementSettings } from "./components/AnnouncementSettings";
+// The external login providers: setting them up, changing, disabling and deleting them (ADR-0106), for manage_login_providers.
+export { loginProvidersQueryOptions } from "./api/loginProviders";
+export { LoginProviderSettings } from "./components/LoginProviderSettings";
 // The webhooks: setting them up, their deliveries and sending one again (ADR-0060), for manage_webhooks.
 export { webhookDeliveriesQueryOptions, webhookQueryOptions, webhooksQueryOptions } from "./api/webhooks";
 export { WebhookDeliveries } from "./components/WebhookDeliveries";

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the server administration feature (web-client/README.md §7): the job queue, the error groups, the settings, the rules, the
-// server's texts, the custom emoji, the webhooks, the announcements, the relays, the cost items and their totals, the billing imports, and the supporter program with its plans, subscriptions and payment provider, none by default. The default viewer has no permissions, so the screens' tests start with
+// server's texts, the custom emoji, the webhooks, the login providers, the announcements, the relays, the cost items and their totals, the billing imports, and the supporter program with its plans, subscriptions and payment provider, none by default. The default viewer has no permissions, so the screens' tests start with
 // `server.use(operatorHandler(...))` (test/msw/http.ts).
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, type Schemas } from "../../../test/fixtures";
@@ -113,6 +113,29 @@ export function webhookFixture(id: string, overrides: Partial<Schemas["AdminWebh
     state: "enabled",
     state_reason: "admin",
     state_changed_at: "2026-10-20T00:00:00Z",
+    created_at: "2026-10-20T00:00:00Z",
+    updated_at: "2026-10-20T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** An OpenID Connect login provider as the admin API answers it, set up at 2026-10-20T00:00:00Z and enabled, with `overrides`. */
+export function loginProviderFixture(id: string, overrides: Partial<Schemas["AdminLoginProvider"]> = {}): Schemas["AdminLoginProvider"] {
+  return {
+    id,
+    kind: "oidc",
+    display_name: "Example SSO",
+    issuer: "https://sso.example",
+    client_id: "my-client",
+    scopes: [],
+    allow_signup: false,
+    allow_link: true,
+    claims: [],
+    organizations: [],
+    state: "enabled",
+    state_changed_at: "2026-10-20T00:00:00Z",
+    callback_url: `https://my.example/auth/external/${id}/callback`,
+    linked_users: 0,
     created_at: "2026-10-20T00:00:00Z",
     updated_at: "2026-10-20T00:00:00Z",
     ...overrides,
@@ -343,6 +366,9 @@ const createdCostItemId = "0199f0e0-0000-7000-8000-0000000000a1";
 /** The ID the default POST /admin/rules handler gives a new rule. */
 const createdRuleId = "0199f0e0-0000-7000-8000-0000000000f1";
 
+/** The ID the default POST /admin/login_providers handler gives a new provider. */
+const createdLoginProviderId = "0199f0e0-0000-7000-8000-0000000000c1";
+
 /** The ID the default POST /admin/webhooks handler gives a new webhook. */
 const createdWebhookId = "0199f0e0-0000-7000-8000-0000000000b1";
 
@@ -483,6 +509,27 @@ export const handlers = [
   ),
   http.post(`${apiBase}/admin/webhooks/:id/deliveries/:delivery_id/redeliver`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(webhookDeliveryFixture(String(params["delivery_id"])))),
+  ),
+  // operationIds listAdminLoginProviders, createLoginProvider, getAdminLoginProvider, updateLoginProvider,
+  // deleteLoginProvider, enableLoginProvider, disableLoginProvider, rotateLoginProviderSecret: no providers; a new or
+  // changed provider is answered as sent.
+  http.get(`${apiBase}/admin/login_providers`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminLoginProviderList"]))),
+  http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
+    const { client_secret: _, ...body } = (await request.clone().json()) as Schemas["CreateLoginProviderRequest"];
+    return withViewer(request, () => HttpResponse.json(loginProviderFixture(createdLoginProviderId, body)));
+  }),
+  http.get(`${apiBase}/admin/login_providers/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]))))),
+  http.patch(`${apiBase}/admin/login_providers/:id`, async ({ request, params }) => {
+    const body = (await request.clone().json()) as Schemas["UpdateLoginProviderRequest"];
+    return withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]), body)));
+  }),
+  http.delete(`${apiBase}/admin/login_providers/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/admin/login_providers/:id/enable`, ({ request, params }) => withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]))))),
+  http.post(`${apiBase}/admin/login_providers/:id/disable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]), { state: "disabled" }))),
+  ),
+  http.post(`${apiBase}/admin/login_providers/:id/rotate_secret`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"])))),
   ),
   // operationIds listAdminRelays, createRelay, followRelay, unfollowRelay, deleteRelay: no relays; a new relay is
   // pending with what was sent, a relay joined again is pending and one left is left.

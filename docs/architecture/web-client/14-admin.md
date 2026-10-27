@@ -4,12 +4,12 @@
 
 - **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[federation.md §7.3](../federation.md)）・監査ログ。
   `features/moderation` は、利用者が自分への処分を確かめる画面（§18）も受け持ち、サーバー管理の画面が使う共通の部品（下の「共通の部品」）と権限の型・一覧のページングも `index.ts` から出す。
-- **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・費用・ロール・ジョブのキュー・エラー。これから足すサーバー管理の画面（リレー）は、
+- **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・外部ログインのプロバイダー・費用・ロール・ジョブのキュー・エラー。これから足すサーバー管理の画面（リレー）は、
   `routes/admin.<画面>.tsx` のルートと、`features/admin/components/AdminMenu.tsx` の一覧の 1 行を足してここに置く。
 
 API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) の管理の操作、タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
 
-- **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面のロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
+- **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面のロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_login_providers` が外部ログインのプロバイダーの画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。
   ルートは `requireSignIn` のあと、loader で閲覧者を読み、権限があるときだけ一覧を読み込む（`routes/-admin/adminRoute.tsx`）。権限がなければ、要求を送らずに理由（権限の名前）を出す。
   守るのはサーバーで、権限が途中で外れて 403 `missing-permission` が返ったときは、ルートの `errorComponent` が同じ理由を出す。
@@ -85,6 +85,13 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     「送信履歴」（その webhook のページへのリンク）・「編集」（フォームと同じ項目のダイアログ。保存したら閉じ、拒否はダイアログの項目に出す）・「無効にする」「有効にする」・「テスト送信」（有効なときだけ）・「秘密を作り直す」（`ConfirmDialog` で確かめ、新しい秘密を一覧の上に一度だけ出す）・「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）を持つ。
     ボタンのアクセシブルネームは webhook の名前（説明は U+2068 / U+2069、ホスト名は U+2066 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。
   - **webhook のページ**（`/admin/webhooks/{id}`）: 設定の説明リストと、過去 14 日の送信履歴（新しい順、「さらに表示」）。各送信はイベントの見出しと、結果（未送信・成功・失敗中）・試行回数・作成日時・最後の試行（結果・状態コード・日時）・メッセージ ID（`dir="ltr"`）の説明リストと「もう一度送る」を持ち、送ると履歴を取り直して `StatusMessage` に知らせる。
+- **外部ログインのプロバイダー**（`/admin/login-providers`、`manage_login_providers`、[ADR-0106](../../adr/0106-external-login-providers.md)）: 「ログインプロバイダーを設定する」と「このサーバーのログインプロバイダー」の 2 つの区画（`h2` の `section`）。
+  - **設定**: 種類（`RadioGroup`: OpenID Connect・GitHub・Mastodon）と、種類に応じた項目のフォーム。表示名（必須、100 文字まで。`oidc` ではサインインのボタンにそのまま出ることを添える）・Issuer（`oidc`、https の URL）かサーバー（`mastodon`、ドメイン）・クライアント ID・クライアントシークレット（`type="password"`、設定と作り直しのときだけ入力し、表示しない）・追加の scope（空白区切り。`mastodon` にはない）・「新規登録を許可する」と「アカウントへのひも付けを許可する」の `Checkbox`・条件（`oidc` は `Fieldset` の中に claim と許す値（カンマ区切り）の行を 10 まで足し外しでき、足した行の claim の欄にフォーカスを移し、外したら「条件を追加」に戻す。`github` は Organization の欄（カンマか空白区切り）。`mastodon` は条件がないことを添える）。
+    種類が取らない項目は送らない。claim か値の片方だけの行は送らずに条件の区画に `role="alert"` で出す。`POST /admin/login_providers` で送り、サーバーの拒否（422 `invalid-login-provider`）は `reason` の項目にサーバーの `detail` を出して入力を残す。設定したらフォームを空にし、コールバック URL（`dir="ltr"`）を IdP に登録することの説明とコピーのボタン付きで出す。
+  - **一覧**: 新しい順。各プロバイダーは見出し（表示名、`dir="auto"`）と Issuer・コールバック URL（コピーのボタン付き）、種類、状態（有効か無効かと、登録を許すか）、ひも付けた利用者の数を持つ。
+    「編集」（種類を変えずに設定のフォームと同じ項目のダイアログ。シークレットの欄は持たない。保存したら閉じ、拒否はダイアログの項目に出す）・「シークレットを更新」（新しいシークレットを入れるダイアログ）・「無効にする」（`ConfirmDialog`）・「有効にする」・「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）を持つ。
+    無効にすることと削除の確認には、ひも付けた利用者の数と、その利用者がこのプロバイダーでサインインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たなければまったくサインインできなくなることを出す。
+    ボタンのアクセシブルネームは表示名（U+2068 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。監査ログの対象はこの画面へリンクする。
 - **リレー**（`/admin/relays`、`manage_settings`、[ADR-0061](../../adr/0061-federation-relays.md)）: 「リレーに参加する」と「このサーバーのリレー」の 2 つの区画（`h2` の `section`）。
   - **参加**: URL（必須、https、2048 バイトまで）・方式（`Select`。既定の「自動で判定」は `protocol` を送らずサーバーに任せ、ほかに Mastodon 方式・LitePub 方式）・リレーから投稿を受け取るか（`Checkbox`、既定は受け取る）のフォーム。`POST /admin/relays` で送る。
     サーバーの拒否（422 `invalid-relay`）は `reason`（`url`・`exists`・`domain_suspended`・`not_actor`・`state`）をクライアントの文言にし、`state` のほかは URL の欄のエラーに、`state` と理由のない失敗はフォームの下（`role="alert"`）に出して、入力を残す。
@@ -164,7 +171,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     ルートの loader は TanStack Query の `infiniteQuery` の `pages` で、そのページ数を新しい方から順に読む。キャッシュに読み込み済みのページはそのまま使う。絞り込みを変えると 1 ページ目からになる。
     次のページの失敗は、一覧の下に `RegionError` で理由を出し、読み込み済みの行を残す。もう一度「さらに表示」を押すと読み直す。
   - **操作者**: アカウントの表示名（`dir="auto"`）とハンドル。アカウントが消えた利用者は「削除されたアカウント」、CLI・サーバー自身・ほかのサーバーはそれぞれの名前にする。
-  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `target_label`（`:shortcode:` か `:shortcode:@domain`）の shortcode とドメインで検索した `/admin/custom-emojis`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、ドメインは `DomainName` で 2 つの形を出す）。
+  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `target_label`（`:shortcode:` か `:shortcode:@domain`）の shortcode とドメインで検索した `/admin/custom-emojis`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、外部ログインのプロバイダーは `/admin/login-providers`、ドメインは `DomainName` で 2 つの形を出す）。
     設定・ルール・登録など画面のない種類と、消えた対象（API の `target_exists` が `false`）は、リンクにせず `target_label` だけを出す。
 - **招待**（`/moderation/invites`、`manage_invites`、FR-001）: 「招待を作成する」と「招待の一覧」の区画。登録モードが `invite` でない（`GET /instance` の `registrations.mode`）ときは、招待では誰も登録できず、登録モードは管理者がサーバーの設定で変えることを、区画の前に書く。
   - **作成**: 登録できる人数（`Select`、1・5・10・25・50・100 人と制限なし。既定は 1 人）と有効期間（`DurationSelect`、30 分〜30 日と無期限。既定は 7 日）。CLI の `my invite create` と同じ既定値にする。確かめずに送り、成功したら一覧を取り直してから、
@@ -299,6 +306,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `features/admin/errors.test.tsx` は、エラーのグループの一覧と各列、状態と報告元の絞り込みと URL、空の状態、管理のメニューのリンク、詳細の各区画と ID のコピー、時間ごとの件数と履歴の順、解決・ミュート・ミュートを外すことと `role="status"` の結果と見出しへのフォーカス、操作の失敗、ID と発生のないグループ、`admin_error_group` の通知の文とリンク、権限を検査する。
   `e2e/admin-errors.spec.ts` は、一覧から詳細をキーボードで開き、キーボードで解決してフォーカスが状態の見出しに移るまでを、各幅とロケールの axe・横スクロールとともに検査する。
   `features/admin/webhooks.test.tsx` は、webhook の設定と一度だけの秘密、足りない権限の拒否をイベントの項目に出すこと、サーバーが無効にした webhook の理由と失敗の回数と有効化、確認を経た秘密の作り直し、ダイアログでの編集、確認を経た削除、送信履歴の一覧ともう一度送ること、権限を検査する。
+  `features/admin/loginProviders.test.tsx` は、一覧の種類・状態・ひも付けた利用者の数・コールバック URL、OpenID Connect の設定と条件の行と送る内容、GitHub と Mastodon の項目の出し分け、サーバーの拒否を項目（Issuer・シークレット）に出すこと、値のない条件を送らずに出すことと行を外したあとのフォーカス、シークレットを持たないダイアログでの編集、シークレットの更新、ひも付けた利用者の数の警告を経た無効化と有効化、警告を経た削除、権限を検査する。
   `features/moderation/invites.test.tsx` は、招待の一覧の状態と人数、既定の値と制限なしでの作成とコードとリンク、失効と見出しへのフォーカス、登録モードが `invite` でないときの説明、権限を検査する。
   `features/admin/documents.test.tsx` は、本文、公開ページをページごと開くこと、保存と `role="status"` の結果、文書ごとの下書き、削除の確認と取り消し、保存の失敗、未保存の変更の確認、権限を検査し、
   `features/documents/documents.test.tsx` は、サインインの画面・設定・メニューのシートの文書へのリンクと、公開していない文書を出さないことを検査する。
@@ -310,6 +318,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `e2e/relays.spec.ts` は、リレーへの参加、一覧、脱退ともう一度参加すること、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
   `e2e/finance.spec.ts` は、費用の画面の集計（按分の既定、キーボードでの週のタブ、現金主義と URL）、年ごとの費用の登録、確認のダイアログを経た取り消し、取り込みの状態、収入の表とお金の動き（加入者のユーザー名、キーボードでの種類の絞り込みと URL）までを、各幅とロケールの axe・横スクロールとともに検査する。
   `e2e/webhooks.spec.ts` は、webhook の設定と一度だけの秘密の表示、一覧、無効化と有効化、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
+  `e2e/login-providers.spec.ts` は、OpenID Connect のプロバイダーの設定とコールバック URL の表示、一覧、警告のダイアログを経た無効化、確認のダイアログを経た削除までを、各幅とロケールの axe・横スクロールとともに検査する。
   `e2e/roles.spec.ts` は、ロールの区画の ARIA スナップショット（閲覧者より上のロールの理由）・axe・横スクロールと、キーボードで付与の確認のダイアログを経て、区画の見出しにフォーカスが移るまでを検査する。
   `e2e/documents.spec.ts` は、本物の `my serve` で登録の画面の同意の文とフッターが文書の SPA のパス（`/about/terms`・`/about/privacy`）へリンクし、その情報ページが目次つきで描かれる（公開していない文書は見つからない画面）ことを、`vite preview` で規約とポリシーの画面の ARIA スナップショット・axe・横スクロールと、キーボードでプライバシーポリシーを書いて保存するまでを検査する。
   `e2e/appeals.spec.ts` は、異議申し立ての一覧の axe・横スクロール・ARIA スナップショットと、キーボードで申し立てを開き、撤回の確認のダイアログを経て処分が解除と出て、審査の見出しにフォーカスが移るまでを検査する。
