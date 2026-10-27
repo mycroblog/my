@@ -73,7 +73,11 @@ type ErrorEvent struct {
 	Where string
 	// Fatal marks an error that stops the process, such as the panic of a goroutine.
 	Fatal bool
-	// Fingerprint groups the events of the same error; the reporter computes it.
+	// Unauthenticated marks a web event that came without an access token (ADR-0103 §6): it
+	// is counted and logged, but never notifies the administrators of a new group.
+	Unauthenticated bool
+	// Fingerprint groups the events of the same error. The reporter computes it when it is
+	// empty; the client API sets the one of a web event, which its stack cannot give.
 	Fingerprint string
 
 	// Correlation with the logs and the traces (ADR-0063 §6); the reporter fills RequestID,

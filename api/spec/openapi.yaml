@@ -93,6 +93,8 @@ tags:
       invitations, and the rooms the user hosted. The operations need
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it, and answer 404 while the voice chat is off on the server.
+  - name: client-errors
+    description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -372,6 +374,8 @@ paths:
     $ref: ./paths/voice_rooms_{id}_summary.yaml
   /voice/history:
     $ref: ./paths/voice_history.yaml
+  /client_errors:
+    $ref: ./paths/client_errors.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -1047,6 +1051,8 @@ components:
       $ref: ./components/schemas/AdminServiceClosureDeliveries.yaml
     AdminServiceClosureProgress:
       $ref: ./components/schemas/AdminServiceClosureProgress.yaml
+    ClientErrorReport:
+      $ref: ./components/schemas/ClientErrorReport.yaml
     CloseServiceRequest:
       $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:

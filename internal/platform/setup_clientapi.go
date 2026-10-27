@@ -92,6 +92,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Payments:    a.paymentsAPI(),
 		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(cfg.OAuthClientRateLimits),
 		Locales: a.Locales, RequestID: RequestID, Logger: a.Logger, Meter: a.Meter,
+		ErrorReporter: a.ErrorReporter,
 	})
 	api.Register(clientAPIRouter{a})
 	// The data of the webhook messages is the admin API's representation (ADR-0060).

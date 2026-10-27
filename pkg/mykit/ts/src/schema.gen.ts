@@ -3540,6 +3540,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/client_errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report an uncaught error of the web client
+         * @description Reports an error that the web client did not handle, for the operators of the server. The
+         *     body is at most 16 KiB of `application/json`. The answer is always 204 and never tells
+         *     whether the report was kept: the server ignores a body of another content type or over the
+         *     size, a body it cannot read, and a report whose `stack` has no frame of a script that this
+         *     server serves, such as the errors of a browser extension. It keeps at most 10 reports a
+         *     minute from each client IP and ignores the rest.
+         *
+         *     The `stack` is the browser's `Error.stack`, in either the V8 form
+         *     (`at fn (https://host/assets/app-1a2B3c4D.js:1:23)`) or the Firefox and Safari form
+         *     (`fn@https://host/assets/app-1a2B3c4D.js:1:23`). Only the frames of this server's scripts
+         *     are kept, without their query or fragment. The server groups the reports by `name`,
+         *     `message` (with the URLs, addresses, and long numbers in it left out), `route`, and the
+         *     name of the first script of the stack without its content hash.
+         *
+         *     A report may be sent without an access token, with `navigator.sendBeacon` while the page
+         *     is left: the server counts it but never notifies the administrators of a new error from
+         *     it. An access token that is sent must be valid, as for every operation.
+         */
+        post: operations["reportClientError"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/queue": {
         parameters: {
             query?: never;
@@ -8071,6 +8107,29 @@ export interface components {
             /** @description The recorded `Delete`s whose inboxes are still being computed. */
             fanouts_pending: number;
             deliveries: components["schemas"]["AdminServiceClosureDeliveries"];
+        };
+        /** @description An uncaught error of the web client. */
+        ClientErrorReport: {
+            /** @description The error's `name`, such as `TypeError`. */
+            name: string;
+            /** @description The error's `message`. */
+            message: string;
+            /** @description The error's `stack` as the browser formats it. */
+            stack: string;
+            /** @description The version of the web client's build. */
+            release?: string;
+            /**
+             * @description The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the
+             *     URL).
+             */
+            route?: string;
+            /**
+             * @description How the error was caught: `route_error` by the router, `boundary_error` by an error
+             *     boundary outside the routes, `uncaught` outside every boundary, and
+             *     `unhandledrejection` as a promise rejection that nothing handled.
+             * @enum {string}
+             */
+            kind: "route_error" | "boundary_error" | "uncaught" | "unhandledrejection";
         };
         /** @description The confirmation of the closure of the server. */
         CloseServiceRequest: {
@@ -16664,6 +16723,29 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["VoiceRoomHistoryPage"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    reportClientError: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientErrorReport"];
+            };
+        };
+        responses: {
+            /** @description The report was received, or ignored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };
