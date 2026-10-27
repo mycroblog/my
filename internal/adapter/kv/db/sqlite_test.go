@@ -24,7 +24,7 @@ func TestSQLiteKeyValueStoreContract(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = d.Close() })
 		err = d.Tx(t.Context(), func(tx uow.Tx) error {
-			sqlTx, err := sqlite.SQLTx(tx)
+			sqlTx, err := d.SQLTx(tx)
 			if err != nil {
 				return err
 			}

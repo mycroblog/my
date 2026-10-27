@@ -20,6 +20,9 @@ type Options struct {
 	// Tracer fills the TraceParent of the enqueued jobs from the span of the caller's context
 	// (ADR-0063 §2); nil leaves it empty.
 	Tracer kernel.Tracer
+	// RelayLease is how long one Outbox.Relay call holds the relay lease, within which it
+	// must enqueue its batch; the default is DefaultRelayLease. Queue does not use it.
+	RelayLease time.Duration
 }
 
 func (o Options) check() {
@@ -42,6 +45,8 @@ type store interface {
 	insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error
 	listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error)
 	deleteOutbox(ctx context.Context, tx uow.Tx, id string) error
+	acquireRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now, until time.Time) (bool, error)
+	endRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now time.Time) (bool, error)
 	backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error)
 	listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error)
 	summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error)

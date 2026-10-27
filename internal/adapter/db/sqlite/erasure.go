@@ -45,7 +45,7 @@ func (r *AccountRepository) ListAccountsToErase(ctx context.Context, deletedBefo
 
 // EraseProfilesAndKeys implements account.ErasureRepository.
 func (r *AccountRepository) EraseProfilesAndKeys(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (r *AccountRepository) EraseProfilesAndKeys(ctx context.Context, tx uow.Tx,
 
 // InsertErasure implements account.ErasureRepository.
 func (r *AccountRepository) InsertErasure(ctx context.Context, tx uow.Tx, accountID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (r *AccountRepository) AccountErased(ctx context.Context, accountID string)
 
 // EraseUserData implements identity.ErasureRepository.
 func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 
 // ListAuthorStatusesToErase implements content.ErasureRepository.
 func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow.Tx, authorAccountID, after string, limit int) ([]appcontent.ErasableStatus, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 
 // EraseStatuses implements content.ErasureRepository.
 func (r *StatusRepository) EraseStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (r *StatusRepository) EraseStatuses(ctx context.Context, tx uow.Tx, statusI
 
 // EraseInteractionsBy implements content.ErasureRepository.
 func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -179,7 +179,7 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 			if err := keep(n, err); err != nil {
 				return err
 			}
-			return addLocalPosts(ctx, tx, accountID, -n)
+			return r.db.addLocalPosts(ctx, tx, accountID, -n)
 		},
 		func() error {
 			return q.EraseBoostRetractionsBy(ctx, sqlitegen.EraseBoostRetractionsByParams{AccountID: accountID, Lim: lim})
@@ -198,7 +198,7 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 
 // ListEdgesToErase implements graph.ErasureRepository.
 func (r *GraphRepository) ListEdgesToErase(ctx context.Context, tx uow.Tx, accountID string, limit int) ([]graph.Edge, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (r *GraphRepository) ListEdgesToErase(ctx context.Context, tx uow.Tx, accou
 
 // EraseFollowsOf implements graph.ErasureRepository.
 func (r *GraphRepository) EraseFollowsOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -231,7 +231,7 @@ func (r *GraphRepository) EraseFollowsOf(ctx context.Context, tx uow.Tx, account
 
 // EraseBlocksOf implements graph.ErasureRepository.
 func (r *GraphRepository) EraseBlocksOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -249,7 +249,7 @@ func (r *GraphRepository) EraseBlocksOf(ctx context.Context, tx uow.Tx, accountI
 
 // EraseMutesOf implements graph.ErasureRepository.
 func (r *GraphRepository) EraseMutesOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -267,7 +267,7 @@ func (r *GraphRepository) EraseMutesOf(ctx context.Context, tx uow.Tx, accountID
 
 // EraseCountersOf implements graph.ErasureRepository.
 func (r *GraphRepository) EraseCountersOf(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (r *GraphRepository) EraseCountersOf(ctx context.Context, tx uow.Tx, accoun
 
 // EraseFeedsOf implements timeline.ErasureRepository.
 func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -338,7 +338,7 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 
 // EraseNotificationsOf implements notification.ErasureRepository.
 func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accountID, userID string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -382,7 +382,7 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 
 // EraseStatusNotifications implements notification.ErasureRepository.
 func (r *NotificationRepository) EraseStatusNotifications(ctx context.Context, tx uow.Tx, statusIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

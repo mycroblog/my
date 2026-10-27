@@ -15,7 +15,7 @@ var _ appnotification.PushRepository = (*NotificationRepository)(nil)
 
 // SavePushSubscription implements notification.PushRepository.
 func (r *NotificationRepository) SavePushSubscription(ctx context.Context, tx uow.Tx, s notification.PushSubscription) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (r *NotificationRepository) SavePushSubscription(ctx context.Context, tx uo
 
 // DeletePushSubscription implements notification.PushRepository.
 func (r *NotificationRepository) DeletePushSubscription(ctx context.Context, tx uow.Tx, id string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -60,7 +60,7 @@ func (r *NotificationRepository) DeletePushSubscription(ctx context.Context, tx 
 
 // PushSubscriptionIDs implements notification.PushRepository.
 func (r *NotificationRepository) PushSubscriptionIDs(ctx context.Context, tx uow.Tx, accountID string, t notification.Type) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

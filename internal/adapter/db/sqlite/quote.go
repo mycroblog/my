@@ -16,7 +16,7 @@ var _ appcontent.QuoteRepository = (*StatusRepository)(nil)
 
 // InsertQuote implements content.QuoteRepository.
 func (r *StatusRepository) InsertQuote(ctx context.Context, tx uow.Tx, q content.Quote) (bool, error) {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -44,7 +44,7 @@ func (r *StatusRepository) FindQuoteTx(ctx context.Context, tx uow.Tx, statusID 
 
 // ListQuotesAfter implements content.QuoteRepository.
 func (r *StatusRepository) ListQuotesAfter(ctx context.Context, tx uow.Tx, after string, limit int) ([]content.Quote, error) {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *StatusRepository) ListQuotesAfter(ctx context.Context, tx uow.Tx, after
 
 // InsertQuoteEvent implements content.QuoteRepository.
 func (r *StatusRepository) InsertQuoteEvent(ctx context.Context, tx uow.Tx, e content.QuoteEvent) error {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (r *StatusRepository) InsertQuoteEvent(ctx context.Context, tx uow.Tx, e co
 
 // ListQuoteEvents implements content.QuoteRepository.
 func (r *StatusRepository) ListQuoteEvents(ctx context.Context, tx uow.Tx, statusID string) ([]content.QuoteEvent, error) {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (r *StatusRepository) ListQuoteEvents(ctx context.Context, tx uow.Tx, statu
 
 // UpsertQuoteState implements content.QuoteRepository.
 func (r *StatusRepository) UpsertQuoteState(ctx context.Context, tx uow.Tx, s content.QuoteState) error {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (r *StatusRepository) ListQuoteStates(ctx context.Context) ([]content.Quote
 
 // DeleteAllQuoteStates implements content.QuoteRepository.
 func (r *StatusRepository) DeleteAllQuoteStates(ctx context.Context, tx uow.Tx) error {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (r *StatusRepository) ListQuotesOf(ctx context.Context, uri, before string,
 
 // UpsertQuotePolicy implements content.QuoteRepository.
 func (r *StatusRepository) UpsertQuotePolicy(ctx context.Context, tx uow.Tx, p content.StatusQuotePolicy) error {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (r *StatusRepository) UpsertQuotePolicy(ctx context.Context, tx uow.Tx, p c
 
 // DeleteQuotePolicy implements content.QuoteRepository.
 func (r *StatusRepository) DeleteQuotePolicy(ctx context.Context, tx uow.Tx, statusID string) error {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (r *StatusRepository) FindQuotePolicy(ctx context.Context, statusID string)
 
 // InsertQuoteAuthorization implements content.QuoteRepository.
 func (r *StatusRepository) InsertQuoteAuthorization(ctx context.Context, tx uow.Tx, a content.QuoteAuthorization) (bool, error) {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -236,7 +236,7 @@ func (r *StatusRepository) FindQuoteAuthorizationFor(ctx context.Context, quotin
 
 // InsertQuoteAuthorizationRevocation implements content.QuoteRepository.
 func (r *StatusRepository) InsertQuoteAuthorizationRevocation(ctx context.Context, tx uow.Tx, authorizationID string, at time.Time) (bool, error) {
-	qs, err := queries(tx)
+	qs, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

@@ -27,7 +27,7 @@ func (d *DB) StatusRepository() *StatusRepository { return &StatusRepository{db:
 
 // InsertStatus implements content.Repository.
 func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s content.Status) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 
 // InsertLocalStatus implements content.Repository.
 func (r *StatusRepository) InsertLocalStatus(ctx context.Context, tx uow.Tx, ls content.LocalStatus) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (r *StatusRepository) InsertLocalStatus(ctx context.Context, tx uow.Tx, ls 
 
 // InsertRevision implements content.Repository.
 func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev content.Revision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 
 // InsertDeletion implements content.Repository.
 func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d content.Deletion) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 
 // EnsureTag implements content.Repository.
 func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Tag{}, err
 	}
@@ -168,7 +168,7 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 
 // Head implements content.Repository.
 func (r *StatusRepository) Head(ctx context.Context, tx uow.Tx, statusID string) (content.Head, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Head{}, err
 	}
@@ -181,7 +181,7 @@ func (r *StatusRepository) Head(ctx context.Context, tx uow.Tx, statusID string)
 
 // UpsertHead implements content.Repository.
 func (r *StatusRepository) UpsertHead(ctx context.Context, tx uow.Tx, h content.Head) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (r *StatusRepository) UpsertHead(ctx context.Context, tx uow.Tx, h content.
 
 // ReplaceMentions implements content.Repository.
 func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statusID string, accountIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (r *StatusRepository) LockStatusKeys(context.Context, uow.Tx, []string) err
 
 // IsDeleted implements content.Repository.
 func (r *StatusRepository) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -224,7 +224,7 @@ func (r *StatusRepository) IsDeleted(ctx context.Context, tx uow.Tx, statusID st
 
 // FindLiveStatusByURI implements content.Repository.
 func (r *StatusRepository) FindLiveStatusByURI(ctx context.Context, tx uow.Tx, uri string) (content.Status, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Status{}, err
 	}
@@ -237,7 +237,7 @@ func (r *StatusRepository) FindLiveStatusByURI(ctx context.Context, tx uow.Tx, u
 
 // ListLiveRepliesTo implements content.Repository.
 func (r *StatusRepository) ListLiveRepliesTo(ctx context.Context, tx uow.Tx, uri string) ([]content.Status, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (r *StatusRepository) ListLiveRepliesTo(ctx context.Context, tx uow.Tx, uri
 
 // UpsertReplyLink implements content.Repository.
 func (r *StatusRepository) UpsertReplyLink(ctx context.Context, tx uow.Tx, l content.ReplyLink) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (r *StatusRepository) UpsertReplyLink(ctx context.Context, tx uow.Tx, l con
 
 // ReplyLink implements content.Repository.
 func (r *StatusRepository) ReplyLink(ctx context.Context, tx uow.Tx, statusID string) (content.ReplyLink, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.ReplyLink{}, err
 	}
@@ -276,7 +276,7 @@ func (r *StatusRepository) ReplyLink(ctx context.Context, tx uow.Tx, statusID st
 
 // InsertCounters implements content.Repository.
 func (r *StatusRepository) InsertCounters(ctx context.Context, tx uow.Tx, c content.Counters) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func (r *StatusRepository) InsertCounters(ctx context.Context, tx uow.Tx, c cont
 
 // AddReplies implements content.Repository.
 func (r *StatusRepository) AddReplies(ctx context.Context, tx uow.Tx, statusID string, delta int64) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -294,7 +294,7 @@ func (r *StatusRepository) AddReplies(ctx context.Context, tx uow.Tx, statusID s
 
 // AddPost implements content.Repository.
 func (r *StatusRepository) AddPost(ctx context.Context, tx uow.Tx, accountID string, publishedAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func (r *StatusRepository) AddPost(ctx context.Context, tx uow.Tx, accountID str
 
 // RemovePost implements content.Repository.
 func (r *StatusRepository) RemovePost(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (r *StatusRepository) RemovePost(ctx context.Context, tx uow.Tx, accountID 
 
 // DeleteStatusProjections implements content.Repository.
 func (r *StatusRepository) DeleteStatusProjections(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ func (r *StatusRepository) DeleteStatusProjections(ctx context.Context, tx uow.T
 }
 
 func (r *StatusRepository) rebuild(ctx context.Context, tx uow.Tx, what string, steps ...func(*sqlitegen.Queries, context.Context) error) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -492,7 +492,7 @@ func (r *StatusRepository) FindRevision(ctx context.Context, id string) (content
 
 // ListCurrentPosts implements content.Repository.
 func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]appcontent.Post, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

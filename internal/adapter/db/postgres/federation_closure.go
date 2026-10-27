@@ -13,7 +13,7 @@ import (
 
 // InsertFanOutCompletion implements federation.Repository.
 func (r *FederationRepository) InsertFanOutCompletion(ctx context.Context, tx uow.Tx, outboundActivityID string, completedAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (r *FederationRepository) InsertFanOutCompletion(ctx context.Context, tx uo
 
 // InsertClosureDelete implements federation.Repository.
 func (r *FederationRepository) InsertClosureDelete(ctx context.Context, tx uow.Tx, d federation.ClosureDelete) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

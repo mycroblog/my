@@ -42,7 +42,7 @@ func incomeMoney(gross, fee, net int64, currency string) (finance.Money, finance
 
 // InsertIncome implements appfinance.Repository.
 func (r *FinanceRepository) InsertIncome(ctx context.Context, tx uow.Tx, rec appfinance.IncomeRecord) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -59,7 +59,7 @@ func (r *FinanceRepository) InsertIncome(ctx context.Context, tx uow.Tx, rec app
 
 // FindIncomeID implements appfinance.Repository.
 func (r *FinanceRepository) FindIncomeID(ctx context.Context, tx uow.Tx, provider, providerID string) (string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return "", err
 	}

@@ -15,6 +15,8 @@ package metrics
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,16 +176,23 @@ func (s *Service) stale(snap Snapshot, now time.Time) (queueStale, totalsStale b
 // refreshLocked computes the stale parts of snap when this process takes the lock, and
 // otherwise returns snap as it is.
 func (s *Service) refreshLocked(ctx context.Context, snap Snapshot, queueStale, totalsStale bool) Snapshot {
-	n, err := s.d.KV.IncrBy(ctx, Namespace, lockKey, 1, LockTTL)
+	var raw [16]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		s.d.Logger.WarnContext(ctx, "metrics: create the snapshot lock token", "error", err)
+		return snap
+	}
+	token := []byte(hex.EncodeToString(raw[:]))
+	taken, err := s.d.KV.CompareAndSwap(ctx, Namespace, lockKey, nil, token, LockTTL)
 	if err != nil {
 		s.d.Logger.WarnContext(ctx, "metrics: take the snapshot lock", "error", err)
 		return snap
 	}
-	if n != 1 {
+	if !taken {
 		return snap // another process computes it
 	}
 	defer func() {
-		if err := s.d.KV.Delete(context.WithoutCancel(ctx), Namespace, lockKey); err != nil {
+		// Release the lock only while it is ours: after LockTTL another process may hold it.
+		if _, err := s.d.KV.CompareAndSwap(context.WithoutCancel(ctx), Namespace, lockKey, token, nil, 0); err != nil {
 			s.d.Logger.WarnContext(ctx, "metrics: release the snapshot lock", "error", err)
 		}
 	}()

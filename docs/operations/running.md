@@ -254,9 +254,10 @@ To send to X-Ray, attach the **AWS Distro for OpenTelemetry (ADOT) Collector Lam
 On SIGTERM or SIGINT the server shuts down gracefully.
 
 1. It stops accepting new connections and taking jobs.
-2. It waits up to 25 seconds for in-flight requests and running jobs to finish (this fits the default 30-second grace period of Kubernetes and ECS).
-3. After 25 seconds it cancels the context of the remaining requests and jobs, closes connections, and exits with code 1.
-   A cancelled job is retried, and a job killed midway is picked up again by another worker when its lease expires.
+2. It waits up to 25 seconds for in-flight requests and running jobs to finish.
+3. After 25 seconds it cancels the context of the remaining requests and jobs and closes connections.
+   It then gives a cancelled job up to 3 more seconds to record its result, and exits with code 1 (at most 28 seconds in all, within the default 30-second grace period of Kubernetes and ECS).
+   A cancelled job is retried. A job that does not stop within those 3 seconds, or that is killed midway, is abandoned and picked up again by a worker when its lease expires, so it may run twice.
 
 A panic in one of the server's background tasks starts the same shutdown, so that the server never keeps running in a broken state.
 The `serve failed` log line names the task, and the process exits with code 1 for the platform or the process manager to restart it.

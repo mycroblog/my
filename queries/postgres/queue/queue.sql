@@ -107,6 +107,21 @@ LIMIT $1;
 -- name: DeleteOutboxEvent :exec
 DELETE FROM outbox_events WHERE id = $1;
 
+-- AcquireOutboxRelayLease takes or renews the relay lease @name for @holder until
+-- @lease_until, unless another holder's lease lasts beyond @now: it affects one row when
+-- @holder holds the lease.
+-- name: AcquireOutboxRelayLease :execrows
+INSERT INTO outbox_relay_leases (name, holder, lease_until)
+VALUES (sqlc.arg(name), sqlc.arg(holder), sqlc.arg(lease_until))
+ON CONFLICT (name) DO UPDATE SET holder = excluded.holder, lease_until = excluded.lease_until
+WHERE outbox_relay_leases.holder = excluded.holder OR outbox_relay_leases.lease_until <= sqlc.arg(now)::timestamptz;
+
+-- EndOutboxRelayLease ends the relay lease @name at @now when @holder still holds it: it
+-- affects one row then, and none when the lease expired and another relay may have taken it.
+-- name: EndOutboxRelayLease :execrows
+UPDATE outbox_relay_leases SET lease_until = sqlc.arg(now)
+WHERE name = sqlc.arg(name) AND holder = sqlc.arg(holder) AND lease_until > sqlc.arg(now);
+
 -- CountReadyJobs counts the due, unleased jobs of each type, with the earliest run_at among
 -- them, for the queue gauges of the metrics snapshot (ADR-0055 section 4). It counts the jobs
 -- that their ordering key holds back too.

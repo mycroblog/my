@@ -15,7 +15,7 @@ import (
 
 // ListLiveBoosts implements content.InteractionRepository.
 func (r *InteractionRepository) ListLiveBoosts(ctx context.Context, tx uow.Tx) ([]content.Boost, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (r *InteractionRepository) ListLiveBoosts(ctx context.Context, tx uow.Tx) (
 
 // ListAllMutes implements graph.Repository.
 func (r *GraphRepository) ListAllMutes(ctx context.Context, tx uow.Tx) ([]graph.Mute, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

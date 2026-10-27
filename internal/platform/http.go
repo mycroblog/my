@@ -111,7 +111,7 @@ func (a *App) localizer(r *http.Request) *i18n.Localizer { return a.Locales.Requ
 func (a *App) instanceDefaultLocale(ctx context.Context) string {
 	locale, err := a.Instance.DefaultLocale(ctx)
 	if err != nil {
-		a.Logger.WarnContext(ctx, "cannot read the default locale", slog.Any("error", err))
+		a.Logger.WarnContext(ctx, "cannot read the default locale", slog.String("error", kernel.ScrubErrorMessage(err.Error())))
 		return ""
 	}
 	return locale
@@ -126,7 +126,7 @@ func (a *App) viewerLocale(ctx context.Context) string {
 	}
 	locale, err := a.Identity.UserLocale(ctx, v.UserID)
 	if err != nil {
-		a.Logger.WarnContext(ctx, "cannot read the user's locale", slog.Any("error", err))
+		a.Logger.WarnContext(ctx, "cannot read the user's locale", slog.String("error", kernel.ScrubErrorMessage(err.Error())))
 		return ""
 	}
 	return locale

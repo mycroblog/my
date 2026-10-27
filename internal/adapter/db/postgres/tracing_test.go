@@ -19,7 +19,7 @@ func TestTracing(t *testing.T) {
 	db.SetTracer(tr)
 	ctx, parent := tr.Start(t.Context(), kernel.SpanSpec{Name: "POST /api/v1/statuses"}, kernel.Attrs{})
 	if err := db.Tx(ctx, func(tx uow.Tx) error {
-		q, err := queries(tx)
+		q, err := db.queries(tx)
 		if err != nil {
 			return err
 		}

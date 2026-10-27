@@ -50,8 +50,9 @@ type Source interface {
 
 // Defaults applied to the zero fields of RunnerOptions.
 const (
-	DefaultLease        = 5 * time.Minute
-	DefaultPollInterval = time.Second
+	DefaultLease         = 5 * time.Minute
+	DefaultPollInterval  = time.Second
+	DefaultRecordTimeout = 10 * time.Second
 )
 
 // RunnerOptions configure a PullRunner. Clock is required; the other zero fields take defaults.
@@ -61,8 +62,13 @@ type RunnerOptions struct {
 	// the default is random.
 	Worker string
 	// Lease is how long a claim hides a job from other workers. A handler gets a context that
-	// ends at the lease, so keep it longer than the slowest handler.
+	// ends at the lease, counted from before the claim, so keep it longer than the slowest
+	// handler.
 	Lease time.Duration
+	// RecordTimeout bounds the recording of a run's result (Complete, Release, Bury and the
+	// attempt record). The record goes on after the runner's context ends, so that the job does
+	// not wait for its lease to expire, but no longer than this.
+	RecordTimeout time.Duration
 	// PollInterval is how long Run waits after finding no due job.
 	PollInterval time.Duration
 	// Retry is the default policy of handlers registered without one.
@@ -111,6 +117,9 @@ func NewPullRunner(src Source, reg *JobHandlerRegistry, opts RunnerOptions) *Pul
 	}
 	if opts.PollInterval <= 0 {
 		opts.PollInterval = DefaultPollInterval
+	}
+	if opts.RecordTimeout <= 0 {
+		opts.RecordTimeout = DefaultRecordTimeout
 	}
 	opts.Retry = opts.Retry.withDefaults()
 	if opts.Random == nil {
@@ -196,14 +205,18 @@ func (r *PullRunner) Drain(ctx context.Context) (int, error) {
 // claimed a job. When the lease ran out while the handler ran and another worker claimed the
 // job, the result is dropped and the error matches ErrLeaseLost.
 func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
+	// The lease runs from now, before the claim: the handler's deadline is taken from the
+	// monotonic clock first, so that it never ends after the lease the Source records.
+	leaseEnd := time.Now().Add(r.opts.Lease)
 	now := r.opts.Clock.Now()
 	j, ok, err := r.src.Claim(ctx, r.opts.Worker, now, r.opts.Lease)
 	if err != nil || !ok {
 		return false, err
 	}
 	// The result must be recorded even when ctx ended during the handler; otherwise the job
-	// would wait for its lease to expire.
-	recordCtx := context.WithoutCancel(ctx)
+	// would wait for its lease to expire. RecordTimeout bounds it.
+	recordCtx, cancelRecord := r.recordContext(ctx)
+	defer func() { cancelRecord() }()
 
 	if j.RunAt.After(now) {
 		// Delivered early by a queue with a delay limit: re-enqueue without running (the
@@ -221,7 +234,6 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	tracer := r.opts.Tracer
 	ctx, span := tracer.Start(tracer.Linked(ctx, j.TraceParent), JobSpan.Named(jobType),
 		kernel.NewAttrs(kernel.StringAttr(LabelJobType, jobType), kernel.IntAttr(AttrJobAttempt, int64(j.Attempt))))
-	recordCtx = context.WithoutCancel(ctx)
 	mctx, end := r.metrics.meter.Begin(ctx)
 	defer end()
 	wait := max(now.Sub(j.RunAt), 0)
@@ -229,10 +241,13 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	started := time.Now() // the monotonic clock: Clock.Now has millisecond precision
 	var res Result
 	if found {
-		res = r.call(mctx, handler, j, jobType)
+		res = r.call(mctx, handler, j, jobType, leaseEnd)
 	} else {
 		res = Retry(0, fmt.Errorf("%w: %s", ErrNoHandler, j.Type))
 	}
+	// The record's deadline starts once the handler returned, under the span of the run.
+	cancelRecord()
+	recordCtx, cancelRecord = r.recordContext(ctx)
 
 	done := r.opts.Clock.Now()
 	ran := func(outcome string) {
@@ -349,10 +364,16 @@ func (r *PullRunner) reportDead(ctx context.Context, j Job, jobType string, res 
 // errDeadWithoutCause stands for the cause of a dead job whose handler gave none.
 var errDeadWithoutCause = errors.New("queue: the job failed without an error")
 
-// call runs h with a context bounded by the lease, turning a panic into a retry after reporting
-// it at the job's type (ADR-0103 §2).
-func (r *PullRunner) call(ctx context.Context, h Handler, j Job, jobType string) (res Result) {
-	ctx, cancel := context.WithTimeout(ctx, r.opts.Lease)
+// recordContext returns the context that records a result: ctx without its cancellation,
+// bounded by RecordTimeout.
+func (r *PullRunner) recordContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), r.opts.RecordTimeout)
+}
+
+// call runs h with a context that ends at leaseEnd, the end of the job's lease, turning a panic
+// into a retry after reporting it at the job's type (ADR-0103 §2).
+func (r *PullRunner) call(ctx context.Context, h Handler, j Job, jobType string, leaseEnd time.Time) (res Result) {
+	ctx, cancel := context.WithDeadline(ctx, leaseEnd)
 	defer cancel()
 	defer func() {
 		if p := recover(); p != nil {

@@ -14,7 +14,7 @@ import (
 
 // InsertSession implements identity.Repository.
 func (r *IdentityRepository) InsertSession(ctx context.Context, tx uow.Tx, s identity.Session) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (r *IdentityRepository) InsertSession(ctx context.Context, tx uow.Tx, s ide
 
 // InsertSessionRevocation implements identity.Repository.
 func (r *IdentityRepository) InsertSessionRevocation(ctx context.Context, tx uow.Tx, rev identity.SessionRevocation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (r *IdentityRepository) InsertSessionRevocation(ctx context.Context, tx uow
 
 // UpsertSessionActivity implements identity.Repository.
 func (r *IdentityRepository) UpsertSessionActivity(ctx context.Context, tx uow.Tx, a identity.SessionActivity) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (r *IdentityRepository) FindUnrevokedSession(ctx context.Context, tokenHash
 
 // RevokeSessionsOfUser implements identity.Repository.
 func (r *IdentityRepository) RevokeSessionsOfUser(ctx context.Context, tx uow.Tx, userID string, reason identity.RevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ func (d *DB) IdentityRepository() *IdentityRepository { return &IdentityReposito
 
 // InsertUser implements identity.Repository.
 func (r *IdentityRepository) InsertUser(ctx context.Context, tx uow.Tx, u identity.User) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (r *IdentityRepository) InsertUser(ctx context.Context, tx uow.Tx, u identi
 
 // InsertPasswordCredential implements identity.Repository.
 func (r *IdentityRepository) InsertPasswordCredential(ctx context.Context, tx uow.Tx, c identity.PasswordCredential) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *IdentityRepository) InsertPasswordCredential(ctx context.Context, tx uo
 
 // EnsureRole implements identity.Repository.
 func (r *IdentityRepository) EnsureRole(ctx context.Context, tx uow.Tx, role identity.Role, perms []identity.Permission) (identity.Role, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return identity.Role{}, err
 	}
@@ -118,7 +118,7 @@ func (r *IdentityRepository) newestPasswordCredential(ctx context.Context, userI
 
 // InsertPasswordCredentialRemoval implements identity.Repository.
 func (r *IdentityRepository) InsertPasswordCredentialRemoval(ctx context.Context, tx uow.Tx, rem identity.PasswordCredentialRemoval) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (r *IdentityRepository) FindRole(ctx context.Context, key string) (identity
 
 // InsertEmailAddress implements identity.Repository.
 func (r *IdentityRepository) InsertEmailAddress(ctx context.Context, tx uow.Tx, e identity.EmailAddress) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (r *IdentityRepository) InsertEmailAddress(ctx context.Context, tx uow.Tx, 
 
 // InsertPrimaryEmail implements identity.Repository.
 func (r *IdentityRepository) InsertPrimaryEmail(ctx context.Context, tx uow.Tx, e identity.EmailAddress) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (r *IdentityRepository) InsertPrimaryEmail(ctx context.Context, tx uow.Tx, 
 
 // InsertRoleGrant implements identity.Repository.
 func (r *IdentityRepository) InsertRoleGrant(ctx context.Context, tx uow.Tx, g identity.RoleGrant) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

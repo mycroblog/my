@@ -14,7 +14,7 @@ import (
 
 // InsertRemoteMedia implements content.MediaRepository.
 func (r *MediaRepository) InsertRemoteMedia(ctx context.Context, tx uow.Tx, m content.RemoteMedia) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -33,7 +33,7 @@ func (r *MediaRepository) InsertRemoteMedia(ctx context.Context, tx uow.Tx, m co
 
 // RemoteMediaByURL implements content.MediaRepository.
 func (r *MediaRepository) RemoteMediaByURL(ctx context.Context, tx uow.Tx, ownerAccountID, remoteURL string) (content.RemoteMedia, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.RemoteMedia{}, err
 	}

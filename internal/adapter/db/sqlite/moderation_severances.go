@@ -13,7 +13,7 @@ import (
 
 // InsertSeverance implements moderation.SeveranceRepository.
 func (r *ModerationRepository) InsertSeverance(ctx context.Context, tx uow.Tx, s moderation.Severance) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

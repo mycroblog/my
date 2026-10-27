@@ -24,7 +24,7 @@ func (d *DB) DiagnosticsRepository() *DiagnosticsRepository { return &Diagnostic
 
 // InsertGroup implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) InsertGroup(ctx context.Context, tx uow.Tx, g appdiagnostics.Group) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -53,7 +53,7 @@ func currentFromRow(id, fingerprint, source, kind, errorType, message, where, fi
 // CurrentByFingerprint implements appdiagnostics.Repository. SQLite locks the whole database
 // for the transaction, which serializes the changes.
 func (r *DiagnosticsRepository) CurrentByFingerprint(ctx context.Context, tx uow.Tx, fingerprint string) (appdiagnostics.Current, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appdiagnostics.Current{}, err
 	}
@@ -67,7 +67,7 @@ func (r *DiagnosticsRepository) CurrentByFingerprint(ctx context.Context, tx uow
 
 // CurrentForUpdate implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) CurrentForUpdate(ctx context.Context, tx uow.Tx, groupID string) (appdiagnostics.Current, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appdiagnostics.Current{}, err
 	}
@@ -81,7 +81,7 @@ func (r *DiagnosticsRepository) CurrentForUpdate(ctx context.Context, tx uow.Tx,
 
 // InsertEvent implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) InsertEvent(ctx context.Context, tx uow.Tx, e appdiagnostics.Event) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (r *DiagnosticsRepository) InsertEvent(ctx context.Context, tx uow.Tx, e ap
 
 // InsertConfirmation implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) InsertConfirmation(ctx context.Context, tx uow.Tx, groupID string, at time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +103,7 @@ func (r *DiagnosticsRepository) InsertConfirmation(ctx context.Context, tx uow.T
 
 // UpsertHead implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appdiagnostics.Head) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (r *DiagnosticsRepository) FindSummary(ctx context.Context, tx uow.Tx, id s
 	q := r.db.reader()
 	if tx != nil {
 		var err error
-		if q, err = queries(tx); err != nil {
+		if q, err = r.db.queries(tx); err != nil {
 			return appdiagnostics.Summary{}, err
 		}
 	}
@@ -234,7 +234,7 @@ func (r *DiagnosticsRepository) Events(ctx context.Context, groupID string) ([]a
 
 // RebuildHeads implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

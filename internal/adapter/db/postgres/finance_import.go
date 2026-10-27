@@ -24,7 +24,7 @@ func runOutcome(r appfinance.Run) string {
 
 // InsertRun implements appfinance.Repository.
 func (r *FinanceRepository) InsertRun(ctx context.Context, tx uow.Tx, run appfinance.Run) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (r *FinanceRepository) SumRuns(ctx context.Context, source string, from, un
 
 // SumRunsTx implements appfinance.Repository.
 func (r *FinanceRepository) SumRunsTx(ctx context.Context, tx uow.Tx, source string, from, until time.Time) (int, int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -63,7 +63,7 @@ func (r *FinanceRepository) SumRunsTx(ctx context.Context, tx uow.Tx, source str
 // LockSource implements appfinance.Repository with a transaction-scoped advisory lock on the
 // imports of the source.
 func (r *FinanceRepository) LockSource(ctx context.Context, tx uow.Tx, source string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (r *FinanceRepository) LockSource(ctx context.Context, tx uow.Tx, source st
 
 // InsertReservation implements appfinance.Repository.
 func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, res appfinance.Reservation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, re
 
 // ImportRunning implements appfinance.Repository.
 func (r *FinanceRepository) ImportRunning(ctx context.Context, tx uow.Tx, source string, since time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -97,7 +97,7 @@ func (r *FinanceRepository) ImportRunning(ctx context.Context, tx uow.Tx, source
 
 // RunKeySucceeded implements appfinance.Repository.
 func (r *FinanceRepository) RunKeySucceeded(ctx context.Context, tx uow.Tx, source, runKey string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -173,7 +173,7 @@ func (r *FinanceRepository) ImportedHeadsForUpdate(ctx context.Context, tx uow.T
 	if len(months) == 0 {
 		return []appfinance.ImportedRevision{}, nil
 	}
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (r *FinanceRepository) ImportedHeadsForUpdate(ctx context.Context, tx uow.T
 
 // InsertImportedRevision implements appfinance.Repository.
 func (r *FinanceRepository) InsertImportedRevision(ctx context.Context, tx uow.Tx, rev appfinance.ImportedRevision) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -200,7 +200,7 @@ func (r *FinanceRepository) InsertImportedRevision(ctx context.Context, tx uow.T
 
 // UpsertImportedHead implements appfinance.Repository.
 func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, rev appfinance.ImportedRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -212,6 +212,6 @@ func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, r
 
 // RebuildImportedHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildImportedHeads(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild imported cost heads",
+	return r.db.execAll(ctx, tx, "rebuild imported cost heads",
 		(*postgresgen.Queries).DeleteAllImportedCostHeads, (*postgresgen.Queries).RebuildImportedCostHeads)
 }

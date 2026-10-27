@@ -29,7 +29,7 @@ func toNullInt(n int) sql.NullInt64 { return sql.NullInt64{Int64: int64(n), Vali
 
 // InsertMediaFile implements content.MediaRepository.
 func (r *MediaRepository) InsertMediaFile(ctx context.Context, tx uow.Tx, m content.MediaFile) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *MediaRepository) InsertMediaFile(ctx context.Context, tx uow.Tx, m cont
 
 // InsertUploadedMedia implements content.MediaRepository.
 func (r *MediaRepository) InsertUploadedMedia(ctx context.Context, tx uow.Tx, u content.UploadedMedia) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (r *MediaRepository) InsertUploadedMedia(ctx context.Context, tx uow.Tx, u 
 
 // InsertProcessingResult implements content.MediaRepository.
 func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx, res content.MediaProcessingResult) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (r *MediaRepository) InsertProcessingResult(ctx context.Context, tx uow.Tx,
 
 // HasProcessingResult implements content.MediaRepository.
 func (r *MediaRepository) HasProcessingResult(ctx context.Context, tx uow.Tx, mediaID string, purpose content.MediaPurpose) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -87,7 +87,7 @@ func (r *MediaRepository) HasProcessingResult(ctx context.Context, tx uow.Tx, me
 
 // UpsertFocus implements content.MediaRepository.
 func (r *MediaRepository) UpsertFocus(ctx context.Context, tx uow.Tx, f content.MediaFocus) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (r *MediaRepository) UpsertFocus(ctx context.Context, tx uow.Tx, f content.
 
 // DeleteUnattachedMedia implements content.MediaRepository.
 func (r *MediaRepository) DeleteUnattachedMedia(ctx context.Context, tx uow.Tx, mediaID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -238,7 +238,7 @@ func (r *MediaRepository) ListOwnerUploads(ctx context.Context, ownerAccountID, 
 
 // UpsertDescription implements content.MediaRepository.
 func (r *MediaRepository) UpsertDescription(ctx context.Context, tx uow.Tx, d content.MediaDescription) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (r *MediaRepository) UpsertDescription(ctx context.Context, tx uow.Tx, d co
 
 // DeleteDescription implements content.MediaRepository.
 func (r *MediaRepository) DeleteDescription(ctx context.Context, tx uow.Tx, mediaID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (r *MediaRepository) DeleteDescription(ctx context.Context, tx uow.Tx, medi
 
 // IsAttached implements content.MediaRepository.
 func (r *MediaRepository) IsAttached(ctx context.Context, tx uow.Tx, mediaID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

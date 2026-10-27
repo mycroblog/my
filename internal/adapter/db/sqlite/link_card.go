@@ -16,7 +16,7 @@ var _ appcontent.LinkCardRepository = (*StatusRepository)(nil)
 
 // UpsertStatusLinkCard implements content.LinkCardRepository.
 func (r *StatusRepository) UpsertStatusLinkCard(ctx context.Context, tx uow.Tx, l content.StatusLinkCard) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (r *StatusRepository) UpsertStatusLinkCard(ctx context.Context, tx uow.Tx, 
 
 // DeleteStatusLinkCard implements content.LinkCardRepository.
 func (r *StatusRepository) DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *StatusRepository) FindLinkCardTx(ctx context.Context, tx uow.Tx, url st
 
 // UpsertLinkCard implements content.LinkCardRepository.
 func (r *StatusRepository) UpsertLinkCard(ctx context.Context, tx uow.Tx, c content.LinkCard) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *StatusRepository) ListUnreferencedLinkCards(ctx context.Context, fetche
 
 // DeleteUnreferencedLinkCard implements content.LinkCardRepository.
 func (r *StatusRepository) DeleteUnreferencedLinkCard(ctx context.Context, tx uow.Tx, url string, fetchedAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +99,7 @@ func (r *StatusRepository) DeleteUnreferencedLinkCard(ctx context.Context, tx uo
 
 // InsertLinkCardMedia implements content.LinkCardRepository.
 func (r *StatusRepository) InsertLinkCardMedia(ctx context.Context, tx uow.Tx, m content.LinkCardMedia, createdAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -118,7 +118,7 @@ func (r *StatusRepository) InsertLinkCardMedia(ctx context.Context, tx uow.Tx, m
 
 // LinkCardMediaByURL implements content.LinkCardRepository.
 func (r *StatusRepository) LinkCardMediaByURL(ctx context.Context, tx uow.Tx, remoteURL string) (content.LinkCardMedia, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.LinkCardMedia{}, err
 	}
@@ -146,7 +146,7 @@ func (r *StatusRepository) ListUnreferencedLinkCardMedia(ctx context.Context, li
 
 // DeleteUnreferencedLinkCardMedia implements content.LinkCardRepository.
 func (r *StatusRepository) DeleteUnreferencedLinkCardMedia(ctx context.Context, tx uow.Tx, mediaID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

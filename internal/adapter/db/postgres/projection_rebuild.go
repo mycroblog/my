@@ -19,8 +19,8 @@ import (
 
 // execAll runs the queries in order inside tx, for a rebuild that empties a projection and
 // derives it again in SQL.
-func execAll(ctx context.Context, tx uow.Tx, what string, steps ...func(*postgresgen.Queries, context.Context) error) error {
-	q, err := queries(tx)
+func (d *DB) execAll(ctx context.Context, tx uow.Tx, what string, steps ...func(*postgresgen.Queries, context.Context) error) error {
+	q, err := d.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func execAll(ctx context.Context, tx uow.Tx, what string, steps ...func(*postgre
 
 // ListUnliftedActions implements moderation.Repository.
 func (r *ModerationRepository) ListUnliftedActions(ctx context.Context, tx uow.Tx) ([]moderation.Action, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (r *ModerationRepository) ListUnliftedActions(ctx context.Context, tx uow.T
 
 // ListUnliftedDomainActions implements moderation.Repository.
 func (r *ModerationRepository) ListUnliftedDomainActions(ctx context.Context, tx uow.Tx) ([]moderation.DomainAction, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (r *ModerationRepository) ListUnliftedDomainActions(ctx context.Context, tx
 
 // ListUnliftedActionStatuses implements moderation.Repository.
 func (r *ModerationRepository) ListUnliftedActionStatuses(ctx context.Context, tx uow.Tx, kind moderation.ActionKind) ([]appmoderation.ActionStatus, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (r *ModerationRepository) ListUnliftedActionStatuses(ctx context.Context, t
 
 // ListAllAccountRestrictionRows implements moderation.Repository.
 func (r *ModerationRepository) ListAllAccountRestrictionRows(ctx context.Context, tx uow.Tx) ([]moderation.RestrictionRow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,65 +106,65 @@ func (r *ModerationRepository) ListAllAccountRestrictionRows(ctx context.Context
 
 // DeleteAllAccountRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteAllAccountRestrictions(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "empty account restrictions", (*postgresgen.Queries).DeleteAllAccountRestrictions)
+	return r.db.execAll(ctx, tx, "empty account restrictions", (*postgresgen.Queries).DeleteAllAccountRestrictions)
 }
 
 // DeleteAllDomainRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteAllDomainRestrictions(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "empty domain restrictions", (*postgresgen.Queries).DeleteAllDomainRestrictions)
+	return r.db.execAll(ctx, tx, "empty domain restrictions", (*postgresgen.Queries).DeleteAllDomainRestrictions)
 }
 
 // RebuildReportStates implements moderation.Repository.
 func (r *ModerationRepository) RebuildReportStates(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild report states", (*postgresgen.Queries).DeleteAllReportStates, (*postgresgen.Queries).RebuildReportStates)
+	return r.db.execAll(ctx, tx, "rebuild report states", (*postgresgen.Queries).DeleteAllReportStates, (*postgresgen.Queries).RebuildReportStates)
 }
 
 // RebuildAppealStates implements moderation.Repository.
 func (r *ModerationRepository) RebuildAppealStates(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild appeal states", (*postgresgen.Queries).DeleteAllAppealStates, (*postgresgen.Queries).RebuildAppealStates)
+	return r.db.execAll(ctx, tx, "rebuild appeal states", (*postgresgen.Queries).DeleteAllAppealStates, (*postgresgen.Queries).RebuildAppealStates)
 }
 
 // RebuildUserRoles implements identity.Repository.
 func (r *IdentityRepository) RebuildUserRoles(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild user roles", (*postgresgen.Queries).DeleteAllUserRoles, (*postgresgen.Queries).RebuildUserRoles)
+	return r.db.execAll(ctx, tx, "rebuild user roles", (*postgresgen.Queries).DeleteAllUserRoles, (*postgresgen.Queries).RebuildUserRoles)
 }
 
 // RebuildRegistrationStates implements identity.Repository.
 func (r *IdentityRepository) RebuildRegistrationStates(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild registration states",
+	return r.db.execAll(ctx, tx, "rebuild registration states",
 		(*postgresgen.Queries).DeleteAllUserRegistrationStates, (*postgresgen.Queries).RebuildUserRegistrationStates)
 }
 
 // RebuildPrimaryEmails implements identity.Repository.
 func (r *IdentityRepository) RebuildPrimaryEmails(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild primary emails", (*postgresgen.Queries).DeleteAllUserPrimaryEmails, (*postgresgen.Queries).RebuildUserPrimaryEmails)
+	return r.db.execAll(ctx, tx, "rebuild primary emails", (*postgresgen.Queries).DeleteAllUserPrimaryEmails, (*postgresgen.Queries).RebuildUserPrimaryEmails)
 }
 
 // RebuildHeads implements webhook.Repository.
 func (r *WebhookRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild webhook endpoint heads",
+	return r.db.execAll(ctx, tx, "rebuild webhook endpoint heads",
 		(*postgresgen.Queries).DeleteAllWebhookEndpointHeads, (*postgresgen.Queries).RebuildWebhookEndpointHeads)
 }
 
 // RebuildFailures implements webhook.Repository.
 func (r *WebhookRepository) RebuildFailures(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild webhook endpoint failures",
+	return r.db.execAll(ctx, tx, "rebuild webhook endpoint failures",
 		(*postgresgen.Queries).DeleteDerivableWebhookEndpointFailures, (*postgresgen.Queries).RebuildWebhookEndpointFailures)
 }
 
 // DeleteAllSensitivityOverrides implements content.Repository.
 func (r *StatusRepository) DeleteAllSensitivityOverrides(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "empty status sensitivity overrides", (*postgresgen.Queries).DeleteAllStatusSensitivityOverrides)
+	return r.db.execAll(ctx, tx, "empty status sensitivity overrides", (*postgresgen.Queries).DeleteAllStatusSensitivityOverrides)
 }
 
 // RebuildPollTallies implements content.Repository.
 func (r *StatusRepository) RebuildPollTallies(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild poll tallies", (*postgresgen.Queries).DeleteAllPollTallies, (*postgresgen.Queries).RebuildPollTallies)
+	return r.db.execAll(ctx, tx, "rebuild poll tallies", (*postgresgen.Queries).DeleteAllPollTallies, (*postgresgen.Queries).RebuildPollTallies)
 }
 
 // ListRestrictions implements timeline.Repository.
 func (r *TimelineRepository) ListRestrictions(ctx context.Context, tx uow.Tx) ([]apptimeline.AuthorRestriction, []apptimeline.DomainRestriction, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,6 +193,6 @@ func (r *TimelineRepository) ListRestrictions(ctx context.Context, tx uow.Tx) ([
 
 // DeleteRestrictions implements timeline.Repository.
 func (r *TimelineRepository) DeleteRestrictions(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "empty feed restrictions",
+	return r.db.execAll(ctx, tx, "empty feed restrictions",
 		(*postgresgen.Queries).DeleteAllFeedAuthorRestrictions, (*postgresgen.Queries).DeleteAllFeedDomainRestrictions)
 }

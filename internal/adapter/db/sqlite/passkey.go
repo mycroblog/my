@@ -13,7 +13,7 @@ import (
 
 // InsertPasskeyCredential implements identity.PasskeyRepository.
 func (r *IdentityRepository) InsertPasskeyCredential(ctx context.Context, tx uow.Tx, c identity.PasskeyCredential) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (r *IdentityRepository) getPasskeyCredential(ctx context.Context, credentia
 
 // InsertPasskeyCredentialRevocation implements identity.PasskeyRepository.
 func (r *IdentityRepository) InsertPasskeyCredentialRevocation(ctx context.Context, tx uow.Tx, rev identity.PasskeyCredentialRevocation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

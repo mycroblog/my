@@ -31,7 +31,7 @@ func (d *DB) CustomEmojiRepository() *CustomEmojiRepository { return &CustomEmoj
 
 // InsertCustomEmoji implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) InsertCustomEmoji(ctx context.Context, tx uow.Tx, e content.CustomEmoji) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (r *CustomEmojiRepository) InsertCustomEmoji(ctx context.Context, tx uow.Tx
 
 // InsertCustomEmojiImage implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) InsertCustomEmojiImage(ctx context.Context, tx uow.Tx, img content.CustomEmojiImage) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiImage(ctx context.Context, tx u
 
 // SetCustomEmojiSettings implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) SetCustomEmojiSettings(ctx context.Context, tx uow.Tx, s content.CustomEmojiSettings) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (r *CustomEmojiRepository) SetCustomEmojiSettings(ctx context.Context, tx u
 
 // SetCustomEmojiAliases implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) SetCustomEmojiAliases(ctx context.Context, tx uow.Tx, emojiID string, aliases []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (r *CustomEmojiRepository) SetCustomEmojiAliases(ctx context.Context, tx uo
 
 // DeleteCustomEmoji implements content.CustomEmojiRepository.
 func (r *CustomEmojiRepository) DeleteCustomEmoji(ctx context.Context, tx uow.Tx, emojiID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (r *CustomEmojiRepository) CustomEmojiImageMediaIDs(ctx context.Context, em
 
 // PurgeRemoteEmoji implements content.EmojiPurgeRepository.
 func (r *CustomEmojiRepository) PurgeRemoteEmoji(ctx context.Context, tx uow.Tx, emojiID string, mediaIDs []string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

@@ -18,7 +18,7 @@ func (r *IdentityRepository) ListManagedRoles(ctx context.Context, tx uow.Tx) ([
 	q := r.db.reader()
 	if tx != nil {
 		var err error
-		if q, err = queries(tx); err != nil {
+		if q, err = r.db.queries(tx); err != nil {
 			return nil, err
 		}
 	}
@@ -35,7 +35,7 @@ func (r *IdentityRepository) ListManagedRoles(ctx context.Context, tx uow.Tx) ([
 
 // InsertManagedRole implements identity.ManagedRoleRepository.
 func (r *IdentityRepository) InsertManagedRole(ctx context.Context, tx uow.Tx, m identity.ManagedRole) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *IdentityRepository) InsertManagedRole(ctx context.Context, tx uow.Tx, m
 
 // DeleteManagedRole implements identity.ManagedRoleRepository.
 func (r *IdentityRepository) DeleteManagedRole(ctx context.Context, tx uow.Tx, roleID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (r *IdentityRepository) DeleteManagedRole(ctx context.Context, tx uow.Tx, r
 // LockRoleByID implements identity.ManagedRoleRepository. SQLite serializes write transactions,
 // so it needs no lock.
 func (r *IdentityRepository) LockRoleByID(ctx context.Context, tx uow.Tx, id string) (identity.Role, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return identity.Role{}, err
 	}

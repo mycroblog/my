@@ -18,7 +18,7 @@ import (
 
 // InsertCustomEmojiRequest implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx uow.Tx, req content.CustomEmojiRequest) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx
 
 // CloseCustomEmojiRequest implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) CloseCustomEmojiRequest(ctx context.Context, tx uow.Tx, o content.CustomEmojiRequestOutcome) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (r *CustomEmojiRepository) CloseCustomEmojiRequest(ctx context.Context, tx 
 
 // PendingImageRequestOf implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) PendingImageRequestOf(ctx context.Context, tx uow.Tx, emojiID string) (string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return "", err
 	}

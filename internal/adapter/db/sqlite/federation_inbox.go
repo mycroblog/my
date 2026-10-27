@@ -17,7 +17,7 @@ var _ appfederation.InboxRepository = (*FederationRepository)(nil)
 
 // InsertReceivedActivity implements federation.InboxRepository.
 func (r *FederationRepository) InsertReceivedActivity(ctx context.Context, tx uow.Tx, a federation.ReceivedActivity) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -30,7 +30,7 @@ func (r *FederationRepository) InsertReceivedActivity(ctx context.Context, tx uo
 
 // InsertReceivedDocument implements federation.InboxRepository.
 func (r *FederationRepository) InsertReceivedDocument(ctx context.Context, tx uow.Tx, activityURI federation.IRI, document []byte) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (r *FederationRepository) FindReceivedDocument(ctx context.Context, activit
 
 // ReleaseUnconfirmedActivity implements federation.InboxRepository.
 func (r *FederationRepository) ReleaseUnconfirmedActivity(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -76,7 +76,7 @@ func (r *FederationRepository) ReleaseUnconfirmedActivity(ctx context.Context, t
 
 // InsertRemoteObjectTombstone implements federation.InboxRepository.
 func (r *FederationRepository) InsertRemoteObjectTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteObjectTombstone) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

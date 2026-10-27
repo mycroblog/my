@@ -16,7 +16,7 @@ import (
 // LockPair implements graph.Repository with a transaction-scoped advisory lock on the unordered
 // pair, so that a follow and a block of one pair serialize under READ COMMITTED.
 func (r *GraphRepository) LockPair(ctx context.Context, tx uow.Tx, accountA, accountB string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (r *GraphRepository) LockPair(ctx context.Context, tx uow.Tx, accountA, acc
 
 // InsertBlock implements graph.Repository.
 func (r *GraphRepository) InsertBlock(ctx context.Context, tx uow.Tx, b graph.Block) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *GraphRepository) InsertBlock(ctx context.Context, tx uow.Tx, b graph.Bl
 
 // InsertBlockRetraction implements graph.Repository.
 func (r *GraphRepository) InsertBlockRetraction(ctx context.Context, tx uow.Tx, ret graph.BlockRetraction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func blockFrom(row postgresgen.Block) graph.Block {
 
 // Block implements graph.Repository.
 func (r *GraphRepository) Block(ctx context.Context, tx uow.Tx, id string) (graph.Block, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Block{}, err
 	}
@@ -83,7 +83,7 @@ func blockEdgesFrom(rows []postgresgen.BlockEdge) []graph.BlockEdge {
 
 // BlockEdge implements graph.Repository.
 func (r *GraphRepository) BlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.BlockEdge{}, err
 	}
@@ -107,7 +107,7 @@ func findBlockEdge(ctx context.Context, q *postgresgen.Queries, blockerAccountID
 
 // InsertBlockEdge implements graph.Repository.
 func (r *GraphRepository) InsertBlockEdge(ctx context.Context, tx uow.Tx, e graph.BlockEdge) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func (r *GraphRepository) InsertBlockEdge(ctx context.Context, tx uow.Tx, e grap
 
 // DeleteBlockEdge implements graph.Repository.
 func (r *GraphRepository) DeleteBlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID, blockID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (r *GraphRepository) DeleteBlockEdge(ctx context.Context, tx uow.Tx, blocke
 
 // DeleteAllBlockEdges implements graph.Repository.
 func (r *GraphRepository) DeleteAllBlockEdges(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (r *GraphRepository) DeleteAllBlockEdges(ctx context.Context, tx uow.Tx) er
 
 // ListBlockHistories implements graph.Repository.
 func (r *GraphRepository) ListBlockHistories(ctx context.Context, tx uow.Tx) ([]graph.BlockHistory, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (r *GraphRepository) ListBlocking(ctx context.Context, blockerAccountID, be
 
 // UpsertMute implements graph.Repository.
 func (r *GraphRepository) UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mute) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (r *GraphRepository) UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mut
 
 // DeleteMute implements graph.Repository.
 func (r *GraphRepository) DeleteMute(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -217,7 +217,7 @@ func (r *GraphRepository) DeleteExpiredMutes(ctx context.Context, tx uow.Tx, now
 	if err != nil {
 		return nil, err
 	}
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func muteFrom(row postgresgen.Mute) graph.Mute {
 
 // Mute implements graph.Repository.
 func (r *GraphRepository) Mute(ctx context.Context, tx uow.Tx, accountID, targetAccountID string, now time.Time) (graph.Mute, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Mute{}, err
 	}
@@ -285,7 +285,7 @@ func (r *GraphRepository) ListMutes(ctx context.Context, accountID string, now t
 
 // BlockByURI implements graph.Repository.
 func (r *GraphRepository) BlockByURI(ctx context.Context, tx uow.Tx, uri string) (graph.BlockHistory, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.BlockHistory{}, err
 	}

@@ -13,7 +13,7 @@ import (
 
 // InsertClosureEvent implements appinstance.ClosureRepository.
 func (r *InstanceRepository) InsertClosureEvent(ctx context.Context, tx uow.Tx, e instance.ClosureEvent) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (r *InstanceRepository) InsertClosureEvent(ctx context.Context, tx uow.Tx, 
 
 // ClosureHead implements appinstance.ClosureRepository.
 func (r *InstanceRepository) ClosureHead(ctx context.Context, tx uow.Tx) (instance.ClosureHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.ClosureHead{}, err
 	}
@@ -47,7 +47,7 @@ func (r *InstanceRepository) ClosureHead(ctx context.Context, tx uow.Tx) (instan
 
 // UpsertClosureHead implements appinstance.ClosureRepository.
 func (r *InstanceRepository) UpsertClosureHead(ctx context.Context, tx uow.Tx, h instance.ClosureHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (r *InstanceRepository) UpsertClosureHead(ctx context.Context, tx uow.Tx, h
 
 // DeleteClosureHead implements appinstance.ClosureRepository.
 func (r *InstanceRepository) DeleteClosureHead(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (r *InstanceRepository) DeleteClosureHead(ctx context.Context, tx uow.Tx) e
 
 // ListClosureEvents implements appinstance.ClosureRepository.
 func (r *InstanceRepository) ListClosureEvents(ctx context.Context, tx uow.Tx) ([]instance.ClosureEvent, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (r *InstanceRepository) ListClosureEvents(ctx context.Context, tx uow.Tx) (
 
 // CurrentClosureTx implements appinstance.ClosureRepository.
 func (r *InstanceRepository) CurrentClosureTx(ctx context.Context, tx uow.Tx) (instance.Closure, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.Closure{}, err
 	}

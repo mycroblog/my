@@ -264,7 +264,7 @@
     "description": "Error in the confirmation of revoking admin that the server refused because the account is the only admin."
   },
   "admin.account.roles.failed.outranked": {
-    "defaultMessage": "The role could not be changed: it is above your highest role. You can grant and revoke only the roles at or below your highest role.",
+    "defaultMessage": "The role could not be changed: it is above your highest role, or it has permissions you do not hold. You can grant and revoke only the roles at or below your highest role, and grant only roles whose permissions you all hold.",
     "description": "Error in the confirmation of a role change that the server refused because the role is above the viewer's highest role."
   },
   "admin.account.roles.grant": {
@@ -298,6 +298,10 @@
   "admin.account.roles.loading": {
     "defaultMessage": "Loading the roles",
     "description": "Accessible name of the spinner while the roles of an account load."
+  },
+  "admin.account.roles.missing_permissions": {
+    "defaultMessage": "You cannot grant this role: it needs permissions you do not have ({permissions}).",
+    "description": "Why a role has no grant button: the viewer lacks some of the role's permissions; permissions lists them, comma separated."
   },
   "admin.account.roles.none": {
     "defaultMessage": "None",

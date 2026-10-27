@@ -76,7 +76,7 @@ func TestReadiness(t *testing.T) {
 			name:        "SQLite in /tmp",
 			env:         with(ready(), "MY_DATABASE_URL", "file:///tmp/my.db?_pragma=busy_timeout(5000)"),
 			want:        append([]string{"warning database_url"}, base...),
-			wantMessage: "temporary directory /tmp",
+			wantMessage: "temporary directory, which",
 		},
 		{
 			name: "SQLite path is not checked for PostgreSQL",

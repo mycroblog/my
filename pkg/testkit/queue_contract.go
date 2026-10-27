@@ -103,6 +103,8 @@ func QueueContract(t *testing.T, newHarness QueueFactory) {
 		{"ReenqueuesJobsBeyondTheDelayLimit", queueReenqueueChain},
 		{"InspectsJobsByState", queueInspectsJobsByState},
 		{"RecordsUnsuccessfulAttempts", queueRecordsUnsuccessfulAttempts},
+		{"EnqueuesFromConcurrentTransactions", queueConcurrentTransactions},
+		{"RefusesARepeatedResult", queueRefusesRepeatedResults},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newHarness) })
@@ -1005,5 +1007,100 @@ func queueKeepsTraceParent(t *testing.T, newHarness QueueFactory) {
 	f.drain()
 	if j := f.wantRuns(5)[4]; j.TraceParent != contractTraceParent {
 		t.Errorf("TraceParent of a job enqueued in a transaction = %q, want %q", j.TraceParent, contractTraceParent)
+	}
+}
+
+// queueConcurrentTransactions enqueues from concurrent transactions, each with a job of its
+// own and a job with an idempotency key that every transaction shares: every committed job of
+// its own runs once, and the shared key yields one job, whichever transactions commit first.
+func queueConcurrentTransactions(t *testing.T, newHarness QueueFactory) {
+	f := newQueueFixture(t, newHarness)
+	if f.h.UnitOfWork == nil || f.h.Outbox == nil {
+		t.Skip("the adapter does not enqueue inside database transactions")
+	}
+	const writers = 6
+	var (
+		ready sync.WaitGroup
+		wg    sync.WaitGroup
+	)
+	start := make(chan struct{})
+	errs := make(chan error, writers)
+	ready.Add(writers)
+	for w := range writers {
+		wg.Go(func() {
+			ready.Done()
+			<-start
+			shared := probe(`{"N":"shared"}`)
+			shared.IdempotencyKey = "concurrent-shared"
+			errs <- f.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+				return f.h.Outbox.EnqueueTx(t.Context(), tx, probe(fmt.Sprintf(`{"N":"own-%d"}`, w)), shared)
+			})
+		})
+	}
+	ready.Wait()
+	close(start)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("concurrent Tx = %v", err)
+		}
+	}
+	f.drain()
+	var got []string
+	for _, j := range f.rec.snapshot() {
+		got = append(got, payloadOf(t, j))
+	}
+	slices.Sort(got)
+	want := []string{"shared"}
+	for w := range writers {
+		want = append(want, fmt.Sprintf("own-%d", w))
+	}
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("ran %q, want %q", got, want)
+	}
+}
+
+// queueRefusesRepeatedResults records the result of a claim twice, as a runner that cannot
+// tell whether its first write committed might: the repeat reports ErrLeaseLost and changes no
+// other job.
+func queueRefusesRepeatedResults(t *testing.T, newHarness QueueFactory) {
+	f := newQueueFixture(t, newHarness)
+	f.enqueue(probe(`{"N":"done"}`), probe(`{"N":"released"}`))
+	f.relay()
+	ctx := t.Context()
+	claim := func() queue.Job {
+		t.Helper()
+		j, ok, err := f.h.Source.Claim(ctx, "w1", f.clock.Now(), contractLease)
+		if err != nil || !ok {
+			t.Fatalf("Claim = %v, %v", ok, err)
+		}
+		return j
+	}
+	done, released := claim(), claim()
+	if err := f.h.Source.Complete(ctx, "w1", done); err != nil {
+		t.Fatalf("Complete: %v", err)
+	}
+	if err := f.h.Source.Complete(ctx, "w1", done); !errors.Is(err, queue.ErrLeaseLost) {
+		t.Errorf("repeated Complete = %v, want ErrLeaseLost", err)
+	}
+	runAt := f.clock.Now().Add(time.Minute)
+	if err := f.h.Source.Release(ctx, "w1", released, released.Attempt, runAt, "retry"); err != nil {
+		t.Fatalf("Release: %v", err)
+	}
+	if err := f.h.Source.Release(ctx, "w1", released, released.Attempt, runAt, "retry"); !errors.Is(err, queue.ErrLeaseLost) {
+		t.Errorf("repeated Release = %v, want ErrLeaseLost", err)
+	}
+	if err := f.h.Source.Bury(ctx, "w1", released, "dead", f.clock.Now()); !errors.Is(err, queue.ErrLeaseLost) {
+		t.Errorf("Bury after Release = %v, want ErrLeaseLost", err)
+	}
+	f.clock.Advance(time.Minute)
+	f.drain()
+	if runs := f.wantRuns(1); payloadOf(t, runs[0]) != "released" {
+		t.Errorf("ran %s, want the released job", runs[0].Payload)
+	}
+	if d := f.dead(); len(d) != 0 {
+		t.Errorf("dead jobs = %v, want none", d)
 	}
 }

@@ -16,7 +16,7 @@ import (
 
 // HasOtherOpenReportOf implements moderation.Repository.
 func (r *ModerationRepository) HasOtherOpenReportOf(ctx context.Context, tx uow.Tx, targetAccountID, reportID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -32,7 +32,7 @@ func (r *ModerationRepository) CountReports(ctx context.Context, state moderatio
 
 // ListUserIDsWithPermission implements identity.Repository.
 func (r *IdentityRepository) ListUserIDsWithPermission(ctx context.Context, tx uow.Tx, p identity.Permission) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
