@@ -15,6 +15,9 @@
 //   restartIce on every connection, for P2P).
 // - The microphone follows the latest wish of the user, one change after another, and is on only while the user
 //   speaks in the room as the call knows it; the room that a write answers (speaking, listening) comes in by applyRoom.
+// - It keeps who is talking (`talking`, the sessions that the audio hears talking, the user's own among them while the
+//   microphone sends), as the audio reports it: the snapshot changes only when that set does, never on each sample of
+//   the levels, and the set is empty once the call ends or joins again with a new session.
 // - It tells the provider what changed for the user (a role, a mute, a raised hand for the hosts) as notices, which
 //   the provider announces.
 // The requests and the audio are given to it, so that the tests give fakes.
@@ -91,6 +94,11 @@ export type VoiceCallSnapshot = {
   /** The microphones of the participants (account ID → on), as the `mic` events said. */
   mics: ReadonlyMap<string, boolean>;
   reactions: readonly VoiceReactionShown[];
+  /**
+   * The sessions talking now (a participant's `session`; the user's own while the microphone sends), as the audio
+   * hears them: a new set only when who talks changes.
+   */
+  talking: ReadonlySet<string>;
 };
 
 /** A change for the user that the page announces. */
@@ -155,6 +163,9 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
+/** Nobody talks. */
+const noneTalking: ReadonlySet<string> = new Set();
+
 export class VoiceCall {
   readonly #options: VoiceCallOptions;
   #session: string;
@@ -191,6 +202,7 @@ export class VoiceCall {
       playbackBlocked: false,
       mics: new Map(),
       reactions: [],
+      talking: noneTalking,
     };
   }
 
@@ -245,6 +257,7 @@ export class VoiceCall {
   }
 
   #connect(): boolean {
+    const session = this.#session;
     try {
       this.#connection = (this.#options.connect ?? connectVoice)({
         session: this.#session,
@@ -254,6 +267,11 @@ export class VoiceCall {
           sendSignal: (signal) => this.#sendSignal(this.#session, signal),
           onPlaybackBlocked: () => {
             this.#set({ playbackBlocked: true });
+          },
+          onTalking: (talking) => {
+            // The connection of a session that the call left behind (it joined again) no longer says who talks.
+            if (session !== this.#session || this.#isEnded()) return;
+            this.#set({ talking });
           },
         },
       });
@@ -334,7 +352,7 @@ export class VoiceCall {
       this.#session = join.session;
       this.#grant = voiceGrant(join.grant);
       this.#wantMic = false;
-      this.#set({ room: join.room, micOn: false });
+      this.#set({ room: join.room, micOn: false, talking: noneTalking });
       this.#options.server.onRoom(join.room);
       this.#scheduleRenewal();
       this.#connect();
@@ -554,7 +572,7 @@ export class VoiceCall {
   #finish(end: VoiceCallEnd): void {
     if (this.#isEnded()) return;
     this.#stop();
-    this.#set({ phase: "ended", end, micOn: false, micPending: false, reactions: [] });
+    this.#set({ phase: "ended", end, micOn: false, micPending: false, reactions: [], talking: noneTalking });
     this.#options.server.onEnd();
   }
 
@@ -572,6 +590,6 @@ export class VoiceCall {
   close(): void {
     if (this.#isEnded()) return;
     this.#stop();
-    this.#set({ phase: "ended", end: undefined, micOn: false, micPending: false, reactions: [] });
+    this.#set({ phase: "ended", end: undefined, micOn: false, micPending: false, reactions: [], talking: noneTalking });
   }
 }

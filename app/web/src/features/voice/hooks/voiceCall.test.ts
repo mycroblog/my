@@ -319,3 +319,42 @@ test("start after close does nothing, and close twice is one close", () => {
   call.close();
   expect(server.openStream).not.toHaveBeenCalled();
 });
+
+describe("who is talking", () => {
+  test("the snapshot carries the audio's talking sessions, and forgets them on a new session and at the end", async () => {
+    const connections: { options: VoiceConnectionOptions; connection: ReturnType<typeof fakeConnection> }[] = [];
+    const { call, server } = setup(undefined, {
+      connect: (options) => {
+        const connection = fakeConnection();
+        connections.push({ options, connection });
+        return connection;
+      },
+    });
+    call.start();
+    await settle();
+    expect(call.getSnapshot().talking.size).toBe(0);
+    const talk = (index: number, sessions: string[]) => connections[index]?.options.events.onTalking?.(new Set(sessions));
+
+    const renders = vi.fn();
+    const unsubscribe = call.subscribe(renders);
+    talk(0, ["s9", "s5"]);
+    expect([...call.getSnapshot().talking].sort()).toEqual(["s5", "s9"]);
+    expect(renders).toHaveBeenCalledTimes(1);
+
+    // A new session (the server took the previous one away): the old connection says nothing more.
+    server.heartbeat.mockRejectedValueOnce(notFound());
+    await vi.advanceTimersByTimeAsync(heartbeatInterval);
+    expect(call.session).toBe("s7");
+    expect(call.getSnapshot().talking.size).toBe(0);
+    talk(0, ["s9"]);
+    expect(call.getSnapshot().talking.size).toBe(0);
+    talk(1, ["s9"]);
+    expect([...call.getSnapshot().talking]).toEqual(["s9"]);
+
+    unsubscribe();
+    call.close();
+    expect(call.getSnapshot().talking.size).toBe(0);
+    talk(1, ["s9"]);
+    expect(call.getSnapshot().talking.size).toBe(0);
+  });
+});

@@ -75,6 +75,7 @@ vi.mock("livekit-client", () => ({
     TrackSubscribed: "trackSubscribed",
     TrackUnsubscribed: "trackUnsubscribed",
     ParticipantPermissionsChanged: "participantPermissionsChanged",
+    ActiveSpeakersChanged: "activeSpeakersChanged",
     Disconnected: "disconnected",
   },
   Track: { Kind: { Audio: "audio" }, Source: { Microphone: "microphone" } },
@@ -104,6 +105,8 @@ const listening: VoiceRoster = { ...speaking, speaker: false };
 
 let onPlaybackBlocked = vi.fn();
 let getMicrophone = vi.fn();
+/** Who the connection said talks, each time. */
+let talking: string[][] = [];
 
 function join(): VoiceConnection {
   return connectVoice({
@@ -116,7 +119,11 @@ function join(): VoiceConnection {
       getMicrophone,
       createRemoteAudio: () => new FakeRemoteAudio(),
     },
-    events: { sendSignal: () => Promise.reject(new Error("LiveKit sends no signals")), onPlaybackBlocked },
+    events: {
+      sendSignal: () => Promise.reject(new Error("LiveKit sends no signals")),
+      onPlaybackBlocked,
+      onTalking: (sessions) => talking.push([...sessions].sort()),
+    },
   });
 }
 
@@ -132,6 +139,7 @@ beforeEach(() => {
   FakeRoom.failNext = false;
   onPlaybackBlocked = vi.fn();
   getMicrophone = vi.fn();
+  talking = [];
   vi.stubGlobal(
     "MediaStream",
     class {
@@ -186,6 +194,58 @@ describe("remote audio", () => {
 
     await connection.resumePlayback();
     expect(FakeRemoteAudio.all[0]?.playing).toBe(true);
+  });
+});
+
+describe("who is talking", () => {
+  /** LiveKit's active speakers, loudest first, the local participant among them. */
+  const speakers = (...identities: string[]) => {
+    room().emit("activeSpeakersChanged", identities.map((identity) => ({ identity })));
+  };
+
+  test("maps LiveKit's active speakers to the sessions that speak, and reports only changes", async () => {
+    const connection = join();
+    connection.update(speaking);
+    await settle();
+    speakers("s2");
+    speakers("s2");
+    // s3 does not speak in the latest state: LiveKit's word alone does not make it talk.
+    speakers("s3", "s2");
+    expect(talking).toEqual([["s2"]]);
+    speakers();
+    expect(talking).toEqual([["s2"], []]);
+  });
+
+  test("the user talks only while the microphone is on", async () => {
+    const connection = join();
+    connection.update(speaking);
+    await settle();
+    room().permit(true);
+    speakers("s1", "s2");
+    expect(talking.at(-1)).toEqual(["s2"]);
+    await connection.setMicrophone(true);
+    expect(talking.at(-1)).toEqual(["s1", "s2"]);
+    connection.update(listening);
+    await settle();
+    expect(talking.at(-1)).toEqual(["s2"]);
+  });
+
+  test("nobody talks once the room goes away or the user leaves", async () => {
+    const connection = join();
+    connection.update(speaking);
+    await settle();
+    speakers("s2");
+    room().emit("disconnected", 1);
+    expect(talking.at(-1)).toEqual([]);
+
+    connection.reconnect(grant);
+    await settle();
+    room(1).emit("activeSpeakersChanged", [{ identity: "s2" }]);
+    // The room that went away says nothing more.
+    room(0).emit("activeSpeakersChanged", []);
+    expect(talking.at(-1)).toEqual(["s2"]);
+    connection.close();
+    expect(talking.at(-1)).toEqual([]);
   });
 });
 

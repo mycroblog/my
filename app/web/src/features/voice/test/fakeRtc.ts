@@ -287,15 +287,86 @@ export class FakeRemoteAudio {
   };
 }
 
+/** A LevelMeter of the environment whose level the test sets. */
+export class FakeLevelMeter {
+  /** Every meter made, in order. */
+  static all: FakeLevelMeter[] = [];
+  readonly stream: unknown;
+  value = 0;
+  closed = false;
+
+  constructor(stream: unknown) {
+    this.stream = stream;
+    FakeLevelMeter.all.push(this);
+  }
+
+  /** The meters not closed yet. */
+  static open(): FakeLevelMeter[] {
+    return FakeLevelMeter.all.filter((meter) => !meter.closed);
+  }
+
+  /** The open meter of `stream`. */
+  static of(stream: unknown): FakeLevelMeter {
+    const found = FakeLevelMeter.open().find((meter) => meter.stream === stream);
+    if (found === undefined) throw new Error("no open meter of the stream");
+    return found;
+  }
+
+  level = (): number => this.value;
+
+  close = (): void => {
+    this.closed = true;
+  };
+}
+
+/** An AnalyserNode whose samples the test sets. */
+export class FakeAnalyser {
+  fftSize = 2048;
+  /** The value of every sample. */
+  sample = 0;
+  connected = true;
+  getFloatTimeDomainData(samples: Float32Array): void {
+    samples.fill(this.sample);
+  }
+  connect(): void {
+    this.connected = true;
+  }
+  disconnect(): void {
+    this.connected = false;
+  }
+}
+
 /** The browser's AudioContext, running, for the audio of the calls of the integration tests. */
 export class FakeAudioContext {
+  /** Every context made, in order. */
+  static all: FakeAudioContext[] = [];
   state: AudioContextState = "running";
   readonly destination = {};
+  readonly analysers: FakeAnalyser[] = [];
+  readonly sources: { connected: boolean }[] = [];
+  constructor() {
+    FakeAudioContext.all.push(this);
+  }
+  createAnalyser(): FakeAnalyser {
+    const analyser = new FakeAnalyser();
+    this.analysers.push(analyser);
+    return analyser;
+  }
   createGain() {
     return { gain: { value: 0 }, connect: () => undefined, disconnect: () => undefined };
   }
   createMediaStreamSource() {
-    return { connect: () => undefined, disconnect: () => undefined };
+    const source = {
+      connected: false,
+      connect: () => {
+        source.connected = true;
+      },
+      disconnect: () => {
+        source.connected = false;
+      },
+    };
+    this.sources.push(source);
+    return source;
   }
   resume(): Promise<void> {
     return Promise.resolve();
@@ -308,6 +379,7 @@ export function resetFakeRtc(): void {
   FakePeerConnection.refusesConfiguration = false;
   FakeRemoteAudio.all = [];
   FakeRemoteAudio.blocked = false;
+  FakeLevelMeter.all = [];
 }
 
 /** Lets the promises and microtasks of the fakes and the connections run. */

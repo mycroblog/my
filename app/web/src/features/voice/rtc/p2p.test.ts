@@ -5,9 +5,10 @@
 // refused signals, stale candidates, and refused configurations. A relay between the
 // connections plays the server: it passes each signal on, after checking it as the server does.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, sdpDirections, settle } from "../test/fakeRtc";
+import { FakeLevelMeter, FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, sdpDirections, settle } from "../test/fakeRtc";
 import { connectVoice, UnsupportedVoiceMethodError } from "./connect";
 import { offerWait, resendWait } from "./p2p";
+import { talkingSample, talkingThreshold } from "./talking";
 import type { IncomingVoiceSignal, OutgoingVoiceSignal, VoiceConnection, VoiceGrant, VoiceMember } from "./types";
 
 const grant: VoiceGrant = {
@@ -27,6 +28,9 @@ function room() {
   const sent: Sent[] = [];
   const rejected: Sent[] = [];
   const pcs = new Map<string, FakePeerConnection[]>();
+  /** The level meters that each session made, and who it last said talks. */
+  const meters = new Map<string, FakeLevelMeter[]>();
+  const talking = new Map<string, string[]>();
   let paused = false;
   const held: (() => void)[] = [];
   /** The signals that the relay refuses (a 422 or a lost request). */
@@ -43,8 +47,16 @@ function room() {
         },
         getMicrophone: options.getMicrophone ?? (() => Promise.resolve(new FakeStream() as unknown as MediaStream)),
         createRemoteAudio: () => new FakeRemoteAudio(),
+        createLevelMeter: (stream) => {
+          const meter = new FakeLevelMeter(stream);
+          meters.set(session, [...(meters.get(session) ?? []), meter]);
+          return meter;
+        },
       },
       events: {
+        onTalking: (sessions) => {
+          talking.set(session, [...sessions].sort());
+        },
         sendSignal: (signal) => {
           const message = { ...signal, from: session };
           sent.push(message);
@@ -88,6 +100,9 @@ function room() {
     sent,
     rejected,
     pcs: (session: string) => pcs.get(session) ?? [],
+    /** The open level meters of `session`. */
+    meters: (session: string) => (meters.get(session) ?? []).filter((meter) => !meter.closed),
+    talking: (session: string) => talking.get(session) ?? [],
     refuse: (which: ((signal: Sent) => boolean) | null) => {
       refuse = which;
     },
@@ -288,6 +303,61 @@ describe("the direction of a participant who does not speak", () => {
     expect(track?.stopped).toBe(false);
     await a.setMicrophone(true);
     expect(track?.enabled).toBe(true);
+  });
+});
+
+describe("who is talking", () => {
+  test("a remote speaker who is heard, and the user while the microphone sends", async () => {
+    vi.useFakeTimers();
+    const r = room();
+    const a = r.join("a");
+    const b = r.join("b");
+    r.state({ a: true, b: true });
+    await settle();
+    // Each side measures the other's stream; nobody talks yet.
+    expect(r.meters("a")).toHaveLength(1);
+    expect(r.meters("b")).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(talkingSample);
+    expect(r.talking("a")).toEqual([]);
+
+    await a.setMicrophone(true);
+    const sent = r.pcs("a")[0]?.transceivers[0]?.sender.track;
+    const microphone = r.meters("a").find((meter) => (meter.stream as FakeStream).tracks.some((track) => track === sent));
+    if (microphone === undefined) throw new Error("no meter of the microphone");
+    microphone.value = talkingThreshold * 5;
+    await vi.advanceTimersByTimeAsync(talkingSample);
+    expect(r.talking("a")).toEqual(["a"]);
+
+    for (const meter of r.meters("b")) meter.value = talkingThreshold * 5;
+    await vi.advanceTimersByTimeAsync(talkingSample);
+    expect(r.talking("b")).toEqual(["a"]);
+
+    // The microphone off: the user no longer talks, and its meter is released.
+    await a.setMicrophone(false);
+    expect(r.talking("a")).toEqual([]);
+    expect(microphone.closed).toBe(true);
+
+    // A participant who no longer speaks is not heard, so does not talk.
+    r.state({ a: false, b: true });
+    await settle();
+    expect(r.talking("b")).toEqual([]);
+
+    a.close();
+    b.close();
+    expect(FakeLevelMeter.open()).toEqual([]);
+  });
+
+  test("closing releases every meter of the call", async () => {
+    const r = room();
+    const a = r.join("a");
+    r.join("b");
+    r.join("c");
+    r.state({ a: true, b: true, c: true });
+    await settle();
+    await a.setMicrophone(true);
+    expect(r.meters("a")).toHaveLength(3);
+    a.close();
+    expect(r.meters("a")).toEqual([]);
   });
 });
 

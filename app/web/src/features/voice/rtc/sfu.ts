@@ -2,7 +2,9 @@
 // What the SFU methods (livekit, sora; ADR-0102 §6) share behind the VoiceConnection of ADR-0101 §7: the audio of the
 // remote participants, each in a RemoteAudio of the environment and heard only while the latest `state` lists its
 // session as a speaker (the receiver's side of the enforcement, as in P2P), and the wait for a change that the server
-// makes on its own path (a permission, a grant) before the microphone can go on.
+// makes on its own path (a permission, a grant) before the microphone can go on. A TalkingDetector given to the remote
+// audio measures each stream while it is heard (Sora; LiveKit reports its active speakers instead).
+import type { TalkingDetector } from "./talking";
 import type { RemoteAudio, VoiceEnvironment, VoiceRoster } from "./types";
 
 /** How long turning the microphone on waits for the server to let the session send (a permission or a grant). */
@@ -12,7 +14,10 @@ export function warn(message: string, error: unknown): void {
   console.warn(`voice: ${message}`, error);
 }
 
-type Entry = { audio: RemoteAudio; session: string | undefined };
+type Entry = { audio: RemoteAudio; session: string | undefined; stream: MediaStream };
+
+/** The remote audios made so far: each measures under keys of its own, so that two connections never share one. */
+let audiosMade = 0;
 
 /** The audio of the remote participants of one connection to an SFU, keyed by the SDK's ID of each stream. */
 export class RemoteAudios {
@@ -20,11 +25,20 @@ export class RemoteAudios {
   readonly #onPlaybackBlocked: () => void;
   readonly #entries = new Map<string, Entry>();
   #speakers: ReadonlySet<string>;
+  readonly #talking: TalkingDetector | undefined;
+  readonly #prefix = `${String(++audiosMade)}:`;
 
-  constructor(environment: VoiceEnvironment, onPlaybackBlocked: () => void, roster: VoiceRoster) {
+  constructor(environment: VoiceEnvironment, onPlaybackBlocked: () => void, roster: VoiceRoster, talking?: TalkingDetector) {
     this.#environment = environment;
     this.#onPlaybackBlocked = onPlaybackBlocked;
     this.#speakers = speakers(roster);
+    this.#talking = talking;
+  }
+
+  /** Measures the stream of `key` while it is heard: a participant who does not speak never talks. */
+  #measure(key: string, entry: Entry): void {
+    if (this.#audible(entry)) this.#talking?.watch(this.#prefix + key, entry.session, entry.stream);
+    else this.#talking?.unwatch(this.#prefix + key);
   }
 
   #audible(entry: Entry): boolean {
@@ -34,9 +48,10 @@ export class RemoteAudios {
   /** Plays `stream` of the participant `session` (undefined while the SDK has not said whose it is). */
   play(key: string, session: string | undefined, stream: MediaStream): void {
     this.remove(key);
-    const entry: Entry = { audio: this.#environment.createRemoteAudio(), session };
+    const entry: Entry = { audio: this.#environment.createRemoteAudio(), session, stream };
     entry.audio.setAudible(this.#audible(entry));
     this.#entries.set(key, entry);
+    this.#measure(key, entry);
     entry.audio.play(stream).catch((error: unknown) => {
       if (error instanceof DOMException && error.name === "NotAllowedError") this.#onPlaybackBlocked();
       else warn("could not play the audio", error);
@@ -49,17 +64,22 @@ export class RemoteAudios {
     if (entry === undefined) return;
     entry.session = session;
     entry.audio.setAudible(this.#audible(entry));
+    this.#measure(key, entry);
   }
 
   remove(key: string): void {
     this.#entries.get(key)?.audio.close();
     this.#entries.delete(key);
+    this.#talking?.unwatch(this.#prefix + key);
   }
 
   /** Hears only the speakers of `roster`. */
   update(roster: VoiceRoster): void {
     this.#speakers = speakers(roster);
-    for (const entry of this.#entries.values()) entry.audio.setAudible(this.#audible(entry));
+    for (const [key, entry] of this.#entries) {
+      entry.audio.setAudible(this.#audible(entry));
+      this.#measure(key, entry);
+    }
   }
 
   async resume(): Promise<void> {
@@ -67,7 +87,10 @@ export class RemoteAudios {
   }
 
   close(): void {
-    for (const entry of this.#entries.values()) entry.audio.close();
+    for (const [key, entry] of this.#entries) {
+      entry.audio.close();
+      this.#talking?.unwatch(this.#prefix + key);
+    }
     this.#entries.clear();
   }
 }
