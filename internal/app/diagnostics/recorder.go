@@ -5,6 +5,7 @@ package diagnostics
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -25,6 +26,9 @@ const (
 	// next flush.
 	maxSeen    = 10000
 	maxPending = 10000
+	// abortGrace is how long Close waits for the goroutine after it cancelled the write in
+	// flight, because the deadline of its caller ended first.
+	abortGrace = time.Second
 )
 
 // RecorderOptions configure a Recorder.
@@ -66,6 +70,12 @@ type Recorder struct {
 	closed  bool
 	stop    chan struct{}
 	done    chan struct{}
+	// abort ends when Close gives up waiting: it cancels the write in flight, so that no write
+	// goes on after Close returns.
+	abort       context.Context //nolint:containedctx // cancels the writes of the goroutine
+	cancelAbort context.CancelFunc
+	// finished is set when no write is left to run: Flush writes nothing after it.
+	finished atomic.Bool
 }
 
 // seenKey is what makes an occurrence a first one in the process: a new fingerprint, version,
@@ -99,7 +109,9 @@ func NewRecorder(o RecorderOptions) *Recorder {
 	if o.Interval <= 0 {
 		o.Interval = FlushInterval
 	}
+	abort, cancelAbort := context.WithCancel(context.Background())
 	return &Recorder{
+		abort: abort, cancelAbort: cancelAbort,
 		svc: o.Service, clock: o.Clock, reporter: o.Reporter, interval: o.Interval, manual: o.Manual,
 		first: make(chan firstReport, firstQueue),
 		seen:  map[seenKey]struct{}{}, pending: map[countKey]*pendingCount{},
@@ -160,6 +172,7 @@ func (r *Recorder) startLocked() {
 
 func (r *Recorder) run(ctx context.Context) {
 	defer close(r.done)
+	defer r.finished.Store(true)
 	t := time.NewTicker(r.interval)
 	defer t.Stop()
 	for {
@@ -169,9 +182,9 @@ func (r *Recorder) run(ctx context.Context) {
 			r.writeFirst(f)
 			r.writing.Unlock()
 		case <-t.C:
-			r.Flush(ctx)
+			r.flush(ctx)
 		case <-r.stop:
-			r.Flush(ctx)
+			r.flush(ctx)
 			return
 		}
 	}
@@ -179,8 +192,15 @@ func (r *Recorder) run(ctx context.Context) {
 
 // Flush writes the first occurrences that wait, then the counts and the latest samples counted
 // since the last flush, each write with its own timeout and without the cancellation of ctx. Every occurrence is written by one flush only, so that concurrent
-// flushes count each once.
+// flushes count each once. It writes nothing once Close has returned.
 func (r *Recorder) Flush(ctx context.Context) {
+	if r.finished.Load() {
+		return
+	}
+	r.flush(ctx)
+}
+
+func (r *Recorder) flush(ctx context.Context) {
 	r.writing.Lock()
 	defer r.writing.Unlock()
 	for drained := false; !drained; {
@@ -212,15 +232,22 @@ func (r *Recorder) Flush(ctx context.Context) {
 	for _, ev := range latest {
 		samples = append(samples, sampleOf(ev))
 	}
-	wctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), writeTimeout)
+	wctx, cancel := r.writeContext(context.WithoutCancel(ctx))
 	defer cancel()
 	_ = r.svc.AddOccurrences(wctx, counts, samples) // dropped: the reporter never reports itself
+}
+
+// writeContext bounds a write by writeTimeout and by the abort of Close.
+func (r *Recorder) writeContext(base context.Context) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(base, writeTimeout)
+	stop := context.AfterFunc(r.abort, cancel)
+	return ctx, func() { stop(); cancel() }
 }
 
 // writeFirst writes a first occurrence; when it fails, the next occurrence of the same
 // fingerprint and version is written at once again.
 func (r *Recorder) writeFirst(f firstReport) {
-	wctx, cancel := context.WithTimeout(f.ctx, writeTimeout)
+	wctx, cancel := r.writeContext(f.ctx)
 	defer cancel()
 	if err := r.svc.RecordFirst(wctx, f.ev); err != nil {
 		r.mu.Lock()
@@ -230,7 +257,9 @@ func (r *Recorder) writeFirst(f firstReport) {
 }
 
 // Close writes what the Recorder holds and stops its goroutine, waiting until ctx ends at most
-// (platform.ErrorSinkCloser). The reports after it are dropped.
+// (platform.ErrorSinkCloser). When ctx ends first, the write in flight is cancelled and awaited
+// for a short grace, so that nothing is written after Close returns. The reports after it are
+// dropped.
 func (r *Recorder) Close(ctx context.Context) error {
 	r.mu.Lock()
 	if r.closed {
@@ -241,7 +270,8 @@ func (r *Recorder) Close(ctx context.Context) error {
 	started := r.started
 	r.mu.Unlock()
 	if !started {
-		r.Flush(ctx)
+		r.flush(ctx)
+		r.finished.Store(true)
 		return nil
 	}
 	close(r.stop)
@@ -249,6 +279,13 @@ func (r *Recorder) Close(ctx context.Context) error {
 	case <-r.done:
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
 	}
+	r.cancelAbort()
+	t := time.NewTimer(abortGrace)
+	defer t.Stop()
+	select {
+	case <-r.done:
+	case <-t.C:
+	}
+	return ctx.Err()
 }

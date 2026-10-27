@@ -115,8 +115,15 @@ func (q *ExportQueue) Close(ctx context.Context) error {
 	case <-timer.C:
 	case <-ctx.Done():
 	}
+	// Cancel the send in flight and wait for the goroutine, so that nothing is sent after Close
+	// returns; the sender's context ends with the cancel, and ctx bounds the wait.
 	q.cancel()
-	return nil
+	select {
+	case <-q.done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // closingExportQueue is an ExportQueue whose sender holds resources that shutdown releases
