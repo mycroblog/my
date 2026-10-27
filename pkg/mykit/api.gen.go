@@ -6746,6 +6746,8 @@ type CreateInviteRequest struct {
 }
 
 // CreateLoginProviderRequest A new login provider. `allow_signup` is false and `allow_link` true unless given.
+// `client_id` and `client_secret` are required, except for `mastodon`: without both, the
+// server registers a client at the Mastodon server.
 type CreateLoginProviderRequest struct {
 	// AllowLink Whether users may link their account to the provider.
 	AllowLink *bool `json:"allow_link,omitempty"`
@@ -6757,10 +6759,10 @@ type CreateLoginProviderRequest struct {
 	Claims *[]LoginProviderClaimCondition `json:"claims,omitempty"`
 
 	// ClientId The client ID that the provider gave, up to 512 bytes.
-	ClientId string `json:"client_id"`
+	ClientId *string `json:"client_id,omitempty"`
 
 	// ClientSecret The client secret that the provider gave, up to 1024 bytes. It is never shown again.
-	ClientSecret string `json:"client_secret"`
+	ClientSecret *string `json:"client_secret,omitempty"`
 
 	// DisplayName The name on the administration screens and on the sign-in button of an `oidc`
 	// provider, 1 to 100 characters without control characters.
@@ -8490,8 +8492,10 @@ type LoginProviderProblem struct {
 	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
 	// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-	// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
-	// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+	// for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+	// authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
+	// longer than 512 bytes, or with control characters, or a Mastodon server that refused to
+	// register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
 	// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
 	// claims for another kind than `oidc`, Organizations for another kind than `github`, or
 	// ones that are not valid.
@@ -8515,8 +8519,10 @@ type LoginProviderProblem struct {
 // LoginProviderProblemReason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 // than 100 characters, or with control characters. `issuer`: not what the kind takes (an
 // `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-// for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
-// control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+// for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+// authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
+// longer than 512 bytes, or with control characters, or a Mastodon server that refused to
+// register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
 // characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
 // claims for another kind than `oidc`, Organizations for another kind than `github`, or
 // ones that are not valid.
@@ -15945,7 +15951,9 @@ type ClientInterface interface {
 	// CreateLoginProviderWithBody Set up a login provider
 	//
 	// Sets up an external login provider, enabled, with the client ID and secret that the
-	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// provider gave for the answer's `callback_url`. The secret is never shown again. For
+	// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+	// secret, registers a client there with the `profile` scope. Settings
 	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 	// says which. The setup is recorded in the audit log under the display name.
 	// Needs the `manage_login_providers` permission.
@@ -15958,7 +15966,9 @@ type ClientInterface interface {
 	// CreateLoginProvider Set up a login provider
 	//
 	// Sets up an external login provider, enabled, with the client ID and secret that the
-	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// provider gave for the answer's `callback_url`. The secret is never shown again. For
+	// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+	// secret, registers a client there with the `profile` scope. Settings
 	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 	// says which. The setup is recorded in the audit log under the display name.
 	// Needs the `manage_login_providers` permission.
@@ -22137,7 +22147,9 @@ func (c *Client) ListAdminLoginProviders(ctx context.Context, reqEditors ...Requ
 // CreateLoginProviderWithBody Set up a login provider
 //
 // Sets up an external login provider, enabled, with the client ID and secret that the
-// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// provider gave for the answer's `callback_url`. The secret is never shown again. For
+// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+// secret, registers a client there with the `profile` scope. Settings
 // that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 // says which. The setup is recorded in the audit log under the display name.
 // Needs the `manage_login_providers` permission.
@@ -22160,7 +22172,9 @@ func (c *Client) CreateLoginProviderWithBody(ctx context.Context, contentType st
 // CreateLoginProvider Set up a login provider
 //
 // Sets up an external login provider, enabled, with the client ID and secret that the
-// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// provider gave for the answer's `callback_url`. The secret is never shown again. For
+// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+// secret, registers a client there with the `profile` scope. Settings
 // that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 // says which. The setup is recorded in the audit log under the display name.
 // Needs the `manage_login_providers` permission.
@@ -43626,7 +43640,9 @@ type ClientWithResponsesInterface interface {
 	// CreateLoginProviderWithBodyWithResponse Set up a login provider
 	//
 	// Sets up an external login provider, enabled, with the client ID and secret that the
-	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// provider gave for the answer's `callback_url`. The secret is never shown again. For
+	// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+	// secret, registers a client there with the `profile` scope. Settings
 	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 	// says which. The setup is recorded in the audit log under the display name.
 	// Needs the `manage_login_providers` permission.
@@ -43639,7 +43655,9 @@ type ClientWithResponsesInterface interface {
 	// CreateLoginProviderWithResponse Set up a login provider
 	//
 	// Sets up an external login provider, enabled, with the client ID and secret that the
-	// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+	// provider gave for the answer's `callback_url`. The secret is never shown again. For
+	// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+	// secret, registers a client there with the `profile` scope. Settings
 	// that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 	// says which. The setup is recorded in the audit log under the display name.
 	// Needs the `manage_login_providers` permission.
@@ -69952,7 +69970,9 @@ func (c *ClientWithResponses) ListAdminLoginProvidersWithResponse(ctx context.Co
 // CreateLoginProviderWithBodyWithResponse Set up a login provider
 //
 // Sets up an external login provider, enabled, with the client ID and secret that the
-// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// provider gave for the answer's `callback_url`. The secret is never shown again. For
+// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+// secret, registers a client there with the `profile` scope. Settings
 // that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 // says which. The setup is recorded in the audit log under the display name.
 // Needs the `manage_login_providers` permission.
@@ -69971,7 +69991,9 @@ func (c *ClientWithResponses) CreateLoginProviderWithBodyWithResponse(ctx contex
 // CreateLoginProviderWithResponse Set up a login provider
 //
 // Sets up an external login provider, enabled, with the client ID and secret that the
-// provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+// provider gave for the answer's `callback_url`. The secret is never shown again. For
+// `mastodon`, the server reads the Mastodon server's metadata and, without a client ID and
+// secret, registers a client there with the `profile` scope. Settings
 // that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
 // says which. The setup is recorded in the audit log under the display name.
 // Needs the `manage_login_providers` permission.

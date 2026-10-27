@@ -112,7 +112,8 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	settings := identity.NewLoginProviderSettings(identity.LoginProviderKind(f.kind))
 	if sub == "add" {
 		for _, required := range []string{"kind", "name", "client-id"} {
-			if !set[required] {
+			// A mastodon provider without a client ID registers a client at its server.
+			if !set[required] && (required != "client-id" || settings.Kind != identity.LoginProviderMastodon) {
 				_, _ = fmt.Fprintf(stderr, "%s: -%s is required\n", c.name, required)
 				return 2
 			}
@@ -127,7 +128,7 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 		return 2
 	}
 	var secret string
-	if sub == "add" || sub == "rotate-secret" {
+	if sub == "rotate-secret" || sub == "add" && settings.ClientID != "" {
 		var err error
 		if secret, err = readClientSecret(stdin, stderr); err != nil {
 			_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
@@ -252,7 +253,7 @@ func printLoginProviders(w io.Writer, app *platform.App, vs []appidentity.LoginP
 func loginProviderUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my login-provider list [-config <file>]
-  my login-provider add -kind oidc|github|mastodon -name <name> -client-id <id>
+  my login-provider add -kind oidc|github|mastodon -name <name> [-client-id <id>]
                         [-issuer <url or domain>] [-scope <scope>]... [-claim <claim>=<value>]...
                         [-org <organization>]... [-allow-signup] [-allow-link=false] [-config <file>]
   my login-provider set [-name <name>] [-issuer <url or domain>] [-client-id <id>] [-scope <scope>]...
@@ -267,12 +268,17 @@ with. The same settings are on the administration screens.
   oidc      an OpenID Connect provider; -issuer is its issuer URL (https),
             exactly as its ID tokens name it
   github    github.com; no -issuer
-  mastodon  one Mastodon server; -issuer is its domain or https://<domain>
+  mastodon  one Mastodon server (4.3 or later); -issuer is its domain or
+            https://<domain>. Without -client-id, add registers a client at
+            the server itself; give -client-id and the secret of a client
+            registered there when the server does not let others register.
+            set does not move it to another server.
 
 add sets up an enabled provider and prints its callback URL, which you register
-at the provider as the redirect URI. add and rotate-secret read the client
-secret that the provider gave from standard input (the first line), or prompt
-for it in a terminal; it is never shown again.
+at the provider as the redirect URI. -client-id is required but for mastodon.
+add with -client-id and rotate-secret read the client secret that the provider
+gave from standard input (the first line), or prompt for it in a terminal; it
+is never shown again.
 
 New users sign up with a provider only with -allow-signup, and only as the
 registration mode allows. Users may link their account to it unless

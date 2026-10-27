@@ -25,10 +25,10 @@ my instance set registration_mode invite
 
 - Registrations from the same network (IP address; `/64` for IPv6) are limited to 5 per 30 minutes. Beyond that the server returns `429` with `Retry-After`.
 - If the username or the email address is taken, the page shows an error on that field and writes nothing (an invite is not consumed either).
-- When you set up external login providers (OpenID Connect) and let new users sign up with one, the sign-in and sign-up pages show a button for each enabled provider, labelled with the provider's display name exactly as you entered it.
+- When you set up [external login providers](login-providers.md) and let new users sign up with one, the sign-in and sign-up pages show a button for each enabled provider, labelled with the provider's display name exactly as you entered it.
   Someone whose account at the provider is not linked to a user of this server gets the same sign-up form without the password field, and the new user signs in with the provider only.
   The registration mode, the invite code, the reason, CAPTCHA, the sign-up blocks and the network limit apply as on the password form; in `closed` mode, or when the provider does not allow sign-ups, the sign-in page says that no account is linked.
-  An address that the provider marks as verified (`email_verified`) is confirmed at once if the user keeps it; any other address is confirmed by mail as below.
+  An address that the provider marks as verified (`email_verified`) is confirmed at once if the user keeps it; any other address, and every address of a user who signs up with a Mastodon server, which gives none, is confirmed by mail as below.
   An email address that matches an existing user never links that user: the form says the address is taken.
   A user with two-factor authentication still enters the code after signing in with a provider.
 - On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days

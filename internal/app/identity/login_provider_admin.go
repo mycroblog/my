@@ -34,7 +34,7 @@ func IsLoginProviderValidation(err error) bool {
 		identity.ErrInvalidLoginProviderKind, identity.ErrInvalidLoginProviderName, identity.ErrInvalidLoginProviderURL,
 		identity.ErrInvalidLoginProviderClientID, identity.ErrInvalidLoginProviderScopes,
 		identity.ErrInvalidLoginProviderConditions, identity.ErrLoginProviderKindChanged,
-		identity.ErrInvalidLoginProviderClientSecret,
+		identity.ErrInvalidLoginProviderClientSecret, ErrMastodonServer, ErrMastodonRegistration,
 	} {
 		if errors.Is(err, target) {
 			return true
@@ -109,15 +109,24 @@ func (s *Service) emitLoginProviderAudit(ctx context.Context, tx uow.Tx, action 
 }
 
 // CreateLoginProvider sets up a provider, enabled, with settings and its client secret, and
-// audits it. byUserID is the administrator, "" for the CLI. It fails with the errors of
-// identity.LoginProviderSettings.Validate and with ErrInvalidLoginProviderClientSecret.
+// audits it. byUserID is the administrator, "" for the CLI. A mastodon provider's server must
+// serve its metadata; without a client_id and a client secret, the server registers a client
+// there (mastodon_login.go). It fails with the errors of identity.LoginProviderSettings.Validate,
+// with ErrInvalidLoginProviderClientSecret, and, for mastodon, with ErrMastodonServer and
+// ErrMastodonRegistration.
 func (s *Service) CreateLoginProvider(ctx context.Context, settings identity.LoginProviderSettings, clientSecret, byUserID string) (LoginProviderView, error) {
 	settings = settings.Normalize()
+	id := s.d.IDs.NewID()
+	if settings.Kind == identity.LoginProviderMastodon {
+		var err error
+		if settings, clientSecret, err = s.prepareMastodonProvider(ctx, id, settings, clientSecret); err != nil {
+			return LoginProviderView{}, err
+		}
+	}
 	if err := settings.Validate(); err != nil {
 		return LoginProviderView{}, err
 	}
 	now := kernel.Normalize(s.d.Clock.Now())
-	id := s.d.IDs.NewID()
 	secret, err := s.sealLoginProviderSecret(ctx, id, clientSecret, byUserID, now)
 	if err != nil {
 		return LoginProviderView{}, err
@@ -166,7 +175,8 @@ func (s *Service) currentLoginProvider(ctx context.Context, tx uow.Tx, id string
 }
 
 // UpdateLoginProvider replaces the settings of a provider with a new revision, unless they are
-// the same, and audits it. The kind stays (identity.ErrLoginProviderKindChanged). It fails as
+// the same, and audits it. The kind stays (identity.ErrLoginProviderKindChanged), and so does the
+// server of a mastodon provider, whose client is registered there. It fails as
 // CreateLoginProvider does, and with ErrNotFound.
 func (s *Service) UpdateLoginProvider(ctx context.Context, id string, settings identity.LoginProviderSettings, byUserID string) (LoginProviderView, error) {
 	old, err := s.d.Repository.FindLoginProvider(ctx, id)
@@ -175,6 +185,9 @@ func (s *Service) UpdateLoginProvider(ctx context.Context, id string, settings i
 	}
 	settings = settings.Normalize()
 	if err := identity.ValidateLoginProviderChange(old.Settings, settings); err != nil {
+		return LoginProviderView{}, err
+	}
+	if err := checkMastodonServerChange(old.Settings, settings); err != nil {
 		return LoginProviderView{}, err
 	}
 	if err := settings.Validate(); err != nil {

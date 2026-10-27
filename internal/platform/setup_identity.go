@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/mycroblog/my/internal/adapter/oidc"
+	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
@@ -59,6 +60,8 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		// Users sign in and sign up with the OpenID Connect providers that administrators set up;
 		// Discovery, the JWKS, and the token exchange go through the same guard (ADR-0106 §5).
 		OIDC: oidc.New(oidc.Options{HTTP: a.HTTPClient, Clock: a.Clock}),
+		// Nobody signs in with a Mastodon server whose domain has a domain action (ADR-0106 §1).
+		LoginProviderDomainRestricted: a.loginProviderDomainRestricted,
 		MetadataDocumentClients: func(ctx context.Context) (bool, error) {
 			s, err := a.Instance.Settings(ctx)
 			return s.OAuthMetadataDocumentClients(), err
@@ -111,4 +114,15 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Policy: originRetention{a},
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
+}
+
+// loginProviderDomainRestricted reports whether the server of a mastodon login provider, or a
+// parent domain, has a domain action in effect, from the moderation module's restrictions.
+func (a *App) loginProviderDomainRestricted(ctx context.Context, host string) (bool, error) {
+	canonical, err := federation.CanonicalHost(host)
+	if err != nil {
+		return false, err
+	}
+	rs, err := a.ModerationPolicy.DomainRestrictions(ctx, canonical)
+	return len(rs) > 0, err
 }

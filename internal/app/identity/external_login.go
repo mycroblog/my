@@ -98,7 +98,9 @@ func (s *Service) needExternalLoginDeps() error {
 }
 
 // externalLoginKind reports whether users sign in with providers of kind k.
-func externalLoginKind(k identity.LoginProviderKind) bool { return k == identity.LoginProviderOIDC }
+func externalLoginKind(k identity.LoginProviderKind) bool {
+	return k == identity.LoginProviderOIDC || k == identity.LoginProviderMastodon
+}
 
 // ExternalLoginProvider is a provider that the sign-in page offers.
 type ExternalLoginProvider struct {
@@ -123,6 +125,13 @@ func (s *Service) ExternalLoginProviders(ctx context.Context) ([]ExternalLoginPr
 	var out []ExternalLoginProvider
 	for _, p := range slices.Backward(ps) {
 		if p.State == identity.LoginProviderEnabled && externalLoginKind(p.Settings.Kind) {
+			// A Mastodon server under a domain action has no button.
+			switch err := s.checkLoginProviderServer(ctx, p); {
+			case errors.Is(err, ErrLoginProviderUnavailable):
+				continue
+			case err != nil:
+				return nil, err
+			}
 			out = append(out, ExternalLoginProvider{
 				ID: p.ID, Kind: p.Settings.Kind, DisplayName: p.Settings.DisplayName, AllowSignup: p.Settings.AllowSignup,
 			})
@@ -145,6 +154,9 @@ func (s *Service) enabledLoginProvider(ctx context.Context, id string) (identity
 	}
 	if p.State != identity.LoginProviderEnabled || !externalLoginKind(p.Settings.Kind) {
 		return identity.LoginProvider{}, ErrLoginProviderUnavailable
+	}
+	if err := s.checkLoginProviderServer(ctx, p); err != nil {
+		return identity.LoginProvider{}, err
 	}
 	return p, nil
 }
@@ -195,6 +207,9 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 	p, err := s.enabledLoginProvider(ctx, providerID)
 	if err != nil {
 		return ExternalLoginStart{}, err
+	}
+	if p.Settings.Kind == identity.LoginProviderMastodon {
+		return s.beginMastodonLogin(ctx, p, returnTo)
 	}
 	op, err := s.d.OIDC.Discover(ctx, p.Settings.Issuer)
 	if err != nil {
@@ -319,7 +334,12 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 	if in.Error != "" || in.Code == "" {
 		return out, fmt.Errorf("%w: provider %s answered %q", ErrExternalLoginFailed, p.ID, in.Error)
 	}
-	tok, err := s.oidcIDToken(ctx, p, in.Code, t)
+	var tok IDToken
+	if p.Settings.Kind == identity.LoginProviderMastodon {
+		tok, err = s.mastodonAccount(ctx, p, in.Code, t)
+	} else {
+		tok, err = s.oidcIDToken(ctx, p, in.Code, t)
+	}
 	if errors.Is(err, ErrInvalidIDToken) {
 		return out, fail(fmt.Errorf("%w: %w", ErrExternalLoginFailed, err))
 	}
