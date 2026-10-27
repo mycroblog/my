@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 
+	"github.com/mycroblog/my/internal/adapter/oidc"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
@@ -55,6 +56,9 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		// A client_id that is an https URL is a Client ID Metadata Document, fetched through the
 		// SSRF guard while the instance setting accepts them (ADR-0090 §1).
 		HTTP: a.HTTPClient,
+		// Users sign in and sign up with the OpenID Connect providers that administrators set up;
+		// Discovery, the JWKS, and the token exchange go through the same guard (ADR-0106 §5).
+		OIDC: oidc.New(oidc.Options{HTTP: a.HTTPClient, Clock: a.Clock}),
 		MetadataDocumentClients: func(ctx context.Context) (bool, error) {
 			s, err := a.Instance.Settings(ctx)
 			return s.OAuthMetadataDocumentClients(), err

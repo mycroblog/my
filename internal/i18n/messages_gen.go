@@ -403,6 +403,69 @@ func (l *Localizer) ServerAuthErrorTitle() string {
 	return l.format("server:auth.error.title", nil)
 }
 
+// ServerAuthExternalDenied formats "server:auth.external.denied". Alert on the sign-in page when the account at the external login provider does not meet the conditions that the administrators set (such as an organization).
+//
+//	en: This server does not accept that account of the other service.
+func (l *Localizer) ServerAuthExternalDenied() string {
+	return l.format("server:auth.external.denied", nil)
+}
+
+// ServerAuthExternalExpired formats "server:auth.external.expired". Alert on the sign-in page when the sign-in with an external login provider (or the account creation after it) expired or was used already.
+//
+//	en: The sign-in took too long or was already used. Start it again.
+func (l *Localizer) ServerAuthExternalExpired() string {
+	return l.format("server:auth.external.expired", nil)
+}
+
+// ServerAuthExternalFailed formats "server:auth.external.failed". Alert on the sign-in page when the external login provider did not complete the sign-in: the user cancelled it, or the service answered an error.
+//
+//	en: The sign-in with the other service did not complete. Try again, or sign in another way.
+func (l *Localizer) ServerAuthExternalFailed() string {
+	return l.format("server:auth.external.failed", nil)
+}
+
+// ServerAuthExternalHeading formats "server:auth.external.heading". Heading above the buttons of the sign-in and registration pages that sign in with another service (an external login provider) that the server's administrators set up.
+//
+//	en: Or sign in with
+func (l *Localizer) ServerAuthExternalHeading() string {
+	return l.format("server:auth.external.heading", nil)
+}
+
+// ServerAuthExternalNotLinked formats "server:auth.external.not_linked". Alert on the sign-in page when no account is linked to the account at the external login provider and new accounts cannot be created with it.
+//
+//	en: No account on this server is linked to that account of the other service. Sign in another way.
+func (l *Localizer) ServerAuthExternalNotLinked() string {
+	return l.format("server:auth.external.not_linked", nil)
+}
+
+// ServerAuthExternalSignUpEmailHint formats "server:auth.external.sign_up.email_hint". Hint under the email address on the registration page of an account at an external login provider, when the provider did not confirm the address.
+//
+//	en: You receive email at this address. We send a link to confirm it.
+func (l *Localizer) ServerAuthExternalSignUpEmailHint() string {
+	return l.format("server:auth.external.sign_up.email_hint", nil)
+}
+
+// ServerAuthExternalSignUpEmailVerified formats "server:auth.external.sign_up.email_verified". Hint under the email address on the registration page of an account at an external login provider, when the provider confirmed the address. {provider} is the provider's name.
+//
+//	en: {provider} confirmed this address. If you change it, we send a link to confirm the new one.
+func (l *Localizer) ServerAuthExternalSignUpEmailVerified(provider string) string {
+	return l.format("server:auth.external.sign_up.email_verified", map[string]any{"provider": provider})
+}
+
+// ServerAuthExternalSignUpTitle formats "server:auth.external.sign_up.title". Title of the registration page for an account at an external login provider. {provider} is the provider's name as the administrators wrote it.
+//
+//	en: Create an account with {provider}
+func (l *Localizer) ServerAuthExternalSignUpTitle(provider string) string {
+	return l.format("server:auth.external.sign_up.title", map[string]any{"provider": provider})
+}
+
+// ServerAuthExternalUnavailable formats "server:auth.external.unavailable". Error page when the user opens the sign-in of an external login provider that does not exist or is turned off.
+//
+//	en: This way of signing in is not available.
+func (l *Localizer) ServerAuthExternalUnavailable() string {
+	return l.format("server:auth.external.unavailable", nil)
+}
+
 // ServerAuthForgotPasswordEmailLabel formats "server:auth.forgot_password.email_label". Label of the email address field of the form that asks for a password reset link.
 //
 //	en: Email address

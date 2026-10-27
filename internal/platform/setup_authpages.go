@@ -30,5 +30,7 @@ func (a *App) setUpAuthPages(cfg *config.Config) {
 		PasswordReset: a.Identity,
 		// Notification emails stop from their own link, without signing in (ADR-0086 §4).
 		MailUnsubscribe: a.Identity,
+		// Users sign in and sign up with the login providers that administrators set up (FR-010).
+		ExternalLogins: a.Identity,
 	}).Register(surfaceRouter{a, surfaceOAuth})
 }

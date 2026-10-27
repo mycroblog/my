@@ -197,6 +197,22 @@ type SignedUp struct {
 // kernel.ErrHumanCheckFailed, and a service that cannot check it with an error wrapping
 // kernel.ErrHumanCheckUnavailable (fail closed, ADR-0042 §4).
 func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) {
+	return s.signUp(ctx, in, nil)
+}
+
+// externalSignUp is the account at an external login provider that a sign-up links its new user
+// to (SignUpExternal); the IDs are made before the transaction, so that a retry writes the same
+// rows.
+type externalSignUp struct {
+	identity identity.ExternalIdentity
+	linkID   string
+	// emailVerified marks the new user's address verified: the provider verified it.
+	emailVerified bool
+}
+
+// signUp is SignUp, or with ext a sign-up without a password that links the new user to the
+// account at an external login provider (SignUpExternal).
+func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignUp) (SignedUp, error) {
 	mode, err := s.registrationMode(ctx)
 	if err != nil {
 		return SignedUp{}, err
@@ -207,8 +223,10 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 	if err := identity.ValidateEmail(in.Email); err != nil {
 		return SignedUp{}, err
 	}
-	if err := identity.ValidatePassword(in.Password); err != nil {
-		return SignedUp{}, err
+	if ext == nil {
+		if err := identity.ValidatePassword(in.Password); err != nil {
+			return SignedUp{}, err
+		}
 	}
 	if err := account.ValidateUsername(in.Username); err != nil {
 		return SignedUp{}, err
@@ -261,7 +279,7 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 		invite = &inv
 	}
 
-	p, err := s.prepareUser(ctx, RegisterInput{Username: in.Username, Password: in.Password, Locale: in.Locale})
+	p, err := s.prepareUser(ctx, RegisterInput{Username: in.Username, Password: in.Password, Locale: in.Locale, passwordless: ext != nil})
 	if err != nil {
 		return SignedUp{}, err
 	}
@@ -284,6 +302,9 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 		state.State = identity.RegistrationApproved
 	}
 	verification := s.verificationRequest(p.user.ID, email.ID, now)
+	if ext != nil && ext.emailVerified {
+		verification = nil
+	}
 	session, err := s.prepareSession(ctx, p.user.ID, in.IP, in.UserAgent, in.CurrentToken, now)
 	if err != nil {
 		return SignedUp{}, err
@@ -304,6 +325,11 @@ func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) 
 		}
 		if err := repo.InsertPrimaryEmail(ctx, tx, email); err != nil {
 			return err
+		}
+		if ext != nil {
+			if err := s.writeExternalSignUp(ctx, tx, *ext, p.user.ID, email.ID, now); err != nil {
+				return err
+			}
 		}
 		if err := repo.InsertRegistrationApplication(ctx, tx, app); err != nil {
 			return err

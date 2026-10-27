@@ -27,5 +27,5 @@
 </div>
 </form>
 <script type="module" src="{{.Script}}"></script>
-{{end}}{{if .CanResetPassword}}<p class="links"><a href="/auth/forgot_password">{{.L.ServerAuthSignInForgotPasswordLink}}</a></p>{{end}}{{if .CanSignUp}}<p class="links"><a href="/auth/sign_up">{{.L.ServerAuthSignInSignUpLink}}</a></p>{{end}}
+{{end}}{{template "external_logins" .}}{{if .CanResetPassword}}<p class="links"><a href="/auth/forgot_password">{{.L.ServerAuthSignInForgotPasswordLink}}</a></p>{{end}}{{if .CanSignUp}}<p class="links"><a href="/auth/sign_up">{{.L.ServerAuthSignInSignUpLink}}</a></p>{{end}}
 {{end}}
