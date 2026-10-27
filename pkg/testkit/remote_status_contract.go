@@ -81,6 +81,7 @@ func RemoteStatusContract(t *testing.T, newHarness RemoteStatusFactory) {
 		{"StoresOnlyCreatesRelatedToLocalAccounts", remoteScope},
 		{"RecordsTheDeclaredParts", remoteRecordsParts},
 		{"KeepsTheAuthorAndTheOrigin", remoteChecksAuthor},
+		{"TakesTheAddressingOfTheActivityOnlyFromTheAuthor", remoteTakesAddressingFromTheAuthor},
 		{"RevisesOnlyWithNewerUpdates", remoteRevises},
 		{"TakesARecentUpdateAsItsCreate", remoteUpdateAsCreate},
 		{"DeletesIntoATombstone", remoteDeletes},
@@ -282,13 +283,19 @@ func (e *remoteStatusEnv) follow(t *testing.T, follower, followee string) {
 // record records doc as received, signed by its actor, without processing it.
 func (e *remoteStatusEnv) record(t *testing.T, doc []byte) federation.IRI {
 	t.Helper()
+	return e.recordAs(t, doc, federation.TrustSigned)
+}
+
+// recordAs records doc as received with trust.
+func (e *remoteStatusEnv) recordAs(t *testing.T, doc []byte, trust federation.Trust) federation.IRI {
+	t.Helper()
 	ctx := t.Context()
 	env, err := federation.ReadEnvelope(doc, appfederation.CanonicalHost)
 	if err != nil {
 		t.Fatalf("ReadEnvelope(%s): %v", doc, err)
 	}
 	a := federation.ReceivedActivity{
-		ActivityURI: env.ActivityURI(doc), ActorURI: env.Actor, Type: env.Type, Scheme: "cavage", Trust: federation.TrustSigned,
+		ActivityURI: env.ActivityURI(doc), ActorURI: env.Actor, Type: env.Type, Scheme: "cavage", Trust: trust,
 		ReceivedAt: e.clock.Now(),
 	}
 	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -740,6 +747,51 @@ func remoteChecksAuthor(t *testing.T, e *remoteStatusEnv) {
 	e.expect(t, remoteActivity(t, "Delete", bob+"#delete", bob, byID), appfederation.InboxDropped)
 	if p := e.post(t, byID); p.Revision.Seq != 1 {
 		t.Errorf("bob revised alice's post: %+v", p.Revision)
+	}
+}
+
+// remoteTakesAddressingFromTheAuthor checks that a post without addressing takes the addressing
+// of the activity that carried it only when its author signed the activity: a Create that
+// someone else signed takes the post from its origin and nothing of the activity.
+func remoteTakesAddressingFromTheAuthor(t *testing.T, e *remoteStatusEnv) {
+	const alice = "https://remote.example/users/alice"
+	e.follower(t, alice)
+	published := remoteNow.Add(-time.Hour)
+	unaddressed := func(id string) map[string]any {
+		n := remoteNote(id, alice, published, nil)
+		delete(n, "to")
+		delete(n, "cc")
+		return n
+	}
+	create := func(id string) []byte {
+		b, err := json.Marshal(map[string]any{
+			"@context": "https://www.w3.org/ns/activitystreams", "id": id + "/activity", "type": "Create", "actor": alice,
+			"object": unaddressed(id), "to": []string{string(federation.PublicIRI)},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+
+	// Signed by its author, the post takes the activity's addressing.
+	signed := alice + "/notes/unaddressed-signed"
+	e.expect(t, create(signed), appfederation.InboxHandled)
+	if p := e.post(t, signed); p.Status.Visibility != content.VisibilityPublic {
+		t.Errorf("post of a signed Create = %s, want public from the activity", p.Status.Visibility)
+	}
+
+	// Signed by someone else, it does not.
+	relayed := alice + "/notes/unaddressed-relayed"
+	e.fetcher.serve(t, relayed, unaddressed(relayed))
+	uri := e.recordAs(t, create(relayed), federation.TrustRefetch)
+	if _, err := e.processor.Process(t.Context(), uri, federation.TrustRefetch); err != nil {
+		t.Fatalf("Process(%s): %v", uri, err)
+	}
+	if e.stored(t, relayed) {
+		if p := e.post(t, relayed); p.Status.Visibility != content.VisibilityDirect {
+			t.Errorf("post of a relayed Create = %s, want direct: no addressing of its author", p.Status.Visibility)
+		}
 	}
 }
 

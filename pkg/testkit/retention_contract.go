@@ -498,7 +498,7 @@ func retentionFederationRecords(t *testing.T, e *retentionEnv) {
 			got.document = err == nil
 			_, err = e.rh.Inbox.FindReceivedActivity(ctx, tc.r.received)
 			got.activity = err == nil
-			got.tombstone, err = e.rh.Inbox.RemoteObjectTombstoned(ctx, tc.r.received+"/object")
+			got.tombstone, err = e.rh.Inbox.RemoteObjectTombstoned(ctx, tc.r.received+"/object", "https://remote.example/users/alice")
 			if err != nil {
 				t.Fatal(err)
 			}

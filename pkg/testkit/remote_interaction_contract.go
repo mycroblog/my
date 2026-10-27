@@ -770,6 +770,40 @@ func likeWithContent(t *testing.T, id, actor, object, text, typ string) []byte {
 	return b
 }
 
+// storeRemoteEmoji records the custom emoji shortcode of domain with its image, as a document of
+// the remote account owner (an actor of domain) does.
+func (e *remoteInteractionEnv) storeRemoteEmoji(t *testing.T, owner, domain, shortcode, image string) {
+	t.Helper()
+	ownerID := e.actor(t, owner)
+	err := e.ih.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		_, err := e.content.RecordRemoteEmojis(t.Context(), tx, ownerID, domain, []appcontent.RemoteEmojiInput{
+			{URI: "https://" + domain + "/emojis/" + shortcode, Shortcode: shortcode, ImageURL: image},
+		})
+		return err
+	})
+	if err != nil {
+		t.Fatalf("RecordRemoteEmojis(%s@%s): %v", shortcode, domain, err)
+	}
+}
+
+// emojiImageURL returns the remote URL of the current image of the custom emoji shortcode of domain.
+func (e *remoteInteractionEnv) emojiImageURL(t *testing.T, shortcode, domain string) string {
+	t.Helper()
+	emoji, err := e.ih.Statuses.FindCustomEmojiByShortcode(t.Context(), shortcode, domain)
+	if err != nil {
+		t.Fatalf("FindCustomEmojiByShortcode(%s, %s): %v", shortcode, domain, err)
+	}
+	var url string
+	err = e.ih.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		url, err = e.ih.Statuses.CurrentCustomEmojiImageURL(t.Context(), tx, emoji.ID)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("CurrentCustomEmojiImageURL(%s): %v", emoji.ID, err)
+	}
+	return url
+}
+
 // reactionCounts returns the reaction counts of a status by the name of their emoji: the
 // Unicode emoji, or "shortcode@domain" of a custom emoji.
 func (e *remoteInteractionEnv) reactionCounts(t *testing.T, statusID string) map[string]int64 {
@@ -889,12 +923,19 @@ func remoteReactsToLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		const actor = "https://example.org/users/akko"
 		fan := e.actor(t, actor)
 		object := at("https://remote.example/objects/9f0e93499d8314a9")
+		// The third server's emoji is stored from its own documents; the reaction borrows it as
+		// it is.
+		const hugImage = "https://other.example/files/hug.png"
+		e.storeRemoteEmoji(t, "https://other.example/users/hugger", "other.example", "hug", hugImage)
 		for _, name := range []string{"emoji-react", "emoji-react-custom", "emoji-react-remote"} {
 			e.expect(t, fixtureDocument(t, "akkoma", "3.20", name, object...), appfederation.InboxHandled)
 		}
 		// Unicode, its own server's emoji (an Emoji without an id), and a third server's.
 		mine := []string{"hug@other.example", "mouse@example.org", "🧡"}
 		check(t, fan, map[string]int64{"🧡": 1, "mouse@example.org": 1, "hug@other.example": 1}, mine...)
+		if got := e.emojiImageURL(t, "hug", "other.example"); got != hugImage {
+			t.Errorf("image of the borrowed emoji = %q, want %q kept", got, hugImage)
+		}
 		if got := e.reactionNotifications(t, author, fan); !slices.Equal(got, mine) {
 			t.Errorf("reaction notifications = %v, want one per emoji", got)
 		}
@@ -933,6 +974,37 @@ func remoteRefusesReactions(t *testing.T, e *remoteInteractionEnv) {
 	e.expect(t, likeWithContent(t, alice+"/react/1", alice, public.URI, "hello", "EmojiReact"), appfederation.InboxDropped)
 	// A custom emoji without its Emoji tag is no reaction.
 	e.expect(t, likeWithContent(t, alice+"/react/2", alice, public.URI, ":blobcat:", "EmojiReact"), appfederation.InboxDropped)
+	// A custom emoji of another server is taken only when that server's documents stored it:
+	// the reaction neither records nor changes it.
+	borrowed := func(id, image string) []byte {
+		b, err := json.Marshal(map[string]any{
+			"@context": "https://www.w3.org/ns/activitystreams", "id": id, "type": "EmojiReact", "actor": alice, "object": public.URI,
+			"content": ":blob:", "tag": []any{map[string]any{
+				"type": "Emoji", "id": "https://other.example/emojis/blob", "name": "blob",
+				"icon": map[string]any{"type": "Image", "url": image},
+			}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	e.expect(t, borrowed(alice+"/react/borrowed-1", "https://remote.example/files/blob.png"), appfederation.InboxDropped)
+	if _, err := e.ih.Statuses.FindCustomEmojiByShortcode(t.Context(), "blob", "other.example"); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindCustomEmojiByShortcode(blob, other.example) after a borrowed reaction = %v, want ErrNotFound", err)
+	}
+	const blobImage = "https://other.example/files/blob.png"
+	e.storeRemoteEmoji(t, "https://other.example/users/blobber", "other.example", "blob", blobImage)
+	e.expect(t, borrowed(alice+"/react/borrowed-2", "https://remote.example/files/blob-2.png"), appfederation.InboxHandled)
+	if got := e.emojiImageURL(t, "blob", "other.example"); got != blobImage {
+		t.Errorf("image of the borrowed emoji = %q, want %q kept", got, blobImage)
+	}
+	if got := e.reactionsOf(t, aliceID, public.ID); !slices.Equal(got, []string{"blob@other.example"}) {
+		t.Errorf("reactions with a borrowed emoji = %v, want blob@other.example", got)
+	}
+	if err := e.interactions.RemoveRemoteReaction(t.Context(), appcontent.RemoteReactionUndo{URI: alice + "/react/borrowed-2", AccountID: aliceID, StatusID: public.ID}); err != nil {
+		t.Fatalf("RemoveRemoteReaction: %v", err)
+	}
 	// Nor does a remote account react to a followers-only post it cannot see.
 	e.expect(t, likeWithContent(t, alice+"/react/3", alice, private.URI, "👍", "EmojiReact"), appfederation.InboxDropped)
 	for _, st := range []content.Status{public, private} {

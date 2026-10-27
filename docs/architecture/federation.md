@@ -97,12 +97,12 @@ ADR-0033 の推奨案に従い、**署名の検証までを同期**、**処理�
 | 3 | IP 単位のレート制限（ADR-0019 §5。1,000 / 5 分、IPv6 は /64 単位） | `429` + `Retry-After` |
 | 4 | 署名ヘッダを解析し、`keyId` のホストを得る | `401`（署名なし）/ `400`（解析不能） |
 | 5 | `keyId` のホストのドメイン単位の処分（`federation` の制限、§11） | `403` |
-| 6 | ドメイン単位のレート制限（`keyId` のホスト。2,000 / 5 分） | `429` + `Retry-After` |
-| 7 | ダイジェストの照合と、鍵の要らない検査（必須の対象・時間窓・宣言されたアルゴリズム。`SignatureVerifier.Check`） | `401` + `Accept-Signature` |
-| 8 | 本文の JSON から `id`・`type`・`actor`・`object`（の `id`）だけを読む（`federation.ReadEnvelope`）。`type` と `https` の `actor` が必須で、IRI は 2,048 バイト、`type` は 255 バイトまで | `400` |
-| 9 | 未知の Actor の自分自身の `Delete` / `Update`（`actor == object`、`accounts (uri)` に無い）なら、鍵を取りに行かずに捨てる（ADR-0019 §7） | `202` |
-| 10 | 鍵の解決（未知・期限切れなら Actor を取得。5 秒で打ち切る） | `401`（取得できない）/ `503`（取得先がサーキットブレーカーで止まっている） |
-| 11 | 署名の検証（ADR-0032。保存した鍵で検証できなければ鍵を取り直して 1 回だけ再検証する） | `401` + `Accept-Signature` |
+| 6 | ダイジェストの照合と、鍵の要らない検査（必須の対象・時間窓・宣言されたアルゴリズム。`SignatureVerifier.Check`） | `401` + `Accept-Signature` |
+| 7 | 本文の JSON から `id`・`type`・`actor`・`object`（の `id`）だけを読む（`federation.ReadEnvelope`）。`type` と `https` の `actor` が必須で、IRI は 2,048 バイト、`type` は 255 バイトまで | `400` |
+| 8 | 未知の Actor の自分自身の `Delete` / `Update`（`actor == object`、`accounts (uri)` に無い）なら、鍵を取りに行かずに捨てる（ADR-0019 §7） | `202` |
+| 9 | 鍵の解決（未知・期限切れなら Actor を取得。5 秒で打ち切る） | `401`（取得できない）/ `503`（取得先がサーキットブレーカーで止まっている） |
+| 10 | 署名の検証（ADR-0032。保存した鍵で検証できなければ鍵を取り直して 1 回だけ再検証する） | `401` + `Accept-Signature` |
+| 11 | ドメイン単位のレート制限（`keyId` のホスト。2,000 / 5 分）。署名が検証できた要求だけを数える | `429` + `Retry-After` |
 | 12 | 署名者と `actor` の照合。一致しなければジョブに `trust = refetch` を付ける。一致すれば、本文の `proof`（FEP-8b32）を検証する（下記）。`refetch` のアクティビティと `Announce` は、署名者が参加中（`accepted`）のリレーの Actor ならジョブに `relay_id` を付ける（§13） | `401` + `Accept-Signature`（`proof` が検証できない） |
 | 13 | 1 つの短いトランザクションで、`received_activities` に `ON CONFLICT DO NOTHING` で挿入し、行が増えたときだけ `received_activity_documents` と `federation.inbox` ジョブ（`queue.Outbox`）を書く | — |
 | 14 | 署名者のドメインの `instance_health` を `available` に戻す（§7.3） | — |
@@ -128,6 +128,7 @@ ADR-0033 の推奨案に従い、**署名の検証までを同期**、**処理�
 
 1. 原本を正規化する（§4）。正規化できなければ `Fail`（dead job に残る）。`relay_id` の付いたアクティビティは、何かを取得する前にリレーの関門を通す（§13）。
 2. `trust = refetch` なら、オブジェクトを `id` からオリジンに取得し直し（§6）、取得した文書を使う。`Announce` 以外で取得できなければ捨てる。
+   オリジンで確かめられずに捨てる `trust = refetch` のアクティビティ（リレーの関門で捨てるものを含む）は、`received_activities` の行と原本を消す（`InboxRepository.ReleaseUnconfirmedActivity`）。重複排除のキーは確かめたアクティビティだけが持ち、同じアクティビティが後から届けば受け付ける。
 3. 主体（`actor`）のアカウントを解決する（未知なら取得、§6）。主体やそのドメインに `federation` の制限があれば捨てる（`Delete` / `Undo` / `Reject` は通す。§11）。
 4. 種類ごとのハンドラ（§3.4）を呼ぶ。ハンドラは 1 つの短いトランザクションで、各モジュールの公開 API を呼んで書く。
 5. 結果: 書けたら `Done`、取得の一時的な失敗は `Retry`（ADR-0004 のバックオフ）、恒久的に処理できないものは `Fail`。
@@ -150,7 +151,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 状況 | 振る舞い |
 | --- | --- |
 | 同じアクティビティの再処理 | 対象テーブルの一意制約（`statuses (uri)`、`boosts (uri)`、`follows (uri)`、`follow_resends (uri)`、`favourites (uri)`、`blocks (uri)`、`reports (uri)`、版の `(status_id, seq)`）で no-op |
-| `Create` より先に `Delete` | `remote_object_tombstones` に URI を記録する。後から届いた `Create` / `Update` / 取得は、tombstone があれば捨てる |
+| `Create` より先に `Delete` | `remote_object_tombstones` に URI と `Delete` の主体を記録する。後から届いた `Create` / `Update` / 取得は、その主体の（主体が `attributedTo` の）オブジェクトに tombstone があれば捨てる |
 | `Create` より先に `Update` | 取り込み範囲（ADR-0034）に入るなら `Create` として扱う。`published` が 1 日より古いものは取り込まない（Mastodon と同じ） |
 | 古い `Update` が後から届く | `updated`（無ければ `published`）が現在版の `revised_at` 以下なら版を作らない |
 | `Follow` より先に `Undo Follow` | 埋め込みの `Follow` があれば、主体とその `object` の組を `remote_follow_tombstones` に記録し、後から届いた同じ組の最初の `Follow` を捨てる（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`object` が URI だけなら、その URI を tombstone に記録して同じ URI の `Follow` を捨てる |
@@ -162,7 +163,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - tombstone は `origin = remote` の `status_deletions`、未知の URI のための `remote_object_tombstones`、未知の `Follow` の組のための `remote_follow_tombstones`（後の 2 つは 30 日で消す）の 3 つです。
 - `remote_object_tombstones` は `InboxProcessor` が書きます。`Delete` / `Undo` のハンドラが無いか、ハンドラが `ErrUnknownObject` を返したとき、対象の URI が主体と同じオリジンで主体自身でなければ記録します（ほかのサーバーのオブジェクトを封じさせない。`federation.TombstoneFor`）。
   `Undo` が主体自身の `Follow` を埋め込んでいれば、URI の代わりに組を `remote_follow_tombstones` に記録します（`federation.FollowTombstoneFor`。主体自身の `Follow` しか封じない）。
-- `Delete` / `Undo` 以外のアクティビティは、ハンドラを呼ぶ前に、アクティビティの URI に tombstone があれば捨てます。`Create` / `Update`（自分自身の Actor 以外）は、オブジェクトの URI の tombstone でも捨てます。
+- `Delete` / `Undo` 以外のアクティビティは、ハンドラを呼ぶ前に、アクティビティの URI に同じ主体が残した tombstone があれば捨てます。`Create` / `Update`（自分自身の Actor 以外）は、オブジェクトの URI の tombstone でも捨てます。
+  tombstone は残した主体のものしか封じません（`InboxRepository.RemoteObjectTombstoned` は URI と主体で引く）。同じオリジンのほかの主体の `Delete` / `Undo` は、その主体のものではないオブジェクトやアクティビティを捨てさせません。取得した投稿は `attributedTo` の主体の tombstone で判定し、作者の分からない取得の前には `status_deletions` だけを見ます。
   `Follow` は、主体と `object` の組に使い終えていない `remote_follow_tombstones` があれば捨て、同じトランザクションで自分の URI を `Undo` の `activity_uri` で `remote_object_tombstones` に記録します。
   これで組の tombstone は使い終わり、同じ `Follow` の再処理は URI の tombstone で捨てられ、その次の `Follow` は通ります。
 - アクティビティの `object` が URI だけのとき、受信した文書の中に埋め込まれていない対象は、ローカルの DB から引くか、取り込み範囲に入るときだけ取得します。
@@ -182,13 +184,13 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Create` | `name` を持ち、投票のあるローカルの投稿への返信の `Note`（投票への回答。Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial が送る形） | `content.RecordRemotePollVote`（FR-112）。`name` が選択肢の題で、投稿としては取り込まない。同じ `Note` は 1 票で、締め切り後・無い選択肢・単一選択の 2 つ目の回答・主体が見られない投稿への回答は捨てる。投票のない投稿への返信は投稿として扱う |
 | `Update` | 投稿 | `content.ReviseRemoteStatus`（新しい版）。投稿の作者とアクティビティの主体が一致し、オリジンが同じであること（[ActivityPub §7.3](https://www.w3.org/TR/activitypub/#update-activity-inbox)）。未知の投稿は §3.3 のとおり `Create` として扱う |
 | `Update` | Actor（自分自身） | `RemoteActors.ReceiveActorUpdate`。オリジンが同じ埋め込みの文書で `account.UpsertRemoteActor`（内容が変わればプロフィールの版が増える）。埋め込みが無い・`id` が主体と一致しなければ取得し直す。削除済みの Actor の `Update` は捨てる |
-| `Delete` | 投稿・`Tombstone` | `content.DeleteRemoteStatus`（`origin = remote`）。未知の URI が、承認済みの引用の `QuoteAuthorization` なら、その引用を `content.RevokeQuoteAuthorization` で取り消す（ADR-0069 §2）。どちらでもなければ tombstone |
-| `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が自動で答える（ADR-0069 §2）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の許可に当てはまる（`content.MayQuote`。`local` の投稿はリモートからは引用させない）なら、`quote_authorizations` に承認を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を承認する |
+| `Delete` | 投稿・`Tombstone` | `content.DeleteRemoteStatus`（`origin = remote`）。未知の URI が、承認済みの引用の `QuoteAuthorization` なら、その引用を `content.RevokeQuoteAuthorization` で取り消す（ADR-0069 §2。承認を出した人、つまり主体が引用された投稿の作者である引用だけ）。どちらでもなければ tombstone |
+| `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が自動で答える（ADR-0069 §2）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の許可に当てはまり（`content.MayQuote`。`local` の投稿はリモートからは引用させない）、引用元の投稿が保存済みなら主体の投稿であるなら、`quote_authorizations` に承認を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を承認する |
 | `Accept` / `Reject` | このサーバーが送った `QuoteRequest`（`id` が `{引用元の IRI}/quote_request`） | `QuoteHandlers.ReceiveQuoteAnswer`。主体は引用先の作者でなければならない。`Accept` は `result` の `QuoteAuthorization` を取得し、§6.3 の引用先の検証と同じ規則で確かめてから `content.AcceptQuote` で承認する（承認は §7.1 の `Update` で伝わる）。`Reject` は `content.RejectQuote` で拒否にする。フォローへの答えより先に照合する |
 | `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。投稿・フォロー・ブーストは消去ジョブが消す |
 | `Announce` | 投稿（主体が参加中のリレーの Actor で `relay_id` の付いたもの） | 投稿をオリジンから取得し、`public` なら取り込んで `relayed_statuses` に記録する。ブーストとしては記録しない（§13） |
 | `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0034）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿は捨てる |
-| `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0052）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込み、ドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
+| `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0052）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
 | `Like` | ローカルの投稿 | `_misskey_reaction`、無ければ `content` が `EmojiReact` と同じ規則で絵文字なら `content.RecordRemoteReaction`（Misskey のリアクション、FEP-c0e0）。それ以外は `content.RecordRemoteFavourite`（お気に入り）。主体が閲覧できない投稿（`ContextObjectFetch`）は捨てる |
 | `Block` | ローカルの Actor | `graph.ReceiveBlock`。両方向のフォローを終了し、相手の投稿を閲覧者から隠す（`feed_exclusions`）。対象がローカルの利用者の Actor でなければ捨てる |
 | `Flag` | ローカルの Actor / 投稿 | `moderation.FileRemoteReport`（`reports.uri`）。送信者のドメインに `report_intake` の制限があれば捨てる。通報の対象は `object` の最初のローカルの Actor、無ければ最初のローカルの投稿の作者で、その作者の投稿を `report_statuses` に残す。ローカルの対象が無ければ捨てる |
@@ -215,7 +217,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 単数と配列 | 配列になり得るプロパティは、単数・配列・`null` のどれでも配列として読む（`type` も配列を許し、知っている型の最初のものを使う） |
 | リンクとオブジェクト | `object`・`inReplyTo`・`attributedTo`・`actor` などは、文字列（IRI）・`Link`（`href`）・埋め込みのオブジェクト（`id`）のどれでも IRI を取り出す。埋め込みの中身を使うのはオリジンが同じときだけ |
 | 公開の宛先 | `https://www.w3.org/ns/activitystreams#Public`、`as:Public`、`Public` を同じ値として扱う（[ActivityPub §5.6](https://www.w3.org/TR/activitypub/#public-addressing)） |
-| 公開範囲 | `to` に公開 → `public`、`cc` に公開 → `unlisted`、作者の `followers` が `to` / `cc` に → `private`、それ以外 → `direct`。リモートの投稿が `local` になることはない |
+| 公開範囲 | `to` に公開 → `public`、`cc` に公開 → `unlisted`、作者の `followers` が `to` / `cc` に → `private`、それ以外 → `direct`。投稿に `to` も `cc` も無ければ、作者が署名した（`trust = signed`）`Create` / `Update` の宛先を使う。ほかの人が署名したアクティビティの宛先は使わない。リモートの投稿が `local` になることはない |
 | 本文 | `contentMap` の言語ごとに 1 行（`status_revision_bodies`）。`content` だけなら `contentMap` の最初の言語、なければ `und` の 1 行。言語タグは BCP 47 として正規化し、不正なら `und`（NFR-I18N-5） |
 | CW | `summary`（無ければ `summaryMap` の最初の値）をプレーンテキストにして `spoiler_text`。`sensitive` は `toot:sensitive` |
 | 変換する型 | `Article` / `Page` / `Event` / `Image` / `Video` / `Audio` は、`name` を太字の段落、`summary` を段落にし、`url` へのリンクを付けた本文にする（Mastodon の `CONVERTED_TYPES` と同じ） |
@@ -307,7 +309,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
     2. `fep_044f` の引用で、引用先がリモートの投稿なら承認を確かめる。引用元と引用先の作者が同じなら、`QuoteAuthorization` なしで承認する。
        そうでなければ `quoteAuthorization` を取得し、`QuoteAuthorization` で、IRI のホストと `attributedTo` が引用先の作者のもの、`interactingObject` が引用元、`interactionTarget` が引用先のときだけ `content.AcceptQuote` で承認する（Mastodon の `VerifyQuoteService` と同じ）。
     3. 検証できない・取得できない承認は `info` のログを残してジョブを完了にし、引用は `pending` のまま残ります。`quoteAuthorization` を足す `Update` を受けると、新しいペイロードでもう一度確かめます。
-    ローカルの投稿への `fep_044f` の引用は、`quoteAuthorization` がこのサーバーの `quote_authorizations` の、取り消されていない承認で、引用元と引用先が一致するときだけ承認します（`content.VerifyLocalQuoteAuthorization`）。
+    ローカルの投稿への `fep_044f` の引用は、`quoteAuthorization` がこのサーバーの `quote_authorizations` の、取り消されていない承認で、引用元と引用先と、承認を受けた人（依頼の主体）が引用元の作者と一致するときだけ承認します（`content.VerifyLocalQuoteAuthorization`）。
   - **スレッドを開いたとき**: `GET /api/v1/statuses/{id}/context` が、閲覧できた投稿について `StatusHandlers.FetchThread` を呼び、応答は待たずに保存済みのものだけを返します（取得したものは次に開いたときに出る）。返信先の無いローカルの投稿は何もしません（返信は配送で届く）。
     同じ投稿は 1 時間に 1 回だけです（KV の名前空間 `federation.thread_fetch`、キーは URI の SHA-256、`IncrBy` で最初の 1 回だけ投入する）。
   - `federation.fetch_object` のペイロードは `uri`、スレッドの起点の `thread`（受信時は空）、残りの祖先の深さ `ancestors`、残りの返信の深さ `replies`、祖先の取得の印 `up` で、冪等キーは `fetch_object:<ペイロードの SHA-256>` です。1 つのジョブは 1 つの投稿を扱います。

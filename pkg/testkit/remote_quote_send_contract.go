@@ -151,7 +151,7 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("quote notifications = %d, want 1", n)
 	}
 	id := s.AuthorizationURI[strings.LastIndexByte(s.AuthorizationURI, '/')+1:]
-	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, id, q.URI, public.ID); err != nil || !ok {
+	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, id, q.URI, quoter, public.ID); err != nil || !ok {
 		t.Errorf("VerifyLocalQuoteAuthorization = %v, %v; want true", ok, err)
 	}
 	// Its Note quotes the post with every alias, the approval, and the fallback, and says who
@@ -365,6 +365,32 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 2 || sent[1].Doc.Result != result {
 		t.Errorf("answers = %+v, want the same QuoteAuthorization twice", sent)
 	}
+	// The approval is bob's: it approves no quote of another account.
+	approval := string(result)[strings.LastIndexByte(string(result), '/')+1:]
+	const dave = "https://remote.example/users/dave"
+	daveID := e.actor(t, dave)
+	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, approval, quoting, daveID, public.ID); err != nil || ok {
+		t.Errorf("VerifyLocalQuoteAuthorization for another account = %v, %v; want false", ok, err)
+	}
+	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, approval, quoting, bobID, public.ID); err != nil || !ok {
+		t.Errorf("VerifyLocalQuoteAuthorization for bob = %v, %v; want true", ok, err)
+	}
+	// A QuoteRequest for a stored post of someone else is refused, and leaves its quote pending.
+	bobsOther := bob + "/notes/quote-other"
+	e.expect(t, remoteActivity(t, "Create", bobsOther+"/activity", bob, remoteNote(bobsOther, bob, remoteNow.Add(-time.Hour), map[string]any{"quote": public.URI})), appfederation.InboxHandled)
+	other := e.post(t, bobsOther).Status
+	daveRequest, err := json.Marshal(map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": dave + "/quote_requests/1", "type": "QuoteRequest", "actor": dave,
+		"object": public.URI, "instrument": bobsOther})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.expect(t, daveRequest, appfederation.InboxHandled)
+	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 3 || sent[2].Type != federation.ActivityReject {
+		t.Errorf("answers = %+v, want a Reject of dave's request for bob's post", sent)
+	}
+	if s := e.quoteState(t, other.ID); s.Approval != content.QuoteApprovalPending {
+		t.Errorf("state of bob's other quote after dave's request = %+v, want pending", s)
+	}
 
 	// A local-only post, and a post of nobody, are refused.
 	local := e.localPost(t, author, content.VisibilityLocal)
@@ -398,7 +424,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if err := e.interactions.RevokeQuote(ctx, author, public.ID, stored.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("RevokeQuote again = %v, want ErrNotFound", err)
 	}
-	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, id, quoting, public.ID); err != nil || ok {
+	if ok, err := e.interactions.VerifyLocalQuoteAuthorization(ctx, id, quoting, bobID, public.ID); err != nil || ok {
 		t.Errorf("VerifyLocalQuoteAuthorization after the revocation = %v, %v; want false", ok, err)
 	}
 }

@@ -21,7 +21,7 @@ const MaxEnvelopeTypeBytes = 255
 const DigestURIPrefix = "urn:my:digest:"
 
 // Envelope is what the inbox reads from a received activity before verifying it (federation.md
-// §3.1 step 8): the id, the first type name, the actor, and the id of the first object. The
+// §3.1 step 7): the id, the first type name, the actor, and the id of the first object. The
 // rest of the document is read later by Normalize.
 type Envelope struct {
 	// ID is the activity's id; "" when the document has none (see ActivityURI).

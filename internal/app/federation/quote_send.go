@@ -30,7 +30,7 @@ const quoteRequestSegment = "quote_request"
 // quotes of local statuses; *appcontent.Interactions implements it.
 type QuoteApprovals interface {
 	AnswerQuoteRequest(ctx context.Context, in appcontent.QuoteRequestInput) (appcontent.QuoteAuthorization, appcontent.Status, error)
-	VerifyLocalQuoteAuthorization(ctx context.Context, id, quotingURI, quotedStatusID string) (bool, error)
+	VerifyLocalQuoteAuthorization(ctx context.Context, id, quotingURI, quotingAccountID, quotedStatusID string) (bool, error)
 }
 
 // QuoteStatuses is what the approvals of quotes read of statuses; *appcontent.Service implements
@@ -260,7 +260,8 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 // quoteRequest answers a remote QuoteRequest of a quote of a local status (ADR-0069 §2): the
 // content module decides it, and the Accept with this server's QuoteAuthorization as result, or
 // the Reject, goes to the actor's inbox. The quoting post (instrument) must be of the actor's
-// origin. When the quoting post is stored already, its quote is approved here too.
+// origin, and the actor's own when it is stored already (the content module refuses it
+// otherwise); a stored quoting post's quote is approved here too.
 func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) error {
 	act := in.Activity
 	quoted, quoting := act.Object().ID, act.Instrument.ID
@@ -312,6 +313,9 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 	}
 	if err != nil {
 		return err
+	}
+	if stored.AuthorAccountID != in.Actor.Account.ID {
+		return nil // the approval is the requester's, and approves no quote of another account
 	}
 	_, err = h.d.Quotes.AcceptQuote(ctx, stored.ID, string(result))
 	if errors.Is(err, appcontent.ErrNotFound) {
