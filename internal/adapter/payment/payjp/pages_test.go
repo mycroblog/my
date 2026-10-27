@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -177,6 +178,55 @@ func TestCheckoutSubscribesOnce(t *testing.T) {
 	}
 	if n := len(e.subscriptionsOf("my_local-1")); n != 1 {
 		t.Errorf("%d subscriptions after the repeats, want 1", n)
+	}
+}
+
+// findBarrier holds the lookups of the subscriptions of a customer until two arrive or a short
+// wait passes, so that two checkouts at the same time both look before either creates.
+type findBarrier struct {
+	base    http.RoundTripper
+	arrived chan struct{}
+	once    sync.Once
+	release chan struct{}
+}
+
+func (b *findBarrier) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.Method == http.MethodGet && r.URL.Path == "/subscriptions" && r.URL.Query().Get("customer") != "" {
+		select {
+		case b.arrived <- struct{}{}:
+		default:
+			b.once.Do(func() { close(b.release) })
+		}
+		select {
+		case <-b.release:
+		case <-time.After(200 * time.Millisecond):
+		}
+	}
+	return b.base.RoundTrip(r)
+}
+
+func TestCheckoutAtTheSameTimeSubscribesOnce(t *testing.T) {
+	e := newPageEnv(t)
+	_, s := e.checkout(t)
+	e.f.addToken("tok_ok", "4242", "verified")
+	base := e.p.o.HTTPClient.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	e.p.o.HTTPClient = &http.Client{Transport: &findBarrier{base: base, arrived: make(chan struct{}, 1), release: make(chan struct{})}}
+	var wg sync.WaitGroup
+	codes := make([]int, 2)
+	for i := range codes {
+		wg.Go(func() { codes[i] = e.post(t, pageCheckout, postedCard(s, "tok_ok")).Code })
+	}
+	wg.Wait()
+	for _, c := range codes {
+		if c != http.StatusSeeOther {
+			t.Errorf("checkout = %d, want 303", c)
+		}
+	}
+	if n := len(e.subscriptionsOf("my_local-1")); n != 1 {
+		t.Errorf("%d subscriptions after two checkouts at the same time, want 1", n)
 	}
 }
 
