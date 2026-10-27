@@ -4,9 +4,10 @@
 // microphone (one change after another, the latest last), going back to recvonly, joining again after the connection
 // went away, and leaving.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { FakeRemoteAudio, FakeStream, resetFakeRtc, settle } from "../test/fakeRtc";
+import { FakeLevelMeter, FakeRemoteAudio, FakeStream, resetFakeRtc, settle } from "../test/fakeRtc";
 import { connectVoice } from "./connect";
 import { sendWait } from "./sfu";
+import { talkingSample, talkingThreshold } from "./talking";
 import type { VoiceConnection, VoiceGrant, VoiceRoster } from "./types";
 
 const fake = vi.hoisted(() => {
@@ -84,6 +85,8 @@ const listening: VoiceRoster = { ...speaking, speaker: false };
 let microphones: FakeStream[] = [];
 let microphoneRefused = false;
 let onPlaybackBlocked = vi.fn();
+/** Who the connection said talks, each time. */
+let talking: string[][] = [];
 
 function join(first: VoiceGrant = grant): VoiceConnection {
   return connectVoice({
@@ -100,8 +103,13 @@ function join(first: VoiceGrant = grant): VoiceConnection {
         return Promise.resolve(stream as unknown as MediaStream);
       },
       createRemoteAudio: () => new FakeRemoteAudio(),
+      createLevelMeter: (stream) => new FakeLevelMeter(stream),
     },
-    events: { sendSignal: () => Promise.reject(new Error("Sora sends no signals")), onPlaybackBlocked },
+    events: {
+      sendSignal: () => Promise.reject(new Error("Sora sends no signals")),
+      onPlaybackBlocked,
+      onTalking: (sessions) => talking.push([...sessions].sort()),
+    },
   });
 }
 
@@ -132,6 +140,7 @@ beforeEach(() => {
   microphones = [];
   microphoneRefused = false;
   onPlaybackBlocked = vi.fn();
+  talking = [];
   grant = {
     kind: "sora",
     url: "wss://sora1.example/signaling",
@@ -211,6 +220,64 @@ describe("remote audio", () => {
     if (audio === undefined) throw new Error("no audio");
     audio.resume = () => Promise.reject(new DOMException("blocked", "NotAllowedError"));
     await expect(connection.resumePlayback()).rejects.toThrow();
+  });
+});
+
+describe("who is talking", () => {
+  /** The open meter of the remote stream of the connection `id`. */
+  const remoteMeter = (id: string) => {
+    const found = FakeLevelMeter.open().find((meter) => (meter.stream as { id?: string }).id === id);
+    if (found === undefined) throw new Error(`no meter of ${id}`);
+    return found;
+  };
+
+  test("a remote speaker once Sora names it, and the user while the microphone sends", async () => {
+    vi.useFakeTimers();
+    const connection = await joined(speaking, sendrecv);
+    sora(0).track("c2");
+    // Whose stream it is is not known yet: it is not heard, nor measured.
+    expect(FakeLevelMeter.open()).toEqual([]);
+    sora(0).created([{ connection_id: "c2", client_id: "s2" }]);
+    remoteMeter("c2").value = talkingThreshold * 5;
+    await vi.advanceTimersByTimeAsync(talkingSample);
+    expect(talking).toEqual([["s2"]]);
+
+    // The microphone is off: it is not measured.
+    expect(FakeLevelMeter.open()).toHaveLength(1);
+    await connection.setMicrophone(true);
+    FakeLevelMeter.of(microphones[0]).value = talkingThreshold * 5;
+    await vi.advanceTimersByTimeAsync(talkingSample);
+    expect(talking.at(-1)).toEqual(["s1", "s2"]);
+    await connection.setMicrophone(false);
+    expect(talking.at(-1)).toEqual(["s2"]);
+
+    // A participant who no longer speaks is not heard, so does not talk.
+    connection.update({ ...speaking, members: [{ session: "s2", account: "b", speaker: false }] });
+    expect(talking.at(-1)).toEqual([]);
+    expect(FakeLevelMeter.open()).toEqual([]);
+  });
+
+  test("a track that goes away, and a connection that replaces another, release their meters", async () => {
+    const connection = await joined(listening);
+    sora(0).created([{ connection_id: "c2", client_id: "s2" }]);
+    sora(0).track("c2");
+    sora(0).track("c3");
+    expect(FakeLevelMeter.open()).toHaveLength(1);
+    sora(0).emit("removetrack", { target: { id: "c2" } });
+    expect(FakeLevelMeter.open()).toEqual([]);
+
+    sora(0).track("c2");
+    connection.update(speaking);
+    connection.reconnect(sendrecv);
+    await settle();
+    expect(FakeLevelMeter.open()).toEqual([]);
+    // The new connection hears the same remote connection under its own key.
+    sora(1).created([{ connection_id: "c2", client_id: "s2" }]);
+    sora(1).track("c2");
+    expect(FakeLevelMeter.open()).toHaveLength(1);
+
+    connection.close();
+    expect(FakeLevelMeter.open()).toEqual([]);
   });
 });
 

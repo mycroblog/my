@@ -10,8 +10,13 @@
 //
 // While connected, LiveKit renews the access token itself, so a renewed grant is used only to join again after the
 // room went away without the user leaving (Disconnected); a grant to reconnect with joins again at once.
+//
+// Who is talking is LiveKit's own: its active speakers (RoomEvent.ActiveSpeakersChanged, which lists the local
+// participant too), by identity, which is the session. Only a speaker of the latest `state` talks, and the user only
+// while the microphone is on; the set is empty while the room is down.
 import type * as LiveKit from "livekit-client";
 import { RemoteAudios, Waiters, warn } from "./sfu";
+import { sameSessions } from "./talking";
 import type { VoiceConnection, VoiceConnectionOptions, VoiceGrant, VoiceRoster } from "./types";
 
 type Sdk = typeof LiveKit;
@@ -36,6 +41,9 @@ class LiveKitConnection implements VoiceConnection {
   #micOn = false;
   /** The changes of the microphone, one after another. */
   #microphoneChanges: Promise<void> = Promise.resolve();
+  /** The identities of LiveKit's latest active speakers, and the talking sessions reported from them. */
+  #activeSpeakers: readonly string[] = [];
+  #talking: ReadonlySet<string> = new Set();
   #closed = false;
 
   constructor(options: VoiceConnectionOptions) {
@@ -73,6 +81,11 @@ class LiveKitConnection implements VoiceConnection {
       .on(sdk.RoomEvent.ParticipantPermissionsChanged, (_previous, participant) => {
         if (participant === room.localParticipant) this.#waiters.changed();
       })
+      .on(sdk.RoomEvent.ActiveSpeakersChanged, (speakers) => {
+        if (room !== this.#room) return;
+        this.#activeSpeakers = speakers.map((speaker) => speaker.identity);
+        this.#reportTalking();
+      })
       .on(sdk.RoomEvent.Disconnected, () => {
         if (room !== this.#room) return;
         this.#room = null;
@@ -101,6 +114,18 @@ class LiveKitConnection implements VoiceConnection {
   #resetAudios(): void {
     this.#audios.close();
     this.#audios = this.#newAudios();
+    this.#activeSpeakers = [];
+    this.#reportTalking();
+  }
+
+  /** Reports the active speakers who talk: the speakers of the latest `state`, and the user while the microphone is on. */
+  #reportTalking(): void {
+    const speakers = new Set(this.#roster.members.filter((member) => member.speaker).map((member) => member.session));
+    const self = this.#options.session;
+    const talking = new Set(this.#activeSpeakers.filter((identity) => (identity === self ? this.#micOn && this.#roster.speaker : speakers.has(identity))));
+    if (sameSessions(talking, this.#talking)) return;
+    this.#talking = talking;
+    this.#options.events.onTalking?.(talking);
   }
 
   /** After a join: stops the microphone of a session that does not speak, and publishes it again for one whose microphone was on. */
@@ -119,6 +144,7 @@ class LiveKitConnection implements VoiceConnection {
 
   async #unpublish(sdk: Sdk, room: LiveKit.Room): Promise<void> {
     this.#micOn = false;
+    this.#reportTalking();
     const track = room.localParticipant.getTrackPublication(sdk.Track.Source.Microphone)?.track;
     if (track === undefined) return;
     try {
@@ -148,6 +174,7 @@ class LiveKitConnection implements VoiceConnection {
     if (this.#closed) return;
     this.#roster = roster;
     this.#audios.update(roster);
+    this.#reportTalking();
     const room = this.#room;
     if (!roster.speaker && room !== null) {
       void this.#sdk.then((sdk) => this.#unpublish(sdk, room));
@@ -156,6 +183,7 @@ class LiveKitConnection implements VoiceConnection {
 
   setMicrophone(on: boolean): Promise<void> {
     this.#micOn = on;
+    this.#reportTalking();
     const change = this.#microphoneChanges.then(() => this.#applyMicrophone());
     this.#microphoneChanges = change.catch(() => undefined);
     return change;
@@ -211,6 +239,8 @@ class LiveKitConnection implements VoiceConnection {
     const room = this.#room;
     this.#room = null;
     this.#audios.close();
+    this.#activeSpeakers = [];
+    this.#reportTalking();
     this.#waiters.changed();
     if (room !== null) void room.disconnect();
   }

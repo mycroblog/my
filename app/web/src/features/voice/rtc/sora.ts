@@ -15,9 +15,13 @@
 // Each remote stream is the connection ID of its sender; the `notify` events of Sora name the client_id (the session)
 // of each connection, which decides whose audio is heard. A renewed grant is kept, and joins again at once when the
 // connection went away without the user leaving.
+//
+// Who is talking comes from the level of each remote stream that is heard, and of the microphone while a sendrecv
+// connection sends it (TalkingDetector); the detector outlives the connections that replace one another.
 import type Sora from "sora-js-sdk";
 import type { ConnectionOptions, ConnectionPublisher, ConnectionSubscriber, SignalingNotifyMessage } from "sora-js-sdk";
 import { RemoteAudios, Waiters, warn } from "./sfu";
+import { TalkingDetector } from "./talking";
 import type { VoiceConnection, VoiceConnectionOptions, VoiceGrant, VoiceRoster } from "./types";
 
 type Sdk = typeof Sora;
@@ -46,8 +50,12 @@ type LinkOptions = {
   role: Role;
   connection: VoiceConnectionOptions;
   roster: VoiceRoster;
+  talking: TalkingDetector;
   onLost: (link: Link) => void;
 };
+
+/** The key of the user's microphone in the TalkingDetector (the remote audios' keys have a colon). */
+const microphoneKey = "microphone";
 
 /** One connection to Sora with one role. */
 class Link {
@@ -60,7 +68,7 @@ class Link {
 
   constructor(options: LinkOptions) {
     this.role = options.role;
-    this.audios = new RemoteAudios(options.connection.environment, options.connection.events.onPlaybackBlocked, options.roster);
+    this.audios = new RemoteAudios(options.connection.environment, options.connection.events.onPlaybackBlocked, options.roster, options.talking);
     const { grant } = options;
     const channel = grant.options.channel_id ?? "";
     const connectionOptions: ConnectionOptions = { audio: true, video: false, audioCodecType: "OPUS", clientId: options.connection.session };
@@ -127,6 +135,7 @@ class SoraConnection implements VoiceConnection {
   readonly #options: VoiceConnectionOptions;
   readonly #sdk: Promise<Sdk>;
   readonly #waiters = new Waiters();
+  readonly #talking: TalkingDetector;
   #grant: VoiceGrant;
   #roster: VoiceRoster = { speaker: false, members: [] };
   /** The live connection, or null before the first one is up and after it went away. */
@@ -147,6 +156,7 @@ class SoraConnection implements VoiceConnection {
   constructor(options: VoiceConnectionOptions) {
     this.#options = options;
     this.#grant = options.grant;
+    this.#talking = new TalkingDetector(options.environment, options.events.onTalking);
     this.#sdk = import("sora-js-sdk").then((module) => module.default);
     this.#rejoin(grantRole(options.grant));
   }
@@ -203,6 +213,7 @@ class SoraConnection implements VoiceConnection {
       role,
       connection: this.#options,
       roster: this.#roster,
+      talking: this.#talking,
       onLost: (lost) => {
         this.#linkLost(lost);
       },
@@ -223,6 +234,7 @@ class SoraConnection implements VoiceConnection {
     this.#link?.close();
     this.#link = link;
     if (role === "recvonly") this.#stopMicrophone();
+    this.#measureMicrophone();
     this.#waiters.changed();
   }
 
@@ -238,16 +250,26 @@ class SoraConnection implements VoiceConnection {
     link.close();
     this.#link = null;
     this.#lost = !this.#closed;
+    this.#measureMicrophone();
   }
 
   #stopMicrophone(): void {
     for (const track of this.#microphone?.getTracks() ?? []) track.stop();
     this.#microphone = null;
+    this.#talking.unwatch(microphoneKey);
   }
 
   /** Sends the microphone only while the user wants it and speaks. */
   #applyMicrophoneTracks(): void {
     for (const track of this.#microphone?.getAudioTracks() ?? []) track.enabled = this.#wantMicrophone && this.#roster.speaker;
+    this.#measureMicrophone();
+  }
+
+  /** Measures the microphone while a sendrecv connection sends it: the user talks only then. */
+  #measureMicrophone(): void {
+    const microphone = this.#microphone;
+    if (microphone !== null && this.#wantMicrophone && this.#roster.speaker && this.#link?.role === "sendrecv") this.#talking.watch(microphoneKey, this.#options.session, microphone);
+    else this.#talking.unwatch(microphoneKey);
   }
 
   update(roster: VoiceRoster): void {
@@ -305,6 +327,7 @@ class SoraConnection implements VoiceConnection {
     this.#link?.close();
     this.#link = null;
     this.#stopMicrophone();
+    this.#talking.close();
     this.#waiters.changed();
   }
 }

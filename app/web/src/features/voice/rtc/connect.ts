@@ -4,11 +4,12 @@
 // and any other method is an UnsupportedVoiceMethodError.
 // The browser's environment plays each remote participant's audio through one AudioContext started from the join
 // button's gesture, muted while the participant does not speak, and asks for the microphone with the constraints of
-// ADR-0101 §7.
+// ADR-0101 §7. It also measures the level of each stream, for who is talking, with an AnalyserNode on that same
+// context: no other context is made, and a meter releases its nodes when it closes.
 import { connectLiveKit } from "./livekit";
 import { connectP2P, microphoneConstraints } from "./p2p";
 import { connectSora } from "./sora";
-import type { RemoteAudio, VoiceConnection, VoiceConnectionOptions, VoiceEnvironment } from "./types";
+import type { LevelMeter, RemoteAudio, VoiceConnection, VoiceConnectionOptions, VoiceEnvironment } from "./types";
 
 /** The grant names a method that this client does not connect with. */
 export class UnsupportedVoiceMethodError extends Error {
@@ -92,6 +93,40 @@ function contextAudio(context: AudioContext): RemoteAudio {
   };
 }
 
+/** The samples of a meter: about 10 ms at 48 kHz, enough for the level of one sample of who is talking. */
+const meterSamples = 512;
+
+/**
+ * The level of `stream` through an AnalyserNode of the shared AudioContext, connected to nothing else (it plays
+ * nothing); null when the context cannot make one.
+ */
+function contextMeter(context: AudioContext, stream: MediaStream): LevelMeter | null {
+  if (typeof context.createAnalyser !== "function") return null;
+  let source: MediaStreamAudioSourceNode;
+  try {
+    source = context.createMediaStreamSource(stream);
+  } catch {
+    // A stream without an audio track.
+    return null;
+  }
+  const analyser = context.createAnalyser();
+  analyser.fftSize = meterSamples;
+  source.connect(analyser);
+  const samples = new Float32Array(analyser.fftSize);
+  return {
+    level: () => {
+      analyser.getFloatTimeDomainData(samples);
+      let sum = 0;
+      for (const sample of samples) sum += sample * sample;
+      return Math.sqrt(sum / samples.length);
+    },
+    close: () => {
+      source.disconnect();
+      analyser.disconnect();
+    },
+  };
+}
+
 /** Whether the browser has what a call needs: WebRTC, Web Audio, and the microphone (a secure context). */
 export function voiceSupported(): boolean {
   return typeof RTCPeerConnection === "function" && typeof AudioContext === "function" && "mediaDevices" in navigator;
@@ -107,5 +142,6 @@ export function browserEnvironment(): VoiceEnvironment {
     createPeerConnection: (configuration) => new RTCPeerConnection(configuration),
     getMicrophone: () => navigator.mediaDevices.getUserMedia(microphoneConstraints),
     createRemoteAudio: () => contextAudio(context),
+    createLevelMeter: (stream) => contextMeter(context, stream),
   };
 }

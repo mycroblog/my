@@ -19,6 +19,10 @@
 // New ICE servers (a renewed grant) go onto every connection with setConfiguration, and restartIce gathers new
 // candidates with them. A browser without setConfiguration (Firefox before 99, MDN browser-compat-data), or one that
 // refuses the new configuration, gets a new connection for that pair instead.
+//
+// Who is talking comes from the level of each remote stream that is heard, and of the microphone while it sends
+// (TalkingDetector), each under its session.
+import { TalkingDetector } from "./talking";
 import { type IncomingVoiceSignal, rtcConfiguration, type VoiceConnection, type VoiceConnectionOptions, type VoiceGrant, type VoiceMember, type VoiceRoster, type VoiceSignal } from "./types";
 
 /** How long a polite side waits for its first offer, and an offer for its answer, before asking again. */
@@ -61,6 +65,7 @@ type PeerOptions = {
   track: MediaStreamTrack | null;
   audible: boolean;
   connection: VoiceConnectionOptions;
+  talking: TalkingDetector;
 };
 
 /** The connection to one other session. */
@@ -70,6 +75,10 @@ class Peer {
   readonly #pc: RTCPeerConnection;
   readonly #audio;
   readonly #options: VoiceConnectionOptions;
+  readonly #talking: TalkingDetector;
+  /** The remote stream, measured for who is talking while it is heard. */
+  #stream: MediaStream | null = null;
+  #audible: boolean;
   #transceiver: RTCRtpTransceiver | null = null;
   #speaker: boolean;
   #track: MediaStreamTrack | null;
@@ -94,6 +103,8 @@ class Peer {
     this.remote = options.remote;
     this.#polite = options.polite;
     this.#options = options.connection;
+    this.#talking = options.talking;
+    this.#audible = options.audible;
     this.#speaker = options.speaker;
     this.#track = options.track;
     this.#audio = options.connection.environment.createRemoteAudio();
@@ -108,6 +119,8 @@ class Peer {
     };
     pc.ontrack = ({ track, streams }) => {
       const stream = streams[0] ?? new MediaStream([track]);
+      this.#stream = stream;
+      this.#measure();
       this.#audio.play(stream).catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "NotAllowedError") options.connection.events.onPlaybackBlocked();
         else warn("could not play the audio", error);
@@ -151,7 +164,15 @@ class Peer {
   }
 
   setAudible(audible: boolean): void {
+    this.#audible = audible;
     this.#audio.setAudible(audible);
+    this.#measure();
+  }
+
+  /** Measures the remote stream while it is heard: a participant who does not speak never talks. */
+  #measure(): void {
+    if (this.#stream !== null && this.#audible && !this.#closed) this.#talking.watch(this.remote, this.remote, this.#stream);
+    else this.#talking.unwatch(this.remote);
   }
 
   resume(): Promise<void> {
@@ -324,6 +345,7 @@ class Peer {
     this.#pc.oniceconnectionstatechange = null;
     this.#pc.close();
     this.#audio.close();
+    this.#talking.unwatch(this.remote);
   }
 }
 
@@ -346,11 +368,13 @@ class P2PConnection implements VoiceConnection {
   /** The microphone the user wants: the changes apply one after another, the latest one last. */
   #wantMicrophone = false;
   #microphoneChanges: Promise<void> = Promise.resolve();
+  readonly #talking: TalkingDetector;
   #closed = false;
 
   constructor(options: VoiceConnectionOptions) {
     this.#options = options;
     this.#configuration = rtcConfiguration(options.grant);
+    this.#talking = new TalkingDetector(options.environment, options.events.onTalking);
   }
 
   #track(): MediaStreamTrack | null {
@@ -361,6 +385,7 @@ class P2PConnection implements VoiceConnection {
     for (const track of this.#microphone?.getTracks() ?? []) track.stop();
     this.#microphone = null;
     this.#wantMicrophone = false;
+    this.#talking.unwatch(this.#options.session);
   }
 
   /** Whether the connection is open and the user speaks; read again after an await. */
@@ -401,6 +426,7 @@ class P2PConnection implements VoiceConnection {
       track: this.#track(),
       audible: member.speaker,
       connection: this.#options,
+      talking: this.#talking,
     });
   }
 
@@ -424,7 +450,12 @@ class P2PConnection implements VoiceConnection {
       this.#microphone = stream;
     }
     const track = this.#track();
-    if (track !== null) track.enabled = this.#wantMicrophone && this.#roster.speaker;
+    const sends = this.#wantMicrophone && this.#roster.speaker;
+    if (track !== null) track.enabled = sends;
+    // The user talks only while the microphone sends.
+    const microphone = this.#microphone;
+    if (sends && microphone !== null) this.#talking.watch(this.#options.session, this.#options.session, microphone);
+    else this.#talking.unwatch(this.#options.session);
     for (const peer of this.#peers.values()) peer.setSending(this.#roster.speaker, track);
   }
 
@@ -477,6 +508,7 @@ class P2PConnection implements VoiceConnection {
     for (const peer of this.#peers.values()) peer.close();
     this.#peers.clear();
     this.#stopMicrophone();
+    this.#talking.close();
   }
 }
 

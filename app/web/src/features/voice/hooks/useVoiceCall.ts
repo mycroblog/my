@@ -46,6 +46,11 @@ export type VoiceCallControl =
       mics: ReadonlyMap<string, boolean>;
       /** The reactions showing now, by participant. */
       reactions: ReadonlyMap<string, readonly VoiceReactionShown[]>;
+      /**
+       * The sessions talking now: a participant talks when `talking.has(participant.session)` (the user too, while the
+       * microphone sends). The set changes, and the page renders again, only when who talks changes.
+       */
+      talking: ReadonlySet<string>;
     };
 
 export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
@@ -118,5 +123,6 @@ export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
     actionError,
     mics: snapshot.mics,
     reactions,
+    talking: snapshot.talking,
   };
 }
