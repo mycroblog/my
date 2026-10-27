@@ -1,6 +1,6 @@
 # ADR-0052: 絵文字リアクション（Misskey / Pleroma / Akkoma 互換）
 
-- Status: Accepted
+- Status: Accepted（§1 の「絵文字の行は ADR-0051 の規則で `custom_emojis` に取り込みます（第三のサーバーの絵文字は、その `Emoji` の `id` で識別する）」の文を ADR-0104（リアクションの第三のサーバーのカスタム絵文字は記録済みのものだけを使う）が置き換える）
 - Date: 2026-10-20
 - Deciders: @rosylilly
 - Issue: #619
