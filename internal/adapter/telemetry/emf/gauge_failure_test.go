@@ -36,7 +36,7 @@ func TestKeepsTheTotalsOfObservableCountersWhenTheWriteFails(t *testing.T) {
 	if err := m.WriteGauges(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	w.buffer.reset()
+	w.reset()
 	total = 8
 	w.fail = true
 	if err := m.WriteGauges(t.Context()); err == nil {
@@ -46,7 +46,7 @@ func TestKeepsTheTotalsOfObservableCountersWhenTheWriteFails(t *testing.T) {
 	if err := m.WriteGauges(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	lines := w.buffer.lines(t)
+	lines := w.lines(t)
 	if len(lines) != 1 || lines[0]["process.cpu.time"] != 3.0 {
 		t.Errorf("lines = %v, want the increase of 3 once", lines)
 	}
