@@ -62,7 +62,7 @@ var _ kernel.Tracer = (*Tracer)(nil)
 // NewTracer returns the Tracer that exports through OTLP/HTTP, or opts.Exporter. Shut it down
 // to flush and stop the exporter.
 func NewTracer(ctx context.Context, opts TracerOptions) (*Tracer, error) {
-	res, err := newResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
 	if err != nil {
 		return nil, fmt.Errorf("traces resource: %w", err)
 	}

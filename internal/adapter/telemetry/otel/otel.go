@@ -72,7 +72,7 @@ var _ kernel.Meter = (*Meter)(nil)
 // New returns the Meter that exports through opts.Exporter. Shut it down to flush and stop
 // the exporter.
 func New(ctx context.Context, opts Options) (*Meter, error) {
-	res, err := newResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
 	if err != nil {
 		return nil, fmt.Errorf("metrics resource: %w", err)
 	}
@@ -117,10 +117,11 @@ func New(ctx context.Context, opts Options) (*Meter, error) {
 	return m, nil
 }
 
-// newResource returns the resource of the metrics and the traces (ADR-0055 §6, ADR-0063 §1):
+// NewResource returns the resource of the metrics, the traces, and the exported error reports
+// (ADR-0055 §6, ADR-0063 §1, ADR-0103 §4 (3)):
 // service.name (default "my"), service.version, my.role, and the attributes of
 // OTEL_RESOURCE_ATTRIBUTES.
-func newResource(ctx context.Context, name, version, role string) (*resource.Resource, error) {
+func NewResource(ctx context.Context, name, version, role string) (*resource.Resource, error) {
 	if name == "" {
 		name = "my"
 	}

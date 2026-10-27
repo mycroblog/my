@@ -390,13 +390,6 @@ func TestLoadInvalid(t *testing.T) {
 			},
 		},
 		{
-			name: "error exporters not yet available",
-			env:  with(minimal(), "MY_ERRORS_EXPORTER", "otlp"),
-			want: []string{
-				`errors_exporter (MY_ERRORS_EXPORTER): "otlp" is not available in v0; want one of none, sentry`,
-			},
-		},
-		{
 			name: "sentry exporter without a DSN",
 			env:  with(minimal(), "MY_ERRORS_EXPORTER", "sentry"),
 			want: []string{"errors_sentry_dsn (MY_ERRORS_SENTRY_DSN): required when errors_exporter is sentry"},
@@ -728,6 +721,7 @@ kek = "nope"
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			skipExcluded(t, tt.env)
 			src := source(tt.env, tt.files)
 			src.File = tt.file
 			cfg, _, err := Load(src)
@@ -751,6 +745,17 @@ kek = "nope"
 				}
 			}
 		})
+	}
+}
+
+// skipExcluded skips a case whose environment selects an adapter that a build tag left out:
+// Load would report that before the issue the case checks.
+func skipExcluded(t *testing.T, env map[string]string) {
+	t.Helper()
+	for k, v := range env {
+		if tag, ok := excludedValues[strings.ToLower(strings.TrimPrefix(k, "MY_"))][v]; ok {
+			t.Skipf("the build tag %s leaves out %s = %s", tag, k, v)
+		}
 	}
 }
 
