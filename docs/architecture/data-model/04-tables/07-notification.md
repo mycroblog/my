@@ -94,6 +94,7 @@
     `supporter_service_closure` は加入を `supporter_subscription_id` にも持ち、サポーターの通知と同じくメールでも送ります。クライアント API は `service_closure` に、伝える変化と予告の日付（閉鎖日・持ち出しの期限。取り消しにはない）を載せます。予告・日付の変更・取り消しのメールは別に送ります（ADR-0086）。
   - `admin_error_group`（ADR-0103 §8）は、エラーのグループのドメインイベントと同じトランザクションで、`error_group_notice_hours` のその 1 時間の行に 1 を足し（upsert。同時のトランザクションも 1 件ずつ足す）、足した後の数が 10 以下ならそのグループを、ちょうど 11 なら `others` の通知を 1 つ作ります。12 以降は数えるだけで、`others` の件数はクライアント API が読むときの `notices - 10` です。
     ログインしていない Web クライアントの報告だけが作ったグループは、ログインした報告が確かめたとき（`diagnostics.error_group_confirmed`）に知らせ、そのときミュートしていれば知らせません。ログインしていない報告による再発は知らせません。同じ規則で `error_group.*` の webhook も送ります。
+    定期のジョブ `notification.prune_error_group_notices`（24 時間ごと）が、始まりが 90 日より前の時間の `error_group_notice_hours` を 1 文で消します（`error_group_counts` と同じ期間）。それより古い `others` の通知の件数は 0 になります。
     Web Push は `/admin/errors`（グループの通知は `/admin/errors/<group_id>`）を開き、メールはモデレーターの通知と同じです。
   - 通話の通知（ADR-0100 §8）は、`voice` が `notification` の公開 API（`VoiceNotifier`）を自分のトランザクションの中で呼んで作ります（`notification` は `voice` を import しない）。行は `voice_room_id` と `source_account_id` を必ず持ち、ほかの種類は `voice_room_id` を持ちません。
     `voice_room_started` は、ルームを開いたトランザクションで積むジョブ（`voice.notify_started`、冪等キーはルーム）が、ホストのローカルのフォロワーを 100 件ずつ、開いた時の公開範囲といまの公開範囲の両方で `CanSee` が真の人に作ります。差出人はホスト、`dedupe_key` は `voice_room_started:<room_id>` で、ルームと受け取る人ごとに 1 つです。終わったルームとホストが変わったルームでは、残りを作りません。

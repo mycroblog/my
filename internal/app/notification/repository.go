@@ -32,6 +32,9 @@ type Repository interface {
 	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)
 	// ErrorGroupNotices returns the admin_error_group notices of the hour that starts at hour.
 	ErrorGroupNotices(ctx context.Context, hour time.Time) (int64, error)
+	// DeleteErrorGroupNoticesBefore deletes the notices of the hours that start before before, in
+	// one statement outside any transaction, and returns how many hours it deleted.
+	DeleteErrorGroupNoticesBefore(ctx context.Context, before time.Time) (int64, error)
 	// Notification returns a notification by ID.
 	Notification(ctx context.Context, tx uow.Tx, id string) (notification.Notification, error)
 	// InsertDismissal inserts a dismissal and reports false, writing nothing, when the

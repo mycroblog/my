@@ -114,6 +114,11 @@ const (
 // makes in an hour (ADR-0103 §8); the rest fold into one of ErrorGroupOthers.
 const ErrorGroupHourlyCap = 10
 
+// ErrorGroupNoticeRetention is how long the notices of an hour that count against
+// ErrorGroupHourlyCap stay: as long as the hourly counts of the error groups. An
+// admin_error_group of ErrorGroupOthers older than this folds no count any more.
+const ErrorGroupNoticeRetention = 90 * 24 * time.Hour
+
 // Valid reports whether c is a known change.
 func (c ErrorGroupChange) Valid() bool {
 	return c == ErrorGroupCreated || c == ErrorGroupRegressed || c == ErrorGroupOthers

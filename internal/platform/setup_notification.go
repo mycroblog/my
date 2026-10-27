@@ -23,6 +23,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	a.Notifications = notification.NewService(notification.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
 	})
+	a.Notifications.RegisterErrorGroupJobs(a.Handlers, a.Scheduler)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
 	a.setUpClosureNotifications(repo, moderators, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)

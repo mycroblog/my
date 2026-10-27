@@ -17,7 +17,7 @@ import (
 // an hour, and the rest of the hour fold into one notification whose count grows with them; a
 // group that a web report without a session created notifies only when a report with one
 // confirms it, unless it is muted by then, and a regression from a report without a session
-// notifies nobody; a new hour starts the count again.
+// notifies nobody; a new hour starts the count again; the prune deletes the old hours.
 func notificationErrorGroups(t *testing.T, e *notificationEnv) {
 	ctx := t.Context()
 	alice, bob := e.user(t, "alice"), e.user(t, "bob")
@@ -98,5 +98,18 @@ func notificationErrorGroups(t *testing.T, e *notificationEnv) {
 	project(appdiagnostics.GroupCreated{Group: next})
 	if ns := list(); len(ns) != notification.ErrorGroupHourlyCap+2 || ns[0].ErrorGroupID != next.ID {
 		t.Errorf("the next hour: %d notifications, newest %+v", len(ns), ns[0])
+	}
+
+	// The prune deletes the notices of the hours older than the retention and keeps the rest:
+	// the first hour is past it, the next hour is just within it.
+	e.clock.Advance(notification.ErrorGroupNoticeRetention)
+	if n, err := e.svc.PruneErrorGroupNotices(ctx); err != nil || n != 1 {
+		t.Errorf("PruneErrorGroupNotices = %d, %v; want 1", n, err)
+	}
+	if n, err := e.svc.ErrorGroupOthers(ctx, others); err != nil || n != 0 {
+		t.Errorf("ErrorGroupOthers of a pruned hour = %d, %v; want 0", n, err)
+	}
+	if n, err := e.svc.PruneErrorGroupNotices(ctx); err != nil || n != 0 {
+		t.Errorf("PruneErrorGroupNotices again = %d, %v; want 0", n, err)
 	}
 }

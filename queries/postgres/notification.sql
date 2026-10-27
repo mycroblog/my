@@ -126,3 +126,6 @@ RETURNING notices;
 
 -- name: GetErrorGroupNotices :one
 SELECT COALESCE((SELECT notices FROM error_group_notice_hours WHERE hour_start = $1), 0)::bigint;
+
+-- name: DeleteErrorGroupNoticesBefore :execrows
+DELETE FROM error_group_notice_hours WHERE hour_start < $1;

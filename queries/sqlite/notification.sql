@@ -128,3 +128,6 @@ RETURNING notices;
 
 -- name: GetErrorGroupNotices :one
 SELECT CAST(COALESCE((SELECT notices FROM error_group_notice_hours WHERE hour_start = ?), 0) AS INTEGER);
+
+-- name: DeleteErrorGroupNoticesBefore :execrows
+DELETE FROM error_group_notice_hours WHERE hour_start < ?;
