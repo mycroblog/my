@@ -96,9 +96,13 @@ export {
   FinanceIcon,
   HomeIcon,
   ImageIcon,
+  InviteIcon,
   LanguageIcon,
+  LeaveIcon,
   LocalIcon,
   MenuIcon,
+  MicrophoneIcon,
+  MicrophoneOffIcon,
   ModerationIcon,
   MoreIcon,
   MoveDownIcon,
@@ -108,9 +112,11 @@ export {
   PollIcon,
   ProfileIcon,
   QuoteIcon,
+  RaiseHandIcon,
   ReplyIcon,
   SearchIcon,
   SettingsIcon,
+  ShareIcon,
   SignInIcon,
   SignUpIcon,
   StarIcon,
@@ -168,6 +174,17 @@ export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 export { FeatureCard, type FeatureCardProps } from "./FeatureCard";
 // An open voice chat room in a list (ADR-0100 §8).
 export { VoiceRoomCard, type VoiceRoomCardProps } from "./VoiceRoomCard";
+// The stage of a voice chat room and the controls of its call.
+export { LivePill, type LivePillProps } from "./LivePill";
+export {
+  StageAvatar,
+  StageGrid,
+  type StageAvatarLabels,
+  type StageAvatarProps,
+  type StageAvatarReaction,
+  type StageGridProps,
+} from "./StageAvatar";
+export { CallDock, CallDockButton, type CallDockButtonProps, type CallDockProps } from "./CallDock";
 export { Hero, type HeroProps } from "./Hero";
 export { Cluster, type ClusterProps } from "./Cluster";
 export { InfoPage, type InfoPageProps } from "./InfoPage";
@@ -226,6 +243,7 @@ export { PostExcerpt, PostExcerptText, QuoteBlock, type PostExcerptProps, type P
 // The app shell (web-client/09-app-shell.md §9): the frame, the navigation, the page heading and the routes' states.
 export { AppShell, AsidePanel, ShellDock, type AppShellProps, type AsidePanelProps, type ShellDockProps } from "./AppShell";
 export { CallBar, type CallBarProps } from "./CallBar";
+export { MiniPlayer, type MiniPlayerAvatar, type MiniPlayerProps } from "./MiniPlayer";
 export {
   AppNav,
   AppNavAccount,

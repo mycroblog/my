@@ -68,6 +68,7 @@ Colors have two layers in [src/theme.css](src/theme.css):
 | `alt-overlay` | The translucent scrim under the alt text over a picture (`MediaViewer`); decorative, its contrast depends on the picture |
 | `avatar-<tint>` / `avatar-<tint>-fg` | The fill and the initial of an `Avatar` without a picture, for each of `lilac`, `peach`, `mint`, `lavender`, `yellow` (`avatarTints`); the same in both themes, fixed |
 | `spark` | The mango mark after a heading (`Spark`); decorative |
+| `hand` / `hand-fg` | A raised hand in a voice chat call: the mango badge of `StageAvatar` and the count of raised hands (`Badge tone="hand"`), with charcoal on it in both themes; fixed, a server theme cannot override them |
 | `pressed` / `pressed-fg` | The pressed button of `Segmented`: charcoal with white in light, coral with charcoal in dark |
 | `badge-<color>` / `badge-<color>-fg` | The background and the text of a role badge (`RoleBadge`, ADR-0071), for each of `neutral`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink` (`badgeColors`) |
 
@@ -75,7 +76,7 @@ Colors have two layers in [src/theme.css](src/theme.css):
 
 - `accent` is coral as text and thin marks; `accent-fill` is the one bright primary fill of a view (one primary action per view). Text on
   `accent-fill` is charcoal (`accent-fill-fg`): never white on coral.
-- Mango is a small spark only (the heading spark, `spark`, and the focus ring in the dark theme), never a fill or a text color.
+- Mango is a small mark only (the heading spark, `spark`; a raised hand, `hand`; and the focus ring in the dark theme), never a large fill or a text color.
 - Selection is shown by `accent` plus a change of shape (a filled icon, a check, a dot), not by color alone.
 
 ### Contrast pairs
@@ -86,7 +87,7 @@ verifies each against WCAG 2.2 AA in both themes: 4.5:1 for text, 3:1 for contro
 - On each of `surface`, `surface-raised`, `surface-sunken`:
   `fg`, `fg-muted`, `accent`, `accent-hover`, `danger`, `success`, `warning` (text) and `border-strong`, `focus` (UI).
 - `accent-fg` on `accent` and `accent-hover`; `accent-fill-fg` on `accent-fill` and `accent-fill-hover`; `danger-fg` on `danger`; `success-fg` on `success`; `warning-fg` on `warning` (text).
-- `fg`, `fg-muted`, `accent` on `soft`; `fg` and the status text on `danger-bg` / `success-bg` / `warning-bg`; `toast-fg`, `toast-action`
+- `fg`, `fg-muted`, `accent` on `soft`; `fg` and the status text on `danger-bg` / `success-bg` / `warning-bg`; `hand-fg` on `hand` (text); `toast-fg`, `toast-action`
   (text) and `toast-muted`, `toast-success`, `toast-danger` (UI) on `toast`.
 - `badge-<color>-fg` on `badge-<color>` for every badge color (text). A server theme cannot override the badge tokens, so their
   pairs hold under every theme; the color only decorates, and the badge's label carries its meaning (WCAG 1.4.1).
@@ -311,7 +312,7 @@ the tasks that read `src/themeTokens.gen.ts` (type checks, tests, builds, Storyb
 
 | Tokens | Kind | Override |
 | --- | --- | --- |
-| `color-*` (but `color-badge-*`) | color | `#rrggbb` per theme (`#rrggbbaa` for `color-overlay`); every contrast pair must keep AA in both themes |
+| `color-*` (but `color-badge-*`, `color-avatar-*`, `color-hand`, `color-hand-fg`) | color | `#rrggbb` per theme (`#rrggbbaa` for `color-overlay`); every contrast pair must keep AA in both themes |
 | `font-sans`, `font-mono`, `font-serif` | font family | Family names, quoted or plain, comma-separated (at most 30); keep `"my Noto Color Emoji"` first in `font-sans` and `font-mono`, or the web client draws emoji with the OS fonts ([ADR-0096](../../docs/adr/0096-emoji-css-import.md)) |
 | `text-*` | length | `0` or rem / px, 0.625rem to 3rem |
 | `text-*--line-height` | number | 1 to 2.5 |
@@ -702,3 +703,24 @@ Counts in `details` are `<Text numeric>`; several parts under a body are a `<Sta
 `onOpenList`; the dialog goes in `after`). Its children are `ReactionChip`s: a toggle named by `label` and described by the formatted
 `count`, outlined and accented while `isSelected`; `onChange={null}` shows it only (an emoji nobody here can react with). The emoji is
 `image` (a custom emoji) or `text`; `ReactionEmoji` draws the same emoji for the rows of the list of reactors.
+
+## Voice chat
+
+The pieces of a voice chat room's page and of the call that follows the user to other pages. The strings, the
+participants and their states are the app's; the look is here.
+
+| Component | What it draws | Its props |
+| --- | --- | --- |
+| `VoiceRoomCard` | An open room in a list: the name as a heading link, the host, the count, the description and hashtags | `name`, `href`, `headingLevel`, `host`, `participants`, `description`, `tags`, `tagsLabel`, `surface` |
+| `LivePill` | The coral pill of an open room | `label` ("Live") |
+| `StageGrid` | The `ul` of the stage, in as many columns as fit | `aria-label` or `aria-labelledby`, `size` (`speaker` / `listener`) |
+| `StageAvatar` | A participant as an `li`: the avatar (large for a speaker, small for a listener), the name and the `caption` (the role); a coral ring while `speaking` (an outline, so its gap is the ground; it fades only with motion allowed); a microphone-off badge (`muted`), a mango hand (`handRaised`) and a `reaction` bubble. Every state is also a text for assistive technology (`labels`, `reaction.label`). With `menu` (a `Menu`), the avatar and the name are its menu button | `name`, `src`, `sources`, `seed`, `size`, `caption`, `speaking`, `muted`, `handRaised`, `reaction`, `labels`, `menu` |
+| `CallDock` | The controls of the call on the room's page: a raised pill `toolbar` (the arrow keys move along it, mirrored in right-to-left text) that wraps, with `end` (leaving) at the end of the line and a `notice` under it | `label`, `children`, `end`, `notice` |
+| `CallDockButton` | A control: a 48 px circle with its label as a tooltip, or with `showLabel` an icon and text pill (`size="sm"`: 44 px). Plain (`onPress`) or a toggle (`isSelected`, `onChange`; `aria-pressed`, coral or with `selectedTone="hand"` mango while on); `variant` `primary`, `soft`, `danger`, `danger-soft`; a `count` badge that describes the button | `label`, `icon`, `showLabel`, `variant`, `size`, `count`, `isDisabled`, `onPress` / `isPending`, `isSelected` / `onChange` / `selectedTone` |
+| `CallBar` | The small bar of the call on the other pages: the room's link, the state, the controls and a notice | `label`, `title`, `status`, `children`, `notice` |
+| `MiniPlayer` | The floating card that takes `CallBar`'s place: the first three speakers stacked (the one talking ringed, hidden from assistive technology), the room's link over the status line (both cut short), the controls (`CallDockButton size="sm"`) and a notice | `label`, `avatars`, `title`, `status`, `children`, `notice` |
+
+`CallBar`, `MiniPlayer` and `CallDock` go at the end of the page in `ShellDock`, which keeps them in view at the bottom
+of the page's column, clear of the tab bar. Each carries `data-call-bar` and writes its height to the document's
+`--call-bar-block-size` while it shows, from which the app's stylesheet keeps focused elements clear of it.
+`CallBar` and `MiniPlayer` are regions named by `label`, so that assistive technology lists them with the landmarks.

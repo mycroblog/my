@@ -8,8 +8,9 @@
 // While it shows, its height is the `--call-bar-block-size` of the document (ResizeObserver), from which the app's
 // stylesheet keeps focused elements clear of it (scroll-padding): the bar wraps on narrow screens, and the notice
 // adds a row.
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { tv } from "tailwind-variants";
+import { useCallBarBlockSize } from "./callBarBlockSize";
 
 const callBar = tv({
   slots: {
@@ -38,28 +39,10 @@ export type CallBarProps = {
   notice?: ReactNode;
 };
 
-/** The custom property with the bar's height, for the app's scroll-padding. */
-const blockSizeProperty = "--call-bar-block-size";
-
 export function CallBar({ label, title, status, children, notice }: CallBarProps) {
   const styles = callBar();
   const ref = useRef<HTMLElement>(null);
-  // The bar's height is an external fact that the document's stylesheet needs (react.dev, "Synchronizing with Effects").
-  useEffect(() => {
-    const element = ref.current;
-    if (element === null) return;
-    const root = document.documentElement;
-    const write = () => {
-      root.style.setProperty(blockSizeProperty, `${String(element.getBoundingClientRect().height)}px`);
-    };
-    write();
-    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(write) : null;
-    observer?.observe(element);
-    return () => {
-      observer?.disconnect();
-      root.style.removeProperty(blockSizeProperty);
-    };
-  }, []);
+  useCallBarBlockSize(ref);
   return (
     <section ref={ref} aria-label={label} data-call-bar="" className={styles.base()}>
       <div className={styles.heading()}>

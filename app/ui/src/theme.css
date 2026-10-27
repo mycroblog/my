@@ -202,6 +202,10 @@
   --color-wave: var(--palette-rose-400);
   /* The spark after a heading: mango, a decoration only. */
   --color-spark: var(--palette-mango-400);
+  /* A raised hand in a voice chat call: the mango badge on a listener's avatar and the count of raised hands, with
+     the charcoal hand or digits on it, the same in both themes. */
+  --color-hand: var(--palette-mango-400);
+  --color-hand-fg: var(--palette-charcoal-900);
 
   /* Role badges (ADR-0071): badge-<color> is the background and badge-<color>-fg the text on it.
      The color only decorates; the badge's name carries its meaning. Server themes cannot override them. */
