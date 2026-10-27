@@ -1,22 +1,37 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// An open voice chat room in a list (ADR-0100 §8): its name as a heading that links to the room's page, its host, how
-// many people are in it, and, in the full form, its description and hashtags. The name, the description and the
-// hashtags are the host's own text in any language (dir="auto"). The `card` surface is a raised card of a page's list;
-// the `plain` surface is a row of a panel that is a card already (the third column), which never holds another card.
+// An open voice chat room in a list (ADR-0100 §8), in the look of the room's stage: the "Live" pill with how many are
+// in the room and how long it has been open, the room's name as a heading that links to its page, the stacked avatars
+// of its speakers (the host first) beside the host, and, in the full form, its description and hashtags. The name,
+// the description and the hashtags are the host's own text in any language (dir="auto"). The `card` surface is a
+// raised card of a page's list; the `plain` surface is a row of a panel that is a card already (the third column),
+// which never holds another card.
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
+import { AvatarStack, type AvatarStackItem } from "./AvatarStack";
 import { Card } from "./Card";
 import type { HeadingLevel } from "./EmptyState";
 import { Heading } from "./Heading";
 import { Link } from "./Link";
+import { LivePill } from "./LivePill";
 import { Tag } from "./Tag";
 
 const voiceRoomCard = tv({
   slots: {
-    base: "flex min-w-0 flex-col gap-2",
-    meta: "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted",
+    base: "flex min-w-0 flex-col",
+    state: "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-muted",
+    name: "font-serif",
+    // The avatars keep their size; the host's name takes the room left and wraps inside it.
+    people: "flex min-w-0 items-center gap-2 text-sm",
+    host: "min-w-0 wrap-anywhere",
+    role: "shrink-0 text-fg-muted",
     description: "line-clamp-3 text-sm whitespace-pre-line text-fg",
     tags: "flex flex-wrap gap-1",
+  },
+  variants: {
+    full: {
+      true: { base: "gap-3", name: "text-lg" },
+      false: { base: "gap-2" },
+    },
   },
 });
 
@@ -27,10 +42,16 @@ export type VoiceRoomCardProps = {
   href: string;
   /** The heading's level: one below the heading of the list. */
   headingLevel?: HeadingLevel;
-  /** The host, as an account item (`AccountItem` with `layout="inline"`). */
+  /** The word on the pill of an open room ("Live"). */
+  liveLabel: string;
+  /** How many are in the room and how long it has been open, formatted ("12 people · 38 min"). */
+  stats: string;
+  /** The speakers, the host first; the card stacks the first few. They only decorate: `host` and `stats` say who is in. */
+  speakers: readonly AvatarStackItem[];
+  /** The host's name, a link to their profile. */
   host: ReactNode;
-  /** How many people are in the room, formatted ("3 people"). */
-  participants: string;
+  /** The word after the host's name ("Host"). */
+  hostLabel: string;
   /** The room's description, the host's text; empty or absent for none. Not shown on the `plain` surface. */
   description?: string | undefined;
   /** The room's hashtags with their `#`. Not shown on the `plain` surface. */
@@ -42,19 +63,39 @@ export type VoiceRoomCardProps = {
 };
 
 /** One open room as an `li`: put several in a `ul` (`Stack as="ul"`). */
-export function VoiceRoomCard({ name, href, headingLevel = 2, host, participants, description, tags, tagsLabel, surface = "card" }: VoiceRoomCardProps) {
-  const slots = voiceRoomCard();
+export function VoiceRoomCard({
+  name,
+  href,
+  headingLevel = 2,
+  liveLabel,
+  stats,
+  speakers,
+  host,
+  hostLabel,
+  description,
+  tags,
+  tagsLabel,
+  surface = "card",
+}: VoiceRoomCardProps) {
   const full = surface === "card";
+  const slots = voiceRoomCard({ full });
   const content = (
     <div className={slots.base()}>
+      <div className={slots.state()}>
+        <LivePill label={liveLabel} />
+        <span>{stats}</span>
+      </div>
       <Heading level={headingLevel} size="subsection" wrap="anywhere">
         <Link href={href} variant="standalone">
-          <span dir="auto">{name}</span>
+          <span dir="auto" className={slots.name()}>
+            {name}
+          </span>
         </Link>
       </Heading>
-      <div className={slots.meta()}>
-        {host}
-        <span>{participants}</span>
+      <div className={slots.people()}>
+        <AvatarStack avatars={speakers} max={full ? 4 : 3} size={full ? "sm" : "xs"} />
+        <span className={slots.host()}>{host}</span>
+        <span className={slots.role()}>{hostLabel}</span>
       </div>
       {full && description !== undefined && description !== "" && (
         <p dir="auto" className={slots.description()}>

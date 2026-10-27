@@ -1,41 +1,74 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The lists of open rooms (ADR-0100 §8): the list page's body with the button that starts a room, the panel of the
-// third column on wide screens, and the section at the top of a hashtag's page. Each room is its name (a link to its
-// page), its host, how many people are in it, and on the pages its description and hashtags. Every list shows
-// nothing while the server has voice chat off.
-import { AccountItem, AsidePanel, Button, EmptyState, Heading, Link, RegionError, Spinner, Stack, Text, VoiceRoomCard } from "@my/ui";
+// third column on wide screens, and the section at the top of a hashtag's page. Each room is a card in the look of its
+// stage: the "Live" pill with how many people are in it and how long it has been open, its name (a link to its page),
+// the stacked avatars of its speakers (the host first) beside the host, and on the pages its description and
+// hashtags. Every list shows nothing while the server has voice chat off.
+import {
+  AsidePanel,
+  type AvatarStackItem,
+  Button,
+  EmptyState,
+  Heading,
+  Link,
+  MicrophoneIcon,
+  RegionError,
+  Spinner,
+  Stack,
+  Text,
+  VoiceIcon,
+  VoiceRoomCard,
+} from "@my/ui";
 import { useId, useState } from "react";
-import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
-import { type VoiceRoom, voiceRoomPath } from "../api/voice";
+import { type VoiceAccount, type VoiceRoom, voiceRoomPath } from "../api/voice";
 import { useCanStartVoiceRoom, useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
+import { useOpenFor } from "../hooks/useVoiceStage";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
 
 type VoiceRoomItemProps = { room: VoiceRoom; headingLevel: 2 | 3; surface?: "card" | "plain" };
 
+/** The name an account shows: its display name, or its username without one. */
+function accountName(account: VoiceAccount): string {
+  return account.display_name || account.username;
+}
+
+/** The avatar of an account in a room's stack. */
+function stackItem(account: VoiceAccount): AvatarStackItem {
+  return { id: account.id, name: accountName(account), sources: imageSources(account.avatar) };
+}
+
+/**
+ * The speakers to stack on a room's card: the host first, then the co-hosts, then the other speakers, each in the
+ * order they joined.
+ */
+function speakerStack(room: VoiceRoom): AvatarStackItem[] {
+  const others = room.participants.filter((participant) => participant.role === "speaker" && participant.account.id !== room.host.id);
+  const ordered = [...others.filter((participant) => participant.cohost), ...others.filter((participant) => !participant.cohost)];
+  return [stackItem(room.host), ...ordered.map((participant) => stackItem(participant.account))];
+}
+
 /** One room as an `li` of a list. */
 function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemProps) {
   const t = useT();
-  const hostName = room.host.display_name || room.host.username;
+  const openFor = useOpenFor(room.opened_at);
   return (
     <VoiceRoomCard
       name={room.name}
       href={voiceRoomPath(room.id)}
       headingLevel={headingLevel}
       surface={surface}
+      liveLabel={t("client:voice.room.live")}
+      stats={t("client:voice.room.stats", { people: t("client:voice.room.participants_count", { count: room.participants_count }), duration: openFor })}
+      speakers={speakerStack(room)}
       host={
-        <AccountItem
-          name={hostName}
-          handle={handleOf(room.host.acct)}
-          avatar={imageSources(room.host.avatar)}
-          avatarSeed={room.host.id}
-          href={profilePath(room.host.acct)}
-          layout="inline"
-        />
+        <Link href={profilePath(room.host.acct)} variant="standalone">
+          <span dir="auto">{accountName(room.host)}</span>
+        </Link>
       }
-      participants={t("client:voice.room.participants_count", { count: room.participants_count })}
+      hostLabel={t("client:voice.role.host")}
       description={room.description}
       tags={room.hashtags.map((tag) => t("client:tag.title", { tag }))}
       tagsLabel={t("client:voice.form.hashtags")}
@@ -61,6 +94,7 @@ export function VoiceRoomList() {
               setFormOpen(true);
             }}
           >
+            <MicrophoneIcon />
             {t("client:voice.start")}
           </Button>
           <VoiceRoomFormDialog isOpen={formOpen} onOpenChange={setFormOpen} />
@@ -92,7 +126,7 @@ function Rooms() {
       return (
         <>
           {list.rooms.length === 0 ? (
-            <EmptyState heading={t("client:voice.list.empty")} description={t("client:voice.list.empty.description")} />
+            <EmptyState illustration={<VoiceIcon />} heading={t("client:voice.list.empty")} description={t("client:voice.list.empty.description")} />
           ) : (
             <Stack as="ul" gap="3" aria-label={t("client:voice.list.label")}>
               {list.rooms.map((room) => (
@@ -123,7 +157,7 @@ export function VoiceRail() {
   if (rooms.length === 0) return null;
   return (
     <AsidePanel heading={t("client:voice.rail.title")}>
-      <Stack as="ul" gap="3">
+      <Stack as="ul" gap="4">
         {rooms.map((room) => (
           <VoiceRoomItem key={room.id} room={room} headingLevel={3} surface="plain" />
         ))}
