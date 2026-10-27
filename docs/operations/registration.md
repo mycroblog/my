@@ -142,7 +142,7 @@ The same operations are available from the admin screens (the client API). All o
 | Operation | What it does |
 | --- | --- |
 | `GET /api/v1/admin/signup_blocks` | Lists blocks (newest first). Filter with `kind` and `active` |
-| `POST /api/v1/admin/signup_blocks` | Adds a block. The body has `kind`, `value`, `severity`, `comment` and `expires_in` (seconds) |
+| `POST /api/v1/admin/signup_blocks` | Adds a block. The body has `kind`, `value`, `severity`, `comment` and `expires_in` (seconds, at most ten years) |
 | `POST /api/v1/admin/signup_blocks/import` | Adds blocks from a list. The body has `kind`, `text` (the list), `severity`, `comment` and `expires_in`. The response has `added`, the number added, and `skipped`, the rows not added (`line`, `value`, `reason`) |
 | `GET /api/v1/admin/signup_blocks/{id}` | Returns one block |
 | `POST /api/v1/admin/signup_blocks/{id}/lift` | Lifts a block. A block already lifted stays as it is |
