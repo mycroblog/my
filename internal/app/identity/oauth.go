@@ -561,7 +561,8 @@ type CodeExchange struct {
 
 // ExchangeAuthorizationCode exchanges a code for an access token and a refresh token. The
 // code must belong to the client, not have expired, come with the redirect_uri it was issued
-// for, and come with the code_verifier of its S256 challenge; otherwise it fails with an
+// for, come with the code_verifier of its S256 challenge, and come from a browser session
+// that has not ended since; otherwise it fails with an
 // *OAuthError invalid_grant. A code works once: presenting it again fails and revokes every
 // token issued from it (RFC 6749 §4.1.2).
 func (s *Service) ExchangeAuthorizationCode(ctx context.Context, in CodeExchange) (IssuedTokens, error) {
