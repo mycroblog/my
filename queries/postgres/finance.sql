@@ -65,11 +65,43 @@ INSERT INTO billing_import_runs (id, source, run_key, outcome, error_kind, reque
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- SumBillingImportRuns sums the requests and the bytes billed of the attempts of a source that
--- occurred in [from, until).
+-- occurred in [from, until), counting the reservation of an attempt that is not recorded yet in
+-- place of its requests.
 -- name: SumBillingImportRuns :one
 SELECT COALESCE(SUM(requests), 0)::bigint AS requests, COALESCE(SUM(bytes_billed), 0)::bigint AS bytes_billed
-FROM billing_import_runs
-WHERE source = sqlc.arg(source) AND occurred_at >= sqlc.arg(from_at) AND occurred_at < sqlc.arg(until_at);
+FROM (
+  SELECT u.requests, u.bytes_billed FROM billing_import_runs u
+  WHERE u.source = sqlc.arg(source) AND u.occurred_at >= sqlc.arg(from_at) AND u.occurred_at < sqlc.arg(until_at)
+  UNION ALL
+  SELECT r.requests, 0 FROM billing_import_reservations r
+  WHERE r.source = sqlc.arg(source) AND r.reserved_at >= sqlc.arg(from_at) AND r.reserved_at < sqlc.arg(until_at)
+    AND NOT EXISTS (SELECT 1 FROM billing_import_runs u WHERE u.id = r.id)
+) AS usage;
+
+-- InsertBillingImportReservation records the requests that an attempt reserved before it calls
+-- the provider.
+-- name: InsertBillingImportReservation :exec
+INSERT INTO billing_import_reservations (id, source, run_key, requests, reserved_at) VALUES ($1, $2, $3, $4, $5);
+
+-- PendingBillingImportReservation reports whether an attempt of a source reserved requests at or
+-- after since and is not recorded yet: it is still running.
+-- name: PendingBillingImportReservation :one
+SELECT EXISTS (
+  SELECT 1 FROM billing_import_reservations r
+  WHERE r.source = sqlc.arg(source) AND r.reserved_at >= sqlc.arg(since)
+    AND NOT EXISTS (SELECT 1 FROM billing_import_runs u WHERE u.id = r.id)
+) AS pending;
+
+-- BillingImportRunKeySucceeded reports whether an attempt of a source with the run key succeeded.
+-- name: BillingImportRunKeySucceeded :one
+SELECT EXISTS (
+  SELECT 1 FROM billing_import_runs WHERE source = $1 AND run_key = $2 AND outcome = 'succeeded'
+) AS succeeded;
+
+-- LockBillingImportSource takes a transaction-scoped advisory lock on the imports of a source, so
+-- that attempts reserve requests one at a time.
+-- name: LockBillingImportSource :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
 
 -- name: CountBillingImportRunsByKey :one
 SELECT COUNT(*) FROM billing_import_runs WHERE source = $1 AND run_key = $2;

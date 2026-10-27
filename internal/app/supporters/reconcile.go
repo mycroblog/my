@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -162,7 +163,7 @@ func (r *reconciliation) refetch(ctx context.Context, ref SubscriptionRef) error
 	if !r.take() {
 		return errRequestCap
 	}
-	snap, err := r.p.d.Provider.GetSubscription(ctx, ref)
+	snap, err := readSubscription(ctx, r.p.d.Provider, r.p.d.Clock, ref)
 	if errors.Is(err, ErrPaymentNotFound) {
 		return nil // deleted on the provider's side; the sweep no longer lists it
 	}
@@ -274,6 +275,7 @@ func (r *reconciliation) sweep(ctx context.Context) error {
 		if !r.take() {
 			return errRequestCap
 		}
+		readAt := kernel.Normalize(r.p.d.Clock.Now())
 		page, err := r.p.d.Provider.ListSubscriptions(ctx, r.run.SweepCursor)
 		if err != nil {
 			return err
@@ -282,6 +284,7 @@ func (r *reconciliation) sweep(ctx context.Context) error {
 			if snap.LocalID == "" || r.synced[snap.Ref] {
 				continue
 			}
+			snap.ReadAt = readAt
 			if err := r.sync(ctx, snap); err != nil {
 				return err
 			}

@@ -222,6 +222,14 @@ CREATE TABLE supporter_subscription_deadlines (
 );
 CREATE INDEX supporter_subscription_deadlines_due_at ON supporter_subscription_deadlines (due_at);
 
+-- Current value: when the newest snapshot of the provider applied to a subscription was read
+-- (ADR-0074 §3). A snapshot read before it is not applied, so that an older state read at the
+-- same time does not replace a newer one.
+CREATE TABLE supporter_subscription_reads (
+  subscription_id uuid NOT NULL PRIMARY KEY,
+  read_at timestamptz NOT NULL
+);
+
 -- Current value: the members who chose to be listed on the supporter list (ADR-0071 §6),
 -- deleted in the transaction that takes their plan's role away and by the erasure of the account.
 CREATE TABLE supporter_listings (

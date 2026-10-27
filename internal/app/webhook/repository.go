@@ -97,9 +97,11 @@ type Repository interface {
 	InsertAttempt(ctx context.Context, tx uow.Tx, a webhook.Attempt) error
 	// Failures returns in tx the run of failures of an endpoint, nil without one.
 	Failures(ctx context.Context, tx uow.Tx, endpointID string) (*webhook.Failures, error)
-	// UpsertFailures sets the run of failures of an endpoint, and DeleteFailures ends it (the
-	// projectors of AttemptRecorded).
-	UpsertFailures(ctx context.Context, tx uow.Tx, endpointID string, f webhook.Failures) error
+	// AddFailure records a failed attempt at at in the run of failures of an endpoint, in one
+	// statement: it starts the run with the attempt, or adds one to the run that goes on, so
+	// that concurrent failures each count. DeleteFailures ends the run (the projectors of
+	// AttemptRecorded).
+	AddFailure(ctx context.Context, tx uow.Tx, endpointID, attemptID string, at time.Time) error
 	DeleteFailures(ctx context.Context, tx uow.Tx, endpointID string) error
 	// ListDeliveries returns up to limit deliveries of an endpoint, newest first, before the
 	// delivery before ("" for the first page).

@@ -24,16 +24,18 @@ func ready() map[string]string {
 	return with(minimal(), "MY_KEK", randomKEK, "MY_DATABASE_URL", "file:/var/lib/my/my.db")
 }
 
+type readinessCase struct {
+	name string
+	env  map[string]string
+	// want lists "<severity> <key>" of each finding, in order.
+	want []string
+	// wantMessage must appear in one of the messages.
+	wantMessage string
+}
+
 func TestReadiness(t *testing.T) {
 	base := []string{"warning mail", "warning vapid_private_key"}
-	tests := []struct {
-		name string
-		env  map[string]string
-		// want lists "<severity> <key>" of each finding, in order.
-		want []string
-		// wantMessage must appear in one of the messages.
-		wantMessage string
-	}{
+	tests := []readinessCase{
 		{name: "ready", env: ready(), want: base},
 		{
 			name: "development profile",
@@ -106,13 +108,28 @@ func TestReadiness(t *testing.T) {
 				"MY_VAPID_PRIVATE_KEY", "kJpUOWsBf0s0ReN3iZK9WLmCnxwcZr2dsHWWUJGGqVM"),
 			want: nil,
 		},
-		{
-			name: "Stripe test key",
-			env: with(ready(), "MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "sk_test_abc",
+	}
+	for _, key := range []string{"sk_test_abc", "rk_test_abc"} {
+		tests = append(tests, readinessCase{
+			name: "Stripe test key " + key,
+			env: with(ready(), "MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
 				"MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
 			want:        append(slices.Clone(base), "warning payments_stripe_secret_key"),
 			wantMessage: "test-mode key",
-		},
+		}, readinessCase{
+			name: "Stripe test key " + key + " in the development profile",
+			env: with(minimal(), "MY_PROFILE", "development", "MY_HOST", "localhost:8080", "MY_DATABASE_URL", ":memory:",
+				"MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key, "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
+			want: nil,
+		})
+	}
+	for _, key := range []string{"sk_live_abc", "rk_live_abc"} {
+		tests = append(tests, readinessCase{
+			name: "Stripe live key " + key,
+			env: with(ready(), "MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
+				"MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
+			want: base,
+		})
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

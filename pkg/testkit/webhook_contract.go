@@ -65,6 +65,7 @@ func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
 		{"SignsWithBothSecretsAfterARotation", webhookRotate},
 		{"PurgesOldMessages", webhookPurge},
 		{"RebuildsItsProjections", webhookRebuild},
+		{"CountsConcurrentFailures", webhookConcurrentFailures},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newWebhookEnv(t, newHarness)) })
@@ -745,9 +746,7 @@ func webhookRebuild(t *testing.T, e *webhookEnv) {
 		if err := e.h.Webhooks.DeleteFailures(ctx, tx, failing); err != nil {
 			return err
 		}
-		return e.h.Webhooks.UpsertFailures(ctx, tx, healthy, webhook.Failures{
-			FirstFailureAttemptID: success.Last.ID, FirstFailureAt: success.Last.AttemptedAt, Consecutive: 1,
-		})
+		return e.h.Webhooks.AddFailure(ctx, tx, healthy, success.Last.ID, success.Last.AttemptedAt)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -763,6 +762,50 @@ func webhookRebuild(t *testing.T, e *webhookEnv) {
 				!g.Failures.FirstFailureAt.Equal(w.Failures.FirstFailureAt) || g.Failures.Consecutive != w.Failures.Consecutive)) {
 			t.Errorf("rebuilt %s = %+v %+v, want %+v %+v", id, g.Head, g.Failures, w.Head, w.Failures)
 		}
+	}
+}
+
+// webhookConcurrentFailures records failures of one endpoint in concurrent transactions: each
+// counts, and the run keeps its first failure.
+func webhookConcurrentFailures(t *testing.T, e *webhookEnv) {
+	ctx := t.Context()
+	id := e.create(t, "https://hooks.example.com/c", webhook.EventStatusCreated).Endpoint.ID
+	first, firstAt := e.ids.NewID(), e.clock.Now()
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.h.Webhooks.AddFailure(ctx, tx, id, first, firstAt)
+	}); err != nil {
+		t.Fatalf("AddFailure = %v", err)
+	}
+	const n = 8
+	attempts := make([]string, n)
+	for i := range attempts {
+		attempts[i] = e.ids.NewID()
+	}
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	for i := range n {
+		wg.Go(func() {
+			errs[i] = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				return e.h.Webhooks.AddFailure(ctx, tx, id, attempts[i], firstAt.Add(time.Duration(i+1)*time.Second))
+			})
+		})
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			t.Fatalf("AddFailure = %v", err)
+		}
+	}
+	var got *webhook.Failures
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		got, err = e.h.Webhooks.Failures(ctx, tx, id)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Consecutive != n+1 || got.FirstFailureAttemptID != first || !got.FirstFailureAt.Equal(firstAt) {
+		t.Errorf("Failures = %+v, want %d failures since %s", got, n+1, first)
 	}
 }
 

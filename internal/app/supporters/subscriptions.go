@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 
 	"github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -263,7 +264,7 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedC
 // resync re-reads a user's linked subscription from the provider after a command and applies
 // it, so that the answer shows the new state.
 func (s *Service) resync(ctx context.Context, rec SubscriptionRecord) (SubscriptionView, error) {
-	snap, err := s.d.Provider.GetSubscription(ctx, rec.Link)
+	snap, err := readSubscription(ctx, s.d.Provider, s.d.Clock, rec.Link)
 	if err != nil {
 		return SubscriptionView{}, err
 	}
@@ -326,11 +327,19 @@ func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interva
 	if err != nil {
 		return SubscriptionView{}, err
 	}
-	key := "change:" + v.ID + ":" + price.ID + ":" + s.d.IDs.NewID()
-	if err := s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), key); err != nil {
+	if err := s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), changeKey(v, price.ID)); err != nil {
 		return SubscriptionView{}, err
 	}
 	return s.resync(ctx, v.SubscriptionRecord)
+}
+
+// changeKey is the idempotency key of a change of v to the price toPriceID: the same for every
+// attempt of one change, so that a retry after a failure part of the way (the difference charged,
+// the plan not switched yet) does not charge again. It names the subscription, the price it
+// pays now, the new price, and the end of the current period: a subscription cannot change from
+// one price to another at once twice in one period, since it moves at once only up.
+func changeKey(v SubscriptionView, toPriceID string) string {
+	return "change:" + v.ID + ":" + v.Current.PriceID + ":" + toPriceID + ":" + strconv.FormatInt(v.Current.PeriodEndsAt.Unix(), 10)
 }
 
 // CancelScheduledChange withdraws the change of a user's subscription that waits for the end

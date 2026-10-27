@@ -120,6 +120,9 @@ func emailHardBounceStopsMail(t *testing.T, e *accountEnv) {
 	if n := len(m.Sent()); n != 0 {
 		t.Fatalf("sent %d emails to a hard-bounced address, want none", n)
 	}
+	if _, ok, err := e.identity.TransactionalAddress(ctx, reg.User.ID); err != nil || ok {
+		t.Errorf("TransactionalAddress after a hard bounce = %v, %v; want none", ok, err)
+	}
 
 	// The user asks for the verification email, which goes out, and verifying lifts the
 	// suppression.
@@ -176,6 +179,9 @@ func emailComplaintStopsNotifications(t *testing.T, e *accountEnv) {
 	}
 	if _, ok, err := e.identity.NotificationAddress(ctx, reg.User.ID); err != nil || ok {
 		t.Errorf("NotificationAddress after a complaint = %v, %v; want none", ok, err)
+	}
+	if _, ok, err := e.identity.TransactionalAddress(ctx, reg.User.ID); err != nil || !ok {
+		t.Errorf("TransactionalAddress after a complaint = %v, %v; want the address", ok, err)
 	}
 	e.requestReset(t, sessionEmail)
 	notice := map[string]string{"user_id": reg.User.ID, "notice": "changed", "credential_id": e.ids.NewID()}

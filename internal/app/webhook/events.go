@@ -59,15 +59,6 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		if !ev.Attempt.Failed() {
 			return repo.DeleteFailures(ctx, tx, ev.EndpointID)
 		}
-		f, err := repo.Failures(ctx, tx, ev.EndpointID)
-		if err != nil {
-			return err
-		}
-		next := webhook.Failures{FirstFailureAttemptID: ev.Attempt.ID, FirstFailureAt: ev.Attempt.AttemptedAt, Consecutive: 1}
-		if f != nil {
-			next = *f
-			next.Consecutive++
-		}
-		return repo.UpsertFailures(ctx, tx, ev.EndpointID, next)
+		return repo.AddFailure(ctx, tx, ev.EndpointID, ev.Attempt.ID, ev.Attempt.AttemptedAt)
 	})
 }

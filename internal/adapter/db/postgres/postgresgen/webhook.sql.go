@@ -12,6 +12,27 @@ import (
 	"time"
 )
 
+const addWebhookEndpointFailure = `-- name: AddWebhookEndpointFailure :exec
+INSERT INTO webhook_endpoint_failures (endpoint_id, first_failure_attempt_id, first_failed_at, consecutive_failures)
+VALUES ($1, $2, $3, 1)
+ON CONFLICT (endpoint_id) DO UPDATE SET
+  consecutive_failures = webhook_endpoint_failures.consecutive_failures + 1
+`
+
+type AddWebhookEndpointFailureParams struct {
+	EndpointID            string
+	FirstFailureAttemptID string
+	FirstFailedAt         time.Time
+}
+
+// AddWebhookEndpointFailure records a failed attempt in the run of failures of an endpoint in
+// one statement: it starts the run with the attempt, or adds one to the run that goes on, so
+// that concurrent failures each count.
+func (q *Queries) AddWebhookEndpointFailure(ctx context.Context, arg AddWebhookEndpointFailureParams) error {
+	_, err := q.db.Exec(ctx, addWebhookEndpointFailure, arg.EndpointID, arg.FirstFailureAttemptID, arg.FirstFailedAt)
+	return err
+}
+
 const deleteWebhookAttemptsOfMessages = `-- name: DeleteWebhookAttemptsOfMessages :exec
 DELETE FROM webhook_delivery_attempts WHERE delivery_id IN (
   SELECT d.id FROM webhook_deliveries d WHERE d.message_id = ANY($1::uuid[])
@@ -610,31 +631,6 @@ func (q *Queries) ListWebhookSecrets(ctx context.Context, arg ListWebhookSecrets
 		return nil, err
 	}
 	return items, nil
-}
-
-const upsertWebhookEndpointFailures = `-- name: UpsertWebhookEndpointFailures :exec
-INSERT INTO webhook_endpoint_failures (endpoint_id, first_failure_attempt_id, first_failed_at, consecutive_failures)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (endpoint_id) DO UPDATE SET
-  first_failure_attempt_id = excluded.first_failure_attempt_id, first_failed_at = excluded.first_failed_at,
-  consecutive_failures = excluded.consecutive_failures
-`
-
-type UpsertWebhookEndpointFailuresParams struct {
-	EndpointID            string
-	FirstFailureAttemptID string
-	FirstFailedAt         time.Time
-	ConsecutiveFailures   int64
-}
-
-func (q *Queries) UpsertWebhookEndpointFailures(ctx context.Context, arg UpsertWebhookEndpointFailuresParams) error {
-	_, err := q.db.Exec(ctx, upsertWebhookEndpointFailures,
-		arg.EndpointID,
-		arg.FirstFailureAttemptID,
-		arg.FirstFailedAt,
-		arg.ConsecutiveFailures,
-	)
-	return err
 }
 
 const upsertWebhookEndpointHead = `-- name: UpsertWebhookEndpointHead :exec

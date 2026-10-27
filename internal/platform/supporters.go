@@ -83,7 +83,8 @@ type supporterUsers struct{ a *App }
 
 // SupporterMailbox implements notification.SupporterMailboxes: the primary address and the
 // locale of the user of a local account, unless the suppression of the address stops
-// notifications (ADR-0086 §5).
+// transactional email (ADR-0086 §5): the supporter emails are transactional, so a complaint
+// does not stop them and a hard bounce does.
 func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) (notification.Mailbox, bool, error) {
 	userID, err := moderatorStaff(u).userOf(ctx, accountID)
 	if err != nil || userID == "" {
@@ -96,7 +97,7 @@ func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) 
 	if err != nil || !user.EmailVerified {
 		return notification.Mailbox{}, false, err
 	}
-	addressID, ok, err := u.a.Identity.NotificationAddress(ctx, userID)
+	addressID, ok, err := u.a.Identity.TransactionalAddress(ctx, userID)
 	if err != nil || !ok {
 		return notification.Mailbox{}, false, err
 	}

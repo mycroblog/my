@@ -55,6 +55,7 @@ func FinanceRepositoryContract(t *testing.T, newHarness FinanceFactory) {
 		{"ImportsWithoutDuplicates", financeImportIdempotent},
 		{"ImportsEstimatesFinalsAndCorrections", financeImportRevisions},
 		{"ImportsWithinTheRequestCaps", financeImportCaps},
+		{"ReservesRequestsBeforeAnImport", financeImportReservations},
 		{"RecordsFailedImports", financeImportFailures},
 		{"RecordsIncomeOnceAndTotalsIt", financeIncomeRecords},
 		{"ListsIncomeMovements", financeIncomeList},

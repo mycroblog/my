@@ -93,7 +93,8 @@ func Readiness(c *Config) []Finding {
 		warnf("vapid_private_key", "is not set, so the server sends no Web Push notifications; generate one with `my config vapid-key`")
 	}
 	switch {
-	case c.PaymentsProvider == "stripe" && strings.HasPrefix(c.PaymentsStripeSecretKey, "sk_test_"):
+	case c.PaymentsProvider == "stripe" && (strings.HasPrefix(c.PaymentsStripeSecretKey, "sk_test_") ||
+		strings.HasPrefix(c.PaymentsStripeSecretKey, "rk_test_")):
 		warnf("payments_stripe_secret_key", "is a test-mode key, so supporters are not charged")
 	case c.PaymentsProvider == "payjp" && strings.HasPrefix(c.PaymentsPayjpSecretKey, "sk_test_"):
 		warnf("payments_payjp_secret_key", "is a test-mode key, so supporters are not charged")

@@ -153,6 +153,19 @@ func (s *Service) mailStopped(ctx context.Context, emailAddressID string, c iden
 // NotificationAddress returns the ID of a user's primary address and whether notification and
 // announcement emails may go to it: false without a primary address or when it is suppressed.
 func (s *Service) NotificationAddress(ctx context.Context, userID string) (emailAddressID string, ok bool, err error) {
+	return s.primaryAddressFor(ctx, userID, identity.MailNotification)
+}
+
+// TransactionalAddress returns the ID of a user's primary address and whether transactional
+// emails may go to it: false without a primary address or when its suppression stops them (a
+// hard bounce does, a complaint does not).
+func (s *Service) TransactionalAddress(ctx context.Context, userID string) (emailAddressID string, ok bool, err error) {
+	return s.primaryAddressFor(ctx, userID, identity.MailTransactional)
+}
+
+// primaryAddressFor returns the ID of a user's primary address and whether an email of class c
+// may go to it.
+func (s *Service) primaryAddressFor(ctx context.Context, userID string, c identity.MailClass) (string, bool, error) {
 	email, _, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
 	switch {
 	case errors.Is(err, ErrNotFound):
@@ -160,7 +173,7 @@ func (s *Service) NotificationAddress(ctx context.Context, userID string) (email
 	case err != nil:
 		return "", false, err
 	}
-	stopped, err := s.mailStopped(ctx, email.ID, identity.MailNotification)
+	stopped, err := s.mailStopped(ctx, email.ID, c)
 	if err != nil || stopped {
 		return "", false, err
 	}

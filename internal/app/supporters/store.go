@@ -210,6 +210,9 @@ type Repository interface {
 	// LockSubscription returns a subscription inside tx, so that its changes run one after
 	// another (SELECT ... FOR UPDATE where the database needs it).
 	LockSubscription(ctx context.Context, tx uow.Tx, id string) (SubscriptionRecord, error)
+	// MarkSubscriptionRead records in tx that a snapshot of a subscription read at at is
+	// applied, and reports false without recording when a snapshot read later was.
+	MarkSubscriptionRead(ctx context.Context, tx uow.Tx, id string, at time.Time) (bool, error)
 	// FindSubscriptionIDByRef returns our subscription of the provider's one; tx may be nil.
 	FindSubscriptionIDByRef(ctx context.Context, tx uow.Tx, provider string, ref SubscriptionRef) (string, error)
 	// FindSubscriptionIDByCheckout returns our subscription of a checkout; tx may be nil.
