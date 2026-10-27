@@ -119,6 +119,8 @@ type Options struct {
 	Origin string
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
+	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
+	Errors kernel.ErrorReporter
 }
 
 // Handler serves the endpoints.
@@ -131,6 +133,9 @@ type Handler struct {
 func New(o Options) (*Handler, error) {
 	if o.Logger == nil {
 		o.Logger = slog.Default()
+	}
+	if o.Errors == nil {
+		o.Errors = kernel.NopErrorReporter{}
 	}
 	h := &Handler{o: o, cop: http.NewCrossOriginProtection()}
 	if o.WebOrigin != "" {
@@ -347,6 +352,7 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error, basic 
 	var oe *appidentity.OAuthError
 	if !errors.As(err, &oe) {
 		h.o.Logger.ErrorContext(r.Context(), "oauth endpoint failed", slog.String("path", r.URL.Path), slog.Any("error", err))
+		h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
 		writeError(w, http.StatusInternalServerError, &appidentity.OAuthError{Code: "server_error"})
 		return
 	}

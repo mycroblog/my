@@ -115,6 +115,6 @@ func findingLine(f config.Finding) string {
 func warnReadiness(ctx context.Context, logger *slog.Logger, cfg *config.Config) {
 	for _, f := range config.Readiness(cfg) {
 		logger.WarnContext(ctx, "a setting is not ready for production",
-			slog.String("env", f.Env()), slog.String("severity", string(f.Severity)), slog.String("detail", f.Message))
+			slog.String("env", f.Env()), slog.String("finding_severity", string(f.Severity)), slog.String("detail", f.Message))
 	}
 }

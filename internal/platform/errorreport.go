@@ -40,8 +40,9 @@ var errorExporters = map[string]ErrorExporter{}
 const errorReporterCloseTimeout = 3 * time.Second
 
 // ErrorReporter is the kernel.ErrorReporter of the App (ADR-0103 §1): it fills each event with
-// the time, the version, the role, the environment, and the request and trace IDs of ctx, and
-// hands it to every sink. The modules register their sinks with AddSink while the App is set
+// the time, the version, the role, the environment, the place and the request and trace IDs of
+// ctx, scrubs it, sets its fingerprint (ADR-0103 §1, §3), counts it in my.errors.reported, and
+// hands it to every sink. Every sink receives the scrubbed event only. The modules register their sinks with AddSink while the App is set
 // up; setUpErrorReporter adds the exporter of errors_exporter.
 //
 // While Serve runs, it is also the kernel.ProcessStopper of kernel.Go: the panic of a goroutine
@@ -50,6 +51,7 @@ type ErrorReporter struct {
 	version, role, environment string
 	clock                      kernel.Clock
 	tracer                     kernel.Tracer
+	reported                   kernel.Counter
 
 	mu    sync.RWMutex
 	sinks []ErrorSink
@@ -67,7 +69,10 @@ func NewErrorReporter(version, role, environment string, clock kernel.Clock, tra
 	if tracer == nil {
 		tracer = kernel.NopTracer{}
 	}
-	return &ErrorReporter{version: version, role: role, environment: environment, clock: clock, tracer: tracer}
+	return &ErrorReporter{
+		version: version, role: role, environment: environment, clock: clock, tracer: tracer,
+		reported: kernel.NopMeter{}.Counter(ErrorsReported),
+	}
 }
 
 // AddSink adds s to the outputs of every later report.
@@ -77,13 +82,18 @@ func (r *ErrorReporter) AddSink(s ErrorSink) {
 	r.sinks = append(r.sinks, s)
 }
 
-// Report fills ev and hands it to every sink. A sink that panics is skipped: the reporter never
-// reports its own failures.
+// Report fills, scrubs, fingerprints, and counts ev, and hands it to every sink. A sink that
+// panics is skipped: the reporter never reports its own failures.
 func (r *ErrorReporter) Report(ctx context.Context, ev kernel.ErrorEvent) {
-	if r == nil {
+	if r == nil || clientGone(ctx, ev) {
 		return
 	}
 	r.fill(ctx, &ev)
+	scrubEvent(&ev)
+	if ev.Fingerprint == "" {
+		ev.Fingerprint = fingerprint(ev)
+	}
+	r.reported.Add(ctx, 1, kernel.NewLabels(LabelErrorSource, string(ev.Source), LabelErrorKind, string(ev.Kind)))
 	r.mu.RLock()
 	sinks := r.sinks
 	r.mu.RUnlock()
@@ -115,12 +125,39 @@ func (r *ErrorReporter) fill(ctx context.Context, ev *kernel.ErrorEvent) {
 	if ev.Environment == "" {
 		ev.Environment = r.environment
 	}
+	if ev.Where == "" {
+		ev.Where = requestWhere(ctx)
+	}
 	if ev.RequestID == "" {
 		ev.RequestID = RequestID(ctx)
 	}
 	if ev.TraceID == "" {
 		ev.TraceID, ev.SpanID = r.tracer.LogIDs(ctx)
 	}
+}
+
+// clientGone reports whether ev is the error of an HTTP request whose client has gone away: the
+// request's context ended, so its error is most likely only that, and nothing here is broken.
+// A panic is reported whatever the context.
+func clientGone(ctx context.Context, ev kernel.ErrorEvent) bool {
+	if ev.Kind != kernel.ErrorKindError || ctx.Err() == nil {
+		return false
+	}
+	_, ok := ctx.Value(requestRouteKey{}).(*requestRoute)
+	return ok
+}
+
+// requestWhere returns the place of an error of the HTTP request of ctx: "<my.surface> <method>
+// <http.route>" once the request has reached a route, "http" before, and "" outside a request.
+func requestWhere(ctx context.Context) string {
+	rr, ok := ctx.Value(requestRouteKey{}).(*requestRoute)
+	switch {
+	case !ok:
+		return ""
+	case rr.route == "":
+		return "http"
+	}
+	return rr.surface + " " + rr.method + " " + rr.route
 }
 
 // Recover reports a panic as a kernel.ErrorKindPanic event at where and does not panic again;
@@ -173,10 +210,12 @@ func (r *ErrorReporter) close(ctx context.Context) {
 	}
 }
 
-// setUpErrorReporter builds the App's ErrorReporter and adds the exporter of errors_exporter
-// (ADR-0103 §4 (3)). The other sinks are added by the setup of their modules.
+// setUpErrorReporter builds the App's ErrorReporter and adds the log line (ADR-0103 §4 (1)) and
+// the exporter of errors_exporter (§4 (3)) behind the limits of the exports (exportLimiter). The other sinks are added by the setup of their modules.
 func (a *App) setUpErrorReporter(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	a.ErrorReporter = NewErrorReporter(opts.Version, string(cfg.Role), cfg.ErrorsEnvironment, a.Clock, a.Tracer)
+	a.ErrorReporter.reported = kernel.MeterOrNop(a.Meter).Counter(ErrorsReported)
+	a.ErrorReporter.AddSink(NewErrorLogSink(a.Logger))
 	if cfg.ErrorsExporter == "" || cfg.ErrorsExporter == "none" {
 		return nil
 	}
@@ -188,7 +227,7 @@ func (a *App) setUpErrorReporter(ctx context.Context, cfg *config.Config, opts A
 	if err != nil {
 		return fmt.Errorf("errors_exporter %s: %w", cfg.ErrorsExporter, err)
 	}
-	a.ErrorReporter.AddSink(sink)
+	a.ErrorReporter.AddSink(newExportLimiter(sink, a.Clock))
 	return nil
 }
 

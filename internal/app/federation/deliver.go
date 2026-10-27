@@ -374,7 +374,8 @@ func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a feder
 		if cause == "" {
 			cause = fmt.Sprintf("inbox answered %d", a.HTTPStatus)
 		}
-		return queue.Retry(retryAfter, fmt.Errorf("deliver to %s: %s", del.InboxURL, cause))
+		// The server failed, not this one: a delivery that gives up is no error to report.
+		return queue.RetryRemote(retryAfter, fmt.Errorf("deliver to %s: %s", del.InboxURL, cause))
 	case federation.DeliveryPermanentFailure:
 		d.d.Logger.InfoContext(ctx, "delivery refused", slog.String("delivery_id", del.ID),
 			slog.String("inbox", string(del.InboxURL)), slog.Int("status", a.HTTPStatus), slog.String("error", a.Error))

@@ -128,6 +128,8 @@ func newHTTPMetrics(m kernel.Meter) *httpMetrics {
 type requestRoute struct {
 	route   string
 	surface string
+	// method is the http.request.method of the request, for the place of its error reports.
+	method string
 }
 
 type requestRouteKey struct{}

@@ -190,15 +190,17 @@ entries:
     notes:
       - "Every metric (kernel.Instrument) is listed in docs/operations/running.md#metrics (`agentkit docs inventory`); a renamed metric or label also updates deploy/monitoring and docs/operations/alerts.md."
   - name: error-reporting
-    paths: ["internal/app/kernel/errorreport.go", "internal/app/kernel/errorreport_test.go", "internal/platform/errorreport.go", "internal/platform/errorreport_test.go", "internal/platform/errorreport_*.go", "internal/platform/errorexport.go", "internal/platform/errorexport_test.go", "internal/adapter/errorreport/**"]
+    paths: ["internal/app/kernel/errorreport.go", "internal/app/kernel/errorreport_test.go", "internal/app/kernel/errorscrub.go", "internal/app/kernel/errorscrub_test.go", "internal/platform/errorreport.go", "internal/platform/errorreport_test.go", "internal/platform/errorreport_*.go", "internal/platform/errorexport.go", "internal/platform/errorexport_test.go", "internal/adapter/errorreport/**", "internal/platform/errorscrub.go", "internal/platform/errorscrub_test.go", "internal/platform/errorlog.go", "internal/platform/errorlog_test.go", "internal/app/queue/errors_test.go"]
     docs: ["docs/adr/0103-error-reporting.md", "docs/architecture/overview.md#3-ポート一覧"]
-    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics"]
+    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics", "docs/operations/running.md#error-reports", "docs/operations/alerts.md#myerrorreportsincreasing"]
     notes:
       - "kernel.ErrorReporter and ErrorEvent use the standard library only; every report goes through the one platform.ErrorReporter, which fills the version, role, environment, and correlation IDs and hands the event to its sinks."
       - "A new output is an ErrorSink (ErrorSinkCloser when it flushes at close) added with App.ErrorReporter.AddSink from the setup of its module; an exporter of errors_exporter registers its ErrorExporter in errorExporters from the init of its own file and flips its choice to inV0 in the config schema."
       - "Sinks never report their own failures, never block a request for long, and run concurrently; the sink that panics is skipped."
       - "Exporters share platform.ExportQueue (1,000 reports, drop and count when full, 2 s drain, my.errors.exported): the adapter in internal/adapter/errorreport/<name> only implements SendError(ctx, kernel.ErrorEvent) error (platform.ErrorSender) and returns an error with Dropped() bool for a rate-limited report; adapters never import platform, and import another adapter only as errorreport/otlp takes the resource of telemetry/otel."
       - "errorreport/otlp is the one OpenTelemetry package outside internal/adapter/telemetry (depguard): it emits exception log records through a SimpleProcessor, never Record.SetErr (the SDK would copy the unscrubbed err.Error()), takes the trace and span IDs from the event into the Emit ctx, and is left out by no_otel through internal/platform/errorreport_otlp.go."
+      - "Report scrubs the message and the stack and sets the fingerprint (errorscrub.go) before any sink; the log sink (errorlog.go) is always there, and the exporter sits behind exportLimiter (one per fingerprint a minute, 60 a minute)."
+      - "Capture points pass an empty where inside a request: the reporter names it <surface> <method> <route>. Report only 5xx causes, job panics and dead jobs, and startup failures; a failure caused by a remote server (a delivery) uses queue.RetryRemote and is not reported."
       - "Start goroutines with kernel.Go(ctx, name, reporter, fn): its panic is reported as fatal and stops Serve through ErrorReporter.StopProcess."
   - name: cli-admin
     paths: ["cmd/my/admin.go", "cmd/my/role.go", "cmd/my/audit.go"]

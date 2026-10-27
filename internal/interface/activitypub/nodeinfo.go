@@ -158,6 +158,7 @@ func (h *Handler) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	users, err := h.o.Accounts.CountLocalUsers(r.Context())
 	if err != nil {
 		h.o.Logger.ErrorContext(r.Context(), "nodeinfo: count users failed", slog.Any("error", err))
+		h.report(r.Context(), err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return
 	}
@@ -165,6 +166,7 @@ func (h *Handler) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	if h.o.OpenRegistrations != nil {
 		if open, err = h.o.OpenRegistrations(r.Context()); err != nil {
 			h.o.Logger.ErrorContext(r.Context(), "nodeinfo: read the registration mode failed", slog.Any("error", err))
+			h.report(r.Context(), err)
 			h.o.Problem(w, r, http.StatusInternalServerError)
 			return
 		}
@@ -173,6 +175,7 @@ func (h *Handler) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	if h.o.LocalPosts != nil {
 		if posts, err = h.o.LocalPosts(r.Context()); err != nil {
 			h.o.Logger.ErrorContext(r.Context(), "nodeinfo: count local posts failed", slog.Any("error", err))
+			h.report(r.Context(), err)
 			h.o.Problem(w, r, http.StatusInternalServerError)
 			return
 		}
@@ -189,6 +192,7 @@ func (h *Handler) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	if h.o.Metadata != nil {
 		if meta, err = h.o.Metadata(r.Context()); err != nil {
 			h.o.Logger.ErrorContext(r.Context(), "nodeinfo: read the instance metadata failed", slog.Any("error", err))
+			h.report(r.Context(), err)
 			h.o.Problem(w, r, http.StatusInternalServerError)
 			return
 		}

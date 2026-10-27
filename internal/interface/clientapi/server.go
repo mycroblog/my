@@ -304,8 +304,8 @@ type Options struct {
 	// Meter records my.stream.connections (ADR-0055 §3); nil records nothing. The HTTP
 	// metrics of every operation are recorded around the Router.
 	Meter kernel.Meter
-	// ErrorReporter receives the errors that the web client reports (client_errors.go); nil
-	// drops them.
+	// ErrorReporter receives the errors behind a 500 answer (ADR-0103 §2) and those that the web
+	// client reports (client_errors.go); nil drops them.
 	ErrorReporter kernel.ErrorReporter
 	// ClientErrorLimit overrides the package's ClientErrorLimit when its Max is set.
 	ClientErrorLimit kernel.Limit

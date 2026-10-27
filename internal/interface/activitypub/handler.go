@@ -14,6 +14,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/graph"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -111,6 +112,8 @@ type Options struct {
 	Problem ProblemWriter
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
+	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
+	Errors kernel.ErrorReporter
 }
 
 // Handler serves the federation endpoints.
@@ -131,6 +134,9 @@ func New(o Options) *Handler {
 	}
 	if o.Logger == nil {
 		o.Logger = slog.Default()
+	}
+	if o.Errors == nil {
+		o.Errors = kernel.NopErrorReporter{}
 	}
 	return &Handler{o: o}
 }
@@ -210,6 +216,7 @@ func (h *Handler) mode(w http.ResponseWriter, r *http.Request) (mode federation.
 	mode, err := h.o.Modes.FederationMode(r.Context())
 	if err != nil {
 		h.o.Logger.ErrorContext(r.Context(), "activitypub: read the federation mode failed", slog.Any("error", err))
+		h.report(r.Context(), err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return "", false
 	}
@@ -242,6 +249,7 @@ func (h *Handler) closure(op instance.ClosureOperation, open, closed http.Handle
 			var err error
 			if state, err = h.o.Closure(r.Context()); err != nil {
 				h.o.Logger.ErrorContext(r.Context(), "activitypub: read the service closure failed", slog.Any("error", err))
+				h.report(r.Context(), err)
 				h.o.Problem(w, r, http.StatusInternalServerError)
 				return
 			}
@@ -292,7 +300,14 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	h.o.Logger.ErrorContext(r.Context(), "activitypub lookup failed", slog.Any("error", err))
+	h.report(r.Context(), err)
 	h.o.Problem(w, r, http.StatusInternalServerError)
+}
+
+// report reports err, the cause of a 500 answer, to the operator (ADR-0103 §2); the reporter
+// names the route.
+func (h *Handler) report(ctx context.Context, err error) {
+	h.o.Errors.Report(ctx, kernel.NewErrorEvent(err, ""))
 }
 
 // visible reports whether an actor may be presented: only active local actors are.
@@ -322,6 +337,7 @@ func (h *Handler) writeJSONCache(w http.ResponseWriter, r *http.Request, ct, cac
 	body, err := json.Marshal(v)
 	if err != nil {
 		h.o.Logger.ErrorContext(r.Context(), "activitypub encode failed", slog.Any("error", err))
+		h.report(r.Context(), err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return
 	}

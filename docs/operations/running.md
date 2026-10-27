@@ -26,7 +26,8 @@ The [production checklist](production-checklist.md) lists the checks and what to
 | `web` | All routes | Does not run |
 | `worker` | Health checks only (for platform probes) | Runs |
 
-Logs go to standard error as JSON Lines. Logs written while handling a request carry a `request_id`, and the same ID is returned in the `X-Request-Id` response header.
+Logs go to standard error as JSON Lines. Every line has `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) and `severity`, the same level in the form Cloud Logging reads (`DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL` for an error that stops the process).
+Logs written while handling a request carry a `request_id`, and the same ID is returned in the `X-Request-Id` response header.
 If the request's `X-Request-Id` is at most 128 characters of letters, digits and `-_.:`, it is used as is, as the ID assigned by a load balancer.
 Logs inside a trace (requests and jobs) also carry `trace_id` and `span_id` (see [Traces](#traces)).
 
@@ -37,6 +38,34 @@ so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-b
 | --- | --- |
 | `http request` (`INFO`; health checks use `DEBUG`) | `http.request.method`, `http.route`, `my.surface` and `http.response.status_code` (a number) have the same values as the labels of `http.server.request.duration`. Also `duration_seconds` (a number of seconds), `url.path` (the path without the query string), `http.response.body.size` and `request_id`. `http.route` and `my.surface` are absent for requests that did not reach a route (health checks, requests refused before routing), and the metric does not count them |
 | `job` (`INFO` on success, `WARN` for `retry`, `ERROR` for `dead`) | `my.job.type` and `my.outcome` have the same values as the labels of `my.job.duration`. Also `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, and `error` on failure |
+| `error report` (`ERROR`; `CRITICAL` for a failure that stops the process) | One line per reported error ([Error reports](#error-reports)) |
+
+### Error reports
+
+The server reports the errors that need the operator's attention as one `error report` line each:
+
+- a panic in an HTTP handler, a job, or a background task;
+- an error behind a 5xx response of the client API, the admin API, the sign-in pages, ActivityPub, OAuth, or media;
+- a job that fails for good (`dead`): it ran out of retries, or refused to run again. Deliveries that gave up because the other server kept failing are not reported;
+- a failure to start: an invalid configuration, or a database or adapter that cannot be set up.
+
+4xx responses, job retries, the maintenance mode, failed readiness checks, requests whose client went away, and failures caused by other servers are not reported; the metrics and the other log lines cover them.
+
+The line is in the form Google Cloud Error Reporting reads: on Cloud Run, the reports appear in Error Reporting grouped as errors without any setup. On other platforms it is a plain JSON line:
+
+| Field | Value |
+| --- | --- |
+| `@type`, `serviceContext` | The Error Reporting event type, and `{"service": "my", "version": "<version>"}` |
+| `my.error.fingerprint` | 32 hexadecimal digits that are the same for every occurrence of the same error: built from the source, the place, the error type, and the functions of the server in the stack, without line numbers |
+| `my.error.source`, `my.error.kind` | `server` (or `web`), and `panic` or `error` |
+| `my.error.where` | Where it happened: `<surface> <method> <route>` for a request (such as `client_api GET /api/v1/statuses/{id}`), the job type for a job, the task name for a background task, `startup` for a failure to start |
+| `my.role`, `deployment.environment.name` | The `role` of the process and `errors_environment` |
+| `request_id`, `job_id`, `attempt`, `trace_id`, `span_id` | The IDs to find the request or job lines of the same error, when it has them |
+| `message` | Last on the line: `<type>: <message>`, a newline, and the Go stack |
+
+Before a report leaves the process, the message has URLs, email addresses, `@user@host` handles, IP addresses, UUIDs and ULIDs, and numbers of 10 digits or more replaced with `<url>`, `<email>`, `<acct>`, `<ip>`, `<id>` and `<n>`, and is cut to 1 KiB.
+The stack keeps its file positions but not the argument values of its function lines (they are shown as `(...)`), and is cut to 16 KiB. No report carries a request body, header, query, cookie, account, user name, IP address, or User-Agent.
+No other line carries a stack, so Error Reporting finds the stacks of these lines only.
 
 A field name is a single key that contains `.`; it is not nested. Quote it in Cloud Logging filters and extractions (for example `jsonPayload."http.route"`, and `EXTRACT(jsonPayload.duration_seconds)` for a distribution value).
 Fields used as labels take values from a finite set only; `url.path`, `request_id` and `job_id` are never labels.
@@ -120,6 +149,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.billing.import.failing` | Gauge | `my.billing.source` (1 when the newest import of the source failed, 0 otherwise) |
 | `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: servers that deliveries still go to but that failed on at least one day since they last answered; `unavailable`: servers whose deliveries are paused) |
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |
+| `my.errors.reported` | Counter | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). One per [error report](#error-reports) |
 
 Health checks (`/healthz`, `/readyz`) are not measured. No label contains a remote domain, account, URL or client IP.
 `my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` and `my.billing.import.failing` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.

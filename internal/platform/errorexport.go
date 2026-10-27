@@ -95,6 +95,10 @@ func (q *ExportQueue) ReceiveError(ctx context.Context, ev kernel.ErrorEvent) {
 	q.count(ctx, exportDropped)
 }
 
+// CountDropped counts a report that never reached the queue, such as one that the limits of the
+// exports skipped (exportLimiter), as dropped in my.errors.exported.
+func (q *ExportQueue) CountDropped(ctx context.Context) { q.count(ctx, exportDropped) }
+
 // Close stops taking reports and waits until the queue is sent, at most 2 seconds or until ctx
 // ends; the reports still waiting then are lost.
 func (q *ExportQueue) Close(ctx context.Context) error {

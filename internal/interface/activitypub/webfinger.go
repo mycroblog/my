@@ -125,6 +125,7 @@ type xrdLink struct {
 func (h *Handler) hostMeta(w http.ResponseWriter, r *http.Request) {
 	body, err := xml.MarshalIndent(xrd{Links: []xrdLink{{Rel: relLRDD, Template: h.lrddTemplate()}}}, "", "  ")
 	if err != nil {
+		h.report(r.Context(), err)
 		h.o.Problem(w, r, http.StatusInternalServerError)
 		return
 	}

@@ -16,7 +16,7 @@ import (
 // setUpQueue builds the job queue that cfg.Queue selects, the runner of the worker role, and the
 // scheduler of the periodic jobs. The db queue is set with the database, before it.
 func (a *App) setUpQueue(cfg *config.Config) error {
-	runnerOpts := queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts}
+	runnerOpts := queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts, Errors: a.ErrorReporter}
 	switch cfg.Queue {
 	case "db":
 		// Set with the database above.

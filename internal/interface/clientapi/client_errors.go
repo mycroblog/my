@@ -37,8 +37,6 @@ const (
 	maxClientErrorBody = 16 << 10
 	// maxClientErrorFrames bounds the frames of the stack that the event keeps.
 	maxClientErrorFrames = 50
-	// maxClientErrorMessage bounds the bytes of the message, as the scrubbing of ADR-0103 §3.
-	maxClientErrorMessage = 1 << 10
 	// maxClientErrorName bounds the bytes of the error's name.
 	maxClientErrorName = 256
 )
@@ -113,7 +111,7 @@ func (s *Server) clientErrorEvent(rep ClientErrorReport, unauthenticated bool) (
 	if name == "" {
 		name = "Error"
 	}
-	message := normalizeClientMessage(cleanText(rep.Message, maxClientErrorBody))
+	message := kernel.ScrubErrorMessage(cleanText(rep.Message, maxClientErrorBody))
 	route := clientRoute(rep.Route)
 	lines := make([]string, len(frames))
 	for i, f := range frames {
@@ -252,35 +250,6 @@ func cleanText(s string, n int) string {
 		n--
 	}
 	return s[:n]
-}
-
-// The parts of a message that differ between the occurrences of the same error, or that may
-// identify a person, replaced as the scrubbing of ADR-0103 §3 does, in this order.
-var clientMessageReplacements = []struct {
-	re   *regexp.Regexp
-	with string
-}{
-	{regexp.MustCompile(`[A-Za-z][A-Za-z0-9+.-]*://[^\s"'<>]+`), "<url>"},
-	{regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`), "<email>"},
-	{regexp.MustCompile(`@[A-Za-z0-9_]+@[A-Za-z0-9.-]+`), "<acct>"},
-	{regexp.MustCompile(`(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b`), "<id>"},
-	{regexp.MustCompile(`\b[0-7][0-9A-HJKMNP-TV-Z]{25}\b`), "<id>"},
-	{regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`), "<ip>"},
-	{regexp.MustCompile(`(?i)\b(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}\b`), "<ip>"},
-	{regexp.MustCompile(`\d{10,}`), "<n>"},
-}
-
-// normalizeClientMessage replaces the URLs, email addresses, accounts, IDs, IP addresses, and
-// long numbers of a message and cuts it to maxClientErrorMessage bytes.
-//
-// The ErrorReporter scrubs every event the same way (ADR-0103 §3, a later change); the web
-// fingerprint needs the normalized message before the event reaches it, so this endpoint keeps
-// its own copy of the rules.
-func normalizeClientMessage(m string) string {
-	for _, r := range clientMessageReplacements {
-		m = r.re.ReplaceAllString(m, r.with)
-	}
-	return cleanText(m, maxClientErrorMessage)
 }
 
 // clientErrorFingerprint returns the fingerprint of a web event (ADR-0103 §6): the minified

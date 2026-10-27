@@ -51,6 +51,7 @@ scrape_configs:
 With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud Logging already have:
 
 - **HTTP errors and latency**: the Cloud Run request count by response code class and the request latency metric of the service.
+- **Errors**: the `error report` lines go to Error Reporting, which groups them and can notify you of new and recurring errors.
 - **Jobs and requests**: the server writes one log line per HTTP request (`msg` = `http request`) and per job run (`msg` = `job`), with the
   same labels as the metrics. Make log-based metrics from them, for example a counter of `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   for failed jobs, or a distribution of `jsonPayload.duration_seconds` filtered on `jsonPayload."my.surface"="client_api"` for the latency.
@@ -89,6 +90,7 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 | Federation | [`MyInboxRejectionsHigh`](#myinboxrejectionshigh) | `my_inbox_activities_total{my_outcome="rejected"}` | over 25% of POSTs for 30 min | ticket | Signature verification failing (clock skew, key fetches failing), a spammer or a suspended domain retrying, rate limits |
 | Federation | [`MyInboxSignatureFailures`](#myinboxsignaturefailures) | `my_inbox_activities_total{my_inbox_rejection="signature"}` | over 10% of POSTs for 30 min | ticket | The server's clock is off, fetching the senders' keys fails, a server that changed its keys |
 | Federation | [`MyInboxErrors`](#myinboxerrors) | `my_inbox_activities_total{my_outcome="error"}` | over 5% of POSTs for 15 min | ticket | The database failing, a bug in the inbox |
+| Errors | [`MyErrorReportsIncreasing`](#myerrorreportsincreasing) | `my_errors_reported_total` | over 10 in 15 min and 3 × the average of the day before, for 15 min | ticket | A new bug from a release, a dependency that fails in a new way, a broken configuration |
 | HTTP | [`MyHTTPErrorsHigh`](#myhttperrorshigh) | 5xx of `http_server_request_duration_seconds_count` | over 5% for 10 min | page | The database or KV down, a bad release, the maintenance mode |
 | HTTP | [`MyHTTPErrorsElevated`](#myhttperrorselevated) | same | over 1% for 30 min | ticket | One failing route, an adapter that fails now and then |
 | HTTP | [`MyAPILatencyHigh`](#myapilatencyhigh) | p95 of the client API (streaming left out) | over 300 ms for 30 min | ticket | Database saturated or far away, a slow query, too little CPU, cold starts |
@@ -287,6 +289,23 @@ The inbox answers `500` to more than 5% of the activities. The senders retry, bu
 **Check** the `http request` and error log lines of the inbox routes for the error, and the database health (`MyNotReady`, `MyDBPoolWaiting`).
 
 **Fix** the database or report the error as a bug. Nothing needs replaying: the senders retry.
+
+### MyErrorReportsIncreasing
+
+The server reports errors (panics, the errors behind 5xx, failed jobs) at more than three times its usual rate.
+
+Check:
+
+- The `error report` lines of the last hour, grouped by `my.error.fingerprint`: the most frequent ones, their `my.error.where`, and the header line of `message`.
+  On Cloud Run, Google Cloud Error Reporting shows the same groups.
+- Whether a release, a configuration change, or a failing dependency (`MyNotReady`, `MyAdapterErrors`) started at the same time.
+- The request or job lines with the same `request_id` or `job_id`.
+
+Fix:
+
+- A failing dependency or a configuration error: fix it; failed jobs can then be run again from the job screen.
+- A bad release: roll back to the previous image.
+- A bug: report it with the header and the stack of the line. Both are scrubbed of personal data.
 
 ### MyHTTPErrorsHigh
 

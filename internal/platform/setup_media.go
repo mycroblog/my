@@ -38,8 +38,8 @@ func (a *App) setUpMedia(cfg *config.Config, medias content.MediaRepository, lin
 
 // setUpMediaHTTP registers the HTTP handlers of the media files and the media proxy.
 func (a *App) setUpMediaHTTP() {
-	mediahttp.New(mediahttp.Options{Blobs: a.Blobs, Problem: a.writeStatusProblem, Logger: a.Logger}).Register(surfaceRouter{a, surfaceMedia})
-	mediahttp.NewProxy(mediahttp.ProxyOptions{Media: a.MediaProxy, Problem: a.writeStatusProblem, Logger: a.Logger}).Register(surfaceRouter{a, surfaceMedia})
+	mediahttp.New(mediahttp.Options{Blobs: a.Blobs, Problem: a.writeStatusProblem, Logger: a.Logger, Errors: a.ErrorReporter}).Register(surfaceRouter{a, surfaceMedia})
+	mediahttp.NewProxy(mediahttp.ProxyOptions{Media: a.MediaProxy, Problem: a.writeStatusProblem, Logger: a.Logger, Errors: a.ErrorReporter}).Register(surfaceRouter{a, surfaceMedia})
 }
 
 // setMediaProcessor builds the media processor, which the media proxy and the media use cases
