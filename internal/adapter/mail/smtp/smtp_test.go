@@ -37,6 +37,9 @@ type server struct {
 	ln       net.Listener
 	tls      *tls.Config
 	starttls bool
+	// fail maps a verb (or "GREETING") to the reply that the server sends instead of the usual
+	// one; "QUIT" mapped to "" drops the connection instead of replying to QUIT.
+	fail map[string]string
 
 	mu        sync.Mutex
 	delivered []kernel.MailMessage
@@ -82,6 +85,10 @@ func (s *server) handle(conn net.Conn) {
 	tp := textproto.NewConn(conn)
 	secure := false
 	rcpt := ""
+	if r, ok := s.fail["GREETING"]; ok {
+		_ = tp.PrintfLine("%s", r)
+		return
+	}
 	_ = tp.PrintfLine("220 test ESMTP")
 	for {
 		line, err := tp.ReadLine()
@@ -94,6 +101,18 @@ func (s *server) handle(conn net.Conn) {
 			s.mu.Unlock()
 		}
 		verb, arg, _ := strings.Cut(line, " ")
+		if r, ok := s.fail[strings.ToUpper(verb)]; ok {
+			if r != "" {
+				_ = tp.PrintfLine("%s", r)
+			}
+			if strings.ToUpper(verb) == "DATA" {
+				_, _ = tp.ReadDotBytes()
+			}
+			if r == "" || strings.ToUpper(verb) == "QUIT" {
+				return
+			}
+			continue
+		}
 		switch strings.ToUpper(verb) {
 		case "EHLO":
 			if s.starttls && !secure {
@@ -325,6 +344,55 @@ func TestNewValidatesOptions(t *testing.T) {
 			t.Errorf("New(%+v) succeeded", o)
 		}
 	}
+}
+
+// A failed QUIT after the server accepted the message does not fail Send: the message is
+// queued, and a retry would deliver it twice.
+func TestAcceptedMessageSurvivesAFailedQuit(t *testing.T) {
+	for name, r := range map[string]string{"dropped": "", "refused": "421 4.3.2 shutting down"} {
+		t.Run(name, func(t *testing.T) {
+			s, tc := newServer(t, true)
+			s.fail = map[string]string{"QUIT": r}
+			if err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"}); err != nil {
+				t.Fatalf("Send = %v, want nil once DATA is accepted", err)
+			}
+			if len(s.messages()) != 1 {
+				t.Errorf("delivered %d messages, want 1", len(s.messages()))
+			}
+		})
+	}
+}
+
+// The errors of every command name the command and the reply code but never the reply text.
+func TestErrorsOmitTheReplyText(t *testing.T) {
+	const secret = "alice@example.com secret-reply-text"
+	for _, verb := range []string{"GREETING", "EHLO", "STARTTLS", "AUTH", "MAIL", "RCPT", "DATA"} {
+		t.Run(verb, func(t *testing.T) {
+			s, tc := newServer(t, true)
+			s.fail = map[string]string{verb: "454 4.7.0 " + secret}
+			if verb == "GREETING" {
+				s.fail[verb] = "554 " + secret
+			}
+			err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"})
+			if err == nil {
+				t.Fatal("Send succeeded")
+			}
+			if strings.Contains(err.Error(), "secret") {
+				t.Errorf("error %q carries the reply text", err)
+			}
+			if errors.Is(err, kernel.ErrMailRejected) || errors.Is(err, kernel.ErrRecipientRejected) {
+				t.Errorf("error %v is permanent, want temporary", err)
+			}
+		})
+	}
+	t.Run("malformed", func(t *testing.T) {
+		s, tc := newServer(t, true)
+		s.fail = map[string]string{"GREETING": secret}
+		err := newMailer(t, s, tc).Send(t.Context(), kernel.MailMessage{Category: kernel.MailTransactional, To: "alice@example.com", Subject: "Hi", Text: "x"})
+		if err == nil || strings.Contains(err.Error(), "secret") {
+			t.Errorf("Send with a malformed greeting = %v", err)
+		}
+	})
 }
 
 func TestReportsTheEnhancedStatusOfARejection(t *testing.T) {
