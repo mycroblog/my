@@ -29,19 +29,23 @@ GitHub や Google、組織の IdP（Keycloak・Authentik・Microsoft Entra な�
 
 主要な IdP の性質（2026-10-27 に公式文書で確認）:
 
-| | OpenID Connect の IdP（Google・GitLab・Keycloak など） | GitHub（OAuth App） |
-| --- | --- | --- |
-| 設定の発見 | `<issuer>/.well-known/openid-configuration`（OpenID Connect Discovery 1.0） | なし。エンドポイントは固定（`https://github.com/login/oauth/authorize` など） |
-| 利用者の識別子 | ID トークンの `sub`。`iss` と組で一意（OpenID Connect Core 1.0 §2） | `GET /user` の数値の `id`。`login`（ユーザー名）は変えられる |
-| ID トークン | 発行する。JWKS の鍵で署名を検証する | 発行しない（OIDC の Provider ではない） |
-| メールアドレス | `email` と `email_verified` の claim（`email` scope） | `GET /user/emails` の `primary` かつ `verified` のもの。要る scope は `user:email`（要検証） |
-| PKCE | 多くが対応。Discovery の `code_challenge_methods_supported` で分かる | `S256` に対応（2025-07 から。必須ではない）。GitHub Enterprise Server は版によって未対応 |
+| | OpenID Connect の IdP（Google・GitLab・Keycloak など） | GitHub（OAuth App） | Mastodon（4.3 以降） |
+| --- | --- | --- | --- |
+| 設定の発見 | `<issuer>/.well-known/openid-configuration`（OpenID Connect Discovery 1.0） | なし。エンドポイントは固定（`https://github.com/login/oauth/authorize` など） | `/.well-known/oauth-authorization-server`（RFC 8414）。4.3 より前は 404 |
+| クライアントの登録 | IdP の管理画面で登録する | GitHub の設定で登録する | `POST /api/v1/apps` で認証なしに登録できる（サーバーの設定の開発の画面でも登録できる） |
+| 利用者の識別子 | ID トークンの `sub`。`iss` と組で一意（OpenID Connect Core 1.0 §2） | `GET /user` の数値の `id`。`login`（ユーザー名）は変えられる | `GET /api/v1/accounts/verify_credentials` の `id`。`profile` scope で読める。4.4 からは `/oauth/userinfo` もある |
+| ID トークン | 発行する。JWKS の鍵で署名を検証する | 発行しない（OIDC の Provider ではない） | 発行しない（OIDC の Provider ではない） |
+| メールアドレス | `email` と `email_verified` の claim（`email` scope） | `GET /user/emails` の `primary` かつ `verified` のもの。要る scope は `user:email`（要検証） | 得られない |
+| PKCE | 多くが対応。Discovery の `code_challenge_methods_supported` で分かる | `S256` に対応（2025-07 から。必須ではない）。GitHub Enterprise Server は版によって未対応 | メタデータの `code_challenge_methods_supported` で分かる |
 
 出典: [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)、
 [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)、
 [Authorizing OAuth apps（GitHub Docs）](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)、
 [PKCE support for OAuth and GitHub App authentication（GitHub Changelog, 2025-07-14）](https://github.blog/changelog/2025-07-14-pkce-support-for-oauth-and-github-app-authentication/)、
-[REST API endpoints for emails（GitHub Docs）](https://docs.github.com/en/rest/users/emails)。
+[REST API endpoints for emails（GitHub Docs）](https://docs.github.com/en/rest/users/emails)、
+[OAuth API methods（Mastodon documentation）](https://docs.joinmastodon.org/methods/oauth/)、
+[OAuth Scopes（Mastodon documentation）](https://docs.joinmastodon.org/api/oauth-scopes/)、
+[Mastodon 4.4 for Developers（Mastodon Blog）](https://blog.joinmastodon.org/2025/07/mastodon-4-4-for-devs/)。
 
 ## Decision Drivers（判断基準）
 
@@ -56,7 +60,7 @@ GitHub や Google、組織の IdP（Keycloak・Authentik・Microsoft Entra な�
 
 IdP の種類について:
 
-1. **汎用の OIDC と、OIDC でない IdP のコード上のプリセット（まず GitHub）**
+1. **汎用の OIDC と、OIDC でない IdP のコード上のプリセット（まず GitHub と Mastodon）**
 2. **汎用の OAuth 2.0**: 管理者が認可・トークン・userinfo のエンドポイントと、識別子・メールアドレスを取り出すフィールドを指定する
 3. **プリセットだけ**: GitHub・Google など、コードに持つ IdP だけを選べる
 
@@ -79,16 +83,24 @@ IdP の種類について:
   利用者の識別子は `sub` とする。
 - `github`: エンドポイントはコードに固定する。識別子は `GET /user` の数値の `id`（文字列にして保存する）とし、`login` は表示にだけ使う。
   メールアドレスは `GET /user/emails` の `primary` かつ `verified` のものを使う。GitHub Enterprise Server は対象にしない。
-- どちらも Authorization Code フローで、`state` と PKCE（`S256`）を使う。`oidc` は `nonce` も使う。
+- `mastodon`: 管理者が指定した 1 つの Mastodon サーバーを IdP にする。サーバーごとに 1 つの IdP を作り、利用者が任意のサーバーを入力する形は持たない。
+  - 管理者はサーバーのドメインを入れる。サーバーは RFC 8414 のメタデータからエンドポイントを得て、`POST /api/v1/apps` でクライアントを登録し
+    （`redirect_uris` は §2 のコールバック、scope は `profile`）、得た `client_id` と `client_secret` を保存する。相手のサーバーが登録を
+    制限しているときは、管理者が相手の画面で登録した `client_id` と `client_secret` を入れる。
+  - メタデータがない（4.3 より前の）サーバーは断る。`profile` より広い scope（`read:accounts` など）は求めない。
+  - 識別子は `verify_credentials` の `id` とし、`acct` と `display_name` は表示と登録画面の初期値にだけ使う。メールアドレスは得られないので、
+    この IdP からの登録は既存のメール検証（FR-002）を求める。
+  - 相手のサーバーのドメインに処分（FR-702）がかかっている間は、その IdP でのログイン・登録・ひも付けを断る。
+- どれも Authorization Code フローで、`state` と PKCE（`S256`）を使う。`oidc` は `nonce` も使う。
   Discovery が `S256` を示さない IdP でも PKCE のパラメータは送る（受けない IdP は無視する）。
-- OIDC でない IdP（Discord など）を足すときは、`github` と同じく、識別子とメールアドレスの取り出し方をコードに書いたプリセットとして足す。
+- ほかの OIDC でない IdP（Discord など）を足すときは、`github` や `mastodon` と同じく、識別子とメールアドレスの取り出し方をコードに書いたプリセットとして足す。
   管理者がエンドポイントとフィールドを指定する汎用の OAuth 2.0 は持たない。
 
 ### 2. 管理と保存
 
 - IdP は DB に置き、identity モジュールが所有する。テーブルは ADR-0060 の webhook と同じ形にする（名前は data-model に書くときに決める）。
   - リソース: IdP（ID、作った人、作った時刻）
-  - イベント（版）: 種類（`oidc` / `github`）、表示名、`issuer`、`client_id`、追加の scope、ポリシー（§4）。最新の版が現在の値
+  - イベント（版）: 種類（`oidc` / `github` / `mastodon`）、表示名、`issuer`（`mastodon` ではサーバーの URL）、`client_id`、追加の scope、ポリシー（§4）。最新の版が現在の値
   - イベント: `client_secret`。`kernel.Sealer` で封をする。回転は行を足す
   - イベント: 有効化・無効化・削除
   - 投影: 現在の版・秘密・状態
@@ -97,7 +109,7 @@ IdP の種類について:
 - 権限は新しい `manage_login_providers` とし、既定では組み込みの `admin` ロールだけが持つ。IdP を足せる人は、その IdP で誰を登録させるかを
   決められ、`manage_settings` より重いからである。操作はすべて監査ログに残す。`client_secret` は作ったときと回転したときに入力を受けるだけで、
   API でも画面でも返さない。
-- コールバックの URL は `https://<host>/auth/external/<IdP の ID>/callback` に固定し、管理画面に表示する。管理者はこれを IdP 側に登録する。
+- コールバックの URL は `https://<host>/auth/external/<IdP の ID>/callback` に固定し、管理画面に表示する。管理者はこれを IdP 側に登録する（`mastodon` はサーバーが §1 の登録で渡す）。
 - 有効な IdP が 1 つもなければ、ログイン画面は外部ログインのボタンを出さず、外部への要求も起きない。
 
 ### 3. ログインの流れ
@@ -148,6 +160,7 @@ IdP の種類について:
 
 - 良い影響
   - Google・GitLab・Microsoft Entra・Keycloak・Authentik など OIDC の IdP を、コードを足さずに管理画面から設定できる。GitHub も使える。
+  - 姉妹インスタンスなど、管理者が信頼する Mastodon サーバーのアカウントでログイン・登録させられる。管理者はドメインを入れるだけで済む。
   - 識別子だけでひも付け、メールアドレスで自動ではひも付けないので、IdP 側でメールアドレスを詐称されても既存のアカウントは乗っ取られない。
   - 外部ログインは Cookie のセッションを作るところで終わるので、クライアント API とトークン（ADR-0030、ADR-0090）は変わらない。
   - IdP を設定しないサーバーには、行も外部への要求も増えない。
@@ -161,7 +174,7 @@ IdP の種類について:
   - FR-010 の追記、data-model §4.1 と `schema/<dialect>/01-identity.sql` の IdP とひも付けのテーブル
   - `manage_login_providers` の権限、監査ログの `action` と `target_kind`、管理 API（`api/spec`）・CLI・管理画面
   - `kernel.HTTPPurposeLoginProvider`、`login_provider_allowed_destinations` の設定、OIDC の Discovery・JWKS・ID トークンの検証
-  - authpages のログイン・登録・コールバックの流れ、GitHub のプリセット
+  - authpages のログイン・登録・コールバックの流れ、GitHub と Mastodon のプリセット
   - アカウント設定のひも付けの一覧・追加・解除、`ErrLastSignInMethod` の判定の拡張
   - 運用文書 `docs/operations/login-providers.md` と `tools/agentkit/context-map.yaml` の更新
 
