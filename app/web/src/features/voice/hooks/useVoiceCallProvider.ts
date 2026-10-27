@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's call as a state of the whole app (ADR-0101 §2–§7; #1345 answer 45: the call goes on across pages, with a
-// small call bar on the screen's edge, as in X's Spaces). VoiceCallProvider holds at most one call: joining a room
+// small mini-player on the screen's edge, as in X's Spaces). VoiceCallProvider holds at most one call: joining a room
 // starts it (from the join button's gesture, which starts the audio, ADR-0101 §7), and so does opening one, which joins
 // the host (ADR-0100 §5; from the gesture of the form's submit button); joining another room replaces it,
 // and leaving, the end of the room, or signing out ends it. Its requests go through the app's
@@ -151,7 +151,7 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
   const call = signedIn ? active : null;
   const snapshot = useSyncExternalStore(call?.subscribe ?? noSubscription, call?.getSnapshot ?? noSnapshot);
   const inCall = snapshot !== undefined && snapshot.phase !== "ended";
-  // Screens without the pages (and so without the call bar): the server's maintenance, and its closure for a user.
+  // Screens without the pages (and so without the mini-player): the server's maintenance, and its closure for a user.
   const underMaintenance = useMaintenance(maintenance) !== null;
   const closure = useClosure();
   const appDown = underMaintenance || (signedIn && hasClosed(closure));

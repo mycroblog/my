@@ -297,7 +297,7 @@ describe("a listener in the call", () => {
 });
 
 describe("the call across pages", () => {
-  test("goes on with the call bar on other pages, which leads back to the room and leaves it", async () => {
+  test("goes on with the mini-player on other pages, which says who is talking, leads back to the room and leaves it", async () => {
     const { room, joined, live } = bobsRoom();
     const srv = serve(room, joined);
     const { user } = await renderApp({ path: `/voice/${roomId}` });
@@ -313,6 +313,15 @@ describe("the call across pages", () => {
     // The call goes on: the same session and stream.
     expect(srv.sessions).toEqual(["s1"]);
     expect(FakePeerConnection.all.every((pc) => !pc.closed)).toBe(true);
+    // A listener has no microphone in it, only leaving.
+    expect(within(bar).queryByRole("button", { name: "Microphone" })).not.toBeInTheDocument();
+    // Who is talking takes the place of the call's state.
+    srv.send("signal", { from: "s9", kind: "offer", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    await waitFor(() => {
+      expect(FakeAudioContext.all.flatMap((context) => context.analysers)).not.toHaveLength(0);
+    });
+    for (const analyser of FakeAudioContext.all.flatMap((context) => context.analysers)) analyser.sample = 0.5;
+    expect(await within(bar).findByText("Bob is talking")).toBeInTheDocument();
 
     await user.click(within(bar).getByRole("link", { name: "Friday night radio" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();

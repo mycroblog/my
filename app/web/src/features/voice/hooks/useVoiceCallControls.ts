@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The controls that the room's page and the call bar share (ADR-0100 §5, §6; ADR-0101 §7): the call's state, the
+// The controls that the room's page and the mini-player share (ADR-0100 §5, §6; ADR-0101 §7): the call's state, the
 // microphone (only a speaker has it; the browser's refusal says why), the sound that the browser blocked, and leaving,
 // where the host of a room with others in it gives the next host or ends the room, and who is talking ("{name} is
 // talking"). Null while there is no call.
@@ -91,7 +91,7 @@ function normalizedPath(pathname: string): string {
 }
 
 /**
- * The call bar's controls, or null while there is no call or the page shows the call itself: the room's page of
+ * The mini-player's controls, or null while there is no call or the page shows the call itself: the room's page of
  * the call, when it shows the room (not its summary or an error), has the call's controls.
  */
 export function useVoiceCallBar(): VoiceCallControls | null {

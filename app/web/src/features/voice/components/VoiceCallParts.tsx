@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The parts of a call that the room's page and the call bar share (ADR-0100 §5, §6; ADR-0101 §7): the call's state
-// in a few words, the call bar's microphone switch, what failed (why the browser refused the microphone, leaving), the
-// button that plays the sound the browser blocked, and leaving, which asks the host of a room with others in it for
-// the next host or the end of the room.
-import { Button, CallDockButton, ConfirmDialog, InlineError, LeaveIcon, Radio, RadioGroup, Switch } from "@my/ui";
+// The parts of a call that the room's page and the mini-player share (ADR-0100 §5, §6; ADR-0101 §7): the call's
+// state in a few words, who is talking, the mini-player's microphone toggle, what failed (why the browser refused the
+// microphone, leaving), the button that plays the sound the browser blocked, and leaving, which asks the host of a
+// room with others in it for the next host or the end of the room.
+import { Button, CallDockButton, ConfirmDialog, InlineError, LeaveIcon, MicrophoneIcon, Radio, RadioGroup } from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
@@ -28,14 +28,29 @@ export function callPhaseText(t: ReturnType<typeof useT>, controls: VoiceCallCon
   return t(phaseLabels[controls.phase]);
 }
 
-/** The microphone switch of a speaker in the call bar; CallErrors says why it could not turn on. */
+/**
+ * Who is talking ("Haruka is talking", "Haruka and 2 others are talking") while the call is connected and someone
+ * talks; otherwise the call's state ("Connected", "Reconnecting…").
+ */
+export function callStatusText(t: ReturnType<typeof useT>, controls: VoiceCallControls): string {
+  const [first] = controls.talking;
+  if (controls.phase !== "live" || first === undefined) return callPhaseText(t, controls);
+  return t("client:voice.bar.talking", { name: participantName(first), others: controls.talking.length - 1 });
+}
+
+/** The microphone toggle of a speaker in the mini-player; CallErrors says why it could not turn on. */
 export function MicrophoneControl({ controls }: { controls: VoiceCallControls }) {
   const t = useT();
   if (!controls.isSpeaker) return null;
   return (
-    <Switch isSelected={controls.micOn} onChange={controls.setMicrophone} isDisabled={controls.micPending}>
-      {t("client:voice.call.microphone")}
-    </Switch>
+    <CallDockButton
+      label={t("client:voice.call.microphone")}
+      size="sm"
+      icon={<MicrophoneIcon filled={controls.micOn} />}
+      isSelected={controls.micOn}
+      onChange={controls.setMicrophone}
+      isDisabled={controls.micPending}
+    />
   );
 }
 
@@ -65,7 +80,7 @@ export function hasCallErrors(controls: VoiceCallControls, actionError?: string)
 
 /**
  * What failed in the call (the microphone, leaving, and on the room's page the user's last operation, `actionError`),
- * for the notice of the call bar or the dock; null for nothing.
+ * for the notice of the mini-player or the dock; null for nothing.
  */
 export function CallErrors({ controls, actionError }: { controls: VoiceCallControls; actionError?: string | undefined }) {
   const t = useT();
@@ -87,12 +102,12 @@ export function CallErrors({ controls, actionError }: { controls: VoiceCallContr
   );
 }
 
-/** The button that plays the sound the browser blocked; nothing while it plays. */
-export function PlaybackButton({ controls }: { controls: VoiceCallControls }) {
+/** The button that plays the sound the browser blocked; nothing while it plays. `sm` in the mini-player. */
+export function PlaybackButton({ controls, size = "md" }: { controls: VoiceCallControls; size?: "sm" | "md" }) {
   const t = useT();
   if (!controls.playbackBlocked) return null;
   return (
-    <Button variant="primary" onPress={controls.resumePlayback}>
+    <Button variant="primary" size={size} onPress={controls.resumePlayback}>
       {t("client:voice.call.play_audio")}
     </Button>
   );
@@ -100,9 +115,10 @@ export function PlaybackButton({ controls }: { controls: VoiceCallControls }) {
 
 /**
  * The leave button and its dialog: the host of a room with others in it hands it over or ends it (ADR-0100 §6). It is
- * the last control of the room page's dock (`look="dock"`) or a button of the call bar.
+ * the last control of the room page's dock (`look="dock"`) or of the mini-player (`look="mini"`); CallErrors says why
+ * leaving failed.
  */
-export function LeaveCallButton({ controls, withError = true, look = "button" }: { controls: VoiceCallControls; withError?: boolean; look?: "button" | "dock" }) {
+export function LeaveCallButton({ controls, look }: { controls: VoiceCallControls; look: "dock" | "mini" }) {
   const t = useT();
   const [asking, setAsking] = useState(false);
   const onPress = () => {
@@ -115,14 +131,7 @@ export function LeaveCallButton({ controls, withError = true, look = "button" }:
       {look === "dock" ? (
         <CallDockButton label={t("client:voice.call.leave")} icon={<LeaveIcon />} showLabel variant="danger" onPress={onPress} isPending={isPending} />
       ) : (
-        <Button variant="danger" onPress={onPress} isPending={isPending}>
-          {t("client:voice.call.leave")}
-        </Button>
-      )}
-      {withError && controls.leaveError !== undefined && !asking && (
-        <InlineError size="inherit" alert>
-          {t("client:voice.call.leave_failed", { reason: controls.leaveError })}
-        </InlineError>
+        <CallDockButton label={t("client:voice.call.leave")} icon={<LeaveIcon />} size="sm" variant="danger-soft" onPress={onPress} isPending={isPending} />
       )}
       {controls.mustChoose && (
         <HostLeaveDialog
