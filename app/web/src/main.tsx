@@ -11,6 +11,7 @@ import { loadStartI18n } from "./lib/locale";
 import { registerServiceWorker, reloadOnPreloadError } from "./lib/pwa";
 import { applyStoredTheme } from "./lib/theme";
 import { createAppRouter } from "./router";
+import type { ErrorReporter } from "./lib/errorReporting";
 import { createAppServices } from "./lib/services";
 import "./index.css";
 
@@ -26,7 +27,16 @@ reloadOnPreloadError(window);
 
 const container = document.getElementById("root");
 if (container === null) throw new Error("the shell has no #root element");
-const root = createRoot(container);
+/** The reports of the page's uncaught errors, once the services exist. */
+let errors: ErrorReporter | undefined;
+const root = createRoot(container, {
+  // What no error boundary caught (ADR-0103 §6). This replaces React's default, which passes the error to
+  // window.reportError, so the error does not reach the window's `error` event as well.
+  onUncaughtError(error) {
+    console.error(error);
+    errors?.report(error, "uncaught");
+  },
+});
 
 // The page is rendered in the supported locale closest to the one it was last displayed in on this browser, or
 // else to the instance's, which the server writes into <html lang> (lib/locale).
@@ -56,6 +66,8 @@ if (config === undefined) {
     });
   }
   const services = createAppServices(config, i18n);
+  errors = services.errors;
+  services.errors.listen(window);
   // Resume the session from the refresh token cookie while the first page loads; API requests wait for it.
   void services.session.restore();
   const router = createAppRouter(services);

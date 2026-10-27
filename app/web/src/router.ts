@@ -4,6 +4,7 @@
 // React's startTransition (the router's Transitioner), so the current page stays on screen while the next one
 // loads (web-client/README.md E4); the pending component appears only when a load takes longer than defaultPendingMs.
 import { createRouter, type RouterHistory } from "@tanstack/react-router";
+import type { ErrorReporter } from "./lib/errorReporting";
 import type { PlainClientMessageKey } from "./lib/i18n";
 import type { RouterContext } from "./lib/query";
 import { routeTree } from "./routeTree.gen";
@@ -33,15 +34,26 @@ export const routerOptions = {
 export type AppRouterOptions = RouterContext & {
   /** The browser's history by default; tests pass a memory history. */
   history?: RouterHistory;
+  /** Where the errors of the pages are reported (lib/errorReporting); a router without one reports nothing. */
+  errors?: ErrorReporter;
 };
 
-export function createAppRouter({ queryClient, api, session, history }: AppRouterOptions) {
-  return createRouter({
+export function createAppRouter({ queryClient, api, session, history, errors }: AppRouterOptions) {
+  const router = createRouter({
     ...routerOptions,
     routeTree,
     context: { queryClient, api, session },
     ...(history === undefined ? {} : { history }),
+    // Every page that fails is reported from here (ADR-0103 §6). A route's own `onCatch` replaces this one, so a
+    // route that has one calls `errors.report(error, "route_error")` itself.
+    ...(errors !== undefined && {
+      defaultOnCatch: (error: unknown) => {
+        errors.report(error, "route_error");
+      },
+    }),
   });
+  errors?.attachRouter(router);
+  return router;
 }
 
 declare module "@tanstack/react-router" {

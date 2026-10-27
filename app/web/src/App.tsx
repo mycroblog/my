@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The app's providers, outermost first: the runtime config, the locale store and i18n in its current locale
+// The app's providers, outermost first: the runtime config, where the error boundaries report what they catch
+// (lib/errorReporting), the locale store and i18n in its current locale
 // (react-intl and React Aria's locale), the TanStack Query cache, the session and the API client, the live
 // regions and toasts of @my/ui (with the prompt for a new version of the app), the user's voice chat call (which goes
 // on across pages, features/voice), whether animations play by
@@ -14,6 +15,7 @@ import { SessionProvider } from "./lib/auth/SessionProvider";
 import { useAutoplay } from "./lib/autoplay";
 import { ConfigProvider, type RuntimeConfig, useConfig } from "./lib/config";
 import { contentLinkPath } from "./lib/contentLinks";
+import { ErrorReporterProvider } from "./lib/errorReporting";
 import { type I18n, MessagesProvider, useT } from "./lib/i18n";
 import { AppLocaleProvider, useDisplaySettings } from "./lib/locale";
 import { isServerPath } from "./lib/paths";
@@ -27,7 +29,7 @@ export type AppProps = AppServices & {
   router: AnyRouter;
 };
 
-export function App({ config, locale, queryClient, api, session, leaveApp, maintenance, router }: AppProps) {
+export function App({ config, locale, queryClient, api, session, leaveApp, maintenance, errors, router }: AppProps) {
   const autoplay = useAutoplay();
   /**
    * Every @my/ui Link (and Menu item, Tab) with a same-origin href navigates through the router instead
@@ -49,30 +51,32 @@ export function App({ config, locale, queryClient, api, session, leaveApp, maint
   };
   return (
     <ConfigProvider config={config}>
-      <AppLocaleProvider locale={locale}>
-        <DisplayedI18nProvider>
-          <QueryClientProvider client={queryClient}>
-            <SessionProvider session={session} api={api} leaveApp={leaveApp}>
-              <AnnouncerProvider>
-                <Toasts>
-                  <UpdatePrompt />
-                  <VoiceCallProvider maintenance={maintenance}>
-                    <AutoplayContext value={autoplay}>
-                      <ExternalLinks>
-                        <AriaRouterProvider navigate={navigate}>
-                          <MaintenanceGate maintenance={maintenance}>
-                            <RouterProvider router={router} />
-                          </MaintenanceGate>
-                        </AriaRouterProvider>
-                      </ExternalLinks>
-                    </AutoplayContext>
-                  </VoiceCallProvider>
-                </Toasts>
-              </AnnouncerProvider>
-            </SessionProvider>
-          </QueryClientProvider>
-        </DisplayedI18nProvider>
-      </AppLocaleProvider>
+      <ErrorReporterProvider reporter={errors}>
+        <AppLocaleProvider locale={locale}>
+          <DisplayedI18nProvider>
+            <QueryClientProvider client={queryClient}>
+              <SessionProvider session={session} api={api} leaveApp={leaveApp}>
+                <AnnouncerProvider>
+                  <Toasts>
+                    <UpdatePrompt />
+                    <VoiceCallProvider maintenance={maintenance}>
+                      <AutoplayContext value={autoplay}>
+                        <ExternalLinks>
+                          <AriaRouterProvider navigate={navigate}>
+                            <MaintenanceGate maintenance={maintenance}>
+                              <RouterProvider router={router} />
+                            </MaintenanceGate>
+                          </AriaRouterProvider>
+                        </ExternalLinks>
+                      </AutoplayContext>
+                    </VoiceCallProvider>
+                  </Toasts>
+                </AnnouncerProvider>
+              </SessionProvider>
+            </QueryClientProvider>
+          </DisplayedI18nProvider>
+        </AppLocaleProvider>
+      </ErrorReporterProvider>
     </ConfigProvider>
   );
 }
