@@ -143,10 +143,14 @@ redirect URI, so `http://127.0.0.1/callback` matches.
 - Every notification is recorded in the Store after its handler returns, and one recorded before is not handled again.
   A process that stops in the middle of a handler handles that notification again on the next start: replies carry an
   `Idempotency-Key` derived from the notification (`mybot.ReplyIdempotencyKey`), so the server posts each of them once.
-- The catch-up covers the time the stream is closed: a stop of the bot, or a cut connection. A notification that the
-  server sends while the stream stays open but that never reaches the bot, such as one a proxy drops, is older than the
-  next one the bot processes, and the catch-up does not find it
-  ([#1291](https://github.com/mycroblog/my/issues/1291)). Behind a proxy that drops events, use `mybot.Polling`.
+- Stream delivery is best effort. The catch-up covers the time the stream is closed: a stop of the bot, or a cut
+  connection, because it runs at the start and after every reconnection and reads back from the newest notification
+  the bot processed. A notification that the server sends while the stream stays open but that never reaches the bot,
+  such as one a proxy drops, is older than the next one the bot processes, so no later catch-up finds it. A handler
+  that returns an error is not part of this gap: the error is logged and its notification counts as processed, and
+  the bot does not run the handler again (the Store failures are retried, as described below). A bot that needs every
+  notification should use `mybot.Polling`, reconnect periodically (for example by restarting), or list the
+  notifications itself.
 - `Mode: mybot.Polling` reads the notifications every `Config.PollInterval` (a minute) instead, for networks whose
   proxies do not pass an event stream.
 - `OnStatus` receives the new posts of the home timeline from the event stream alone: they are not caught up after a
