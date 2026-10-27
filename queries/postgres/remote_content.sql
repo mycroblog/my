@@ -146,8 +146,8 @@ WHERE poll_id = sqlc.arg(poll_id)::uuid AND account_id = sqlc.arg(account_id)::u
 -- name: GetPollStatus :one
 SELECT r.status_id FROM polls p JOIN status_revisions r ON r.id = p.revision_id WHERE p.id = sqlc.arg(poll_id)::uuid;
 
--- LockPoll locks the poll until the transaction ends, so that the votes of a local poll are
--- counted one transaction at a time.
+-- LockPoll locks the poll, local or remote, until the transaction ends, so that the votes in it
+-- are checked and counted one transaction at a time.
 -- name: LockPoll :one
 SELECT id FROM polls WHERE id = sqlc.arg(poll_id)::uuid FOR UPDATE;
 

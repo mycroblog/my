@@ -896,8 +896,8 @@ const lockPoll = `-- name: LockPoll :one
 SELECT id FROM polls WHERE id = $1::uuid FOR UPDATE
 `
 
-// LockPoll locks the poll until the transaction ends, so that the votes of a local poll are
-// counted one transaction at a time.
+// LockPoll locks the poll, local or remote, until the transaction ends, so that the votes in it
+// are checked and counted one transaction at a time.
 func (q *Queries) LockPoll(ctx context.Context, pollID string) (string, error) {
 	row := q.db.QueryRow(ctx, lockPoll, pollID)
 	var id string
