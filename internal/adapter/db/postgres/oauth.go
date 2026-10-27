@@ -128,6 +128,26 @@ func (r *IdentityRepository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, f
 	return wrap(err, "revoke token family")
 }
 
+// LockTokenGrants implements identity.Repository with a transaction-scoped advisory lock on the
+// user, so that issuing and revoking the user's tokens serialize under READ COMMITTED.
+func (r *IdentityRepository) LockTokenGrants(ctx context.Context, tx uow.Tx, userID string) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.LockUserTokenGrants(ctx, "identity:oauth_grants:"+userID), "lock the token grants")
+}
+
+// SessionRevoked implements identity.Repository.
+func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	revoked, err := q.SessionRevoked(ctx, sessionID)
+	return revoked, wrap(err, "check session revocation")
+}
+
 // TokenFamilyActive implements identity.Repository.
 func (r *IdentityRepository) TokenFamilyActive(ctx context.Context, familyID string, now time.Time) (bool, error) {
 	active, err := r.db.reader().TokenFamilyActive(ctx, postgresgen.TokenFamilyActiveParams{FamilyID: familyID, Now: now})

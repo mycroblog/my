@@ -128,6 +128,20 @@ func (r *IdentityRepository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, f
 	return wrap(err, "revoke token family")
 }
 
+// LockTokenGrants implements identity.Repository. It does nothing: SQLite runs one write
+// transaction at a time (BEGIN IMMEDIATE).
+func (r *IdentityRepository) LockTokenGrants(context.Context, uow.Tx, string) error { return nil }
+
+// SessionRevoked implements identity.Repository.
+func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	revoked, err := q.SessionRevoked(ctx, sessionID)
+	return revoked, wrap(err, "check session revocation")
+}
+
 // TokenFamilyActive implements identity.Repository.
 func (r *IdentityRepository) TokenFamilyActive(ctx context.Context, familyID string, now time.Time) (bool, error) {
 	active, err := r.db.reader().TokenFamilyActive(ctx, sqlitegen.TokenFamilyActiveParams{FamilyID: familyID, Now: toMillis(now)})

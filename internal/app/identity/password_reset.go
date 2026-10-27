@@ -317,6 +317,9 @@ func (s *Service) writePassword(ctx context.Context, tx uow.Tx, cred identity.Pa
 // the grant keepFamilyID ("" for none).
 func (s *Service) endOtherSessions(ctx context.Context, tx uow.Tx, userID, keepFamilyID string, at time.Time) error {
 	repo := s.d.Repository
+	if err := repo.LockTokenGrants(ctx, tx, userID); err != nil {
+		return err
+	}
 	if err := repo.RevokeSessionsOfUser(ctx, tx, userID, identity.RevokedPasswordChanged, at); err != nil {
 		return err
 	}

@@ -97,6 +97,9 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 			return nil
 		}
 		now := kernel.Normalize(clock.Now())
+		if err := repo.LockTokenGrants(ctx, tx, a.Local.UserID); err != nil {
+			return err
+		}
 		if err := repo.RevokeSessionsOfUser(ctx, tx, a.Local.UserID, identity.RevokedModeration, now); err != nil {
 			return err
 		}
@@ -128,6 +131,9 @@ func RegisterLifecycleProjectors(r *uow.Projectors, repo Repository, accounts Ac
 			return nil
 		}
 		now := kernel.Normalize(clock.Now())
+		if err := repo.LockTokenGrants(ctx, tx, a.Local.UserID); err != nil {
+			return err
+		}
 		if err := repo.RevokeSessionsOfUser(ctx, tx, a.Local.UserID, identity.RevokedAccountDeleted, now); err != nil {
 			return err
 		}
