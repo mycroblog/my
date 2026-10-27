@@ -23,8 +23,8 @@ type blockPayload struct {
 	Blocked string `json:"blocked"`
 }
 
-// registerBlockProjector subscribes the rooms to graph.blocked: a block between two
-// participants of the same room enqueues JobCheckBlock in the transaction of the block.
+// registerBlockProjector subscribes the rooms to graph.blocked: a block where either account is
+// a participant enqueues JobCheckBlock in the transaction of the block.
 func (s *Service) registerBlockProjector(r *uow.Projectors) {
 	r.Register(graph.EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		b := e.(graph.Blocked).Block
@@ -32,21 +32,23 @@ func (s *Service) registerBlockProjector(r *uow.Projectors) {
 	})
 }
 
-// enqueueCheckBlock enqueues JobCheckBlock in tx when blocker and blocked are in the same room.
+// enqueueCheckBlock enqueues JobCheckBlock in tx when blocker or blocked is a participant. The
+// other one may be joining the same room in a transaction that tx does not see yet: the job
+// reads the participants after the block committed, and a join that commits after the job
+// read them sees the block (recheckBlocks).
 func (s *Service) enqueueCheckBlock(ctx context.Context, tx uow.Tx, blockID, blocker, blocked string) error {
-	a, err := s.d.Repository.FindParticipant(ctx, tx, blocker)
-	if errors.Is(err, ErrNotFound) {
+	in := false
+	for _, id := range []string{blocker, blocked} {
+		_, err := s.d.Repository.FindParticipant(ctx, tx, id)
+		switch {
+		case err == nil:
+			in = true
+		case !errors.Is(err, ErrNotFound):
+			return err
+		}
+	}
+	if !in {
 		return nil
-	}
-	if err != nil {
-		return err
-	}
-	b, err := s.d.Repository.FindParticipant(ctx, tx, blocked)
-	if errors.Is(err, ErrNotFound) || (err == nil && b.RoomID != a.RoomID) {
-		return nil
-	}
-	if err != nil {
-		return err
 	}
 	payload, err := json.Marshal(blockPayload{Blocker: blocker, Blocked: blocked})
 	if err != nil {

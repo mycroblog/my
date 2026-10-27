@@ -50,6 +50,12 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 	host := HostChange{ID: s.d.IDs.NewID(), RoomID: room.ID, HostAccountID: accountID, Reason: voice.HostOpened, ChangedAt: now}
 	part := Participation{ID: s.d.IDs.NewID(), RoomID: room.ID, AccountID: accountID, JoinedAt: now}
 	session := newSessionID()
+	// The grant is issued before anything is written, so that a transport that gives no grant
+	// (ErrTransportUnavailable) leaves no room behind and the host can try again.
+	g, err := s.grant(ctx, room.ID, Session{ID: session, AccountID: accountID}, true)
+	if err != nil {
+		return Joined{}, err
+	}
 	if err := s.d.Heartbeats.start(ctx, part.ID, session); err != nil {
 		return Joined{}, err
 	}
@@ -106,7 +112,7 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 		return Joined{}, s.joinFailed(ctx, part.ID, session, err)
 	}
 	s.forget(ctx, prev)
-	return s.joined(ctx, room.ID, Session{ID: session, AccountID: accountID}, true)
+	return s.joined(ctx, room.ID, session, g)
 }
 
 // Get returns a room that accountID sees (voice.CanSee), after evaluating its expiry;
