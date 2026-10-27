@@ -249,3 +249,52 @@ func totpRegeneratesAndDisables(t *testing.T, e *accountEnv) {
 	e.enableTOTP(t, u.reg)
 	e.signInFirstStep(t)
 }
+
+// failingIncrKV is a KeyValueStore whose IncrBy fails once it has succeeded ok times.
+type failingIncrKV struct {
+	kernel.KeyValueStore
+	ok int
+}
+
+var errIncrFailed = errors.New("testkit: IncrBy failed")
+
+func (k *failingIncrKV) IncrBy(ctx context.Context, namespace, key string, n int64, ttl time.Duration) (int64, error) {
+	if k.ok == 0 {
+		return 0, errIncrFailed
+	}
+	k.ok--
+	return k.KeyValueStore.IncrBy(ctx, namespace, key, n, ttl)
+}
+
+// totpKeepsCodesWhenAStepFails fails to record the used TOTP step after a confirmation: enabling
+// TOTP enrolls nothing, and regenerating the recovery codes keeps the old ones, so that no
+// recovery codes are stored that the user never saw.
+func totpKeepsCodesWhenAStepFails(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	reg := e.sessionUser(t)
+	failing := func(ok int) *appidentity.Service {
+		return e.newIdentityWith(func(d *appidentity.Deps) { d.KV = &failingIncrKV{KeyValueStore: e.kv, ok: ok} })
+	}
+
+	setup, err := e.identity.BeginTOTPSetup(ctx, reg.User.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secret, _ := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(setup.Secret)
+	code := identity.TOTPCode(secret, identity.TOTPStep(e.clock.Now()))
+	if _, err := failing(0).EnableTOTP(ctx, reg.User.ID, setup.Token, code); !errors.Is(err, errIncrFailed) {
+		t.Fatalf("EnableTOTP with a failing store = %v, want its error", err)
+	}
+	if st, err := e.identity.TwoFactorStatus(ctx, reg.User.ID); err != nil || st.Enabled {
+		t.Fatalf("TwoFactorStatus after a failed EnableTOTP = %+v, %v; want disabled", st, err)
+	}
+
+	u := e.enableTOTP(t, reg)
+	// The confirmation's step is recorded; recording it under the new enrollment fails.
+	if _, err := failing(1).RegenerateRecoveryCodes(ctx, reg.User.ID, u.code(e)); !errors.Is(err, errIncrFailed) {
+		t.Fatalf("RegenerateRecoveryCodes with a failing store = %v, want its error", err)
+	}
+	if _, err := e.completeSignIn(e.signInFirstStep(t), u.codes[0]); err != nil {
+		t.Errorf("CompleteSignIn(recovery code from before the failure) = %v, want it to work", err)
+	}
+}

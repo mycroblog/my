@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -45,6 +46,13 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, userID, code stri
 	if err != nil {
 		return nil, err
 	}
+	if f.recoveryHash == nil {
+		// The code stays used under the new enrollment. It is marked before the new codes
+		// replace the old ones, so that a failure here leaves the old codes working.
+		if _, err := s.useStep(ctx, e.ID, f.step); err != nil {
+			return nil, err
+		}
+	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.useRecoveryCode(ctx, tx, f, now); err != nil {
 			return err
@@ -57,12 +65,6 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, userID, code stri
 	})
 	if err := s.afterSecondFactorTx(ctx, userID, "", err); err != nil {
 		return nil, err
-	}
-	if f.recoveryHash == nil {
-		// The code stays used under the new enrollment.
-		if _, err := s.useStep(ctx, e.ID, f.step); err != nil {
-			return nil, err
-		}
 	}
 	return codes, nil
 }
@@ -204,19 +206,38 @@ func (s *Service) needTwoFactorDeps() error {
 	return nil
 }
 
-// newChallenge stores a sign-in challenge of userID and returns it.
+// newChallenge stores a sign-in challenge of userID and returns it. The challenge keeps when it
+// was issued, so that a later change of the password makes it stop working.
 func (s *Service) newChallenge(ctx context.Context, userID string) (string, error) {
 	if err := s.needTwoFactorDeps(); err != nil {
 		return "", err
 	}
 	token, hash := NewToken(SecondFactorChallengePrefix)
-	if err := s.d.KV.Set(ctx, TwoFactorNamespace, challengeKey(hash), []byte(userID), SecondFactorChallengeTTL); err != nil {
+	v := userID + challengeSeparator + strconv.FormatInt(s.d.Clock.Now().UnixNano(), 10)
+	if err := s.d.KV.Set(ctx, TwoFactorNamespace, challengeKey(hash), []byte(v), SecondFactorChallengeTTL); err != nil {
 		return "", fmt.Errorf("identity: store a sign-in challenge: %w", err)
 	}
 	return token, nil
 }
 
 func challengeKey(hash []byte) string { return "challenge:" + hex.EncodeToString(hash) }
+
+// challengeSeparator separates the user ID of a stored challenge from when it was issued.
+const challengeSeparator = " "
+
+// parseChallenge returns the user and the time of issue of a stored challenge; ok is false for a
+// malformed value.
+func parseChallenge(v []byte) (userID string, issuedAt time.Time, ok bool) {
+	userID, nanos, found := strings.Cut(string(v), challengeSeparator)
+	if !found || userID == "" {
+		return "", time.Time{}, false
+	}
+	n, err := strconv.ParseInt(nanos, 10, 64)
+	if err != nil {
+		return "", time.Time{}, false
+	}
+	return userID, time.Unix(0, n), true
+}
 
 // SecondFactorInput is the second step of a sign-in.
 type SecondFactorInput struct {
@@ -234,8 +255,8 @@ type SecondFactorInput struct {
 // for a user without two-factor authentication. A recovery code is spent in the transaction
 // that starts the session.
 //
-// It fails with ErrSecondFactorExpired when the challenge is unknown, used, or expired, or the
-// user no longer has TOTP; with ErrInvalidSecondFactor for a wrong code; with
+// It fails with ErrSecondFactorExpired when the challenge is unknown, used, or expired, the
+// password of the user changed after it was issued, or the user no longer has TOTP; with ErrInvalidSecondFactor for a wrong code; with
 // ErrInvalidCredentials when the account stopped being active; and with a
 // *kernel.RateLimitedError when too many codes failed for the user (SecondFactorLimit) or
 // sign-ins failed from the client (LoginIPLimit). A wrong code counts against both.
@@ -258,7 +279,11 @@ func (s *Service) CompleteSignIn(ctx context.Context, in SecondFactorInput) (Sig
 	if err != nil {
 		return SignedIn{}, err
 	}
-	userID := string(v)
+	userID, issuedAt, ok := parseChallenge(v)
+	if !ok {
+		s.dropChallenge(ctx, key)
+		return SignedIn{}, ErrSecondFactorExpired
+	}
 	if err := s.checkSecondFactorLimit(ctx, userID); err != nil {
 		return SignedIn{}, err
 	}
@@ -266,6 +291,16 @@ func (s *Service) CompleteSignIn(ctx context.Context, in SecondFactorInput) (Sig
 		if errors.Is(err, ErrInvalidCredentials) {
 			s.dropChallenge(ctx, key)
 		}
+		return SignedIn{}, err
+	}
+	// The first step checked the password of then; a reset or change since ends the challenge.
+	switch changed, err := s.d.Repository.LastPasswordChange(ctx, userID); {
+	case err == nil:
+		if changed.After(issuedAt) {
+			s.dropChallenge(ctx, key)
+			return SignedIn{}, ErrSecondFactorExpired
+		}
+	case !errors.Is(err, ErrNotFound):
 		return SignedIn{}, err
 	}
 	e, err := s.d.Repository.FindActiveTOTPEnrollment(ctx, userID)

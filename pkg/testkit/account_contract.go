@@ -106,6 +106,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"TOTPRecoveryCodesWorkOnce", totpRecoveryCodesWorkOnce},
 		{"RateLimitsWrongTOTPCodes", totpRateLimitsWrongCodes},
 		{"RegeneratesRecoveryCodesAndDisablesTOTP", totpRegeneratesAndDisables},
+		{"KeepsRecoveryCodesWhenAStepCannotBeRecorded", totpKeepsCodesWhenAStepFails},
 		{"RegistersListsAndRemovesPasskeys", passkeyRegistersListsAndRemoves},
 		{"LimitsPasskeyRegistrations", passkeyLimitsRegistrations},
 		{"SignsInWithAPasskey", passkeySignsIn},
