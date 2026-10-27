@@ -272,7 +272,9 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 // evaluation ends: the participants other than the host, and the host once its grace ran out.
 // A session that changed or came back since the read is not claimed and counts as alive, so
 // that a join from another device or a late heartbeat is not undone by what the evaluation
-// read before.
+// read before. A session that another evaluation claimed meanwhile stays expired but
+// unclaimed: this evaluation neither ends that participation nor takes the host out of its
+// grace, and leaves both to the evaluation that holds the claim.
 func (s *Service) claimExpired(ctx context.Context, e *evaluation, ps []Participant, graceOver bool) error {
 	e.claimed = map[string]bool{}
 	for _, p := range ps {
@@ -280,16 +282,15 @@ func (s *Service) claimExpired(ctx context.Context, e *evaluation, ps []Particip
 		if !e.live.expired(id) || (p.AccountID == e.host && !graceOver) {
 			continue
 		}
-		ok, err := s.d.Heartbeats.claim(ctx, id, e.live.raw[id])
+		claimed, alive, err := s.d.Heartbeats.claim(ctx, id, e.live.raw[id])
 		if err != nil {
 			s.releaseClaims(ctx, *e)
 			return err
 		}
-		if ok {
+		if claimed {
 			e.claimed[id] = true
-		} else {
-			e.live.alive[id] = true
 		}
+		e.live.alive[id] = alive
 	}
 	return nil
 }

@@ -160,22 +160,31 @@ func (h *Heartbeats) stop(ctx context.Context, participationID, sessionID string
 
 // claim marks the session of a participation that an evaluation read as raw (the value of
 // kvSessions) and found expired, so that no join from another device replaces it and no
-// heartbeat renews it while the evaluation ends the participation. It reports false, and
-// claims nothing, when the session changed or came back since the read.
-func (h *Heartbeats) claim(ctx context.Context, participationID, raw string) (bool, error) {
+// heartbeat renews it while the evaluation ends the participation. It reports claimed when the
+// mark is the evaluation's, and alive, with nothing claimed, when the session changed or came
+// back since the read. A session that another evaluation claimed since the read is neither:
+// it is still expired, and that evaluation ends the participation or releases it.
+func (h *Heartbeats) claim(ctx context.Context, participationID, raw string) (claimed, alive bool, err error) {
 	ok, err := h.kv.CompareAndSwap(ctx, kvSessions, participationID, sessionValue(raw), []byte(sessionEnding), HeartbeatLease)
-	if err != nil || !ok {
-		return false, err
+	if err != nil {
+		return false, false, err
+	}
+	if !ok {
+		cur, err := h.raw(ctx, participationID)
+		if err != nil {
+			return false, false, err
+		}
+		return false, cur != sessionEnding, nil
 	}
 	if raw == "" || raw == sessionEnding {
-		return true, nil
+		return true, false, nil
 	}
 	back, err := h.alive(ctx, raw)
 	if err != nil || !back {
-		return err == nil, err
+		return err == nil, false, err
 	}
 	// A heartbeat landed since the read: the session stays.
-	return false, h.release(ctx, participationID, raw)
+	return false, true, h.release(ctx, participationID, raw)
 }
 
 // release gives back the session that claim marked, raw as claim read it.
