@@ -12,6 +12,39 @@ import (
 	"database/sql"
 )
 
+const acquireOutboxRelayLease = `-- name: AcquireOutboxRelayLease :execrows
+INSERT INTO outbox_relay_leases (name, holder, lease_until)
+SELECT CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS INTEGER)
+WHERE NOT EXISTS (
+  SELECT 1 FROM outbox_relay_leases AS l
+  WHERE l.name = ?1 AND l.holder <> ?2 AND l.lease_until > ?4
+)
+ON CONFLICT (name) DO UPDATE SET holder = excluded.holder, lease_until = excluded.lease_until
+`
+
+type AcquireOutboxRelayLeaseParams struct {
+	Name       string
+	Holder     string
+	LeaseUntil int64
+	Now        int64
+}
+
+// AcquireOutboxRelayLease takes or renews the relay lease @name for @holder until
+// @lease_until, unless another holder's lease lasts beyond @now: it affects one row when
+// @holder holds the lease.
+func (q *Queries) AcquireOutboxRelayLease(ctx context.Context, arg AcquireOutboxRelayLeaseParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, acquireOutboxRelayLease,
+		arg.Name,
+		arg.Holder,
+		arg.LeaseUntil,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const claimJob = `-- name: ClaimJob :one
 UPDATE jobs
 SET locked_by = ?1, locked_until = ?2, attempt = attempt + 1
@@ -276,6 +309,27 @@ DELETE FROM outbox_events WHERE id = ?
 func (q *Queries) DeleteOutboxEvent(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deleteOutboxEvent, id)
 	return err
+}
+
+const endOutboxRelayLease = `-- name: EndOutboxRelayLease :execrows
+UPDATE outbox_relay_leases SET lease_until = ?1
+WHERE name = ?2 AND holder = ?3 AND lease_until > ?1
+`
+
+type EndOutboxRelayLeaseParams struct {
+	Now    int64
+	Name   string
+	Holder string
+}
+
+// EndOutboxRelayLease ends the relay lease @name at @now when @holder still holds it: it
+// affects one row then, and none when the lease expired and another relay may have taken it.
+func (q *Queries) EndOutboxRelayLease(ctx context.Context, arg EndOutboxRelayLeaseParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, endOutboxRelayLease, arg.Now, arg.Name, arg.Holder)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const insertDeadJobFromClaim = `-- name: InsertDeadJobFromClaim :execrows

@@ -29,8 +29,7 @@ func NewPostgres(d *postgres.DB, opts Options) *Queue {
 
 // NewPostgresOutbox returns the outbox kept in the PostgreSQL database d.
 func NewPostgresOutbox(d *postgres.DB, opts Options) *Outbox {
-	opts.check()
-	return &Outbox{db: d, st: postgresStore{d}, opts: opts}
+	return newOutbox(d, postgresStore{d}, opts)
 }
 
 type postgresStore struct{ db *postgres.DB }
@@ -283,6 +282,26 @@ func (s postgresStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) e
 		return err
 	}
 	return q.DeleteOutboxEvent(ctx, id)
+}
+
+func (s postgresStore) acquireRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now, until time.Time) (bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.AcquireOutboxRelayLease(ctx, postgresqueue.AcquireOutboxRelayLeaseParams{
+		Name: name, Holder: holder, LeaseUntil: until, Now: now,
+	})
+	return n == 1, err
+}
+
+func (s postgresStore) endRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now time.Time) (bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.EndOutboxRelayLease(ctx, postgresqueue.EndOutboxRelayLeaseParams{Name: name, Holder: holder, Now: now})
+	return n == 1, err
 }
 
 func (s postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {
