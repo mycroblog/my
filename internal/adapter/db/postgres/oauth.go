@@ -131,7 +131,7 @@ func (r *IdentityRepository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, f
 // LockTokenGrants implements identity.Repository with a transaction-scoped advisory lock on the
 // user, so that issuing and revoking the user's tokens serialize under READ COMMITTED.
 func (r *IdentityRepository) LockTokenGrants(ctx context.Context, tx uow.Tx, userID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (r *IdentityRepository) LockTokenGrants(ctx context.Context, tx uow.Tx, use
 
 // SessionRevoked implements identity.Repository.
 func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

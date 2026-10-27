@@ -63,7 +63,7 @@ func (r *FederationRepository) FindReceivedDocument(ctx context.Context, activit
 
 // ReleaseUnconfirmedActivity implements federation.InboxRepository.
 func (r *FederationRepository) ReleaseUnconfirmedActivity(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

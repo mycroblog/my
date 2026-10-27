@@ -134,7 +134,7 @@ func (r *IdentityRepository) LockTokenGrants(context.Context, uow.Tx, string) er
 
 // SessionRevoked implements identity.Repository.
 func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
