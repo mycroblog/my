@@ -254,6 +254,8 @@
   見出しは失敗の種類（`lib/errors.ts` の `errorKind`: 通信できない・サーバーの失敗・見つからない（404）・権限がない（403）・画面自体の不具合）ごとに分け、理由は `errorMessage(error)`（通信できないときはオフラインかどうかも言う。画面自体の不具合はカタログの文）にする。404 と 403 には「もう一度試す」を出さない。
   「もう一度試す」は、まずその失敗を起こした query だけをその場で取り直す。また失敗したら、エラーとボタンのフォーカスを残したまま新しい理由を `role="alert"` で出す。取れたら Query のエラー境界を戻して loader を再実行し、画面の `h1` にフォーカスを移す。
   レイアウト自体の失敗はルートの `errorComponent`（`RootError`）が画面全体に出す。合うルートのないアドレスは `NotFound` を出す。独立した区画（3 列目など）は `react-error-boundary` で囲む。
+  捕まえたエラーはサーバーに報告する（[ADR-0103](../../adr/0103-error-reporting.md) §6、`lib/errorReporting.tsx`）: 画面の失敗はルーターの `defaultOnCatch` が報告し、ルートに `onCatch` を書くときは既定を上書きするので、そこからも `errors.report(error, "route_error")` を呼ぶ。
+  `react-error-boundary` の `onError` には必ず `useBoundaryErrorReport()` が返す関数を渡す。境界の外のものは `createRoot` の `onUncaughtError`（`main.tsx`）と window の `error`・`unhandledrejection` が受ける。
   見せるものがない画面（合うルートのないアドレス・見つからないアカウント・無効にしたタイムライン）の出口は `routes/-layout/HomeLink.tsx` の 1 つのリンクにし、サインインしている利用者にはホームのタイムライン（`/home`）、サインインしていない人にはランディングページ（`/`、「トップページへ」）を指す。
   オフラインでセッションを再開できないとき（`unreachable`）は、ナビゲーションと同じくホームのタイムラインを指す。
 - **オフライン**（`lib/network.ts`、G17）: オンラインかどうかは TanStack Query の `onlineManager` 1 つに置き、Query のキャッシュとオフラインの帯が同じ状態を読む。

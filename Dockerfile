@@ -37,9 +37,11 @@ COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
 COPY app/ app/
 COPY pkg/mykit/ts/ pkg/mykit/ts/
+# The same version as the server's, which the client sends with its error reports.
+ARG VERSION=dev
 RUN cd tools/i18n && bun run src/gen.ts --ts \
     && cd ../../app/ui && bun run scripts/theme-tokens.ts --ts \
-    && cd .. && bun run build
+    && cd .. && VITE_MY_RELEASE="$VERSION" bun run build
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Integration tests of the error boundaries (web-client/README.md E1, web-client/16-look-states-and-wording.md G16): the app's layout, error components and
 // router options, over a route tree of the test's own with a page whose loader fails, and over the app's routes
-// with an API that fails in each of the ways the error tells apart.
+// with an API that fails in each of the ways the error tells apart; and the report of a page that fails.
 import { createRootRouteWithContext, createRoute, createRouter, type RouterHistory } from "@tanstack/react-router";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+import { ErrorReporter } from "./lib/errorReporting";
 import type { RouterContext } from "./lib/query";
-import { routerOptions } from "./router";
+import { createAppRouter, routerOptions } from "./router";
 import { AppLayout } from "./routes/-layout/AppLayout";
 import { PlaceholderPage } from "./routes/-layout/PlaceholderPage";
 import { NotFound, RootError } from "./routes/-layout/RouteStates";
@@ -182,4 +183,30 @@ describe("a page whose API fails", () => {
     });
     expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
   });
+});
+
+test("reports a page that fails as a route_error with the pattern of its route (ADR-0103 §6)", async () => {
+  // A local timeline whose post cannot be displayed: the page fails while it renders.
+  server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json({ items: [null] })));
+  const reports: unknown[] = [];
+  server.use(
+    http.post(`${apiBase}/client_errors`, async ({ request }) => {
+      reports.push(await request.json());
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  // React and the router log the error.
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  // The app's router, with a reporter that takes the test's stacks, which name files rather than URLs, for the app's own.
+  await renderApp({
+    path: "/local",
+    createRouter: (options) => createAppRouter({ ...options, errors: new ErrorReporter({ api: options.api, apiOrigin: window.location.origin, isOwnStack: () => true }) }),
+  });
+
+  await waitFor(() => {
+    expect(reports).toHaveLength(1);
+  });
+  expect(reports[0]).toMatchObject({ kind: "route_error", route: "/local" });
 });

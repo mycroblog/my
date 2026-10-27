@@ -12,6 +12,7 @@ import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
 import { VoiceCallBar, VoiceRail, VoiceRoomAside } from "../../features/voice";
 import { hasClosed, useClosure } from "../../lib/closure";
+import { useBoundaryErrorReport } from "../../lib/errorReporting";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
 import { ConnectionBanner } from "./ConnectionBanner";
@@ -35,6 +36,8 @@ const voiceRoomPagePattern = /^\/voice\/([^/]+)\/?$/u;
 
 export function AppLayout() {
   const t = useT();
+  // The blocks of the third column fail on their own, and their boundaries report what they catch.
+  const reportBoundaryError = useBoundaryErrorReport();
   const mainRef = useRef<HTMLElement>(null);
   useViewChange(mainRef);
   useLiveUpdates();
@@ -103,16 +106,16 @@ export function AppLayout() {
             // chat rooms come first, while there are any (web-client/09-app-shell.md §9).
             <>
               {!onVoicePage && (
-                <ErrorBoundary fallback={null}>
+                <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                   <VoiceRail />
                 </ErrorBoundary>
               )}
               {voiceRoomId !== undefined && (
-                <ErrorBoundary fallback={null}>
+                <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                   <VoiceRoomAside id={voiceRoomId} />
                 </ErrorBoundary>
               )}
-              <ErrorBoundary fallback={null}>
+              <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                 <ServerInfo />
               </ErrorBoundary>
             </>

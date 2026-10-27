@@ -20,6 +20,7 @@ import {
 import type { Ref } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useIntl } from "react-intl";
+import { useBoundaryErrorReport } from "../../../lib/errorReporting";
 import { useT } from "../../../lib/i18n";
 import type { Status } from "../api/status";
 import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
@@ -63,12 +64,13 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
   const view = useStatusView(status);
   const viewerLabels = useMediaViewerLabels();
   const audioLabels = useAudioPlayerLabels();
+  const reportBoundaryError = useBoundaryErrorReport();
 
   const card =
     view.card === null ? undefined : (
       // The card is drawn from what another site declared: should it fail to render, only the card is lost
       // (web-client/README.md E1).
-      <ErrorBoundary fallback={<Hint>{t("client:timeline.card.failed")}</Hint>}>
+      <ErrorBoundary fallback={<Hint>{t("client:timeline.card.failed")}</Hint>} onError={reportBoundaryError}>
         <LinkCard
           href={view.card.href}
           title={view.card.title}

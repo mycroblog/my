@@ -70,9 +70,13 @@ export function resumableSession() {
   return http.post(oauthPaths.refresh, () => tokenResponse(validAccessToken));
 }
 
-/** The default instance and OAuth handlers: no refresh token cookie, so the browser has no session to resume. */
+/**
+ * The default instance, error report, and OAuth handlers: no refresh token cookie, so the browser has no session to
+ * resume.
+ */
 export const handlers = [
   http.get(`${apiBase}/instance`, () => HttpResponse.json(instanceFixture)),
+  http.post(`${apiBase}/client_errors`, () => new HttpResponse(null, { status: 204 })),
   http.post(oauthPaths.refresh, () => oauthError("invalid_grant")),
   http.post(oauthPaths.token, () => oauthError("invalid_grant")),
   http.post(oauthPaths.revoke, () => new HttpResponse(null, { status: 200 })),
