@@ -143,15 +143,8 @@ func (f *Fetcher) fetch(ctx context.Context, uri string, flow federation.Flow) (
 // check refuses URIs of this instance, of a suspended server, and of an unavailable one.
 func (f *Fetcher) check(ctx context.Context, target federation.IRI) error {
 	host := target.Host()
-	if strings.EqualFold(host, f.d.Host) {
-		return fmt.Errorf("%w: %s is local", ErrFetchRefused, target)
-	}
-	suspended, err := f.d.Domains.FederationSuspended(ctx, host)
-	if err != nil {
+	if err := f.refuses(ctx, host); err != nil {
 		return err
-	}
-	if suspended {
-		return fmt.Errorf("%w: %s", ErrFetchRefused, host)
 	}
 	state, err := f.d.Instances.InstanceState(ctx, host)
 	if err != nil {
@@ -161,6 +154,44 @@ func (f *Fetcher) check(ctx context.Context, target federation.IRI) error {
 		return fmt.Errorf("%w: %s", ErrFetchUnavailable, host)
 	}
 	return nil
+}
+
+// refuses fails with ErrFetchRefused for host when it is this instance or a suspended server
+// (a domain block of federation, federation.md §6.1).
+func (f *Fetcher) refuses(ctx context.Context, host string) error {
+	if strings.EqualFold(host, f.d.Host) {
+		return fmt.Errorf("%w: %s is local", ErrFetchRefused, host)
+	}
+	suspended, err := f.d.Domains.FederationSuspended(ctx, host)
+	if err != nil {
+		return err
+	}
+	if suspended {
+		return fmt.Errorf("%w: %s", ErrFetchRefused, host)
+	}
+	return nil
+}
+
+// checkRedirect is the kernel.HTTPRequest.CheckRedirect of the requests to remote servers: a
+// redirect hop to this instance or to a suspended server ends the request with ErrFetchRefused.
+func (f *Fetcher) checkRedirect(ctx context.Context, u string) error {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrFetchRefused, err)
+	}
+	host, err := CanonicalHost(parsed.Hostname())
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrFetchRefused, err)
+	}
+	return f.refuses(ctx, host)
+}
+
+// redirectPolicy returns f.checkRedirect, or nil for a nil f.
+func (f *Fetcher) redirectPolicy() func(context.Context, string) error {
+	if f == nil {
+		return nil
+	}
+	return f.checkRedirect
 }
 
 func (f *Fetcher) fetchOnce(ctx context.Context, target federation.IRI) (*Fetched, error) {
@@ -173,9 +204,11 @@ func (f *Fetcher) fetchOnce(ctx context.Context, target federation.IRI) (*Fetche
 	}
 	resp, err := f.d.Client.Do(ctx, &kernel.HTTPRequest{
 		Method: http.MethodGet, URL: string(target), Header: http.Header{"Accept": {ActivityStreamsAccept}},
-		Purpose: kernel.HTTPPurposeJSON,
+		Purpose: kernel.HTTPPurposeJSON, CheckRedirect: f.checkRedirect,
 	}, key)
 	switch {
+	case errors.Is(err, ErrFetchRefused):
+		return nil, fmt.Errorf("%s: %w", target, err)
 	case errors.Is(err, kernel.ErrForbiddenDestination), errors.Is(err, kernel.ErrInvalidHTTPRequest), errors.Is(err, kernel.ErrResponseTooLarge):
 		return nil, fmt.Errorf("%w: %s: %w", ErrFetchNotFound, target, err)
 	case err != nil:

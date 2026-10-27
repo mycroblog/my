@@ -130,3 +130,54 @@ func (r *MediaRepository) ListCurrentCustomEmojis(ctx context.Context, ids []str
 	}
 	return out, nil
 }
+
+// InsertRemoteMediaCache implements content.MediaRepository.
+func (r *MediaRepository) InsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertRemoteMediaCache(ctx, sqlitegen.InsertRemoteMediaCacheParams{
+		Url: e.URL, BlobKey: e.BlobKey, ContentType: e.ContentType, FileSize: e.FileSize,
+		FetchedAt: toMillis(e.FetchedAt), ExpiresAt: toMillis(e.ExpiresAt), LastAccessedAt: toMillis(e.LastAccessedAt),
+	})
+	return n > 0, wrap(err, "insert remote media cache")
+}
+
+// LockRemoteMediaCache implements content.MediaRepository.
+func (r *MediaRepository) LockRemoteMediaCache(ctx context.Context, tx uow.Tx, url string) (content.RemoteMediaCacheEntry, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return content.RemoteMediaCacheEntry{}, err
+	}
+	row, err := q.LockRemoteMediaCache(ctx, url)
+	if err != nil {
+		return content.RemoteMediaCacheEntry{}, notFound(err, appcontent.ErrNotFound, "remote media cache "+url)
+	}
+	return remoteMediaCacheEntry(row), nil
+}
+
+// RecordBlobDeletion implements content.MediaRepository.
+func (r *MediaRepository) RecordBlobDeletion(ctx context.Context, tx uow.Tx, key string, deleteAfter time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.UpsertMediaBlobDeletion(ctx, sqlitegen.UpsertMediaBlobDeletionParams{BlobKey: key, DeleteAfter: toMillis(deleteAfter)}), "record blob deletion")
+}
+
+// ForgetBlobDeletion implements content.MediaRepository.
+func (r *MediaRepository) ForgetBlobDeletion(ctx context.Context, tx uow.Tx, key string) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.DeleteMediaBlobDeletion(ctx, key)
+	return n > 0, wrap(err, "forget blob deletion")
+}
+
+// ListDueBlobDeletions implements content.MediaRepository.
+func (r *MediaRepository) ListDueBlobDeletions(ctx context.Context, now time.Time, limit int) ([]string, error) {
+	keys, err := r.db.reader().ListDueMediaBlobDeletions(ctx, sqlitegen.ListDueMediaBlobDeletionsParams{Now: toMillis(now), BatchLimit: int64(limit)})
+	return keys, wrap(err, "list due blob deletions")
+}

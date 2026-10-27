@@ -58,10 +58,54 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 	return nil
 }
 
+// LockUnfinishedDataImports implements identity.ImportRepository with SELECT ... FOR UPDATE on
+// the user's row, which the requests of the user's exports and imports lock first.
+func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	if err := q.LockUserDataTransfers(ctx, userID); err != nil {
+		return false, wrap(err, "lock the data transfers of a user")
+	}
+	unfinished, err := q.HasUnfinishedDataImport(ctx, userID)
+	return unfinished, wrap(err, "find an unfinished data import")
+}
+
+// lockDataImport locks an import with SELECT ... FOR SHARE, so that DeleteDataImport, which
+// deletes the import's row first, waits for tx; it fails with ErrNotFound when the import is
+// gone.
+func lockDataImport(ctx context.Context, q *postgresgen.Queries, importID string) error {
+	if _, err := q.LockDataImport(ctx, importID); err != nil {
+		return notFound(err, appidentity.ErrNotFound, "data import")
+	}
+	return nil
+}
+
+// InsertDataImportItemFailure implements identity.ImportRepository.
+func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx uow.Tx, importID string, position int, at time.Time) (int, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	pos, err := toInt32(position, "position")
+	if err != nil {
+		return 0, err
+	}
+	if err := lockDataImport(ctx, q, importID); err != nil {
+		return 0, err
+	}
+	n, err := q.InsertDataImportItemFailure(ctx, postgresgen.InsertDataImportItemFailureParams{ImportID: importID, Position: pos, FailedAt: at})
+	return int(n), wrap(err, "insert data import item failure")
+}
+
 // InsertDataImportResult implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.Tx, res identity.DataImportResult) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
+		return err
+	}
+	if err := lockDataImport(ctx, q, res.ImportID); err != nil {
 		return err
 	}
 	pos, err := toInt32(res.Position, "position")
@@ -130,19 +174,24 @@ func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t
 	return ids, wrap(err, "list old data imports")
 }
 
-// DeleteDataImport implements identity.ImportRepository.
+// DeleteDataImport implements identity.ImportRepository. It deletes the import's row first, so
+// that it waits for a transaction that locked the row to record a result or a failure, and the
+// deletions of the children, statements of their own, see what it recorded.
 func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id string) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
+	if err := q.DeleteDataImport(ctx, id); err != nil {
+		return wrap(err, "delete data import")
+	}
 	if err := q.DeleteDataImportItemResults(ctx, id); err != nil {
 		return wrap(err, "delete data import results")
 	}
-	if err := q.DeleteDataImportItems(ctx, id); err != nil {
-		return wrap(err, "delete data import items")
+	if err := q.DeleteDataImportItemFailures(ctx, id); err != nil {
+		return wrap(err, "delete data import item failures")
 	}
-	return wrap(q.DeleteDataImport(ctx, id), "delete data import")
+	return wrap(q.DeleteDataImportItems(ctx, id), "delete data import items")
 }
 
 func dataImportProgress(row postgresgen.ListDataImportProgressRow) identity.DataImportProgress {

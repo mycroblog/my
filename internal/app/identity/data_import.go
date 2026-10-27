@@ -38,9 +38,13 @@ const (
 	ImportTTL = 7 * 24 * time.Hour
 	// ImportListLimit is the number of imports ListImports returns.
 	ImportListLimit = 10
-	// ImportItemAttempts is the number of runs of JobProcessImport that an item may fail with an
-	// error before it is recorded as failed, so that the rest of the import goes on.
+	// ImportItemAttempts is the number of times that an item may fail with an error worth
+	// retrying before it is recorded as failed, so that the rest of the import goes on. Each
+	// item counts its own failures: the failures of other items and of the job do not use them.
 	ImportItemAttempts = 5
+	// importRetryDelay is the delay of the job that retries an item after its first failure; it
+	// doubles after each further failure.
+	importRetryDelay = 30 * time.Second
 	// importBatch is the number of items one run of JobProcessImport carries out.
 	importBatch = 20
 	// importItemTimeout bounds one item, which may fetch from a remote server.
@@ -56,11 +60,20 @@ var ErrImportInProgress = errors.New("identity: an import is being carried out")
 // repositories implement it and pass testkit.AccountRepositoryContract.
 type ImportRepository interface {
 	InsertDataImport(ctx context.Context, tx uow.Tx, i identity.DataImport) error
+	// LockUnfinishedDataImports makes the requests of a user's exports and imports that run tx
+	// wait for each other until tx ends, and reports whether the user has an import with an item
+	// without a result.
+	LockUnfinishedDataImports(ctx context.Context, tx uow.Tx, userID string) (bool, error)
 	// InsertDataImportItems inserts items of one import.
 	InsertDataImportItems(ctx context.Context, tx uow.Tx, items []identity.DataImportItem) error
 	// InsertDataImportResult records how an item ended; a second result of the same item does
-	// nothing, so that the first one stands.
+	// nothing, so that the first one stands. It fails with ErrNotFound when the import is gone,
+	// and keeps the import from being deleted until tx ends.
 	InsertDataImportResult(ctx context.Context, tx uow.Tx, r identity.DataImportResult) error
+	// InsertDataImportItemFailure records that a run could not carry out an item, with an error
+	// worth retrying, and returns how many runs have failed on the item. It fails with
+	// ErrNotFound when the import is gone, and keeps the import from being deleted until tx ends.
+	InsertDataImportItemFailure(ctx context.Context, tx uow.Tx, importID string, position int, at time.Time) (int, error)
 	// FindDataImport returns an import with its numbers. It fails with ErrNotFound when there is
 	// none.
 	FindDataImport(ctx context.Context, id string) (identity.DataImportProgress, error)
@@ -72,8 +85,9 @@ type ImportRepository interface {
 	// ListDataImportsCreatedBefore returns the IDs of up to limit imports created before t,
 	// oldest first.
 	ListDataImportsCreatedBefore(ctx context.Context, t time.Time, limit int) ([]string, error)
-	// DeleteDataImport deletes an import with its items and their results; deleting a missing
-	// one succeeds.
+	// DeleteDataImport deletes an import with its items and their results and failures;
+	// deleting a missing one succeeds. It waits for a transaction that is recording a result or
+	// a failure of the import.
 	DeleteDataImport(ctx context.Context, tx uow.Tx, id string) error
 }
 
@@ -246,6 +260,8 @@ func (m *Imports) key(kind identity.ImportKind, target string) string {
 // transaction: an item for each entry and, for an overwrite, one that removes each of
 // PreviewImport's removals. While another import of the user has items without a result, it
 // fails with ErrImportInProgress; a file that PreviewImport refuses fails the same way.
+// Concurrent imports of a user check and insert one at a time, so that a user has at most one
+// import being carried out.
 func (m *Imports) StartImport(ctx context.Context, in ImportInput) (identity.DataImportProgress, error) {
 	recent, err := m.d.Repository.ListDataImports(ctx, in.UserID, 1)
 	if err != nil {
@@ -277,6 +293,13 @@ func (m *Imports) StartImport(ctx context.Context, in ImportInput) (identity.Dat
 		return identity.DataImportProgress{}, err
 	}
 	err = m.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		unfinished, err := m.d.Repository.LockUnfinishedDataImports(ctx, tx, in.UserID)
+		if err != nil {
+			return err
+		}
+		if unfinished {
+			return ErrImportInProgress
+		}
 		if err := m.d.Repository.InsertDataImport(ctx, tx, imp); err != nil {
 			return err
 		}
@@ -304,6 +327,15 @@ func processJob(importID string, payload []byte, position int) queue.NewJob {
 	}
 }
 
+// retryJob returns the job that carries out the items of an import from position on again,
+// after the item at position failed for the failures-th time at now.
+func retryJob(importID string, payload []byte, position, failures int, now time.Time) queue.NewJob {
+	j := processJob(importID, payload, position)
+	j.IdempotencyKey += ":retry:" + strconv.Itoa(failures)
+	j.RunAt = now.Add(importRetryDelay << min(failures-1, 10))
+	return j
+}
+
 // ListImports returns the latest ImportListLimit imports of a user, newest first.
 func (m *Imports) ListImports(ctx context.Context, userID string) ([]identity.DataImportProgress, error) {
 	return m.d.Repository.ListDataImports(ctx, userID, ImportListLimit)
@@ -326,7 +358,7 @@ func (m *Imports) handleProcess(ctx context.Context, j queue.Job) queue.Result {
 	if err := json.Unmarshal(j.Payload, &p); err != nil || p.ImportID == "" {
 		return queue.Fail(fmt.Errorf("identity: invalid %s payload: %w", JobProcessImport, err))
 	}
-	if err := m.ProcessImport(ctx, p.ImportID, j.Attempt >= ImportItemAttempts); err != nil {
+	if err := m.ProcessImport(ctx, p.ImportID); err != nil {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
@@ -334,10 +366,11 @@ func (m *Imports) handleProcess(ctx context.Context, j queue.Job) queue.Result {
 
 // ProcessImport carries out the next batch of items of an import that have no result, records
 // each one's result, and enqueues the job of the next batch when there may be more. An item
-// that fails with an *ImportItemError is recorded as failed; another error stops the batch to be
-// retried, unless giveUp is set: then the item is recorded as failed (unavailable) and the batch
-// goes on. A missing import, removed in the meantime, is done.
-func (m *Imports) ProcessImport(ctx context.Context, importID string, giveUp bool) error {
+// that fails with an *ImportItemError is recorded as failed. Another error is recorded as a
+// failure of the item and stops the batch, and a job retries it later; once the item has failed
+// ImportItemAttempts times, it is recorded as failed (unavailable) and the batch goes on. A
+// missing import, removed before or during the batch, is done.
+func (m *Imports) ProcessImport(ctx context.Context, importID string) error {
 	imp, err := m.d.Repository.FindDataImport(ctx, importID)
 	if errors.Is(err, ErrNotFound) {
 		return nil
@@ -349,6 +382,10 @@ func (m *Imports) ProcessImport(ctx context.Context, importID string, giveUp boo
 	if err != nil {
 		return err
 	}
+	payload, err := json.Marshal(ImportJob{ImportID: importID})
+	if err != nil {
+		return err
+	}
 	for _, item := range items {
 		res := identity.DataImportResult{ImportID: importID, Position: item.Position, Outcome: identity.ImportDone}
 		var itemErr *ImportItemError
@@ -356,28 +393,67 @@ func (m *Imports) ProcessImport(ctx context.Context, importID string, giveUp boo
 		case err == nil:
 		case errors.As(err, &itemErr):
 			res.Outcome, res.Failure = identity.ImportFailed, itemErr.Failure
-		case giveUp && ctx.Err() == nil:
-			m.d.Logger.WarnContext(ctx, "identity: an import item failed", "import_id", importID, "position", item.Position, "error", err)
-			res.Outcome, res.Failure = identity.ImportFailed, identity.ImportFailureUnavailable
-		default:
+		case ctx.Err() != nil:
 			return fmt.Errorf("identity: import %s item %d: %w", importID, item.Position, err)
+		default:
+			retried, err := m.recordItemFailure(ctx, importID, payload, item.Position, err)
+			switch {
+			case errors.Is(err, ErrNotFound):
+				return nil
+			case err != nil:
+				return err
+			case retried:
+				return nil
+			}
+			continue
 		}
 		res.ProcessedAt = kernel.Normalize(m.d.Clock.Now())
-		if err := m.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return m.d.Repository.InsertDataImportResult(ctx, tx, res) }); err != nil {
+		err := m.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return m.d.Repository.InsertDataImportResult(ctx, tx, res) })
+		if errors.Is(err, ErrNotFound) {
+			return nil
+		}
+		if err != nil {
 			return err
 		}
 	}
 	if len(items) < importBatch {
 		return nil
 	}
-	payload, err := json.Marshal(ImportJob{ImportID: importID})
-	if err != nil {
-		return err
-	}
 	next := items[len(items)-1].Position + 1
 	return m.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		return m.d.Outbox.EnqueueTx(ctx, tx, processJob(importID, payload, next))
 	})
+}
+
+// recordItemFailure records that an item failed with cause, an error worth retrying. Before
+// the item's ImportItemAttempts-th failure it enqueues the job that retries the item after a
+// delay and reports true; at that failure it records the item as failed (unavailable). It fails
+// with ErrNotFound when the import is gone.
+func (m *Imports) recordItemFailure(ctx context.Context, importID string, payload []byte, position int, cause error) (bool, error) {
+	now := kernel.Normalize(m.d.Clock.Now())
+	retried := false
+	err := m.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		retried = false
+		failures, err := m.d.Repository.InsertDataImportItemFailure(ctx, tx, importID, position, now)
+		if err != nil {
+			return err
+		}
+		if failures < ImportItemAttempts {
+			retried = true
+			return m.d.Outbox.EnqueueTx(ctx, tx, retryJob(importID, payload, position, failures, now))
+		}
+		return m.d.Repository.InsertDataImportResult(ctx, tx, identity.DataImportResult{
+			ImportID: importID, Position: position, Outcome: identity.ImportFailed, Failure: identity.ImportFailureUnavailable,
+			ProcessedAt: now,
+		})
+	})
+	if err != nil {
+		return false, err
+	}
+	if !retried {
+		m.d.Logger.WarnContext(ctx, "identity: an import item failed", "import_id", importID, "position", position, "error", cause)
+	}
+	return retried, nil
 }
 
 // carryOut carries out one item, bounded by importItemTimeout.

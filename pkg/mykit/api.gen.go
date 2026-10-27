@@ -6499,8 +6499,8 @@ type CreateAccountActionRequest struct {
 	// blocked.
 	BlockEmail *bool `json:"block_email,omitempty"`
 
-	// ExpiresIn The seconds the action lasts; omitted, it lasts until it is lifted. A `ban` and the
-	// actions on posts take none.
+	// ExpiresIn The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted. A `ban` and the actions on posts take none.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -6556,7 +6556,8 @@ type CreateDomainActionRequest struct {
 	// accepted. The action covers its subdomains.
 	Domain string `json:"domain"`
 
-	// ExpiresIn The seconds the action lasts; omitted, it lasts until it is lifted.
+	// ExpiresIn The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -6676,7 +6677,8 @@ type CreateRoleRequest struct {
 type CreateSignupBlockRequest struct {
 	Comment *string `json:"comment,omitempty"`
 
-	// ExpiresIn The seconds the block lasts; omitted, it lasts until it is lifted.
+	// ExpiresIn The seconds the block lasts, at most ten years (315360000); omitted, it lasts until it
+	// is lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
@@ -7642,7 +7644,8 @@ type ImportSignupBlocksRequest struct {
 	// Comment The comment of every block added.
 	Comment *string `json:"comment,omitempty"`
 
-	// ExpiresIn The seconds each block lasts; omitted, they last until they are lifted.
+	// ExpiresIn The seconds each block lasts, at most ten years (315360000); omitted, they last until
+	// they are lifted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// Kind `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
@@ -14454,9 +14457,9 @@ type ClientInterface interface {
 	// Grants the role to the user of a local account; its permissions apply from the user's
 	// next request, and the audit log records `role_granted`. Granting a role that the user
 	// holds changes nothing and records nothing. A role whose position is above every role
-	// of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-	// is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-	// permission.
+	// of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+	// account, one that is not local, or an unknown role is a 404. Answers the roles that the
+	// user holds afterwards. Needs the `manage_roles` permission.
 	//
 	// Corresponds with PUT /admin/accounts/{id}/roles/{role} (the `GrantAccountRole` operationId).
 	GrantAccountRole(ctx context.Context, id AdminAccountId, role RoleKey, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19659,9 +19662,9 @@ func (c *Client) RevokeAccountRole(ctx context.Context, id AdminAccountId, role 
 // Grants the role to the user of a local account; its permissions apply from the user's
 // next request, and the audit log records `role_granted`. Granting a role that the user
 // holds changes nothing and records nothing. A role whose position is above every role
-// of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-// is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-// permission.
+// of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+// account, one that is not local, or an unknown role is a 404. Answers the roles that the
+// user holds afterwards. Needs the `manage_roles` permission.
 //
 // Corresponds with PUT /admin/accounts/{id}/roles/{role} (the `GrantAccountRole` operationId).
 func (c *Client) GrantAccountRole(ctx context.Context, id AdminAccountId, role RoleKey, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -41400,9 +41403,9 @@ type ClientWithResponsesInterface interface {
 	// Grants the role to the user of a local account; its permissions apply from the user's
 	// next request, and the audit log records `role_granted`. Granting a role that the user
 	// holds changes nothing and records nothing. A role whose position is above every role
-	// of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-	// is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-	// permission.
+	// of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+	// account, one that is not local, or an unknown role is a 404. Answers the roles that the
+	// user holds afterwards. Needs the `manage_roles` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -66526,9 +66529,9 @@ func (c *ClientWithResponses) RevokeAccountRoleWithResponse(ctx context.Context,
 // Grants the role to the user of a local account; its permissions apply from the user's
 // next request, and the audit log records `role_granted`. Granting a role that the user
 // holds changes nothing and records nothing. A role whose position is above every role
-// of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-// is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-// permission.
+// of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+// account, one that is not local, or an unknown role is a 404. Answers the roles that the
+// user holds afterwards. Needs the `manage_roles` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //

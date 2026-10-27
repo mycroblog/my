@@ -5285,9 +5285,9 @@ export interface paths {
          * @description Grants the role to the user of a local account; its permissions apply from the user's
          *     next request, and the audit log records `role_granted`. Granting a role that the user
          *     holds changes nothing and records nothing. A role whose position is above every role
-         *     of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-         *     is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-         *     permission.
+         *     of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+         *     account, one that is not local, or an unknown role is a 404. Answers the roles that the
+         *     user holds afterwards. Needs the `manage_roles` permission.
          */
         put: operations["grantAccountRole"];
         post?: never;
@@ -8792,8 +8792,8 @@ export interface components {
              */
             notify_target: boolean;
             /**
-             * @description The seconds the action lasts; omitted, it lasts until it is lifted. A `ban` and the
-             *     actions on posts take none.
+             * @description The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+             *     is lifted. A `ban` and the actions on posts take none.
              */
             expires_in?: number;
             /**
@@ -8836,7 +8836,10 @@ export interface components {
             private_note?: string;
             /** @default false */
             obfuscate: boolean;
-            /** @description The seconds the action lasts; omitted, it lasts until it is lifted. */
+            /**
+             * @description The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+             *     is lifted.
+             */
             expires_in?: number;
         };
         /** @description A new invite. */
@@ -8936,7 +8939,10 @@ export interface components {
             value: string;
             severity: components["schemas"]["AdminSignupBlockSeverity"];
             comment?: string;
-            /** @description The seconds the block lasts; omitted, it lasts until it is lifted. */
+            /**
+             * @description The seconds the block lasts, at most ten years (315360000); omitted, it lasts until it
+             *     is lifted.
+             */
             expires_in?: number;
         };
         /** @description A new status. */
@@ -9598,7 +9604,10 @@ export interface components {
             severity: components["schemas"]["AdminSignupBlockSeverity"];
             /** @description The comment of every block added. */
             comment?: string;
-            /** @description The seconds each block lasts; omitted, they last until they are lifted. */
+            /**
+             * @description The seconds each block lasts, at most ten years (315360000); omitted, they last until
+             *     they are lifted.
+             */
             expires_in?: number;
         };
         /**

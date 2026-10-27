@@ -6,9 +6,9 @@ put:
     Grants the role to the user of a local account; its permissions apply from the user's
     next request, and the audit log records `role_granted`. Granting a role that the user
     holds changes nothing and records nothing. A role whose position is above every role
-    of the viewer is a 403. An unknown account, one that is not local, or an unknown role
-    is a 404. Answers the roles that the user holds afterwards. Needs the `manage_roles`
-    permission.
+    of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
+    account, one that is not local, or an unknown role is a 404. Answers the roles that the
+    user holds afterwards. Needs the `manage_roles` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]

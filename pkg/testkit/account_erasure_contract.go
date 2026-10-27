@@ -138,11 +138,11 @@ func (e *erasureEnv) eraser(evidence appcontent.RetainedStatuses, holds appaccou
 // run runs the erasure to the end of its run and returns how many accounts it erased.
 func (e *erasureEnv) run(t *testing.T, er *appaccount.Eraser) int {
 	t.Helper()
-	total, after := 0, ""
+	total, after := 0, appaccount.ErasureCursor{}
 	for range 100 {
 		res, err := er.Run(t.Context(), after)
 		if err != nil {
-			t.Fatalf("Run(%q) = %v", after, err)
+			t.Fatalf("Run(%+v) = %v", after, err)
 		}
 		total += res.Erased
 		if !res.More {

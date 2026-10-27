@@ -58,7 +58,10 @@ func TestActionsAndTheirRestrictions(t *testing.T) {
 	early := now
 	past := ok
 	past.ExpiresAt = &early
-	for name, a := range map[string]Action{"expiring ban": ban, "expiry at issue": past} {
+	tooLate := now.Add(MaxDuration + time.Second)
+	tooLong := ok
+	tooLong.ExpiresAt = &tooLate
+	for name, a := range map[string]Action{"expiring ban": ban, "expiry at issue": past, "expiry too late": tooLong} {
 		if err := a.Validate(); !errors.Is(err, ErrInvalidAction) {
 			t.Errorf("Validate(%s) = %v, want ErrInvalidAction", name, err)
 		}
@@ -248,5 +251,24 @@ func TestDomainActionState(t *testing.T) {
 	}
 	if !OutcomeActioned.Valid() || !OutcomeDismissed.Valid() || ReportOutcome("ignored").Valid() {
 		t.Error("ReportOutcome.Valid accepts the wrong outcomes")
+	}
+}
+
+func TestDurationsAreBounded(t *testing.T) {
+	for _, tc := range []struct {
+		seconds int64
+		want    bool
+	}{{0, false}, {1, true}, {MaxDurationSeconds, true}, {MaxDurationSeconds + 1, false}, {1 << 62, false}, {-1, false}} {
+		if got := ValidDurationSeconds(tc.seconds); got != tc.want {
+			t.Errorf("ValidDurationSeconds(%d) = %v, want %v", tc.seconds, got, tc.want)
+		}
+	}
+	for _, tc := range []struct {
+		d    time.Duration
+		want bool
+	}{{0, true}, {MaxDuration, true}, {MaxDuration + 1, false}, {-time.Second, false}} {
+		if got := ValidDuration(tc.d); got != tc.want {
+			t.Errorf("ValidDuration(%s) = %v, want %v", tc.d, got, tc.want)
+		}
 	}
 }

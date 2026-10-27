@@ -67,7 +67,7 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
 `GET /api/v1/admin/accounts/{id}/actions` (filter with `active`), `GET /api/v1/admin/account_actions/{id}`, and `POST .../{id}/lift` (the body `{"reason": "..."}` is optional).
 
 - Name an account with `@username` (local), `@username@domain` (remote) or the account ID in the CLI, and with the account ID in the admin API.
-- Several actions stack (the union of their restrictions). Lifting removes only that action's restrictions, and an action with an end time ends by itself at that time (shown as `expired` in lists).
+- Several actions stack (the union of their restrictions). Lifting removes only that action's restrictions, and an action with an end time ends by itself at that time (shown as `expired` in lists). An end time is at most ten years away (`expires_in` up to 315360000); a longer one is refused with `422`.
 - Sessions and tokens that `disable_login`, `suspend` and `ban` revoked do not come back when you lift the action. The user signs in again.
 - A `suspend` or `ban` of a local account sends an Actor `Update` with an emptied profile to the followers' servers and to known servers to show the suspension (Mastodon shows it as "suspended").
   Lifting and expiry send an `Update` with the original profile. Expiry is sent by a job that runs every 5 minutes, so it can be up to 5 minutes late.
@@ -168,7 +168,7 @@ In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `k
 - Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
 - An action also applies to subdomains (an action on `spam.example` applies to `a.spam.example` too).
 - An action is applied to the restriction projection (`domain_restrictions`) and to the timeline restrictions in the transaction that records it, and takes effect from the next delivery, fetch or receipt.
-- An action with an end time (`-duration` / `expires_in`) ends by itself at that time. Expiry is not a "lift", so lists show it as `expired`.
+- An action with an end time (`-duration` / `expires_in`, at most ten years) ends by itself at that time. Expiry is not a "lift", so lists show it as `expired`.
 - Lifting removes only that action's restrictions. Other actions on the same domain stay. Lifting an already lifted action changes nothing.
 - Lists are newest first, and `-active` (`active=true`) shows only the actions in effect.
 

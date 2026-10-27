@@ -70,6 +70,35 @@ func TestServesPublicMediaWithSafeHeaders(t *testing.T) {
 	}
 }
 
+// The video and audio variants that processing remuxes are served with their type, with range
+// requests for seeking.
+func TestServesVideoAndAudioVariants(t *testing.T) {
+	blobs, h := newServer(t)
+	for _, tc := range []struct{ name, ct string }{
+		{"large-animated.mp4", "video/mp4"},
+		{"large-animated.webm", "video/webm"},
+		{"large-animated.m4a", "audio/mp4"},
+		{"audio-large-animated.webm", "audio/webm"},
+		{"large-animated.ogg", "audio/ogg"},
+		{"large-animated.mp3", "audio/mpeg"},
+	} {
+		p := "/media/0192f0c1-0000-7000-8000-000000000001/0192f0c1-0000-7000-8000-000000000002/" + tc.name
+		put(t, blobs, strings.TrimPrefix(p, "/"), "0123456789", tc.ct)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, p, nil))
+		if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != tc.ct || rec.Body.String() != "0123456789" {
+			t.Errorf("GET %s = %d %q", tc.name, rec.Code, rec.Header().Get("Content-Type"))
+		}
+		rec = httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, p, nil)
+		req.Header.Set("Range", "bytes=4-")
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusPartialContent || rec.Body.String() != "456789" {
+			t.Errorf("range GET %s = %d %q", tc.name, rec.Code, rec.Body.String())
+		}
+	}
+}
+
 func TestServesOnlyPublicImageBlobs(t *testing.T) {
 	blobs, h := newServer(t)
 	put(t, blobs, "uploads/0192f0c1-0000-7000-8000-000000000001", "\xFF\xD8\xFFwith exif", "image/jpeg")

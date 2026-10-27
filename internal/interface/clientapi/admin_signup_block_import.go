@@ -48,7 +48,7 @@ func (s *Server) ImportSignupBlocks(ctx context.Context, req ImportSignupBlocksR
 		return unprocessable(l.ServerErrorsInvalidValue("severity"))
 	}
 	if b.ExpiresIn != nil {
-		if *b.ExpiresIn < 1 {
+		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
 			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second

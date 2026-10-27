@@ -410,6 +410,17 @@ CREATE TABLE remote_media_cache (
 CREATE INDEX remote_media_cache_expires_at ON remote_media_cache (expires_at);
 CREATE INDEX remote_media_cache_last_accessed_at ON remote_media_cache (last_accessed_at);
 
+-- Current value (work list): a blob of the media files or of the remote media cache that is to be
+-- deleted at or after delete_after, so that no blob is left that nothing refers to. A writer
+-- records a key before it writes the blob, due after a grace period, and removes the row in the
+-- transaction that records the blob; a deletion records the keys of the rows it deletes in the
+-- same transaction, due at once. The cleanup jobs delete each due blob, then its row.
+CREATE TABLE media_blob_deletions (
+  blob_key TEXT NOT NULL PRIMARY KEY,
+  delete_after INTEGER NOT NULL
+) STRICT;
+CREATE INDEX media_blob_deletions_delete_after ON media_blob_deletions (delete_after);
+
 -- Current value (cache): the link card of a URL (ADR-0062), read from the page's head and shared
 -- by every status that links the URL. url is the requested URL, normalized; card_url is where the
 -- card links (the final URL, or its og:url of the same origin). A fetch upserts the row;

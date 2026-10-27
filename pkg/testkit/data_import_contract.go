@@ -29,6 +29,10 @@ type fakeImportTargets struct {
 	mu   sync.Mutex
 	has  map[string][]appidentity.ImportTarget // by account and kind
 	adds []identity.DataImportItem
+	// transient are the targets that fail with an error worth retrying, and how many more times.
+	transient map[string]int
+	// onAdd, when set, runs on each add of a target that resolves.
+	onAdd func(identity.DataImportItem)
 }
 
 func (f *fakeImportTargets) slot(accountID string, kind identity.ImportKind) string {
@@ -58,8 +62,19 @@ func (f *fakeImportTargets) Add(_ context.Context, accountID string, kind identi
 		return errors.New("the database is busy")
 	}
 	f.mu.Lock()
-	defer f.mu.Unlock()
+	if f.transient[item.Target] > 0 {
+		f.transient[item.Target]--
+		f.mu.Unlock()
+		return errors.New("the remote server is busy")
+	}
 	f.adds = append(f.adds, item)
+	onAdd := f.onAdd
+	f.mu.Unlock()
+	if onAdd != nil {
+		onAdd(item)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	slot := f.slot(accountID, kind)
 	for _, t := range f.has[slot] {
 		if strings.EqualFold(t.Row.Target, item.Target) {
@@ -93,6 +108,8 @@ type importEnv struct {
 	outbox  *recordingOutbox
 	targets *fakeImportTargets
 	imports *appidentity.Imports
+	// retries counts the delayed jobs that run has run.
+	retries int
 }
 
 func newImportEnv(e *accountEnv) *importEnv {
@@ -104,9 +121,10 @@ func newImportEnv(e *accountEnv) *importEnv {
 	return x
 }
 
-// run runs the queued jobs of the imports, and the jobs they enqueue, with attempt as their
-// attempt number, and returns the results of the last round.
-func (x *importEnv) run(t *testing.T, attempt int) []queue.Result {
+// run runs the queued jobs of the imports, and the jobs they enqueue, without waiting for their
+// delays, and returns the results of the last round. A job that asks for a retry runs again
+// with the next attempt number, as the queue runs it, up to the queue's default attempts.
+func (x *importEnv) run(t *testing.T) []queue.Result {
 	t.Helper()
 	reg := &queue.JobHandlerRegistry{}
 	x.imports.RegisterJobs(reg, queue.NewScheduler(nil, x.clock, nil))
@@ -114,22 +132,38 @@ func (x *importEnv) run(t *testing.T, attempt int) []queue.Result {
 	if !ok {
 		t.Fatal("no handler of the import jobs")
 	}
+	type queued struct {
+		job     queue.NewJob
+		attempt int
+	}
+	var pending []queued
 	var results []queue.Result
-	for round := 0; ; round++ {
-		jobs := x.outbox.take()
-		if len(jobs) == 0 || round > 100 {
+	for round := 0; round <= 100; round++ {
+		for _, j := range x.outbox.take() {
+			if !j.RunAt.IsZero() {
+				if !j.RunAt.After(x.clock.Now()) {
+					t.Errorf("job %s runs at %v, want a delay", j.IdempotencyKey, j.RunAt)
+				}
+				x.retries++
+			}
+			pending = append(pending, queued{job: j, attempt: 1})
+		}
+		if len(pending) == 0 {
 			return results
 		}
 		results = results[:0]
-		for _, j := range jobs {
-			r := h(t.Context(), queue.Job{Type: j.Type, Payload: j.Payload, Attempt: attempt})
-			if r.IsRetry() {
-				x.outbox.jobs = append(x.outbox.jobs, j) // as the queue keeps it
-				return append(results, r)
+		jobs := pending
+		pending = nil
+		for _, q := range jobs {
+			r := h(t.Context(), queue.Job{Type: q.job.Type, Payload: q.job.Payload, Attempt: q.attempt})
+			if r.IsRetry() && q.attempt < queue.DefaultMaxAttempts {
+				pending = append(pending, queued{job: q.job, attempt: q.attempt + 1})
 			}
 			results = append(results, r)
 		}
 	}
+	t.Fatal("the import jobs did not end")
+	return nil
 }
 
 func importsCarryOutCSVFiles(t *testing.T, e *accountEnv) {
@@ -160,7 +194,7 @@ func importsCarryOutCSVFiles(t *testing.T, e *accountEnv) {
 	if jobs := x.outbox.jobs; len(jobs) != 1 || jobs[0].Type != appidentity.JobProcessImport || jobs[0].IdempotencyKey == "" {
 		t.Fatalf("queued jobs = %+v, want one keyed job", jobs)
 	}
-	for _, r := range x.run(t, 1) {
+	for _, r := range x.run(t) {
 		if !r.IsDone() {
 			t.Errorf("job = %+v, want done", r)
 		}
@@ -188,7 +222,7 @@ func importsCarryOutCSVFiles(t *testing.T, e *accountEnv) {
 	if err != nil || over.Total != 26 {
 		t.Fatalf("StartImport(overwrite) = %+v, %v; want 3 adds and 23 removals", over, err)
 	}
-	x.run(t, 1)
+	x.run(t)
 	has, _ := x.targets.List(ctx, alice.AccountID, identity.ImportFollowing)
 	var got []string
 	for _, h := range has {
@@ -198,20 +232,24 @@ func importsCarryOutCSVFiles(t *testing.T, e *accountEnv) {
 		t.Errorf("following after the overwrite = %v", got)
 	}
 
-	// An error worth retrying stops the batch; on the last attempt the item is recorded as failed.
+	// An error worth retrying stops the batch, and a delayed job retries it; after
+	// ImportItemAttempts failures the item is recorded as failed.
 	in = appidentity.ImportInput{UserID: bob.User.ID, AccountID: bob.AccountID, Kind: identity.ImportBlocks, Mode: identity.ImportMerge,
 		Text: "flaky@remote.example\nok@remote.example\n"}
 	flaky, err := x.imports.StartImport(ctx, in)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rs := x.run(t, 1); len(rs) != 1 || !rs[0].IsRetry() {
-		t.Fatalf("first run = %+v, want a retry", rs)
+	if err := x.imports.ProcessImport(ctx, flaky.ID); err != nil {
+		t.Fatalf("first run = %v", err)
+	}
+	if jobs := x.outbox.jobs; len(jobs) != 2 || !jobs[1].RunAt.After(e.clock.Now()) {
+		t.Fatalf("jobs after the first run = %+v, want the first job and a delayed retry", jobs)
 	}
 	if got, _ := e.h.Identity.FindDataImport(ctx, flaky.ID); got.Processed != 0 {
 		t.Errorf("after a retry = %+v, want nothing processed", got)
 	}
-	x.run(t, appidentity.ImportItemAttempts)
+	x.run(t)
 	if got, err := e.h.Identity.FindDataImport(ctx, flaky.ID); err != nil || !got.Finished() || got.Failed != 1 || got.Processed != 2 {
 		t.Errorf("after the last attempt = %+v, %v; want finished with one failure", got, err)
 	}
@@ -242,7 +280,7 @@ func importsCarryOutCSVFiles(t *testing.T, e *accountEnv) {
 		t.Errorf("items of an expired import = %+v, %v; want none", pending, err)
 	}
 	// A job of a removed import does nothing.
-	if err := x.imports.ProcessImport(ctx, started.ID, false); err != nil {
+	if err := x.imports.ProcessImport(ctx, started.ID); err != nil {
 		t.Errorf("ProcessImport(removed) = %v", err)
 	}
 }
@@ -258,7 +296,7 @@ func importsAreErasedWithTheAccount(t *testing.T, e *accountEnv) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		x.run(t, 1)
+		x.run(t)
 	}
 	kept, err := x.imports.StartImport(ctx, appidentity.ImportInput{
 		UserID: bob.User.ID, AccountID: bob.AccountID, Kind: identity.ImportBlocks, Mode: identity.ImportMerge, Text: "a@remote.example\n",

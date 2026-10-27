@@ -43,7 +43,9 @@ type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 // until a status attaches the file, the cleanup of old unattached uploads that keeps attached
 // and referenced ones, the erasure of a deleted account's uploads with their blobs that keeps
 // the attached and referenced ones, remote media files recorded once per owner and URL, and the media
-// proxy's remote media cache with its cleanup, and the bytes that the local uploads keep.
+// proxy's remote media cache with its cleanup, the work list of blob deletions that leaves no
+// blob of a failed or losing write and retries failed deletions, and the bytes that the local
+// uploads keep.
 func MediaRepositoryContract(t *testing.T, newHarness MediaFactory) {
 	t.Helper()
 	cases := []struct {
@@ -68,6 +70,10 @@ func MediaRepositoryContract(t *testing.T, newHarness MediaFactory) {
 		{"CachesTheSmallVariantOfRemoteMedia", mediaCachesSmallRemoteVariants},
 		{"CleansUpTheRemoteMediaCache", mediaCleansUpRemoteMediaCache},
 		{"CountsStoredBytes", mediaCountsStoredBytes},
+		{"LeavesNoUnrecordedUploads", mediaLeavesNoUnrecordedUploads},
+		{"LeavesNoUnrecordedVariants", mediaLeavesNoUnrecordedVariants},
+		{"RetriesFailedCleanupDeletions", mediaRetriesFailedCleanupDeletions},
+		{"KeepsCopiesRefreshedDuringCleanup", mediaKeepsCopiesRefreshedDuringCleanup},
 		{"ProcessesVideoAndAudio", mediaProcessesVideoAndAudio},
 		{"RejectsVideoAndAudio", mediaRejectsVideoAndAudio},
 	}
@@ -113,12 +119,18 @@ func newMediaEnv(t *testing.T, newHarness MediaFactory) *mediaEnv {
 	appcontent.RegisterProjectors(projectors, h.Statuses)
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
 	e := &mediaEnv{h: h, clock: clock, ids: NewIDGenerator(clock), blobs: NewMemoryBlobStore(clock), jobs: &recordingJobs{}, referrers: referrerSet{}}
-	e.service = appcontent.NewMediaService(appcontent.MediaDeps{
-		UnitOfWork: h.UnitOfWork, Repository: h.Media, Blobs: e.blobs, Processor: FakeMediaProcessor{},
-		Jobs: e.jobs, Clock: clock, IDs: e.ids, Limits: media.Limits{MaxBytes: 1 << 20},
+	e.service = e.serviceOn(e.blobs, h.Media)
+	return e
+}
+
+// serviceOn returns a media service of the environment on other blob storage and repository,
+// which wrap the environment's to fail on purpose.
+func (e *mediaEnv) serviceOn(blobs blob.Store, repo appcontent.MediaRepository) *appcontent.MediaService {
+	return appcontent.NewMediaService(appcontent.MediaDeps{
+		UnitOfWork: e.h.UnitOfWork, Repository: repo, Blobs: blobs, Processor: FakeMediaProcessor{},
+		Jobs: e.jobs, Clock: e.clock, IDs: e.ids, Limits: media.Limits{MaxBytes: 1 << 20},
 		Referrers: []appcontent.MediaReferrer{e.referrers},
 	})
-	return e
 }
 
 func (e *mediaEnv) upload(t *testing.T, data []byte) appcontent.Media {

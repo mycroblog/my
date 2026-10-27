@@ -73,22 +73,29 @@ func newCacheEnv(t *testing.T, e *mediaEnv, maxSize int64) *cacheEnv {
 		mediaEnv: e, net: &mediaNet{body: data, hits: map[string]int{}}, data: data,
 		settings: appcontent.ProxySettings{Policy: appcontent.RemoteMediaCacheAll, CacheTTL: time.Hour},
 	}
+	c.proxy = c.proxyOn(t, e.h.Media, maxSize)
+	return c
+}
+
+// proxyOn returns a media proxy of the environment on another repository, which wraps the
+// environment's.
+func (c *cacheEnv) proxyOn(t *testing.T, repo appcontent.MediaRepository, maxSize int64) *appcontent.MediaProxy {
+	t.Helper()
 	p, err := appcontent.NewMediaProxy(appcontent.ProxyDeps{
-		Repository: e.h.Media, HTTP: c.net, Accounts: remoteDomains{}, Policy: noMediaRejects{},
+		Repository: repo, HTTP: c.net, Accounts: remoteDomains{}, Policy: noMediaRejects{},
 		Settings: func(context.Context) (appcontent.ProxySettings, error) {
 			c.mu.Lock()
 			defer c.mu.Unlock()
 			return c.settings, nil
 		},
-		UnitOfWork: e.h.UnitOfWork, Blobs: e.blobs, Clock: e.clock, ProfileImages: e.referrers,
+		UnitOfWork: c.h.UnitOfWork, Blobs: c.blobs, Clock: c.clock, ProfileImages: c.referrers,
 		MaxCacheSize: maxSize, Keys: [][]byte{bytes.Repeat([]byte("k"), 32)}, BaseURL: "https://social.example",
 		Processor: FakeMediaProcessor{},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.proxy = p
-	return c
+	return p
 }
 
 func (c *cacheEnv) set(policy appcontent.RemoteMediaPolicy, ttl time.Duration) {
@@ -194,21 +201,30 @@ func mediaCachesRemoteMedia(t *testing.T, e *mediaEnv) {
 		t.Error("the copy differs from the remote file")
 	}
 
-	// Past its expiry, the file is fetched again and the entry renewed.
+	// Past its expiry, the file is fetched again into a copy under a key of its own, and the
+	// entry renewed; the replaced copy's blob goes with the next cleanup.
 	e.clock.Advance(time.Hour)
 	c.open(t, plain)
 	if n := c.net.count(plain.RemoteURL); n != 4 {
 		t.Errorf("an expired copy was served: %d fetches, want 4", n)
 	}
-	if renewed, _ := c.entry(t, plain.RemoteURL); !renewed.ExpiresAt.Equal(e.clock.Now().Add(time.Hour)) {
-		t.Errorf("renewed entry expires at %v", renewed.ExpiresAt)
+	renewed, _ := c.entry(t, plain.RemoteURL)
+	if !renewed.ExpiresAt.Equal(e.clock.Now().Add(time.Hour)) || renewed.BlobKey == got.BlobKey || !bytes.Equal(e.blobs.Bytes(renewed.BlobKey), c.data) {
+		t.Errorf("renewed entry = %+v, the replaced one had blob %s", renewed, got.BlobKey)
+	}
+	if _, err := c.proxy.CleanupCache(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.blobs.Head(ctx, got.BlobKey); err == nil {
+		t.Errorf("the blob %s of the replaced copy is left", got.BlobKey)
 	}
 	// A copy whose blob is gone is fetched again.
-	if err := e.blobs.Delete(ctx, got.BlobKey); err != nil {
+	if err := e.blobs.Delete(ctx, renewed.BlobKey); err != nil {
 		t.Fatal(err)
 	}
 	c.open(t, plain)
-	if n := c.net.count(plain.RemoteURL); n != 5 || !bytes.Equal(e.blobs.Bytes(got.BlobKey), c.data) {
+	refetched, _ := c.entry(t, plain.RemoteURL)
+	if n := c.net.count(plain.RemoteURL); n != 5 || !bytes.Equal(e.blobs.Bytes(refetched.BlobKey), c.data) {
 		t.Errorf("a lost copy was not fetched again: %d fetches", n)
 	}
 
@@ -266,7 +282,7 @@ func mediaCachesSmallRemoteVariants(t *testing.T, e *mediaEnv) {
 			t.Fatalf("Open(small) = %s, %d, %d bytes, %v; want the preview", pm.ContentType, pm.Length, len(got), err)
 		}
 	}
-	key := m.RemoteURL + "#small-attachment"
+	key := m.RemoteURL + "#small-attachment-230400px"
 
 	c.set(appcontent.RemoteMediaCacheNone, time.Hour)
 	open()
@@ -287,6 +303,64 @@ func mediaCachesSmallRemoteVariants(t *testing.T, e *mediaEnv) {
 	small, ok := c.entry(t, key)
 	if _, full := c.entry(t, m.RemoteURL); !ok || !full || small.ContentType != want.ContentType || !bytes.Equal(e.blobs.Bytes(small.BlobKey), want.Data) {
 		t.Errorf("cache entry of the small variant = %+v, %v (file kept: %v)", small, ok, full)
+	}
+
+	// The small variant of an avatar is cropped around its focal point, so two files of the same
+	// URL with other focal points (as two owners may declare) are cached apart.
+	const avatarURL = "https://remote.example/avatar-focus.png"
+	focused := func(owner string, f *content.MediaFocus) content.RemoteMedia {
+		t.Helper()
+		var m content.RemoteMedia
+		err := c.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+			var err error
+			m, err = c.service.RecordRemoteMedia(t.Context(), tx, appcontent.RemoteMediaInput{
+				OwnerAccountID: owner, RemoteURL: avatarURL, DeclaredMediaType: content.MediaTypeImage,
+				Purpose: content.PurposeAvatar, Focus: f,
+			})
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return m
+	}
+	openSmallOf := func(m content.RemoteMedia) []byte {
+		t.Helper()
+		u, err := url.Parse(c.proxy.URL(m.MediaID, appcontent.ProxySmall))
+		if err != nil {
+			t.Fatal(err)
+		}
+		pm, err := c.proxy.Open(t.Context(), m.MediaID, string(appcontent.ProxySmall), u.Query().Get("sig"))
+		if err != nil {
+			t.Fatalf("Open(small): %v", err)
+		}
+		defer func() { _ = pm.Body.Close() }()
+		got, err := io.ReadAll(pm.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	left := focused(mediaOwner, &content.MediaFocus{X: -0.5, Y: 0.25})
+	right := focused("0192f0c1-0000-7000-8000-00000000b0b0", &content.MediaFocus{X: 0.5, Y: -0.25})
+	centre := focused("0192f0c1-0000-7000-8000-00000000c0c0", nil)
+	for _, m := range []content.RemoteMedia{left, right, centre, left, right, centre} {
+		req := media.Request{Purpose: media.PurposeAvatar}
+		if m.Focus != nil {
+			req.FocusX, req.FocusY = m.Focus.X, m.Focus.Y
+		}
+		want, err := FakeMediaProcessor{}.Preview(t.Context(), c.data, media.Limits{}, media.Sizes{}, req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := openSmallOf(m); !bytes.Equal(got, want.Data) {
+			t.Errorf("small variant with focus %+v = %q, want %q", m.Focus, got, want.Data)
+		}
+	}
+	for _, k := range []string{avatarURL + "#small-avatar-96x96c-f-0.5,0.25", avatarURL + "#small-avatar-96x96c-f0.5,-0.25", avatarURL + "#small-avatar-96x96c-f0,0"} {
+		if _, ok := c.entry(t, k); !ok {
+			t.Errorf("no cache entry %s", k)
+		}
 	}
 }
 

@@ -29,6 +29,8 @@ type fakeRoles struct {
 	anyHolderManagesRoles bool
 	// defErr is what CreateRole, UpdateRole, and DeleteRole fail with, or nil for success.
 	defErr error
+	// grantErr is what GrantRole fails with, or nil for the semantics above.
+	grantErr error
 }
 
 var fakeRoleIDs = map[string]string{
@@ -79,6 +81,9 @@ func (f *fakeRoles) check(in appidentity.RoleChangeInput) error {
 }
 
 func (f *fakeRoles) GrantRole(_ context.Context, in appidentity.RoleChangeInput) (bool, error) {
+	if f.grantErr != nil {
+		return false, f.grantErr
+	}
 	if err := f.check(in); err != nil || slices.Contains(f.held[in.UserID], in.RoleKey) {
 		return false, err
 	}
@@ -268,6 +273,12 @@ func TestRoleProblems(t *testing.T) {
 	res := e.send(t, http.MethodPut, "/admin/accounts/"+bobAccountID+"/roles/admin", "bob-admin", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeBlank {
 		t.Errorf("a moderator grants admin = %d %+v, want 403", res.StatusCode, p)
+	}
+	// Nor a role with a permission that it does not hold.
+	f.grantErr = fmt.Errorf("x: %w", &appidentity.MissingPermissionsError{Missing: []identity.Permission{identity.PermManageSettings}})
+	res = e.send(t, http.MethodPut, "/admin/accounts/"+bobAccountID+"/roles/moderator", "bob-admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeBlank {
+		t.Errorf("a grant of a permission the viewer lacks = %d %+v, want 403", res.StatusCode, p)
 	}
 	if len(f.changes) != 0 {
 		t.Errorf("changes = %q, want none", f.changes)

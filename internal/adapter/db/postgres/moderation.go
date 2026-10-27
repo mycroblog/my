@@ -207,6 +207,26 @@ func (r *ModerationRepository) DeleteAccountRestrictionsOf(ctx context.Context, 
 	return wrap(q.DeleteAccountRestrictionsOfAction(ctx, actionID), "delete account restrictions")
 }
 
+// LockAccountRestrictions implements moderation.Repository with a transaction-scoped advisory
+// lock on the account, so that the actions and lifts on it serialize under READ COMMITTED.
+func (r *ModerationRepository) LockAccountRestrictions(ctx context.Context, tx uow.Tx, accountID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.LockModerationTarget(ctx, "moderation:account:"+accountID), "lock the account restrictions")
+}
+
+// LockDomainRestrictions implements moderation.Repository with a transaction-scoped advisory
+// lock on the domain, so that the actions and lifts on it serialize under READ COMMITTED.
+func (r *ModerationRepository) LockDomainRestrictions(ctx context.Context, tx uow.Tx, domain string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.LockModerationTarget(ctx, "moderation:domain:"+domain), "lock the domain restrictions")
+}
+
 // AccountRestrictionRows implements moderation.Repository.
 func (r *ModerationRepository) AccountRestrictionRows(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.RestrictionRow, error) {
 	q, err := r.db.queries(tx)

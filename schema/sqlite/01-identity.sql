@@ -641,3 +641,13 @@ CREATE TABLE data_import_item_results (
   PRIMARY KEY (import_id, position),
   CHECK ((outcome = 'failed') = (failure IS NOT NULL))
 ) STRICT;
+
+-- Event (child of an item): a run that could not carry out the item, with an error worth
+-- retrying. The item is recorded as failed when its failed runs reach the limit.
+CREATE TABLE data_import_item_failures (
+  import_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  attempt INTEGER NOT NULL CHECK (attempt >= 1),
+  failed_at INTEGER NOT NULL,
+  PRIMARY KEY (import_id, position, attempt)
+) STRICT;

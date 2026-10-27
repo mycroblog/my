@@ -22,11 +22,30 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 	return wrap(err, "insert data export")
 }
 
-// InsertDataExportResult implements identity.ExportRepository.
-func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) error {
+// LockPendingDataExports implements identity.ExportRepository with SELECT ... FOR UPDATE on the
+// user's row, which the requests of the user's exports and imports lock first.
+func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
 	q, err := r.db.queries(tx)
 	if err != nil {
-		return err
+		return false, err
+	}
+	if err := q.LockUserDataTransfers(ctx, userID); err != nil {
+		return false, wrap(err, "lock the data transfers of a user")
+	}
+	pending, err := q.HasPendingDataExport(ctx, userID)
+	return pending, wrap(err, "find a pending data export")
+}
+
+// InsertDataExportResult implements identity.ExportRepository: SELECT ... FOR SHARE on the
+// export keeps DeleteDataExport, which deletes the export's row first, from deleting it until tx
+// ends.
+func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	if _, err := q.LockDataExport(ctx, res.ExportID); err != nil {
+		return false, notFound(err, appidentity.ErrNotFound, "data export")
 	}
 	p := postgresgen.InsertDataExportResultParams{
 		ExportID: res.ExportID, Outcome: string(res.Outcome), BlobKey: toNullString(res.BlobKey),
@@ -36,7 +55,18 @@ func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.
 		size := res.FileSize
 		p.FileSize = &size
 	}
-	return wrap(q.InsertDataExportResult(ctx, p), "insert data export result")
+	n, err := q.InsertDataExportResult(ctx, p)
+	return n > 0, wrap(err, "insert data export result")
+}
+
+// ListStalePendingDataExports implements identity.ExportRepository.
+func (r *IdentityRepository) ListStalePendingDataExports(ctx context.Context, t time.Time, limit int) ([]string, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListStalePendingDataExports(ctx, postgresgen.ListStalePendingDataExportsParams{RequestedBefore: t, BatchLimit: n})
+	return ids, wrap(err, "list stale pending data exports")
 }
 
 // FindDataExport implements identity.ExportRepository.
@@ -86,16 +116,18 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 	return out, nil
 }
 
-// DeleteDataExport implements identity.ExportRepository.
+// DeleteDataExport implements identity.ExportRepository. It deletes the export's row first, so
+// that it waits for a transaction that locked the row to record a result, and the deletion of
+// the result, a statement of its own, sees that result.
 func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id string) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
-	if err := q.DeleteDataExportResult(ctx, id); err != nil {
-		return wrap(err, "delete data export result")
+	if err := q.DeleteDataExport(ctx, id); err != nil {
+		return wrap(err, "delete data export")
 	}
-	return wrap(q.DeleteDataExport(ctx, id), "delete data export")
+	return wrap(q.DeleteDataExportResult(ctx, id), "delete data export result")
 }
 
 func dataExport(row postgresgen.ListDataExportsRow) identity.DataExport {

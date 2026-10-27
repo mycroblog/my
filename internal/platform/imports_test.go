@@ -112,7 +112,7 @@ func TestCSVExportAndImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("StartImport(%s) = %v", kind, err)
 		}
-		if err := e.app.Imports.ProcessImport(ctx, started.ID, false); err != nil {
+		if err := e.app.Imports.ProcessImport(ctx, started.ID); err != nil {
 			t.Fatalf("ProcessImport(%s) = %v", kind, err)
 		}
 	}
@@ -164,7 +164,7 @@ func TestCSVExportAndImport(t *testing.T) {
 	if err != nil || started.Total != 1 {
 		t.Fatalf("StartImport(overwrite) = %+v, %v; want one removal", started, err)
 	}
-	if err := e.app.Imports.ProcessImport(ctx, started.ID, false); err != nil {
+	if err := e.app.Imports.ProcessImport(ctx, started.ID); err != nil {
 		t.Fatal(err)
 	}
 	if blocking, _ := e.app.Graph.IsBlocking(ctx, alice.accountID, dave.accountID); blocking {
@@ -184,7 +184,7 @@ func TestCSVExportAndImport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := e.app.Imports.ProcessImport(ctx, started.ID, false); err != nil {
+	if err := e.app.Imports.ProcessImport(ctx, started.ID); err != nil {
 		t.Fatal(err)
 	}
 	if mutes, err := e.app.Graph.DomainMutes(ctx, alice.accountID, graph.DomainMutePage{}); err != nil || len(mutes) != 1 || mutes[0].Domain != "xn--r8jz45g.xn--zckzah" {

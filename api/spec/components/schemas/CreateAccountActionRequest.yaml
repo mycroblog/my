@@ -29,10 +29,11 @@ properties:
     default: true
   expires_in:
     description: |
-      The seconds the action lasts; omitted, it lasts until it is lifted. A `ban` and the
-      actions on posts take none.
+      The seconds the action lasts, at most ten years (315360000); omitted, it lasts until it
+      is lifted. A `ban` and the actions on posts take none.
     type: integer
     minimum: 1
+    maximum: 315360000
   status_ids:
     description: |
       The posts of the account that `delete_statuses` or `mark_statuses_sensitive` acts

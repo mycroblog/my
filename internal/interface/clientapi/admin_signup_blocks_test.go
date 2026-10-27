@@ -138,14 +138,16 @@ func TestSignupBlocksAPI(t *testing.T) {
 	second := decodeJSON[clientapi.AdminSignupBlock](t, res)
 
 	for name, body := range map[string]string{
-		"kind":       `{"kind":"email","value":"x","severity":"reject"}`,
-		"severity":   `{"kind":"ip_range","value":"192.0.2.0/24","severity":"maybe"}`,
-		"value":      `{"kind":"ip_range","value":"bad","severity":"reject"}`,
-		"expires_in": `{"kind":"ip_range","value":"192.0.2.0/24","severity":"reject","expires_in":0}`,
-		"comment":    `{"kind":"ip_range","value":"192.0.2.0/24","severity":"reject","comment":"` + strings.Repeat("x", 1001) + `"}`,
+		"kind":           `{"kind":"email","value":"x","severity":"reject"}`,
+		"severity":       `{"kind":"ip_range","value":"192.0.2.0/24","severity":"maybe"}`,
+		"value":          `{"kind":"ip_range","value":"bad","severity":"reject"}`,
+		"expires_in":     `{"kind":"ip_range","value":"192.0.2.0/24","severity":"reject","expires_in":0}`,
+		"expires_in:max": `{"kind":"ip_range","value":"192.0.2.0/24","severity":"reject","expires_in":10000000000000,"x":"invalid-on-purpose"}`,
+		"comment":        `{"kind":"ip_range","value":"192.0.2.0/24","severity":"reject","comment":"` + strings.Repeat("x", 1001) + `"}`,
 	} {
+		field, _, _ := strings.Cut(name, ":")
 		res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, name) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, field) {
 			t.Errorf("%s: POST = %d %+v, want 422 naming it", name, res.StatusCode, p)
 		}
 	}
@@ -208,14 +210,16 @@ func TestImportSignupBlocksAPI(t *testing.T) {
 	}
 
 	for name, body := range map[string]string{
-		"kind":       `{"kind":"email","text":"x","severity":"reject"}`,
-		"severity":   `{"kind":"ip_range","text":"192.0.2.0/24","severity":"maybe"}`,
-		"expires_in": `{"kind":"ip_range","text":"192.0.2.0/24","severity":"reject","expires_in":0}`,
-		"comment":    `{"kind":"ip_range","text":"192.0.2.0/24","severity":"reject","comment":"` + strings.Repeat("x", 1001) + `"}`,
-		"text":       `{"kind":"email_domain","text":"` + strings.Repeat(`a.example\n`, moderation.MaxSignupBlockImport+1) + `","severity":"reject"}`,
+		"kind":           `{"kind":"email","text":"x","severity":"reject"}`,
+		"severity":       `{"kind":"ip_range","text":"192.0.2.0/24","severity":"maybe"}`,
+		"expires_in":     `{"kind":"ip_range","text":"192.0.2.0/24","severity":"reject","expires_in":0}`,
+		"expires_in:max": `{"kind":"ip_range","text":"192.0.2.0/24","severity":"reject","expires_in":10000000000000,"x":"invalid-on-purpose"}`,
+		"comment":        `{"kind":"ip_range","text":"192.0.2.0/24","severity":"reject","comment":"` + strings.Repeat("x", 1001) + `"}`,
+		"text":           `{"kind":"email_domain","text":"` + strings.Repeat(`a.example\n`, moderation.MaxSignupBlockImport+1) + `","severity":"reject"}`,
 	} {
+		field, _, _ := strings.Cut(name, ":")
 		res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks/import", "admin-write", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, name) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, field) {
 			t.Errorf("%s: POST import = %d %+v, want 422 naming it", name, res.StatusCode, p)
 		}
 	}

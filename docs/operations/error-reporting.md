@@ -107,6 +107,7 @@ The server limits what it sends so that the service is not flooded:
 - The same fingerprint goes out at most once a minute per process, and all reports at most 60 a minute. The rest stay in the log and the groups.
 - Up to 1,000 reports wait to be sent. A report that finds the queue full is dropped. When the server stops, it waits up to 2 seconds for the queue to empty.
 - When the service answers `429` or asks to slow down (`Retry-After`, `X-Sentry-Rate-Limits`), the server stops sending for that long.
+- The server never follows a redirect from the service, so that the DSN key and the report go nowhere else: a redirect counts as `failed`. Use the DSN that the service shows, which points at its intake itself.
 
 Watch the counter `my.errors.exported`: `my.outcome` is `success`, `dropped` (over a limit, the queue was full, or the service asked to slow down), or `failed` (the service could not be reached or refused the report) ([Running the server](running.md#metrics)).
 
