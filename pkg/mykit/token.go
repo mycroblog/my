@@ -62,11 +62,16 @@ type RefreshingTokenSource struct {
 
 	mu  sync.Mutex
 	tok *Token
+	// unsaved is true while OnTokens has not saved tok, the tokens of the last renewal.
+	unsaved bool
 }
 
 // NewRefreshingTokenSource returns the source that starts from tok (from Exchange, or saved before) and renews
 // it through the token endpoint of cfg. onTokens receives the tokens of every renewal; when it fails, the new
-// tokens are kept in the source and the request that needed them fails with its error.
+// tokens are kept in the source, the request that needed them fails with its error, and every later call of
+// Token or Refresh passes them to onTokens again before it hands them out, until onTokens saves them. The
+// source never hands out tokens that onTokens has not saved, so a process that restarts after a failed save
+// does not lose the only valid refresh token while requests went on with it.
 func NewRefreshingTokenSource(cfg OAuthConfig, tok *Token, onTokens func(context.Context, *Token) error) *RefreshingTokenSource {
 	return &RefreshingTokenSource{oauth: cfg, onTokens: onTokens, now: time.Now, tok: tok}
 }
@@ -75,6 +80,9 @@ func NewRefreshingTokenSource(cfg OAuthConfig, tok *Token, onTokens func(context
 func (s *RefreshingTokenSource) Token(ctx context.Context) (*Token, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.save(ctx); err != nil {
+		return nil, err
+	}
 	if s.tok.valid(s.now()) {
 		return s.tok, nil
 	}
@@ -86,6 +94,9 @@ func (s *RefreshingTokenSource) Token(ctx context.Context) (*Token, error) {
 func (s *RefreshingTokenSource) Refresh(ctx context.Context, refused *Token) (*Token, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.save(ctx); err != nil {
+		return nil, err
+	}
 	if s.tok != nil && refused != nil && s.tok.AccessToken != refused.AccessToken && s.tok.valid(s.now()) {
 		return s.tok, nil
 	}
@@ -108,10 +119,23 @@ func (s *RefreshingTokenSource) renew(ctx context.Context) (*Token, error) {
 		tok.RefreshToken = s.tok.RefreshToken
 	}
 	s.tok = tok
-	if s.onTokens != nil {
-		if err := s.onTokens(ctx, tok); err != nil {
-			return nil, err
-		}
+	s.unsaved = true
+	if err := s.save(ctx); err != nil {
+		return nil, err
 	}
 	return tok, nil
+}
+
+// save passes the tokens of the last renewal to onTokens when it has not saved them yet; s.mu is held.
+func (s *RefreshingTokenSource) save(ctx context.Context) error {
+	if !s.unsaved {
+		return nil
+	}
+	if s.onTokens != nil {
+		if err := s.onTokens(ctx, s.tok); err != nil {
+			return err
+		}
+	}
+	s.unsaved = false
+	return nil
 }

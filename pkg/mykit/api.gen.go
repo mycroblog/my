@@ -17578,7 +17578,8 @@ type ClientInterface interface {
 	// CreateStatusWithBody Post a status
 	//
 	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-	// returns the status posted with it. Attached media must be the user's own uploads that
+	// returns the status posted with it, before the post rate limit and the other checks of
+	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422 (FR-112).
 	//
@@ -17590,7 +17591,8 @@ type ClientInterface interface {
 	// CreateStatus Post a status
 	//
 	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-	// returns the status posted with it. Attached media must be the user's own uploads that
+	// returns the status posted with it, before the post rate limit and the other checks of
+	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422 (FR-112).
 	//
@@ -25391,7 +25393,8 @@ func (c *Client) CreateReport(ctx context.Context, body CreateReportJSONRequestB
 // CreateStatusWithBody Post a status
 //
 // Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-// returns the status posted with it. Attached media must be the user's own uploads that
+// returns the status posted with it, before the post rate limit and the other checks of
+// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422 (FR-112).
 //
@@ -25413,7 +25416,8 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // CreateStatus Post a status
 //
 // Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-// returns the status posted with it. Attached media must be the user's own uploads that
+// returns the status posted with it, before the post rate limit and the other checks of
+// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422 (FR-112).
 //
@@ -44800,7 +44804,8 @@ type ClientWithResponsesInterface interface {
 	// CreateStatusWithBodyWithResponse Post a status
 	//
 	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-	// returns the status posted with it. Attached media must be the user's own uploads that
+	// returns the status posted with it, before the post rate limit and the other checks of
+	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422 (FR-112).
 	//
@@ -44812,7 +44817,8 @@ type ClientWithResponsesInterface interface {
 	// CreateStatusWithResponse Post a status
 	//
 	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-	// returns the status posted with it. Attached media must be the user's own uploads that
+	// returns the status posted with it, before the post rate limit and the other checks of
+	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422 (FR-112).
 	//
@@ -71490,7 +71496,8 @@ func (c *ClientWithResponses) CreateReportWithResponse(ctx context.Context, body
 // CreateStatusWithBodyWithResponse Post a status
 //
 // Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-// returns the status posted with it. Attached media must be the user's own uploads that
+// returns the status posted with it, before the post rate limit and the other checks of
+// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422 (FR-112).
 //
@@ -71508,7 +71515,8 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 // CreateStatusWithResponse Post a status
 //
 // Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-// returns the status posted with it. Attached media must be the user's own uploads that
+// returns the status posted with it, before the post rate limit and the other checks of
+// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422 (FR-112).
 //

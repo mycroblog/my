@@ -1984,7 +1984,8 @@ export interface paths {
         /**
          * Post a status
          * @description Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
-         *     returns the status posted with it. Attached media must be the user's own uploads that
+         *     returns the status posted with it, before the post rate limit and the other checks of
+         *     a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
          *     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
          *     poll outside the limits of `PollInput` is a 422 (FR-112).
          */

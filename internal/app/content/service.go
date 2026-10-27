@@ -427,6 +427,23 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, now: now}, nil
 }
 
+// Replay returns the post that an author posted with an Idempotency-Key, so that a retry is
+// answered before the checks of a new post (such as its rate limit). It fails with ErrNotFound
+// when the author posted nothing with key, with ErrAlreadyDeleted when that post is deleted, and
+// with content.ErrInvalidIdempotencyKey when key is not valid.
+func (s *Service) Replay(ctx context.Context, authorID, key string) (Post, error) {
+	if err := content.ValidateIdempotencyKey(key); err != nil {
+		return Post{}, err
+	}
+	if key == "" {
+		return Post{}, ErrNotFound
+	}
+	if _, err := s.localActive(ctx, authorID); err != nil {
+		return Post{}, err
+	}
+	return s.replay(ctx, authorID, key)
+}
+
 // replay returns the post that an author posted with an Idempotency-Key.
 func (s *Service) replay(ctx context.Context, authorID, key string) (Post, error) {
 	ls, err := s.d.Repository.FindLocalStatusByIdempotencyKey(ctx, authorID, key)

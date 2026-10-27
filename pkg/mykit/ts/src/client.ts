@@ -44,6 +44,7 @@ export function createClient(options: ClientOptions): Api {
     baseUrl: origin + apiBasePath,
     fetch: createTransport({
       fetch: options.fetch ?? ((request) => globalThis.fetch(request)),
+      basePath: apiBasePath,
       tokenSource: options.tokenSource,
       retry: options.retry,
       ...(options.sleep === undefined ? {} : { sleep: options.sleep }),

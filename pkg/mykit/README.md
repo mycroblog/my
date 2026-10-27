@@ -102,6 +102,13 @@ tokens := mykit.NewRefreshingTokenSource(cfg, saved, func(ctx context.Context, t
 api, err := mykit.New(mykit.Config{Server: cfg.Server, TokenSource: tokens})
 ```
 
+When `onTokens` fails, the request that needed the renewal fails with its error, and the source keeps the new tokens
+and hands them out to no request until `onTokens` saves them: every later request first passes them to `onTokens`
+again. So a process that restarts after a failed save never runs on with a refresh token it did not save.
+
+The token endpoint gets the authorization code, the PKCE verifier, and the refresh tokens, so mykit never follows a
+redirect from it: a redirect fails the request with an `*mykit.OAuthError` (`OAuthError`) of the redirect's status.
+
 If the refresh token has been revoked, the renewal fails with an `*mykit.OAuthError` (`OAuthError` in TypeScript) whose
 code is `invalid_grant`: send the user through the authorization again.
 
@@ -138,7 +145,8 @@ timeline, notifications, and announcements, as typed events. The stream needs th
 
 - It connects again whenever the stream ends or fails, with an exponential backoff, or after `Retry-After` for a 429
   (too many streams) or a 503. A stream that sends nothing, heartbeats included, for 60 seconds (the default; the server
-  sends one every 30 seconds) counts as failed. Do not set a `Timeout` on the Go `http.Client`: it would end every stream.
+  sends one every 30 seconds) counts as failed, and so does an event with more than 4 MiB of data. Do not set a
+  `Timeout` on the Go `http.Client`: it would end every stream.
 - **The server replays nothing, and the library sends no `Last-Event-ID`.** Events that happened while the stream was
   closed are lost to the stream. Reading what you missed is up to you: `OnOpen(reconnected)` (`onOpen` in TypeScript)
   tells you each time a stream opens, and when `reconnected` is true, read the home timeline and the notifications again.
@@ -181,10 +189,16 @@ problem of type `about:blank` with the answer's status.
 - A 429 or 503 is retried up to 3 times, after the time `Retry-After` gives. When `Retry-After` asks for more than
   `MaxWait` (one minute), the answer becomes a problem at once. Set `Retry.Disabled` (`retry: { disabled: true }`) to
   turn the retries off, or `MaxRetries` and `MaxWait` to change them.
-- Only requests that are safe to repeat are retried: `GET`, `HEAD`, and requests with an `Idempotency-Key`.
-- For the operations that take an `Idempotency-Key` (creating a status), mykit adds a new UUID when you do not pass
-  one, and sends the same key on every retry, so a retried post is applied once. Pass your own key (the
-  `IdempotencyKey` parameter) to make a repeat of your own safe, for example after a crash.
+- Only requests that are safe to repeat are retried: `GET`, `HEAD`, and the requests of an operation that takes an
+  `Idempotency-Key` (creating a status). An `Idempotency-Key` header on any other operation does not make it retried:
+  the server ignores it there.
+- For the operations that take an `Idempotency-Key`, mykit adds a new UUID when you do not pass one, and sends the
+  same key on every retry, so a retried post is applied once. The server answers a request with a key it has seen
+  with the status posted with it, before it checks the post limit or anything else of a new post.
+- A request that got no answer may still have been applied. Its `*mykit.NetworkError` (`NetworkError`) carries the key
+  it was sent with (`IdempotencyKey`, `idempotencyKey`): send the request again with that key (the `IdempotencyKey`
+  parameter) and it is applied once. Pass your own key to make a repeat safe across a restart, for example after a
+  crash.
 - A media upload reads its body once, so a Go upload is never sent again; a TypeScript `Blob` upload is sent again only
   after a 401.
 
@@ -192,6 +206,11 @@ problem of type `about:blank` with the answer's status.
 
 `UploadMedia` (Go, from an `io.Reader`) and `uploadMedia` (TypeScript, from a `Blob`) build the multipart request. The
 answer is usually still being processed: poll `GetMedia` until its state is ready or failed.
+
+The Go readers stay yours: `UploadMedia` never closes them. It returns when the request or its context ends, even
+while a `Read` of a reader blocks, and reads no more after that, but the goroutine that reads them lives on until that
+`Read` returns. When a reader can block (a pipe, a socket, a terminal), make its `Read` return after `UploadMedia`
+returns, for example by closing it.
 
 ## Admin operations
 

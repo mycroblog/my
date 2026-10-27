@@ -36,7 +36,7 @@ type Config struct {
 }
 
 // RetryPolicy decides how a request answered with 429 or 503 is sent again. Only requests that are safe to
-// repeat are retried: GET, HEAD, and requests with an Idempotency-Key.
+// repeat are retried: GET, HEAD, and the requests of an operation that takes an Idempotency-Key.
 type RetryPolicy struct {
 	// Disabled turns the retries off: the 429 or 503 becomes a *Problem at once.
 	Disabled bool

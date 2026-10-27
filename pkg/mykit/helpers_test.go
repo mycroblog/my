@@ -14,7 +14,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestAllFollowsNextCursor(t *testing.T) {
@@ -141,6 +143,82 @@ func TestUploadMediaProblem(t *testing.T) {
 	}
 }
 
+// blockingReader is a source whose Read blocks until Close, as a pipe or a network stream can.
+type blockingReader struct {
+	calls    atomic.Int32
+	entered  chan struct{}
+	closed   chan struct{}
+	returned chan struct{}
+}
+
+func newBlockingReader() *blockingReader {
+	return &blockingReader{entered: make(chan struct{}), closed: make(chan struct{}), returned: make(chan struct{})}
+}
+
+func (r *blockingReader) Read([]byte) (int, error) {
+	first := r.calls.Add(1) == 1
+	if first {
+		close(r.entered)
+	}
+	<-r.closed
+	if first {
+		close(r.returned)
+	}
+	return 0, io.ErrClosedPipe
+}
+
+func (r *blockingReader) Close() error {
+	close(r.closed)
+	return nil
+}
+
+// TestUploadMediaCancelledWhileTheSourceBlocks checks the contract of UploadMedia's readers: the upload returns
+// when ctx ends even while a Read of the source blocks, the source stays the caller's, and once the caller makes
+// the Read return (here by closing the source) the upload reads no more of it.
+func TestUploadMediaCancelledWhileTheSourceBlocks(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+	}))
+	defer srv.Close()
+	api, _ := newTestAPI(t, srv, Config{})
+	src := newBlockingReader()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := api.UploadMedia(ctx, MediaUploadInput{File: MediaFile{Name: "a.png", Body: src}})
+		done <- err
+	}()
+	select {
+	case <-src.entered:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the upload never read the source")
+	}
+	cancel()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("UploadMedia = %v, want context.Canceled", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("UploadMedia did not return when ctx ended")
+	}
+	select {
+	case <-src.returned:
+		t.Fatal("the Read of the source returned before the caller released it")
+	default:
+	}
+	_ = src.Close()
+	select {
+	case <-src.returned:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the Read of the source did not return after Close")
+	}
+	time.Sleep(50 * time.Millisecond)
+	if n := src.calls.Load(); n != 1 {
+		t.Errorf("Read calls = %d, want no Read after the cancelled upload", n)
+	}
+}
+
 func TestPKCE(t *testing.T) {
 	// RFC 7636 Appendix B.
 	if got := CodeChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"); got != "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" {
@@ -198,6 +276,36 @@ func TestExchangeError(t *testing.T) {
 	var oe *OAuthError
 	if !errors.As(err, &oe) || oe.Code != "invalid_grant" || oe.Status != http.StatusBadRequest || oe.Description != "the code has expired" {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+// TestTokenEndpointDoesNotFollowRedirects checks that a grant is posted to the token endpoint of the server only:
+// a redirect, even one that keeps the body (307, 308), is the endpoint's answer and is not followed.
+func TestTokenEndpointDoesNotFollowRedirects(t *testing.T) {
+	var followed atomic.Int32
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		followed.Add(1)
+		writeJSON(w, map[string]any{"access_token": "at", "token_type": "Bearer"})
+	}))
+	defer elsewhere.Close()
+	for _, status := range []int{http.StatusFound, http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, elsewhere.URL+TokenPath, status)
+		}))
+		cfg := OAuthConfig{Server: srv.URL, ClientID: "app", HTTPClient: &http.Client{}}
+		_, err := cfg.Exchange(context.Background(), "c", "v")
+		var oe *OAuthError
+		if !errors.As(err, &oe) || oe.Status != status {
+			t.Errorf("Exchange answered %d = %v, want an *OAuthError of %d", status, err, status)
+		}
+		src := NewRefreshingTokenSource(cfg, &Token{RefreshToken: "rt"}, nil)
+		if _, err := src.Token(context.Background()); !errors.As(err, &oe) || oe.Status != status {
+			t.Errorf("refresh answered %d = %v, want an *OAuthError of %d", status, err, status)
+		}
+		srv.Close()
+	}
+	if n := followed.Load(); n != 0 {
+		t.Errorf("the redirects were followed %d times", n)
 	}
 }
 

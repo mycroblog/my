@@ -11,6 +11,18 @@ export type ServerSentEvent = { event: string; data: string };
 /** The end of a line: CRLF, LF or CR. */
 const lineEnd = /\r\n|\n|\r/;
 
+/** The most characters of a line, and of the data of one event (its data lines, each with its LF). */
+export const maxEventLength = 4 << 20;
+
+/** The failure of a stream whose line or event is longer than maxEventLength. */
+export class EventTooLargeError extends Error {
+  override readonly name = "EventTooLargeError";
+
+  constructor() {
+    super(`mykit: a stream event is longer than ${String(maxEventLength)} characters`);
+  }
+}
+
 /** Parses an event stream that arrives in pieces; feed it text with `push`, then call `end`. */
 export class EventStreamParser {
   #buffer = "";
@@ -18,7 +30,7 @@ export class EventStreamParser {
   #event = "";
   #data = "";
 
-  /** Parses the next piece of text and returns the events it completed. */
+  /** Parses the next piece of text and returns the events it completed. It throws an EventTooLargeError at a line or event longer than maxEventLength. */
   push(text: string): ServerSentEvent[] {
     let input = this.#buffer + text;
     if (!this.#started && input.length > 0) {
@@ -36,6 +48,7 @@ export class EventStreamParser {
       if (event !== null) events.push(event);
       input = input.slice(match.index + match[0].length);
     }
+    if (input.length > maxEventLength) throw new EventTooLargeError();
     this.#buffer = input;
     return events;
   }
@@ -59,7 +72,10 @@ export class EventStreamParser {
     let value = colon === -1 ? "" : line.slice(colon + 1);
     if (value.startsWith(" ")) value = value.slice(1);
     if (field === "event") this.#event = value;
-    else if (field === "data") this.#data += `${value}\n`;
+    else if (field === "data") {
+      if (this.#data.length + value.length + 1 > maxEventLength) throw new EventTooLargeError();
+      this.#data += `${value}\n`;
+    }
     return null;
   }
 

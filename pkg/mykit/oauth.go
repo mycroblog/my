@@ -30,7 +30,8 @@ type OAuthConfig struct {
 	// RedirectURI is the redirect_uri that the authorization request sent.
 	RedirectURI string
 	// HTTPClient sends the requests to the token endpoint. Nil means a new http.Client; the library never uses
-	// http.DefaultClient.
+	// http.DefaultClient. Its CheckRedirect is not used: a redirect from the token endpoint is never followed and
+	// fails the request with an *OAuthError of the redirect's status.
 	HTTPClient *http.Client
 }
 
@@ -112,10 +113,12 @@ func (c OAuthConfig) token(ctx context.Context, params map[string]string) (*Toke
 		// RFC 6749 §2.3.1: the credentials are form-encoded before they go into Basic.
 		req.SetBasicAuth(url.QueryEscape(c.ClientID), url.QueryEscape(c.ClientSecret))
 	}
-	hc := c.HTTPClient
-	if hc == nil {
-		hc = &http.Client{}
+	var hc http.Client
+	if c.HTTPClient != nil {
+		hc = *c.HTTPClient
 	}
+	// The grant goes to the token endpoint of the server only: a redirect is its answer, never followed.
+	hc.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	now := time.Now()
 	resp, err := hc.Do(req)
 	if err != nil {

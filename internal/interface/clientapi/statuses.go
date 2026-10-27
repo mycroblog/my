@@ -21,6 +21,8 @@ import (
 // Statuses runs the posting use cases of local statuses. *appcontent.Service implements it.
 type Statuses interface {
 	Create(ctx context.Context, in appcontent.CreateInput) (appcontent.Post, error)
+	// Replay returns the post that the author posted with an Idempotency-Key; ErrNotFound when none.
+	Replay(ctx context.Context, authorAccountID, key string) (appcontent.Post, error)
 	Edit(ctx context.Context, in appcontent.EditInput) (appcontent.Post, error)
 	Delete(ctx context.Context, accountID, statusID string) (content.Deletion, error)
 	SetQuotePolicy(ctx context.Context, accountID, statusID string, policy content.QuotePolicy) (content.StatusQuotePolicy, error)
@@ -459,6 +461,20 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 	if err != nil {
 		return nil, err
 	}
+	// A retry with the key of a status already posted returns that status, before the rate limit and
+	// the other checks of a new post, which the first request passed.
+	if key := deref(req.Params.IdempotencyKey); key != "" {
+		post, err := s.o.Statuses.Replay(ctx, v.AccountID, key)
+		if err == nil {
+			return s.createdStatus(ctx, post.Status.ID)
+		}
+		if !errors.Is(err, appcontent.ErrNotFound) {
+			if p, ok := s.statusProblem(ctx, err); ok {
+				return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
+			}
+			return nil, err
+		}
+	}
 	if p, h, limited := s.LimitProblem(ctx, PostLimit, v.AccountID); limited {
 		return CreateStatusdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
 	}
@@ -484,16 +500,25 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 		ClientID: v.ClientID, IdempotencyKey: deref(req.Params.IdempotencyKey), Poll: pollInput(body.Poll),
 		QuotedStatusID: knownID(deref(body.QuotedStatusId)), QuotePolicy: content.QuotePolicy(deref(body.QuotePolicy)),
 	})
-	if err == nil {
-		var out Status
-		if out, err = s.viewStatus(ctx, post.Status.ID); err == nil {
-			return CreateStatus200JSONResponse{Body: out, Headers: CreateStatus200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
+	if err != nil {
+		if p, ok := s.statusProblem(ctx, err); ok {
+			return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
 		}
+		return nil, err
 	}
-	if p, ok := s.statusProblem(ctx, err); ok {
-		return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
+	return s.createdStatus(ctx, post.Status.ID)
+}
+
+// createdStatus answers POST /api/v1/statuses with the status posted.
+func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStatusResponseObject, error) {
+	out, err := s.viewStatus(ctx, statusID)
+	if err != nil {
+		if p, ok := s.statusProblem(ctx, err); ok {
+			return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
+		}
+		return nil, err
 	}
-	return nil, err
+	return CreateStatus200JSONResponse{Body: out, Headers: CreateStatus200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
 }
 
 // quotableRemotely refuses a quote of a remote status while the federation mode does not send

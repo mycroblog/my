@@ -28,6 +28,7 @@ const sampleStatusID = "01890a5d-ac96-774b-bcce-b302099a9001"
 // answers ErrNotFound, so that a Server without statuses serves only 404s.
 type fakeStatuses struct {
 	create   func(appcontent.CreateInput) (appcontent.Post, error)
+	replay   func(accountID, key string) (appcontent.Post, error)
 	edit     func(appcontent.EditInput) (appcontent.Post, error)
 	del      func(accountID, id string) error
 	view     func(appcontent.Viewer, string) (appcontent.StatusView, error)
@@ -43,6 +44,13 @@ func (f *fakeStatuses) Create(_ context.Context, in appcontent.CreateInput) (app
 		return appcontent.Post{}, errNotFound
 	}
 	return f.create(in)
+}
+
+func (f *fakeStatuses) Replay(_ context.Context, accountID, key string) (appcontent.Post, error) {
+	if f.replay == nil {
+		return appcontent.Post{}, errNotFound
+	}
+	return f.replay(accountID, key)
 }
 
 func (f *fakeStatuses) Edit(_ context.Context, in appcontent.EditInput) (appcontent.Post, error) {
@@ -591,6 +599,52 @@ func TestPostLimit(t *testing.T) {
 	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`)
 	if res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") == "" {
 		t.Errorf("post over the limit = %d, Retry-After %q", res.StatusCode, res.Header.Get("Retry-After"))
+	}
+}
+
+// A retry with the Idempotency-Key of a posted status returns that status even over the post limit,
+// without posting again; a key that posted nothing is a new post, which the limit refuses.
+func TestCreateStatusReplaysBeforeTheLimit(t *testing.T) {
+	posted := map[string]bool{}
+	var created int64
+	f := &fakeStatuses{
+		create: func(in appcontent.CreateInput) (appcontent.Post, error) {
+			created++
+			posted[in.IdempotencyKey] = true
+			return appcontent.Post{Status: content.Status{ID: sampleStatusID}}, nil
+		},
+		replay: func(accountID, key string) (appcontent.Post, error) {
+			if accountID != aliceAccountID || !posted[key] {
+				return appcontent.Post{}, errNotFound
+			}
+			return appcontent.Post{Status: content.Status{ID: sampleStatusID}}, nil
+		},
+		view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil },
+	}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Statuses, o.StatusReader, o.Interactions = f, f, f
+		o.AccountLimit = kernel.Limit{Name: "api.account", Max: 1000, Window: time.Minute}
+	})
+	post := func(key string) *http.Response {
+		req := httptest.NewRequest(http.MethodPost, clientapi.BasePath+"/statuses", strings.NewReader(`{"text":"hi","visibility":"public"}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer write")
+		req.Header.Set("Idempotency-Key", key)
+		return e.spec.Serve(t, e.h, req)
+	}
+	for i := range clientapi.PostLimit.Max {
+		if res := post(fmt.Sprintf("key-%d", i)); res.StatusCode != http.StatusOK {
+			t.Fatalf("post %d = %d", i, res.StatusCode)
+		}
+	}
+	if res := post("key-0"); res.StatusCode != http.StatusOK || decodeStatus(t, res).Id != sampleStatusID {
+		t.Errorf("retry over the limit = %d, want 200 with the status", res.StatusCode)
+	}
+	if created != clientapi.PostLimit.Max {
+		t.Errorf("created %d statuses, want %d", created, clientapi.PostLimit.Max)
+	}
+	if res := post("key-new"); res.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("new post over the limit = %d, want 429", res.StatusCode)
 	}
 }
 

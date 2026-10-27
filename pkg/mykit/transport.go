@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"math/rand/v2"
 	"net/http"
 	"strconv"
@@ -41,9 +42,15 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 		// One key for every attempt, so that the server applies the request once.
 		req.Header.Set(idempotencyKeyHeader, uuid.NewString())
 	}
-	// A request is sent again only when its body can be read again.
+	// A request is sent again only when its body can be read again. A 429 or 503 is retried for a GET or HEAD,
+	// and for an operation that takes an Idempotency-Key and has one: the header makes no other operation safe
+	// to repeat, since the server ignores it there.
 	replayable := req.Body == nil || req.Body == http.NoBody || req.GetBody != nil
-	retryable := replayable && (req.Method == http.MethodGet || req.Method == http.MethodHead || req.Header.Get(idempotencyKeyHeader) != "")
+	idempotencyKey := ""
+	if acceptsIdempotencyKey(req.Method, req.URL.Path, t.basePath) {
+		idempotencyKey = req.Header.Get(idempotencyKeyHeader)
+	}
+	retryable := replayable && (req.Method == http.MethodGet || req.Method == http.MethodHead || idempotencyKey != "")
 
 	refreshed := false
 	retries := 0
@@ -65,7 +72,7 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 		}
 		resp, err := t.client.Do(r)
 		if err != nil {
-			return nil, &NetworkError{Method: req.Method, URL: req.URL.Redacted(), Err: err}
+			return nil, &NetworkError{Method: req.Method, URL: req.URL.Redacted(), IdempotencyKey: idempotencyKey, Err: err}
 		}
 		switch {
 		case resp.StatusCode == http.StatusUnauthorized && tok != nil && !refreshed && replayable:
@@ -134,11 +141,17 @@ func retryDelay(retryAfter string, n int, limit time.Duration, now time.Time) (t
 	return min(d, limit), true
 }
 
-// parseRetryAfter reads a Retry-After header, in seconds or an HTTP date, as the wait from now. It reports
-// false when the header is absent or unreadable.
+// maxDuration is the longest time.Duration, the wait of a Retry-After beyond it.
+const maxDuration = time.Duration(math.MaxInt64)
+
+// parseRetryAfter reads a Retry-After header, in seconds or an HTTP date, as the wait from now; seconds beyond
+// what a time.Duration holds are maxDuration. It reports false when the header is absent or unreadable.
 func parseRetryAfter(retryAfter string, now time.Time) (time.Duration, bool) {
-	if secs, err := strconv.Atoi(retryAfter); err == nil {
-		return time.Duration(max(secs, 0)) * time.Second, true
+	if secs, err := strconv.ParseUint(retryAfter, 10, 64); err == nil || errors.Is(err, strconv.ErrRange) {
+		if err != nil || secs > uint64(maxDuration/time.Second) {
+			return maxDuration, true
+		}
+		return time.Duration(secs) * time.Second, true
 	}
 	if at, err := http.ParseTime(retryAfter); err == nil {
 		return max(at.Sub(now), 0), true
@@ -163,7 +176,11 @@ func sleepContext(ctx context.Context, d time.Duration) error {
 type NetworkError struct {
 	Method string
 	URL    string
-	Err    error
+	// IdempotencyKey is the Idempotency-Key of a request to an operation that takes one, such as posting a
+	// status, and "" for any other request. The server may have applied the request without the answer
+	// arriving: send it again with this key (the operation's IdempotencyKey parameter) to have it applied once.
+	IdempotencyKey string
+	Err            error
 }
 
 func (e *NetworkError) Error() string {
