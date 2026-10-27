@@ -55,3 +55,27 @@ DELETE FROM data_import_items WHERE import_id = @import_id;
 
 -- name: DeleteDataImport :exec
 DELETE FROM data_imports WHERE id = @id;
+
+-- name: DeleteDataImportItemFailures :exec
+DELETE FROM data_import_item_failures WHERE import_id = @import_id;
+
+-- HasUnfinishedDataImport reports whether the user has an import with an item without a result.
+-- name: HasUnfinishedDataImport :one
+SELECT EXISTS (
+  SELECT 1 FROM data_imports i JOIN data_import_items t ON t.import_id = i.id
+  WHERE i.user_id = @user_id
+    AND NOT EXISTS (SELECT 1 FROM data_import_item_results r WHERE r.import_id = t.import_id AND r.position = t.position)
+) AS unfinished;
+
+-- DataImportExists reports whether an import is there.
+-- name: DataImportExists :one
+SELECT EXISTS (SELECT 1 FROM data_imports WHERE id = @id) AS present;
+
+-- InsertDataImportItemFailure records a failed run of an item as the attempt after its last one
+-- and returns that attempt.
+-- name: InsertDataImportItemFailure :one
+INSERT INTO data_import_item_failures (import_id, position, attempt, failed_at)
+SELECT @import_id, @position, COALESCE(MAX(f.attempt), 0) + 1, @failed_at
+FROM data_import_item_failures f
+WHERE f.import_id = @import_id AND f.position = @position
+RETURNING attempt;

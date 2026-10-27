@@ -9,7 +9,7 @@
 | FR-005 TOTP | S | `totp_enrollments`, `totp_recovery_codes`, `totp_recovery_code_uses` |
 | FR-006 プロフィール | M | `account_profile_revisions`, `account_profile_fields`, `account_profile_heads` |
 | FR-007 言語・タイムゾーン | M | `user_preferences`, `user_time_zones` |
-| FR-008 アカウント削除・エクスポート・インポート | S | `account_lifecycle_events`, `data_exports`, `data_export_results`, `data_imports`, `data_import_items`, `data_import_item_results` |
+| FR-008 アカウント削除・エクスポート・インポート | S | `account_lifecycle_events`, `data_exports`, `data_export_results`, `data_imports`, `data_import_items`, `data_import_item_results`, `data_import_item_failures` |
 | FR-101〜104 投稿・公開範囲・メンション・タグ・CW | M | `statuses`, `status_revisions` と子テーブル, `status_mention_index`, `feed_tag_entries` |
 | FR-105 画像添付・代替テキスト | M | `media_files`, `uploaded_media`, `media_processing_results`, `media_variants`, `media_focus`, `media_descriptions`, `status_revision_attachments` |
 | FR-106 返信・スレッド | M | `statuses.in_reply_to_uri` / `conversation_uri`, `status_reply_links` |

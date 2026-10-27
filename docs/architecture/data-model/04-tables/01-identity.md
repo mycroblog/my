@@ -249,10 +249,13 @@
 | `data_export_results` | イベント | `export_id`（PK）, `outcome`（`enum(ready, failed)`）, `blob_key`（NULL 可。`ready` のときだけ値を持つ）, `file_size`（NULL 可。同じ）, `expires_at`, `completed_at`。インデックス `(expires_at)` |
 
 - 本人のデータのアーカイブ（FR-008）です。要求（`POST /api/v1/exports`）が `data_exports` の行とジョブ `identity.build_export` を同じトランザクションで積みます。作成中（結果のない行）の要求があるあいだは、次の要求を受け付けません（`409`）。
-- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}.zip` に書き、`ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0038）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
-  結果のある行は作り直さないので、再実行してよい。5 回失敗すると `failed` を記録します。
+  確認と挿入は同じトランザクションで、利用者の行（`users`）を `FOR UPDATE` でロックしてから行うので（SQLite は書き込みのトランザクションが直列）、同時の要求でも作成中の要求は 1 件までです。インポートの開始も同じ行をロックします。
+- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0038）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
+  結果のある行は作り直さないので、再実行してよい。キーは試行ごとに別なので、重なって走った試行が記録済みのアーカイブを上書きしたり消したりすることはなく、記録された `blob_key` と `file_size` は常に同じ Blob を指します。結果を記録できなかった試行（先に別の試行が記録した、要求が消された）は自分の Blob を消します。
+  結果の記録は要求の行を `FOR SHARE` でロックしてから行い、要求の削除は要求の行を先に消すので、消された要求に結果が残ることはありません。
+  5 回目の構築が失敗すると `failed` を記録します。記録にも失敗したときは、その後の最大 3 回の実行が記録だけをやり直し、それでも結果のない要求は 1 時間ごとのジョブ `identity.expire_exports` が要求から 24 時間後（`identity.ExportStaleAfter`）に `failed` にするので、作成中のまま残りません。
 - 状態は結果から求めます: 結果がなければ作成中、`expires_at` を過ぎていれば期限切れ、それ以外は `outcome` のとおり。`expires_at` は結果の記録から 7 日です（`identity.ExportTTL`）。
-- 1 時間ごとのジョブ `identity.expire_exports` が、期限を過ぎたアーカイブ（`ready` は Blob を先に消す）と行を消します。アカウントの消去（§8）も、本人の要求と Blob をすべて消します。
+- 1 時間ごとのジョブ `identity.expire_exports` が、期限を過ぎたアーカイブ（`ready` は記録した Blob を先に消す）と行を消します。アカウントの消去（§8）も、本人の要求と Blob をすべて消します。
 
 #### CSV のエクスポートとインポート
 
@@ -261,6 +264,7 @@
 | `data_imports` | リソース | `id`, `user_id`, `account_id`, `kind`（`enum(following, blocks, mutes, domain_mutes, bookmarks)`）, `mode`（`enum(merge, overwrite)`）, `created_at`。インデックス `(user_id, id DESC)`、`(created_at)` |
 | `data_import_items` | リソース（インポートの子） | `import_id`, `position`（PK は `(import_id, position)`）, `action`（`enum(add, remove)`）, `target`, `show_boosts`, `notify`, `hide_notifications` |
 | `data_import_item_results` | イベント（項目の子） | `import_id`, `position`（PK）, `outcome`（`enum(done, failed)`）, `failure`（NULL 可。`failed` のときだけ `enum(unresolvable, unavailable, blocked, restricted, self, limit)`）, `processed_at` |
+| `data_import_item_failures` | イベント（項目の子） | `import_id`, `position`, `attempt`（PK は `(import_id, position, attempt)`。項目ごとに 1 から数える）, `failed_at`。再試行に値するエラーで項目を行えなかった実行 |
 
 - 本人のフォロー・ブロック・ミュート・ミュートしたドメイン・ブックマークを、Mastodon の「インポートとエクスポート」と同じ CSV で読み書きします（FR-008）。Mastodon が書き出した CSV をこちらで、こちらが書き出した CSV を Mastodon で読み込めます。
   - フォローは `following_accounts.csv`（`Account address,Show boosts,Notify on new posts,Languages`。承認済みのフォローだけ）、ブロックは `blocked_accounts.csv`（1 行に 1 アドレス、見出しなし）、ミュートは `muted_accounts.csv`（`Account address,Hide notifications`。期限の過ぎていないもの）、ミュートしたドメインは `blocked_domains.csv`（1 行に 1 ドメイン、見出しなし。読み込みでは Mastodon の見出し `#domain` も受け付ける。Mastodon の利用者単位のドメインブロックはこちらのドメインのミュートになる、FR-304）、ブックマークは `bookmarks.csv`（1 行に投稿の URI 1 つ、見出しなし。今も見られる投稿だけ）です。
@@ -270,10 +274,11 @@
   アドレス（ブックマークは `http(s)` の URL、ミュートしたドメインはホスト名）でない行は `invalid`、前の行と同じ相手（ユーザー名とドメインの大文字小文字を区別しない）は `duplicate` として飛ばします。1 ファイルは 10,000 件まで（`identity.MaxImportEntries`）です。
 - 開始（`POST /api/v1/imports`）は、ファイルの各項目を `add` の項目に、`overwrite` では今あるもののうちファイルにないもの（アドレスを同じ規則で、ドメインは IDNA の A ラベルの小文字にして比べる）を `remove` の項目にし、`data_imports` の行・項目・最初のジョブ `identity.process_import` を 1 つのトランザクションで書きます。
   `remove` の項目の `target` は相手のアカウントか投稿の ID かドメイン、`add` の項目の `target` はファイルに書かれたアドレスか URL です。プレビュー（`POST /api/v1/imports/preview`）は同じ比較をして件数を返し、何も書きません。
-  結果のない項目が残るインポートがあるあいだは、次のインポートを受け付けません（`409`）。
+  結果のない項目が残るインポートがあるあいだは、次のインポートを受け付けません（`409`）。確認と挿入はデータエクスポートと同じく利用者の行をロックした同じトランザクションで行うので、同時の開始でも進行中のインポートは 1 件までです。
 - ジョブは結果のない項目を 20 件ずつ順に行い、項目ごとに結果を記録してから次の 20 件のジョブを積みます（冪等キーは次の位置を含み、順序キーでインポートごとに 1 本ずつ流す）。
   リモートのアカウントは WebFinger と Actor の取得で解決し（検索と同じ `federation.RemoteActors.ResolveHandle`）、投稿は URL で解決して（`federation.Resolver`）、フォロー・ブロック・ミュート・ブックマークの各ユースケースを呼びます。リモートへの `Follow` の配送は、フォローのイベントから連合のモジュールが積むジョブが行います。
-  同じ項目をもう一度行っても変わらない操作なので、ジョブの再実行は安全です。見つからない・処分された・ブロックで妨げられた・自分自身・ミュートできないドメイン（このサーバーのドメインは `unresolvable`、上限を超えたものは `limit`）などの項目は `failed` を記録して先へ進み、それ以外のエラーはジョブの再試行に任せます。5 回目の実行でも失敗する項目は `failed`（`unavailable`）にして、インポートが止まらないようにします。
+  同じ項目をもう一度行っても変わらない操作なので、ジョブの再実行は安全です。見つからない・処分された・ブロックで妨げられた・自分自身・ミュートできないドメイン（このサーバーのドメインは `unresolvable`、上限を超えたものは `limit`）などの項目は `failed` を記録して先へ進みます。それ以外のエラーは `data_import_item_failures` に記録してバッチを止め、同じトランザクションで遅延付きのジョブ（30 秒から失敗ごとに倍）を積んでその項目からやり直します。失敗は項目ごとに数えるので、ほかの項目の失敗やジョブ自体の再試行が項目の回数を使うことはありません。5 回目の失敗で項目を `failed`（`unavailable`）にして、インポートが止まらないようにします。
+  結果と失敗の記録はインポートの行を `FOR SHARE` でロックしてから行い（SQLite は書き込みのトランザクションが直列）、インポートの削除はインポートの行を先に消すので、期限切れやアカウントの消去で消えたインポートに結果が残ることはありません。消えていればジョブはそこで止まります。
 - 状態は件数から求めます: 項目の数とすべての結果の数が等しければ `finished`、そうでなければ `in_progress`。
 - 1 時間ごとのジョブ `identity.expire_imports` が、作成から 7 日（`identity.ImportTTL`）を過ぎたインポートを項目と結果ごと消します。アカウントの消去（§8）も、本人のインポートをすべて消します。
 - 利用者ごとのドメインの非表示（Mastodon の `blocked_domains.csv`）は、その機能（#638）がまだないので扱いません。
