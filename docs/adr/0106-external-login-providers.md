@@ -81,7 +81,8 @@ IdP の種類について:
   `alg` は Discovery の `id_token_signing_alg_values_supported` のうち `RS256`・`ES256`・`EdDSA` だけを受け、`none` と HMAC は受けない。
   利用者の識別子は `sub` とする。
 - `github`: エンドポイントはコードに固定する。識別子は `GET /user` の数値の `id`（文字列にして保存する）とし、`login` は表示にだけ使う。
-  メールアドレスは `GET /user/emails` の `primary` かつ `verified` のものを使う。GitHub Enterprise Server は対象にしない。
+  メールアドレスは `GET /user/emails` の `primary` かつ `verified` のものを使い、そのために `user:email` scope を求める（`GET /user` に scope は要らない）。
+  `read:org` は Organization の条件（§4）を設定した IdP だけが加える。GitHub Enterprise Server は対象にしない。
 - `mastodon`: 管理者が指定した 1 つの Mastodon サーバーを IdP にする。サーバーごとに 1 つの IdP を作り、利用者が任意のサーバーを入力する形は持たない。
   - 管理者はサーバーのドメインを入れる。サーバーは RFC 8414 のメタデータからエンドポイントを得て、`POST /api/v1/apps` でクライアントを登録し
     （`redirect_uris` は §2 のコールバック、scope は `profile`）、得た `client_id` と `client_secret` を保存する。相手のサーバーが登録を
@@ -223,4 +224,4 @@ IdP の種類について:
 
 ## Open Questions / 要検証
 
-- GitHub の `GET /user/emails` に要る scope が `user:email` で足りるか（現行の文書の記述が一覧の操作について明確でない）
+- なし
