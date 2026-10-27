@@ -19,7 +19,8 @@ type KeyValueStoreFactory func(t *testing.T, clock *Clock) kernel.KeyValueStore
 
 // KeyValueStoreContract verifies a kernel.KeyValueStore adapter: values round-trip and are
 // copied, namespaces are separate, Set replaces the value and the expiry, Delete is idempotent,
-// entries expire after their TTL and never without one, IncrBy starts missing and expired
+// entries expire after their TTL and never without one, a positive TTL shorter than a
+// millisecond never expires early, IncrBy starts missing and expired
 // counters and keeps the expiry of live ones, concurrent IncrBy calls lose no increment,
 // CompareAndSwap writes and deletes only an entry that holds the value it expects (absent when
 // it expects nil), and exactly one of concurrent swaps from one value wins, DeleteExpired removes
@@ -36,6 +37,7 @@ func KeyValueStoreContract(t *testing.T, newStore KeyValueStoreFactory) {
 		{"SetReplaces", kvSetReplaces},
 		{"Deletes", kvDeletes},
 		{"Expires", kvExpires},
+		{"KeepsShortTTLs", kvKeepsShortTTLs},
 		{"Increments", kvIncrements},
 		{"IncrementsConcurrently", kvIncrementsConcurrently},
 		{"ComparesAndSwaps", kvComparesAndSwaps},
@@ -138,6 +140,42 @@ func kvExpires(t *testing.T, s kernel.KeyValueStore, clock *Clock) {
 	kvWantMissing(t, s, "ns", "short")
 	clock.Advance(1000 * time.Hour)
 	kvWant(t, s, "ns", "forever", "v")
+}
+
+// kvKeepsShortTTLs: a positive TTL never expires early, however short; a store that keeps
+// expiries in milliseconds rounds them up, so an entry may live less than a millisecond longer.
+func kvKeepsShortTTLs(t *testing.T, s kernel.KeyValueStore, clock *Clock) {
+	const ttl = 1500 * time.Microsecond
+	clock.Advance(300 * time.Microsecond) // off the millisecond
+	kvSet(t, s, "ns", "tiny", "v", time.Nanosecond)
+	kvWant(t, s, "ns", "tiny", "v")
+	kvSet(t, s, "ns", "set", "v", ttl)
+	kvIncr(t, s, "ns", "counter", 1, ttl)
+	if !kvSwap(t, s, "swapped", nil, []byte("v"), ttl) {
+		t.Fatal("CompareAndSwap on an absent key did not write")
+	}
+	clock.Advance(time.Millisecond)
+	kvWant(t, s, "ns", "set", "v")
+	kvWant(t, s, "ns", "swapped", "v")
+	if got := kvIncr(t, s, "ns", "counter", 1, ttl); got != 2 {
+		t.Fatalf("IncrBy before the TTL passed = %d, want 2", got)
+	}
+	n, err := s.DeleteExpired(t.Context(), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Only "tiny" may have expired.
+	if n > 1 {
+		t.Fatalf("DeleteExpired before the TTL passed = %d, want at most the 1 nanosecond entry", n)
+	}
+	kvWant(t, s, "ns", "set", "v")
+	clock.Advance(time.Millisecond)
+	kvWantMissing(t, s, "ns", "tiny")
+	kvWantMissing(t, s, "ns", "set")
+	kvWantMissing(t, s, "ns", "swapped")
+	if got := kvIncr(t, s, "ns", "counter", 1, ttl); got != 1 {
+		t.Fatalf("IncrBy after the TTL passed = %d, want 1", got)
+	}
 }
 
 func kvIncrements(t *testing.T, s kernel.KeyValueStore, clock *Clock) {

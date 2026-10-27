@@ -510,6 +510,11 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 
 	repo := s.d.Repository
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		// The lock makes a deletion that another transaction is recording visible before the
+		// check, so that the edit of a status being deleted fails.
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(content.Status{ID: st.ID}, true)); err != nil {
+			return err
+		}
 		deleted, err := repo.IsDeleted(ctx, tx, st.ID)
 		if err != nil {
 			return err

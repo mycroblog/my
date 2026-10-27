@@ -226,6 +226,20 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	return nil
 }
 
+// LockStatusKeys implements content.Repository with transaction-scoped advisory locks.
+func (r *StatusRepository) LockStatusKeys(ctx context.Context, tx uow.Tx, keys []string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	for _, k := range keys {
+		if err := q.LockStatusKey(ctx, "content:"+k); err != nil {
+			return wrap(err, "lock status key")
+		}
+	}
+	return nil
+}
+
 // IsDeleted implements content.Repository.
 func (r *StatusRepository) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
 	q, err := r.db.queries(tx)

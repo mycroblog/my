@@ -208,6 +208,10 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	return nil
 }
 
+// LockStatusKeys implements content.Repository. It does nothing: write transactions begin with
+// BEGIN IMMEDIATE and so already run one at a time.
+func (r *StatusRepository) LockStatusKeys(context.Context, uow.Tx, []string) error { return nil }
+
 // IsDeleted implements content.Repository.
 func (r *StatusRepository) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
 	q, err := r.db.queries(tx)

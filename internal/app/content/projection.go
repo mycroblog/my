@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -27,10 +28,16 @@ import (
 func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
+			return err
+		}
 		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision)
 	})
 	r.Register(EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(StatusRevised).Revision
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(content.Status{ID: rev.StatusID}, true)); err != nil {
+			return err
+		}
 		deleted, err := repo.IsDeleted(ctx, tx, rev.StatusID)
 		if err != nil || deleted {
 			return err
@@ -39,6 +46,9 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	})
 	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusDeleted)
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, true)); err != nil {
+			return err
+		}
 		return projectDeleted(ctx, tx, repo, ev.Status)
 	})
 	// poll_tallies holds the counts of the newest observation of each remote poll.
@@ -46,6 +56,29 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		o := e.(PollTallyObserved).Observation
 		return repo.ReplacePollTallies(ctx, tx, o.PollID, o.Tallies())
 	})
+}
+
+// statusLockKeys returns the keys of Repository.LockStatusKeys, sorted, that a projector of s
+// takes before it reads the projections:
+//   - the URI of s and the URI it replies to, so that a status and its parent or replies created
+//     or deleted at the same time each see the other once it commits (the second one waits for the
+//     first one's commit, and READ COMMITTED reads what it committed);
+//   - with byID, the ID of s, so that a revision and the deletion of a status do not both read
+//     the status as live: a revision projected after the deletion sees it.
+//
+// Every transaction takes its keys in this order, so that two of them do not wait for each other.
+func statusLockKeys(s content.Status, byID bool) []string {
+	var keys []string
+	if byID {
+		keys = append(keys, "id:"+s.ID)
+	}
+	for _, uri := range []string{s.URI, s.InReplyToURI} {
+		if uri != "" {
+			keys = append(keys, "uri:"+uri)
+		}
+	}
+	slices.Sort(keys)
+	return slices.Compact(keys)
 }
 
 func projectRevision(ctx context.Context, tx uow.Tx, repo Repository, rev content.Revision) error {

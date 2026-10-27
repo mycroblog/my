@@ -109,6 +109,33 @@ func (r Relationship) RequestedFollow() bool { return r.Following == graph.State
 // (ErrInteractionRestricted), the followee active (local or remote), and neither may block the
 // other (ErrBlocked).
 func (s *Service) Follow(ctx context.Context, followerID, followeeID string) (Relationship, error) {
+	return s.FollowWith(ctx, followerID, followeeID, FollowOptions{})
+}
+
+// FollowOptions are the preferences that a follow asks for; nil fields keep their value, the
+// default for a new follow.
+type FollowOptions struct {
+	ShowBoosts *bool
+	Notify     *bool
+}
+
+func (o FollowOptions) set() bool { return o.ShowBoosts != nil || o.Notify != nil }
+
+// apply returns p with the preferences that o sets.
+func (o FollowOptions) apply(p graph.Preferences) graph.Preferences {
+	if o.ShowBoosts != nil {
+		p.ShowBoosts = *o.ShowBoosts
+	}
+	if o.Notify != nil {
+		p.Notify = *o.Notify
+	}
+	return p
+}
+
+// FollowWith is Follow with the preferences that opts sets, recorded in the same transaction: a
+// new follow starts with them, and the follow that the follower already has takes them as
+// UpdatePreferences does. When any part fails, nothing is recorded.
+func (s *Service) FollowWith(ctx context.Context, followerID, followeeID string, opts FollowOptions) (Relationship, error) {
 	f := graph.Follow{FollowerAccountID: followerID, FolloweeAccountID: followeeID}
 	if err := f.Validate(); err != nil {
 		return Relationship{}, err
@@ -134,7 +161,7 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) (Re
 	f.ID = s.d.IDs.NewID()
 	f.URI = graph.FollowURI(s.d.Host, f.ID)
 	f.RequestedAt = s.d.Clock.Now()
-	prefs := graph.DefaultPreferences(f.ID)
+	prefs := opts.apply(graph.DefaultPreferences(f.ID))
 	acceptance := graph.Acceptance{FollowID: f.ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: f.RequestedAt}
 
 	repo := s.d.Repository
@@ -145,8 +172,12 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) (Re
 		if err := s.checkNotBlocked(ctx, tx, followerID, followeeID); err != nil {
 			return err
 		}
-		if _, err := repo.Edge(ctx, tx, followerID, followeeID); !errors.Is(err, ErrNotFound) {
+		switch edge, err := repo.Edge(ctx, tx, followerID, followeeID); {
+		case errors.Is(err, ErrNotFound):
+		case err != nil || !opts.set():
 			return err // nil: already following or requested
+		default:
+			return s.changePreferencesIn(ctx, tx, edge, opts)
 		}
 		if err := repo.InsertFollow(ctx, tx, f); err != nil {
 			return err
@@ -202,6 +233,9 @@ func (s *Service) AcceptFollowRequest(ctx context.Context, followeeID, followerI
 	now := s.d.Clock.Now()
 	repo := s.d.Repository
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := repo.LockPair(ctx, tx, followerID, followeeID); err != nil {
+			return err
+		}
 		edge, f, err := s.liveFollow(ctx, tx, followerID, followeeID)
 		if err != nil || edge.State == graph.StateActive {
 			return err
@@ -228,6 +262,9 @@ func (s *Service) AcceptFollowRequest(ctx context.Context, followeeID, followerI
 func (s *Service) RejectFollowRequest(ctx context.Context, followeeID, followerID string) (Relationship, error) {
 	now := s.d.Clock.Now()
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.d.Repository.LockPair(ctx, tx, followerID, followeeID); err != nil {
+			return err
+		}
 		edge, f, err := s.liveFollow(ctx, tx, followerID, followeeID)
 		if err != nil {
 			return err
@@ -282,6 +319,9 @@ func (s *Service) terminateIn(ctx context.Context, tx uow.Tx, followerID, follow
 // endIn is terminateIn with the termination's reason, time, and announcement taken from ev, and
 // returns the state that the follow ended in, graph.StateNone when no follow ended.
 func (s *Service) endIn(ctx context.Context, tx uow.Tx, ev FollowTerminated, followerID, followeeID string, activeOnly bool) (graph.State, error) {
+	if err := s.d.Repository.LockPair(ctx, tx, followerID, followeeID); err != nil {
+		return graph.StateNone, err
+	}
 	edge, f, err := s.liveFollow(ctx, tx, followerID, followeeID)
 	if errors.Is(err, ErrNotFound) || (err == nil && activeOnly && edge.State != graph.StateActive) {
 		return graph.StateNone, nil
@@ -320,20 +360,38 @@ type PreferencesInput struct {
 // followeeID. Without a follow it fails with ErrNotFound.
 func (s *Service) UpdatePreferences(ctx context.Context, followerID, followeeID string, in PreferencesInput) (Relationship, error) {
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		edge, f, err := s.liveFollow(ctx, tx, followerID, followeeID)
+		edge, err := s.d.Repository.Edge(ctx, tx, followerID, followeeID)
 		if err != nil {
 			return err
 		}
-		p := graph.Preferences{FollowID: f.ID, ShowBoosts: in.ShowBoosts, Notify: in.Notify}
-		if err := s.d.Repository.UpsertPreferences(ctx, tx, p); err != nil {
-			return err
-		}
-		return tx.Emit(ctx, FollowPreferencesChanged{Follow: f, State: edge.State, Preferences: p})
+		return s.changePreferencesIn(ctx, tx, edge, FollowOptions{ShowBoosts: &in.ShowBoosts, Notify: &in.Notify})
 	})
 	if err != nil {
 		return Relationship{}, err
 	}
 	return s.Relationship(ctx, followerID, followeeID)
+}
+
+// changePreferencesIn records, inside tx, the preferences that opts sets for the follow of edge,
+// keeping the others.
+func (s *Service) changePreferencesIn(ctx context.Context, tx uow.Tx, edge graph.Edge, opts FollowOptions) error {
+	repo := s.d.Repository
+	f, err := repo.Follow(ctx, tx, edge.FollowID)
+	if err != nil {
+		return err
+	}
+	p, err := repo.Preferences(ctx, tx, f.ID)
+	if errors.Is(err, ErrNotFound) {
+		p, err = graph.DefaultPreferences(f.ID), nil
+	}
+	if err != nil {
+		return err
+	}
+	p = opts.apply(p)
+	if err := repo.UpsertPreferences(ctx, tx, p); err != nil {
+		return err
+	}
+	return tx.Emit(ctx, FollowPreferencesChanged{Follow: f, State: edge.State, Preferences: p})
 }
 
 // Relationship returns the follow, block, and mute relationship between accountID and targetID.

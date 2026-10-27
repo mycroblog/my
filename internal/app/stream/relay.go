@@ -24,7 +24,12 @@ const (
 
 // The liveness marker of a listening process (ADR-0050 §2): while a Relay listens, it writes
 // the key of its process ID in LivenessNamespace every LivenessInterval, with LivenessTTL, so
-// that JobSweep keeps the per-process resources of live processes.
+// that JobSweep keeps the per-process resources of live processes. A Relay writes the marker
+// before it starts listening and does not listen when it cannot. When the writes keep failing
+// until the marker may expire before the next one (LivenessTTL - LivenessInterval after the
+// last write that succeeded), the Relay treats its listener as broken, since a sweep may
+// delete its resources: the subscriptions of the process end and the next Subscribe writes the
+// marker again.
 const (
 	LivenessNamespace = "stream.alive"
 	LivenessInterval  = time.Minute
@@ -147,6 +152,9 @@ type listening struct {
 	// liveness marker.
 	stop     chan struct{}
 	stopOnce sync.Once
+	// lost is closed when the liveness marker may have expired: the heartbeat could not renew
+	// it in time.
+	lost chan struct{}
 }
 
 func (c *listening) halt() { c.stopOnce.Do(func() { close(c.stop) }) }
@@ -353,19 +361,30 @@ func (r *Relay) subscribe(ctx context.Context, open func() (Subscription, error)
 
 // startLocked starts a listener and makes it cur; r.mu is held.
 func (r *Relay) startLocked() *listening {
-	cur := &listening{ready: make(chan struct{}), stop: make(chan struct{})}
+	cur := &listening{ready: make(chan struct{}), stop: make(chan struct{}), lost: make(chan struct{})}
 	r.cur = cur
-	if r.o.Liveness != nil {
-		// The marker precedes the resources that Listen creates.
-		kernel.Go(context.Background(), "stream.relay.heartbeat", r.o.Reporter, func(context.Context) { r.heartbeat(cur) })
-	}
 	kernel.Go(context.Background(), "stream.relay.listen", r.o.Reporter, func(context.Context) { r.listen(cur) })
 	return cur
 }
 
 func (r *Relay) listen(cur *listening) {
 	ctx, cancel := context.WithTimeout(r.base, r.o.ReadyTimeout)
-	l, err := r.bus.Listen(ctx, r.receive)
+	var (
+		l       Listener
+		err     error
+		wroteAt time.Time
+	)
+	if r.o.Liveness != nil {
+		// The marker precedes the resources that Listen creates, so that a sweep never takes
+		// them for the leftovers of an ended process.
+		wroteAt = time.Now()
+		if err = r.writeMarker(ctx); err != nil {
+			err = fmt.Errorf("write the liveness marker: %w", err)
+		}
+	}
+	if err == nil {
+		l, err = r.bus.Listen(ctx, r.receive)
+	}
 	cancel()
 
 	r.mu.Lock()
@@ -390,15 +409,22 @@ func (r *Relay) listen(cur *listening) {
 		r.closeListener(cur)
 		return
 	}
+	if r.o.Liveness != nil {
+		kernel.Go(context.Background(), "stream.relay.heartbeat", r.o.Reporter, func(context.Context) { r.heartbeat(cur, wroteAt) })
+	}
 	r.watch(cur)
 }
 
-// watch ends every subscription when cur's listener breaks while it is current.
+// watch ends every subscription when cur's listener breaks, or its liveness marker may have
+// expired, while it is current.
 func (r *Relay) watch(cur *listening) {
+	reason := "stream relay listener broke; ending the subscriptions of this process"
 	select {
 	case <-cur.stop:
 		return
 	case <-cur.l.Broken():
+	case <-cur.lost:
+		reason = "stream relay could not renew its liveness marker in time; ending the subscriptions of this process"
 	}
 	r.mu.Lock()
 	current := r.cur == cur
@@ -409,7 +435,7 @@ func (r *Relay) watch(cur *listening) {
 	}
 	r.mu.Unlock()
 	if current {
-		r.log.Warn("stream relay listener broke; ending the subscriptions of this process")
+		r.log.Warn(reason)
 	}
 	r.closeListener(cur)
 }
@@ -424,16 +450,17 @@ func (r *Relay) closeListener(cur *listening) {
 	}
 }
 
-// heartbeat writes the liveness marker of this process until cur stops.
-func (r *Relay) heartbeat(cur *listening) {
-	write := func() {
-		ctx, cancel := context.WithTimeout(r.base, LivenessInterval/2)
-		defer cancel()
-		if err := r.o.Liveness.Set(ctx, LivenessNamespace, r.o.ProcessID, []byte("1"), LivenessTTL); err != nil && r.base.Err() == nil {
-			r.log.Warn("stream relay could not write its liveness marker", slog.Any("error", err))
-		}
-	}
-	write()
+// writeMarker writes the liveness marker of this process once, within ctx and
+// LivenessInterval/2.
+func (r *Relay) writeMarker(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, LivenessInterval/2)
+	defer cancel()
+	return r.o.Liveness.Set(ctx, LivenessNamespace, r.o.ProcessID, []byte("1"), LivenessTTL)
+}
+
+// heartbeat renews the liveness marker of this process, last written at wroteAt, until cur
+// stops. It closes cur.lost and returns when the marker may expire before the next write.
+func (r *Relay) heartbeat(cur *listening, wroteAt time.Time) {
 	t := time.NewTicker(LivenessInterval)
 	defer t.Stop()
 	for {
@@ -441,7 +468,20 @@ func (r *Relay) heartbeat(cur *listening) {
 		case <-cur.stop:
 			return
 		case <-t.C:
-			write()
+		}
+		attempt := time.Now()
+		err := r.writeMarker(r.base)
+		switch {
+		case err == nil:
+			wroteAt = attempt
+		case r.base.Err() != nil:
+			return
+		default:
+			r.log.Warn("stream relay could not write its liveness marker", slog.Any("error", err))
+			if time.Since(wroteAt) >= LivenessTTL-LivenessInterval {
+				close(cur.lost)
+				return
+			}
 		}
 	}
 }
