@@ -245,6 +245,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/admin/webhooks/{id}/rotate_secret":                      {Operation: "rotateWebhookSecret", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/webhooks/{id}/test":                               {Operation: "testWebhook", Scopes: []string{"admin:write"}},
 	"POST /api/v1/announcements/{id}/read":                                {Operation: "markAnnouncementRead", Scopes: []string{"write:notifications"}},
+	"POST /api/v1/client_errors":                                          {Operation: "reportClientError", Anonymous: true, Scopes: []string{"write"}},
 	"POST /api/v1/custom_emoji_requests":                                  {Operation: "createCustomEmojiRequest", Scopes: []string{"write:custom_emojis"}},
 	"POST /api/v1/custom_emoji_requests/{id}/withdraw":                    {Operation: "withdrawCustomEmojiRequest", Scopes: []string{"write:custom_emojis"}},
 	"POST /api/v1/domain_mutes":                                           {Operation: "muteDomain", Scopes: []string{"write:mutes"}},

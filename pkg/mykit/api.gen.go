@@ -1262,6 +1262,30 @@ func (e BillingSourceName) Valid() bool {
 	}
 }
 
+// Defines values for ClientErrorReportKind.
+const (
+	ClientErrorReportKindBoundaryError      ClientErrorReportKind = "boundary_error"
+	ClientErrorReportKindRouteError         ClientErrorReportKind = "route_error"
+	ClientErrorReportKindUncaught           ClientErrorReportKind = "uncaught"
+	ClientErrorReportKindUnhandledrejection ClientErrorReportKind = "unhandledrejection"
+)
+
+// Valid indicates whether the value is a known member of the ClientErrorReportKind enum.
+func (e ClientErrorReportKind) Valid() bool {
+	switch e {
+	case ClientErrorReportKindBoundaryError:
+		return true
+	case ClientErrorReportKindRouteError:
+		return true
+	case ClientErrorReportKindUncaught:
+		return true
+	case ClientErrorReportKindUnhandledrejection:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CostBasis.
 const (
 	CostBasisAmortized CostBasis = "amortized"
@@ -6052,6 +6076,35 @@ type ChangePasswordRequest struct {
 	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
 	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
 }
+
+// ClientErrorReport An uncaught error of the web client.
+type ClientErrorReport struct {
+	// Kind How the error was caught: `route_error` by the router, `boundary_error` by an error
+	// boundary outside the routes, `uncaught` outside every boundary, and
+	// `unhandledrejection` as a promise rejection that nothing handled.
+	Kind ClientErrorReportKind `json:"kind"`
+
+	// Message The error's `message`.
+	Message string `json:"message"`
+
+	// Name The error's `name`, such as `TypeError`.
+	Name string `json:"name"`
+
+	// Release The version of the web client's build.
+	Release *string `json:"release,omitempty"`
+
+	// Route The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the
+	// URL).
+	Route *string `json:"route,omitempty"`
+
+	// Stack The error's `stack` as the browser formats it.
+	Stack string `json:"stack"`
+}
+
+// ClientErrorReportKind How the error was caught: `route_error` by the router, `boundary_error` by an error
+// boundary outside the routes, `uncaught` outside every boundary, and
+// `unhandledrejection` as a promise rejection that nothing handled.
+type ClientErrorReportKind string
 
 // CloseServiceRequest The confirmation of the closure of the server.
 type CloseServiceRequest struct {
