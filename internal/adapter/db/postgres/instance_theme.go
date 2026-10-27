@@ -13,7 +13,7 @@ import (
 
 // InsertThemeRevision implements instance.ThemeRepository.
 func (r *InstanceRepository) InsertThemeRevision(ctx context.Context, tx uow.Tx, rev instance.ThemeRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (r *InstanceRepository) InsertThemeRevision(ctx context.Context, tx uow.Tx,
 
 // ThemeHead implements instance.ThemeRepository.
 func (r *InstanceRepository) ThemeHead(ctx context.Context, tx uow.Tx) (instance.ThemeHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.ThemeHead{}, err
 	}
@@ -51,7 +51,7 @@ func (r *InstanceRepository) ThemeHead(ctx context.Context, tx uow.Tx) (instance
 
 // UpsertThemeHead implements instance.ThemeRepository.
 func (r *InstanceRepository) UpsertThemeHead(ctx context.Context, tx uow.Tx, h instance.ThemeHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *InstanceRepository) UpsertThemeHead(ctx context.Context, tx uow.Tx, h i
 
 // DeleteThemeHead implements instance.ThemeRepository.
 func (r *InstanceRepository) DeleteThemeHead(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (r *InstanceRepository) DeleteThemeHead(ctx context.Context, tx uow.Tx) err
 
 // LatestThemeRevisionID implements instance.ThemeRepository.
 func (r *InstanceRepository) LatestThemeRevisionID(ctx context.Context, tx uow.Tx) (string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return "", err
 	}

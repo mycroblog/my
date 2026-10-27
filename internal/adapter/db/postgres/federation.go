@@ -27,7 +27,7 @@ func (d *DB) FederationRepository() *FederationRepository { return &FederationRe
 
 // InsertOutboundActivity implements federation.Repository.
 func (r *FederationRepository) InsertOutboundActivity(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *FederationRepository) InsertOutboundActivity(ctx context.Context, tx uo
 
 // InsertOutboundDocument implements federation.Repository.
 func (r *FederationRepository) InsertOutboundDocument(ctx context.Context, tx uow.Tx, outboundActivityID string, document []byte, builtAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -52,7 +52,7 @@ func (r *FederationRepository) InsertOutboundDocument(ctx context.Context, tx uo
 
 // InsertDelivery implements federation.Repository.
 func (r *FederationRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d federation.Delivery) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -65,7 +65,7 @@ func (r *FederationRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d 
 
 // UpsertInstanceHealth implements federation.Repository.
 func (r *FederationRepository) UpsertInstanceHealth(ctx context.Context, tx uow.Tx, h federation.InstanceHealth) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

@@ -22,6 +22,14 @@ CREATE TABLE outbox_events (
   created_at INTEGER NOT NULL
 ) STRICT;
 
+-- Current value: the lease of the relay that moves outbox_events, one row per outbox. Only the
+-- holder relays until lease_until, so that overlapping relays keep the events in order.
+CREATE TABLE outbox_relay_leases (
+  name TEXT NOT NULL PRIMARY KEY,
+  holder TEXT NOT NULL,
+  lease_until INTEGER NOT NULL
+) STRICT;
+
 -- Pending and running jobs of the database queue. A job is deleted when it finishes and moved
 -- to dead_jobs when it fails for good. A claim sets locked_by and locked_until together.
 CREATE TABLE jobs (

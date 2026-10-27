@@ -13,7 +13,7 @@ import (
 
 // InsertEmailDeliveryFailure implements identity.Repository.
 func (r *IdentityRepository) InsertEmailDeliveryFailure(ctx context.Context, tx uow.Tx, f identity.EmailDeliveryFailure) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -26,7 +26,7 @@ func (r *IdentityRepository) InsertEmailDeliveryFailure(ctx context.Context, tx 
 
 // InsertEmailSuppressionLift implements identity.Repository.
 func (r *IdentityRepository) InsertEmailSuppressionLift(ctx context.Context, tx uow.Tx, l identity.EmailSuppressionLift) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (r *IdentityRepository) InsertEmailSuppressionLift(ctx context.Context, tx 
 
 // RefreshEmailSuppression implements identity.Repository.
 func (r *IdentityRepository) RefreshEmailSuppression(ctx context.Context, tx uow.Tx, emailAddressID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -70,5 +70,5 @@ func (r *IdentityRepository) FindPrimaryEmailAddressID(ctx context.Context, norm
 
 // RebuildEmailSuppressions implements identity.Repository.
 func (r *IdentityRepository) RebuildEmailSuppressions(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild email suppressions", (*sqlitegen.Queries).DeleteAllEmailSuppressions, (*sqlitegen.Queries).RebuildEmailSuppressions)
+	return r.db.execAll(ctx, tx, "rebuild email suppressions", (*sqlitegen.Queries).DeleteAllEmailSuppressions, (*sqlitegen.Queries).RebuildEmailSuppressions)
 }

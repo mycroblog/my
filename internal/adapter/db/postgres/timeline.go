@@ -27,7 +27,7 @@ func (d *DB) TimelineRepository() *TimelineRepository { return &TimelineReposito
 
 // InsertEntry implements timeline.Repository.
 func (r *TimelineRepository) InsertEntry(ctx context.Context, tx uow.Tx, e apptimeline.Entry) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -50,7 +50,7 @@ func (r *TimelineRepository) InsertEntry(ctx context.Context, tx uow.Tx, e appti
 
 // Entry implements timeline.Repository.
 func (r *TimelineRepository) Entry(ctx context.Context, tx uow.Tx, id string) (apptimeline.Entry, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return apptimeline.Entry{}, err
 	}
@@ -63,7 +63,7 @@ func (r *TimelineRepository) Entry(ctx context.Context, tx uow.Tx, id string) (a
 
 // UpdateRevision implements timeline.Repository.
 func (r *TimelineRepository) UpdateRevision(ctx context.Context, tx uow.Tx, statusID, language string, seq int) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (r *TimelineRepository) UpdateRevision(ctx context.Context, tx uow.Tx, stat
 
 // DeleteEntry implements timeline.Repository.
 func (r *TimelineRepository) DeleteEntry(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (r *TimelineRepository) DeleteEntry(ctx context.Context, tx uow.Tx, id stri
 // DeleteStatusEntries implements timeline.Repository. Only the post entry (ID = status ID) has
 // direct recipients and tags.
 func (r *TimelineRepository) DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func applyTagUsage(ctx context.Context, q *postgresgen.Queries, deltas map[strin
 
 // ReplaceDirectRecipients implements timeline.Repository.
 func (r *TimelineRepository) ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, entryID string, accountIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (r *TimelineRepository) ReplaceDirectRecipients(ctx context.Context, tx uow
 
 // ReplaceTags implements timeline.Repository.
 func (r *TimelineRepository) ReplaceTags(ctx context.Context, tx uow.Tx, e apptimeline.Entry, tagIDs []string, revisedAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (r *TimelineRepository) ReplaceTags(ctx context.Context, tx uow.Tx, e appti
 
 // UpsertFollowEdge implements timeline.Repository.
 func (r *TimelineRepository) UpsertFollowEdge(ctx context.Context, tx uow.Tx, e apptimeline.FollowEdge) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func (r *TimelineRepository) UpsertFollowEdge(ctx context.Context, tx uow.Tx, e 
 
 // DeleteFollowEdge implements timeline.Repository.
 func (r *TimelineRepository) DeleteFollowEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (r *TimelineRepository) DeleteFollowEdge(ctx context.Context, tx uow.Tx, fo
 
 // UpsertExclusion implements timeline.Repository.
 func (r *TimelineRepository) UpsertExclusion(ctx context.Context, tx uow.Tx, x apptimeline.Exclusion) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func (r *TimelineRepository) UpsertExclusion(ctx context.Context, tx uow.Tx, x a
 
 // DeleteExclusion implements timeline.Repository.
 func (r *TimelineRepository) DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason timeline.ExclusionReason) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (r *TimelineRepository) DeleteExclusion(ctx context.Context, tx uow.Tx, vie
 
 // UpsertAuthorRestriction implements timeline.Repository.
 func (r *TimelineRepository) UpsertAuthorRestriction(ctx context.Context, tx uow.Tx, ar apptimeline.AuthorRestriction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func (r *TimelineRepository) UpsertAuthorRestriction(ctx context.Context, tx uow
 
 // DeleteAuthorRestriction implements timeline.Repository.
 func (r *TimelineRepository) DeleteAuthorRestriction(ctx context.Context, tx uow.Tx, accountID string, restriction timeline.Restriction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (r *TimelineRepository) DeleteAuthorRestriction(ctx context.Context, tx uow
 
 // UpsertDomainRestriction implements timeline.Repository.
 func (r *TimelineRepository) UpsertDomainRestriction(ctx context.Context, tx uow.Tx, dr apptimeline.DomainRestriction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -275,7 +275,7 @@ func (r *TimelineRepository) UpsertDomainRestriction(ctx context.Context, tx uow
 
 // DeleteDomainRestriction implements timeline.Repository.
 func (r *TimelineRepository) DeleteDomainRestriction(ctx context.Context, tx uow.Tx, domain string, restriction timeline.Restriction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func (r *TimelineRepository) DeleteDomainRestriction(ctx context.Context, tx uow
 
 // InsertDomainMute implements timeline.Repository.
 func (r *TimelineRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m apptimeline.DomainMute) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func (r *TimelineRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m 
 
 // DeleteDomainMute implements timeline.Repository.
 func (r *TimelineRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ func (r *TimelineRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, vi
 
 // DeleteProjection implements timeline.Repository.
 func (r *TimelineRepository) DeleteProjection(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

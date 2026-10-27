@@ -161,7 +161,7 @@ func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) 
 			_ = sqlTx.Rollback()
 		}
 	}()
-	tx := &Tx{tx: sqlTx, db: dbtrace.Wrap(sqlTx, d.tracer, dbtrace.SystemSQLite), projectors: d.opts.Projectors}
+	tx := &Tx{tx: sqlTx, owner: d.db, db: dbtrace.Wrap(sqlTx, d.tracer, dbtrace.SystemSQLite), projectors: d.opts.Projectors}
 	if err := fn(tx); err != nil {
 		return err
 	}
@@ -189,6 +189,9 @@ func isRetryable(err error) bool {
 // Tx is a SQLite transaction. It implements uow.Tx.
 type Tx struct {
 	tx *sql.Tx
+	// owner is the database the transaction runs in: a Tx works only with the repositories of
+	// that database.
+	owner *sql.DB
 	// db runs the queries of tx, with their spans.
 	db         dbtrace.DBTX
 	projectors *uow.Projectors
@@ -204,27 +207,43 @@ func (t *Tx) Emit(ctx context.Context, e uow.Event) error {
 	return t.projectors.Project(ctx, t, e)
 }
 
-// txOf recovers the SQLite transaction behind tx, for repositories of this adapter.
-func txOf(tx uow.Tx) (*sql.Tx, error) {
+// ErrForeignTx is returned when a repository is given a transaction that its database did not
+// begin: one of another adapter, or of another database of this adapter.
+var ErrForeignTx = errors.New("sqlite: transaction does not belong to this database")
+
+// ownTx recovers the transaction behind tx when d's database began it.
+func (d *DB) ownTx(tx uow.Tx) (*Tx, error) {
 	t, ok := tx.(*Tx)
 	if !ok {
-		return nil, fmt.Errorf("sqlite: transaction %T does not belong to this adapter", tx)
+		return nil, fmt.Errorf("%w: %T", ErrForeignTx, tx)
+	}
+	if t.owner != d.db {
+		return nil, fmt.Errorf("%w: it runs in another database", ErrForeignTx)
+	}
+	return t, nil
+}
+
+// txOf recovers the SQLite transaction behind tx, for repositories of this adapter.
+func (d *DB) txOf(tx uow.Tx) (*sql.Tx, error) {
+	t, err := d.ownTx(tx)
+	if err != nil {
+		return nil, err
 	}
 	return t.tx, nil
 }
 
 // SQLTx returns the database/sql transaction behind tx, for the adapters of other ports that
 // keep their tables in this database (the database job queue, internal/adapter/queue/db).
-// It fails for a Tx of another adapter.
-func SQLTx(tx uow.Tx) (*sql.Tx, error) { return txOf(tx) }
+// It fails with ErrForeignTx for a Tx that d's database did not begin.
+func (d *DB) SQLTx(tx uow.Tx) (*sql.Tx, error) { return d.txOf(tx) }
 
 // QueryTx returns what runs the queries of tx with their spans (SetTracer), for the sqlc code
-// of the adapters of other ports that keep their tables in this database. It fails for a Tx of
-// another adapter.
-func QueryTx(tx uow.Tx) (dbtrace.DBTX, error) {
-	t, ok := tx.(*Tx)
-	if !ok {
-		return nil, fmt.Errorf("sqlite: transaction %T does not belong to this adapter", tx)
+// of the adapters of other ports that keep their tables in this database. It fails with
+// ErrForeignTx for a Tx that d's database did not begin.
+func (d *DB) QueryTx(tx uow.Tx) (dbtrace.DBTX, error) {
+	t, err := d.ownTx(tx)
+	if err != nil {
+		return nil, err
 	}
 	return t.db, nil
 }

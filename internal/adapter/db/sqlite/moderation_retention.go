@@ -18,7 +18,7 @@ var _ appmoderation.RetentionRepository = (*ModerationRepository)(nil)
 
 // InsertRetentionHold implements moderation.RetentionRepository.
 func (r *ModerationRepository) InsertRetentionHold(ctx context.Context, tx uow.Tx, h moderation.RetentionHold) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (r *ModerationRepository) InsertRetentionHold(ctx context.Context, tx uow.T
 
 // InsertRetentionHoldRelease implements moderation.RetentionRepository.
 func (r *ModerationRepository) InsertRetentionHoldRelease(ctx context.Context, tx uow.Tx, rel moderation.RetentionHoldRelease) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (r *ModerationRepository) InsertRetentionHoldRelease(ctx context.Context, t
 
 // RetentionHold implements moderation.RetentionRepository.
 func (r *ModerationRepository) RetentionHold(ctx context.Context, tx uow.Tx, id string) (moderation.RetentionHoldRecord, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.RetentionHoldRecord{}, err
 	}
@@ -93,7 +93,7 @@ func (r *ModerationRepository) HeldAccountIDs(ctx context.Context) ([]string, er
 
 // StatusRetained implements moderation.RetentionRepository.
 func (r *ModerationRepository) StatusRetained(ctx context.Context, tx uow.Tx, statusID, authorAccountID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -107,7 +107,7 @@ func idBelow(t time.Time) string { return kernel.UUIDv7Floor(t.Add(time.Millisec
 
 // ListActionsToPurge implements moderation.RetentionRepository.
 func (r *ModerationRepository) ListActionsToPurge(ctx context.Context, tx uow.Tx, endedBefore time.Time, limit int) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (r *ModerationRepository) ListActionsToPurge(ctx context.Context, tx uow.Tx
 
 // PurgeActions implements moderation.RetentionRepository.
 func (r *ModerationRepository) PurgeActions(ctx context.Context, tx uow.Tx, actionIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (r *ModerationRepository) PurgeActions(ctx context.Context, tx uow.Tx, acti
 
 // ListReportsToPurge implements moderation.RetentionRepository.
 func (r *ModerationRepository) ListReportsToPurge(ctx context.Context, tx uow.Tx, resolvedBefore time.Time, limit int) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (r *ModerationRepository) ListReportsToPurge(ctx context.Context, tx uow.Tx
 
 // PurgeReports implements moderation.RetentionRepository.
 func (r *ModerationRepository) PurgeReports(ctx context.Context, tx uow.Tx, reportIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (r *ModerationRepository) ReportedVoiceRooms(ctx context.Context, roomIDs [
 
 // ListSignupBlocksToPurge implements moderation.RetentionRepository.
 func (r *ModerationRepository) ListSignupBlocksToPurge(ctx context.Context, tx uow.Tx, endedBefore time.Time, limit int) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (r *ModerationRepository) ListSignupBlocksToPurge(ctx context.Context, tx u
 
 // PurgeSignupBlocks implements moderation.RetentionRepository.
 func (r *ModerationRepository) PurgeSignupBlocks(ctx context.Context, tx uow.Tx, blockIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (r *ModerationRepository) PurgeSignupBlocks(ctx context.Context, tx uow.Tx,
 
 // DeleteAuditEntriesBefore implements moderation.RetentionRepository.
 func (r *ModerationRepository) DeleteAuditEntriesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

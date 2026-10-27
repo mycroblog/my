@@ -142,7 +142,10 @@ func TraceJobs(ctx context.Context, t kernel.Tracer, jobs []Job) {
 type JobQueue interface {
 	// Enqueue adds jobs atomically: either all of them are enqueued or, on error, none. Jobs
 	// whose IdempotencyKey matches a job not yet completed, or an earlier job of the same
-	// call, are skipped.
+	// call, are skipped. An adapter that also runs the jobs before returning (the inline
+	// queue) does not report the errors of that run: the jobs are enqueued by then. Like a
+	// commit, a call whose connection fails may leave the outcome unknown; repeating it with
+	// the same idempotency keys is safe.
 	Enqueue(ctx context.Context, jobs ...NewJob) error
 }
 
@@ -154,8 +157,16 @@ type JobQueue interface {
 // outbox_events, which a relay later moves into the configured JobQueue.
 type Outbox interface {
 	// EnqueueTx records jobs in tx, with the same deduplication as JobQueue.Enqueue (for
-	// outbox_events, deduplication happens when the relay enqueues them). It is safe to
-	// repeat when UnitOfWork.Tx retries the transaction.
+	// outbox_events, deduplication happens when the relay enqueues them), also between
+	// concurrent transactions. It is safe to repeat when UnitOfWork.Tx retries the
+	// transaction.
+	//
+	// A job takes its place in enqueue order when EnqueueTx builds it, but no worker sees it
+	// before its transaction commits. Jobs of one ordering key that concurrent transactions
+	// enqueue still run one at a time, but a job whose transaction commits after a later job
+	// of its key was claimed runs after that job. Commands that need the order of their jobs
+	// across transactions serialize the transactions themselves, for example by updating one
+	// row of the entity the jobs are about.
 	EnqueueTx(ctx context.Context, tx uow.Tx, jobs ...NewJob) error
 }
 

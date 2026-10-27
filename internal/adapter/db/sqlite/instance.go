@@ -23,7 +23,7 @@ func (d *DB) InstanceRepository() *InstanceRepository { return &InstanceReposito
 
 // InsertSettingRevision implements instance.Repository.
 func (r *InstanceRepository) InsertSettingRevision(ctx context.Context, tx uow.Tx, rev instance.SettingRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (r *InstanceRepository) InsertSettingRevision(ctx context.Context, tx uow.T
 
 // CurrentSetting implements instance.Repository.
 func (r *InstanceRepository) CurrentSetting(ctx context.Context, tx uow.Tx, key instance.SettingKey) (instance.CurrentSetting, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.CurrentSetting{}, err
 	}
@@ -49,7 +49,7 @@ func (r *InstanceRepository) CurrentSetting(ctx context.Context, tx uow.Tx, key 
 
 // UpsertCurrentSetting implements instance.Repository.
 func (r *InstanceRepository) UpsertCurrentSetting(ctx context.Context, tx uow.Tx, c instance.CurrentSetting) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (r *InstanceRepository) UpsertCurrentSetting(ctx context.Context, tx uow.Tx
 
 // DeleteAllCurrentSettings implements instance.Repository.
 func (r *InstanceRepository) DeleteAllCurrentSettings(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (r *InstanceRepository) DeleteAllCurrentSettings(ctx context.Context, tx uo
 
 // ListSettingRevisions implements instance.Repository.
 func (r *InstanceRepository) ListSettingRevisions(ctx context.Context, tx uow.Tx) ([]instance.SettingRevision, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (r *InstanceRepository) ListSettingRevisions(ctx context.Context, tx uow.Tx
 
 // InsertTextRevision implements instance.Repository.
 func (r *InstanceRepository) InsertTextRevision(ctx context.Context, tx uow.Tx, rev instance.TextRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (r *InstanceRepository) InsertTextRevision(ctx context.Context, tx uow.Tx, 
 
 // CurrentText implements instance.Repository.
 func (r *InstanceRepository) CurrentText(ctx context.Context, tx uow.Tx, key instance.TextKey) (instance.CurrentText, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.CurrentText{}, err
 	}
@@ -107,7 +107,7 @@ func (r *InstanceRepository) CurrentText(ctx context.Context, tx uow.Tx, key ins
 
 // UpsertCurrentText implements instance.Repository.
 func (r *InstanceRepository) UpsertCurrentText(ctx context.Context, tx uow.Tx, c instance.CurrentText) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func (r *InstanceRepository) UpsertCurrentText(ctx context.Context, tx uow.Tx, c
 
 // DeleteAllCurrentTexts implements instance.Repository.
 func (r *InstanceRepository) DeleteAllCurrentTexts(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (r *InstanceRepository) DeleteAllCurrentTexts(ctx context.Context, tx uow.T
 
 // ListTextRevisionHeads implements instance.Repository.
 func (r *InstanceRepository) ListTextRevisionHeads(ctx context.Context, tx uow.Tx) ([]instance.CurrentText, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

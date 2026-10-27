@@ -15,7 +15,7 @@ import (
 
 // InsertRegistrationApplication implements identity.Repository.
 func (r *IdentityRepository) InsertRegistrationApplication(ctx context.Context, tx uow.Tx, a identity.RegistrationApplication) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (r *IdentityRepository) InsertRegistrationApplication(ctx context.Context, 
 
 // InsertRegistrationDecision implements identity.Repository.
 func (r *IdentityRepository) InsertRegistrationDecision(ctx context.Context, tx uow.Tx, d identity.RegistrationDecision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *IdentityRepository) InsertRegistrationDecision(ctx context.Context, tx 
 
 // UpsertRegistrationState implements identity.Repository.
 func (r *IdentityRepository) UpsertRegistrationState(ctx context.Context, tx uow.Tx, s identity.UserRegistrationState) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (r *IdentityRepository) UpsertRegistrationState(ctx context.Context, tx uow
 
 // TransitionPendingRegistrationState implements identity.Repository.
 func (r *IdentityRepository) TransitionPendingRegistrationState(ctx context.Context, tx uow.Tx, s identity.UserRegistrationState) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -109,7 +109,7 @@ func (r *IdentityRepository) ListRegistrations(ctx context.Context, state identi
 
 // InsertInvite implements identity.Repository.
 func (r *IdentityRepository) InsertInvite(ctx context.Context, tx uow.Tx, i identity.Invite) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (r *IdentityRepository) FindInviteByID(ctx context.Context, id string) (ide
 
 // InviteUsage implements identity.Repository.
 func (r *IdentityRepository) InviteUsage(ctx context.Context, tx uow.Tx, inviteID string) (int, bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, false, err
 	}
@@ -164,7 +164,7 @@ func (r *IdentityRepository) InviteUsage(ctx context.Context, tx uow.Tx, inviteI
 
 // InsertInviteRedemption implements identity.Repository.
 func (r *IdentityRepository) InsertInviteRedemption(ctx context.Context, tx uow.Tx, rd identity.InviteRedemption) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (r *IdentityRepository) InsertInviteRedemption(ctx context.Context, tx uow.
 
 // InsertInviteRevocation implements identity.Repository.
 func (r *IdentityRepository) InsertInviteRevocation(ctx context.Context, tx uow.Tx, rv identity.InviteRevocation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (r *IdentityRepository) ListInvites(ctx context.Context, before string, lim
 
 // InsertUserToken implements identity.Repository.
 func (r *IdentityRepository) InsertUserToken(ctx context.Context, tx uow.Tx, t identity.UserToken) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -243,7 +243,7 @@ func (r *IdentityRepository) UserTokenRedeemed(ctx context.Context, tokenID stri
 
 // InsertUserTokenRedemption implements identity.Repository.
 func (r *IdentityRepository) InsertUserTokenRedemption(ctx context.Context, tx uow.Tx, rd identity.UserTokenRedemption) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (r *IdentityRepository) InsertUserTokenRedemption(ctx context.Context, tx u
 
 // InsertEmailVerification implements identity.Repository.
 func (r *IdentityRepository) InsertEmailVerification(ctx context.Context, tx uow.Tx, v identity.EmailVerification) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

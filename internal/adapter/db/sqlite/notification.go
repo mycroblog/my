@@ -24,7 +24,7 @@ func (d *DB) NotificationRepository() *NotificationRepository { return &Notifica
 
 // AddErrorGroupNotice implements notification.Repository.
 func (r *NotificationRepository) AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -46,7 +46,7 @@ func (r *NotificationRepository) DeleteErrorGroupNoticesBefore(ctx context.Conte
 
 // InsertNotification implements notification.Repository.
 func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -70,7 +70,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 
 // Notification implements notification.Repository.
 func (r *NotificationRepository) Notification(ctx context.Context, tx uow.Tx, id string) (notification.Notification, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return notification.Notification{}, err
 	}
@@ -83,7 +83,7 @@ func (r *NotificationRepository) Notification(ctx context.Context, tx uow.Tx, id
 
 // InsertDismissal implements notification.Repository.
 func (r *NotificationRepository) InsertDismissal(ctx context.Context, tx uow.Tx, d notification.Dismissal) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -98,7 +98,7 @@ func (r *NotificationRepository) InsertDismissal(ctx context.Context, tx uow.Tx,
 
 // AdvanceReadMarker implements notification.Repository.
 func (r *NotificationRepository) AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notification.ReadMarker) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -113,7 +113,7 @@ func (r *NotificationRepository) AdvanceReadMarker(ctx context.Context, tx uow.T
 
 // UpsertExclusion implements notification.Repository.
 func (r *NotificationRepository) UpsertExclusion(ctx context.Context, tx uow.Tx, x notification.Exclusion) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *NotificationRepository) UpsertExclusion(ctx context.Context, tx uow.Tx,
 
 // DeleteExclusion implements notification.Repository.
 func (r *NotificationRepository) DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason notification.ExclusionReason) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (r *NotificationRepository) DeleteExclusion(ctx context.Context, tx uow.Tx,
 
 // InsertDomainExclusion implements notification.Repository.
 func (r *NotificationRepository) InsertDomainExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *NotificationRepository) InsertDomainExclusion(ctx context.Context, tx u
 
 // DeleteDomainExclusion implements notification.Repository.
 func (r *NotificationRepository) DeleteDomainExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (r *NotificationRepository) DeleteDomainExclusion(ctx context.Context, tx u
 
 // DomainExcluded implements notification.Repository.
 func (r *NotificationRepository) DomainExcluded(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -167,7 +167,7 @@ func (r *NotificationRepository) DomainExcluded(ctx context.Context, tx uow.Tx, 
 
 // InsertDeletedStatus implements notification.Repository.
 func (r *NotificationRepository) InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

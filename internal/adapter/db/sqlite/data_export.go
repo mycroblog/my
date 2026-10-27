@@ -16,7 +16,7 @@ import (
 
 // InsertDataExport implements identity.ExportRepository.
 func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e identity.DataExport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 // LockPendingDataExports implements identity.ExportRepository. SQLite serializes write
 // transactions (BEGIN IMMEDIATE), so reading inside tx is enough.
 func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -38,7 +38,7 @@ func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.
 // InsertDataExportResult implements identity.ExportRepository. SQLite serializes write
 // transactions, so the export that tx finds stays until tx ends.
 func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -111,7 +111,7 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 
 // DeleteDataExport implements identity.ExportRepository.
 func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

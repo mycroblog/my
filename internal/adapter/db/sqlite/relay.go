@@ -36,7 +36,7 @@ func relayRecord(row relayRow) appfederation.RelayRecord {
 
 // InsertRelay implements federation.RelayRepository.
 func (r *FederationRepository) InsertRelay(ctx context.Context, tx uow.Tx, rl federation.Relay) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (r *FederationRepository) InsertRelay(ctx context.Context, tx uow.Tx, rl fe
 
 // LockRelay implements federation.RelayRepository.
 func (r *FederationRepository) LockRelay(ctx context.Context, tx uow.Tx, id string) (appfederation.RelayRecord, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appfederation.RelayRecord{}, err
 	}
@@ -65,7 +65,7 @@ func (r *FederationRepository) LockRelay(ctx context.Context, tx uow.Tx, id stri
 
 // InsertRelayEvent implements federation.RelayRepository.
 func (r *FederationRepository) InsertRelayEvent(ctx context.Context, tx uow.Tx, e federation.RelayEvent) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -78,7 +78,7 @@ func (r *FederationRepository) InsertRelayEvent(ctx context.Context, tx uow.Tx, 
 
 // UpsertRelayState implements federation.RelayRepository.
 func (r *FederationRepository) UpsertRelayState(ctx context.Context, tx uow.Tx, s federation.RelayStatus) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (r *FederationRepository) UpsertRelayState(ctx context.Context, tx uow.Tx, 
 
 // DeleteRelay implements federation.RelayRepository.
 func (r *FederationRepository) DeleteRelay(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (r *FederationRepository) DeleteRelay(ctx context.Context, tx uow.Tx, id st
 
 // RebuildRelayStates implements federation.RelayRepository.
 func (r *FederationRepository) RebuildRelayStates(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

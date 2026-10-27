@@ -50,7 +50,7 @@ func (r *IdentityRepository) ListRoles(ctx context.Context) ([]appidentity.RoleW
 
 // LockRole implements identity.RoleRepository with SELECT ... FOR UPDATE.
 func (r *IdentityRepository) LockRole(ctx context.Context, tx uow.Tx, key string) (identity.Role, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return identity.Role{}, err
 	}
@@ -63,7 +63,7 @@ func (r *IdentityRepository) LockRole(ctx context.Context, tx uow.Tx, key string
 
 // FindRoleGrantID implements identity.RoleRepository.
 func (r *IdentityRepository) FindRoleGrantID(ctx context.Context, tx uow.Tx, userID, roleID string) (string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return "", err
 	}
@@ -76,7 +76,7 @@ func (r *IdentityRepository) FindRoleGrantID(ctx context.Context, tx uow.Tx, use
 
 // CountRoleHolders implements identity.RoleRepository.
 func (r *IdentityRepository) CountRoleHolders(ctx context.Context, tx uow.Tx, roleID string) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +86,7 @@ func (r *IdentityRepository) CountRoleHolders(ctx context.Context, tx uow.Tx, ro
 
 // InsertRoleRevocation implements identity.RoleRepository.
 func (r *IdentityRepository) InsertRoleRevocation(ctx context.Context, tx uow.Tx, rev identity.RoleRevocation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (r *IdentityRepository) ListRoleHolderIDs(ctx context.Context, roleID strin
 
 // RolePermissions implements identity.RoleRepository.
 func (r *IdentityRepository) RolePermissions(ctx context.Context, tx uow.Tx, roleID string) ([]identity.Permission, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *IdentityRepository) RolePermissions(ctx context.Context, tx uow.Tx, rol
 
 // SetRolePermissions implements identity.RoleRepository.
 func (r *IdentityRepository) SetRolePermissions(ctx context.Context, tx uow.Tx, roleID string, perms []identity.Permission) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *IdentityRepository) SetRolePermissions(ctx context.Context, tx uow.Tx, 
 
 // UpdateRolePosition implements identity.RoleRepository.
 func (r *IdentityRepository) UpdateRolePosition(ctx context.Context, tx uow.Tx, roleID string, position int) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func (r *IdentityRepository) UpdateRolePosition(ctx context.Context, tx uow.Tx, 
 
 // DeleteRole implements identity.RoleRepository.
 func (r *IdentityRepository) DeleteRole(ctx context.Context, tx uow.Tx, roleID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

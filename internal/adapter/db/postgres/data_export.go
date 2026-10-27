@@ -14,7 +14,7 @@ import (
 
 // InsertDataExport implements identity.ExportRepository.
 func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e identity.DataExport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 // LockPendingDataExports implements identity.ExportRepository with SELECT ... FOR UPDATE on the
 // user's row, which the requests of the user's exports and imports lock first.
 func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -40,7 +40,7 @@ func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.
 // export keeps DeleteDataExport, which deletes the export's row first, from deleting it until tx
 // ends.
 func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 // that it waits for a transaction that locked the row to record a result, and the deletion of
 // the result, a statement of its own, sees that result.
 func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

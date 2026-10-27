@@ -15,7 +15,7 @@ import (
 
 // InsertDataImport implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i identity.DataImport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i 
 
 // InsertDataImportItems implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.Tx, items []identity.DataImportItem) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 // LockUnfinishedDataImports implements identity.ImportRepository. SQLite serializes write
 // transactions (BEGIN IMMEDIATE), so reading inside tx is enough.
 func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -68,7 +68,7 @@ func findDataImport(ctx context.Context, q *sqlitegen.Queries, importID string) 
 
 // InsertDataImportItemFailure implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx uow.Tx, importID string, position int, at time.Time) (int, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -83,7 +83,7 @@ func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx
 
 // InsertDataImportResult implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.Tx, res identity.DataImportResult) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t
 
 // DeleteDataImport implements identity.ImportRepository.
 func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

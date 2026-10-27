@@ -89,7 +89,7 @@ func (r *StatusRepository) LocalStatusInConversation(ctx context.Context, conver
 
 // EnsureCustomEmoji implements content.Repository.
 func (r *StatusRepository) EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e content.CustomEmoji) (content.CustomEmoji, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.CustomEmoji{}, err
 	}
@@ -115,7 +115,7 @@ func (r *StatusRepository) EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e c
 
 // CurrentCustomEmojiImageURL implements content.Repository.
 func (r *StatusRepository) CurrentCustomEmojiImageURL(ctx context.Context, tx uow.Tx, emojiID string) (string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return "", err
 	}
@@ -128,7 +128,7 @@ func (r *StatusRepository) CurrentCustomEmojiImageURL(ctx context.Context, tx uo
 
 // InsertCustomEmojiImage implements content.Repository.
 func (r *StatusRepository) InsertCustomEmojiImage(ctx context.Context, tx uow.Tx, img content.CustomEmojiImage) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (r *StatusRepository) InsertCustomEmojiImage(ctx context.Context, tx uow.Tx
 
 // LatestPollObservation implements content.Repository.
 func (r *StatusRepository) LatestPollObservation(ctx context.Context, tx uow.Tx, pollID string) (content.PollTallyObservation, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.PollTallyObservation{}, err
 	}
@@ -163,7 +163,7 @@ func (r *StatusRepository) LatestPollObservation(ctx context.Context, tx uow.Tx,
 
 // InsertPollObservation implements content.Repository.
 func (r *StatusRepository) InsertPollObservation(ctx context.Context, tx uow.Tx, o content.PollTallyObservation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (r *StatusRepository) InsertPollObservation(ctx context.Context, tx uow.Tx,
 
 // ReplacePollTallies implements content.Repository.
 func (r *StatusRepository) ReplacePollTallies(ctx context.Context, tx uow.Tx, pollID string, tallies []content.PollTally) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func customEmojiImageFrom(row postgresgen.CustomEmojiImage) content.CustomEmojiI
 
 // InsertPollVote implements content.Repository.
 func (r *StatusRepository) InsertPollVote(ctx context.Context, tx uow.Tx, v content.PollVote) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -317,7 +317,7 @@ func (r *StatusRepository) PollStatusID(ctx context.Context, pollID string) (str
 
 // LockPoll implements content.Repository.
 func (r *StatusRepository) LockPoll(ctx context.Context, tx uow.Tx, pollID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -329,7 +329,7 @@ func (r *StatusRepository) LockPoll(ctx context.Context, tx uow.Tx, pollID strin
 
 // CountPollVotes implements content.Repository.
 func (r *StatusRepository) CountPollVotes(ctx context.Context, tx uow.Tx, pollID string) (map[int]int64, int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, 0, err
 	}

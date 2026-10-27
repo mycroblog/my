@@ -26,7 +26,7 @@ func (d *DB) ModerationRepository() *ModerationRepository { return &ModerationRe
 
 // InsertAction implements moderation.Repository.
 func (r *ModerationRepository) InsertAction(ctx context.Context, tx uow.Tx, a moderation.Action) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func actionStatusIDs(ctx context.Context, q *sqlitegen.Queries, actionID string)
 
 // Action implements moderation.Repository.
 func (r *ModerationRepository) Action(ctx context.Context, tx uow.Tx, id string) (moderation.Action, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.Action{}, err
 	}
@@ -84,7 +84,7 @@ func (r *ModerationRepository) Action(ctx context.Context, tx uow.Tx, id string)
 
 // InsertActionLift implements moderation.Repository.
 func (r *ModerationRepository) InsertActionLift(ctx context.Context, tx uow.Tx, l moderation.Lift) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (r *ModerationRepository) InsertActionLift(ctx context.Context, tx uow.Tx, 
 
 // InsertDomainAction implements moderation.Repository.
 func (r *ModerationRepository) InsertDomainAction(ctx context.Context, tx uow.Tx, a moderation.DomainAction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (r *ModerationRepository) InsertDomainAction(ctx context.Context, tx uow.Tx
 
 // DomainAction implements moderation.Repository.
 func (r *ModerationRepository) DomainAction(ctx context.Context, tx uow.Tx, id string) (moderation.DomainAction, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.DomainAction{}, err
 	}
@@ -133,7 +133,7 @@ func (r *ModerationRepository) DomainAction(ctx context.Context, tx uow.Tx, id s
 
 // InsertDomainActionLift implements moderation.Repository.
 func (r *ModerationRepository) InsertDomainActionLift(ctx context.Context, tx uow.Tx, l moderation.DomainLift) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (r *ModerationRepository) InsertDomainActionLift(ctx context.Context, tx uo
 
 // InsertReport implements moderation.Repository.
 func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep moderation.Report) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -189,7 +189,7 @@ func restrictionRowsFrom(target string, restriction string, source string, until
 
 // InsertAccountRestriction implements moderation.Repository.
 func (r *ModerationRepository) InsertAccountRestriction(ctx context.Context, tx uow.Tx, row moderation.RestrictionRow) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (r *ModerationRepository) InsertAccountRestriction(ctx context.Context, tx 
 
 // DeleteAccountRestrictionsOf implements moderation.Repository.
 func (r *ModerationRepository) DeleteAccountRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (r *ModerationRepository) LockDomainRestrictions(context.Context, uow.Tx, s
 
 // AccountRestrictionRows implements moderation.Repository.
 func (r *ModerationRepository) AccountRestrictionRows(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.RestrictionRow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (r *ModerationRepository) AccountRestrictionRows(ctx context.Context, tx uo
 
 // DeleteExpiredAccountRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteExpiredAccountRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (r *ModerationRepository) DeleteExpiredAccountRestrictions(ctx context.Cont
 
 // InsertDomainRestriction implements moderation.Repository.
 func (r *ModerationRepository) InsertDomainRestriction(ctx context.Context, tx uow.Tx, row moderation.RestrictionRow) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -268,7 +268,7 @@ func (r *ModerationRepository) InsertDomainRestriction(ctx context.Context, tx u
 
 // DeleteDomainRestrictionsOf implements moderation.Repository.
 func (r *ModerationRepository) DeleteDomainRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (r *ModerationRepository) DeleteDomainRestrictionsOf(ctx context.Context, t
 
 // DomainRestrictionRows implements moderation.Repository.
 func (r *ModerationRepository) DomainRestrictionRows(ctx context.Context, tx uow.Tx, domain string) ([]moderation.RestrictionRow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (r *ModerationRepository) DomainRestrictionRows(ctx context.Context, tx uow
 
 // UpsertReportStatus implements moderation.Repository.
 func (r *ModerationRepository) UpsertReportStatus(ctx context.Context, tx uow.Tx, s moderation.ReportStatus) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func (r *ModerationRepository) ListReportsOf(ctx context.Context, targetAccountI
 
 // InsertReportAssignment implements moderation.Repository.
 func (r *ModerationRepository) InsertReportAssignment(ctx context.Context, tx uow.Tx, a moderation.ReportAssignment) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -425,7 +425,7 @@ func (r *ModerationRepository) InsertReportAssignment(ctx context.Context, tx uo
 
 // InsertReportResolution implements moderation.Repository.
 func (r *ModerationRepository) InsertReportResolution(ctx context.Context, tx uow.Tx, res moderation.ReportResolution) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -438,7 +438,7 @@ func (r *ModerationRepository) InsertReportResolution(ctx context.Context, tx uo
 // ReportStatusForUpdate implements moderation.Repository. SQLite serializes write
 // transactions, so it needs no lock.
 func (r *ModerationRepository) ReportStatusForUpdate(ctx context.Context, tx uow.Tx, reportID string) (moderation.ReportStatus, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.ReportStatus{}, err
 	}

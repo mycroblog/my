@@ -15,7 +15,7 @@ import (
 
 // UpsertRemoteHead implements account.Repository.
 func (r *AccountRepository) UpsertRemoteHead(ctx context.Context, tx uow.Tx, h account.RemoteHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func fromNullInt64(n sql.NullInt64) *int64 {
 
 // AccountByURI implements account.Repository.
 func (r *AccountRepository) AccountByURI(ctx context.Context, tx uow.Tx, uri string) (account.Account, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.Account{}, err
 	}
@@ -87,7 +87,7 @@ func (r *AccountRepository) AccountByURI(ctx context.Context, tx uow.Tx, uri str
 
 // InsertRemoteAccount implements account.Repository.
 func (r *AccountRepository) InsertRemoteAccount(ctx context.Context, tx uow.Tx, ra account.RemoteAccount) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -97,7 +97,7 @@ func (r *AccountRepository) InsertRemoteAccount(ctx context.Context, tx uow.Tx, 
 
 // LatestRemoteSnapshot implements account.Repository.
 func (r *AccountRepository) LatestRemoteSnapshot(ctx context.Context, tx uow.Tx, accountID string) (account.RemoteSnapshot, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.RemoteSnapshot{}, err
 	}
@@ -152,7 +152,7 @@ func (r *AccountRepository) ListRemoteProfileURLs(ctx context.Context, accountID
 
 // InsertRemoteSnapshot implements account.Repository.
 func (r *AccountRepository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx, s account.RemoteSnapshot) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (r *AccountRepository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx,
 
 // RecordRemoteFetchFailure implements account.Repository.
 func (r *AccountRepository) RecordRemoteFetchFailure(ctx context.Context, tx uow.Tx, accountID string, at time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -213,7 +213,7 @@ func (r *AccountRepository) CountKnownSharedInboxes(ctx context.Context) (int, e
 
 // LatestHandleVerification implements account.Repository.
 func (r *AccountRepository) LatestHandleVerification(ctx context.Context, tx uow.Tx, accountID string) (account.HandleVerification, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.HandleVerification{}, err
 	}
@@ -226,7 +226,7 @@ func (r *AccountRepository) LatestHandleVerification(ctx context.Context, tx uow
 
 // InsertHandleVerification implements account.Repository.
 func (r *AccountRepository) InsertHandleVerification(ctx context.Context, tx uow.Tx, v account.HandleVerification) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (r *AccountRepository) InsertHandleVerification(ctx context.Context, tx uow
 
 // ListLatestHandleVerifications implements account.Repository.
 func (r *AccountRepository) ListLatestHandleVerifications(ctx context.Context, tx uow.Tx) ([]account.HandleVerification, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (r *AccountRepository) ListLatestHandleVerifications(ctx context.Context, t
 
 // DeleteHandle implements account.Repository.
 func (r *AccountRepository) DeleteHandle(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (r *AccountRepository) DeleteHandle(ctx context.Context, tx uow.Tx, account
 
 // DeleteOtherHandle implements account.Repository.
 func (r *AccountRepository) DeleteOtherHandle(ctx context.Context, tx uow.Tx, h account.Handle) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (r *AccountRepository) DeleteOtherHandle(ctx context.Context, tx uow.Tx, h 
 
 // KeyByFingerprint implements account.Repository.
 func (r *AccountRepository) KeyByFingerprint(ctx context.Context, tx uow.Tx, keyID string, fingerprint []byte) (account.Key, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.Key{}, err
 	}
@@ -290,7 +290,7 @@ func (r *AccountRepository) KeyByFingerprint(ctx context.Context, tx uow.Tx, key
 
 // CurrentKey implements account.Repository.
 func (r *AccountRepository) CurrentKey(ctx context.Context, tx uow.Tx, keyID string) (account.Key, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.Key{}, err
 	}
@@ -312,7 +312,7 @@ func (r *AccountRepository) FindCurrentKey(ctx context.Context, keyID string) (a
 
 // ListActiveKeys implements account.Repository.
 func (r *AccountRepository) ListActiveKeys(ctx context.Context, tx uow.Tx, accountID string) ([]account.Key, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func (r *AccountRepository) ListActiveKeys(ctx context.Context, tx uow.Tx, accou
 
 // InsertKeyRevocation implements account.Repository.
 func (r *AccountRepository) InsertKeyRevocation(ctx context.Context, tx uow.Tx, rev account.KeyRevocation) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

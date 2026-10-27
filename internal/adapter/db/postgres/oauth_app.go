@@ -44,7 +44,7 @@ func currentOAuthClient(ctx context.Context, q *postgresgen.Queries, c identity.
 
 // InsertOAuthClient implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClient(ctx context.Context, tx uow.Tx, c identity.OAuthClient) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (r *IdentityRepository) ListOwnedOAuthClients(ctx context.Context, ownerUse
 
 // CountOwnedOAuthClients implements identity.Repository.
 func (r *IdentityRepository) CountOwnedOAuthClients(ctx context.Context, tx uow.Tx, ownerUserID string) (int, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -84,7 +84,7 @@ func (r *IdentityRepository) CountOwnedOAuthClients(ctx context.Context, tx uow.
 
 // InsertOAuthClientRevision implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientRevision(ctx context.Context, tx uow.Tx, rev identity.OAuthClientRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (r *IdentityRepository) InsertOAuthClientRevision(ctx context.Context, tx u
 
 // InsertOAuthClientSecretRotation implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientSecretRotation(ctx context.Context, tx uow.Tx, rot identity.OAuthClientSecretRotation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (r *IdentityRepository) InsertOAuthClientSecretRotation(ctx context.Context
 
 // RevokeTokensOfOwnedClients implements identity.Repository.
 func (r *IdentityRepository) RevokeTokensOfOwnedClients(ctx context.Context, tx uow.Tx, ownerUserID string, reason identity.TokenRevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ var _ appmoderation.SignupBlockRepository = (*ModerationRepository)(nil)
 
 // InsertSignupBlock implements moderation.SignupBlockRepository.
 func (r *ModerationRepository) InsertSignupBlock(ctx context.Context, tx uow.Tx, b moderation.SignupBlock) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func signupBlockFrom(row sqlitegen.SignupBlock) moderation.SignupBlock {
 
 // SignupBlock implements moderation.SignupBlockRepository.
 func (r *ModerationRepository) SignupBlock(ctx context.Context, tx uow.Tx, id string) (moderation.SignupBlock, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.SignupBlock{}, err
 	}
@@ -51,7 +51,7 @@ func (r *ModerationRepository) SignupBlock(ctx context.Context, tx uow.Tx, id st
 
 // InsertSignupBlockLift implements moderation.SignupBlockRepository.
 func (r *ModerationRepository) InsertSignupBlockLift(ctx context.Context, tx uow.Tx, l moderation.SignupBlockLift) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (r *ModerationRepository) SignupBlocksInEffect(ctx context.Context, m appmo
 
 // SignupBlocksInEffectOf implements moderation.SignupBlockRepository.
 func (r *ModerationRepository) SignupBlocksInEffectOf(ctx context.Context, tx uow.Tx, kind moderation.SignupBlockKind, values []string, now time.Time) ([]moderation.SignupBlock, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

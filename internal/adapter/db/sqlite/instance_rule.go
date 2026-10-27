@@ -14,7 +14,7 @@ import (
 
 // InsertRule implements instance.RuleRepository.
 func (r *InstanceRepository) InsertRule(ctx context.Context, tx uow.Tx, id string, createdAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (r *InstanceRepository) InsertRule(ctx context.Context, tx uow.Tx, id strin
 
 // InsertRuleRevision implements instance.RuleRepository.
 func (r *InstanceRepository) InsertRuleRevision(ctx context.Context, tx uow.Tx, rev instance.RuleRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (r *InstanceRepository) InsertRuleRevision(ctx context.Context, tx uow.Tx, 
 
 // InsertRuleRetirement implements instance.RuleRepository.
 func (r *InstanceRepository) InsertRuleRetirement(ctx context.Context, tx uow.Tx, ret instance.RuleRetirement) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -48,7 +48,7 @@ func (r *InstanceRepository) InsertRuleRetirement(ctx context.Context, tx uow.Tx
 
 // Rule implements instance.RuleRepository.
 func (r *InstanceRepository) Rule(ctx context.Context, tx uow.Tx, id string) (instance.Rule, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.Rule{}, err
 	}
@@ -115,7 +115,7 @@ func ruleOf(row sqlitegen.ListAllInstanceRulesRow) instance.Rule {
 
 // RuleHead implements instance.RuleRepository.
 func (r *InstanceRepository) RuleHead(ctx context.Context, tx uow.Tx, ruleID string) (instance.RuleHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.RuleHead{}, err
 	}
@@ -128,7 +128,7 @@ func (r *InstanceRepository) RuleHead(ctx context.Context, tx uow.Tx, ruleID str
 
 // UpsertRuleHead implements instance.RuleRepository.
 func (r *InstanceRepository) UpsertRuleHead(ctx context.Context, tx uow.Tx, h instance.RuleHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (r *InstanceRepository) UpsertRuleHead(ctx context.Context, tx uow.Tx, h in
 
 // DeleteRuleHead implements instance.RuleRepository.
 func (r *InstanceRepository) DeleteRuleHead(ctx context.Context, tx uow.Tx, ruleID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (r *InstanceRepository) DeleteRuleHead(ctx context.Context, tx uow.Tx, rule
 
 // DeleteAllRuleHeads implements instance.RuleRepository.
 func (r *InstanceRepository) DeleteAllRuleHeads(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func (r *InstanceRepository) DeleteAllRuleHeads(ctx context.Context, tx uow.Tx) 
 
 // ListRuleHeads implements instance.RuleRepository.
 func (r *InstanceRepository) ListRuleHeads(ctx context.Context, tx uow.Tx) ([]instance.RuleHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (r *InstanceRepository) ListRuleHeads(ctx context.Context, tx uow.Tx) ([]in
 
 // ListRuleRevisionHeads implements instance.RuleRepository.
 func (r *InstanceRepository) ListRuleRevisionHeads(ctx context.Context, tx uow.Tx) ([]instance.RuleHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (r *InstanceRepository) ListRuleRevisionHeads(ctx context.Context, tx uow.T
 
 // ListRetiredRuleIDs implements instance.RuleRepository.
 func (r *InstanceRepository) ListRetiredRuleIDs(ctx context.Context, tx uow.Tx) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

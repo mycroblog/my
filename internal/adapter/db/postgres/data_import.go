@@ -14,7 +14,7 @@ import (
 
 // InsertDataImport implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i identity.DataImport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i 
 // InsertDataImportItems implements identity.ImportRepository: the items of each import in one
 // statement.
 func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.Tx, items []identity.DataImportItem) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 // LockUnfinishedDataImports implements identity.ImportRepository with SELECT ... FOR UPDATE on
 // the user's row, which the requests of the user's exports and imports lock first.
 func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +84,7 @@ func lockDataImport(ctx context.Context, q *postgresgen.Queries, importID string
 
 // InsertDataImportItemFailure implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx uow.Tx, importID string, position int, at time.Time) (int, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +101,7 @@ func (r *IdentityRepository) InsertDataImportItemFailure(ctx context.Context, tx
 
 // InsertDataImportResult implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.Tx, res identity.DataImportResult) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t
 // that it waits for a transaction that locked the row to record a result or a failure, and the
 // deletions of the children, statements of their own, see what it recorded.
 func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

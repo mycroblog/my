@@ -14,7 +14,7 @@ import (
 
 // UpsertRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 
 // TouchRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, 
 
 // DeleteRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) DeleteRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, fetchedAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -137,7 +137,7 @@ func (r *MediaRepository) ListCurrentCustomEmojis(ctx context.Context, ids []str
 
 // InsertRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) InsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -150,7 +150,7 @@ func (r *MediaRepository) InsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 
 // LockRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) LockRemoteMediaCache(ctx context.Context, tx uow.Tx, url string) (content.RemoteMediaCacheEntry, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.RemoteMediaCacheEntry{}, err
 	}
@@ -163,7 +163,7 @@ func (r *MediaRepository) LockRemoteMediaCache(ctx context.Context, tx uow.Tx, u
 
 // RecordBlobDeletion implements content.MediaRepository.
 func (r *MediaRepository) RecordBlobDeletion(ctx context.Context, tx uow.Tx, key string, deleteAfter time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (r *MediaRepository) RecordBlobDeletion(ctx context.Context, tx uow.Tx, key
 
 // ForgetBlobDeletion implements content.MediaRepository.
 func (r *MediaRepository) ForgetBlobDeletion(ctx context.Context, tx uow.Tx, key string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

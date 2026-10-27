@@ -17,7 +17,7 @@ import (
 
 // RoleBadge implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) RoleBadge(ctx context.Context, tx uow.Tx, roleID string) (identity.RoleBadge, bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return identity.RoleBadge{}, false, err
 	}
@@ -33,7 +33,7 @@ func (r *IdentityRepository) RoleBadge(ctx context.Context, tx uow.Tx, roleID st
 
 // SetRoleBadge implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) SetRoleBadge(ctx context.Context, tx uow.Tx, roleID string, b identity.RoleBadge) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (r *IdentityRepository) SetRoleBadge(ctx context.Context, tx uow.Tx, roleID
 
 // DeleteRoleBadge implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) DeleteRoleBadge(ctx context.Context, tx uow.Tx, roleID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (r *IdentityRepository) DeleteRoleBadge(ctx context.Context, tx uow.Tx, rol
 
 // RoleBadgeDisplayed implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) RoleBadgeDisplayed(ctx context.Context, tx uow.Tx, userID, roleID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -66,7 +66,7 @@ func (r *IdentityRepository) RoleBadgeDisplayed(ctx context.Context, tx uow.Tx, 
 
 // SetRoleBadgeDisplayed implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) SetRoleBadgeDisplayed(ctx context.Context, tx uow.Tx, userID, roleID string, displayed bool, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

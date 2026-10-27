@@ -126,7 +126,7 @@ func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) 
 			_ = pgTx.Rollback(context.WithoutCancel(ctx))
 		}
 	}()
-	tx := &Tx{tx: pgTx, projectors: d.opts.Projectors}
+	tx := &Tx{tx: pgTx, owner: d.pool, projectors: d.opts.Projectors}
 	if err := fn(tx); err != nil {
 		return err
 	}
@@ -146,7 +146,10 @@ func isRetryable(err error) bool {
 
 // Tx is a PostgreSQL transaction. It implements uow.Tx.
 type Tx struct {
-	tx         pgx.Tx
+	tx pgx.Tx
+	// owner is the pool of the database the transaction runs in: a Tx works only with the
+	// repositories of that database.
+	owner      *pgxpool.Pool
 	projectors *uow.Projectors
 	// events are the events emitted so far, for the commit hooks.
 	events []uow.Event
@@ -160,16 +163,24 @@ func (t *Tx) Emit(ctx context.Context, e uow.Event) error {
 	return t.projectors.Project(ctx, t, e)
 }
 
-// txOf recovers the PostgreSQL transaction behind tx, for repositories of this adapter.
-func txOf(tx uow.Tx) (pgx.Tx, error) {
+// ErrForeignTx is returned when a repository is given a transaction that its database did not
+// begin: one of another adapter, or of another database of this adapter.
+var ErrForeignTx = errors.New("postgres: transaction does not belong to this database")
+
+// txOf recovers the PostgreSQL transaction behind tx, for repositories of this adapter, when
+// d's database began it.
+func (d *DB) txOf(tx uow.Tx) (pgx.Tx, error) {
 	t, ok := tx.(*Tx)
 	if !ok {
-		return nil, fmt.Errorf("postgres: transaction %T does not belong to this adapter", tx)
+		return nil, fmt.Errorf("%w: %T", ErrForeignTx, tx)
+	}
+	if t.owner != d.pool {
+		return nil, fmt.Errorf("%w: it runs in another database", ErrForeignTx)
 	}
 	return t.tx, nil
 }
 
 // PgxTx returns the pgx transaction behind tx, for the adapters of other ports that keep
 // their tables in this database (the database job queue, internal/adapter/queue/db).
-// It fails for a Tx of another adapter.
-func PgxTx(tx uow.Tx) (pgx.Tx, error) { return txOf(tx) }
+// It fails with ErrForeignTx for a Tx that d's database did not begin.
+func (d *DB) PgxTx(tx uow.Tx) (pgx.Tx, error) { return d.txOf(tx) }
