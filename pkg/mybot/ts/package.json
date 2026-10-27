@@ -37,7 +37,7 @@
     "croner": "10.0.1"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.3",
     "@typescript/native": "npm:typescript@7.0.2",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2004",
