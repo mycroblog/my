@@ -34,6 +34,8 @@ type fakeServer struct {
 	refreshTokens []string
 	// stream serves the n-th connection (from 1) of GET /streaming; nil keeps it open until the client leaves.
 	stream func(w http.ResponseWriter, r *http.Request, n int)
+	// list, when set, runs before the n-th call (from 1) of listNotifications, which fails when it returns false.
+	list func(n int) bool
 	// tokens maps a valid refresh token to the one that replaces it.
 	tokens map[string]string
 	scope  string
@@ -75,8 +77,15 @@ func newFakeServer(t *testing.T) *fakeServer {
 	})
 	mux.HandleFunc("GET /api/v1/notifications", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
-		defer f.mu.Unlock()
 		f.listCalls++
+		n, hook := f.listCalls, f.list
+		f.mu.Unlock()
+		if hook != nil && !hook(n) {
+			http.Error(w, "failed", http.StatusInternalServerError)
+			return
+		}
+		f.mu.Lock()
+		defer f.mu.Unlock()
 		items := f.notifications
 		start := 0
 		if c := r.URL.Query().Get("cursor"); c != "" {

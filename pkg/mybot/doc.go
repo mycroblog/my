@@ -25,8 +25,10 @@
 //
 // Receiving: Run verifies the account (verifyCredentials) and opens the event stream; after every connection,
 // the first and each reconnection, it reads the notifications (listNotifications) back to the position in the
-// Store, or to Config.CatchUpLimit (24 hours by default, zero turns it off), and handles those it missed. Every notification is recorded in the
-// Store after its handler returns (at least once), and one recorded before is skipped. Mode Polling reads the
+// Store, or to Config.CatchUpLimit (24 hours by default, zero turns it off), and handles those it missed. The
+// notifications reach the handlers in the order of time: those of the stream wait for a running catch-up, which
+// is tried again until it succeeds, and then both are handed out oldest first. Every notification is recorded in
+// the Store after its handler returns (at least once), and one recorded before is skipped. Mode Polling reads the
 // notifications every minute instead. The new posts of the home timeline (OnStatus) come from the event stream
 // alone and are not caught up.
 //
