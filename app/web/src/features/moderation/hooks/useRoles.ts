@@ -29,6 +29,8 @@ export type RoleRow = {
   held: boolean;
   /** The viewer's highest role when it is below this one (the viewer may not change it), else undefined. */
   outrankedBy: AdminRole | undefined;
+  /** The permissions of the role that the viewer lacks (the server grants a role only to a viewer who holds all of them). */
+  missing: string[];
 };
 
 /** The roles of an account: loading, failing to load, or every role of the instance. */
@@ -67,6 +69,7 @@ export function useAccountRoles(accountId: string): AccountRoles {
   }
   const heldIds = new Set(held.data.items.map((role) => role.id));
   const top = highest(own.data.items);
+  const permissions = new Set(own.data.items.flatMap((role) => role.permissions));
   return {
     status: "ready",
     held: held.data.items,
@@ -74,6 +77,7 @@ export function useAccountRoles(accountId: string): AccountRoles {
       role,
       held: heldIds.has(role.id),
       outrankedBy: top === undefined || role.position > top.position ? top : undefined,
+      missing: role.permissions.filter((permission) => !permissions.has(permission)),
     })),
   };
 }

@@ -75,7 +75,9 @@ function RoleList({ roles, changes }: { roles: AccountRolesState; changes: RoleC
 
 function RoleItem({ row, changes }: { row: RoleRow; changes: RoleChanges }) {
   const t = useT();
-  const { role, held, outrankedBy } = row;
+  const { role, held, outrankedBy, missing } = row;
+  // Granting needs every permission of the role (revoking does not), so the grant button gives way to the reason.
+  const cannotGrant = !held && outrankedBy === undefined && missing.length > 0;
   const key = isolatedKey(role.key);
   const pending = changes.isPending && changes.confirmation?.role.id === role.id;
   return (
@@ -83,6 +85,7 @@ function RoleItem({ row, changes }: { row: RoleRow; changes: RoleChanges }) {
       <SectionHeader
         actions={
           outrankedBy === undefined &&
+          !cannotGrant &&
           // Different keys: the pressed button gives way to the other one, and focus goes to the region's heading.
           (held ? (
             <Button
@@ -126,6 +129,7 @@ function RoleItem({ row, changes }: { row: RoleRow; changes: RoleChanges }) {
       {outrankedBy !== undefined && (
         <Hint>{t("client:admin.account.roles.outranked", { role: isolatedKey(outrankedBy.key) })}</Hint>
       )}
+      {cannotGrant && <Hint>{t("client:admin.account.roles.missing_permissions", { permissions: missing.join(", ") })}</Hint>}
     </Stack>
   );
 }

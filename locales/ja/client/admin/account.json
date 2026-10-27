@@ -264,7 +264,7 @@
     "description": "Error in the confirmation of revoking admin that the server refused because the account is the only admin."
   },
   "admin.account.roles.failed.outranked": {
-    "defaultMessage": "ロールを変更できませんでした：あなたのいちばん高いロールより上のロールです。付与・剥奪できるのは、あなたのいちばん高いロール以下のロールだけです。",
+    "defaultMessage": "ロールを変更できませんでした：あなたのいちばん高いロールより上のロールか、あなたが持っていない権限を含むロールです。付与・剥奪できるのは、あなたのいちばん高いロール以下のロールだけで、付与できるのは、含まれる権限をすべて持っているロールだけです。",
     "description": "Error in the confirmation of a role change that the server refused because the role is above the viewer's highest role."
   },
   "admin.account.roles.grant": {
@@ -298,6 +298,10 @@
   "admin.account.roles.loading": {
     "defaultMessage": "ロールを読み込んでいます",
     "description": "Accessible name of the spinner while the roles of an account load."
+  },
+  "admin.account.roles.missing_permissions": {
+    "defaultMessage": "このロールは付与できません：あなたが持っていない権限（{permissions}）を含んでいます。",
+    "description": "Why a role has no grant button: the viewer lacks some of the role's permissions; permissions lists them, comma separated."
   },
   "admin.account.roles.none": {
     "defaultMessage": "なし",
