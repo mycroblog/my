@@ -354,5 +354,25 @@
   "notifications.link.voice_room": {
     "defaultMessage": "ルームを開く",
     "description": "Link in a voice chat notification to the page of the room."
+  },
+  "notifications.type.admin_error_group_created": {
+    "defaultMessage": "新しいエラーが報告されました",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
+  },
+  "notifications.type.admin_error_group_regressed": {
+    "defaultMessage": "解決したエラーが再び起きました",
+    "description": "Notification sentence to an administrator who manages the errors: an error that was marked resolved happened again on another version."
+  },
+  "notifications.type.admin_error_group_others": {
+    "defaultMessage": "この 1 時間に、ほかにも新しいエラーや再発したエラーが報告されました",
+    "description": "Notification sentence to an administrator who manages the errors: more errors than the server notifies of one by one in an hour were reported."
+  },
+  "notifications.link.error_group": {
+    "defaultMessage": "エラーを開く",
+    "description": "Link of an admin_error_group notification to the page of the error group."
+  },
+  "notifications.link.errors": {
+    "defaultMessage": "エラーの一覧を開く",
+    "description": "Link of an admin_error_group notification about more groups to the list of error groups."
   }
 }

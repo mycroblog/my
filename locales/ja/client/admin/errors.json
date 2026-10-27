@@ -1,0 +1,342 @@
+{
+  "admin.errors.action_failed": {
+    "defaultMessage": "エラーを変更できませんでした：{reason}",
+    "description": "Toast when resolving, muting or unmuting an error group failed. {reason} is why."
+  },
+  "admin.errors.actor.cli": {
+    "defaultMessage": "コマンドライン",
+    "description": "Who changed an error group's state: an operator with the server's command line tool."
+  },
+  "admin.errors.actor.system": {
+    "defaultMessage": "サーバー",
+    "description": "Who changed an error group's state: the server itself, when a resolved group happened again."
+  },
+  "admin.errors.actor.user": {
+    "defaultMessage": "管理者",
+    "description": "Who changed an error group's state: an administrator in the app."
+  },
+  "admin.errors.back": {
+    "defaultMessage": "エラーの一覧",
+    "description": "Link from the page of one error group back to the list."
+  },
+  "admin.errors.column.counts": {
+    "defaultMessage": "発生回数",
+    "description": "Header of the column of the error groups table with how many times each happened in the last 24 hours and 7 days."
+  },
+  "admin.errors.column.error": {
+    "defaultMessage": "エラー",
+    "description": "Header of the column of the error groups table that names the error (its type, where it happened, and its message) and links to its page."
+  },
+  "admin.errors.copied": {
+    "defaultMessage": "コピーしました",
+    "description": "Toast after a request ID or a trace ID was copied to the clipboard."
+  },
+  "admin.errors.copy": {
+    "defaultMessage": "コピー",
+    "description": "Button that copies a request ID or a trace ID to the clipboard."
+  },
+  "admin.errors.copy_failed": {
+    "defaultMessage": "コピーできませんでした。文字を選んでコピーしてください。",
+    "description": "Toast when copying a request ID or a trace ID to the clipboard failed."
+  },
+  "admin.errors.copy_request_id": {
+    "defaultMessage": "リクエスト ID をコピー",
+    "description": "Accessible name of the button that copies the request ID of an error's latest occurrence."
+  },
+  "admin.errors.copy_trace_id": {
+    "defaultMessage": "トレース ID をコピー",
+    "description": "Accessible name of the button that copies the trace ID of an error's latest occurrence."
+  },
+  "admin.errors.count": {
+    "defaultMessage": "{count, plural, other {# 回}}",
+    "description": "How many times an error happened. {count} is the number of occurrences."
+  },
+  "admin.errors.count_24h": {
+    "defaultMessage": "直近 24 時間",
+    "description": "Term in an error group's details: how many times it happened in the last 24 hours."
+  },
+  "admin.errors.count_24h.value": {
+    "defaultMessage": "{count, plural, other {24 時間に # 回}}",
+    "description": "Cell of the error groups table: how many times the group happened in the last 24 hours. {count} is the number."
+  },
+  "admin.errors.count_7d": {
+    "defaultMessage": "直近 7 日",
+    "description": "Term in an error group's details: how many times it happened in the last 7 days."
+  },
+  "admin.errors.count_7d.value": {
+    "defaultMessage": "{count, plural, other {7 日に # 回}}",
+    "description": "Cell of the error groups table: how many times the group happened in the last 7 days. {count} is the number."
+  },
+  "admin.errors.description": {
+    "defaultMessage": "グループは同じ種類のエラーをまとめたものです。直したグループは解決にしてください。別の版で再び起きると、もう一度開きます。通知を止めるにはミュートします。",
+    "description": "Hint above the list of error groups: what a group is, and what resolving and muting do."
+  },
+  "admin.errors.detail_title": {
+    "defaultMessage": "エラー",
+    "description": "Heading of the page of one error group."
+  },
+  "admin.errors.details": {
+    "defaultMessage": "このエラーについて",
+    "description": "Heading of the section of an error group's page with what the group is."
+  },
+  "admin.errors.empty": {
+    "defaultMessage": "未解決のエラーはありません",
+    "description": "Heading of the list of error groups when no group is open, with no other filter."
+  },
+  "admin.errors.empty.description": {
+    "defaultMessage": "サーバーや Web クライアントが報告したエラーがここに表示されます。",
+    "description": "Description of an empty list of error groups."
+  },
+  "admin.errors.empty.filtered": {
+    "defaultMessage": "条件に合うエラーはありません",
+    "description": "Heading of the list of error groups when no group matches the selected filters."
+  },
+  "admin.errors.event.muted": {
+    "defaultMessage": "ミュートした",
+    "description": "Change in an error group's history: it was muted."
+  },
+  "admin.errors.event.regressed": {
+    "defaultMessage": "再発した",
+    "description": "Change in an error group's history: a resolved group happened again on another version."
+  },
+  "admin.errors.event.resolved": {
+    "defaultMessage": "解決にした",
+    "description": "Change in an error group's history: it was resolved."
+  },
+  "admin.errors.event.unmuted": {
+    "defaultMessage": "ミュートを外した",
+    "description": "Change in an error group's history: it was unmuted."
+  },
+  "admin.errors.event.with_version": {
+    "defaultMessage": "{change}（版 {version}）",
+    "description": "Change in an error group's history with the version it names. {change} is the change, such as admin.errors.event.resolved; {version} is the version of the server."
+  },
+  "admin.errors.filter.all_sources": {
+    "defaultMessage": "サーバーと Web クライアント",
+    "description": "Option of the source filter of the error groups: errors of both sources."
+  },
+  "admin.errors.filter.all_states": {
+    "defaultMessage": "すべての状態",
+    "description": "Option of the state filter of the error groups: groups in every state."
+  },
+  "admin.errors.filter.source": {
+    "defaultMessage": "報告元",
+    "description": "Accessible name of the menu that filters the error groups by what reported them."
+  },
+  "admin.errors.filter.state": {
+    "defaultMessage": "状態",
+    "description": "Accessible name of the menu that filters the error groups by state."
+  },
+  "admin.errors.fingerprint": {
+    "defaultMessage": "指紋",
+    "description": "Term in an error group's details: the fingerprint that groups the errors, also found in the logs."
+  },
+  "admin.errors.first_seen": {
+    "defaultMessage": "最初の発生",
+    "description": "Term and column header: when, and on which version, the error group happened first."
+  },
+  "admin.errors.history": {
+    "defaultMessage": "履歴",
+    "description": "Heading of the section of an error group's page with the changes of its state, and the caption of its table."
+  },
+  "admin.errors.history.at": {
+    "defaultMessage": "日時",
+    "description": "Column header of an error group's history: when it changed."
+  },
+  "admin.errors.history.by": {
+    "defaultMessage": "変更した人",
+    "description": "Column header of an error group's history: who made the change."
+  },
+  "admin.errors.history.change": {
+    "defaultMessage": "変更",
+    "description": "Column header of an error group's history: what changed."
+  },
+  "admin.errors.history.empty": {
+    "defaultMessage": "状態は変わっていません",
+    "description": "Heading of the history of an error group whose state never changed."
+  },
+  "admin.errors.hourly": {
+    "defaultMessage": "時間ごとの発生回数",
+    "description": "Heading of the section of an error group's page with its occurrences of each hour, and the caption of its table."
+  },
+  "admin.errors.hourly.count": {
+    "defaultMessage": "回数",
+    "description": "Column header of the hourly counts: how many times the error happened in the hour."
+  },
+  "admin.errors.hourly.description": {
+    "defaultMessage": "直近 90 日のうち発生のあった時間を、新しい順に 1 日ずつ表示します。時刻はあなたのタイムゾーンです。",
+    "description": "Hint above the hourly counts of an error group."
+  },
+  "admin.errors.hourly.empty": {
+    "defaultMessage": "直近 90 日に発生はありません",
+    "description": "Heading of the hourly counts of an error group that did not happen in the last 90 days."
+  },
+  "admin.errors.hourly.hour": {
+    "defaultMessage": "時間",
+    "description": "Column header of the hourly counts: the start of the hour."
+  },
+  "admin.errors.hourly.version": {
+    "defaultMessage": "最後の版",
+    "description": "Column header of the hourly counts: the version of the server of the last occurrence of the hour."
+  },
+  "admin.errors.kind": {
+    "defaultMessage": "種類",
+    "description": "Term in an error group's details: whether the errors are crashes or errors."
+  },
+  "admin.errors.kind.error": {
+    "defaultMessage": "エラー",
+    "description": "Kind of an error group: an error that was returned or caught."
+  },
+  "admin.errors.kind.panic": {
+    "defaultMessage": "クラッシュ",
+    "description": "Kind of an error group: a panic of the server or an uncaught error of the web client."
+  },
+  "admin.errors.last_seen": {
+    "defaultMessage": "最後の発生",
+    "description": "Term and column header: when, and on which version, the error group happened last."
+  },
+  "admin.errors.list": {
+    "defaultMessage": "エラーのグループ",
+    "description": "Caption of the table of error groups (visually hidden)."
+  },
+  "admin.errors.message": {
+    "defaultMessage": "メッセージ",
+    "description": "Term in an error group's details and its latest occurrence: the error's message, with personal data removed."
+  },
+  "admin.errors.mute": {
+    "defaultMessage": "ミュートする",
+    "description": "Button that mutes an error group."
+  },
+  "admin.errors.mute.description": {
+    "defaultMessage": "数え続けますが、ミュートを外すまで通知も webhook のイベントも送りません。",
+    "description": "Hint under the button that mutes an error group: what muting does."
+  },
+  "admin.errors.muted": {
+    "defaultMessage": "エラーをミュートしました。",
+    "description": "Status message after an administrator muted an error group."
+  },
+  "admin.errors.resolve": {
+    "defaultMessage": "解決にする",
+    "description": "Button that marks an error group fixed."
+  },
+  "admin.errors.resolve.description": {
+    "defaultMessage": "別の版で再び起きると、もう一度開いて通知します。",
+    "description": "Hint under the button that resolves an error group: what happens if it comes back."
+  },
+  "admin.errors.resolved": {
+    "defaultMessage": "エラーを解決にしました。",
+    "description": "Status message after an administrator resolved an error group."
+  },
+  "admin.errors.resolved_version": {
+    "defaultMessage": "解決した版",
+    "description": "Term in a resolved error group's state: the version of the server that the group was resolved with."
+  },
+  "admin.errors.sample": {
+    "defaultMessage": "最新の発生",
+    "description": "Heading of the section of an error group's page with its latest occurrence."
+  },
+  "admin.errors.sample.description": {
+    "defaultMessage": "個人情報は除いてあります。前後の出来事は、リクエスト ID でログを検索して確かめてください。",
+    "description": "Hint of the latest occurrence of an error group: the text is scrubbed, and the request ID finds it in the logs."
+  },
+  "admin.errors.sample.none": {
+    "defaultMessage": "このグループの発生は残っていません。",
+    "description": "Text of the latest occurrence section when the server kept none."
+  },
+  "admin.errors.sample.none_id": {
+    "defaultMessage": "なし",
+    "description": "Value of the request ID or the trace ID of an occurrence that had none."
+  },
+  "admin.errors.sample.occurred_at": {
+    "defaultMessage": "日時",
+    "description": "Term in the latest occurrence of an error group: when it happened."
+  },
+  "admin.errors.sample.request_id": {
+    "defaultMessage": "リクエスト ID",
+    "description": "Term in the latest occurrence of an error group: the request ID, to search the logs for."
+  },
+  "admin.errors.sample.role": {
+    "defaultMessage": "プロセスの役割",
+    "description": "Term in the latest occurrence of an error group: the role of the server process that reported it (all, web, worker, or stream)."
+  },
+  "admin.errors.sample.stack": {
+    "defaultMessage": "スタック",
+    "description": "Term in the latest occurrence of an error group: its stack trace."
+  },
+  "admin.errors.sample.trace_id": {
+    "defaultMessage": "トレース ID",
+    "description": "Term in the latest occurrence of an error group: the trace ID, to find the trace."
+  },
+  "admin.errors.sample.type": {
+    "defaultMessage": "型の連鎖",
+    "description": "Term in the latest occurrence of an error group: the chain of the types of the error, outermost first."
+  },
+  "admin.errors.sample.version": {
+    "defaultMessage": "版",
+    "description": "Term in the latest occurrence of an error group: the version of the server."
+  },
+  "admin.errors.source": {
+    "defaultMessage": "報告元",
+    "description": "Term and column header: what reported the errors of a group, the server or the web client."
+  },
+  "admin.errors.source.server": {
+    "defaultMessage": "サーバー",
+    "description": "Source of an error group: the server reported the errors."
+  },
+  "admin.errors.source.web": {
+    "defaultMessage": "Web クライアント",
+    "description": "Source of an error group: the web client in people's browsers reported the errors."
+  },
+  "admin.errors.state": {
+    "defaultMessage": "状態",
+    "description": "Term and column header: the state of an error group (open, resolved, or muted); also the heading of the state section of a group's page."
+  },
+  "admin.errors.state.muted": {
+    "defaultMessage": "ミュート中",
+    "description": "State of an error group: it notifies nobody until it is unmuted; also an option of the state filter."
+  },
+  "admin.errors.state.open": {
+    "defaultMessage": "未解決",
+    "description": "State of an error group: new, unmuted, or happened again after it was resolved; also an option of the state filter."
+  },
+  "admin.errors.state.resolved": {
+    "defaultMessage": "解決済み",
+    "description": "State of an error group: an administrator marked it fixed; also an option of the state filter."
+  },
+  "admin.errors.state_since": {
+    "defaultMessage": "この状態になった日時",
+    "description": "Term in an error group's state: when the group entered its state."
+  },
+  "admin.errors.summary": {
+    "defaultMessage": "サーバーと Web クライアントが報告したエラーのグループと、解決・ミュート。",
+    "description": "Description of the errors screen in the administration menu of the settings."
+  },
+  "admin.errors.title": {
+    "defaultMessage": "エラー",
+    "description": "Heading of the admin screen of the error groups that the server and the web client report, and its link in the administration menu."
+  },
+  "admin.errors.type": {
+    "defaultMessage": "型",
+    "description": "Term in an error group's details: the type of the error (a Go type or the name of a JavaScript error)."
+  },
+  "admin.errors.unmute": {
+    "defaultMessage": "ミュートを外す",
+    "description": "Button that unmutes a muted error group."
+  },
+  "admin.errors.unmute.description": {
+    "defaultMessage": "グループはもう一度開き、通知するようになります。",
+    "description": "Hint under the button that unmutes an error group."
+  },
+  "admin.errors.unmuted": {
+    "defaultMessage": "エラーのミュートを外しました。",
+    "description": "Status message after an administrator unmuted an error group."
+  },
+  "admin.errors.version": {
+    "defaultMessage": "版 {version}",
+    "description": "The version of the server that an error happened on. {version} is the version, such as 0.3.1."
+  },
+  "admin.errors.where": {
+    "defaultMessage": "起きた場所",
+    "description": "Term in an error group's details: where the errors happened (an HTTP route, a job type, a background task, or a page of the web client)."
+  }
+}

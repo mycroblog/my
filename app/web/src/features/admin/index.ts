@@ -74,3 +74,8 @@ export { SupporterSettings } from "./components/SupporterSettings";
 // and the progress of its deliveries (ADR-0088), for manage_service_closure.
 export { adminClosureCheckQueryOptions, adminClosureQueryOptions } from "./api/closure";
 export { ServiceClosureSettings } from "./components/ServiceClosureSettings";
+// The groups of the errors that the server and the web client report: the list, one group with its latest occurrence,
+// and resolving, muting and unmuting it (ADR-0103 §8), for manage_errors.
+export { type ErrorFilter, errorGroupQueryOptions, errorGroupsQueryOptions, errorSourceFilters, errorStateFilters } from "./api/errors";
+export { ErrorGroupDetail } from "./components/ErrorGroupDetail";
+export { ErrorGroups } from "./components/ErrorGroups";

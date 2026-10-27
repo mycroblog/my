@@ -354,5 +354,25 @@
   "notifications.link.voice_room": {
     "defaultMessage": "Open the room",
     "description": "Link in a voice chat notification to the page of the room."
+  },
+  "notifications.type.admin_error_group_created": {
+    "defaultMessage": "A new error was reported",
+    "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
+  },
+  "notifications.type.admin_error_group_regressed": {
+    "defaultMessage": "A resolved error happened again",
+    "description": "Notification sentence to an administrator who manages the errors: an error that was marked resolved happened again on another version."
+  },
+  "notifications.type.admin_error_group_others": {
+    "defaultMessage": "More new or recurring errors were reported this hour",
+    "description": "Notification sentence to an administrator who manages the errors: more errors than the server notifies of one by one in an hour were reported."
+  },
+  "notifications.link.error_group": {
+    "defaultMessage": "Open the error",
+    "description": "Link of an admin_error_group notification to the page of the error group."
+  },
+  "notifications.link.errors": {
+    "defaultMessage": "Open the errors",
+    "description": "Link of an admin_error_group notification about more groups to the list of error groups."
   }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The default MSW handlers of the server administration feature (web-client/README.md §7): the job queue, the settings, the rules, the
+// The default MSW handlers of the server administration feature (web-client/README.md §7): the job queue, the error groups, the settings, the rules, the
 // server's texts, the custom emoji, the webhooks, the announcements, the relays, the cost items and their totals, the billing imports, and the supporter program with its plans, subscriptions and payment provider, none by default. The default viewer has no permissions, so the screens' tests start with
 // `server.use(operatorHandler(...))` (test/msw/http.ts).
 import { http, HttpResponse } from "msw";
@@ -265,6 +265,51 @@ export function costItemFixture(id: string, overrides: Partial<Schemas["CostItem
   };
 }
 
+/** An error group as the admin API answers it: an open panic of the server first seen at 2026-10-20T00:00:00Z, with `overrides`. */
+export function errorGroupFixture(id: string, overrides: Partial<Schemas["ErrorGroup"]> = {}): Schemas["ErrorGroup"] {
+  return {
+    id,
+    fingerprint: "0123456789abcdef0123456789abcdef",
+    state: "open",
+    state_since: "2026-10-20T00:00:00Z",
+    source: "server",
+    kind: "panic",
+    where: "client_api GET /api/v1/statuses/{id}",
+    type: "runtime.Error",
+    message: "runtime error: invalid memory address or nil pointer dereference",
+    count_24h: 3,
+    count_7d: 12,
+    first_seen_at: "2026-10-20T00:00:00Z",
+    last_seen_at: "2026-10-21T05:30:00Z",
+    first_version: "0.3.0",
+    last_version: "0.3.1",
+    ...overrides,
+  };
+}
+
+/** An error group with its latest occurrence, two hours of counts and no change of state, with `overrides`. */
+export function errorGroupDetailFixture(id: string, overrides: Partial<Schemas["ErrorGroupDetail"]> = {}): Schemas["ErrorGroupDetail"] {
+  return {
+    ...errorGroupFixture(id),
+    sample: {
+      type: "runtime.Error",
+      message: "runtime error: invalid memory address or nil pointer dereference",
+      stack: "goroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32",
+      request_id: "01JB0000000000000000000000",
+      trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+      version: "0.3.1",
+      role: "all",
+      occurred_at: "2026-10-21T05:30:00Z",
+    },
+    hourly_counts: [
+      { hour: "2026-10-20T00:00:00Z", count: 9, last_version: "0.3.0" },
+      { hour: "2026-10-21T05:00:00Z", count: 3, last_version: "0.3.1" },
+    ],
+    events: [],
+    ...overrides,
+  };
+}
+
 /** The totals that the default handler answers: the periods of the query, each without costs. */
 function emptyTotals(url: URL): Schemas["CostTotals"] {
   const granularity = (url.searchParams.get("granularity") ?? "month") as Schemas["CostGranularity"];
@@ -334,6 +379,15 @@ export const handlers = [
   http.get(`${apiBase}/admin/jobs`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.post(`${apiBase}/admin/jobs/:id/retry`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  // operationIds listErrorGroups, getErrorGroup, resolveErrorGroup, muteErrorGroup, unmuteErrorGroup: no groups; a
+  // group asked for by its ID is an open one, and an action answers the group in its new state.
+  http.get(`${apiBase}/admin/error_groups`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  http.get(`${apiBase}/admin/error_groups/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupDetailFixture(String(params["id"]))))),
+  http.post(`${apiBase}/admin/error_groups/:id/resolve`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "resolved", resolved_version: "0.3.1" }))),
+  ),
+  http.post(`${apiBase}/admin/error_groups/:id/mute`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "muted" })))),
+  http.post(`${apiBase}/admin/error_groups/:id/unmute`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]))))),
   // operationIds listInstanceTexts, setInstanceText: no texts; a new text is recorded as sent, at 2026-10-17T00:00:00Z.
   http.get(`${apiBase}/admin/instance_texts`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.put(`${apiBase}/admin/instance_texts/:key`, async ({ request, params }) => {

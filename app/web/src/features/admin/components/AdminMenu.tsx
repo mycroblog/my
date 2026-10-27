@@ -43,6 +43,7 @@ export const adminPages: readonly StaffPage[] = [
   },
   { href: "/admin/roles", permission: "manage_roles", label: "client:admin.roles.title", description: "client:admin.roles.summary" },
   { href: "/admin/jobs", permission: "manage_jobs", label: "client:admin.jobs.title", description: "client:admin.jobs.summary" },
+  { href: "/admin/errors", permission: "manage_errors", label: "client:admin.errors.title", description: "client:admin.errors.summary" },
 ];
 
 /** The administration page's links to the server administration screens, or why there are none for the viewer's roles. */
