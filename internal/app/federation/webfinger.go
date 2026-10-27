@@ -73,7 +73,17 @@ func (r *RemoteActors) checkHandle(ctx context.Context, a *federation.Actor) app
 		return appaccount.HandleCheck{Outcome: appaccount.HandleVerified, Username: user, Domain: domain}
 	}
 	// The handle names another domain (Mastodon's WEB_DOMAIN and LOCAL_DOMAIN): that domain
-	// must name the actor too.
+	// must name the actor too. The rules of fetching apply to it as to the actor's own server:
+	// never this instance or a suspended server, which cannot confirm the handle, and not an
+	// unavailable one.
+	if r.d.Fetcher != nil {
+		switch err := r.d.Fetcher.check(ctx, federation.IRI("https://"+domain+"/")); {
+		case errors.Is(err, ErrFetchRefused):
+			return appaccount.HandleCheck{Outcome: appaccount.HandleMismatch, Username: user, Domain: domain}
+		case err != nil:
+			return appaccount.HandleCheck{}
+		}
+	}
 	second, err := r.webFinger(ctx, "https://"+domain, "acct:"+user+"@"+domain)
 	switch {
 	case errors.Is(err, errWebFingerUnanswered):
@@ -102,7 +112,8 @@ func parseAcct(subject string) (user, domain string, ok bool) {
 }
 
 // webFinger looks resource up at origin's /.well-known/webfinger. It is not signed: WebFinger
-// is public (FR-401).
+// is public (FR-401). A redirect to this instance or to a suspended server fails with
+// ErrFetchRefused.
 func (r *RemoteActors) webFinger(ctx context.Context, origin, resource string) (jrd, error) {
 	if err := r.identifies(ctx); err != nil {
 		return jrd{}, fmt.Errorf("%w: %w", errWebFingerUnanswered, err)
@@ -110,9 +121,10 @@ func (r *RemoteActors) webFinger(ctx context.Context, origin, resource string) (
 	u := origin + "/.well-known/webfinger?resource=" + url.QueryEscape(resource)
 	resp, err := r.d.HTTP.Do(ctx, &kernel.HTTPRequest{
 		Method: http.MethodGet, URL: u, Header: http.Header{"Accept": {webFingerAccept}}, Purpose: kernel.HTTPPurposeJSON,
+		CheckRedirect: r.d.Fetcher.redirectPolicy(),
 	})
 	switch {
-	case errors.Is(err, kernel.ErrForbiddenDestination), errors.Is(err, kernel.ErrInvalidHTTPRequest),
+	case errors.Is(err, ErrFetchRefused), errors.Is(err, kernel.ErrForbiddenDestination), errors.Is(err, kernel.ErrInvalidHTTPRequest),
 		errors.Is(err, kernel.ErrTooManyRedirects), errors.Is(err, kernel.ErrResponseTooLarge):
 		return jrd{}, err
 	case err != nil:

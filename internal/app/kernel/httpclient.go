@@ -20,15 +20,18 @@ import (
 // space or in the special-purpose ranges of ADR-0019 §1 (checked on the address it actually
 // connects to, after name resolution and on every redirect hop), internal host names, schemes
 // other than https, and ports other than 443 and 80. It ignores proxy environment variables and
-// follows at most MaxRedirects redirects, never from https to http.
+// follows at most MaxRedirects redirects, never from https to http. A request may forbid
+// redirects (HTTPRequest.NoRedirects) or check every redirect hop with a policy of its own
+// (HTTPRequest.CheckRedirect).
 //
 // Do runs outside transactions (ADR-0003).
 type HTTPClient interface {
 	// Do sends req and returns the response once its headers arrive. The caller reads and closes
 	// Body. Do fails with an error wrapping ErrForbiddenDestination for a refused destination
 	// (also when a redirect leads to one), ErrTooManyRedirects, ErrResponseTooLarge when the
-	// response's Content-Length exceeds the purpose's limit, and ErrInvalidHTTPRequest for a
-	// request that cannot be sent. A status code of 4xx or 5xx is a response, not an error.
+	// response's Content-Length exceeds the purpose's limit, ErrInvalidHTTPRequest for a
+	// request that cannot be sent, and the error of the request's CheckRedirect. A status code
+	// of 3xx (when the client does not follow it), 4xx or 5xx is a response, not an error.
 	Do(ctx context.Context, req *HTTPRequest) (*HTTPResponse, error)
 }
 
@@ -108,6 +111,15 @@ type HTTPRequest struct {
 	Body []byte
 	// Purpose selects the response limits; it is required.
 	Purpose HTTPPurpose
+	// NoRedirects makes the client return a 3xx answer as is instead of following it. A POST
+	// whose answer redirects must not count as delivered (a 301, 302, or 303 would be followed
+	// with a GET), so deliveries set it.
+	NoRedirects bool
+	// CheckRedirect, when set, is called with the absolute URL of every redirect hop before the
+	// client follows it, after the client's own checks of the destination. An error ends the
+	// request, and Do returns an error wrapping it. Callers apply their own policy of
+	// destinations with it, such as the federation domain blocks.
+	CheckRedirect func(ctx context.Context, url string) error
 }
 
 // HTTPResponse is the response to an HTTPRequest.
