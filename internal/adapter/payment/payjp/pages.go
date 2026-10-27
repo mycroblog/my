@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
@@ -64,6 +65,44 @@ type pages struct {
 	p   *Provider
 	env supporters.PageEnv
 	cop *http.CrossOriginProtection
+	// checkouts serializes the posts of the checkout form of one subscription, so that two at
+	// the same time (a double submit, two tabs) do not both find no subscription and create two.
+	checkouts keyedMutex
+}
+
+// keyedMutex is a set of mutexes by key, each kept while it is held or awaited.
+type keyedMutex struct {
+	mu    sync.Mutex
+	locks map[string]*keyedLock
+}
+
+type keyedLock struct {
+	mu   sync.Mutex
+	refs int
+}
+
+// lock locks key and returns its unlock.
+func (k *keyedMutex) lock(key string) func() {
+	k.mu.Lock()
+	if k.locks == nil {
+		k.locks = map[string]*keyedLock{}
+	}
+	l := k.locks[key]
+	if l == nil {
+		l = &keyedLock{}
+		k.locks[key] = l
+	}
+	l.refs++
+	k.mu.Unlock()
+	l.mu.Lock()
+	return func() {
+		l.mu.Unlock()
+		k.mu.Lock()
+		if l.refs--; l.refs == 0 {
+			delete(k.locks, key)
+		}
+		k.mu.Unlock()
+	}
 }
 
 // Pages implements supporters.PageServer.
@@ -295,7 +334,8 @@ func (h *pages) checkoutPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // checkout takes the checkout form: it checks the card's 3-D Secure, prepares the customer,
-// makes the card the customer's default, and creates the subscription with our ID, once.
+// makes the card the customer's default, and creates the subscription with our ID, once: the
+// posts of one checkout run one at a time in the process.
 func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 	s, in := readCardForm(w, r)
 	st, ok := h.state(w, r, pageCheckout, s)
@@ -316,6 +356,9 @@ func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 		again(http.StatusBadRequest, (*i18n.Localizer).ServerPaymentsErrorForm, cardInput{Email: r.PostForm.Get("email"), Name: r.PostForm.Get("name")})
 		return
 	}
+	// PAY.JP v1 takes no idempotency key, so the subscription is looked for and created under
+	// the lock of the checkout: a second post waits and then finds the first one's subscription.
+	defer h.checkouts.lock(st.LocalID)()
 	if _, found, err := h.p.findSubscription(ctx, st.Customer, st.LocalID); err != nil {
 		h.failed(w, r, st.Cancel, err)
 		return

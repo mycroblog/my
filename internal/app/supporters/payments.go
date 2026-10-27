@@ -422,7 +422,7 @@ func (p *Payments) HandleNotice(ctx context.Context, n Notice) queue.Result {
 		if ref == "" {
 			continue
 		}
-		snap, err := prov.GetSubscription(ctx, ref)
+		snap, err := readSubscription(ctx, prov, p.d.Clock, ref)
 		if err != nil {
 			return p.providerFailure(ctx, "get subscription", err)
 		}

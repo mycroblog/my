@@ -62,6 +62,8 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"KeepsTheRoleThroughTheGrace", supporterGrace},
 		{"RevokesOnFullRefundsAndChargebacks", supporterReversals},
 		{"ChangesPlansAtOnceOrAtThePeriodEnd", supporterChanges},
+		{"RetriesAChangeWithItsKey", supporterChangeRetry},
+		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
 		{"AbandonsUnpaidCheckouts", supporterAbandon},
 		{"SubscribesOnceAndOnlyWhenEligible", supporterEligibility},
 		{"ChargesNewPricesToNewSubscriptions", supporterPrices},
@@ -789,6 +791,91 @@ func supporterChanges(t *testing.T, e *supporterEnv) {
 	}
 	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrSubscriptionState) {
 		t.Errorf("a change while canceling: %v", err)
+	}
+}
+
+// supporterSnapshotOrder applies two snapshots read at the same time in the wrong order: the one
+// read first, with the older state, does not replace the newer one.
+func supporterSnapshotOrder(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	older, ok := e.world.Subscription(ref)
+	if !ok {
+		t.Fatalf("no subscription %s at the provider", ref)
+	}
+	e.clock.Advance(time.Minute)
+	older.ReadAt = e.clock.Now()
+	newer := older
+	newer.Price = gold.Prices[domain.IntervalMonth].Ref
+	newer.ReadAt = e.clock.Now().Add(time.Second)
+	e.clock.Advance(time.Minute)
+	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, newer); err != nil {
+		t.Fatal(err)
+	}
+	if changed, err := e.svc.SyncSubscription(ctx, paymentProvider, older); err != nil || changed {
+		t.Fatalf("SyncSubscription of the older snapshot = %v, %v; want no change", changed, err)
+	}
+	if v := e.expect(t, id, domain.StateActive, gold, true); v.Current.PlanID != gold.ID {
+		t.Fatalf("plan after the older snapshot = %s, want gold", v.Current.PlanID)
+	}
+	// A snapshot read later applies.
+	later := older
+	later.ReadAt = e.clock.Now()
+	if changed, err := e.svc.SyncSubscription(ctx, paymentProvider, later); err != nil || !changed {
+		t.Fatalf("SyncSubscription of a later snapshot = %v, %v; want a change", changed, err)
+	}
+	e.expect(t, id, domain.StateActive, basic, true)
+}
+
+// changeRecorder is a provider that records the keys of ChangePrice and fails the next call
+// while fail is set, as a change that failed part of the way.
+type changeRecorder struct {
+	supporters.PaymentProvider
+	keys []string
+	fail bool
+}
+
+func (r *changeRecorder) ChangePrice(ctx context.Context, ref supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
+	r.keys = append(r.keys, key)
+	if r.fail {
+		r.fail = false
+		return fmt.Errorf("%w: the plan was not switched", supporters.ErrPaymentUnavailable)
+	}
+	return r.PaymentProvider.ChangePrice(ctx, ref, to, when, key)
+}
+
+// supporterChangeRetry sends a change again with the key of its failed attempt, so that the
+// provider charges the difference once, and another change with another key.
+func supporterChangeRetry(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	rec := &changeRecorder{PaymentProvider: e.world, fail: true}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentUnavailable) {
+		t.Fatalf("ChangePlan with a failure = %v", err)
+	}
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan again = %v", err)
+	}
+	if len(rec.keys) != 2 || rec.keys[0] != rec.keys[1] || rec.keys[0] == "" {
+		t.Fatalf("keys of the attempts of one change = %q, want the same key twice", rec.keys)
+	}
+	e.expect(t, id, domain.StateActive, gold, true)
+	if _, err := svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalYear); err != nil {
+		t.Fatal(err)
+	}
+	if len(rec.keys) != 3 || rec.keys[2] == rec.keys[0] {
+		t.Errorf("key of another change = %q, want a new one", rec.keys)
 	}
 }
 

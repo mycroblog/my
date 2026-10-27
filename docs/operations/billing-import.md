@@ -22,6 +22,9 @@ A binary built with the build tag `no_billing_aws` refuses `aws` (see [build-tag
 The Cost Explorer API charges $0.01 for each paginated request. A small account needs one request of one page a day, about $0.31 a month.
 To prevent unexpected charges, the server counts requests per UTC day (`billing_aws_max_requests_per_day`, default 4) and per UTC calendar month (`billing_aws_max_requests_per_month`, default 120 = $1.20), and stops without calling once a limit is reached.
 Scheduled imports, job retries, and "Import now" in the administration all count. An import that hits a limit is recorded as a failure of kind `request_cap`, and the import of the next day (for the daily limit) or of the first day of the next month (for the monthly limit) tries again.
+Before it calls, an import sets aside the requests that the limits leave, so imports that run at the same time cannot exceed the limits together.
+Imports of one provider run one at a time: an import that starts while another has not finished tries again a minute later, and a job that already imported successfully calls nothing when it runs again.
+An import that stopped before it finished (the process exited) counts the requests it set aside, and the next import waits for it for up to 15 minutes.
 
 ### Enable Cost Explorer
 

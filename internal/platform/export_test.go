@@ -19,3 +19,10 @@ func NewHealthCache(check func(ctx context.Context) error, clock kernel.Clock) f
 
 // HealthCacheTTL is healthCacheTTL.
 const HealthCacheTTL = healthCacheTTL
+
+// SupporterMailbox is the mailbox of the supporter emails of an account: its address ID and
+// whether the emails may go to it.
+func SupporterMailbox(ctx context.Context, a *App, accountID string) (string, bool, error) {
+	box, ok, err := supporterUsers{a}.SupporterMailbox(ctx, accountID)
+	return box.EmailAddressID, ok, err
+}

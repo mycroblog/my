@@ -1255,6 +1255,27 @@ func (q *Queries) ListSupporterSubscriptionUsers(ctx context.Context, ids string
 	return items, nil
 }
 
+const markSupporterSubscriptionRead = `-- name: MarkSupporterSubscriptionRead :execrows
+INSERT INTO supporter_subscription_reads (subscription_id, read_at) VALUES (?, ?)
+ON CONFLICT (subscription_id) DO UPDATE SET read_at = excluded.read_at
+WHERE supporter_subscription_reads.read_at <= excluded.read_at
+`
+
+type MarkSupporterSubscriptionReadParams struct {
+	SubscriptionID string
+	ReadAt         int64
+}
+
+// MarkSupporterSubscriptionRead records that a snapshot read at read_at is applied to a
+// subscription, unless a snapshot read later was: it changes no row then.
+func (q *Queries) MarkSupporterSubscriptionRead(ctx context.Context, arg MarkSupporterSubscriptionReadParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, markSupporterSubscriptionRead, arg.SubscriptionID, arg.ReadAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const rebuildSupporterDeadlines = `-- name: RebuildSupporterDeadlines :exec
 INSERT INTO supporter_subscription_deadlines (subscription_id, kind, due_at)
 SELECT h.subscription_id, 'checkout', s.created_at + 86400000

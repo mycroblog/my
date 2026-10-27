@@ -464,6 +464,16 @@ func (r *SupporterRepository) LockSubscription(ctx context.Context, tx uow.Tx, i
 	return subscription(ctx, q, id)
 }
 
+// MarkSubscriptionRead implements supporters.Repository.
+func (r *SupporterRepository) MarkSubscriptionRead(ctx context.Context, tx uow.Tx, id string, at time.Time) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.MarkSupporterSubscriptionRead(ctx, postgresgen.MarkSupporterSubscriptionReadParams{SubscriptionID: id, ReadAt: at})
+	return n > 0, wrap(err, "mark the read of a subscription")
+}
+
 // FindSubscriptionIDByRef implements supporters.Repository.
 func (r *SupporterRepository) FindSubscriptionIDByRef(ctx context.Context, tx uow.Tx, provider string, ref supporters.SubscriptionRef) (string, error) {
 	q, err := r.q(tx)

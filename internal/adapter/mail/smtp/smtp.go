@@ -12,7 +12,8 @@
 // kernel.ErrMailRejected, and everything else, such as a 4xx reply, a refused AUTH, or a
 // connection that fails, as a temporary failure. The errors name the SMTP command, the reply
 // code, and the enhanced status code, never the server's reply text, which often repeats the
-// recipient's address.
+// recipient's address. Once the server accepts the message after DATA, the message counts as
+// sent: a failed QUIT after that does not fail Send, since sending again would deliver it twice.
 package smtp
 
 import (
@@ -110,7 +111,7 @@ func (m *Mailer) Send(ctx context.Context, msg kernel.MailMessage) error {
 	}
 	c, err := smtp.NewClient(conn, m.o.Host)
 	if err != nil {
-		return fmt.Errorf("smtp: greeting from %s: %w", addr, err)
+		return fmt.Errorf("smtp: %s: %w", addr, command("greeting", err))
 	}
 	defer func() { _ = c.Close() }()
 	if err := m.dialogue(c, to, body); err != nil {
@@ -121,21 +122,21 @@ func (m *Mailer) Send(ctx context.Context, msg kernel.MailMessage) error {
 
 func (m *Mailer) dialogue(c *smtp.Client, to string, body []byte) error {
 	if err := c.Hello(m.o.HelloName); err != nil {
-		return err
+		return command("EHLO", err)
 	}
 	if ok, _ := c.Extension("STARTTLS"); !ok {
 		return errors.New("the server does not offer STARTTLS")
 	}
 	if err := c.StartTLS(m.o.TLSConfig.Clone()); err != nil {
-		return fmt.Errorf("STARTTLS: %w", err)
+		return command("STARTTLS", err)
 	}
 	if m.o.Username != "" {
 		if err := c.Auth(smtp.PlainAuth("", m.o.Username, m.o.Password, m.o.Host)); err != nil {
-			return fmt.Errorf("AUTH: %w", err)
+			return command("AUTH", err)
 		}
 	}
 	if err := c.Mail(m.o.From); err != nil {
-		return err
+		return command("MAIL FROM", err)
 	}
 	if err := c.Rcpt(to); err != nil {
 		return reply("RCPT TO", err)
@@ -145,24 +146,47 @@ func (m *Mailer) dialogue(c *smtp.Client, to string, body []byte) error {
 		return reply("DATA", err)
 	}
 	if _, err := w.Write(body); err != nil {
-		return fmt.Errorf("DATA: %w", err)
+		return command("DATA", err)
 	}
 	if err := w.Close(); err != nil {
 		return reply("DATA", err)
 	}
-	return c.Quit()
+	// The server has accepted the message: a failed QUIT no longer fails the Send, since a
+	// retry would deliver the message again.
+	_ = c.Quit()
+	return nil
+}
+
+// command returns the error of a command other than RCPT TO and DATA's replies (or of the
+// greeting) as a temporary failure that names the command and the reply code but never the
+// server's reply text. Errors that are not replies, such as a failed TLS handshake, keep their
+// type.
+func command(name string, err error) error {
+	var te *textproto.Error
+	if errors.As(err, &te) {
+		code := strconv.Itoa(te.Code)
+		if status := enhancedStatus.FindString(te.Msg); status != "" {
+			code += " " + status
+		}
+		return fmt.Errorf("%s: reply %s", name, code)
+	}
+	var pe textproto.ProtocolError
+	if errors.As(err, &pe) {
+		return fmt.Errorf("%s: malformed reply", name)
+	}
+	return fmt.Errorf("%s: %w", name, err)
 }
 
 // enhancedStatus matches the enhanced status code (RFC 3463) at the start of a reply's text.
 var enhancedStatus = regexp.MustCompile(`^[245]\.\d{1,3}\.\d{1,3}\b`)
 
-// reply returns the error of a reply to the recipient or the message (command is "RCPT TO" or
+// reply returns the error of a reply to the recipient or the message (name is "RCPT TO" or
 // "DATA"), classified as kernel.ErrRecipientRejected, kernel.ErrMailRejected, or temporary,
 // with the reply code and the enhanced status code but without the reply's text.
-func reply(command string, err error) error {
+func reply(name string, err error) error {
 	var te *textproto.Error
 	if !errors.As(err, &te) {
-		return fmt.Errorf("%s: %w", command, err)
+		return command(name, err)
 	}
 	status := enhancedStatus.FindString(te.Msg)
 	code := strconv.Itoa(te.Code)
@@ -172,11 +196,11 @@ func reply(command string, err error) error {
 	var out error
 	switch {
 	case te.Code < 500 || te.Code > 599:
-		out = fmt.Errorf("%s: reply %s", command, code)
-	case command == "RCPT TO" && strings.HasPrefix(status, "5.1."):
-		out = fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrRecipientRejected)
+		out = fmt.Errorf("%s: reply %s", name, code)
+	case name == "RCPT TO" && strings.HasPrefix(status, "5.1."):
+		out = fmt.Errorf("%s: reply %s: %w", name, code, kernel.ErrRecipientRejected)
 	default:
-		out = fmt.Errorf("%s: reply %s: %w", command, code, kernel.ErrMailRejected)
+		out = fmt.Errorf("%s: reply %s: %w", name, code, kernel.ErrMailRejected)
 	}
 	if status == "" {
 		return out

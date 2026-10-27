@@ -47,6 +47,64 @@ func (r *FinanceRepository) SumRuns(ctx context.Context, source string, from, un
 	return int(row.Requests), row.BytesBilled, nil
 }
 
+// SumRunsTx implements appfinance.Repository.
+func (r *FinanceRepository) SumRunsTx(ctx context.Context, tx uow.Tx, source string, from, until time.Time) (int, int64, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return 0, 0, err
+	}
+	row, err := q.SumBillingImportRuns(ctx, postgresgen.SumBillingImportRunsParams{Source: source, FromAt: from, UntilAt: until})
+	if err != nil {
+		return 0, 0, wrap(err, "sum billing import runs")
+	}
+	return int(row.Requests), row.BytesBilled, nil
+}
+
+// LockSource implements appfinance.Repository with a transaction-scoped advisory lock on the
+// imports of the source.
+func (r *FinanceRepository) LockSource(ctx context.Context, tx uow.Tx, source string) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.LockBillingImportSource(ctx, "finance:billing_import:"+source), "lock billing import source")
+}
+
+// InsertReservation implements appfinance.Repository.
+func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, res appfinance.Reservation) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	requests, err := toInt32(res.Requests, "billing import reservation")
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertBillingImportReservation(ctx, postgresgen.InsertBillingImportReservationParams{
+		ID: res.ID, Source: res.Source, RunKey: res.RunKey, Requests: requests, ReservedAt: res.ReservedAt,
+	}), "insert billing import reservation")
+}
+
+// ImportRunning implements appfinance.Repository.
+func (r *FinanceRepository) ImportRunning(ctx context.Context, tx uow.Tx, source string, since time.Time) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	v, err := q.PendingBillingImportReservation(ctx, postgresgen.PendingBillingImportReservationParams{Source: source, Since: since})
+	return v, wrap(err, "find a pending billing import reservation")
+}
+
+// RunKeySucceeded implements appfinance.Repository.
+func (r *FinanceRepository) RunKeySucceeded(ctx context.Context, tx uow.Tx, source, runKey string) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	v, err := q.BillingImportRunKeySucceeded(ctx, postgresgen.BillingImportRunKeySucceededParams{Source: source, RunKey: runKey})
+	return v, wrap(err, "find a succeeded billing import run")
+}
+
 // RunKeyUsed implements appfinance.Repository.
 func (r *FinanceRepository) RunKeyUsed(ctx context.Context, source, runKey string) (bool, error) {
 	n, err := r.db.reader().CountBillingImportRunsByKey(ctx, postgresgen.CountBillingImportRunsByKeyParams{Source: source, RunKey: runKey})

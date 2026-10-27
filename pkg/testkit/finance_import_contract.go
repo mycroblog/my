@@ -3,16 +3,19 @@
 package testkit
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"maps"
 	"reflect"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
@@ -100,7 +103,10 @@ func financeImportIdempotent(t *testing.T, e *financeEnv) {
 		Through: financeDate(t, "2026-10-19"), Rows: []FakeBillingRow{usd(fakeEC2, "30.004"), usd(fakeS3, "1.235")},
 	})
 	e.importNow(t, "schedule:finance.billing_import.aws:1", "done")
-	e.importNow(t, "schedule:finance.billing_import.aws:1", "done") // a retry of the job
+	e.importNow(t, "schedule:finance.billing_import.aws:1", "done") // the job again: it calls nothing
+	if n := e.aws.Calls(); n != 1 {
+		t.Errorf("the source was called %d times by one job, want 1", n)
+	}
 	e.clock.Advance(time.Hour)
 	e.importNow(t, "schedule:finance.billing_import.aws:2", "done")
 	e.importNow(t, appfinance.ManualRunKey("aws", e.clock.Now()), "done")
@@ -134,8 +140,8 @@ func financeImportIdempotent(t *testing.T, e *financeEnv) {
 
 	st := e.status(t)
 	if st.Source != "aws" || st.Provider != "AWS" || st.LastRun == nil || !st.LastRun.Succeeded() || st.LastSuccess == nil ||
-		st.RequestsToday != 4 || st.RequestsThisMonth != 4 || st.Caps != nil {
-		t.Errorf("status = %+v, want 4 successful requests today", st)
+		st.RequestsToday != 3 || st.RequestsThisMonth != 3 || st.Caps != nil {
+		t.Errorf("status = %+v, want 3 successful requests today", st)
 	}
 	if len(st.Months) != 2 || st.Months[0].Month.String() != "2026-10" || st.Months[0].Kind != finance.KindEstimate ||
 		st.Months[1].Kind != finance.KindFinal || !slices.Equal(st.Months[0].Totals, []finance.Money{{Minor: 3124, Currency: "USD"}}) {
@@ -248,6 +254,52 @@ func financeImportCaps(t *testing.T, e *financeEnv) {
 	st = e.status(t)
 	if st.LastRun.ErrorKind != appfinance.ImportErrorRequestCap || st.LastRun.Requests != 1 || st.RequestsToday != 2 {
 		t.Errorf("status after an attempt cut at the cap = %+v, last run %+v", st, st.LastRun)
+	}
+}
+
+// An attempt reserves its requests before it calls the source: while the reservation of an
+// attempt that is not recorded yet holds, the other attempts of the source wait and call nothing,
+// and the reservation counts toward the caps, also after ReservationHold; attempts at the same
+// time never call the source beyond the caps.
+func financeImportReservations(t *testing.T, e *financeEnv) {
+	ctx := t.Context()
+	e.aws.SetMonth(billingMonth(t, "2026-10"), FakeBillingMonth{Rows: []FakeBillingRow{usd(fakeS3, "1.00")}})
+	e.caps["aws"] = appfinance.RequestCaps{PerDay: 3, PerMonth: 120}
+	// An attempt that reserved a request and stopped before it recorded anything.
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.h.Finance.InsertReservation(ctx, tx, appfinance.Reservation{
+			ID: "01900000-0000-7000-8000-00000000f1a5", Source: "aws", RunKey: "run:stopped", Requests: 1, ReservedAt: e.clock.Now(),
+		})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if r := e.svc.Import(ctx, "aws", "run:1"); !r.IsRetry() || !errors.Is(r.Err(), appfinance.ErrImportRunning) {
+		t.Fatalf("Import while another attempt runs = %+v (%v), want a retry with ErrImportRunning", r, r.Err())
+	}
+	if n := e.aws.Calls(); n != 0 {
+		t.Fatalf("the source was called %d times while another attempt ran, want 0", n)
+	}
+	if st := e.status(t); st.RequestsToday != 1 {
+		t.Errorf("requests today with a reservation = %d, want 1", st.RequestsToday)
+	}
+	e.clock.Advance(appfinance.ReservationHold + time.Second)
+	e.importNow(t, "run:1", "done")
+	if req := e.aws.Requests(); len(req) != 1 || req[0].MaxRequests != 2 {
+		t.Fatalf("requests to the source = %+v, want one with 2 left under the cap", req)
+	}
+
+	// Attempts at the same time: one request is left today.
+	const n = 6
+	var wg sync.WaitGroup
+	for i := range n {
+		wg.Go(func() { e.svc.Import(ctx, "aws", fmt.Sprintf("run:concurrent:%d", i)) })
+	}
+	wg.Wait()
+	if got := e.aws.Calls(); got != 2 {
+		t.Errorf("the source was called %d times in all, want 2 under the daily cap", got)
+	}
+	if st := e.status(t); st.RequestsToday != 3 {
+		t.Errorf("requests today = %d, want 3", st.RequestsToday)
 	}
 }
 

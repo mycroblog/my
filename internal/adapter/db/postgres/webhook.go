@@ -267,16 +267,15 @@ func (r *WebhookRepository) Failures(ctx context.Context, tx uow.Tx, endpointID 
 	}, nil
 }
 
-// UpsertFailures implements appwebhook.Repository.
-func (r *WebhookRepository) UpsertFailures(ctx context.Context, tx uow.Tx, endpointID string, f webhook.Failures) error {
+// AddFailure implements appwebhook.Repository.
+func (r *WebhookRepository) AddFailure(ctx context.Context, tx uow.Tx, endpointID, attemptID string, at time.Time) error {
 	q, err := queries(tx)
 	if err != nil {
 		return err
 	}
-	return wrap(q.UpsertWebhookEndpointFailures(ctx, postgresgen.UpsertWebhookEndpointFailuresParams{
-		EndpointID: endpointID, FirstFailureAttemptID: f.FirstFailureAttemptID, FirstFailedAt: f.FirstFailureAt,
-		ConsecutiveFailures: int64(f.Consecutive),
-	}), "upsert webhook endpoint failures")
+	return wrap(q.AddWebhookEndpointFailure(ctx, postgresgen.AddWebhookEndpointFailureParams{
+		EndpointID: endpointID, FirstFailureAttemptID: attemptID, FirstFailedAt: at,
+	}), "add webhook endpoint failure")
 }
 
 // DeleteFailures implements appwebhook.Repository.

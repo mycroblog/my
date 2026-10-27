@@ -39,10 +39,12 @@
 | `supporter_subscription_heads` | 投影 | `subscription_id`（PK）, `transition_id`, `user_id`, `plan_id`, `state` | インデックス `(plan_id, state)`, `(user_id)` |
 | `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ |
 | `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)` |
+| `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを事業者から読み始めた時刻 |
 | `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | 参加者の一覧に出る選択（ADR-0071 §6） |
 
 - 状態は、webhook・決済画面からの戻り・Scheduler の期限・定期の照合のどれも、事業者からサブスクリプションを取り直して `supporters.Derive` で導きます（`Syncer`、ジョブ `supporters.sync`）。
   導いた状態か、プラン・価格・期間の終わり・猶予・予約された変更が直前の遷移と違うときだけ遷移の行を足し、同じトランザクションで投影と期限、プランのロールの付与・剥奪・入れ替え（`identity` の管理されたロールの操作）を書きます。ロールが外れる遷移は `supporter_listings` の行も消します。
+  スナップショットには読み始めた時刻を付け、加入の行をロックしたトランザクションで `supporter_subscription_reads` の時刻より前に読んだものは当てません。同時に読んだ古い状態が、先に当てた新しい状態を上書きしないためです。
 - 掲載の選択（`supporter_listings`）は、加入中（`active`・`canceling`・`past_due`）の本人が `PUT /preferences/supporter_listing` で入れ、取り消すと消えます。入れる処理は加入の行をロックして状態を確かめるので、ロールが外れる遷移と入れ違っても加入の終わった人の行は残りません。
   一覧（`GET /instance/supporters`）は、行と加入中の加入の投影と廃止していないプランの投影を結合し、プランの順位の順・載せた新しい順に読みます。
 - 期限は、`pending` が開始から 24 時間（`checkout`）、`active`・`canceling` が期間の終わり（`period_end`）、`past_due` が猶予の終わり（`grace`）です。5 分ごとのジョブ `supporters.deadlines` が期限の来た行に `supporters.sync` を積みます。

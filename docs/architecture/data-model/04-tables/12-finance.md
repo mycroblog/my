@@ -11,6 +11,7 @@
 | `cost_item_cancellations` | イベント | `id`, `cost_item_id`, `canceled_by_user_id`（NULL 可）, `canceled_at` | 一意 `(cost_item_id)` |
 | `cost_item_heads` | 投影 | `cost_item_id`（PK）, `label_revision_id`, `ends_on`（`date`。NULL 可 = 無期限） | 行がある = 取り消されていない |
 | `billing_import_runs` | イベント | `id`, `source`（`enum(aws, gcp)`）, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, failed)`）, `error_kind`（`enum(none, permission, not_enabled, not_found, throttled, request_cap, bytes_cap, invalid_response, unavailable)`）, `requests`（`int`）, `bytes_billed`（`bigint`）, `occurred_at` | `CHECK (outcome = 'succeeded') = (error_kind = 'none')`。インデックス `(source, occurred_at)`, `(run_key)` |
+| `billing_import_reservations` | イベント | `id`（試行の `billing_import_runs.id`）, `source`（`enum(aws, gcp)`）, `run_key`, `requests`（`int`。上限のない事業者は 0）, `reserved_at` | インデックス `(source, reserved_at)` |
 | `imported_cost_revisions` | イベント（版） | `id`, `source`, `billing_month`（`string(7)`。`YYYY-MM`）, `service`（`string(200)`）, `charge_type`（`enum(usage, credit, refund, tax, support, fee, adjustment, other)`）, `category`（`cost_item_label_revisions` と同じ enum）, `starts_on`・`ends_on`（`date`）, `amount_minor`（`bigint`。負も可）, `currency`（`string(3)`）, `kind`（`enum(estimate, final, correction)`）, `run_id`, `run_key`, `recorded_at` | 一意 `(source, billing_month, service, charge_type, run_key)`。`starts_on <= ends_on` |
 | `imported_cost_heads` | 投影 | `(source, billing_month, service, charge_type)`（PK）, `revision_id` | 版を足すトランザクションで同期に更新する |
 | `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp)`）, `provider_id`（`string(255)`。Stripe は balance transaction の ID、PAY.JP は ADR-0099 §5 の ID）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。返金・チャージバック・その取り消しの元の `payment` の行）, `subscription_id`（NULL 可 = 加入に結び付かない手数料。加入への論理参照で外部キーを付けない）, `occurred_at`, `occurred_on`（`date`。事業者のレポートのタイムゾーンでの日付）, `covers_starts_on`・`covers_ends_on`（`date`。NULL 可。`payment` の請求の期間）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`。負も可）, `currency`（`string(3)`）, `recorded_at` | 一意 `(provider, provider_id)`。`net_minor = gross_minor - fee_minor`。`covers_*` は両方 NULL か `payment` で `starts_on <= ends_on`。`parent_movement_id` は返金・チャージバック・取り消しだけ。インデックス `(occurred_on)`, `(subscription_id, occurred_at)` |
@@ -32,6 +33,9 @@
   成功した試行は、キー `(source, billing_month, service, charge_type)` ごとに最新の版と金額・通貨・確定の別・`starts_on`〜`ends_on` を比べ、違うキーだけ版を足して `imported_cost_heads` を同じトランザクションで更新します。取り直した月で事業者が返さなくなったキーは金額 0 の版になります。
   版の種類は、キーの最新の版が `final` か `correction` なら `correction`、事業者が月を確定と返せば `final`、それまでは `estimate` です（`finance.NextRevisionKind`）。同じジョブの再試行は `run_key` の一意制約で版を重ねません。
 - 取り直す月は事業者のタイムゾーンでの今月と、15 日まで、または確定するまでの前月です（`finance.RefetchMonths`）。AWS の課金される要求は `billing_import_runs.requests` を UTC の日と暦月で合計して上限（`billing_aws_max_requests_per_day`・`_per_month`）で止め、上限に達した試行は事業者を呼ばずに `request_cap` として記録します。
+  試行は事業者を呼ぶ前に、事業者ごとに 1 つずつ走るトランザクション（PostgreSQL は事業者ごとのアドバイザリロック）で残りの要求を `billing_import_reservations` に予約します。
+  まだ記録されていない試行の予約は、その要求の代わりに上限の合計に入るので、同時の試行が合わせて上限を超えることはありません。
+  記録されていない予約が `finance.ReservationHold`（15 分）以内にある間、同じ事業者のほかの試行は呼ばずに後で再試行し、同じ `run_key` の試行が成功していれば何も呼ばずに終えます。
 - 集計は、取り込んだ費用の各キーの最新の版を `starts_on`〜`ends_on` の日数に、現金主義でも按分でも日割りで載せ、`estimate` の版が載る期間を見込みとします（ADR-0068 §3）。
 
 - 収入（ADR-0073）は、決済の事業者で額が確定したお金の動きを 1 件 1 行で `income_movements` に記録します。加入のモジュール（`supporters`）の webhook と照合のジョブが `finance.RecordIncome` を呼び、

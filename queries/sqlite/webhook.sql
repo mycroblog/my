@@ -89,12 +89,14 @@ VALUES (?, ?, ?, ?, ?, ?);
 SELECT endpoint_id, first_failure_attempt_id, first_failed_at, consecutive_failures
 FROM webhook_endpoint_failures WHERE endpoint_id = ?;
 
--- name: UpsertWebhookEndpointFailures :exec
+-- AddWebhookEndpointFailure records a failed attempt in the run of failures of an endpoint in
+-- one statement: it starts the run with the attempt, or adds one to the run that goes on, so
+-- that concurrent failures each count.
+-- name: AddWebhookEndpointFailure :exec
 INSERT INTO webhook_endpoint_failures (endpoint_id, first_failure_attempt_id, first_failed_at, consecutive_failures)
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, 1)
 ON CONFLICT (endpoint_id) DO UPDATE SET
-  first_failure_attempt_id = excluded.first_failure_attempt_id, first_failed_at = excluded.first_failed_at,
-  consecutive_failures = excluded.consecutive_failures;
+  consecutive_failures = webhook_endpoint_failures.consecutive_failures + 1;
 
 -- name: DeleteWebhookEndpointFailures :exec
 DELETE FROM webhook_endpoint_failures WHERE endpoint_id = ?;

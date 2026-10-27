@@ -46,6 +46,54 @@ func (r *FinanceRepository) SumRuns(ctx context.Context, source string, from, un
 	return int(row.Requests), row.BytesBilled, nil
 }
 
+// SumRunsTx implements appfinance.Repository.
+func (r *FinanceRepository) SumRunsTx(ctx context.Context, tx uow.Tx, source string, from, until time.Time) (int, int64, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return 0, 0, err
+	}
+	row, err := q.SumBillingImportRuns(ctx, sqlitegen.SumBillingImportRunsParams{Source: source, FromAt: toMillis(from), UntilAt: toMillis(until)})
+	if err != nil {
+		return 0, 0, wrap(err, "sum billing import runs")
+	}
+	return int(row.Requests), row.BytesBilled, nil
+}
+
+// LockSource implements appfinance.Repository. SQLite runs one write transaction at a time, so
+// there is nothing to lock.
+func (r *FinanceRepository) LockSource(context.Context, uow.Tx, string) error { return nil }
+
+// InsertReservation implements appfinance.Repository.
+func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, res appfinance.Reservation) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertBillingImportReservation(ctx, sqlitegen.InsertBillingImportReservationParams{
+		ID: res.ID, Source: res.Source, RunKey: res.RunKey, Requests: int64(res.Requests), ReservedAt: toMillis(res.ReservedAt),
+	}), "insert billing import reservation")
+}
+
+// ImportRunning implements appfinance.Repository.
+func (r *FinanceRepository) ImportRunning(ctx context.Context, tx uow.Tx, source string, since time.Time) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	v, err := q.PendingBillingImportReservation(ctx, sqlitegen.PendingBillingImportReservationParams{Source: source, Since: toMillis(since)})
+	return v != 0, wrap(err, "find a pending billing import reservation")
+}
+
+// RunKeySucceeded implements appfinance.Repository.
+func (r *FinanceRepository) RunKeySucceeded(ctx context.Context, tx uow.Tx, source, runKey string) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	v, err := q.BillingImportRunKeySucceeded(ctx, sqlitegen.BillingImportRunKeySucceededParams{Source: source, RunKey: runKey})
+	return v != 0, wrap(err, "find a succeeded billing import run")
+}
+
 // RunKeyUsed implements appfinance.Repository.
 func (r *FinanceRepository) RunKeyUsed(ctx context.Context, source, runKey string) (bool, error) {
 	n, err := r.db.reader().CountBillingImportRunsByKey(ctx, sqlitegen.CountBillingImportRunsByKeyParams{Source: source, RunKey: runKey})

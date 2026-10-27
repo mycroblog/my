@@ -114,6 +114,16 @@ type Run struct {
 	OccurredAt  time.Time
 }
 
+// Reservation is the billed requests that an attempt of a billing import reserved before it
+// called the provider (billing_import_reservations): ID is the attempt's Run.ID.
+type Reservation struct {
+	ID         string
+	Source     string
+	RunKey     string
+	Requests   int
+	ReservedAt time.Time
+}
+
 // Succeeded reports whether the attempt recorded what the source reported.
 func (r Run) Succeeded() bool { return r.ErrorKind == ImportErrorNone }
 
@@ -145,8 +155,23 @@ type ImportRepository interface {
 	// InsertRun records an attempt.
 	InsertRun(ctx context.Context, tx uow.Tx, r Run) error
 	// SumRuns returns the requests and the bytes billed of the attempts of source that occurred
-	// in [from, until).
+	// in [from, until), counting the reservation of an attempt that is not recorded yet in place
+	// of its requests.
 	SumRuns(ctx context.Context, source string, from, until time.Time) (requests int, bytesBilled int64, err error)
+	// SumRunsTx is SumRuns in tx.
+	SumRunsTx(ctx context.Context, tx uow.Tx, source string, from, until time.Time) (requests int, bytesBilled int64, err error)
+	// LockSource makes the transactions that reserve requests for source run one at a time: it
+	// locks the source in tx on the databases that run write transactions at the same time.
+	LockSource(ctx context.Context, tx uow.Tx, source string) error
+	// InsertReservation records the requests that an attempt reserved before it calls the
+	// provider. Until the attempt (the Run of the same ID) is recorded, SumRuns counts the
+	// reservation in place of its requests.
+	InsertReservation(ctx context.Context, tx uow.Tx, r Reservation) error
+	// ImportRunning reports in tx whether an attempt of source reserved requests at or after
+	// since and is not recorded yet.
+	ImportRunning(ctx context.Context, tx uow.Tx, source string, since time.Time) (bool, error)
+	// RunKeySucceeded reports in tx whether an attempt of source with runKey succeeded.
+	RunKeySucceeded(ctx context.Context, tx uow.Tx, source, runKey string) (bool, error)
 	// RunKeyUsed reports whether an attempt of source recorded runKey.
 	RunKeyUsed(ctx context.Context, source, runKey string) (bool, error)
 	// LastRun returns the newest attempt of source, or its newest success when succeeded is
