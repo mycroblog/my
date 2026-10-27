@@ -417,6 +417,10 @@ func loginProviderLinks(t *testing.T, e *loginProviderEnv) {
 	if _, _, err := e.link(t, gh, "1003", alice); err != nil {
 		t.Errorf("link 1003 to alice after her unlink = %v", err)
 	}
+	counts, err := e.h.Identity.CountLoginProviderLinks(t.Context())
+	if err != nil || counts[gh] != 2 || counts[md] != 1 {
+		t.Errorf("CountLoginProviderLinks = %v, %v; want 2 at github and 1 at mastodon", counts, err)
+	}
 }
 
 // loginProviderRebuild empties the projections, rebuilds them, and reads what the commands

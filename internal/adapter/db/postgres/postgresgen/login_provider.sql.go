@@ -12,6 +12,36 @@ import (
 	"time"
 )
 
+const countLoginProviderLinks = `-- name: CountLoginProviderLinks :many
+SELECT provider_id, COUNT(*) AS users FROM user_external_identities GROUP BY provider_id
+`
+
+type CountLoginProviderLinksRow struct {
+	ProviderID string
+	Users      int64
+}
+
+// CountLoginProviderLinks counts the users linked to each provider that has one.
+func (q *Queries) CountLoginProviderLinks(ctx context.Context) ([]CountLoginProviderLinksRow, error) {
+	rows, err := q.db.Query(ctx, countLoginProviderLinks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountLoginProviderLinksRow{}
+	for rows.Next() {
+		var i CountLoginProviderLinksRow
+		if err := rows.Scan(&i.ProviderID, &i.Users); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteUserExternalIdentityByLink = `-- name: DeleteUserExternalIdentityByLink :exec
 DELETE FROM user_external_identities WHERE link_id = $1
 `

@@ -562,6 +562,16 @@ paths:
     $ref: ./paths/admin_oauth_client_host_denials.yaml
   /admin/oauth_client_host_denials/{host}:
     $ref: ./paths/admin_oauth_client_host_denials_{host}.yaml
+  /admin/login_providers:
+    $ref: ./paths/admin_login_providers.yaml
+  /admin/login_providers/{id}:
+    $ref: ./paths/admin_login_providers_{id}.yaml
+  /admin/login_providers/{id}/enable:
+    $ref: ./paths/admin_login_providers_{id}_enable.yaml
+  /admin/login_providers/{id}/disable:
+    $ref: ./paths/admin_login_providers_{id}_disable.yaml
+  /admin/login_providers/{id}/rotate_secret:
+    $ref: ./paths/admin_login_providers_{id}_rotate_secret.yaml
   /admin/webhooks:
     $ref: ./paths/admin_webhooks.yaml
   /admin/webhooks/{id}:
@@ -711,6 +721,8 @@ components:
       $ref: ./components/parameters/InstanceTextKey.yaml
     InviteId:
       $ref: ./components/parameters/InviteId.yaml
+    LoginProviderId:
+      $ref: ./components/parameters/LoginProviderId.yaml
     OAuthClientId:
       $ref: ./components/parameters/OAuthClientId.yaml
     OAuthClientHost:
@@ -764,6 +776,8 @@ components:
       $ref: ./components/responses/AdminCustomEmoji.yaml
     AdminCustomEmojiRequest:
       $ref: ./components/responses/AdminCustomEmojiRequest.yaml
+    AdminLoginProvider:
+      $ref: ./components/responses/AdminLoginProvider.yaml
     ErrorGroup:
       $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
@@ -812,6 +826,8 @@ components:
       $ref: ./components/responses/CustomEmojiRequest.yaml
     CustomEmojiRequestProblem:
       $ref: ./components/responses/CustomEmojiRequestProblem.yaml
+    LoginProviderProblem:
+      $ref: ./components/responses/LoginProviderProblem.yaml
     OAuthApp:
       $ref: ./components/responses/OAuthApp.yaml
     OwnCustomEmoji:
@@ -875,6 +891,14 @@ components:
       $ref: ./components/schemas/AdminAccountPrivateData.yaml
     AdminAccountRegistration:
       $ref: ./components/schemas/AdminAccountRegistration.yaml
+    AdminLoginProvider:
+      $ref: ./components/schemas/AdminLoginProvider.yaml
+    AdminLoginProviderList:
+      $ref: ./components/schemas/AdminLoginProviderList.yaml
+    AdminLoginProviderState:
+      $ref: ./components/schemas/AdminLoginProviderState.yaml
+    CreateLoginProviderRequest:
+      $ref: ./components/schemas/CreateLoginProviderRequest.yaml
     EmailSuppression:
       $ref: ./components/schemas/EmailSuppression.yaml
     AdminAccountRegistrationState:
@@ -959,6 +983,14 @@ components:
       $ref: ./components/schemas/AdminOAuthClientPage.yaml
     DenyOAuthClientHostRequest:
       $ref: ./components/schemas/DenyOAuthClientHostRequest.yaml
+    LoginProviderClaimCondition:
+      $ref: ./components/schemas/LoginProviderClaimCondition.yaml
+    LoginProviderKind:
+      $ref: ./components/schemas/LoginProviderKind.yaml
+    LoginProviderProblem:
+      $ref: ./components/schemas/LoginProviderProblem.yaml
+    LoginProviderProblemReason:
+      $ref: ./components/schemas/LoginProviderProblemReason.yaml
     OAuthClientRegistration:
       $ref: ./components/schemas/OAuthClientRegistration.yaml
     AdminInviteState:
@@ -1071,6 +1103,8 @@ components:
       $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:
       $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
+    RotateLoginProviderSecretRequest:
+      $ref: ./components/schemas/RotateLoginProviderSecretRequest.yaml
     ServiceClosureState:
       $ref: ./components/schemas/ServiceClosureState.yaml
     ServiceClosureNotice:
@@ -1639,6 +1673,8 @@ components:
       $ref: ./components/schemas/UpdateCustomEmojiRequest.yaml
     UpdateInstanceSettingsRequest:
       $ref: ./components/schemas/UpdateInstanceSettingsRequest.yaml
+    UpdateLoginProviderRequest:
+      $ref: ./components/schemas/UpdateLoginProviderRequest.yaml
     UpdateOAuthAppRequest:
       $ref: ./components/schemas/UpdateOAuthAppRequest.yaml
     UpdateOwnCustomEmojiRequest:

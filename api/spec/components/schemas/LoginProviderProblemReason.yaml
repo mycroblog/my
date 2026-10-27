@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+  than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+  `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+  for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+  control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+  characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+  claims for another kind than `oidc`, Organizations for another kind than `github`, or
+  ones that are not valid.
+type: string
+enum: [kind, display_name, issuer, client_id, client_secret, scopes, conditions]

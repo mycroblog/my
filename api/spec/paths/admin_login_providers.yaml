@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAdminLoginProviders
+  summary: List the login providers
+  description: |
+    The external login providers that are not deleted, enabled or not, newest first.
+    Needs the `manage_login_providers` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The login providers.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminLoginProviderList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createLoginProvider
+  summary: Set up a login provider
+  description: |
+    Sets up an external login provider, enabled, with the client ID and secret that the
+    provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+    that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+    says which. The setup is recorded in the audit log under the display name.
+    Needs the `manage_login_providers` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateLoginProviderRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminLoginProvider.yaml
+    "422":
+      $ref: ../components/responses/LoginProviderProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

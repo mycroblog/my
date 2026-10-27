@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: disableLoginProvider
+  summary: Disable a login provider
+  description: |
+    Nobody signs in, signs up, or links an account with the provider until it is enabled
+    again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+    answer is the number of users that can no longer sign in with it. Disabling a disabled
+    provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+    ID is a 404. Needs the `manage_login_providers` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/LoginProviderId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminLoginProvider.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

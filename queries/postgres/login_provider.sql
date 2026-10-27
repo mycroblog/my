@@ -114,3 +114,7 @@ JOIN external_identities x ON x.id = u.external_identity_id
 JOIN external_identity_links l ON l.id = u.link_id
 WHERE u.user_id = $1
 ORDER BY u.link_id;
+
+-- CountLoginProviderLinks counts the users linked to each provider that has one.
+-- name: CountLoginProviderLinks :many
+SELECT provider_id, COUNT(*) AS users FROM user_external_identities GROUP BY provider_id;

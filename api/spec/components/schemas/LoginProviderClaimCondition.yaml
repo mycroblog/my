@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A condition of an `oidc` provider: a user signs in only when the claim of the ID token
+  has one of the values, such as `hd` for the domain of a Google Workspace organization.
+type: object
+required: [claim, values]
+properties:
+  claim:
+    description: The name of the claim, up to 100 bytes.
+    type: string
+    maxLength: 100
+  values:
+    description: The allowed values, 1 to 50 of up to 256 characters each, sorted.
+    type: array
+    minItems: 1
+    maxItems: 50
+    items:
+      type: string
+      maxLength: 256

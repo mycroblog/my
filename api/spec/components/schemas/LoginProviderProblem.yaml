@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The problem of a login provider that breaks a rule (422,
+  `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
+  request) has none.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      reason:
+        $ref: ./LoginProviderProblemReason.yaml

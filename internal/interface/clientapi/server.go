@@ -278,6 +278,9 @@ type Options struct {
 	// OAuthClients runs the OAuth clients and the denied hosts of client metadata documents
 	// (admin_oauth_clients.go).
 	OAuthClients OAuthClients
+	// LoginProviders runs the external login providers (admin_login_providers.go); nil answers
+	// 404 to their operations.
+	LoginProviders LoginProviders
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms

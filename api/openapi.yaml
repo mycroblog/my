@@ -8153,6 +8153,187 @@ paths:
           description: The host is allowed.
         default:
           $ref: '#/components/responses/Problem'
+  /admin/login_providers:
+    get:
+      operationId: listAdminLoginProviders
+      summary: List the login providers
+      description: |
+        The external login providers that are not deleted, enabled or not, newest first.
+        Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The login providers.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminLoginProviderList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createLoginProvider
+      summary: Set up a login provider
+      description: |
+        Sets up an external login provider, enabled, with the client ID and secret that the
+        provider gave for the answer's `callback_url`. The secret is never shown again. Settings
+        that break a rule are a 422 `/api/v1/problems/invalid-login-provider` whose `reason`
+        says which. The setup is recorded in the audit log under the display name.
+        Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoginProviderRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        '422':
+          $ref: '#/components/responses/LoginProviderProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/login_providers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/LoginProviderId'
+    get:
+      operationId: getAdminLoginProvider
+      summary: Get a login provider
+      description: An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateLoginProvider
+      summary: Change a login provider
+      description: |
+        Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
+        `organizations` remove them. A refused change is a 422
+        `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
+        unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLoginProviderRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        '422':
+          $ref: '#/components/responses/LoginProviderProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteLoginProvider
+      summary: Delete a login provider
+      description: |
+        Deletes the provider for good: the users linked to it no longer sign in with it. The
+        deletion is recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      responses:
+        '204':
+          description: The login provider is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/login_providers/{id}/enable:
+    post:
+      operationId: enableLoginProvider
+      summary: Enable a login provider
+      description: |
+        Users sign in, sign up, and link their accounts with the provider again. Enabling an
+        enabled provider changes nothing. The change is recorded in the audit log. An unknown or
+        deleted ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/LoginProviderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/login_providers/{id}/disable:
+    post:
+      operationId: disableLoginProvider
+      summary: Disable a login provider
+      description: |
+        Nobody signs in, signs up, or links an account with the provider until it is enabled
+        again, and the sign-in screen no longer shows it; the links stay. `linked_users` of the
+        answer is the number of users that can no longer sign in with it. Disabling a disabled
+        provider changes nothing. The change is recorded in the audit log. An unknown or deleted
+        ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/LoginProviderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/login_providers/{id}/rotate_secret:
+    post:
+      operationId: rotateLoginProviderSecret
+      summary: Give a login provider a new client secret
+      description: |
+        Replaces the client secret with the one the request gives, which the provider issued;
+        the previous one is no longer used. The secret is never shown again. A secret that
+        breaks a rule is a 422 `/api/v1/problems/invalid-login-provider`. The rotation is
+        recorded in the audit log. An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/LoginProviderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotateLoginProviderSecretRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminLoginProvider'
+        '422':
+          $ref: '#/components/responses/LoginProviderProblem'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/webhooks:
     get:
       operationId: listAdminWebhooks
@@ -9071,6 +9252,13 @@ components:
       description: The ID of the invite.
       schema:
         $ref: '#/components/schemas/Id'
+    LoginProviderId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the login provider.
+      schema:
+        $ref: '#/components/schemas/Id'
     OAuthClientId:
       name: id
       in: path
@@ -9282,6 +9470,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminCustomEmojiRequest'
+    AdminLoginProvider:
+      description: The login provider.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminLoginProvider'
     ErrorGroup:
       description: The error group.
       headers:
@@ -9506,6 +9703,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/CustomEmojiRequestProblem'
+    LoginProviderProblem:
+      description: The login provider breaks a rule; nothing was changed.
+      headers:
+        Content-Language:
+          description: The locale of `title` and `detail`.
+          schema:
+            type: string
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/LoginProviderProblem'
     OAuthApp:
       description: The OAuth app.
       headers:
@@ -10165,6 +10375,167 @@ components:
           description: When the registration entered its `registration_state`.
           type: string
           format: date-time
+    AdminLoginProvider:
+      description: |
+        An external login provider that users sign in, sign up, and link their accounts with.
+        Its client secret is never shown.
+      type: object
+      required:
+        - id
+        - kind
+        - display_name
+        - client_id
+        - scopes
+        - allow_signup
+        - allow_link
+        - claims
+        - organizations
+        - state
+        - state_changed_at
+        - callback_url
+        - linked_users
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        kind:
+          $ref: '#/components/schemas/LoginProviderKind'
+        display_name:
+          description: |
+            The name of the provider on the administration screens, and on the sign-in button of
+            an `oidc` provider as it is written.
+          type: string
+        issuer:
+          description: |
+            The OpenID Connect issuer of an `oidc` provider, or the server's URL
+            (`https://<host>`) of a `mastodon` one; omitted for `github`.
+          type: string
+        client_id:
+          type: string
+        scopes:
+          description: The scopes asked for besides the ones the kind needs, sorted.
+          type: array
+          items:
+            type: string
+        allow_signup:
+          description: Whether new users may sign up with the provider.
+          type: boolean
+        allow_link:
+          description: Whether users may link their account to the provider.
+          type: boolean
+        claims:
+          description: The conditions of an `oidc` provider, by claim; empty lets every user in.
+          type: array
+          items:
+            $ref: '#/components/schemas/LoginProviderClaimCondition'
+        organizations:
+          description: |
+            The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
+            provider must belong to; empty lets every GitHub user in.
+          type: array
+          items:
+            type: string
+        state:
+          $ref: '#/components/schemas/AdminLoginProviderState'
+        state_changed_at:
+          type: string
+          format: date-time
+        callback_url:
+          description: |
+            The redirect URI to register at the provider:
+            `https://<host>/auth/external/<id>/callback`.
+          type: string
+        linked_users:
+          description: |
+            The number of users whose accounts are linked to the provider; disabling or deleting it
+            keeps them from signing in with it.
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          description: When the settings last changed.
+          type: string
+          format: date-time
+    AdminLoginProviderList:
+      description: The login providers, newest first.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminLoginProvider'
+    AdminLoginProviderState:
+      description: |
+        Whether users sign in, sign up, and link their accounts with the provider. The sign-in
+        screen shows only the enabled providers.
+      type: string
+      enum:
+        - enabled
+        - disabled
+    CreateLoginProviderRequest:
+      description: |
+        A new login provider. `allow_signup` is false and `allow_link` true unless given.
+      type: object
+      required:
+        - kind
+        - display_name
+        - client_id
+        - client_secret
+      properties:
+        kind:
+          $ref: '#/components/schemas/LoginProviderKind'
+        display_name:
+          description: |
+            The name on the administration screens and on the sign-in button of an `oidc`
+            provider, 1 to 100 characters without control characters.
+          type: string
+          maxLength: 100
+        issuer:
+          description: |
+            For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+            exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+            `https://<host>`. None for `github`.
+          type: string
+          maxLength: 2048
+        client_id:
+          description: The client ID that the provider gave, up to 512 bytes.
+          type: string
+          maxLength: 512
+        scopes:
+          description: |
+            Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+            Organizations of `github`); none for `mastodon`.
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        allow_signup:
+          description: Whether new users may sign up with the provider.
+          type: boolean
+        allow_link:
+          description: Whether users may link their account to the provider.
+          type: boolean
+        claims:
+          description: The conditions on the claims of the ID token, for `oidc` only, at most 10.
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/LoginProviderClaimCondition'
+        organizations:
+          description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+          type: array
+          maxItems: 50
+          items:
+            type: string
+        client_secret:
+          description: The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+          type: string
+          maxLength: 1024
     EmailSuppression:
       description: |
         The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
@@ -11203,6 +11574,66 @@ components:
           type: string
           minLength: 1
           maxLength: 253
+    LoginProviderClaimCondition:
+      description: |
+        A condition of an `oidc` provider: a user signs in only when the claim of the ID token
+        has one of the values, such as `hd` for the domain of a Google Workspace organization.
+      type: object
+      required:
+        - claim
+        - values
+      properties:
+        claim:
+          description: The name of the claim, up to 100 bytes.
+          type: string
+          maxLength: 100
+        values:
+          description: The allowed values, 1 to 50 of up to 256 characters each, sorted.
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 256
+    LoginProviderKind:
+      description: |
+        The kind of an external login provider. `oidc`: an OpenID Connect provider found by
+        its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+      type: string
+      enum:
+        - oidc
+        - github
+        - mastodon
+    LoginProviderProblem:
+      description: |
+        The problem of a login provider that breaks a rule (422,
+        `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
+        request) has none.
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            reason:
+              $ref: '#/components/schemas/LoginProviderProblemReason'
+    LoginProviderProblemReason:
+      description: |
+        Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
+        than 100 characters, or with control characters. `issuer`: not what the kind takes (an
+        `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
+        for `mastodon`; none for `github`). `client_id`: empty, longer than 512 bytes, or with
+        control characters. `client_secret`: empty, longer than 1024 bytes, or with control
+        characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
+        claims for another kind than `oidc`, Organizations for another kind than `github`, or
+        ones that are not valid.
+      type: string
+      enum:
+        - kind
+        - display_name
+        - issuer
+        - client_id
+        - client_secret
+        - scopes
+        - conditions
     OAuthClientRegistration:
       description: |
         The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
@@ -12571,6 +13002,16 @@ components:
           description: The operator's message to the users, as plain text of at most 5,000 characters; omitted or empty for none.
           type: string
           maxLength: 5000
+    RotateLoginProviderSecretRequest:
+      description: A new client secret of a login provider.
+      type: object
+      required:
+        - client_secret
+      properties:
+        client_secret:
+          description: The client secret that the provider gave, up to 1024 bytes. It is never shown again.
+          type: string
+          maxLength: 1024
     ServiceClosureState:
       description: |
         Where the server is in its closure (ADR-0088 §1):
@@ -18754,6 +19195,55 @@ components:
           additionalProperties:
             type: string
             maxLength: 320
+    UpdateLoginProviderRequest:
+      description: |
+        The changes to a login provider; what is omitted stays. The kind does not change, and the
+        client secret changes only by a rotation.
+      type: object
+      properties:
+        display_name:
+          description: |
+            The name on the administration screens and on the sign-in button of an `oidc`
+            provider, 1 to 100 characters without control characters.
+          type: string
+          maxLength: 100
+        issuer:
+          description: |
+            For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
+            exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
+            `https://<host>`. None for `github`.
+          type: string
+          maxLength: 2048
+        client_id:
+          description: The client ID that the provider gave, up to 512 bytes.
+          type: string
+          maxLength: 512
+        scopes:
+          description: |
+            Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
+            Organizations of `github`); none for `mastodon`.
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        allow_signup:
+          description: Whether new users may sign up with the provider.
+          type: boolean
+        allow_link:
+          description: Whether users may link their account to the provider.
+          type: boolean
+        claims:
+          description: The conditions on the claims of the ID token, for `oidc` only, at most 10.
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/LoginProviderClaimCondition'
+        organizations:
+          description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+          type: array
+          maxItems: 50
+          items:
+            type: string
     UpdateOAuthAppRequest:
       description: The changes to an OAuth app, checked as for a new one; what is omitted stays.
       type: object
