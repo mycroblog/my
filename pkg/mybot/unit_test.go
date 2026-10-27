@@ -142,3 +142,35 @@ func TestTracker(t *testing.T) {
 		t.Errorf("released: %q, want c", p)
 	}
 }
+
+// A change whose save fails leaves the FileStore as it was.
+func TestFileStoreKeepsNothingOfAFailedSave(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "state")
+	s, err := NewFileStore(filepath.Join(dir, "state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	if err := s.MarkProcessed(ctx, "lost", time.Now()); err == nil {
+		t.Fatal("MarkProcessed succeeded without the directory")
+	}
+	if ok, _ := s.IsProcessed(ctx, "lost"); ok {
+		t.Error("the failed MarkProcessed is in the store")
+	}
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetPosition(ctx, "p"); err != nil {
+		t.Fatal(err)
+	}
+	r, err := NewFileStore(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := r.IsProcessed(ctx, "lost"); ok {
+		t.Error("a later save wrote the failed MarkProcessed")
+	}
+	if p, _ := r.Position(ctx); p != "p" {
+		t.Errorf("position = %q, want p", p)
+	}
+}

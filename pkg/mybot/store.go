@@ -8,8 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -69,15 +71,24 @@ func newStateStore(s storeState, save func(*storeState) error) *stateStore {
 	return &stateStore{s: s, save: save}
 }
 
-// change applies f to the state and saves it; s.mu is taken.
+// change applies f to the state and saves it; s.mu is taken. When the save fails, the state stays as it was, so
+// that it never holds what the file does not.
 func (st *stateStore) change(f func(*storeState)) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	f(&st.s)
 	if st.save == nil {
+		f(&st.s)
 		return nil
 	}
-	return st.save(&st.s)
+	next := st.s
+	next.Processed = maps.Clone(st.s.Processed)
+	next.LastRuns = maps.Clone(st.s.LastRuns)
+	f(&next)
+	if err := st.save(&next); err != nil {
+		return err
+	}
+	st.s = next
+	return nil
 }
 
 func (st *stateStore) IsProcessed(_ context.Context, id string) (bool, error) {
@@ -155,8 +166,10 @@ func NewMemoryStore() *MemoryStore {
 }
 
 // FileStore is a Store in one JSON file, the default Store of a Bot. Every change rewrites the file: the new
-// content goes to a temporary file in the same directory, which then replaces the file, so that a crash never
-// leaves half of it. The file holds the refresh token: it is created readable by its owner only.
+// content goes to a temporary file in the same directory, flushed to the disk, which then replaces the file, so
+// that a crash never leaves half of it; the directory is flushed too where the system allows it. A change that
+// returns nil is on the disk; one that returns an error changed neither the file nor the store. The file holds the
+// refresh token: it is created readable by its owner only.
 type FileStore struct {
 	*stateStore
 	path string
@@ -217,5 +230,20 @@ func (f *FileStore) write(s *storeState) error {
 		return fmt.Errorf("mybot: write the state file: %w", err)
 	}
 	done = true
+	syncDir(filepath.Dir(f.path))
 	return nil
+}
+
+// syncDir flushes the directory dir, so that a rename in it outlasts a crash of the system. It does its best: a
+// system that cannot open a directory to flush it, such as Windows, keeps the rename in its own time.
+func syncDir(dir string) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	d, err := os.Open(dir) //nolint:gosec // G304: the directory of the state file that the bot was configured with
+	if err != nil {
+		return
+	}
+	_ = d.Sync()
+	_ = d.Close()
 }
