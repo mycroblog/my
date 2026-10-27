@@ -5,6 +5,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
@@ -23,11 +24,30 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 	return wrap(err, "insert data export")
 }
 
-// InsertDataExportResult implements identity.ExportRepository.
-func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) error {
+// LockPendingDataExports implements identity.ExportRepository. SQLite serializes write
+// transactions (BEGIN IMMEDIATE), so reading inside tx is enough.
+func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
 	q, err := queries(tx)
 	if err != nil {
-		return err
+		return false, err
+	}
+	pending, err := q.HasPendingDataExport(ctx, userID)
+	return pending, wrap(err, "find a pending data export")
+}
+
+// InsertDataExportResult implements identity.ExportRepository. SQLite serializes write
+// transactions, so the export that tx finds stays until tx ends.
+func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	present, err := q.DataExportExists(ctx, res.ExportID)
+	if err != nil {
+		return false, wrap(err, "find data export")
+	}
+	if !present {
+		return false, fmt.Errorf("data export %s: %w", res.ExportID, appidentity.ErrNotFound)
 	}
 	p := sqlitegen.InsertDataExportResultParams{
 		ExportID: res.ExportID, Outcome: string(res.Outcome), BlobKey: toNullString(res.BlobKey),
@@ -36,7 +56,16 @@ func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.
 	if res.Outcome == identity.ExportReady {
 		p.FileSize = sql.NullInt64{Int64: res.FileSize, Valid: true}
 	}
-	return wrap(q.InsertDataExportResult(ctx, p), "insert data export result")
+	n, err := q.InsertDataExportResult(ctx, p)
+	return n > 0, wrap(err, "insert data export result")
+}
+
+// ListStalePendingDataExports implements identity.ExportRepository.
+func (r *IdentityRepository) ListStalePendingDataExports(ctx context.Context, t time.Time, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListStalePendingDataExports(ctx, sqlitegen.ListStalePendingDataExportsParams{
+		RequestedBefore: toMillis(t), BatchLimit: int64(limit),
+	})
+	return ids, wrap(err, "list stale pending data exports")
 }
 
 // FindDataExport implements identity.ExportRepository.
@@ -86,10 +115,10 @@ func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id
 	if err != nil {
 		return err
 	}
-	if err := q.DeleteDataExportResult(ctx, id); err != nil {
-		return wrap(err, "delete data export result")
+	if err := q.DeleteDataExport(ctx, id); err != nil {
+		return wrap(err, "delete data export")
 	}
-	return wrap(q.DeleteDataExport(ctx, id), "delete data export")
+	return wrap(q.DeleteDataExportResult(ctx, id), "delete data export result")
 }
 
 func dataExport(row sqlitegen.ListDataExportsRow) identity.DataExport {

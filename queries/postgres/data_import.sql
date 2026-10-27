@@ -58,3 +58,27 @@ DELETE FROM data_import_items WHERE import_id = sqlc.arg(import_id)::uuid;
 
 -- name: DeleteDataImport :exec
 DELETE FROM data_imports WHERE id = sqlc.arg(id)::uuid;
+
+-- name: DeleteDataImportItemFailures :exec
+DELETE FROM data_import_item_failures WHERE import_id = sqlc.arg(import_id)::uuid;
+
+-- HasUnfinishedDataImport reports whether the user has an import with an item without a result.
+-- name: HasUnfinishedDataImport :one
+SELECT EXISTS (
+  SELECT 1 FROM data_imports i JOIN data_import_items t ON t.import_id = i.id
+  WHERE i.user_id = sqlc.arg(user_id)::uuid
+    AND NOT EXISTS (SELECT 1 FROM data_import_item_results r WHERE r.import_id = t.import_id AND r.position = t.position)
+)::boolean AS unfinished;
+
+-- LockDataImport locks an import against its deletion until the transaction ends.
+-- name: LockDataImport :one
+SELECT id FROM data_imports WHERE id = sqlc.arg(id)::uuid FOR SHARE;
+
+-- InsertDataImportItemFailure records a failed run of an item as the attempt after its last one
+-- and returns that attempt.
+-- name: InsertDataImportItemFailure :one
+INSERT INTO data_import_item_failures (import_id, position, attempt, failed_at)
+SELECT sqlc.arg(import_id)::uuid, sqlc.arg(position)::integer, COALESCE(MAX(f.attempt), 0) + 1, sqlc.arg(failed_at)::timestamptz
+FROM data_import_item_failures f
+WHERE f.import_id = sqlc.arg(import_id)::uuid AND f.position = sqlc.arg(position)::integer
+RETURNING attempt;

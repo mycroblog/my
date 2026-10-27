@@ -21,6 +21,15 @@ func (q *Queries) DeleteDataImport(ctx context.Context, id string) error {
 	return err
 }
 
+const deleteDataImportItemFailures = `-- name: DeleteDataImportItemFailures :exec
+DELETE FROM data_import_item_failures WHERE import_id = $1::uuid
+`
+
+func (q *Queries) DeleteDataImportItemFailures(ctx context.Context, importID string) error {
+	_, err := q.db.Exec(ctx, deleteDataImportItemFailures, importID)
+	return err
+}
+
 const deleteDataImportItemResults = `-- name: DeleteDataImportItemResults :exec
 DELETE FROM data_import_item_results WHERE import_id = $1::uuid
 `
@@ -79,6 +88,22 @@ func (q *Queries) GetDataImportProgress(ctx context.Context, id string) (GetData
 	return i, err
 }
 
+const hasUnfinishedDataImport = `-- name: HasUnfinishedDataImport :one
+SELECT EXISTS (
+  SELECT 1 FROM data_imports i JOIN data_import_items t ON t.import_id = i.id
+  WHERE i.user_id = $1::uuid
+    AND NOT EXISTS (SELECT 1 FROM data_import_item_results r WHERE r.import_id = t.import_id AND r.position = t.position)
+)::boolean AS unfinished
+`
+
+// HasUnfinishedDataImport reports whether the user has an import with an item without a result.
+func (q *Queries) HasUnfinishedDataImport(ctx context.Context, userID string) (bool, error) {
+	row := q.db.QueryRow(ctx, hasUnfinishedDataImport, userID)
+	var unfinished bool
+	err := row.Scan(&unfinished)
+	return unfinished, err
+}
+
 const insertDataImport = `-- name: InsertDataImport :exec
 
 INSERT INTO data_imports (id, user_id, account_id, kind, mode, created_at)
@@ -105,6 +130,29 @@ func (q *Queries) InsertDataImport(ctx context.Context, arg InsertDataImportPara
 		arg.CreatedAt,
 	)
 	return err
+}
+
+const insertDataImportItemFailure = `-- name: InsertDataImportItemFailure :one
+INSERT INTO data_import_item_failures (import_id, position, attempt, failed_at)
+SELECT $1::uuid, $2::integer, COALESCE(MAX(f.attempt), 0) + 1, $3::timestamptz
+FROM data_import_item_failures f
+WHERE f.import_id = $1::uuid AND f.position = $2::integer
+RETURNING attempt
+`
+
+type InsertDataImportItemFailureParams struct {
+	ImportID string
+	Position int32
+	FailedAt time.Time
+}
+
+// InsertDataImportItemFailure records a failed run of an item as the attempt after its last one
+// and returns that attempt.
+func (q *Queries) InsertDataImportItemFailure(ctx context.Context, arg InsertDataImportItemFailureParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertDataImportItemFailure, arg.ImportID, arg.Position, arg.FailedAt)
+	var attempt int32
+	err := row.Scan(&attempt)
+	return attempt, err
 }
 
 const insertDataImportItemResult = `-- name: InsertDataImportItemResult :exec
@@ -293,4 +341,16 @@ func (q *Queries) ListPendingDataImportItems(ctx context.Context, arg ListPendin
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockDataImport = `-- name: LockDataImport :one
+SELECT id FROM data_imports WHERE id = $1::uuid FOR SHARE
+`
+
+// LockDataImport locks an import against its deletion until the transaction ends.
+func (q *Queries) LockDataImport(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, lockDataImport, id)
+	var id_2 string
+	err := row.Scan(&id_2)
+	return id_2, err
 }
