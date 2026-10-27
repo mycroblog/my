@@ -119,6 +119,19 @@ func (q *ExportQueue) Close(ctx context.Context) error {
 	return nil
 }
 
+// closingExportQueue is an ExportQueue whose sender holds resources that shutdown releases
+// after the queue has drained, such as the LoggerProvider of the otlp exporter.
+type closingExportQueue struct {
+	*ExportQueue
+	shutdown func(ctx context.Context) error
+}
+
+// Close drains the queue, then shuts the sender down within ctx.
+func (q *closingExportQueue) Close(ctx context.Context) error {
+	_ = q.ExportQueue.Close(ctx)
+	return q.shutdown(ctx)
+}
+
 func (q *ExportQueue) run(ctx context.Context) {
 	defer close(q.done)
 	for ev := range q.queue {

@@ -1344,7 +1344,7 @@ Where the error reports also go: the panics, the errors behind a 5xx response or
 | --- | --- | --- |
 | `none` | yes | Only the log line and the error groups in the database. |
 | `sentry` | yes | Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking. |
-| `otlp` | not in v0 | Also as OpenTelemetry log records of exceptions over OTLP/HTTP, to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`. |
+| `otlp` | yes | Also as OpenTelemetry log records of exceptions (event name `exception`) over OTLP/HTTP (protobuf, gzip), to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) with `OTEL_EXPORTER_OTLP_HEADERS`. Whether the receiving backend groups them as errors depends on the backend; for Sentry, GlitchTip, and Datadog use `sentry`. The build tag `no_otel` leaves it out. |
 
 ### `errors_sentry_dsn`
 
