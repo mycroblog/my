@@ -95,3 +95,35 @@ func (r *PaymentRepository) LastReconcileRun(ctx context.Context, provider strin
 		OccurredAt: fromMillis(row.OccurredAt),
 	}, nil
 }
+
+// ClaimCheckout implements supporters.PaymentRepository.
+func (r *PaymentRepository) ClaimCheckout(ctx context.Context, tx uow.Tx, c supporters.CheckoutClaim) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.ClaimPaymentCheckout(ctx, sqlitegen.ClaimPaymentCheckoutParams{
+		Provider: c.Provider, CheckoutID: c.CheckoutID, Holder: c.Holder, ClaimedAt: toMillis(c.ClaimedAt), ExpiresAt: toMillis(c.ExpiresAt),
+	})
+	return n > 0, wrap(err, "claim payment checkout")
+}
+
+// ReleaseCheckout implements supporters.PaymentRepository.
+func (r *PaymentRepository) ReleaseCheckout(ctx context.Context, tx uow.Tx, provider, checkoutID, holder string) error {
+	q, err := queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.ReleasePaymentCheckout(ctx, sqlitegen.ReleasePaymentCheckoutParams{Provider: provider, CheckoutID: checkoutID, Holder: holder}),
+		"release payment checkout")
+}
+
+// PurgeCheckoutClaims implements supporters.PaymentRepository.
+func (r *PaymentRepository) PurgeCheckoutClaims(ctx context.Context, tx uow.Tx, before time.Time) (int64, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.PurgePaymentCheckoutClaims(ctx, toMillis(before))
+	return n, wrap(err, "purge payment checkout claims")
+}

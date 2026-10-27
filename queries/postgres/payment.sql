@@ -41,3 +41,22 @@ FROM payment_reconcile_runs
 WHERE provider = sqlc.arg(provider) AND (sqlc.arg(include_failed)::boolean OR outcome <> 'failed')
 ORDER BY occurred_at DESC, id DESC
 LIMIT 1;
+
+-- ClaimPaymentCheckout takes the claim of a checkout when no one holds it or its claim has
+-- expired, and reports through its row count whether it did.
+-- name: ClaimPaymentCheckout :execrows
+INSERT INTO payment_checkout_claims (provider, checkout_id, holder, claimed_at, expires_at)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (provider, checkout_id) DO UPDATE SET
+  holder = excluded.holder,
+  claimed_at = excluded.claimed_at,
+  expires_at = excluded.expires_at
+WHERE payment_checkout_claims.expires_at <= excluded.claimed_at;
+
+-- ReleasePaymentCheckout deletes the claim of a checkout when holder still holds it.
+-- name: ReleasePaymentCheckout :exec
+DELETE FROM payment_checkout_claims WHERE provider = $1 AND checkout_id = $2 AND holder = $3;
+
+-- PurgePaymentCheckoutClaims deletes the claims that expired before before_at.
+-- name: PurgePaymentCheckoutClaims :execrows
+DELETE FROM payment_checkout_claims WHERE expires_at < sqlc.arg(before_at);

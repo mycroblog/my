@@ -68,7 +68,9 @@ const paymentProvider = "stripe"
 // payments it refers to, the receipts are purged after their retention, and the
 // reconciliation catches up on what the webhooks missed, stays within its requests, resumes
 // from its cursors in continuation jobs until its sweep ends, records failures without losing
-// its cursors, and skips changes older than the provider keeps.
+// its cursors, and skips changes older than the provider keeps. One post of a checkout at a time
+// holds its claim across the processes on the database, until it releases the claim or the claim
+// expires.
 func PaymentRepositoryContract(t *testing.T, newHarness PaymentFactory) {
 	t.Helper()
 	cases := []struct {
@@ -86,6 +88,7 @@ func PaymentRepositoryContract(t *testing.T, newHarness PaymentFactory) {
 		{"RecordsFailedReconciliations", paymentReconcileFailure},
 		{"SkipsChangesOutsideTheWindow", paymentReconcileWindow},
 		{"ServesThePagesOfAPageServer", paymentPageServer},
+		{"ClaimsACheckoutAcrossProcesses", paymentCheckoutClaim},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newHarness) })
@@ -772,5 +775,85 @@ func paymentPageServer(t *testing.T, newHarness PaymentFactory) {
 	}
 	if res, err := e.svc.Pages(ctx, paymentProvider, "198.51.100.8"); err != nil || res.Handler == nil {
 		t.Errorf("Pages of another client IP = %+v, %v, want the provider's handler", res, err)
+	}
+}
+
+func paymentCheckoutClaim(t *testing.T, newHarness PaymentFactory) {
+	e := newPaymentEnv(t, newHarness, paymentEnvOptions{})
+	ctx := t.Context()
+	// Another process: its own Payments on the same database.
+	other := supporters.NewPayments(supporters.PaymentsDeps{
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Payments, Provider: e.world, Syncer: e.syncer,
+		Outbox: queue.AfterCommit(&uow.Projectors{}, e.jobs, nil), Clock: e.clock, IDs: NewIDGenerator(e.clock), Logger: discardLogger(),
+	})
+	claim := func(p *supporters.Payments, id string) (func(), bool) {
+		t.Helper()
+		release, ok, err := p.ClaimCheckout(ctx, id)
+		if err != nil {
+			t.Fatalf("ClaimCheckout(%s) = %v", id, err)
+		}
+		if ok != (release != nil) {
+			t.Fatalf("ClaimCheckout(%s) = %v with release %v", id, ok, release != nil)
+		}
+		return release, ok
+	}
+	release, ok := claim(e.svc, "local-1")
+	if !ok {
+		t.Fatal("first claim refused")
+	}
+	if _, ok := claim(other, "local-1"); ok {
+		t.Error("claim of another process while the first holds it was taken")
+	}
+	if _, ok := claim(e.svc, "local-1"); ok {
+		t.Error("second claim in the same process was taken")
+	}
+	if r, ok := claim(other, "local-2"); !ok {
+		t.Error("claim of another checkout refused")
+	} else {
+		r()
+	}
+	release()
+	release2, ok := claim(other, "local-1")
+	if !ok {
+		t.Fatal("claim after the release refused")
+	}
+	// A release by a holder whose claim was taken over deletes nothing of the new holder.
+	release()
+	if _, ok := claim(e.svc, "local-1"); ok {
+		t.Error("claim taken after a stale release")
+	}
+	// A claim that its process never releases expires.
+	e.clock.Advance(supporters.CheckoutClaimHold - time.Second)
+	if _, ok := claim(e.svc, "local-1"); ok {
+		t.Error("claim taken before the other expired")
+	}
+	e.clock.Advance(time.Second)
+	release3, ok := claim(e.svc, "local-1")
+	if !ok {
+		t.Fatal("claim after the other expired refused")
+	}
+	release2()
+	if _, ok := claim(other, "local-1"); ok {
+		t.Error("claim taken after the expired holder released")
+	}
+	release3()
+	// The purge deletes the expired claims only.
+	if _, ok := claim(e.svc, "local-3"); !ok {
+		t.Fatal("claim of local-3 refused")
+	}
+	e.clock.Advance(supporters.CheckoutClaimHold + time.Second)
+	if _, ok := claim(other, "local-4"); !ok {
+		t.Fatal("claim of local-4 refused")
+	}
+	var purged int64
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		purged, err = e.h.Payments.PurgeCheckoutClaims(ctx, tx, e.clock.Now())
+		return err
+	}); err != nil || purged != 1 {
+		t.Errorf("PurgeCheckoutClaims = %d, %v, want 1", purged, err)
+	}
+	if _, ok := claim(e.svc, "local-4"); ok {
+		t.Error("the purge deleted a claim that has not expired")
 	}
 }

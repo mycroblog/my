@@ -280,3 +280,19 @@ CREATE TABLE payment_reconcile_runs (
 ) STRICT;
 CREATE UNIQUE INDEX payment_reconcile_runs_run_key ON payment_reconcile_runs (provider, run_key);
 CREATE INDEX payment_reconcile_runs_provider_occurred_at ON payment_reconcile_runs (provider, occurred_at);
+
+-- Current value: the claim of a checkout of the payment provider's own pages (ADR-0099 §1) while
+-- one server process creates its subscription, so that the posts of one checkout on several
+-- replicas create one subscription when the provider takes no idempotency key (PAY.JP v1). One row
+-- per (provider, checkout_id); holder is the post that holds it. The holder deletes the row when it
+-- is done; a row whose expires_at has passed (its process stopped) is taken over by the next claim,
+-- and the receipt purge deletes the expired ones.
+CREATE TABLE payment_checkout_claims (
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp')),
+  checkout_id TEXT NOT NULL CHECK (length(checkout_id) BETWEEN 1 AND 255),
+  holder TEXT NOT NULL,
+  claimed_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL CHECK (expires_at > claimed_at),
+  PRIMARY KEY (provider, checkout_id)
+) STRICT;
+CREATE INDEX payment_checkout_claims_expires_at ON payment_checkout_claims (expires_at);

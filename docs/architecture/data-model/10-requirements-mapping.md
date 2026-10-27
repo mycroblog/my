@@ -54,7 +54,7 @@
 | FR-902 期間の集計 | S | `cost_item_heads` と §4.12 の項目・改定（読み取りのときに計算し、投影を持たない） |
 | FR-903 費用の公開範囲 | S | `instance_settings`（`finance_visibility`）と FR-902 の集計（読み取りのときに計算する） |
 | FR-904 利用料金の自動取り込み | S | §4.12 の `billing_import_runs`, `billing_import_reservations`, `imported_cost_revisions`, `imported_cost_heads`, `audit_log_entries`（手動の取り込み） |
-| FR-910・FR-911 サポーターの決済と状態 | S | §4.13 の `payment_webhook_receipts`, `payment_reconcile_runs`, `supporter_*` の表, `notifications`（`supporter_*` の種類） |
+| FR-910・FR-911 サポーターの決済と状態 | S | §4.13 の `payment_webhook_receipts`, `payment_reconcile_runs`, `payment_checkout_claims`, `supporter_*` の表, `notifications`（`supporter_*` の種類） |
 | FR-912 課金のロールの安全柵 | S | `managed_roles`, `role_permissions`, `roles` |
 | FR-913 ロールのバッジ | S | `role_badges`, `user_role_badge_displays`, `user_roles` |
 | FR-914 参加者の一覧 | S | `supporter_listings`, `supporter_subscription_heads`, `supporter_plan_heads`, `instance_settings`（`supporter_list_visibility`） |
