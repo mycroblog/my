@@ -1,6 +1,6 @@
 # ADR-0106: 管理者が設定する外部 IdP でのログイン
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-27
 - Deciders: @rosylilly
 - Issue: #1576
@@ -72,9 +72,7 @@ IdP の種類について:
 
 ## Decision（決定）
 
-> 推奨案である。Accepted にするのは人間の Decider のみ。
-
-**IdP の種類は選択肢 1、置き場所は (a) を推奨する。**
+**IdP の種類は選択肢 1、置き場所は (a) を採用する。**
 
 ### 1. IdP の種類
 
@@ -163,7 +161,7 @@ IdP の種類について:
   そのまま出し、翻訳しない。
 - アカウント設定に「ひも付けたアカウント」、管理画面に IdP の一覧と編集を足す（docs/architecture/web-client/ に従う）。
 
-### この推奨を覆す条件
+### この決定を見直す条件
 
 - 対象にしたい IdP の多くが OIDC でも GitHub 型のプリセットでも扱えず、プリセットを足し続けるほうが汎用の OAuth 2.0 より重いと分かった場合は、
   識別子のフィールドを固定の候補から選ぶ形の汎用 OAuth 2.0 を検討する。
@@ -185,7 +183,7 @@ IdP の種類について:
   - JWT の検証と OIDC のクライアントのために依存を足す見込みがある（ライセンスの確認が要る）。
   - SAML と CAS の IdP は扱わない。
 - 後続で必要になる作業（Issue に分ける）
-  - FR-010 の追記、data-model §4.1 と `schema/<dialect>/01-identity.sql` の IdP とひも付けのテーブル
+  - data-model §4.1 と `schema/<dialect>/01-identity.sql` の IdP とひも付けのテーブル
   - `manage_login_providers` の権限、監査ログの `action` と `target_kind`、管理 API（`api/spec`）・CLI・管理画面
   - `kernel.HTTPPurposeLoginProvider`、`login_provider_allowed_destinations` の設定、OIDC の Discovery・JWKS・ID トークンの検証
   - authpages のログイン・登録・コールバックの流れ、GitHub と Mastodon のプリセット
@@ -194,7 +192,7 @@ IdP の種類について:
 
 ## Pros and Cons of the Options（詳細比較・任意）
 
-### 1. 汎用の OIDC とプリセット（推奨）
+### 1. 汎用の OIDC とプリセット（採用）
 
 - 良い: OIDC の IdP は Discovery と ID トークンの検証という標準の手順で扱え、どの claim が識別子かで迷わない（Driver 1, 4）。
   標準に乗らない IdP の扱いはコードにあり、テストされている。
@@ -213,7 +211,7 @@ IdP の種類について:
 
 ### 置き場所の (a)・(b)
 
-- (a) DB（推奨）: 再起動なしに足せ（Driver 3）、変更が監査ログに残る。秘密は `kernel.Sealer` で封をする。
+- (a) DB（採用）: 再起動なしに足せ（Driver 3）、変更が監査ログに残る。秘密は `kernel.Sealer` で封をする。
 - (b) 設定ファイル: 秘密を DB に置かず、Infrastructure as Code で配れる。ただし、変えるたびに再起動が要り、管理画面から設定できないので
   決定者の要望（管理者が増やせる）を満たさない。
 
