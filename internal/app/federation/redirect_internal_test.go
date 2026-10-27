@@ -104,6 +104,9 @@ func (emptyKV) Set(context.Context, string, string, []byte, time.Duration) error
 	return nil
 }
 func (emptyKV) Delete(context.Context, string, string) error { return nil }
+func (emptyKV) CompareAndSwap(context.Context, string, string, []byte, []byte, time.Duration) (bool, error) {
+	return false, nil
+}
 func (emptyKV) IncrBy(context.Context, string, string, int64, time.Duration) (int64, error) {
 	return 0, nil
 }
