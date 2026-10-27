@@ -148,3 +148,25 @@ func TestRefs(t *testing.T) {
 		t.Errorf("Refs = %s", b.String())
 	}
 }
+
+func TestShowRefusesPathsOutsideTheRoot(t *testing.T) {
+	k := fixture(t)
+	root := k.S.Repo.Root
+	outside := filepath.Join(t.TempDir(), "secret.txt")
+	if err := os.WriteFile(outside, []byte("TOPSECRET\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "link.txt")); err != nil {
+		t.Skip("symlinks are not available:", err)
+	}
+	rel, err := filepath.Rel(root, outside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ref := range []string{outside, rel, rel + ":1-1", "link.txt", "link.txt:1-1"} {
+		var b bytes.Buffer
+		if err := k.Show(&b, ref, 12000); err == nil || strings.Contains(b.String(), "TOPSECRET") {
+			t.Errorf("Show(%q) = %q, %v; want an error and no content", ref, b.String(), err)
+		}
+	}
+}

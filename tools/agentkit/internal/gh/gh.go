@@ -137,6 +137,18 @@ func (c *Cache) Synced() time.Time {
 	return t
 }
 
+// issueLimit is the most issues one `gh issue list` call returns here.
+const issueLimit = 5000
+
+// notTruncated fails when a listing returned exactly its limit: gh cuts a longer list silently, so the cache
+// would miss the rest.
+func notTruncated(what string, n, limit int) error {
+	if n >= limit {
+		return fmt.Errorf("gh returned %d %s, the limit of one call: the list may be cut and the cache incomplete", n, what)
+	}
+	return nil
+}
+
 // Sync refreshes the issues and the merged pull requests updated since the last sync (all of them the first
 // time) and reports how many it stored.
 func (c *Cache) Sync() (int, error) {
@@ -147,8 +159,11 @@ func (c *Cache) Sync() (int, error) {
 		search = []string{"--search", "updated:>=" + since.Add(-time.Hour).Format("2006-01-02T15:04:05Z")}
 	}
 	var issues []Issue
-	args := append([]string{"issue", "list", "-R", Repo(), "--state", "all", "--limit", "5000", "--json", "number,title,body,state,updatedAt,labels"}, search...)
+	args := append([]string{"issue", "list", "-R", Repo(), "--state", "all", "--limit", strconv.Itoa(issueLimit), "--json", "number,title,body,state,updatedAt,labels"}, search...)
 	if err := JSON(&issues, args...); err != nil {
+		return 0, err
+	}
+	if err := notTruncated("issues", len(issues), issueLimit); err != nil {
 		return 0, err
 	}
 	prs, err := mergedPRs(since)
@@ -189,10 +204,58 @@ const prQuery = `query($owner: String!, $name: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
     pullRequests(states: MERGED, first: 50, after: $cursor, orderBy: {field: UPDATED_AT, direction: DESC}) {
       pageInfo { hasNextPage endCursor }
-      nodes { number title body state url headRefName mergedAt updatedAt files(first: 100) { nodes { path additions deletions } } }
+      nodes { number title body state url headRefName mergedAt updatedAt files(first: 100) { pageInfo { hasNextPage endCursor } nodes { path additions deletions } } }
     }
   }
 }`
+
+type pageInfo struct {
+	HasNextPage bool   `json:"hasNextPage"`
+	EndCursor   string `json:"endCursor"`
+}
+
+const filesQuery = `query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) { files(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { path additions deletions } } }
+  }
+}`
+
+// filesPage reads one page of the files of pull request number after cursor.
+func filesPage(number int, cursor string) ([]File, pageInfo, error) {
+	owner, name, _ := strings.Cut(Repo(), "/")
+	var resp struct {
+		Data struct {
+			Repository struct {
+				PullRequest struct {
+					Files struct {
+						Nodes    []File   `json:"nodes"`
+						PageInfo pageInfo `json:"pageInfo"`
+					} `json:"files"`
+				} `json:"pullRequest"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := JSON(&resp, "api", "graphql", "-f", "query="+filesQuery, "-F", "owner="+owner, "-F", "name="+name, "-F", "number="+strconv.Itoa(number), "-F", "cursor="+cursor)
+	f := resp.Data.Repository.PullRequest.Files
+	return f.Nodes, f.PageInfo, err
+}
+
+// moreFiles reads the pages of a pull request's files after cursor, so that a pull request of more than one page
+// of files does not lose the later ones.
+func moreFiles(number int, cursor string, page func(number int, cursor string) ([]File, pageInfo, error)) ([]File, error) {
+	var out []File
+	for {
+		files, pi, err := page(number, cursor)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, files...)
+		if !pi.HasNextPage {
+			return out, nil
+		}
+		cursor = pi.EndCursor
+	}
+}
 
 // mergedPRs pages through the merged pull requests, most recently updated first, down to since.
 func mergedPRs(since time.Time) ([]PR, error) {
@@ -215,7 +278,8 @@ func mergedPRs(since time.Time) ([]PR, error) {
 						Nodes []struct {
 							PR
 							Files struct {
-								Nodes []File `json:"nodes"`
+								Nodes    []File   `json:"nodes"`
+								PageInfo pageInfo `json:"pageInfo"`
 							} `json:"files"`
 						} `json:"nodes"`
 					} `json:"pullRequests"`
@@ -229,6 +293,13 @@ func mergedPRs(since time.Time) ([]PR, error) {
 		for _, n := range page.Nodes {
 			pr := n.PR
 			pr.Files = n.Files.Nodes
+			if n.Files.PageInfo.HasNextPage {
+				more, err := moreFiles(n.Number, n.Files.PageInfo.EndCursor, filesPage)
+				if err != nil {
+					return nil, err
+				}
+				pr.Files = append(pr.Files, more...)
+			}
 			if t, _ := time.Parse(time.RFC3339, pr.UpdatedAt); !since.IsZero() && t.Before(since.Add(-time.Hour)) {
 				return out, nil
 			}

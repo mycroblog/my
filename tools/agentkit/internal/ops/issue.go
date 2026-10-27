@@ -77,19 +77,11 @@ func Claim(root string, n int, plan string) (string, error) {
 			stop = append(stop, fmt.Sprintf("%s is %s", id, st))
 		}
 	}
-	for _, d := range text.Dependencies(is.Body) {
-		num, _ := strconv.Atoi(d)
-		var st struct {
-			State string `json:"state"`
-		}
-		if err := gh.JSON(&st, "issue", "view", d, "-R", gh.Repo(), "--json", "state"); err == nil && st.State == "OPEN" {
-			stop = append(stop, fmt.Sprintf("waits for #%d, which is open", num))
-		} else if err != nil {
-			if err := gh.JSON(&st, "pr", "view", d, "-R", gh.Repo(), "--json", "state"); err == nil && st.State == "OPEN" {
-				stop = append(stop, fmt.Sprintf("waits for PR #%d, which is open", num))
-			}
-		}
+	waits, err := openDependencies(text.Dependencies(is.Body))
+	if err != nil {
+		return "", fmt.Errorf("do not take #%d: %w (workflow.md §1)", n, err)
 	}
+	stop = append(stop, waits...)
 	if len(stop) > 0 {
 		return "", fmt.Errorf("do not take #%d: %s (workflow.md §1)", n, strings.Join(stop, "; "))
 	}
@@ -109,6 +101,40 @@ func Claim(root string, n int, plan string) (string, error) {
 		did = append(did, "plan commented")
 	}
 	return fmt.Sprintf("claimed #%d %s (%s)", n, is.Title, strings.Join(did, ", ")), nil
+}
+
+// itemState is the state ("OPEN", "CLOSED", "MERGED") of the issue or pull request number d; a var so that tests
+// replace the gh calls.
+var itemState = func(kind, d string) (string, error) {
+	var st struct {
+		State string `json:"state"`
+	}
+	err := gh.JSON(&st, kind, "view", d, "-R", gh.Repo(), "--json", "state")
+	return st.State, err
+}
+
+// openDependencies returns a line for each of the issues or pull requests in deps that is still open. A
+// dependency whose state cannot be read is an error: it must not count as done.
+func openDependencies(deps []string) ([]string, error) {
+	var stop []string
+	for _, d := range deps {
+		num, _ := strconv.Atoi(d)
+		st, err := itemState("issue", d)
+		if err == nil {
+			if st == "OPEN" {
+				stop = append(stop, fmt.Sprintf("waits for #%d, which is open", num))
+			}
+			continue
+		}
+		st, prErr := itemState("pr", d)
+		if prErr != nil {
+			return nil, fmt.Errorf("could not read the state of the dependency #%d (issue: %w; pull request: %w)", num, err, prErr)
+		}
+		if st == "OPEN" {
+			stop = append(stop, fmt.Sprintf("waits for PR #%d, which is open", num))
+		}
+	}
+	return stop, nil
 }
 
 // Block comments why the work stops and labels the issue agent:blocked (workflow.md §8).

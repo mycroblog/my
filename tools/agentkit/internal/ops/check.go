@@ -39,10 +39,39 @@ func passedFile(r *repo.Repo) string {
 	return filepath.Join(r.Root, ".tmp", "agentkit", "check", "passed")
 }
 
-// CheckPassed reports whether `agentkit check` passed on the current content of the working tree.
-func CheckPassed(r *repo.Repo) bool {
+// evidenceKey identifies what a pass of `agentkit check` covers: the content of the working tree, the commit of
+// base it was compared with, and the files changed since the merge base (which decide the contexts checked). A
+// pass computed against another base, or for another set of changed contexts, does not match. It is "" when any
+// part cannot be read.
+func evidenceKey(r *repo.Repo, base string) string {
+	tree := treeKey(r)
+	if tree == "" {
+		return ""
+	}
+	baseSHA, err := repo.Git(r.Root, "rev-parse", "--verify", "--quiet", base+"^{commit}")
+	if err != nil {
+		return ""
+	}
+	mb, err := repo.Git(r.Root, "merge-base", base, "HEAD")
+	if err != nil {
+		return ""
+	}
+	changed, err := r.Changed(base)
+	if err != nil {
+		return ""
+	}
+	sort.Strings(changed)
+	h := sha256.New()
+	h.Write([]byte(tree + "\n" + strings.TrimSpace(baseSHA) + "\n" + strings.TrimSpace(mb) + "\n" + strings.Join(changed, "\n")))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// CheckPassed reports whether `agentkit check` passed on the current content of the working tree, compared with
+// the same commit of base.
+func CheckPassed(r *repo.Repo, base string) bool {
+	key := evidenceKey(r, base)
 	b, err := os.ReadFile(passedFile(r))
-	return err == nil && strings.TrimSpace(string(b)) == treeKey(r)
+	return key != "" && err == nil && strings.TrimSpace(string(b)) == key
 }
 
 // task runs `scripts/task.sh args...` in the root of r, with its output combined.
@@ -60,7 +89,7 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 		return false, nil, err
 	}
 	log := filepath.Join(dir, time.Now().Format("20060102-150405")+".log")
-	key := treeKey(r)
+	key := evidenceKey(r, base)
 	start := time.Now()
 	out, runErr := task(r, "check:changed", "BASE="+base)
 	if err := os.WriteFile(log, out, 0o600); err != nil {
@@ -77,7 +106,9 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 	rel, _ := filepath.Rel(r.Root, log)
 	ok := runErr == nil
 	if ok {
-		_ = os.WriteFile(passedFile(r), []byte(key+"\n"), 0o600)
+		if key != "" {
+			_ = os.WriteFile(passedFile(r), []byte(key+"\n"), 0o600)
+		}
 		lines = append(lines, fmt.Sprintf("passed in %s (log: %s)", time.Since(start).Round(time.Second), rel))
 		return true, lines, nil
 	}
