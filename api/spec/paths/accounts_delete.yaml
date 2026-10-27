@@ -13,6 +13,10 @@ post:
     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
     `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
     accepted every hour.
+    An `external_confirmation` from a linked login provider
+    (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+    expired, or used one, or one for another operation, is a 422
+    `/api/v1/problems/external-confirmation-expired`.
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]

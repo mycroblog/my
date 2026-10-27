@@ -137,6 +137,7 @@ type PasskeyRepository interface {
 type TxReads interface {
 	FindCurrentPasswordCredentialTx(ctx context.Context, tx uow.Tx, userID string) (identity.PasswordCredential, error)
 	ListActivePasskeyCredentialsTx(ctx context.Context, tx uow.Tx, userID string) ([]identity.PasskeyCredential, error)
+	ListLinkedExternalIdentitiesTx(ctx context.Context, tx uow.Tx, userID string) ([]identity.LinkedExternalIdentity, error)
 	FindRegistrationApplicationTx(ctx context.Context, tx uow.Tx, userID string) (identity.RegistrationApplication, error)
 	FindRegistrationStateTx(ctx context.Context, tx uow.Tx, userID string) (identity.UserRegistrationState, error)
 	FindPrimaryEmailTx(ctx context.Context, tx uow.Tx, userID string) (identity.EmailAddress, bool, error)

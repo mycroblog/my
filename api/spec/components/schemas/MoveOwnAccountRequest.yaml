@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The move of the user's own account: the account it moves to, and the confirmation, `password`
-  or `passkey`.
+  The move of the user's own account: the account it moves to, and the confirmation, `password`,
+  `passkey`, or `external_confirmation`.
 type: object
 required: [target_account_id]
 properties:
@@ -14,3 +14,5 @@ properties:
     maxLength: 1024
   passkey:
     $ref: ./PasskeyAssertion.yaml
+  external_confirmation:
+    $ref: ./ExternalConfirmationToken.yaml

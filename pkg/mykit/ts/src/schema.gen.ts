@@ -602,6 +602,10 @@ export interface paths {
          *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
          *     accepted every hour.
+         *     An `external_confirmation` from a linked login provider
+         *     (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+         *     expired, or used one, or one for another operation, is a 422
+         *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["deleteOwnAccount"];
         delete?: never;
@@ -644,6 +648,10 @@ export interface paths {
          *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 10 attempts per account are
          *     accepted every hour.
+         *     An `external_confirmation` from a linked login provider
+         *     (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+         *     expired, or used one, or one for another operation, is a 422
+         *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["moveOwnAccount"];
         delete?: never;
@@ -703,6 +711,10 @@ export interface paths {
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
          *     accepted every hour. A new password that is not 8 to 128 characters is a 400 that
          *     names `new_password`.
+         *     An `external_confirmation` from a linked login provider
+         *     (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+         *     expired, or used one, or one for another operation, is a 422
+         *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["changePassword"];
         delete?: never;
@@ -722,16 +734,20 @@ export interface paths {
         put?: never;
         /**
          * Remove the authenticated user's password
-         * @description Removes the password of a user who has a passkey, after checking a `passkey` of the
-         *     user (FR-004): from then on only the passkeys sign in, and a user with two-factor
+         * @description Removes the password of a user who has a passkey or a linked account, after checking a
+         *     `passkey` of the user or an `external_confirmation` from a linked login provider
+         *     (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
          *     authentication still enters a code after one. A password reset link or
          *     `POST /accounts/password` with a passkey sets a password again. Every other session and
          *     grant of the user ends, as a change of the password does, and the user is told by email
          *     when the server sends email. A user without a password gets a 204 and nothing changes.
-         *     A user without a passkey gets a 409 `/api/v1/problems/last-sign-in-method`; a passkey
+         *     A user without a passkey and without a linked account gets a 409
+         *     `/api/v1/problems/last-sign-in-method`; a passkey
          *     that does not verify is a 422 `/api/v1/problems/invalid-passkey`, an expired
          *     confirmation a 422 `/api/v1/problems/passkey-confirmation-expired`, and at most 5 wrong
          *     ones per user are accepted every hour.
+         *     An unknown, expired, or used `external_confirmation` is a 422
+         *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["removePassword"];
         delete?: never;
@@ -1044,6 +1060,10 @@ export interface paths {
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
          *     accepted every hour. A user with 20 passkeys gets a 409
          *     `/api/v1/problems/too-many-passkeys`.
+         *     An `external_confirmation` from a linked login provider
+         *     (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
+         *     expired, or used one, or one for another operation, is a 422
+         *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["beginPasskeyRegistration"];
         delete?: never;
@@ -1089,9 +1109,102 @@ export interface paths {
         /**
          * Remove a passkey
          * @description The passkey no longer signs in. An unknown or removed passkey is a 404, and the last
-         *     passkey of a user without a password a 409 `/api/v1/problems/last-sign-in-method`.
+         *     passkey of a user without a password and without a linked account a 409
+         *     `/api/v1/problems/last-sign-in-method`.
          */
         delete: operations["deletePasskey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/linked_identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the authenticated user's linked accounts and the login providers
+         * @description The accounts at external login providers that the user links, which sign the user in and
+         *     confirm the user's operations, oldest first, and the login providers that users sign in
+         *     with, which the user can link an account at (`allow_link`) or confirm with. A server
+         *     without login providers answers two empty lists.
+         */
+        get: operations["listLinkedIdentities"];
+        put?: never;
+        /**
+         * Start linking an account at a login provider
+         * @description Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+         *     `link` operation) and returns the `start_url` that the browser opens to sign in at the
+         *     provider. The browser must be signed in to the server's sign-in pages as the same user;
+         *     one that is not signs in first. The provider sends the browser back to `return_to` with
+         *     the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+         *     the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+         *     (another user links the account), `already_linked`, `unavailable`, `failed`,
+         *     `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+         *     links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+         *     links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+         *     wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+         *     are accepted every hour.
+         */
+        post: operations["beginLinkIdentity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/linked_identities/confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a confirmation with a linked login provider
+         * @description Returns the `start_url` that the browser opens to sign in again at a provider that the
+         *     user links an account at, which confirms `operation` in place of the password or a
+         *     passkey. The browser must be signed in to the server's sign-in pages as the same user;
+         *     one that is not signs in first. An OpenID Connect provider is asked to authenticate the
+         *     user again, and an authentication older than the request does not count. The provider
+         *     sends the browser back to `return_to` with the outcome in the fragment, next to
+         *     `operation` and `provider`: `external_confirmation=<token>`, which the operation takes
+         *     once in its `external_confirmation` within 10 minutes, or `external_error=<reason>` where
+         *     the reason is `mismatch` (the user signed in with an account that the user does not link),
+         *     `denied`, `unavailable`, `failed`, `rate_limited`, or `expired`. A mismatch and a token
+         *     that does not verify count against the wrong confirmations of the operation. A provider
+         *     that the user links no account at, or that is disabled, is a 422
+         *     `/api/v1/problems/login-provider-unavailable`.
+         */
+        post: operations["beginExternalConfirmation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/linked_identities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlink an account at a login provider
+         * @description The account no longer signs the user in or confirms the user's operations. An unknown
+         *     or unlinked link is a 404, and the last way to sign in of a user without a password and
+         *     without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+         */
+        delete: operations["unlinkIdentity"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8855,14 +8968,26 @@ export interface components {
          *     of a payment on a card statement or an invoice.
          */
         CalendarDate: string;
-        /** @description A change of the user's password, confirmed with `current_password` or `passkey`. */
+        /**
+         * @description A change of the user's password, confirmed with `current_password`, `passkey`, or
+         *     `external_confirmation`.
+         */
         ChangePasswordRequest: {
             /** @description The user's current password, which confirms the change. */
             current_password?: string;
             passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
             /** @description The new password, 8 to 128 characters. */
             new_password: string;
         };
+        /**
+         * @description An operation that the user confirms: registering a passkey (`passkey_registration`),
+         *     changing or setting the password (`password_change`), removing it (`password_removal`),
+         *     deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+         *     account at a login provider (`link`).
+         * @enum {string}
+         */
+        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_move" | "link";
         /** @description The local custom emoji that a copy of a remote one becomes. */
         CopyCustomEmojiRequest: {
             /**
@@ -9519,21 +9644,26 @@ export interface components {
             /** @description Shown to the user who appealed, as plain text. */
             public_reason?: string;
         };
-        /** @description The confirmation of the deletion of the user's own account: `password` or `passkey`. */
+        /**
+         * @description The confirmation of the deletion of the user's own account: `password`, `passkey`, or
+         *     `external_confirmation`.
+         */
         DeleteOwnAccountRequest: {
             /** @description The user's current password. */
             password?: string;
             passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /**
-         * @description The move of the user's own account: the account it moves to, and the confirmation, `password`
-         *     or `passkey`.
+         * @description The move of the user's own account: the account it moves to, and the confirmation, `password`,
+         *     `passkey`, or `external_confirmation`.
          */
         MoveOwnAccountRequest: {
             target_account_id: components["schemas"]["Id"];
             /** @description The user's current password. */
             password?: string;
             passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /**
          * @description A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
@@ -9756,6 +9886,27 @@ export interface components {
          * @enum {string}
          */
         ErrorGroupState: "open" | "resolved" | "muted";
+        /** @description Where the browser goes to sign in at a login provider. */
+        ExternalAuthorizationStart: {
+            /** @description The URL on this server that sends the browser on to the provider. */
+            start_url: string;
+            /**
+             * Format: date-time
+             * @description When `start_url` stops working.
+             */
+            expires_at: string;
+        };
+        /** @description The linked login provider to confirm an operation with. */
+        ExternalConfirmationRequest: {
+            provider_id: components["schemas"]["Id"];
+            operation: components["schemas"]["ConfirmedOperation"];
+            return_to?: components["schemas"]["ReturnTo"];
+        };
+        /**
+         * @description The `external_confirmation` token of a re-authentication with a linked login provider
+         *     (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+         */
+        ExternalConfirmationToken: string;
         /**
          * @description What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
          *     resolved group that happened again on another version (`regressed`, with `group_id`), or the
@@ -10297,6 +10448,27 @@ export interface components {
             reason?: string;
         };
         /**
+         * @description The login provider to link an account at, and what confirms it: the user's `password`, a
+         *     `passkey` of the user, or an `external_confirmation`.
+         */
+        LinkIdentityRequest: {
+            provider_id: components["schemas"]["Id"];
+            /** @description The user's current password. */
+            password?: string;
+            passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
+            return_to?: components["schemas"]["ReturnTo"];
+        };
+        /** @description An enabled login provider that users sign in with. */
+        LinkableLoginProvider: {
+            id: components["schemas"]["Id"];
+            kind: components["schemas"]["LoginProviderKind"];
+            /** @description The administrators' name for the provider, shown as written. */
+            display_name: string;
+            /** @description Whether users link accounts at the provider to their account. */
+            allow_link: boolean;
+        };
+        /**
          * @description The card of the first link in a status (ADR-0062): the title, description, and image
          *     that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
          *     after the status was posted or received. Omitted from a status with attachments or a
@@ -10354,6 +10526,31 @@ export interface components {
             blurhash?: string;
             /** @description The alternative text of the image (`og:image:alt`); omitted when it has none. */
             description?: string;
+        };
+        /** @description An account at an external login provider that the authenticated user links. */
+        LinkedIdentity: {
+            id: components["schemas"]["Id"];
+            provider_id: components["schemas"]["Id"];
+            provider_kind: components["schemas"]["LoginProviderKind"];
+            /** @description The administrators' name for the provider, shown as written. */
+            provider_name: string;
+            /**
+             * Format: date-time
+             * @description When the user linked the account.
+             */
+            linked_at: string;
+            /**
+             * @description Whether the provider is enabled: the account signs the user in and confirms the
+             *     user's operations.
+             */
+            available: boolean;
+        };
+        /** @description The authenticated user's linked accounts and the login providers. */
+        LinkedIdentityList: {
+            /** @description The linked accounts, oldest first; at most one per provider. */
+            items: components["schemas"]["LinkedIdentity"][];
+            /** @description The login providers that users sign in with, oldest first. */
+            providers: components["schemas"]["LinkableLoginProvider"][];
         };
         /**
          * @description The moving renditions of an animation, absent for a still image: animated WebP for
@@ -11015,8 +11212,8 @@ export interface components {
             expires_at: string;
         };
         /**
-         * @description The name of a new passkey and what confirms it: the user's `password` or a `passkey` of
-         *     the user.
+         * @description The name of a new passkey and what confirms it: the user's `password`, a `passkey` of
+         *     the user, or an `external_confirmation`.
          */
         PasskeyRegistrationRequest: {
             /** @description What the user calls the passkey; spaces around it are dropped. */
@@ -11024,6 +11221,7 @@ export interface components {
             /** @description The user's current password. */
             password?: string;
             passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /** @description Whether the authenticated user has a password. */
         PasswordStatus: {
@@ -11325,7 +11523,14 @@ export interface components {
          *     - `/api/v1/problems/too-many-passkeys` (409): the user already has the most passkeys
          *       allowed. Remove one first.
          *     - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
-         *       way to sign in: the password without a passkey, or the last passkey without a password.
+         *       way to sign in: the password, the last passkey, or the last linked account when nothing
+         *       else signs the user in.
+         *     - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
+         *       login provider is unknown, expired, used, or for another operation. Start a new one.
+         *     - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
+         *       disabled, does not allow links, or the user links no account at it.
+         *     - `/api/v1/problems/login-provider-linked` (409): the user links an account at the login
+         *       provider already.
          *     - `/api/v1/problems/too-many-oauth-apps` (409): the user already has the most OAuth apps
          *       allowed (25). Delete one first.
          *     - `/api/v1/problems/oauth-app-registration-disabled` (403): the server does not let users
@@ -11643,9 +11848,13 @@ export interface components {
             /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
             uri: string;
         };
-        /** @description The passkey that confirms the removal of the user's password. */
+        /**
+         * @description What confirms the removal of the user's password: a `passkey` of the user or an
+         *     `external_confirmation`.
+         */
         RemovePasswordRequest: {
-            passkey: components["schemas"]["PasskeyAssertion"];
+            passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /** @description The new image of a local custom emoji. */
         ReplaceCustomEmojiImageRequest: {
@@ -11691,6 +11900,12 @@ export interface components {
         ResolveReportRequest: {
             outcome: components["schemas"]["AdminReportOutcome"];
         };
+        /**
+         * @description The path on this server, such as `/settings/linked-accounts`, that the login provider
+         *     sends the browser back to; the settings of the linked accounts when it is missing or not
+         *     such a path.
+         */
+        ReturnTo: string;
         /**
          * @description The badge of a role (ADR-0071), which its holders may show on their profile. The label is
          *     the staff's own text, the same in every locale: clients show it as user content
@@ -14622,6 +14837,102 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The passkey is removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listLinkedIdentities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The linked accounts and the login providers. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedIdentityList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    beginLinkIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIdentityRequest"];
+            };
+        };
+        responses: {
+            /** @description Where the browser goes to sign in at the provider. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAuthorizationStart"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    beginExternalConfirmation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalConfirmationRequest"];
+            };
+        };
+        responses: {
+            /** @description Where the browser goes to sign in again at the provider. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAuthorizationStart"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    unlinkIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the link. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account is unlinked. */
             204: {
                 headers: {
                     [name: string]: unknown;

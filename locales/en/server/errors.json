@@ -452,8 +452,8 @@
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used."
   },
   "errors.passkey.last_sign_in_method": {
-    "defaultMessage": "This is your last way to sign in. Add a passkey or set a password first.",
-    "description": "Title of the HTTP 409 API error when the user removes their password without a passkey, or their last passkey without a password, which would leave them no way to sign in."
+    "defaultMessage": "This is your last way to sign in. Add a passkey, set a password, or link an account first.",
+    "description": "Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in."
   },
   "errors.passkey.registration_expired": {
     "defaultMessage": "The registration of the passkey expired. Start again.",
@@ -622,5 +622,17 @@
   "errors.voice.already_invited": {
     "defaultMessage": "That user was invited to this room already.",
     "description": "API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation)."
+  },
+  "errors.external_confirmation.expired": {
+    "defaultMessage": "The confirmation with the linked account expired or was already used. Try again.",
+    "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation."
+  },
+  "errors.login_provider.unavailable": {
+    "defaultMessage": "That sign-in service is not available.",
+    "description": "Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at."
+  },
+  "errors.login_provider.linked": {
+    "defaultMessage": "You have already linked an account at that sign-in service.",
+    "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
   }
 }

@@ -47,6 +47,10 @@ tags:
     description: The authenticated user's two-factor authentication.
   - name: passkeys
     description: The authenticated user's passkeys, which sign in instead of the password.
+  - name: linked_identities
+    description: |
+      The accounts at external login providers that the authenticated user links, which sign
+      in and confirm operations instead of the password.
   - name: authorized_apps
     description: The apps the authenticated user authorized with OAuth, and revoking them.
   - name: oauth-apps
@@ -192,6 +196,12 @@ paths:
     $ref: ./paths/passkeys_confirmation.yaml
   /passkeys/{id}:
     $ref: ./paths/passkeys_{id}.yaml
+  /linked_identities:
+    $ref: ./paths/linked_identities.yaml
+  /linked_identities/confirmation:
+    $ref: ./paths/linked_identities_confirmation.yaml
+  /linked_identities/{id}:
+    $ref: ./paths/linked_identities_{id}.yaml
   /authorized_apps:
     $ref: ./paths/authorized_apps.yaml
   /authorized_apps/{id}:
@@ -1161,6 +1171,8 @@ components:
       $ref: ./components/schemas/CalendarDate.yaml
     ChangePasswordRequest:
       $ref: ./components/schemas/ChangePasswordRequest.yaml
+    ConfirmedOperation:
+      $ref: ./components/schemas/ConfirmedOperation.yaml
     CopyCustomEmojiRequest:
       $ref: ./components/schemas/CopyCustomEmojiRequest.yaml
     CostBasis:
@@ -1307,6 +1319,12 @@ components:
       $ref: ./components/schemas/ErrorGroupSource.yaml
     ErrorGroupState:
       $ref: ./components/schemas/ErrorGroupState.yaml
+    ExternalAuthorizationStart:
+      $ref: ./components/schemas/ExternalAuthorizationStart.yaml
+    ExternalConfirmationRequest:
+      $ref: ./components/schemas/ExternalConfirmationRequest.yaml
+    ExternalConfirmationToken:
+      $ref: ./components/schemas/ExternalConfirmationToken.yaml
     NotificationErrorGroup:
       $ref: ./components/schemas/NotificationErrorGroup.yaml
     FinanceCostItemLine:
@@ -1387,10 +1405,18 @@ components:
       $ref: ./components/schemas/IssueOAuthAppTokenRequest.yaml
     LiftAccountActionRequest:
       $ref: ./components/schemas/LiftAccountActionRequest.yaml
+    LinkIdentityRequest:
+      $ref: ./components/schemas/LinkIdentityRequest.yaml
+    LinkableLoginProvider:
+      $ref: ./components/schemas/LinkableLoginProvider.yaml
     LinkCard:
       $ref: ./components/schemas/LinkCard.yaml
     LinkCardImage:
       $ref: ./components/schemas/LinkCardImage.yaml
+    LinkedIdentity:
+      $ref: ./components/schemas/LinkedIdentity.yaml
+    LinkedIdentityList:
+      $ref: ./components/schemas/LinkedIdentityList.yaml
     MediaAnimatedVariants:
       $ref: ./components/schemas/MediaAnimatedVariants.yaml
     MediaAttachment:
@@ -1555,6 +1581,8 @@ components:
       $ref: ./components/schemas/ReportState.yaml
     ResolveReportRequest:
       $ref: ./components/schemas/ResolveReportRequest.yaml
+    ReturnTo:
+      $ref: ./components/schemas/ReturnTo.yaml
     RoleBadge:
       $ref: ./components/schemas/RoleBadge.yaml
     RoleProblem:

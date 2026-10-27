@@ -18,6 +18,8 @@ import {
   registerPasskeyMutation,
   removePasskeyMutation,
 } from "../api/passkeys";
+import type { Confirmation } from "../api/linkedIdentities";
+import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 import { useHasPassword } from "./usePasswordChange";
 
 /** The user's passkeys, oldest first, which the route has loaded. */
@@ -32,6 +34,8 @@ export type PasskeyForm = {
   isSupported: boolean;
   /** Whether the user has a password, which confirms the registration; without one, another passkey confirms it. */
   hasPassword: boolean;
+  /** The confirmation with a linked provider, for a user with neither a password nor a passkey. */
+  external: ExternalConfirmation;
   name: string;
   changeName: (name: string) => void;
   password: string;
@@ -77,12 +81,14 @@ export function usePasskeyForm(): PasskeyForm {
   const t = useT();
   const queryClient = useQueryClient();
   const hasPassword = useHasPassword();
+  const external = useExternalConfirmation("passkey_registration", hasPassword);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | undefined>(undefined);
   const register = useMutation({
     ...registerPasskeyMutation(api),
-    onSuccess: async (added) => {
+    onSuccess: async (added, { confirmation }) => {
+      if (confirmation.kind === "external") external.markUsed();
       await refreshPasskeys(api, queryClient);
       setName("");
       setPassword("");
@@ -97,6 +103,7 @@ export function usePasskeyForm(): PasskeyForm {
   return {
     isSupported: supportsPasskeys(),
     hasPassword,
+    external,
     name,
     changeName: (next) => {
       setName(next);
@@ -112,9 +119,14 @@ export function usePasskeyForm(): PasskeyForm {
       event.preventDefault();
       const trimmed = name.trim();
       if (register.isPending || trimmed === "" || (hasPassword && password === "")) return;
+      let confirmation: Confirmation;
+      if (hasPassword) confirmation = { kind: "password", password };
+      else if (!external.isPreferred) confirmation = { kind: "passkey" };
+      else if (external.confirmed !== undefined) confirmation = { kind: "external", token: external.confirmed.token };
+      else return;
       register.reset();
       setStatus(undefined);
-      register.mutate({ name: trimmed, password: hasPassword ? password : undefined });
+      register.mutate({ name: trimmed, confirmation });
     },
     isPending: register.isPending,
     passwordError: failure === "wrong-password" ? t("client:settings.passkeys.add.wrong_password") : undefined,

@@ -1790,5 +1790,189 @@
   "settings.push.type.service_closure": {
     "defaultMessage": "このサーバーの終了",
     "description": "Checkbox of the push notification kinds: the closure of the service was announced, rescheduled or withdrawn."
+  },
+  "settings.linked_accounts.title": {
+    "defaultMessage": "連携したアカウント",
+    "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."
+  },
+  "settings.linked_accounts.description": {
+    "defaultMessage": "連携したサービスのアカウントは、パスワードの代わりにログインでき、アカウントの変更の確認にも使えます。連携しても、投稿がそのサービスに共有されることはありません。",
+    "description": "Description at the top of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.list.title": {
+    "defaultMessage": "連携しているアカウント",
+    "description": "Heading of the list of the user's linked accounts on the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up)."
+  },
+  "settings.linked_accounts.empty": {
+    "defaultMessage": "連携しているアカウントはありません。",
+    "description": "Empty state of the list of linked accounts."
+  },
+  "settings.linked_accounts.linked_at": {
+    "defaultMessage": "{date} に連携",
+    "description": "When an account was linked, under the service's name. {date} is a formatted date and time."
+  },
+  "settings.linked_accounts.unavailable": {
+    "defaultMessage": "このサービスは現在使えないため、このアカウントではログインできません。",
+    "description": "Note under a linked account whose service the administrators turned off."
+  },
+  "settings.linked_accounts.unlink": {
+    "defaultMessage": "連携を解除",
+    "description": "Button of a linked account that unlinks it, after a dialog."
+  },
+  "settings.linked_accounts.unlink.title": {
+    "defaultMessage": "{provider} のアカウントの連携を解除しますか？",
+    "description": "Title of the dialog that confirms unlinking an account. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.unlink.description": {
+    "defaultMessage": "そのアカウントではログインできなくなります。あとでもう一度連携できます。",
+    "description": "Description of the dialog that confirms unlinking an account."
+  },
+  "settings.linked_accounts.unlink.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the dialog that confirms unlinking an account, without unlinking it."
+  },
+  "settings.linked_accounts.unlink.last": {
+    "defaultMessage": "これはログインに使える最後の手段です。先にパスワードを設定するか、パスキーを追加するか、ほかのアカウントを連携してください。",
+    "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
+  },
+  "settings.linked_accounts.unlink.failed": {
+    "defaultMessage": "連携を解除できませんでした: {reason}",
+    "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.unlinked": {
+    "defaultMessage": "{provider} のアカウントの連携を解除しました。",
+    "description": "Announcement after an account was unlinked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.add.title": {
+    "defaultMessage": "アカウントを連携",
+    "description": "Heading of the section that links an account at a sign-in service."
+  },
+  "settings.linked_accounts.add.description": {
+    "defaultMessage": "サービスでログインすると、この画面に戻ります。このサーバーのほかの利用者に連携されているアカウントは連携できません。",
+    "description": "Description of the section that links an account."
+  },
+  "settings.linked_accounts.add.none": {
+    "defaultMessage": "アカウントを連携できるサービスはありません。",
+    "description": "Note in the section that links an account when the server has no service that allows linking, or the user linked every one."
+  },
+  "settings.linked_accounts.link": {
+    "defaultMessage": "{provider} を連携",
+    "description": "Button that starts linking an account at a service. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.linked_accounts.link.title": {
+    "defaultMessage": "{provider} のアカウントを連携",
+    "description": "Title of the dialog that confirms linking an account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description": {
+    "defaultMessage": "パスワードを入力して {provider} へ進みます。",
+    "description": "Description of the dialog that links an account, for a user with a password. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_passkey": {
+    "defaultMessage": "ブラウザーがパスキーを求めたあと、{provider} へ進みます。",
+    "description": "Description of the dialog that links an account, for a user without a password who has passkeys. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.description_external": {
+    "defaultMessage": "連携したアカウントでもう一度ログインしました。{provider} へ進みます。",
+    "description": "Description of the dialog that links an account, once the user confirmed with another linked account. {provider} is the service's name."
+  },
+  "settings.linked_accounts.link.password": {
+    "defaultMessage": "現在のパスワード",
+    "description": "Label of the password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.password.required": {
+    "defaultMessage": "パスワードを入力してください。",
+    "description": "Error of the empty password field in the dialog that links an account."
+  },
+  "settings.linked_accounts.link.wrong_password": {
+    "defaultMessage": "パスワードが違います。",
+    "description": "Error in the dialog that links an account when the password is wrong."
+  },
+  "settings.linked_accounts.link.continue": {
+    "defaultMessage": "続ける",
+    "description": "Button of the dialog that links an account: it leaves for the service."
+  },
+  "settings.linked_accounts.link.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the dialog that links an account."
+  },
+  "settings.linked_accounts.link.failed": {
+    "defaultMessage": "連携を始められませんでした: {reason}",
+    "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
+  },
+  "settings.linked_accounts.linked": {
+    "defaultMessage": "{provider} のアカウントを連携しました。",
+    "description": "Status at the top of the page after the service sent the user back with the account linked. {provider} is the service's name."
+  },
+  "settings.linked_accounts.failed.linked_elsewhere": {
+    "defaultMessage": "そのアカウントは、このサーバーのほかの利用者に連携されています。",
+    "description": "Alert when the account the user signed in with at the service is linked to another user already."
+  },
+  "settings.linked_accounts.failed.already_linked": {
+    "defaultMessage": "そのサービスのアカウントはすでに連携しています。",
+    "description": "Alert when the user links an account at a service where they already have one linked."
+  },
+  "settings.linked_accounts.failed.denied": {
+    "defaultMessage": "そのサービスは、ログインしたアカウントを受け付けていません。",
+    "description": "Alert when the account at the service does not meet the conditions that the administrators set (such as an organization)."
+  },
+  "settings.linked_accounts.failed.unavailable": {
+    "defaultMessage": "そのサービスは使えません。",
+    "description": "Alert when the service is turned off or no longer allows linking."
+  },
+  "settings.linked_accounts.failed.expired": {
+    "defaultMessage": "連携に時間がかかりすぎました。もう一度やり直してください。",
+    "description": "Alert when the link expired before the service sent the user back."
+  },
+  "settings.linked_accounts.failed.rate_limited": {
+    "defaultMessage": "試行が多すぎます。しばらくしてからやり直してください。",
+    "description": "Alert when the user tried too many times."
+  },
+  "settings.linked_accounts.failed.failed": {
+    "defaultMessage": "サービスでのログインが完了しませんでした。もう一度やり直してください。",
+    "description": "Alert when the user cancelled at the service, or the service answered an error."
+  },
+  "settings.external_confirmation.description": {
+    "defaultMessage": "連携したアカウントでもう一度ログインして、本人であることを確認します。",
+    "description": "Text above the buttons that confirm an operation (such as deleting the account) by signing in again at a linked service, for a user without a password and passkeys."
+  },
+  "settings.external_confirmation.start": {
+    "defaultMessage": "{provider} でもう一度ログイン",
+    "description": "Button that leaves for a linked service to confirm an operation. {provider} is the service's name as the administrators wrote it."
+  },
+  "settings.external_confirmation.confirmed": {
+    "defaultMessage": "{provider} でもう一度ログインしました。10 分以内に完了してください。",
+    "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
+  },
+  "settings.external_confirmation.start_failed": {
+    "defaultMessage": "確認を始められませんでした: {reason}",
+    "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
+  },
+  "settings.external_confirmation.failed.mismatch": {
+    "defaultMessage": "連携していないアカウントでログインしました。連携したアカウントでやり直してください。",
+    "description": "Alert when the user confirmed at the service with another account than the linked one."
+  },
+  "settings.external_confirmation.failed.expired": {
+    "defaultMessage": "確認に時間がかかりすぎたか、すでに使われています。もう一度やり直してください。",
+    "description": "Alert when the confirmation with a linked service expired (10 minutes) or was used."
+  },
+  "settings.external_confirmation.failed.rate_limited": {
+    "defaultMessage": "試行が多すぎます。しばらくしてからやり直してください。",
+    "description": "Alert when the user failed to confirm too many times."
+  },
+  "settings.external_confirmation.failed.unavailable": {
+    "defaultMessage": "そのサービスは使えません。",
+    "description": "Alert when the linked service is turned off."
+  },
+  "settings.external_confirmation.failed.denied": {
+    "defaultMessage": "そのサービスは、ログインしたアカウントを受け付けていません。",
+    "description": "Alert when the account at the service does not meet the administrators' conditions."
+  },
+  "settings.external_confirmation.failed.failed": {
+    "defaultMessage": "サービスでのログインを確認できませんでした。もう一度やり直してください。",
+    "description": "Alert when the user cancelled at the service, the service answered an error, or it did not ask the user to sign in again."
+  },
+  "settings.account.delete.confirm.description_external": {
+    "defaultMessage": "アカウントはすぐに削除され、ログアウトします。元に戻すことはできません。",
+    "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
   }
 }

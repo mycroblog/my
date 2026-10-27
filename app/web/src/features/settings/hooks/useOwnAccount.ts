@@ -17,6 +17,7 @@ import {
 } from "../api/account";
 import { confirmationFailure } from "../api/password";
 import { confirmationErrorMessage } from "./passkeyConfirmation";
+import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 import { useHasPassword } from "./usePasswordChange";
 import { saveFile } from "./saveFile";
 
@@ -84,6 +85,8 @@ export function useDataExports(): DataExports {
 export type AccountDeletion = {
   /** Whether the user has a password, which confirms the deletion; without one, a passkey confirms it. */
   hasPassword: boolean;
+  /** The confirmation with a linked provider, for a user with neither a password nor a passkey. */
+  external: ExternalConfirmation;
   isOpen: boolean;
   open: () => void;
   cancel: () => void;
@@ -102,6 +105,7 @@ export function useAccountDeletion(): AccountDeletion {
   const navigate = useNavigate();
   const t = useT();
   const hasPassword = useHasPassword();
+  const external = useExternalConfirmation("account_deletion", hasPassword);
   const [isOpen, setIsOpen] = useState(false);
   const [password, setPassword] = useState("");
   const mutation = useMutation({
@@ -117,6 +121,7 @@ export function useAccountDeletion(): AccountDeletion {
   const failure = mutation.isError ? confirmationFailure(mutation.error) : undefined;
   return {
     hasPassword,
+    external,
     isOpen,
     open: () => {
       mutation.reset();
@@ -131,8 +136,13 @@ export function useAccountDeletion(): AccountDeletion {
     changePassword: setPassword,
     submit: () => {
       if (mutation.isPending) return;
-      if (!hasPassword) mutation.mutate(undefined);
-      else if (password !== "") mutation.mutate(password);
+      if (hasPassword) {
+        if (password !== "") mutation.mutate({ kind: "password", password });
+      } else if (!external.isPreferred) {
+        mutation.mutate({ kind: "passkey" });
+      } else if (external.confirmed !== undefined) {
+        mutation.mutate({ kind: "external", token: external.confirmed.token });
+      }
     },
     isPending: mutation.isPending,
     error:

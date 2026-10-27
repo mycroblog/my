@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The login provider to link an account at, and what confirms it: the user's `password`, a
+  `passkey` of the user, or an `external_confirmation`.
+type: object
+required: [provider_id]
+properties:
+  provider_id:
+    $ref: ./Id.yaml
+  password:
+    description: The user's current password.
+    type: string
+    minLength: 1
+    maxLength: 1024
+  passkey:
+    $ref: ./PasskeyAssertion.yaml
+  external_confirmation:
+    $ref: ./ExternalConfirmationToken.yaml
+  return_to:
+    $ref: ./ReturnTo.yaml

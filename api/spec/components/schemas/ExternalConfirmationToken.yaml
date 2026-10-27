@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The `external_confirmation` token of a re-authentication with a linked login provider
+  (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+type: string
+minLength: 1
+maxLength: 4096

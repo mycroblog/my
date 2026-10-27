@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listLinkedIdentities
+  x-first-party-only: true
+  summary: List the authenticated user's linked accounts and the login providers
+  description: |
+    The accounts at external login providers that the user links, which sign the user in and
+    confirm the user's operations, oldest first, and the login providers that users sign in
+    with, which the user can link an account at (`allow_link`) or confirm with. A server
+    without login providers answers two empty lists.
+  tags: [linked_identities]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The linked accounts and the login providers.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/LinkedIdentityList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: beginLinkIdentity
+  x-first-party-only: true
+  summary: Start linking an account at a login provider
+  description: |
+    Checks the confirmation (`password`, `passkey`, or `external_confirmation` of the
+    `link` operation) and returns the `start_url` that the browser opens to sign in at the
+    provider. The browser must be signed in to the server's sign-in pages as the same user;
+    one that is not signs in first. The provider sends the browser back to `return_to` with
+    the outcome in the fragment, next to `provider`: `linked=<provider ID>`, or `external_error=<reason>` where
+    the reason is `denied` (the provider's conditions refuse the account), `linked_elsewhere`
+    (another user links the account), `already_linked`, `unavailable`, `failed`,
+    `rate_limited`, or `expired`. A provider that is unknown, disabled, or does not allow
+    links is a 422 `/api/v1/problems/login-provider-unavailable`, a provider that the user
+    links an account at already a 409 `/api/v1/problems/login-provider-linked`, and a
+    wrong confirmation as for the other confirmed operations; at most 5 wrong ones per user
+    are accepted every hour.
+  tags: [linked_identities]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/LinkIdentityRequest.yaml
+  responses:
+    "200":
+      description: Where the browser goes to sign in at the provider.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ExternalAuthorizationStart.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

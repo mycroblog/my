@@ -9,6 +9,7 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { supportsPasskeys } from "../../../lib/webauthn";
+import type { Confirmation } from "../api/linkedIdentities";
 import { passkeysQueryOptions } from "../api/passkeys";
 import {
   changePasswordMutation,
@@ -18,6 +19,7 @@ import {
   removePasswordMutation,
 } from "../api/password";
 import { confirmationErrorMessage } from "./passkeyConfirmation";
+import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 
 /** Whether the user has a password, which the route has loaded. */
 export function useHasPassword(): boolean {
@@ -34,6 +36,8 @@ export type PasswordChangeForm = {
   hasPassword: boolean;
   /** Whether the browser can use passkeys, which confirm setting a password. */
   isPasskeySupported: boolean;
+  /** The confirmation with a linked provider, which sets a password for a user without passkeys. */
+  external: ExternalConfirmation;
   currentPassword: string;
   changeCurrentPassword: (password: string) => void;
   newPassword: string;
@@ -56,15 +60,17 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
   const t = useT();
   const queryClient = useQueryClient();
   const hasPassword = useHasPassword();
+  const external = useExternalConfirmation("password_change", hasPassword);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const change = useMutation({
     ...changePasswordMutation(api),
-    onSuccess: async (_, { currentPassword: confirmed }) => {
+    onSuccess: async (_, { confirmation }) => {
+      if (confirmation.kind === "external") external.markUsed();
       await refreshPasswordStatus(api, queryClient);
       setCurrentPassword("");
       setNewPassword("");
-      onStatus(t(confirmed === undefined ? "client:settings.password.set.done" : "client:settings.password.changed"));
+      onStatus(t(confirmation.kind === "password" ? "client:settings.password.changed" : "client:settings.password.set.done"));
     },
   });
   const failure = change.isError ? confirmationFailure(change.error) : undefined;
@@ -76,6 +82,7 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
   return {
     hasPassword,
     isPasskeySupported: supportsPasskeys(),
+    external,
     currentPassword,
     changeCurrentPassword: (next) => {
       setCurrentPassword(next);
@@ -90,9 +97,15 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
     submit: (event) => {
       event.preventDefault();
       if (change.isPending || newPassword === "" || (hasPassword && currentPassword === "")) return;
+      let confirmation: Confirmation;
+      if (hasPassword) confirmation = { kind: "password", password: currentPassword };
+      else if (!external.isPreferred) confirmation = { kind: "passkey" };
+      else if (external.confirmed !== undefined) {
+        confirmation = { kind: "external", token: external.confirmed.token };
+      } else return;
       change.reset();
       onStatus(undefined);
-      change.mutate({ currentPassword: hasPassword ? currentPassword : undefined, newPassword });
+      change.mutate({ confirmation, newPassword });
     },
     isPending: change.isPending,
     currentPasswordError: failure === "wrong-password" ? t("client:settings.password.wrong_password") : undefined,
@@ -104,8 +117,10 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
 export type PasswordRemoval = {
   /** Whether the browser can use passkeys, which confirm the removal. */
   isSupported: boolean;
-  /** Whether the user has a passkey, without which the password stays. */
+  /** Whether the user has a passkey, which confirms the removal. */
   hasPasskey: boolean;
+  /** The confirmation with a linked provider, which removes the password of a user without passkeys. */
+  external: ExternalConfirmation;
   isOpen: boolean;
   open: () => void;
   cancel: () => void;
@@ -125,10 +140,13 @@ export function usePasswordRemoval(onStatus: (status: string | undefined) => voi
   const t = useT();
   const queryClient = useQueryClient();
   const hasPasskey = useSuspenseQuery(passkeysQueryOptions(api)).data.items.length > 0;
+  // Only a passkey or a linked provider confirms the removal of the password.
+  const external = useExternalConfirmation("password_removal", false);
   const [isOpen, setIsOpen] = useState(false);
   const remove = useMutation({
     ...removePasswordMutation(api),
-    onSuccess: async () => {
+    onSuccess: async (_, confirmation) => {
+      if (confirmation.kind === "external") external.markUsed();
       await refreshPasswordStatus(api, queryClient);
       setIsOpen(false);
       onStatus(t("client:settings.password.removed"));
@@ -138,6 +156,7 @@ export function usePasswordRemoval(onStatus: (status: string | undefined) => voi
   return {
     isSupported: supportsPasskeys(),
     hasPasskey,
+    external,
     isOpen,
     open: () => {
       remove.reset();
@@ -149,7 +168,12 @@ export function usePasswordRemoval(onStatus: (status: string | undefined) => voi
       remove.reset();
     },
     confirm: () => {
-      if (!remove.isPending) remove.mutate();
+      if (remove.isPending) return;
+      if (!external.isPreferred) {
+        remove.mutate({ kind: "passkey" });
+      } else if (external.confirmed !== undefined) {
+        remove.mutate({ kind: "external", token: external.confirmed.token });
+      }
     },
     isPending: remove.isPending,
     error:

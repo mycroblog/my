@@ -80,11 +80,13 @@ func (s *Server) RemovePassword(ctx context.Context, req RemovePasswordRequestOb
 	if req.Body == nil {
 		return RemovePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "passkey")), nil
 	}
-	c, _, ok := confirmationOf(nil, &req.Body.Passkey, "passkey")
+	c, param, ok := confirmationOf(nil, req.Body.Passkey, req.Body.ExternalConfirmation, "passkey")
 	if !ok {
-		return RemovePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "passkey")), nil
+		return RemovePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}
-	err = s.o.OwnAccount.RemovePassword(ctx, appidentity.RemovePasswordInput{UserID: v.UserID, Passkey: c.Passkey, KeepFamilyID: v.FamilyID})
+	err = s.o.OwnAccount.RemovePassword(ctx, appidentity.RemovePasswordInput{
+		UserID: v.UserID, Passkey: c.Passkey, External: c.External, KeepFamilyID: v.FamilyID,
+	})
 	if p := s.passkeyProblem(ctx, err); p != nil {
 		return RemovePassworddefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -107,7 +109,7 @@ func (s *Server) ChangePassword(ctx context.Context, req ChangePasswordRequestOb
 	if req.Body == nil {
 		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "current_password")), nil
 	}
-	c, param, ok := confirmationOf(req.Body.CurrentPassword, req.Body.Passkey, "current_password")
+	c, param, ok := confirmationOf(req.Body.CurrentPassword, req.Body.Passkey, req.Body.ExternalConfirmation, "current_password")
 	if !ok {
 		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}
@@ -152,7 +154,7 @@ func (s *Server) DeleteOwnAccount(ctx context.Context, req DeleteOwnAccountReque
 	if req.Body == nil {
 		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "password")), nil
 	}
-	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, "password")
+	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
 		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}

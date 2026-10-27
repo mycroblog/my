@@ -22,7 +22,7 @@ func (s *Service) DeleteOwnAccount(ctx context.Context, userID string, c Confirm
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: DeleteOwnAccount needs a RateLimiter")
 	}
-	if err := s.confirm(ctx, SelfDeletionLimit, userID, c); err != nil {
+	if err := s.confirm(ctx, OperationAccountDeletion, userID, c); err != nil {
 		return err
 	}
 	st, err := s.d.Accounts.UserLifecycle(ctx, userID)

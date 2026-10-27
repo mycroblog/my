@@ -7,6 +7,7 @@ import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import { passkeyPromptFailure } from "../../../lib/webauthn";
 import { confirmWithPasskey } from "./passkeys";
+import { type Confirmation, confirmationBody } from "./linkedIdentities";
 
 /** The lengths of a password that the server takes, in characters (identity.MinPasswordLength / MaxPasswordLength). */
 export const passwordMinLength = 8;
@@ -18,28 +19,32 @@ export function passwordStatusQueryOptions(api: Api) {
 }
 
 /**
- * Changes the password after the current one confirms it, or sets one after a passkey confirms it when
- * `currentPassword` is undefined (POST /accounts/password), as the options of useMutation.
+ * Changes the password after the current one confirms it, or sets one after a passkey or a linked provider confirms
+ * it (POST /accounts/password), as the options of useMutation.
  */
 export function changePasswordMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/password"] as const,
-    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string | undefined; newPassword: string }): Promise<void> => {
+    mutationFn: async ({ confirmation, newPassword }: { confirmation: Confirmation; newPassword: string }): Promise<void> => {
       const body =
-        currentPassword === undefined
-          ? { passkey: await confirmWithPasskey(api), new_password: newPassword }
-          : { current_password: currentPassword, new_password: newPassword };
+        confirmation.kind === "password"
+          ? { current_password: confirmation.password, new_password: newPassword }
+          : { ...(await confirmationBody(api, confirmation)), new_password: newPassword };
       await api.fetch.POST("/accounts/password", { body });
     },
   };
 }
 
-/** Removes the password after a passkey confirms it (POST /accounts/password/remove), as the options of useMutation. */
+/**
+ * Removes the password after a passkey or a linked provider confirms it (POST /accounts/password/remove), as the
+ * options of useMutation.
+ */
 export function removePasswordMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/password/remove"] as const,
-    mutationFn: async (): Promise<void> => {
-      await api.fetch.POST("/accounts/password/remove", { body: { passkey: await confirmWithPasskey(api) } });
+    mutationFn: async (confirmation: Exclude<Confirmation, { kind: "password" }>): Promise<void> => {
+      const body = confirmation.kind === "external" ? { external_confirmation: confirmation.token } : { passkey: await confirmWithPasskey(api) };
+      await api.fetch.POST("/accounts/password/remove", { body });
     },
   };
 }

@@ -8,6 +8,7 @@ import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
 import { ApiError } from "../../../lib/errors";
 import { createPasskey, getPasskey, passkeyPromptFailure } from "../../../lib/webauthn";
+import { type Confirmation, confirmationBody } from "./linkedIdentities";
 
 export type Passkey = components["schemas"]["Passkey"];
 /** A passkey's answer that confirms an operation in place of the password. */
@@ -35,16 +36,16 @@ export function passkeysQueryOptions(api: Api) {
 }
 
 /**
- * Registers a passkey called `name`, confirmed by the password or, for a user without one (`password` undefined), by
- * another passkey (confirmWithPasskey), as the options of useMutation: the registration's options
+ * Registers a passkey called `name`, confirmed by the password, another passkey (confirmWithPasskey), or a linked
+ * provider, as the options of useMutation: the registration's options
  * (POST /passkeys/registration), the browser's prompt, and the new passkey (POST /passkeys). An error is an ApiError, a
  * NetworkError, the DOMException of a prompt, or a PasskeyOptionsError (lib/webauthn).
  */
 export function registerPasskeyMutation(api: Api) {
   return {
     mutationKey: ["post", "/passkeys"] as const,
-    mutationFn: async ({ name, password }: { name: string; password: string | undefined }): Promise<Passkey> => {
-      const body = password === undefined ? { name, passkey: await confirmWithPasskey(api) } : { name, password };
+    mutationFn: async ({ name, confirmation }: { name: string; confirmation: Confirmation }): Promise<Passkey> => {
+      const body = { name, ...(await confirmationBody(api, confirmation)) };
       const begun = await api.fetch.POST("/passkeys/registration", { body });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (begun.data === undefined) throw new ApiError(begun.error);

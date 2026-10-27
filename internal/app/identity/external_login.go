@@ -155,7 +155,8 @@ func (s *Service) externalCallbackURL(providerID string) string {
 	return strings.TrimSuffix(s.d.BaseURL, "/") + ExternalLoginPathPrefix + url.PathEscape(providerID) + "/callback"
 }
 
-// externalLoginToken is what the cookie of a sign-in seals.
+// externalLoginToken is what the cookie of a sign-in seals, and of a link or a confirmation
+// (external_link.go) when Purpose is set.
 type externalLoginToken struct {
 	IssuedAt   int64  `json:"iat"` // Unix milliseconds
 	ProviderID string `json:"provider"`
@@ -163,6 +164,14 @@ type externalLoginToken struct {
 	Nonce      string `json:"nonce"`
 	Verifier   string `json:"verifier"`
 	ReturnTo   string `json:"return_to,omitempty"`
+	// Purpose, UserID, and Operation are those of the intent of a link or a confirmation; ""
+	// for a sign-in.
+	Purpose   ExternalPurpose    `json:"purpose,omitempty"`
+	UserID    string             `json:"user,omitempty"`
+	Operation ConfirmedOperation `json:"op,omitempty"`
+	// AuthAfter is the time, in Unix milliseconds, before which the provider's authentication
+	// of a confirmation does not count (max_age=0); 0 for none.
+	AuthAfter int64 `json:"auth_after,omitempty"`
 }
 
 // externalSignUpToken is what the ticket of a sign-up seals.
@@ -196,14 +205,19 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 	if err != nil {
 		return ExternalLoginStart{}, err
 	}
+	now := s.d.Clock.Now()
+	return s.beginAuthorization(ctx, p, externalLoginToken{
+		IssuedAt: now.UnixMilli(), ProviderID: p.ID, ReturnTo: returnTo,
+		State: randomToken(), Nonce: randomToken(), Verifier: randomToken(),
+	})
+}
+
+// beginAuthorization seals t for the cookie and returns the authorization request of provider p
+// for it, which asks the user to sign in again at the provider when t has AuthAfter.
+func (s *Service) beginAuthorization(ctx context.Context, p identity.LoginProvider, t externalLoginToken) (ExternalLoginStart, error) {
 	op, err := s.d.OIDC.Discover(ctx, p.Settings.Issuer)
 	if err != nil {
 		return ExternalLoginStart{}, fmt.Errorf("%w: provider %s: %w", ErrExternalLoginFailed, p.ID, err)
-	}
-	now := s.d.Clock.Now()
-	t := externalLoginToken{
-		IssuedAt: now.UnixMilli(), ProviderID: p.ID, ReturnTo: returnTo,
-		State: randomToken(), Nonce: randomToken(), Verifier: randomToken(),
 	}
 	cookie, err := s.sealJSON(ctx, t, externalLoginAAD)
 	if err != nil {
@@ -231,8 +245,11 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 			q.Set("hd", c.Values[0])
 		}
 	}
+	if t.AuthAfter != 0 {
+		reauthenticationParams(p.Settings.Kind, q)
+	}
 	u.RawQuery = q.Encode()
-	return ExternalLoginStart{AuthorizationURL: u.String(), Cookie: cookie, ExpiresAt: now.Add(ExternalLoginTTL)}, nil
+	return ExternalLoginStart{AuthorizationURL: u.String(), Cookie: cookie, ExpiresAt: time.UnixMilli(t.IssuedAt).Add(ExternalLoginTTL)}, nil
 }
 
 // ExternalLoginInput is the provider's answer to a sign-in, at its callback.
@@ -263,6 +280,16 @@ type ExternalLogin struct {
 	SecondFactorChallenge string
 	// SignUp asks the user to sign up: no user links the account at the provider.
 	SignUp *ExternalSignUpView
+	// Purpose is that of a link or a confirmation (external_link.go), which ends with Linked or
+	// Confirmation, or with the error, and goes back to ReturnTo either way; "" for a sign-in.
+	Purpose ExternalPurpose
+	// Linked tells that the link was made, or was there already.
+	Linked bool
+	// Confirmation is the token of a confirmation, which the operation takes in
+	// Confirmation.External.
+	Confirmation string
+	// Operation is the operation of a confirmation.
+	Operation ConfirmedOperation
 }
 
 // FinishExternalLogin completes a sign-in with a provider.
@@ -311,7 +338,10 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 	if n != 1 {
 		return ExternalLogin{}, fail(ErrExternalLoginExpired)
 	}
-	out := ExternalLogin{ReturnTo: t.ReturnTo}
+	out := ExternalLogin{ReturnTo: t.ReturnTo, Purpose: t.Purpose, Operation: t.Operation}
+	if t.Purpose != "" {
+		return s.finishExternalIntent(ctx, in, t, out)
+	}
 	p, err := s.enabledLoginProvider(ctx, t.ProviderID)
 	if err != nil {
 		return out, err
@@ -389,7 +419,12 @@ func (s *Service) oidcIDToken(ctx context.Context, p identity.LoginProvider, cod
 	if err != nil {
 		return IDToken{}, fmt.Errorf("%w: provider %s: %w", ErrExternalLoginFailed, p.ID, err)
 	}
-	tok, err := s.d.OIDC.VerifyIDToken(ctx, op, raw, IDTokenCheck{ClientID: p.Settings.ClientID, Nonce: t.Nonce})
+	check := IDTokenCheck{ClientID: p.Settings.ClientID, Nonce: t.Nonce}
+	if t.AuthAfter != 0 {
+		// auth_time has whole seconds.
+		check.AuthenticatedAfter = time.UnixMilli(t.AuthAfter).Truncate(time.Second)
+	}
+	tok, err := s.d.OIDC.VerifyIDToken(ctx, op, raw, check)
 	if err != nil {
 		if errors.Is(err, ErrInvalidIDToken) {
 			return IDToken{}, err

@@ -70,6 +70,14 @@
   その答えを `POST /passkeys` へ送る（`lib/webauthn` が JSON とブラウザのオブジェクトを変換する）。間違ったパスワードはその欄のエラー、閉じられた確認や検証できなかったパスキーなどは `role="alert"` で出す。
   パスキーに対応していないブラウザではフォームの代わりにその旨を出す。各行は名前（`dir="auto"`）と追加した日時を出し、「削除」（アクセシブルネームに名前を含める）を `ConfirmDialog`（`danger`）で確かめてから `DELETE /passkeys/{id}` を送る。
   削除した行は一覧から消し、フォーカスを次の行のボタンへ移す（`useFocusAfterRemoval`）。パスワードのない利用者の最後のパスキーはサーバーが断り（409 `last-sign-in-method`）、その理由をダイアログに出す。パスキーでのログインはサーバーのログインの画面が行う（§8）。
+- **連携したアカウント**（`/settings/linked-accounts`、設定のメニューの「連携したアカウント」、FR-010・ADR-0106 §3、`features/settings` の `LinkedAccountSettings`）: loader が、連携したアカウントと IdP の一覧（`GET /linked_identities`）、パスワードがあるか、パスキーの一覧を読む。
+  連携したアカウントが何をするか（パスワードの代わりにログインでき、確認にも使える）の説明、連携したアカウントの一覧（古い順）、アカウントを連携する区画の 3 つ。各行は IdP の表示名（管理者が書いたまま、`dir="auto"`）と連携した日時、無効になった IdP にはその旨を出し、
+  「連携を解除」（アクセシブルネームに IdP の名前を含める）を `ConfirmDialog`（`danger`）で確かめてから `DELETE /linked_identities/{id}` を送る。解除した行は一覧から消してフォーカスを次の行のボタンへ移し（`useFocusAfterRemoval`）、最後のログイン手段（409 `last-sign-in-method`）はその理由をダイアログに出す。
+  連携する区画は、連携を許し、まだ連携していない IdP ごとに「{IdP} を連携」のボタンを出す。押すと `ConfirmDialog` で確かめ（パスワードのある利用者は現在のパスワードの欄、ない利用者はパスキー、どちらもない利用者は先に下の連携したアカウントでの確認を済ませる）、
+  `POST /linked_identities` の `start_url` へアプリを離れる（`useLeaveApp`）。IdP から戻った画面は、アドレスのフラグメントの結果（`linked` か `external_error`）を `StatusMessage` か `role="alert"` に出す。
+- **連携したアカウントでの確認**（`features/settings` の `useExternalConfirmation` と `ExternalConfirmationChoice`）: パスワードもパスキーもない利用者（`isPreferred`。ほかの手段がある利用者にはほかの手段を先に勧める、ADR-0106 §3.7）の本人確認の操作（パスワードの設定・削除、パスキーの追加、アカウントの削除と移転、連携の追加。パスワードの削除はパスキーのない利用者）は、
+  操作の前に「{IdP} でもう一度ログイン」のボタンを出し、`POST /linked_identities/confirmation`（`operation` と、戻り先の今の画面のパス）の `start_url` へアプリを離れる。サーバーは結果をフラグメント（`external_confirmation`・`operation`・`provider`、失敗は `external_error`）に入れて画面へ戻す。
+  画面は開いたときにフラグメントを 1 度だけ読み（`useExternalOutcome`）、アドレスから外す（再読み込みで出し直さない）。確認が戻った操作は、ボタンの代わりに確認した IdP の名前を出し、操作の要求の `external_confirmation` に入れて 1 度だけ送る。失敗は理由ごとの文言（`settings.external_confirmation.failed.*`）で出す。
 - **プロバイダ**（`App.tsx`）: 外側から、ランタイム設定、表示のロケール、i18n（`react-intl` と React Aria の `I18nProvider`）、QueryClient（`lib/query`）、セッションと API クライアント（`lib/auth/SessionProvider`、§10）、`AnnouncerProvider` / `ToastProvider`、React Aria の `RouterProvider`、ルーターの順に置く。
 - **文言**（`lib/i18n`）: クライアントの文言は `locales/<locale>/client/<area>.json`（領域ごとのファイル、ADR-0082）にある。`vite-plugins/client-catalogs.ts` がロケールごとに 1 つのモジュールにまとめ、ロケールごとに別のチャンクで読み込む。足りない文言は `ja-JP` → `ja` → `en` の順に補う。
   ID の型は `tools/i18n` が生成する `MessageArgs` から作る（`ClientMessageKey`）。文字列にするときは `useT()` の `t("client:…", 引数)` を使い、ID と引数の型を検査する。
