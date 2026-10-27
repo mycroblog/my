@@ -108,7 +108,7 @@ func (r *PaymentRepository) LastReconcileRun(ctx context.Context, provider strin
 
 // ClaimCheckout implements supporters.PaymentRepository.
 func (r *PaymentRepository) ClaimCheckout(ctx context.Context, tx uow.Tx, c supporters.CheckoutClaim) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func (r *PaymentRepository) ClaimCheckout(ctx context.Context, tx uow.Tx, c supp
 
 // ReleaseCheckout implements supporters.PaymentRepository.
 func (r *PaymentRepository) ReleaseCheckout(ctx context.Context, tx uow.Tx, provider, checkoutID, holder string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (r *PaymentRepository) ReleaseCheckout(ctx context.Context, tx uow.Tx, prov
 
 // PurgeCheckoutClaims implements supporters.PaymentRepository.
 func (r *PaymentRepository) PurgeCheckoutClaims(ctx context.Context, tx uow.Tx, before time.Time) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
