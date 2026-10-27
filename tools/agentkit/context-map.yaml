@@ -192,7 +192,7 @@ entries:
   - name: error-reporting
     paths: ["internal/app/kernel/errorreport.go", "internal/app/kernel/errorreport_test.go", "internal/app/kernel/errorscrub.go", "internal/app/kernel/errorscrub_test.go", "internal/platform/errorreport.go", "internal/platform/errorreport_test.go", "internal/platform/errorreport_*.go", "internal/platform/errorexport.go", "internal/platform/errorexport_test.go", "internal/adapter/errorreport/**", "internal/platform/errorscrub.go", "internal/platform/errorscrub_test.go", "internal/platform/errorlog.go", "internal/platform/errorlog_test.go", "internal/app/queue/errors_test.go"]
     docs: ["docs/adr/0103-error-reporting.md", "docs/architecture/overview.md#3-ポート一覧"]
-    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics", "docs/operations/running.md#error-reports", "docs/operations/alerts.md#myerrorreportsincreasing"]
+    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics", "docs/operations/running.md#error-reports", "docs/operations/alerts.md#myerrorreportsincreasing", "docs/operations/error-reporting.md"]
     notes:
       - "kernel.ErrorReporter and ErrorEvent use the standard library only; every report goes through the one platform.ErrorReporter, which fills the version, role, environment, and correlation IDs and hands the event to its sinks."
       - "A new output is an ErrorSink (ErrorSinkCloser when it flushes at close) added with App.ErrorReporter.AddSink from the setup of its module; an exporter of errors_exporter registers its ErrorExporter in errorExporters from the init of its own file and flips its choice to inV0 in the config schema."
