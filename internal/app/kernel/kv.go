@@ -16,7 +16,9 @@ var ErrKeyNotFound = errors.New("kernel: key not found")
 // a namespace names its owner, for example "ratelimit".
 //
 // An entry with a TTL expires that long after it was written; a TTL <= 0 means it never
-// expires. Expired entries behave as absent: Get reports ErrKeyNotFound for them and IncrBy
+// expires. A positive TTL never expires early, however short: a store that keeps expiries in
+// milliseconds rounds them up, so an entry may stay live less than a millisecond past its TTL.
+// Expired entries behave as absent: Get reports ErrKeyNotFound for them and IncrBy
 // starts them again. DeleteExpired removes them physically, a bounded batch at a time, so that
 // one call stays a short transaction on a large store.
 //
@@ -39,6 +41,7 @@ type KeyValueStore interface {
 	// expects no live entry (absent or expired); an empty, non-nil old expects an empty value.
 	CompareAndSwap(ctx context.Context, namespace, key string, old, value []byte, ttl time.Duration) (bool, error)
 	// DeleteExpired removes at most limit expired entries and returns how many it removed;
-	// fewer than limit means none are left. A limit <= 0 removes nothing.
+	// fewer than limit means none are left, also when a concurrent write renews an entry that
+	// it was about to remove. A limit <= 0 removes nothing.
 	DeleteExpired(ctx context.Context, limit int) (int64, error)
 }

@@ -363,6 +363,56 @@ func TestListenDeletesTheQueueWhenSubscribeFails(t *testing.T) {
 	})
 }
 
+// stalledSubscribe fails Subscribe only when its context ends.
+type stalledSubscribe struct{ sns.TopicClient }
+
+func (stalledSubscribe) Subscribe(ctx context.Context, _ *awssns.SubscribeInput, _ ...func(*awssns.Options)) (*awssns.SubscribeOutput, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+// slowDeleteQueue takes delay for each DeleteQueue.
+type slowDeleteQueue struct {
+	sns.QueueClient
+	delay time.Duration
+}
+
+func (c slowDeleteQueue) DeleteQueue(ctx context.Context, in *sqs.DeleteQueueInput, optFns ...func(*sqs.Options)) (*sqs.DeleteQueueOutput, error) {
+	select {
+	case <-time.After(c.delay):
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	return c.QueueClient.DeleteQueue(ctx, in, optFns...)
+}
+
+// A Listen whose subscription fails at its deadline returns by that deadline, and deletes the
+// queue it created afterwards.
+func TestListenReturnsByItsDeadlineWhenSubscribeFails(t *testing.T) {
+	b := fakeBroker(t)
+	const deadline, deleteDelay = 50 * time.Millisecond, 500 * time.Millisecond
+	bus, err := sns.New(stalledSubscribe{b.sns}, slowDeleteQueue{b.sqs, deleteDelay}, sns.Options{TopicARN: b.topic, QueuePrefix: b.prefix})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), deadline)
+	defer cancel()
+	start := time.Now()
+	if l, err := bus.Listen(ctx, func([]byte) {}); err == nil {
+		_ = l.Close(t.Context())
+		t.Fatal("Listen with a stalled subscription succeeded")
+	}
+	if took := time.Since(start); took >= deleteDelay {
+		t.Errorf("Listen took %s, past its deadline %s", took, deadline)
+	}
+	for wait := time.Now().Add(5 * time.Second); len(b.queues(t)) != 0; {
+		if time.Now().After(wait) {
+			t.Fatalf("queues = %v, want none after the cleanup", b.queues(t))
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
 // A listener whose receives keep failing breaks.
 func TestListenerBreaksWhenReceivingKeepsFailing(t *testing.T) {
 	t.Cleanup(sns.SetReceiveWaits(200*time.Millisecond, time.Second, 50*time.Millisecond))

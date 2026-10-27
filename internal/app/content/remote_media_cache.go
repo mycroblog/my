@@ -4,12 +4,14 @@ package content
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/blob"
@@ -87,11 +89,12 @@ func (p *MediaProxy) cacheable(ctx context.Context, m content.RemoteMedia, polic
 	}
 }
 
-// remoteMediaKey is the blob key of the copy of a remote URL. It is derived from the URL, so
-// that fetching the same URL again replaces the copy instead of leaving one behind.
+// remoteMediaKey returns a new blob key for a copy of a remote URL (or of its small variant): the
+// SHA-256 of the URL and a random part. Each copy has a key of its own, so that the cleanup of
+// an expired copy never deletes the blob of the copy that a refresh wrote in its place.
 func remoteMediaKey(remoteURL string) string {
 	sum := sha256.Sum256([]byte(remoteURL))
-	return remoteMediaPrefix + hex.EncodeToString(sum[:])
+	return remoteMediaPrefix + hex.EncodeToString(sum[:]) + "-" + strings.ToLower(rand.Text())
 }
 
 // openCached serves the copy of m while it has not expired, and otherwise fetches the file,
@@ -112,29 +115,83 @@ func (p *MediaProxy) openCached(ctx context.Context, m content.RemoteMedia, ttl 
 		return nil, err
 	}
 	defer func() { _ = f.body.Close() }()
-	key := remoteMediaKey(m.RemoteURL)
 	body := &errReader{r: f.body}
-	info, err := p.d.Blobs.Put(ctx, key, body, blob.PutOptions{ContentType: f.contentType})
+	e, err := p.keepCopy(ctx, m.RemoteURL, body, f.contentType, ttl)
 	if body.err != nil {
 		return nil, readError(m, body.err)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("proxy media %s: keep a copy: %w", m.MediaID, err)
 	}
-	now := p.d.Clock.Now()
-	e := content.RemoteMediaCacheEntry{
-		URL: m.RemoteURL, BlobKey: key, ContentType: f.contentType, FileSize: info.Size,
-		FetchedAt: now, ExpiresAt: now.Add(ttl), LastAccessedAt: now,
-	}
-	if err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return p.d.Repository.UpsertRemoteMediaCache(ctx, tx, e) }); err != nil {
-		// The blob stays without a row; the next fetch of the URL replaces it.
-		return nil, fmt.Errorf("proxy media %s: record the copy: %w", m.MediaID, err)
-	}
-	rc, info, err := p.d.Blobs.Get(ctx, key)
+	rc, info, err := p.d.Blobs.Get(ctx, e.BlobKey)
 	if err != nil {
 		return nil, fmt.Errorf("proxy media %s: read the copy: %w", m.MediaID, err)
 	}
 	return &ProxiedMedia{ContentType: e.ContentType, Length: info.Size, MaxAge: ttl, Body: rc}, nil
+}
+
+// keepCopy writes the content of r under a new key and records it as the cache entry of url for
+// ttl. The key is reserved on the work list of blob deletions before the write and kept when
+// the entry is recorded, so that a blob whose entry is never recorded is deleted (blobJournal).
+// The entry it replaces is read locked, and its blob released, in the same transaction, so that
+// of two concurrent refreshes neither leaves the other's blob behind.
+func (p *MediaProxy) keepCopy(ctx context.Context, url string, r io.Reader, contentType string, ttl time.Duration) (content.RemoteMediaCacheEntry, error) {
+	journal := p.journal()
+	key := remoteMediaKey(url)
+	if err := journal.reserve(ctx, key); err != nil {
+		return content.RemoteMediaCacheEntry{}, err
+	}
+	info, err := p.d.Blobs.Put(ctx, key, r, blob.PutOptions{ContentType: contentType})
+	if err != nil {
+		journal.discard(ctx, key)
+		return content.RemoteMediaCacheEntry{}, err
+	}
+	now := p.d.Clock.Now()
+	e := content.RemoteMediaCacheEntry{
+		URL: url, BlobKey: key, ContentType: contentType, FileSize: info.Size,
+		FetchedAt: now, ExpiresAt: now.Add(ttl), LastAccessedAt: now,
+	}
+	err = p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := journal.keep(ctx, tx, key); err != nil {
+			return err
+		}
+		// A concurrent first fetch of the URL may insert its entry between the lookup and the
+		// insert; the lookup after that finds it.
+		for range 3 {
+			prev, err := p.d.Repository.LockRemoteMediaCache(ctx, tx, url)
+			switch {
+			case errors.Is(err, ErrNotFound):
+				inserted, err := p.d.Repository.InsertRemoteMediaCache(ctx, tx, e)
+				if err != nil || inserted {
+					return err
+				}
+				continue
+			case err != nil:
+				return err
+			}
+			if err := p.d.Repository.UpsertRemoteMediaCache(ctx, tx, e); err != nil {
+				return err
+			}
+			if prev.BlobKey == key {
+				return nil
+			}
+			return journal.release(ctx, tx, prev.BlobKey)
+		}
+		return fmt.Errorf("content: the cache entry of %s keeps changing", url)
+	})
+	if err != nil {
+		// A commit that failed to answer may have recorded the entry.
+		if got, ferr := p.d.Repository.FindRemoteMediaCache(context.WithoutCancel(ctx), url); ferr == nil && got.BlobKey != key || errors.Is(ferr, ErrNotFound) {
+			journal.discard(ctx, key)
+		}
+		return content.RemoteMediaCacheEntry{}, fmt.Errorf("record the copy: %w", err)
+	}
+	return e, nil
+}
+
+// journal returns the work list of blob deletions on the proxy's ports.
+func (p *MediaProxy) journal() blobJournal {
+	return blobJournal{uow: p.d.UnitOfWork, repo: p.d.Repository, blobs: p.d.Blobs, clock: p.d.Clock, logger: p.d.Logger}
 }
 
 // openCopy opens the copy of remoteURL, or returns nil when there is none to serve: no entry,
@@ -185,12 +242,18 @@ func (e *errReader) Read(p []byte) (int, error) {
 
 // CleanupCache deletes the copies of the remote media cache that have expired, then the least
 // recently accessed ones while the cache is over its size limit, and returns how many it
-// deleted (FR-803). Each copy's blob is deleted before its row, so that a failure leaves a row
-// that the next run deletes again rather than a blob that nothing refers to; a row fetched again
-// since it was read is kept. One run looks at a bounded number of copies; the next run continues.
+// deleted (FR-803). It first deletes the blobs that are due on the work list of blob deletions
+// (blobJournal), such as those of copies that a refresh replaced. Each copy's row goes in a
+// transaction that records its blob key on that list, and then its blob; a failure leaves the
+// key for the next run. A row fetched again since it was read is kept, and so is its blob,
+// which has a key of its own. One run looks at a bounded number of copies; the next run
+// continues.
 func (p *MediaProxy) CleanupCache(ctx context.Context) (int, error) {
 	if p.d.Blobs == nil || p.d.UnitOfWork == nil || p.d.Clock == nil {
 		return 0, nil
+	}
+	if _, err := p.journal().sweep(ctx); err != nil {
+		return 0, err
 	}
 	deleted := 0
 	now := p.d.Clock.Now()
@@ -242,17 +305,22 @@ func (p *MediaProxy) CleanupCache(ctx context.Context) (int, error) {
 	return deleted, nil
 }
 
-// evict deletes the blob and then the row of a cache entry, and reports whether it deleted the
-// row.
+// evict deletes the row of a cache entry unless it was fetched again since it was read, with
+// its blob key recorded on the work list of blob deletions, then the blob, and reports whether
+// it deleted the row.
 func (p *MediaProxy) evict(ctx context.Context, e content.RemoteMediaCacheEntry) (bool, error) {
-	if err := p.d.Blobs.Delete(ctx, e.BlobKey); err != nil {
-		return false, err
-	}
+	journal := p.journal()
 	var deleted bool
 	err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		deleted, err = p.d.Repository.DeleteRemoteMediaCache(ctx, tx, e.URL, e.FetchedAt)
-		return err
+		if deleted, err = p.d.Repository.DeleteRemoteMediaCache(ctx, tx, e.URL, e.FetchedAt); err != nil || !deleted {
+			return err
+		}
+		return journal.release(ctx, tx, e.BlobKey)
 	})
-	return deleted, err
+	if err != nil || !deleted {
+		return false, err
+	}
+	journal.deleteNow(ctx, e.BlobKey)
+	return true, nil
 }

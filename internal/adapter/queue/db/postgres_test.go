@@ -8,6 +8,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
@@ -66,6 +67,17 @@ func TestPostgresOutboxContract(t *testing.T) {
 	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
 		return postgresHarness(t, clock, newDatabase(t), true)
 	})
+}
+
+func TestPostgresOverlappingRelays(t *testing.T) {
+	clock := testkit.NewClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	d, err := postgres.Open(t.Context(), newDatabase(t), uow.Options{})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(d.Close)
+	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
+	testOverlappingRelays(t, d, queuedb.NewPostgresOutbox(d, opts), queuedb.NewPostgresOutbox(d, opts))
 }
 
 func TestPostgresBacklogContract(t *testing.T) {

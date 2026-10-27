@@ -22,6 +22,25 @@ const MaxPayloadSize = 1024
 // unchanged and never looks into it. Delivery is best effort and at least once: a payload may
 // be lost while a listener is broken and may arrive twice, and payloads of different senders
 // arrive in any order. A Bus is safe for concurrent use.
+//
+// Every adapter closes Listener.Broken when its listener may have missed payloads, and the
+// Relay then ends the subscriptions of the process, whose clients reconnect and read again: the
+// payloads lost or repeated around a break and that reconnect are the accepted semantics, not
+// a defect. While a listener is open, the adapters guarantee:
+//
+//   - postgres (LISTEN / NOTIFY): every payload once; a payload sent while the listening
+//     connection is lost is lost, and the lost connection breaks the listener.
+//   - valkey (Pub/Sub): at most once; a payload published while the listener is disconnected
+//     is lost, and the lost connection breaks the listener.
+//   - sns (SNS to one SQS standard queue per listener): at least once, so a payload may arrive
+//     twice; the queue keeps payloads for 60 seconds while receives fail, and the listener
+//     breaks after 30 seconds of failures or when its queue is gone.
+//   - pubsub (one Pub/Sub subscription per listener): at least once, so a payload may arrive
+//     twice; a streaming pull that the service closes and the client reopens loses nothing,
+//     and the listener breaks when its subscription is gone.
+//   - MemoryBroker: every payload once, for tests.
+//
+// testkit.StreamBusContract checks these with bursts of payloads, cut by a break and not.
 type Bus interface {
 	// Send hands payload to the broker for every listening process, including this one, and
 	// returns once the broker has it. It returns no later than ctx's deadline, with an error,

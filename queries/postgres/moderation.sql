@@ -1,5 +1,10 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
+-- LockModerationTarget takes a transaction-scoped advisory lock on the restrictions of one
+-- account or domain, so that the actions and lifts on it serialize under READ COMMITTED.
+-- name: LockModerationTarget :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
 -- Account actions ---------------------------------------------------------------------------
 
 -- name: InsertModerationAction :exec

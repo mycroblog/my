@@ -298,6 +298,8 @@ func TestCreateDomainActionRejectsInvalidInput(t *testing.T) {
 		`{"domain":"bad..example","kind":"suspend"}`:                                                                                                  "domain",
 		`{"domain":"bad.example","kind":"silence","x":"invalid-on-purpose"}`:                                                                          "kind",
 		`{"domain":"bad.example","kind":"suspend","expires_in":0,"x":"invalid-on-purpose"}`:                                                           "expires_in",
+		`{"domain":"bad.example","kind":"suspend","expires_in":315360001,"x":"invalid-on-purpose"}`:                                                   "expires_in",
+		`{"domain":"bad.example","kind":"suspend","expires_in":10000000000000,"x":"invalid-on-purpose"}`:                                              "expires_in",
 		`{"domain":"bad.example","kind":"suspend","x":"invalid-on-purpose","private_note":"` + strings.Repeat("a", moderation.MaxActionText+1) + `"}`: "private_note",
 		`{"domain":"bad.example","kind":"suspend","public_comment":"spam\u0000"}`:                                                                     "public_comment",
 		`{"domain":"bad.example","kind":"suspend","private_note":"\u0000"}`:                                                                           "private_note",

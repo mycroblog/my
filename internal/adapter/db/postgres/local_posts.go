@@ -12,8 +12,8 @@ import (
 
 // addLocalPosts adds delta to the local_post_counters row of an account. A counter that a
 // negative delta would bring to zero is deleted instead, so every row stays positive.
-func addLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error {
-	q, err := queries(tx)
+func (d *DB) addLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error {
+	q, err := d.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func addLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64
 
 // AddLocalPosts implements content.Repository.
 func (r *StatusRepository) AddLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error {
-	return addLocalPosts(ctx, tx, accountID, delta)
+	return r.db.addLocalPosts(ctx, tx, accountID, delta)
 }
 
 // RebuildLocalPostCounters implements content.Repository.
@@ -61,12 +61,12 @@ func (r *StatusRepository) LocalPostsTotal(ctx context.Context) (int64, error) {
 
 // AddLocalPosts implements content.InteractionRepository.
 func (r *InteractionRepository) AddLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error {
-	return addLocalPosts(ctx, tx, accountID, delta)
+	return r.db.addLocalPosts(ctx, tx, accountID, delta)
 }
 
 // ListLocalStatusBoosters implements content.InteractionRepository.
 func (r *InteractionRepository) ListLocalStatusBoosters(ctx context.Context, tx uow.Tx, statusID string) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ func (r *SupporterRepository) q(tx uow.Tx) (*sqlitegen.Queries, error) {
 	if tx == nil {
 		return r.db.reader(), nil
 	}
-	return queries(tx)
+	return r.db.queries(tx)
 }
 
 func toNullMillisValue(t time.Time) sql.NullInt64 {
@@ -43,7 +43,7 @@ func toNullMillisValue(t time.Time) sql.NullInt64 {
 
 // InsertProgramChange implements supporters.Repository.
 func (r *SupporterRepository) InsertProgramChange(ctx context.Context, tx uow.Tx, c supporters.ProgramChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (r *SupporterRepository) LastProgramChange(ctx context.Context, tx uow.Tx) 
 
 // InsertPlan implements supporters.Repository.
 func (r *SupporterRepository) InsertPlan(ctx context.Context, tx uow.Tx, p domain.Plan) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *SupporterRepository) InsertPlan(ctx context.Context, tx uow.Tx, p domai
 
 // InsertPlanRevision implements supporters.Repository.
 func (r *SupporterRepository) InsertPlanRevision(ctx context.Context, tx uow.Tx, rev domain.PlanRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (r *SupporterRepository) InsertPlanRevision(ctx context.Context, tx uow.Tx,
 
 // InsertPlanRetirement implements supporters.Repository.
 func (r *SupporterRepository) InsertPlanRetirement(ctx context.Context, tx uow.Tx, planID, byUserID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func priceFrom(row sqlitegen.GetSupporterPriceRow) supporters.Price {
 
 // InsertPrice implements supporters.Repository.
 func (r *SupporterRepository) InsertPrice(ctx context.Context, tx uow.Tx, p supporters.Price) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (r *SupporterRepository) InsertPrice(ctx context.Context, tx uow.Tx, p supp
 
 // SetPriceHead implements supporters.Repository.
 func (r *SupporterRepository) SetPriceHead(ctx context.Context, tx uow.Tx, planID string, interval domain.Interval, priceID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func (r *SupporterRepository) SetPriceHead(ctx context.Context, tx uow.Tx, planI
 
 // InsertPriceArchival implements supporters.Repository.
 func (r *SupporterRepository) InsertPriceArchival(ctx context.Context, tx uow.Tx, priceID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func (r *SupporterRepository) FindPrice(ctx context.Context, tx uow.Tx, id strin
 
 // InsertCustomer implements supporters.Repository.
 func (r *SupporterRepository) InsertCustomer(ctx context.Context, tx uow.Tx, c supporters.Customer) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func setDeadline(ctx context.Context, q *sqlitegen.Queries, subscriptionID strin
 
 // InsertSubscription implements supporters.Repository.
 func (r *SupporterRepository) InsertSubscription(ctx context.Context, tx uow.Tx, s supporters.Subscription, first supporters.TransitionRecord, d *supporters.Deadline) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ func (r *SupporterRepository) InsertSubscription(ctx context.Context, tx uow.Tx,
 
 // InsertCheckout implements supporters.Repository.
 func (r *SupporterRepository) InsertCheckout(ctx context.Context, tx uow.Tx, c supporters.CheckoutRecord) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -442,7 +442,7 @@ func (r *SupporterRepository) FindSubscription(ctx context.Context, tx uow.Tx, i
 // LockSubscription implements supporters.Repository. SQLite serializes write transactions, so
 // it needs no lock.
 func (r *SupporterRepository) LockSubscription(ctx context.Context, tx uow.Tx, id string) (supporters.SubscriptionRecord, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return supporters.SubscriptionRecord{}, err
 	}
@@ -451,7 +451,7 @@ func (r *SupporterRepository) LockSubscription(ctx context.Context, tx uow.Tx, i
 
 // MarkSubscriptionRead implements supporters.Repository.
 func (r *SupporterRepository) MarkSubscriptionRead(ctx context.Context, tx uow.Tx, id string, at time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -504,7 +504,7 @@ func (r *SupporterRepository) LiveSubscriptionID(ctx context.Context, tx uow.Tx,
 
 // InsertLink implements supporters.Repository.
 func (r *SupporterRepository) InsertLink(ctx context.Context, tx uow.Tx, subscriptionID, provider string, ref supporters.SubscriptionRef, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -515,7 +515,7 @@ func (r *SupporterRepository) InsertLink(ctx context.Context, tx uow.Tx, subscri
 
 // InsertTransition implements supporters.Repository.
 func (r *SupporterRepository) InsertTransition(ctx context.Context, tx uow.Tx, t supporters.TransitionRecord, userID string, d *supporters.Deadline) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,7 @@ func (r *SupporterRepository) InsertTransition(ctx context.Context, tx uow.Tx, t
 
 // InsertReversal implements supporters.Repository.
 func (r *SupporterRepository) InsertReversal(ctx context.Context, tx uow.Tx, rev supporters.Reversal) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -548,7 +548,7 @@ func (r *SupporterRepository) InsertReversal(ctx context.Context, tx uow.Tx, rev
 
 // HasRevokingReversal implements supporters.Repository.
 func (r *SupporterRepository) HasRevokingReversal(ctx context.Context, tx uow.Tx, subscriptionID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -617,7 +617,7 @@ func (r *SupporterRepository) ListSubscriptions(ctx context.Context, f supporter
 
 // LiveSubscriptionIDsOfPlan implements supporters.Repository.
 func (r *SupporterRepository) LiveSubscriptionIDsOfPlan(ctx context.Context, tx uow.Tx, planID string) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -627,7 +627,7 @@ func (r *SupporterRepository) LiveSubscriptionIDsOfPlan(ctx context.Context, tx 
 
 // LiveSubscriptionIDs implements supporters.Repository.
 func (r *SupporterRepository) LiveSubscriptionIDs(ctx context.Context, tx uow.Tx) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -680,7 +680,7 @@ func (r *SupporterRepository) SubscriptionUsers(ctx context.Context, ids []strin
 
 // InsertListing implements supporters.Repository.
 func (r *SupporterRepository) InsertListing(ctx context.Context, tx uow.Tx, userID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -716,7 +716,7 @@ func (r *SupporterRepository) ListListings(ctx context.Context, f supporters.Lis
 
 // DeleteListing implements supporters.Repository.
 func (r *SupporterRepository) DeleteListing(ctx context.Context, tx uow.Tx, userID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -725,7 +725,7 @@ func (r *SupporterRepository) DeleteListing(ctx context.Context, tx uow.Tx, user
 
 // EraseUser implements supporters.Repository.
 func (r *SupporterRepository) EraseUser(ctx context.Context, tx uow.Tx, userID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -737,7 +737,7 @@ func (r *SupporterRepository) EraseUser(ctx context.Context, tx uow.Tx, userID s
 
 // RebuildProjections implements supporters.Repository.
 func (r *SupporterRepository) RebuildProjections(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

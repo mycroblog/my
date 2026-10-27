@@ -8,6 +8,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
@@ -27,7 +28,7 @@ func openSQLite(t *testing.T, path string, apply bool) *sqlite.DB {
 	t.Cleanup(func() { _ = d.Close() })
 	if apply {
 		err := d.Tx(t.Context(), func(tx uow.Tx) error {
-			sqlTx, err := sqlite.SQLTx(tx)
+			sqlTx, err := d.SQLTx(tx)
 			if err != nil {
 				return err
 			}
@@ -61,6 +62,13 @@ func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply, relay
 		return sqliteHarness(t, clock, path, false, false)
 	}
 	return h
+}
+
+func TestSQLiteOverlappingRelays(t *testing.T) {
+	clock := testkit.NewClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	d := openSQLite(t, filepath.Join(t.TempDir(), "queue.db"), true)
+	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
+	testOverlappingRelays(t, d, queuedb.NewSQLiteOutbox(d, opts), queuedb.NewSQLiteOutbox(d, opts))
 }
 
 func TestSQLiteBacklogContract(t *testing.T) {

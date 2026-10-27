@@ -1257,6 +1257,18 @@ func (q *Queries) ListTagsByPrefix(ctx context.Context, arg ListTagsByPrefixPara
 	return items, nil
 }
 
+const lockStatusKey = `-- name: LockStatusKey :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// LockStatusKey takes a transaction-scoped advisory lock on a key of the content module's
+// status projections (a status, or a URI with its replies), so that the projectors of one
+// thread serialize under READ COMMITTED.
+func (q *Queries) LockStatusKey(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockStatusKey, lockKey)
+	return err
+}
+
 const rebuildAccountPostCounters = `-- name: RebuildAccountPostCounters :exec
 INSERT INTO account_post_counters (account_id, statuses_count, last_status_at)
 SELECT s.author_account_id, COUNT(*), MAX(s.published_at)

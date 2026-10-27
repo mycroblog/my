@@ -110,7 +110,7 @@ func (r *VoiceRepository) RecordAccounts(ctx context.Context, tx uow.Tx, roomID 
 
 // PurgeParticipantRecords implements appvoice.RecordsRepository.
 func (r *VoiceRepository) PurgeParticipantRecords(ctx context.Context, tx uow.Tx, roomIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (r *VoiceRepository) RoomsRevisedBy(ctx context.Context, tx uow.Tx, account
 
 // EraseRevisionTexts implements appvoice.RecordsRepository.
 func (r *VoiceRepository) EraseRevisionTexts(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

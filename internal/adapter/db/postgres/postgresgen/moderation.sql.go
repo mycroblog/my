@@ -489,7 +489,6 @@ func (q *Queries) InsertDomainRestriction(ctx context.Context, arg InsertDomainR
 
 const insertModerationAction = `-- name: InsertModerationAction :exec
 
-
 INSERT INTO moderation_actions (
   id, target_account_id, kind, reason_category, public_reason, private_note, report_id, issuer,
   issued_by_user_id, notify_target, expires_at, issued_at
@@ -511,7 +510,6 @@ type InsertModerationActionParams struct {
 	IssuedAt        time.Time
 }
 
-// SPDX-License-Identifier: AGPL-3.0-only
 // Account actions ---------------------------------------------------------------------------
 func (q *Queries) InsertModerationAction(ctx context.Context, arg InsertModerationActionParams) error {
 	_, err := q.db.Exec(ctx, insertModerationAction,
@@ -1298,6 +1296,19 @@ func (q *Queries) ListReportsOfTarget(ctx context.Context, targetAccountID strin
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockModerationTarget = `-- name: LockModerationTarget :exec
+
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+// SPDX-License-Identifier: AGPL-3.0-only
+// LockModerationTarget takes a transaction-scoped advisory lock on the restrictions of one
+// account or domain, so that the actions and lifts on it serialize under READ COMMITTED.
+func (q *Queries) LockModerationTarget(ctx context.Context, lockKey string) error {
+	_, err := q.db.Exec(ctx, lockModerationTarget, lockKey)
+	return err
 }
 
 const upsertReportState = `-- name: UpsertReportState :exec

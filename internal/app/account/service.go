@@ -280,6 +280,16 @@ func (s *Service) IsEmojiReferenced(ctx context.Context, emojiID string) (bool, 
 
 // ReviseProfile records a new revision of an account's profile and makes it current.
 func (s *Service) ReviseProfile(ctx context.Context, accountID string, in ProfileInput) (account.ProfileRevision, error) {
+	return s.reviseProfile(ctx, accountID, in, nil)
+}
+
+// errProfileChanged reports that the current profile revision is no longer the one that a
+// revision was built on.
+var errProfileChanged = errors.New("account: the profile changed concurrently")
+
+// reviseProfile records a new revision like ReviseProfile. With a non-nil baseSeq, it fails with
+// errProfileChanged unless the current revision has that seq (0 for none).
+func (s *Service) reviseProfile(ctx context.Context, accountID string, in ProfileInput, baseSeq *int) (account.ProfileRevision, error) {
 	base := account.ProfileRevision{
 		ID:            s.d.IDs.NewID(),
 		AccountID:     accountID,
@@ -309,6 +319,9 @@ func (s *Service) ReviseProfile(ctx context.Context, accountID string, in Profil
 		head, err := s.d.Repository.ProfileHead(ctx, tx, accountID)
 		if err != nil && !errors.Is(err, ErrNotFound) {
 			return err
+		}
+		if baseSeq != nil && head.Seq != *baseSeq {
+			return errProfileChanged
 		}
 		rev.Seq = head.Seq + 1
 		if err := s.d.Repository.InsertProfileRevision(ctx, tx, rev); err != nil {

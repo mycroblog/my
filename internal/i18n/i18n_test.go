@@ -87,6 +87,14 @@ func TestCanonicalize(t *testing.T) {
 		"*":                   "",
 		"en--US":              "",
 		"ja;q=1":              "",
+		"123":                 "",
+		"en-u":                "",
+		"en-a":                "",
+		"en-US-US":            "",
+		"iw":                  "he",
+		"und-JP":              "",
+		"und":                 "und",
+		"x-foo":               "",
 	}
 	for in, want := range tests {
 		if got := Canonicalize(in); got != want {

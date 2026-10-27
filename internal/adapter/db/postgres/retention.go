@@ -23,7 +23,7 @@ var (
 
 // ListRemoteStatusesToPurge implements content.RetentionRepository.
 func (r *StatusRepository) ListRemoteStatusesToPurge(ctx context.Context, tx uow.Tx, pq appcontent.PurgeQuery) ([]content.Status, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (r *StatusRepository) ListRemoteStatusesToPurge(ctx context.Context, tx uow
 
 // ListRelayedStatusesToPurge implements content.RetentionRepository.
 func (r *StatusRepository) ListRelayedStatusesToPurge(ctx context.Context, tx uow.Tx, pq appcontent.RelayedPurgeQuery) ([]content.Status, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (r *StatusRepository) ListRelayedStatusesToPurge(ctx context.Context, tx uo
 
 // InsertRelayedStatus implements content.Repository.
 func (r *StatusRepository) InsertRelayedStatus(ctx context.Context, tx uow.Tx, statusID, relayID string, receivedAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func purgeIDBound(pq appcontent.PurgeQuery) string {
 
 // PurgeStatuses implements content.RetentionRepository.
 func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 
 // StatusHasNotifications implements notification.Repository.
 func (r *NotificationRepository) StatusHasNotifications(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -130,7 +130,7 @@ func (r *NotificationRepository) StatusHasNotifications(ctx context.Context, tx 
 
 // DeleteReceivedDocumentsBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteReceivedDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -146,7 +146,7 @@ func (r *FederationRepository) DeleteReceivedDocumentsBefore(ctx context.Context
 
 // DeleteReceivedActivitiesBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteReceivedActivitiesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -162,7 +162,7 @@ func (r *FederationRepository) DeleteReceivedActivitiesBefore(ctx context.Contex
 
 // DeleteRemoteFollowTombstonesBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteRemoteFollowTombstonesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -178,7 +178,7 @@ func (r *FederationRepository) DeleteRemoteFollowTombstonesBefore(ctx context.Co
 
 // DeleteRemoteObjectTombstonesBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteRemoteObjectTombstonesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -194,7 +194,7 @@ func (r *FederationRepository) DeleteRemoteObjectTombstonesBefore(ctx context.Co
 
 // DeleteOutboundDocumentsBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteOutboundDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -210,7 +210,7 @@ func (r *FederationRepository) DeleteOutboundDocumentsBefore(ctx context.Context
 
 // DeleteDeliveryAttemptsBefore implements federation.PurgeRepository.
 func (r *FederationRepository) DeleteDeliveryAttemptsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -238,7 +238,7 @@ func (r *AccountRepository) ListRemoteAccountsWithPastProfiles(ctx context.Conte
 
 // PrunePastProfiles implements account.ProfilePruneRepository.
 func (r *AccountRepository) PrunePastProfiles(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

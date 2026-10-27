@@ -16,7 +16,7 @@ import (
 
 // InsertDeliveryAttempt implements federation.Repository.
 func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow.Tx, a federation.DeliveryAttempt) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow
 // LockInstanceHealth implements federation.Repository. SQLite serializes writers, so the read
 // needs no lock.
 func (r *FederationRepository) LockInstanceHealth(ctx context.Context, tx uow.Tx, domain string) (federation.InstanceHealth, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return federation.InstanceHealth{}, err
 	}
@@ -44,7 +44,7 @@ func (r *FederationRepository) LockInstanceHealth(ctx context.Context, tx uow.Tx
 
 // InsertAvailabilityEvent implements federation.Repository.
 func (r *FederationRepository) InsertAvailabilityEvent(ctx context.Context, tx uow.Tx, e federation.AvailabilityEvent) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

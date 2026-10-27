@@ -257,9 +257,16 @@ type kvStore struct {
 	mu      sync.Mutex
 	entries map[string]time.Time // namespace/key → expiry
 	sets    int
+	fail    error // when not nil, Set fails with it
 }
 
 func newKVStore() *kvStore { return &kvStore{entries: map[string]time.Time{}} }
+
+func (s *kvStore) setFail(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.fail = err
+}
 
 func (s *kvStore) Get(_ context.Context, ns, key string) ([]byte, error) {
 	s.mu.Lock()
@@ -274,6 +281,9 @@ func (s *kvStore) Get(_ context.Context, ns, key string) ([]byte, error) {
 func (s *kvStore) Set(_ context.Context, ns, key string, _ []byte, ttl time.Duration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.fail != nil {
+		return s.fail
+	}
 	s.entries[ns+"/"+key] = time.Now().Add(ttl)
 	s.sets++
 	return nil
@@ -345,6 +355,84 @@ func TestRelayWritesItsLivenessMarker(t *testing.T) {
 		}
 		if alive() {
 			t.Error("the marker outlived its TTL after the listener closed")
+		}
+	})
+}
+
+// A Relay that cannot write its liveness marker does not listen, so that no sweep takes its
+// resources for the leftovers of an ended process.
+func TestRelayDoesNotListenWithoutItsLivenessMarker(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		kv := newKVStore()
+		kv.setFail(errors.New("kv down"))
+		broker := stream.NewMemoryBroker()
+		r := stream.NewRelay(broker.Bus(), stream.RelayOptions{Liveness: kv})
+		defer closeRelay(t, r)
+
+		if _, err := r.Subscribe(t.Context(), aliceID); !errors.Is(err, stream.ErrUnavailable) {
+			t.Fatalf("Subscribe without a marker: %v, want ErrUnavailable", err)
+		}
+		synctest.Wait()
+		if got := broker.Listeners(); got != 0 {
+			t.Errorf("listeners without a marker = %d, want 0", got)
+		}
+
+		kv.setFail(nil)
+		s, err := r.Subscribe(t.Context(), aliceID)
+		if err != nil {
+			t.Fatalf("Subscribe once the marker can be written: %v", err)
+		}
+		defer s.Close()
+		if ok, err := stream.Alive(t.Context(), kv, r.ProcessID()); err != nil || !ok {
+			t.Errorf("Alive = %v, %v; want true", ok, err)
+		}
+	})
+}
+
+// A Relay whose marker writes keep failing until the marker may expire ends its subscriptions
+// and closes its listener, whose resources a sweep may delete; a single failure does not.
+func TestRelayBreaksWhenItsLivenessMarkerLapses(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		kv := newKVStore()
+		broker := stream.NewMemoryBroker()
+		r := stream.NewRelay(broker.Bus(), stream.RelayOptions{Liveness: kv})
+		defer closeRelay(t, r)
+		s, err := r.Subscribe(t.Context(), aliceID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.Close()
+
+		kv.setFail(errors.New("kv down"))
+		time.Sleep(stream.LivenessInterval + time.Second)
+		synctest.Wait()
+		kv.setFail(nil)
+		time.Sleep(stream.LivenessInterval)
+		synctest.Wait()
+		select {
+		case <-s.Done():
+			t.Fatal("one failed marker write ended the subscription")
+		default:
+		}
+
+		kv.setFail(errors.New("kv down"))
+		lapse := stream.LivenessTTL - stream.LivenessInterval
+		time.Sleep(lapse - stream.LivenessInterval)
+		synctest.Wait()
+		select {
+		case <-s.Done():
+			t.Fatal("the subscription ended while the marker was still live past the next write")
+		default:
+		}
+		time.Sleep(stream.LivenessInterval)
+		synctest.Wait()
+		select {
+		case <-s.Done():
+		default:
+			t.Fatal("the subscription outlived a marker that may have expired")
+		}
+		if got := broker.Listeners(); got != 0 {
+			t.Errorf("listeners after the marker lapsed = %d, want 0", got)
 		}
 	})
 }

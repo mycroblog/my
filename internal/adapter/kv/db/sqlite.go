@@ -19,16 +19,16 @@ import (
 
 // NewSQLite returns the store kept in the SQLite database d, whose entries expire by clock.
 func NewSQLite(d *sqlite.DB, clock kernel.Clock) *Store {
-	return &Store{db: d, st: sqliteStore{}, clock: clock}
+	return &Store{db: d, st: sqliteStore{d}, clock: clock}
 }
 
 // sqliteStore stores timestamps as Unix milliseconds (data-model §1.2).
-type sqliteStore struct{}
+type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}
 
-func sqliteQueries(tx uow.Tx) (*sqlitekv.Queries, error) {
-	sqlTx, err := sqlite.SQLTx(tx)
+func (s sqliteStore) queries(tx uow.Tx) (*sqlitekv.Queries, error) {
+	sqlTx, err := s.db.SQLTx(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func nullMillis(t *time.Time) sql.NullInt64 {
 	return millis(*t)
 }
 
-func (sqliteStore) get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -56,24 +56,24 @@ func (sqliteStore) get(ctx context.Context, tx uow.Tx, namespace, key string, no
 	return v, err == nil, err
 }
 
-func (sqliteStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.SetEntry(ctx, sqlitekv.SetEntryParams{Namespace: namespace, Key: key, Value: value, ExpiresAt: nullMillis(expiresAt)})
 }
 
-func (sqliteStore) del(ctx context.Context, tx uow.Tx, namespace, key string) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) del(ctx context.Context, tx uow.Tx, namespace, key string) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.DeleteEntry(ctx, sqlitekv.DeleteEntryParams{Namespace: namespace, Key: key})
 }
 
-func (sqliteStore) incr(ctx context.Context, tx uow.Tx, namespace, key string, initial []byte, expiresAt *time.Time, now time.Time) ([]byte, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) incr(ctx context.Context, tx uow.Tx, namespace, key string, initial []byte, expiresAt *time.Time, now time.Time) ([]byte, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,21 +85,21 @@ func (sqliteStore) incr(ctx context.Context, tx uow.Tx, namespace, key string, i
 }
 
 // swap reads and writes in one transaction, which BEGIN IMMEDIATE makes atomic.
-func (st sqliteStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
-	cur, found, err := st.get(ctx, tx, namespace, key, now)
+func (s sqliteStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
+	cur, found, err := s.get(ctx, tx, namespace, key, now)
 	switch {
 	case err != nil:
 		return false, err
 	case old == nil && found, old != nil && (!found || !bytes.Equal(cur, old)):
 		return false, nil
 	case value == nil:
-		return true, st.del(ctx, tx, namespace, key)
+		return true, s.del(ctx, tx, namespace, key)
 	}
-	return true, st.set(ctx, tx, namespace, key, value, expiresAt)
+	return true, s.set(ctx, tx, namespace, key, value, expiresAt)
 }
 
-func (sqliteStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}

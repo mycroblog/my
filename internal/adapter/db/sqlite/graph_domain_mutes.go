@@ -12,7 +12,7 @@ import (
 
 // InsertDomainMute implements graph.Repository.
 func (r *GraphRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m graph.DomainMute) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -25,7 +25,7 @@ func (r *GraphRepository) InsertDomainMute(ctx context.Context, tx uow.Tx, m gra
 
 // DeleteDomainMute implements graph.Repository.
 func (r *GraphRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, accountID, domain string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -38,7 +38,7 @@ func (r *GraphRepository) DeleteDomainMute(ctx context.Context, tx uow.Tx, accou
 
 // CountDomainMutes implements graph.Repository.
 func (r *GraphRepository) CountDomainMutes(ctx context.Context, tx uow.Tx, accountID string) (int, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -59,7 +59,7 @@ func (r *GraphRepository) ListDomainMutes(ctx context.Context, accountID, after 
 
 // ListAllDomainMutes implements graph.Repository.
 func (r *GraphRepository) ListAllDomainMutes(ctx context.Context, tx uow.Tx) ([]graph.DomainMute, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

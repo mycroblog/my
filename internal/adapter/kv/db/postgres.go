@@ -20,23 +20,23 @@ import (
 
 // NewPostgres returns the store kept in the PostgreSQL database d, whose entries expire by clock.
 func NewPostgres(d *postgres.DB, clock kernel.Clock) *Store {
-	return &Store{db: d, st: postgresStore{}, clock: clock}
+	return &Store{db: d, st: postgresStore{d}, clock: clock}
 }
 
-type postgresStore struct{}
+type postgresStore struct{ db *postgres.DB }
 
 var _ store = postgresStore{}
 
-func postgresQueries(tx uow.Tx) (*postgreskv.Queries, error) {
-	pgTx, err := postgres.PgxTx(tx)
+func (s postgresStore) queries(tx uow.Tx) (*postgreskv.Queries, error) {
+	pgTx, err := s.db.PgxTx(tx)
 	if err != nil {
 		return nil, err
 	}
 	return postgreskv.New(pgTx), nil
 }
 
-func (postgresStore) get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -47,39 +47,39 @@ func (postgresStore) get(ctx context.Context, tx uow.Tx, namespace, key string, 
 	return v, err == nil, err
 }
 
-func (postgresStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.SetEntry(ctx, postgreskv.SetEntryParams{Namespace: namespace, Key: key, Value: value, ExpiresAt: expiresAt})
 }
 
-func (postgresStore) del(ctx context.Context, tx uow.Tx, namespace, key string) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) del(ctx context.Context, tx uow.Tx, namespace, key string) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.DeleteEntry(ctx, postgreskv.DeleteEntryParams{Namespace: namespace, Key: key})
 }
 
-func (postgresStore) incr(ctx context.Context, tx uow.Tx, namespace, key string, initial []byte, expiresAt *time.Time, now time.Time) ([]byte, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) incr(ctx context.Context, tx uow.Tx, namespace, key string, initial []byte, expiresAt *time.Time, now time.Time) ([]byte, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
 	return q.IncrEntry(ctx, postgreskv.IncrEntryParams{Namespace: namespace, Key: key, Initial: initial, ExpiresAt: expiresAt, Now: now})
 }
 
-func (postgresStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return false, err
 	}
 	var n int64
 	switch {
 	case old == nil && value == nil:
-		_, found, err := postgresStore{}.get(ctx, tx, namespace, key, now)
+		_, found, err := s.get(ctx, tx, namespace, key, now)
 		return !found, err
 	case old == nil:
 		n, err = q.SwapAbsentEntry(ctx, postgreskv.SwapAbsentEntryParams{Namespace: namespace, Key: key, Value: value, ExpiresAt: expiresAt, Now: now})
@@ -91,8 +91,8 @@ func (postgresStore) swap(ctx context.Context, tx uow.Tx, namespace, key string,
 	return n == 1, err
 }
 
-func (postgresStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}

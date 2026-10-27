@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,22 +76,67 @@ type exportEnv struct {
 	exports *appidentity.Exports
 	// fail makes the archive's entry fail.
 	fail bool
+	// write, when set, writes the archive's entry instead.
+	write func(ctx context.Context, w io.Writer) error
+	// deleteErr makes the removals of blobs fail.
+	deleteErr error
+}
+
+// exportBlobs is the blob store of an exportEnv, whose removals fail with its deleteErr.
+type exportBlobs struct {
+	*MemoryBlobStore
+	x *exportEnv
+}
+
+// Delete implements blob.Store.
+func (b exportBlobs) Delete(ctx context.Context, key string) error {
+	if b.x.deleteErr != nil {
+		return b.x.deleteErr
+	}
+	return b.MemoryBlobStore.Delete(ctx, key)
 }
 
 func newExportEnv(e *accountEnv) *exportEnv {
 	x := &exportEnv{accountEnv: e, blobs: NewMemoryBlobStore(e.clock), outbox: &recordingOutbox{}}
 	x.exports = appidentity.NewExports(appidentity.ExportDeps{
-		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Identity, Blobs: x.blobs, Outbox: x.outbox, Accounts: e.accounts,
-		Entries: []appidentity.ArchiveEntry{{Name: "account.txt", Write: func(_ context.Context, accountID string, w io.Writer) error {
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Identity, Blobs: exportBlobs{MemoryBlobStore: x.blobs, x: x}, Outbox: x.outbox,
+		Accounts: e.accounts,
+		Entries: []appidentity.ArchiveEntry{{Name: "account.txt", Write: func(ctx context.Context, accountID string, w io.Writer) error {
 			if x.fail {
 				return errors.New("the entry fails")
+			}
+			if x.write != nil {
+				return x.write(ctx, w)
 			}
 			_, err := io.WriteString(w, "account "+accountID)
 			return err
 		}}},
-		Clock: e.clock, IDs: e.ids,
+		Clock: e.clock, IDs: e.ids, Logger: slog.New(slog.DiscardHandler),
 	})
 	return x
+}
+
+// buildHandler returns the handler of the build jobs.
+func (x *exportEnv) buildHandler(t *testing.T) queue.Handler {
+	t.Helper()
+	reg := &queue.JobHandlerRegistry{}
+	x.exports.RegisterJobs(reg, queue.NewScheduler(nil, x.clock, nil))
+	h, _, ok := reg.Lookup(appidentity.JobBuildExport)
+	if !ok {
+		t.Fatal("no handler of the build")
+	}
+	return h
+}
+
+// archiveKeys returns the keys of the stored archives.
+func (x *exportEnv) archiveKeys() []string {
+	var keys []string
+	for _, k := range x.blobs.Keys() {
+		if strings.HasPrefix(k, "exports/") {
+			keys = append(keys, k)
+		}
+	}
+	return keys
 }
 
 // build runs the queued build jobs with attempt as their attempt number.

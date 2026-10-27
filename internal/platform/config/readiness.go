@@ -70,7 +70,7 @@ func Readiness(c *Config) []Finding {
 		case memory:
 			errorf("database_url", "keeps the SQLite database in memory, so every restart loses all data")
 		case inTempDir(path):
-			warnf("database_url", "puts the SQLite database in the temporary directory %s, which the system may clear", filepath.Dir(path))
+			warnf("database_url", "puts the SQLite database in the temporary directory, which the system may clear")
 		}
 	}
 	if c.KeyManager == "local" && len(c.KEK) > 0 && !looksRandom(c.KEK) {

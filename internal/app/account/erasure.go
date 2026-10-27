@@ -123,10 +123,21 @@ func NewEraser(d ErasureDeps) *Eraser {
 	return &Eraser{d: d}
 }
 
-// erasurePayload is the payload of JobEraseDeletedAccounts: the cursor of the run, the last
-// account that the run finished.
-type erasurePayload struct {
+// ErasureCursor is where a run of the erasure goes on: after the last account that it
+// finished, and inside the account it was erasing when its job used up its transactions. It is
+// the payload of JobEraseDeletedAccounts (none for the first job of a run).
+type ErasureCursor struct {
+	// After is the last account that the run finished.
 	After string `json:"after,omitempty"`
+	// Account is the account that the run was erasing, "" for none; the fields below are about it.
+	Account string `json:"account,omitempty"`
+	// Eraser is the index in ErasureDeps.Erasers of the eraser that the run was at, or
+	// len(Erasers) when only the profile and keys were left.
+	Eraser int `json:"eraser,omitempty"`
+	// Next is that eraser's cursor.
+	Next string `json:"next,omitempty"`
+	// Kept reports that the erasers before kept data of the account.
+	Kept bool `json:"kept,omitempty"`
 }
 
 // RegisterJobs registers the JobEraseDeletedAccounts handler and its hourly schedule.
@@ -136,25 +147,25 @@ func (e *Eraser) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Schedu
 }
 
 func (e *Eraser) handle(ctx context.Context, j queue.Job) queue.Result {
-	var pl erasurePayload
+	var cur ErasureCursor
 	if len(j.Payload) > 0 && string(j.Payload) != "null" {
-		if err := json.Unmarshal(j.Payload, &pl); err != nil {
+		if err := json.Unmarshal(j.Payload, &cur); err != nil {
 			return queue.Fail(fmt.Errorf("account: erasure payload %s: %w", j.Payload, err))
 		}
 	}
-	res, err := e.Run(ctx, pl.After)
+	res, err := e.Run(ctx, cur)
 	if err != nil {
 		return queue.Retry(0, err)
 	}
 	if !res.More || e.d.Jobs == nil {
 		return queue.Done()
 	}
-	b, err := json.Marshal(erasurePayload{After: res.Next})
+	b, err := json.Marshal(res.Next)
 	if err != nil {
 		return queue.Fail(err)
 	}
 	// The time keeps a continuation of the same cursor from colliding with the running job.
-	key := "erase_deleted:" + res.Next + ":" + strconv.FormatInt(e.d.Clock.Now().UnixMilli(), 10)
+	key := "erase_deleted:" + res.Next.After + ":" + res.Next.Account + ":" + strconv.FormatInt(e.d.Clock.Now().UnixMilli(), 10)
 	if err := e.d.Jobs.Enqueue(ctx, queue.NewJob{Type: JobEraseDeletedAccounts, Payload: b, IdempotencyKey: key}); err != nil {
 		return queue.Retry(0, err)
 	}
@@ -165,46 +176,54 @@ func (e *Eraser) handle(ctx context.Context, j queue.Job) queue.Result {
 type ErasureRun struct {
 	// Erased counts the accounts recorded as erased.
 	Erased int
-	// More reports that the run used up its transactions; the next run continues after Next.
+	// More reports that the run used up its transactions; the next run continues from Next.
 	More bool
-	Next string
+	Next ErasureCursor
 }
 
-// Run erases the accounts to erase after the account ID after ("" for the first), in a bounded
-// number of short transactions. It is safe to repeat.
-func (e *Eraser) Run(ctx context.Context, after string) (ErasureRun, error) {
+// Run erases the accounts to erase from the cursor (the zero value for the first job of a run),
+// in a bounded number of short transactions. A run that uses them up inside an account returns
+// a cursor inside it, so that the next one goes on from there instead of passing over the kept
+// data again. It is safe to repeat.
+func (e *Eraser) Run(ctx context.Context, cur ErasureCursor) (ErasureRun, error) {
 	var held []string
 	if e.d.Holds != nil {
 		var err error
 		if held, err = e.d.Holds.HeldAccountIDs(ctx); err != nil {
-			return ErasureRun{Next: after}, fmt.Errorf("account: retention holds: %w", err)
+			return ErasureRun{Next: cur}, fmt.Errorf("account: retention holds: %w", err)
 		}
 	}
 	before := e.d.Clock.Now().Add(-e.d.Delay)
 	budget := erasureMaxBatches
-	out := ErasureRun{Next: after}
+	out := ErasureRun{Next: ErasureCursor{After: cur.After}}
 	for {
-		targets, err := e.d.Repository.ListAccountsToErase(ctx, before, out.Next, erasureAccounts)
+		targets, err := e.d.Repository.ListAccountsToErase(ctx, before, out.Next.After, erasureAccounts)
 		if err != nil {
 			return out, err
 		}
 		for _, t := range targets {
 			if slices.Contains(held, t.AccountID) {
-				out.Next = t.AccountID
+				out.Next.After = t.AccountID
 				continue
 			}
-			finished, erased, err := e.erase(ctx, t, &budget)
+			// The progress of the cursor holds only for the account it names.
+			at := ErasureCursor{Account: t.AccountID}
+			if cur.Account == t.AccountID {
+				at = cur
+			}
+			at.After = out.Next.After
+			next, erased, err := e.erase(ctx, t, at, &budget)
 			if err != nil {
 				return out, fmt.Errorf("account: erase %s: %w", t.AccountID, err)
 			}
-			if !finished {
-				out.More = true
+			if next != nil {
+				out.More, out.Next = true, *next
 				return out, nil
 			}
 			if erased {
 				out.Erased++
 			}
-			out.Next = t.AccountID
+			out.Next.After = t.AccountID
 		}
 		if len(targets) < erasureAccounts {
 			return out, nil
@@ -216,45 +235,44 @@ func (e *Eraser) Run(ctx context.Context, after string) (ErasureRun, error) {
 	}
 }
 
-// erase runs the erasers on one account within the budget of transactions. It reports whether
-// it finished the account in this run, and whether it recorded the account as erased (nothing
-// is kept for later).
-func (e *Eraser) erase(ctx context.Context, t ErasureTarget, budget *int) (finished, erased bool, err error) {
-	kept := false
-	for _, er := range e.d.Erasers {
-		cursor := ""
+// erase runs the erasers on one account from the cursor at, within the budget of
+// transactions. It returns the cursor to go on from when the budget ran out first, and
+// whether it recorded the account as erased (nothing is kept for later).
+func (e *Eraser) erase(ctx context.Context, t ErasureTarget, at ErasureCursor, budget *int) (*ErasureCursor, bool, error) {
+	for ; at.Eraser < len(e.d.Erasers); at.Eraser, at.Next = at.Eraser+1, "" {
+		er := e.d.Erasers[at.Eraser]
 		for {
 			if *budget <= 0 {
-				return false, false, nil
+				return &at, false, nil
 			}
 			*budget--
-			b, err := er.EraseAccountData(ctx, t, cursor, e.d.Batch)
+			b, err := er.EraseAccountData(ctx, t, at.Next, e.d.Batch)
 			if err != nil {
-				return false, false, err
+				return nil, false, err
 			}
-			kept = kept || b.Kept
+			at.Kept = at.Kept || b.Kept
 			if b.Done {
 				break
 			}
-			cursor = b.Next
+			at.Next = b.Next
 		}
 	}
 	if *budget <= 0 {
-		return false, false, nil
+		return &at, false, nil
 	}
 	*budget--
 	now := kernel.Normalize(e.d.Clock.Now())
-	err = e.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err := e.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := e.d.Repository.EraseProfilesAndKeys(ctx, tx, t.AccountID); err != nil {
 			return err
 		}
-		if kept {
+		if at.Kept {
 			return nil
 		}
 		return e.d.Repository.InsertErasure(ctx, tx, t.AccountID, now)
 	})
 	if err != nil {
-		return false, false, err
+		return nil, false, err
 	}
-	return true, !kept, nil
+	return nil, !at.Kept, nil
 }

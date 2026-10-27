@@ -16,7 +16,7 @@ var _ appmoderation.AuditRepository = (*ModerationRepository)(nil)
 
 // InsertAuditEntry implements moderation.AuditRepository.
 func (r *ModerationRepository) InsertAuditEntry(ctx context.Context, tx uow.Tx, e moderation.AuditEntry) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

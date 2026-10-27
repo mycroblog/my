@@ -39,6 +39,10 @@
 
 - 投稿の投影は **削除されていない投稿だけ** を対象にします。削除イベントを記録したトランザクションで、その投稿の `status_heads`・`status_mention_index`・`status_counters`・`status_reply_links`（返信としての行と、親としての行の両方）を消します。削除された投稿への遅れた版は投影に反映しません。
 - `status_reply_links` は、返信と親の両方が既知で、どちらも削除されていないときに 1 行です。返信が先に届いた場合は、親の投稿のトランザクションで `statuses (in_reply_to_uri)` から返信を引いてつなぎます。
+- 投稿の作成・編集・削除の projector は、投影を読む前に投稿のキーでトランザクションを直列化します（`Repository.LockStatusKeys`）。
+  作成と削除は投稿の `uri` と `in_reply_to_uri`、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
+  PostgreSQL は READ COMMITTED なので、トランザクションスコープのアドバイザリロックを取ります。SQLite は書き込みトランザクションが `BEGIN IMMEDIATE` で直列なので何もしません。
+  これが無いと、同時に作られた親と返信が互いを見落としてつながらず、削除と同時の編集が削除済みの投稿の `status_heads`・`status_mention_index` を作り直します。
 - `replies_count` は、つながった返信のうち公開範囲が `public` / `local` / `unlisted` のものを数えます。`private` / `direct` の返信は、件数からも存在が分からないように数えません。
 - `local_post_counters` はローカルアカウントごとに、NodeInfo の `usage.localPosts` に数える投稿の件数を持ちます。
   Mastodon（`account_stats.statuses_count` のローカルアカウントの合計）と GoToSocial に合わせ、削除されていない `direct` 以外のローカルの投稿と、取り消されていない、削除されていない投稿へのローカルのブーストを数えます。
@@ -189,7 +193,8 @@
 | `media_variants` | イベント（結果の子） | `result_id`, `size`（`enum(small, medium, large)`）, `motion`（`enum(still, animated)`）, `blob_key`, `content_type`, `file_size`（`bigint`）, `width` / `height`（`int`） | PK `(result_id, size, motion)`（[ADR-0054](../../../adr/0054-media-variants-video-audio.md)） |
 | `media_focus` | 現在値 | `media_id`（PK）, `focus_x` / `focus_y`（`real`、-1.0〜1.0） | 行がなければ中央 |
 | `media_descriptions` | 現在値 | `media_id`（PK）, `description`（`text`、空でない、1,500 文字まで） | 行がなければ説明なし。投稿が添付するときに `status_revision_attachments.description` へ写す |
-| `remote_media_cache` | 現在値（キャッシュ） | `url`（PK。メディアプロキシの `small` は `{URL}#small-{purpose}`）, `blob_key`（`remote/{url の SHA-256}`）, `content_type`（中身で判定した形式）, `file_size`（`bigint`）, `fetched_at`, `expires_at`, `last_accessed_at`（1 時間単位で更新） | FR-409, NFR-COST-4。インデックス `(expires_at)`, `(last_accessed_at)`。メディアプロキシが書き、`media.cleanup_remote` が期限切れと容量超過の分を消す（federation.md §9） |
+| `remote_media_cache` | 現在値（キャッシュ） | `url`（PK。メディアプロキシの `small` は `{URL}#small-{purpose}-{箱}`、箱が切り抜くときは焦点も加える。[federation.md §9](../../federation.md#9-リモートメディア)）, `blob_key`（`remote/{url の SHA-256}-{乱数}`。取得し直すたびに新しいキー）, `content_type`（中身で判定した形式）, `file_size`（`bigint`）, `fetched_at`, `expires_at`, `last_accessed_at`（1 時間単位で更新） | FR-409, NFR-COST-4。インデックス `(expires_at)`, `(last_accessed_at)`。メディアプロキシが書き、`media.cleanup_remote` が期限切れと容量超過の分を消す（federation.md §9） |
+| `media_blob_deletions` | 現在値（作業の一覧） | `blob_key`（PK）, `delete_after` | インデックス `(delete_after)`。メディアのファイルとリモートのメディアのキャッシュの Blob で、`delete_after` 以降に消すもの。Blob ストアはキーを列挙できないので、どの Blob も書く前から消したあとまでいずれかの行にキーがある。書く側は書く前にキーを猶予（24 時間）付きで記録し、Blob を指す行を記録するトランザクションで消す。失敗した・競合に負けた書き込みは書いた Blob を消し、消せなかったものは猶予のあとにクリーンアップが消す。行を消す側は同じトランザクションでキーを今の時刻で記録し、そのあと Blob を消してから行を消す。`media.cleanup` と `media.cleanup_remote` が期限の来たものを消す |
 | `link_card_media` | リソース（部分型） | `media_id`（PK）, `remote_url`, `content_type`（中身で判定した形式）, `width` / `height`（`int`）, `blurhash`, `description`（`og:image:alt`。無ければ空） | 一意 `(remote_url)`。リンクのカードの画像（[ADR-0062](../../../adr/0062-link-preview-cards.md) §3）。所有者はアカウントではなくカードの URL で、`media_files.owner_account_id` は空。1 回だけ取得して形式・寸法・blurhash を記録し、本体は保存しない。メディアプロキシが添付の画像と同じ規則で中継する |
 
 #### リンクのカード
@@ -243,6 +248,9 @@
 - 未添付のアップロード（どの版からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
   作成から `media_unattached_ttl`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.cleanup` が行と Blob ごと削除します（FR-803）。
   アバター・ヘッダーの参照は `account` モジュール、インスタンスのプレビュー画像（`preview_image`、§4.9）の参照は `instance` モジュールの公開 API で問い合わせます。削除は同じトランザクションで添付の有無を再検査します。
+  行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録し、そのあと Blob を消すので、Blob の削除に失敗してもキーが残り、次の実行が消し直します。
+- アップロードと `media.process` は、Blob を書く前にキーを `media_blob_deletions` に猶予付きで記録し、`uploaded_media` や処理結果を記録するトランザクションで外します。
+  書き込みの失敗（オブジェクトを置いたあとの取り消しを含む）、結果の記録の失敗、同じジョブの並行する実行に負けたときは、書いた Blob を消します。消せなかったもの・処理の途中で止まったものは、猶予のあとに `media.cleanup` が消します。
 
 #### タグ・カスタム絵文字・投票
 

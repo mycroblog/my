@@ -95,15 +95,17 @@ type RoleChangeInput struct {
 	UserID  string
 	RoleKey string
 	// ByUserID is the user who changes the role, or "" for the CLI. A user may change only the
-	// roles at or below their highest one (identity.CanManageRole); the CLI may change any.
+	// roles at or below their highest one (identity.CanManageRole), and grant only the roles
+	// whose every permission they hold themselves; the CLI may change any.
 	ByUserID string
 }
 
 // GrantRole grants a role to a user and reports whether it changed anything: granting a role
 // that the user holds does nothing and records nothing. It fails with ErrNotFound for an
 // unknown user or role, with ErrRoleOutranksActor when the role is above every role of
-// in.ByUserID, and with ErrRoleManagedByPlan for the role of a supporter plan, which only its
-// subscriptions grant (ADR-0072 §5).
+// in.ByUserID, with a *MissingPermissionsError when in.ByUserID lacks a permission of the role,
+// and with ErrRoleManagedByPlan for the role of a supporter plan, which only its subscriptions
+// grant (ADR-0072 §5).
 func (s *Service) GrantRole(ctx context.Context, in RoleChangeInput) (bool, error) {
 	c, err := s.prepareRoleChange(ctx, in)
 	if err != nil {
@@ -118,6 +120,17 @@ func (s *Service) GrantRole(ctx context.Context, in RoleChangeInput) (bool, erro
 		}
 		if err := s.refuseManaged(ctx, tx, role); err != nil {
 			return err
+		}
+		if in.ByUserID != "" {
+			// The permissions are read in the transaction that locks the role, so that a change
+			// to them cannot slip between the check and the grant.
+			perms, err := s.d.Repository.RolePermissions(ctx, tx, role.ID)
+			if err != nil {
+				return err
+			}
+			if err := identity.CheckPermissionsHeld(c.actorPerms, perms); err != nil {
+				return err
+			}
 		}
 		switch _, err := s.d.Repository.FindRoleGrantID(ctx, tx, in.UserID, role.ID); {
 		case err == nil:
@@ -203,10 +216,12 @@ type roleChange struct {
 	auditID string
 	label   string
 	at      time.Time
+	// actorPerms are the permissions of in.ByUserID; none for the CLI.
+	actorPerms []identity.Permission
 }
 
-// prepareRoleChange checks the user, the role, and the rank of the actor, and makes the IDs and
-// the label of the audit log entry.
+// prepareRoleChange checks the user, the role, and the rank of the actor, reads the actor's
+// permissions, and makes the IDs and the label of the audit log entry.
 func (s *Service) prepareRoleChange(ctx context.Context, in RoleChangeInput) (roleChange, error) {
 	if _, err := s.d.Repository.FindUser(ctx, in.UserID); err != nil {
 		return roleChange{}, err
@@ -215,14 +230,12 @@ func (s *Service) prepareRoleChange(ctx context.Context, in RoleChangeInput) (ro
 	if err != nil {
 		return roleChange{}, err
 	}
-	if in.ByUserID != "" {
-		actorRoles, err := s.d.Repository.ListUserRoles(ctx, in.ByUserID)
-		if err != nil {
-			return roleChange{}, err
-		}
-		if !identity.CanManageRole(actorRoles, role) {
-			return roleChange{}, fmt.Errorf("%w: %s", ErrRoleOutranksActor, role.Key)
-		}
+	actor, err := s.loadRoleActor(ctx, in.ByUserID)
+	if err != nil {
+		return roleChange{}, err
+	}
+	if in.ByUserID != "" && !identity.CanManageRole(actor.roles, role) {
+		return roleChange{}, fmt.Errorf("%w: %s", ErrRoleOutranksActor, role.Key)
 	}
 	label := in.UserID
 	la, err := s.d.Accounts.LocalAccountOfUser(ctx, in.UserID)
@@ -234,6 +247,7 @@ func (s *Service) prepareRoleChange(ctx context.Context, in RoleChangeInput) (ro
 	}
 	return roleChange{
 		in: in, eventID: s.d.IDs.NewID(), auditID: s.d.IDs.NewID(), label: role.Key + " " + label, at: s.d.Clock.Now(),
+		actorPerms: actor.perms,
 	}, nil
 }
 

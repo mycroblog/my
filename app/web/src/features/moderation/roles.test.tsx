@@ -189,6 +189,21 @@ describe("an account's roles", () => {
     expect(within(roleRow(roles, "moderator")).getByRole("button", { name: `Grant ${ltr("moderator")}` })).toBeInTheDocument();
   });
 
+  test("a role with a permission the viewer lacks has no grant button, and says which", async () => {
+    const lead: Role = { id: "0192f0c4-7a8e-7000-8000-000000000a09", key: "lead", position: 50, permissions: ["manage_reports", "manage_webhooks"] };
+    const reporter: Role = { ...moderatorRoleFixture, id: "0192f0c4-7a8e-7000-8000-000000000a08", key: "reporter", position: 200, permissions: ["manage_reports"] };
+    rolesServer([], [reporter]);
+    server.use(http.get(`${apiBase}/admin/roles`, () => HttpResponse.json({ items: [adminRoleFixture, reporter, moderatorRoleFixture, lead] })));
+    const { roles } = await openRoles();
+
+    const row = within(roleRow(roles, "lead"));
+    expect(row.queryByRole("button")).not.toBeInTheDocument();
+    expect(row.getByText("You cannot grant this role: it needs permissions you do not have (manage_webhooks).")).toBeInTheDocument();
+    // moderator also needs manage_accounts and view_audit.
+    expect(within(roleRow(roles, "moderator")).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(roleRow(roles, "reporter")).getByRole("button", { name: `Grant ${ltr("reporter")}` })).toBeInTheDocument();
+  });
+
   test("a change the server refuses for a role above the viewer's stays in the confirmation with the reason", async () => {
     rolesServer([]);
     server.use(http.put(`${apiBase}/admin/accounts/:id/roles/:role`, () => problem(403, "about:blank", "Forbidden")));
@@ -199,7 +214,7 @@ describe("an account's roles", () => {
     await user.click(within(dialog).getByRole("button", { name: "Grant" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-      "The role could not be changed: it is above your highest role. You can grant and revoke only the roles at or below your highest role.",
+      "The role could not be changed: it is above your highest role, or it has permissions you do not hold. You can grant and revoke only the roles at or below your highest role, and grant only roles whose permissions you all hold.",
     );
   });
 

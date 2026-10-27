@@ -28,7 +28,7 @@ linters:
     # - app/<module>: standard library, its own module's domain, any module's app package
     #   (the public API through which modules reach each other), and internal/i18n.
     # - i18n: a leaf library (message formatting, ADR-0009) usable from app and interface code;
-    #   it imports only the standard library, the embedded catalogs, and its MessageFormat engine.
+    #   it imports only the standard library, the embedded catalogs, its MessageFormat engine, and x/text/language.
     # - interface/*, adapter/*, pkg/testkit: anything except the layers listed under deny.
     # - platform and cmd: anything (composition root). Nothing imports cmd.
     # Third-party packages for domain/app must be added to the allow list explicitly.
@@ -386,6 +386,8 @@ linters:
             - github.com/mycroblog/my/internal/i18n
             - github.com/mycroblog/my/locales
             - github.com/kaptinlin/messageformat-go/mf1
+            # BCP 47 tag parsing for Canonicalize, the same as the language preferences: pure-Go data, not an external resource.
+            - golang.org/x/text/language
         # bluemonday is the remote HTML sanitizer (ADR-0019 §2); it stays inside the adapter of
         # kernel.HTMLSanitizer so that every caller goes through the port and its policy version,
         # and holds the allowlist of the instance's documents (htmlsanitizer.SanitizeDocument).

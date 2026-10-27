@@ -12,12 +12,33 @@ import (
 	"database/sql"
 )
 
+const dataImportExists = `-- name: DataImportExists :one
+SELECT EXISTS (SELECT 1 FROM data_imports WHERE id = ?1) AS present
+`
+
+// DataImportExists reports whether an import is there.
+func (q *Queries) DataImportExists(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, dataImportExists, id)
+	var present bool
+	err := row.Scan(&present)
+	return present, err
+}
+
 const deleteDataImport = `-- name: DeleteDataImport :exec
 DELETE FROM data_imports WHERE id = ?1
 `
 
 func (q *Queries) DeleteDataImport(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deleteDataImport, id)
+	return err
+}
+
+const deleteDataImportItemFailures = `-- name: DeleteDataImportItemFailures :exec
+DELETE FROM data_import_item_failures WHERE import_id = ?1
+`
+
+func (q *Queries) DeleteDataImportItemFailures(ctx context.Context, importID string) error {
+	_, err := q.db.ExecContext(ctx, deleteDataImportItemFailures, importID)
 	return err
 }
 
@@ -79,6 +100,22 @@ func (q *Queries) GetDataImportProgress(ctx context.Context, id string) (GetData
 	return i, err
 }
 
+const hasUnfinishedDataImport = `-- name: HasUnfinishedDataImport :one
+SELECT EXISTS (
+  SELECT 1 FROM data_imports i JOIN data_import_items t ON t.import_id = i.id
+  WHERE i.user_id = ?1
+    AND NOT EXISTS (SELECT 1 FROM data_import_item_results r WHERE r.import_id = t.import_id AND r.position = t.position)
+) AS unfinished
+`
+
+// HasUnfinishedDataImport reports whether the user has an import with an item without a result.
+func (q *Queries) HasUnfinishedDataImport(ctx context.Context, userID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, hasUnfinishedDataImport, userID)
+	var unfinished bool
+	err := row.Scan(&unfinished)
+	return unfinished, err
+}
+
 const insertDataImport = `-- name: InsertDataImport :exec
 
 INSERT INTO data_imports (id, user_id, account_id, kind, mode, created_at)
@@ -133,6 +170,29 @@ func (q *Queries) InsertDataImportItem(ctx context.Context, arg InsertDataImport
 		arg.HideNotifications,
 	)
 	return err
+}
+
+const insertDataImportItemFailure = `-- name: InsertDataImportItemFailure :one
+INSERT INTO data_import_item_failures (import_id, position, attempt, failed_at)
+SELECT ?1, ?2, COALESCE(MAX(f.attempt), 0) + 1, ?3
+FROM data_import_item_failures f
+WHERE f.import_id = ?1 AND f.position = ?2
+RETURNING attempt
+`
+
+type InsertDataImportItemFailureParams struct {
+	ImportID string
+	Position int64
+	FailedAt int64
+}
+
+// InsertDataImportItemFailure records a failed run of an item as the attempt after its last one
+// and returns that attempt.
+func (q *Queries) InsertDataImportItemFailure(ctx context.Context, arg InsertDataImportItemFailureParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, insertDataImportItemFailure, arg.ImportID, arg.Position, arg.FailedAt)
+	var attempt int64
+	err := row.Scan(&attempt)
+	return attempt, err
 }
 
 const insertDataImportItemResult = `-- name: InsertDataImportItemResult :exec

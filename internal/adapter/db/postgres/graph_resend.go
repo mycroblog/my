@@ -13,7 +13,7 @@ import (
 
 // InsertResend implements graph.Repository.
 func (r *GraphRepository) InsertResend(ctx context.Context, tx uow.Tx, rs graph.Resend) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -28,7 +28,7 @@ func (r *GraphRepository) InsertResend(ctx context.Context, tx uow.Tx, rs graph.
 
 // FollowByResendURI implements graph.Repository.
 func (r *GraphRepository) FollowByResendURI(ctx context.Context, tx uow.Tx, uri string) (graph.Follow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Follow{}, err
 	}

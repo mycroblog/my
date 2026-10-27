@@ -238,6 +238,9 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 		body = bytes.NewReader(r.Body)
 	}
 	ctx, cancel := context.WithTimeout(ctx, limits.Timeout)
+	if r.NoRedirects || r.CheckRedirect != nil {
+		ctx = context.WithValue(ctx, redirectPolicyKey{}, redirectPolicy{none: r.NoRedirects, check: r.CheckRedirect})
+	}
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		cancel()
@@ -287,14 +290,37 @@ func (c *Client) limits(p kernel.HTTPPurpose) (kernel.HTTPLimits, bool) {
 	return l, true
 }
 
+// redirectPolicyKey keys the redirectPolicy of a request in its context, where checkRedirect
+// reads it.
+type redirectPolicyKey struct{}
+
+// redirectPolicy is what a kernel.HTTPRequest asks of redirects: none at all, or a check of each
+// hop.
+type redirectPolicy struct {
+	none  bool
+	check func(ctx context.Context, url string) error
+}
+
 func (c *Client) checkRedirect(req *http.Request, via []*http.Request) error {
+	policy, _ := req.Context().Value(redirectPolicyKey{}).(redirectPolicy)
+	if policy.none {
+		return http.ErrUseLastResponse
+	}
 	if len(via) > kernel.MaxRedirects {
 		return fmt.Errorf("%w: more than %d", kernel.ErrTooManyRedirects, kernel.MaxRedirects)
 	}
 	if via[len(via)-1].URL.Scheme == "https" && req.URL.Scheme != "https" {
 		return fmt.Errorf("%w: redirect from https to %s", kernel.ErrForbiddenDestination, req.URL.Scheme)
 	}
-	return c.checkURL(req.URL)
+	if err := c.checkURL(req.URL); err != nil {
+		return err
+	}
+	if policy.check != nil {
+		if err := policy.check(req.Context(), req.URL.String()); err != nil {
+			return fmt.Errorf("redirect to %s: %w", req.URL.Redacted(), err)
+		}
+	}
+	return nil
 }
 
 // checkURL checks the scheme, port, and host of u; a host that is an IP address is checked

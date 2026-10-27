@@ -27,7 +27,7 @@ func (d *DB) AccountRepository() *AccountRepository { return &AccountRepository{
 
 // InsertAccount implements account.Repository.
 func (r *AccountRepository) InsertAccount(ctx context.Context, tx uow.Tx, a account.Account) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *AccountRepository) InsertAccount(ctx context.Context, tx uow.Tx, a acco
 
 // InsertLocalAccount implements account.Repository.
 func (r *AccountRepository) InsertLocalAccount(ctx context.Context, tx uow.Tx, la account.LocalAccount) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *AccountRepository) InsertLocalAccount(ctx context.Context, tx uow.Tx, l
 
 // InsertProfileRevision implements account.Repository.
 func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx, rev account.ProfileRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (r *AccountRepository) InsertProfileRevision(ctx context.Context, tx uow.Tx
 
 // InsertKey implements account.Repository.
 func (r *AccountRepository) InsertKey(ctx context.Context, tx uow.Tx, k account.Key, sealedPrivateKey []byte) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (r *AccountRepository) InsertKey(ctx context.Context, tx uow.Tx, k account.
 
 // InsertLifecycleEvent implements account.Repository.
 func (r *AccountRepository) InsertLifecycleEvent(ctx context.Context, tx uow.Tx, e account.LifecycleEvent) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (r *AccountRepository) InsertLifecycleEvent(ctx context.Context, tx uow.Tx,
 
 // UpsertHandle implements account.Repository.
 func (r *AccountRepository) UpsertHandle(ctx context.Context, tx uow.Tx, h account.Handle) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (r *AccountRepository) UpsertHandle(ctx context.Context, tx uow.Tx, h accou
 
 // DeleteAllHandles implements account.Repository.
 func (r *AccountRepository) DeleteAllHandles(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func (r *AccountRepository) DeleteAllHandles(ctx context.Context, tx uow.Tx) err
 
 // ProfileHead implements account.Repository.
 func (r *AccountRepository) ProfileHead(ctx context.Context, tx uow.Tx, accountID string) (account.ProfileHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.ProfileHead{}, err
 	}
@@ -204,7 +204,7 @@ func (r *AccountRepository) ProfileHead(ctx context.Context, tx uow.Tx, accountI
 
 // UpsertProfileHead implements account.Repository.
 func (r *AccountRepository) UpsertProfileHead(ctx context.Context, tx uow.Tx, h account.ProfileHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (r *AccountRepository) UpsertProfileHead(ctx context.Context, tx uow.Tx, h 
 
 // DeleteAllProfileHeads implements account.Repository.
 func (r *AccountRepository) DeleteAllProfileHeads(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (r *AccountRepository) DeleteAllProfileHeads(ctx context.Context, tx uow.Tx
 
 // LifecycleState implements account.Repository.
 func (r *AccountRepository) LifecycleState(ctx context.Context, tx uow.Tx, accountID string) (account.LifecycleState, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.LifecycleState{}, err
 	}
@@ -245,7 +245,7 @@ func lifecycleState(row sqlitegen.AccountLifecycleState) account.LifecycleState 
 
 // UpsertLifecycleState implements account.Repository.
 func (r *AccountRepository) UpsertLifecycleState(ctx context.Context, tx uow.Tx, s account.LifecycleState) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -257,7 +257,7 @@ func (r *AccountRepository) UpsertLifecycleState(ctx context.Context, tx uow.Tx,
 
 // DeleteAllLifecycleStates implements account.Repository.
 func (r *AccountRepository) DeleteAllLifecycleStates(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func (r *AccountRepository) DeleteAllLifecycleStates(ctx context.Context, tx uow
 
 // ListLocalAccounts implements account.Repository.
 func (r *AccountRepository) ListLocalAccounts(ctx context.Context, tx uow.Tx) ([]account.LocalAccount, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (r *AccountRepository) ListLocalAccounts(ctx context.Context, tx uow.Tx) ([
 
 // ListProfileRevisionSeqs implements account.Repository.
 func (r *AccountRepository) ListProfileRevisionSeqs(ctx context.Context, tx uow.Tx) ([]account.ProfileHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (r *AccountRepository) ListProfileRevisionSeqs(ctx context.Context, tx uow.
 
 // ListLifecycleEvents implements account.Repository.
 func (r *AccountRepository) ListLifecycleEvents(ctx context.Context, tx uow.Tx) ([]account.LifecycleEvent, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ func accountFrom(row sqlitegen.Account) account.Account {
 
 // Account implements account.Repository.
 func (r *AccountRepository) Account(ctx context.Context, tx uow.Tx, id string) (account.Account, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.Account{}, err
 	}
@@ -436,7 +436,7 @@ func (r *AccountRepository) AccountsOnDomain(ctx context.Context, tx uow.Tx, dom
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (r *AccountRepository) FindCurrentProfile(ctx context.Context, accountID st
 
 // CurrentProfile implements account.Repository.
 func (r *AccountRepository) CurrentProfile(ctx context.Context, tx uow.Tx, accountID string) (account.ProfileRevision, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.ProfileRevision{}, err
 	}

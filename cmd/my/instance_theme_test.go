@@ -39,6 +39,8 @@ func TestInstanceTheme(t *testing.T) {
 		{"", []string{"theme"}, 2, "Usage:"},
 		{"", []string{"theme", "frobnicate"}, 2, "unknown subcommand"},
 		{"not json", []string{"theme", "set"}, 1, "not JSON"},
+		{`{"tokens":[]} {"tokens":[]}`, []string{"theme", "set"}, 1, "exactly one JSON value"},
+		{`{"tokens":[]} garbage`, []string{"theme", "set"}, 1, "exactly one JSON value"},
 		{`{"tokens":[{"token":"color-fg","light":"#ffffff","dark":"#ffffff"}],"custom_css":""}`, []string{"theme", "set"}, 1, "color-fg on color-surface"},
 	} {
 		code, _, stderr := runInstanceCmd(t, tc.stdin, tc.args...)

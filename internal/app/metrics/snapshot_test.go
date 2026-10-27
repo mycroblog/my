@@ -116,8 +116,21 @@ func (s *store) IncrBy(_ context.Context, ns, key string, n int64, ttl time.Dura
 	return v, nil
 }
 
-func (s *store) CompareAndSwap(context.Context, string, string, []byte, []byte, time.Duration) (bool, error) {
-	panic("unused")
+func (s *store) CompareAndSwap(_ context.Context, ns, key string, old, value []byte, ttl time.Duration) (bool, error) {
+	s.writes.Add(1)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	k := ns + "/" + key
+	e, ok := s.live(k)
+	if old == nil && ok || old != nil && (!ok || !bytes.Equal(e.value, old)) {
+		return false, nil
+	}
+	if value == nil {
+		delete(s.values, k)
+		return true, nil
+	}
+	s.values[k] = entry{value: value, expires: expiry(s.clock, ttl)}
+	return true, nil
 }
 
 func (s *store) DeleteExpired(context.Context, int) (int64, error) { return 0, nil }
@@ -334,6 +347,29 @@ func TestOnlyTheLockHolderComputes(t *testing.T) {
 	}
 	if db.totals.Load() != 1 || db.backlogs.Load() != 1 {
 		t.Errorf("computed %d, %d times, want once", db.totals.Load(), db.backlogs.Load())
+	}
+}
+
+func TestAnExpiredOwnerDoesNotReleaseItsSuccessorsLock(t *testing.T) {
+	c := &clock{now: start}
+	kv := newStore(c)
+	db := &database{block: make(chan struct{}), started: make(chan struct{})}
+	a := newProcess(kv, c, db, nil)
+
+	done := make(chan map[string]float64)
+	go func() { done <- a.meter.collect(t) }()
+	<-db.started // a holds the lock and computes
+
+	// a's lock expires and another process takes it.
+	c.advance(metrics.LockTTL + time.Second)
+	if err := kv.Set(t.Context(), metrics.Namespace, "lock", []byte("successor"), metrics.LockTTL); err != nil {
+		t.Fatal(err)
+	}
+	close(db.block)
+	<-done
+	got, err := kv.Get(t.Context(), metrics.Namespace, "lock")
+	if err != nil || string(got) != "successor" {
+		t.Errorf("lock after a finished = %q, %v; want the successor's", got, err)
 	}
 }
 

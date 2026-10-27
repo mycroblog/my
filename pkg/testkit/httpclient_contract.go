@@ -46,6 +46,8 @@ type HTTPClientNetwork struct {
 // IPv4 addresses in decimal, octal, and hexadecimal notation, internal host names, other
 // schemes and ports, redirects towards an internal server or from https to http, more than
 // kernel.MaxRedirects redirects, and a stub DNS that rebinds a name to an internal address. It
+// returns the 3xx answer of a request with NoRedirects, and asks a request's CheckRedirect
+// before following each redirect hop. It
 // enforces the body limit on the decompressed size and on Content-Length, and sends a
 // User-Agent. The contract never uses the network: every server is an httptest server.
 func HTTPClientContract(t *testing.T, newClient func(t *testing.T, n HTTPClientNetwork) kernel.HTTPClient) {
@@ -93,6 +95,74 @@ func HTTPClientContract(t *testing.T, newClient func(t *testing.T, n HTTPClientN
 		_, err := e.get(t, e.public.url("public.example", "/hop0"), kernel.HTTPPurposeJSON)
 		if !errors.Is(err, kernel.ErrTooManyRedirects) {
 			t.Errorf("Do() after %d redirects = %v, want ErrTooManyRedirects", kernel.MaxRedirects+1, err)
+		}
+	})
+	t.Run("ReturnsTheRedirectWithNoRedirects", func(t *testing.T) {
+		e := newHTTPClientEnv(t, newClient)
+		var landed atomic.Int32
+		e.public.handle("/inbox", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/landing", http.StatusFound)
+		})
+		e.public.handle("/landing", func(w http.ResponseWriter, _ *http.Request) {
+			landed.Add(1)
+			_, _ = w.Write([]byte("landing"))
+		})
+		for _, method := range []string{http.MethodPost, http.MethodGet} {
+			resp, err := e.client.Do(t.Context(), &kernel.HTTPRequest{
+				Method: method, URL: e.public.url("public.example", "/inbox"), Body: []byte(`{}`),
+				Purpose: kernel.HTTPPurposeJSON, NoRedirects: true,
+			})
+			if err != nil {
+				t.Fatalf("Do(%s, NoRedirects) = %v", method, err)
+			}
+			_, _ = resp.ReadAll()
+			if resp.StatusCode != http.StatusFound {
+				t.Errorf("Do(%s, NoRedirects) status = %d, want the 302 itself", method, resp.StatusCode)
+			}
+		}
+		if n := landed.Load(); n != 0 {
+			t.Errorf("the redirect target got %d requests, want none", n)
+		}
+	})
+	t.Run("ChecksEveryRedirectHop", func(t *testing.T) {
+		e := newHTTPClientEnv(t, newClient)
+		e.dns["refused.example"] = []netip.Addr{e.public.addr.Addr()}
+		var refusedHits atomic.Int32
+		e.public.handle("/hop", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, e.public.url("public.example", "/hop2"), http.StatusFound)
+		})
+		e.public.handle("/hop2", func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.Host, "refused.example") {
+				refusedHits.Add(1)
+				_, _ = w.Write([]byte("refused"))
+				return
+			}
+			http.Redirect(w, r, e.public.url("refused.example", "/hop2"), http.StatusFound)
+		})
+		refusal := errors.New("refused by the caller")
+		var seen []string
+		resp, err := e.client.Do(t.Context(), &kernel.HTTPRequest{
+			URL: e.public.url("public.example", "/hop"), Purpose: kernel.HTTPPurposeJSON,
+			CheckRedirect: func(_ context.Context, u string) error {
+				seen = append(seen, u)
+				if strings.Contains(u, "refused.example") {
+					return refusal
+				}
+				return nil
+			},
+		})
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+		if !errors.Is(err, refusal) {
+			t.Errorf("Do() = %v, want the error of CheckRedirect", err)
+		}
+		want := []string{e.public.url("public.example", "/hop2"), e.public.url("refused.example", "/hop2")}
+		if fmt.Sprint(seen) != fmt.Sprint(want) {
+			t.Errorf("CheckRedirect saw %q, want %q", seen, want)
+		}
+		if n := refusedHits.Load(); n != 0 {
+			t.Errorf("the refused host got %d requests, want none", n)
 		}
 	})
 	t.Run("RefusesDeniedRanges", func(t *testing.T) {

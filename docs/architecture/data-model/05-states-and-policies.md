@@ -46,6 +46,8 @@
 | `report_intake` | 通報を受け付けない（ドメイン単位の `reject_reports`） | `Flag` の受信 |
 
 - 新しい処分は、`kind` に値を足して対応表に 1 行書くだけで追加できます（テーブル変更なし）。
+- 処分の期限は最長 10 年です（`moderation.MaxDuration`。登録の拒否リストも同じ）。それより長い期限は拒否し、無期限には読み替えません。
+- 1 つのアカウント（ドメイン）への処分と解除は、トランザクションの初めにその対象のロック（PostgreSQL ではトランザクション単位の advisory lock）を取って 1 つずつ進めます。こうすると、並んだ解除がたがいの未確定の行を読まず、確定した行から制限の変化（`moderation.account_restrictions_changed`）を投影します。
 - リモートアカウントへの処分は、制限だけを生む `limit` / `suspend` / `force_sensitive` を同じ表で扱います。ほかの種類（`login` や `post` の制限、本人への通知、投稿への処分、`ban`）はリモートには意味がないので受け付けません（`moderation.ErrUnsupportedAction`）。`notify_target` は常に偽です。
 - リモートのアカウントの `suspend` は、同じトランザクションで両方向のフォローを切ります（`relationship_severances`）。切断は、ローカルのアカウントと同じく凍結の始まりに発行される `moderation.account_suspension_changed`（凍結した処分の ID を持つ）と同じ時点で行います。
 - ローカルのアカウントの `suspend` / `ban` とその解除・期限切れ、`delete_statuses` が連合先に送るものは [ADR-0036](../../adr/0036-moderation-federation-propagation.md) と [federation.md §11](../federation.md#11-モデレーションとの連携) にあります。

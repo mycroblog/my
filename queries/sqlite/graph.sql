@@ -34,12 +34,15 @@ FROM follow_edges WHERE follower_account_id = ? AND followee_account_id = ?;
 INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING;
 
--- name: UpdateFollowEdge :exec
-UPDATE follow_edges SET state = ?, since = ?
-WHERE follower_account_id = ? AND followee_account_id = ? AND follow_id = ?;
+-- UpdateFollowEdge and DeleteFollowEdge change the edge only in the state that the command read,
+-- so that a projector learns from the rows affected that a concurrent transaction changed it.
+-- name: UpdateFollowEdge :execrows
+UPDATE follow_edges SET state = sqlc.arg(state), since = sqlc.arg(since)
+WHERE follower_account_id = sqlc.arg(follower_account_id) AND followee_account_id = sqlc.arg(followee_account_id)
+  AND follow_id = sqlc.arg(follow_id) AND state = sqlc.arg(from_state);
 
--- name: DeleteFollowEdge :exec
-DELETE FROM follow_edges WHERE follower_account_id = ? AND followee_account_id = ? AND follow_id = ?;
+-- name: DeleteFollowEdge :execrows
+DELETE FROM follow_edges WHERE follower_account_id = ? AND followee_account_id = ? AND follow_id = ? AND state = ?;
 
 -- name: DeleteAllFollowEdges :exec
 DELETE FROM follow_edges;

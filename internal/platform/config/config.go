@@ -499,7 +499,11 @@ func MaintenanceRequested(src Source) (bool, error) {
 	issues = append(issues, srcIssues...)
 	if len(issues) == 0 {
 		if err := validate(f, v); err != nil {
-			issues = append(issues, Issue{Key: f.key, Message: err.Error()})
+			msg := err.Error()
+			if f.secret {
+				msg = redactSecret(msg, v)
+			}
+			issues = append(issues, Issue{Key: f.key, Message: msg})
 		}
 	}
 	if len(issues) > 0 {
@@ -593,7 +597,11 @@ func load(src Source, maintenance bool) (*Config, []Setting, error) {
 		}
 		present[f.key] = true
 		if err := validate(f, v); err != nil {
-			issues = append(issues, Issue{Key: f.key, Message: err.Error()})
+			msg := err.Error()
+			if f.secret {
+				msg = redactSecret(msg, v)
+			}
+			issues = append(issues, Issue{Key: f.key, Message: msg})
 			continue
 		}
 		valid[f.key] = v
@@ -675,6 +683,18 @@ func validate(f *field, v string) error {
 		return f.check(v)
 	}
 	return nil
+}
+
+// redactSecret removes from msg the value of a secret setting, and the userinfo and the password
+// of a URL value, which the error of a URL parser quotes verbatim.
+func redactSecret(msg, v string) string {
+	msg = strings.ReplaceAll(msg, v, "(redacted)")
+	if u, err := url.Parse(v); err == nil && u.User != nil {
+		if pw, ok := u.User.Password(); ok && pw != "" {
+			msg = strings.ReplaceAll(msg, pw, "(redacted)")
+		}
+	}
+	return msg
 }
 
 func v0Values(f *field) []string {

@@ -88,14 +88,16 @@ func (s *Server) localUser(ctx context.Context, accountID string) (string, bool,
 }
 
 // roleProblem maps the errors of GrantRole and RevokeRole to problems: 404 for an unknown user
-// or role, 403 for a role that outranks the viewer, and 409 for the last admin and for the role
-// of a supporter plan. It reports false for any other error.
+// or role, 403 for a role that outranks the viewer or has a permission that the viewer lacks,
+// and 409 for the last admin and for the role of a supporter plan. It reports false for any
+// other error.
 func (s *Server) roleProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
+	var missing *appidentity.MissingPermissionsError
 	switch {
 	case errors.Is(err, appidentity.ErrNotFound):
 		return s.notFoundResponse(ctx), true
-	case errors.Is(err, appidentity.ErrRoleOutranksActor):
+	case errors.Is(err, appidentity.ErrRoleOutranksActor), errors.As(err, &missing):
 		return s.problem(ctx, http.StatusForbidden, ProblemTypeBlank, l.ServerErrorsForbidden(), ""), true
 	case errors.Is(err, appidentity.ErrLastAdmin):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true

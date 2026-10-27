@@ -17,8 +17,13 @@ import (
 )
 
 // DefaultShutdownTimeout is how long Serve waits for in-flight requests and jobs after ctx
-// ends. It fits in the 30-second grace period that Kubernetes and ECS give after SIGTERM.
+// ends. With DefaultJobStopTimeout it fits in the 30-second grace period that Kubernetes and ECS
+// give after SIGTERM.
 const DefaultShutdownTimeout = 25 * time.Second
+
+// DefaultJobStopTimeout is how long Serve waits, after ShutdownTimeout cancelled the job in
+// progress, for the job runner to return before Serve abandons it.
+const DefaultJobStopTimeout = 3 * time.Second
 
 // ServeOptions configure Serve.
 type ServeOptions struct {
@@ -28,6 +33,9 @@ type ServeOptions struct {
 	MetricsListener net.Listener
 	// ShutdownTimeout bounds the graceful shutdown; the default is DefaultShutdownTimeout.
 	ShutdownTimeout time.Duration
+	// JobStopTimeout bounds the wait for the job runner after ShutdownTimeout cancelled its
+	// job; the default is DefaultJobStopTimeout.
+	JobStopTimeout time.Duration
 }
 
 // Serve runs the App in its configured role until ctx ends, then shuts down gracefully:
@@ -39,13 +47,17 @@ type ServeOptions struct {
 //
 // When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
 // ShutdownTimeout for the requests and the job in progress to finish. After the timeout it
-// cancels their contexts, closes the remaining connections, and waits for the job runner to
-// return. The open streams end when the shutdown starts; the broker of the streams closes then
+// cancels their contexts, closes the remaining connections, and waits up to JobStopTimeout for
+// the job runner to return; a job that ignores the cancellation is abandoned, and the queue
+// runs it again once its lease expires (at-least-once delivery). The open streams end when the shutdown starts; the broker of the streams closes then
 // in the web and all roles, and after the jobs in the worker role. Serve returns nil after a graceful shutdown and an error when it cannot listen,
 // the server fails, a goroutine panicked, or the timeout was hit.
 func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if opts.ShutdownTimeout <= 0 {
 		opts.ShutdownTimeout = DefaultShutdownTimeout
+	}
+	if opts.JobStopTimeout <= 0 {
+		opts.JobStopTimeout = DefaultJobStopTimeout
 	}
 	ln := opts.Listener
 	if ln == nil {
@@ -151,7 +163,14 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	}
 	hardStop()
 	_ = srv.Close()
-	<-jobsDone
+	// A job that ignores the cancellation is abandoned rather than holding the exit: its lease
+	// expires and the queue runs it again (at-least-once delivery).
+	select {
+	case <-jobsDone:
+	case <-time.After(opts.JobStopTimeout):
+		a.Logger.ErrorContext(ctx, "job runner abandoned: a job did not stop after its cancellation",
+			slog.Duration("timeout", opts.JobStopTimeout))
+	}
 	a.shutDownStreams(graceCtx)
 	if err == nil {
 		a.Logger.InfoContext(ctx, "stopped")

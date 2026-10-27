@@ -50,6 +50,22 @@ type MediaRepository interface {
 
 	// UpsertRemoteMediaCache records a copy of a remote file, replacing the entry of its URL.
 	UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) error
+	// InsertRemoteMediaCache records a copy of a remote file unless its URL has an entry, and
+	// reports whether it recorded it.
+	InsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) (bool, error)
+	// LockRemoteMediaCache returns the cache entry of a remote URL read in tx, which a
+	// concurrent transaction that locks the same entry waits for, so that only one of two
+	// refreshes of a URL replaces a given copy.
+	LockRemoteMediaCache(ctx context.Context, tx uow.Tx, url string) (content.RemoteMediaCacheEntry, error)
+
+	// RecordBlobDeletion records that the blob of key is to be deleted at or after deleteAfter,
+	// replacing the time of a key recorded already.
+	RecordBlobDeletion(ctx context.Context, tx uow.Tx, key string, deleteAfter time.Time) error
+	// ForgetBlobDeletion removes the record of key and reports whether there was one.
+	ForgetBlobDeletion(ctx context.Context, tx uow.Tx, key string) (bool, error)
+	// ListDueBlobDeletions returns up to limit keys whose deletion is due at or before now, the
+	// earliest first.
+	ListDueBlobDeletions(ctx context.Context, now time.Time, limit int) ([]string, error)
 	// TouchRemoteMediaCache sets when the entry of url was last accessed; a missing entry is
 	// not an error.
 	TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, at time.Time) error

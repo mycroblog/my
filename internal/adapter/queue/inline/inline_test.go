@@ -150,3 +150,33 @@ func TestRunUntilWithSynchronousEnqueue(t *testing.T) {
 		t.Errorf("RunUntil: %v", err)
 	}
 }
+
+// An Enqueue whose synchronous run fails after the jobs were stored returns nil: the jobs are
+// enqueued (here, already run), and JobQueue.Enqueue returns an error only when it enqueued none.
+func TestEnqueueDoesNotReportErrorsOfTheRun(t *testing.T) {
+	clock := testkit.NewClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	q := inline.New(inline.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)})
+	var reg queue.JobHandlerRegistry
+	ran := 0
+	reg.Register("stolen", func(ctx context.Context, _ queue.Job) queue.Result {
+		ran++
+		// The lease runs out and another worker claims the job, so that recording this run's
+		// result fails with ErrLeaseLost.
+		clock.Advance(2 * time.Minute)
+		if _, ok, err := q.Claim(ctx, "other", clock.Now(), time.Hour); err != nil || !ok {
+			t.Errorf("Claim by another worker = %v, %v", ok, err)
+		}
+		return queue.Done()
+	})
+	q.RunSynchronously(queue.NewPullRunner(q, &reg, queue.RunnerOptions{Clock: clock, Lease: time.Minute}))
+	if err := q.Enqueue(t.Context(), queue.NewJob{Type: "stolen"}); err != nil {
+		t.Fatalf("Enqueue = %v, want nil once the job is enqueued", err)
+	}
+	if ran != 1 {
+		t.Fatalf("ran %d times, want 1", ran)
+	}
+	jobs, err := q.ListJobs(t.Context(), clock.Now(), queue.JobFilter{State: queue.JobStateRunning}, queue.JobPosition{}, 10)
+	if err != nil || len(jobs) != 1 {
+		t.Fatalf("running jobs = %v, %v, want the job the other worker holds", jobs, err)
+	}
+}

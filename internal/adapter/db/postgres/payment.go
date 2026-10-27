@@ -23,7 +23,7 @@ func (d *DB) PaymentRepository() *PaymentRepository { return &PaymentRepository{
 
 // InsertWebhookReceipt implements supporters.PaymentRepository.
 func (r *PaymentRepository) InsertWebhookReceipt(ctx context.Context, tx uow.Tx, w supporters.WebhookReceipt) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -47,7 +47,7 @@ func (r *PaymentRepository) LastWebhookReceipt(ctx context.Context, provider str
 
 // PurgeWebhookReceipts implements supporters.PaymentRepository.
 func (r *PaymentRepository) PurgeWebhookReceipts(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -61,7 +61,7 @@ func (r *PaymentRepository) PurgeWebhookReceipts(ctx context.Context, tx uow.Tx,
 
 // InsertReconcileRun implements supporters.PaymentRepository.
 func (r *PaymentRepository) InsertReconcileRun(ctx context.Context, tx uow.Tx, run supporters.ReconcileRun) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

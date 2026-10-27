@@ -16,7 +16,7 @@ import (
 
 // InsertPreferences implements identity.PreferencesRepository.
 func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p identity.Preferences) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 
 // UpdatePreferences implements identity.PreferencesRepository.
 func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p identity.Preferences) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func setTimeZone(ctx context.Context, q *sqlitegen.Queries, p identity.Preferenc
 
 // ReplaceTimelineLanguages implements identity.PreferencesRepository.
 func (r *IdentityRepository) ReplaceTimelineLanguages(ctx context.Context, tx uow.Tx, userID string, languages []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (r *IdentityRepository) ReplaceTimelineLanguages(ctx context.Context, tx uo
 // LockPreferences implements identity.PreferencesRepository. SQLite serializes write
 // transactions (BEGIN IMMEDIATE), so reading inside tx is enough.
 func (r *IdentityRepository) LockPreferences(ctx context.Context, tx uow.Tx, userID string) (appidentity.UserPreferences, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appidentity.UserPreferences{}, err
 	}

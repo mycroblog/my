@@ -452,7 +452,7 @@ func TestUnitOfWorkContract(t *testing.T) {
 		return testkit.UnitOfWorkHarness{
 			UnitOfWork: db,
 			Insert: func(ctx context.Context, tx uow.Tx, name string) error {
-				q, err := queries(tx)
+				q, err := db.queries(tx)
 				if err != nil {
 					return err
 				}
@@ -466,7 +466,7 @@ func TestUnitOfWorkContract(t *testing.T) {
 func TestTransactionsAreReadCommitted(t *testing.T) {
 	db := newTestDB(t, uow.Options{})
 	err := db.Tx(t.Context(), func(tx uow.Tx) error {
-		pgTx, err := txOf(tx)
+		pgTx, err := db.txOf(tx)
 		if err != nil {
 			return err
 		}
@@ -507,7 +507,7 @@ func TestRetriesDeadlocks(t *testing.T) {
 	var bothLocked sync.WaitGroup
 	bothLocked.Add(2)
 	lock := func(tx uow.Tx, key string) error {
-		pgTx, err := txOf(tx)
+		pgTx, err := db.txOf(tx)
 		if err != nil {
 			return err
 		}
@@ -528,7 +528,7 @@ func TestRetriesDeadlocks(t *testing.T) {
 			if err := lock(tx, second); err != nil {
 				return err
 			}
-			q, err := queries(tx)
+			q, err := db.queries(tx)
 			if err != nil {
 				return err
 			}
@@ -588,7 +588,7 @@ func TestOpenHidesTheURLInErrors(t *testing.T) {
 }
 
 func TestRejectsForeignTransactions(t *testing.T) {
-	if _, err := txOf(foreignTx{}); err == nil {
+	if _, err := (&DB{}).txOf(foreignTx{}); !errors.Is(err, ErrForeignTx) {
 		t.Fatal("txOf accepted a transaction of another adapter")
 	}
 }

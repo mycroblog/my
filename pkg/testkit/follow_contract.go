@@ -51,10 +51,12 @@ func FollowRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"UnfollowsAndRemovesFollowers", followUnfollows},
 		{"FollowsAgainAsANewFollow", followAgain},
 		{"UpdatesPreferences", followPreferences},
+		{"FollowsWithPreferencesAtomically", followWithPreferences},
 		{"PagesFollowersAndFollowing", followPages},
 		{"RejectsInvalidFollows", followRejectsInvalid},
 		{"RecordsEachTransitionOnce", followRecordsOnce},
 		{"AgreesOnConcurrentFollows", followConcurrent},
+		{"SettlesAPendingRequestOnce", followSettlesOnce},
 		{"EmitsDomainEvents", followEmitsEvents},
 		{"IncrementalProjectionEqualsRebuild", followProjectionEqualsRebuild},
 	}
@@ -579,6 +581,128 @@ func followConcurrent(t *testing.T, e *followEnv) {
 	}
 	checkCounters(t, e, alice, 0, 1)
 	checkCounters(t, e, bob, 1, 0)
+}
+
+// followSettlesOnce accepts a pending request while it is rejected or withdrawn, in transactions
+// that each read the request as pending before the other commits, when the database lets them:
+// one outcome wins, and the edges and counters equal a rebuild.
+func followSettlesOnce(t *testing.T, e *followEnv) {
+	ctx := t.Context()
+	var meet *rendezvous
+	settle := func(context.Context, uow.Tx, uow.Event) error {
+		if meet != nil {
+			meet.wait()
+		}
+		return nil
+	}
+	for _, typ := range []string{appgraph.EventFollowAccepted, appgraph.EventFollowRejected, appgraph.EventFollowTerminated} {
+		e.captured.Register(typ, settle)
+	}
+	followee := e.user(t, "bob", true)
+	for i, other := range []struct {
+		name string
+		run  func(follower string) error
+	}{
+		{"reject", func(follower string) error {
+			_, err := e.graph.RejectFollowRequest(ctx, followee, follower)
+			return err
+		}},
+		{"withdraw", func(follower string) error { _, err := e.graph.Unfollow(ctx, follower, followee); return err }},
+	} {
+		follower := e.user(t, fmt.Sprintf("alice%d", i), false)
+		e.follow(t, follower, followee)
+		meet = newRendezvous(2)
+		var accepted, settled error
+		var wg sync.WaitGroup
+		wg.Go(func() { _, accepted = e.graph.AcceptFollowRequest(ctx, followee, follower) })
+		wg.Go(func() { settled = other.run(follower) })
+		wg.Wait()
+		meet = nil
+		if accepted != nil && !errors.Is(accepted, appgraph.ErrNotFound) || settled != nil && !errors.Is(settled, appgraph.ErrNotFound) {
+			t.Fatalf("accept and %s = %v, %v", other.name, accepted, settled)
+		}
+		hs := e.histories(t, follower, followee)
+		if len(hs) != 1 || hs[0].Acceptance != nil && hs[0].Rejection != nil {
+			t.Errorf("accept and %s: histories = %+v, want one follow accepted or rejected, not both", other.name, hs)
+		}
+		incremental := snapshotFollowProjections(t, e.repo)
+		if err := appgraph.RebuildProjections(ctx, e.h.UnitOfWork, e.repo); err != nil {
+			t.Fatalf("RebuildProjections = %v", err)
+		}
+		if rebuilt := snapshotFollowProjections(t, e.repo); !reflect.DeepEqual(incremental, rebuilt) {
+			t.Errorf("accept and %s: incremental projections differ from a rebuild:\nincremental %+v\nrebuilt     %+v", other.name, incremental, rebuilt)
+		}
+	}
+}
+
+// followWithPreferences checks FollowWith: a new follow starts with the requested preferences in
+// its one event, a failure records nothing, and following again changes only the preferences that
+// it names.
+func followWithPreferences(t *testing.T, e *followEnv) {
+	ctx := t.Context()
+	alice, bob, carol := e.user(t, "alice", false), e.user(t, "bob", false), e.user(t, "carol", true)
+	no, yes := false, true
+	injected := errors.New("injected failure")
+	var fail bool
+	for _, typ := range []string{appgraph.EventFollowed, appgraph.EventFollowRequested} {
+		e.captured.Register(typ, func(context.Context, uow.Tx, uow.Event) error {
+			if fail {
+				return injected
+			}
+			return nil
+		})
+	}
+	e.events.take()
+
+	fail = true
+	if _, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{ShowBoosts: &no, Notify: &yes}); !errors.Is(err, injected) {
+		t.Fatalf("FollowWith with a failing projector = %v, want the injected failure", err)
+	}
+	fail = false
+	if hs := e.histories(t, alice, bob); len(hs) != 0 {
+		t.Errorf("follows after a failed FollowWith = %+v, want none", hs)
+	}
+	checkRelationship(t, e, alice, bob, graph.StateNone, graph.StateNone)
+	e.events.take()
+
+	for _, followee := range []string{bob, carol} {
+		rel, err := e.graph.FollowWith(ctx, alice, followee, appgraph.FollowOptions{ShowBoosts: &no, Notify: &yes})
+		if err != nil || rel.ShowBoosts || !rel.Notify {
+			t.Errorf("FollowWith(%s) = %+v, %v; want the requested preferences", followee, rel, err)
+		}
+		events := e.events.take()
+		if len(events) != 1 {
+			t.Fatalf("FollowWith(%s) events = %+v, want one", followee, events)
+		}
+		var prefs graph.Preferences
+		switch ev := events[0].(type) {
+		case appgraph.Followed:
+			prefs = ev.Preferences
+		case appgraph.FollowRequested:
+			prefs = ev.Preferences
+		}
+		if prefs.ShowBoosts || !prefs.Notify {
+			t.Errorf("FollowWith(%s) event = %+v, want the requested preferences", followee, events[0])
+		}
+	}
+
+	// Following again changes only the named preferences; without any, nothing.
+	rel, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{ShowBoosts: &yes})
+	if err != nil || !rel.ShowBoosts || !rel.Notify || rel.Following != graph.StateActive {
+		t.Errorf("FollowWith(show boosts) again = %+v, %v; want boosts shown and notify kept", rel, err)
+	}
+	if events := e.events.take(); len(events) != 1 || events[0].EventType() != appgraph.EventFollowPreferencesChanged {
+		t.Errorf("events of following again = %+v, want one FollowPreferencesChanged", events)
+	}
+	if _, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{}); err != nil {
+		t.Errorf("FollowWith without preferences again = %v", err)
+	}
+	if events := e.events.take(); len(events) != 0 {
+		t.Errorf("events of following again without preferences = %+v, want none", events)
+	}
+	if hs := e.histories(t, alice, bob); len(hs) != 1 {
+		t.Errorf("follows of alice to bob = %d, want 1", len(hs))
+	}
 }
 
 func followEmitsEvents(t *testing.T, e *followEnv) {

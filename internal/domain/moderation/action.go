@@ -118,6 +118,26 @@ var (
 	ErrInvalidActionStatuses = fmt.Errorf("%w: the statuses of the action", ErrInvalidAction)
 )
 
+// MaxDuration bounds how long a moderation action or a sign-up block lasts: ten years. A longer
+// one is refused rather than kept until it is lifted.
+const MaxDuration = 10 * 365 * 24 * time.Hour
+
+// MaxDurationSeconds is MaxDuration in seconds, the bound of the expires_in of the client API.
+const MaxDurationSeconds = int64(MaxDuration / time.Second)
+
+// ValidDuration reports whether d is a duration that an action or a sign-up block may last:
+// from 0 (until it is lifted) to MaxDuration.
+func ValidDuration(d time.Duration) bool {
+	return d >= 0 && d <= MaxDuration
+}
+
+// ValidDurationSeconds reports whether seconds is an expires_in of the client API: from 1 to
+// MaxDurationSeconds. Callers convert it to a time.Duration only after this check, so that the
+// conversion cannot overflow.
+func ValidDurationSeconds(seconds int64) bool {
+	return seconds >= 1 && seconds <= MaxDurationSeconds
+}
+
 // Action is one moderation action on an account (moderation_actions, an event). It is
 // immutable; lifting it is a separate Lift event, and an expired action is not lifted: its
 // restrictions end at ExpiresAt when they are read.
@@ -163,6 +183,8 @@ func (a Action) Validate() error {
 		return fmt.Errorf("%w: %s", ErrActionNeverExpires, a.Kind)
 	case a.ExpiresAt != nil && !a.ExpiresAt.After(a.IssuedAt):
 		return fmt.Errorf("%w: it must expire after it is issued", ErrInvalidAction)
+	case a.ExpiresAt != nil && a.ExpiresAt.Sub(a.IssuedAt) > MaxDuration:
+		return fmt.Errorf("%w: it must expire within %s", ErrInvalidAction, MaxDuration)
 	}
 	return a.validateStatuses()
 }
@@ -276,6 +298,8 @@ func (a DomainAction) Validate() error {
 		return fmt.Errorf("%w: kind %q", ErrInvalidAction, a.Kind)
 	case a.ExpiresAt != nil && !a.ExpiresAt.After(a.IssuedAt):
 		return fmt.Errorf("%w: it must expire after it is issued", ErrInvalidAction)
+	case a.ExpiresAt != nil && a.ExpiresAt.Sub(a.IssuedAt) > MaxDuration:
+		return fmt.Errorf("%w: it must expire within %s", ErrInvalidAction, MaxDuration)
 	}
 	return nil
 }

@@ -22,10 +22,15 @@ import (
 // "media/x/r/large.jpg" is at "/media/x/r/large.jpg".
 const PathPrefix = "/" + blob.PublicPrefix
 
-// servable lists the media types this handler serves: the outputs of the MediaProcessor. A blob
-// of any other type is not served, so that nothing a browser could run (HTML, SVG) is ever
-// sent from the instance's origin.
-var servable = map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
+// servable lists the media types this handler serves: the outputs of the MediaProcessor, the
+// images it encodes and the video and audio files it remuxes. A blob of any other type is not
+// served, so that nothing a browser could run (HTML, SVG) is ever sent from the instance's
+// origin.
+var servable = map[string]bool{
+	"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true,
+	"video/mp4": true, "video/webm": true,
+	"audio/mp4": true, "audio/webm": true, "audio/ogg": true, "audio/mpeg": true,
+}
 
 // ProblemWriter writes the error response of an HTTP status, the same one the rest of the
 // server uses for that status.

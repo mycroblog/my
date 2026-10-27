@@ -23,6 +23,7 @@ type Graph interface {
 	Counters(ctx context.Context, accountID string) (graph.Counters, error)
 
 	Follow(ctx context.Context, followerID, followeeID string) (appgraph.Relationship, error)
+	FollowWith(ctx context.Context, followerID, followeeID string, opts appgraph.FollowOptions) (appgraph.Relationship, error)
 	UpdatePreferences(ctx context.Context, followerID, followeeID string, in appgraph.PreferencesInput) (appgraph.Relationship, error)
 	Unfollow(ctx context.Context, followerID, followeeID string) (appgraph.Relationship, error)
 	RemoveFollower(ctx context.Context, followeeID, followerID string) (appgraph.Relationship, error)
@@ -167,18 +168,11 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 // FollowAccount serves POST /api/v1/accounts/{id}/follow.
 func (s *Server) FollowAccount(ctx context.Context, req FollowAccountRequestObject) (FollowAccountResponseObject, error) {
 	res, p, err := s.relateGuarded(ctx, req.Id, s.followable, func(v Viewer) (appgraph.Relationship, error) {
-		r, err := s.o.Graph.Follow(ctx, v.AccountID, req.Id)
-		if err != nil || req.Body == nil || (req.Body.ShowBoosts == nil && req.Body.Notify == nil) {
-			return r, err
+		var opts appgraph.FollowOptions
+		if req.Body != nil {
+			opts = appgraph.FollowOptions{ShowBoosts: req.Body.ShowBoosts, Notify: req.Body.Notify}
 		}
-		in := appgraph.PreferencesInput{ShowBoosts: r.ShowBoosts, Notify: r.Notify}
-		if req.Body.ShowBoosts != nil {
-			in.ShowBoosts = *req.Body.ShowBoosts
-		}
-		if req.Body.Notify != nil {
-			in.Notify = *req.Body.Notify
-		}
-		return s.o.Graph.UpdatePreferences(ctx, v.AccountID, req.Id, in)
+		return s.o.Graph.FollowWith(ctx, v.AccountID, req.Id, opts)
 	})
 	switch {
 	case err != nil:

@@ -15,7 +15,7 @@ import (
 
 // EnsureOAuthClient implements identity.Repository.
 func (r *IdentityRepository) EnsureOAuthClient(ctx context.Context, tx uow.Tx, c identity.OAuthClient) (identity.OAuthClient, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return identity.OAuthClient{}, err
 	}
@@ -36,7 +36,7 @@ func (r *IdentityRepository) EnsureOAuthClient(ctx context.Context, tx uow.Tx, c
 
 // ReplaceOAuthClientRedirectURIs implements identity.Repository.
 func (r *IdentityRepository) ReplaceOAuthClientRedirectURIs(ctx context.Context, tx uow.Tx, clientID string, uris []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (r *IdentityRepository) ReplaceOAuthClientRedirectURIs(ctx context.Context,
 
 // InsertAuthorizationCode implements identity.Repository.
 func (r *IdentityRepository) InsertAuthorizationCode(ctx context.Context, tx uow.Tx, c identity.AuthorizationCode) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (r *IdentityRepository) InsertAuthorizationCode(ctx context.Context, tx uow
 
 // InsertAuthorizationCodeRedemption implements identity.Repository.
 func (r *IdentityRepository) InsertAuthorizationCodeRedemption(ctx context.Context, tx uow.Tx, red identity.AuthorizationCodeRedemption) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -89,7 +89,7 @@ func (r *IdentityRepository) InsertAuthorizationCodeRedemption(ctx context.Conte
 
 // InsertAccessToken implements identity.Repository.
 func (r *IdentityRepository) InsertAccessToken(ctx context.Context, tx uow.Tx, t identity.AccessToken) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (r *IdentityRepository) InsertAccessToken(ctx context.Context, tx uow.Tx, t
 
 // InsertTokenRevocation implements identity.Repository.
 func (r *IdentityRepository) InsertTokenRevocation(ctx context.Context, tx uow.Tx, rev identity.TokenRevocation) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func (r *IdentityRepository) InsertTokenRevocation(ctx context.Context, tx uow.T
 
 // RevokeTokenFamily implements identity.Repository.
 func (r *IdentityRepository) RevokeTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.TokenRevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (r *IdentityRepository) LockTokenGrants(context.Context, uow.Tx, string) er
 
 // SessionRevoked implements identity.Repository.
 func (r *IdentityRepository) SessionRevoked(ctx context.Context, tx uow.Tx, sessionID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -158,7 +158,7 @@ func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, 
 
 // RevokeSessionOfTokenFamily implements identity.Repository.
 func (r *IdentityRepository) RevokeSessionOfTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.RevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func accessTokenFromRow(row sqlitegen.GetAccessTokenByAccessHashRow) identity.Ac
 
 // RevokeOtherTokensOfUser implements identity.Repository.
 func (r *IdentityRepository) RevokeOtherTokensOfUser(ctx context.Context, tx uow.Tx, userID, keepFamilyID string, reason identity.TokenRevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (r *IdentityRepository) RevokeOtherTokensOfUser(ctx context.Context, tx uow
 
 // RevokeTokensOfUser implements identity.Repository.
 func (r *IdentityRepository) RevokeTokensOfUser(ctx context.Context, tx uow.Tx, userID string, reason identity.TokenRevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func (r *IdentityRepository) FindOAuthClientState(ctx context.Context, clientID 
 
 // RevokeTokensOfClient implements identity.Repository.
 func (r *IdentityRepository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx, clientID string, reason identity.TokenRevocationReason, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -321,7 +321,7 @@ func (r *IdentityRepository) ListOAuthClients(ctx context.Context, registration 
 
 // InsertOAuthClientDisablement implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, tx uow.Tx, dis identity.OAuthClientDisablement) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -333,7 +333,7 @@ func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, t
 
 // LiftOAuthClientDisablements implements identity.Repository.
 func (r *IdentityRepository) LiftOAuthClientDisablements(ctx context.Context, tx uow.Tx, clientID, byUserID string, at time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -345,7 +345,7 @@ func (r *IdentityRepository) LiftOAuthClientDisablements(ctx context.Context, tx
 
 // InsertOAuthClientDeletion implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx uow.Tx, del identity.OAuthClientDeletion) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -357,7 +357,7 @@ func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx u
 
 // UpsertTokenFamilyLastUsed implements identity.Repository.
 func (r *IdentityRepository) UpsertTokenFamilyLastUsed(ctx context.Context, tx uow.Tx, familyID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -391,7 +391,7 @@ func (r *IdentityRepository) ListAuthorizedAppTokens(ctx context.Context, userID
 
 // RevokeTokensOfUserAndClient implements identity.Repository.
 func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx uow.Tx, userID, clientID string, reason identity.TokenRevocationReason, at time.Time) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

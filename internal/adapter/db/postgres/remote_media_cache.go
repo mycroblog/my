@@ -14,7 +14,7 @@ import (
 
 // UpsertRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 
 // TouchRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, 
 
 // DeleteRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) DeleteRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, fetchedAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -133,4 +133,59 @@ func (r *MediaRepository) ListCurrentCustomEmojis(ctx context.Context, ids []str
 		})
 	}
 	return out, nil
+}
+
+// InsertRemoteMediaCache implements content.MediaRepository.
+func (r *MediaRepository) InsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertRemoteMediaCache(ctx, postgresgen.InsertRemoteMediaCacheParams{
+		Url: e.URL, BlobKey: e.BlobKey, ContentType: e.ContentType, FileSize: e.FileSize,
+		FetchedAt: e.FetchedAt, ExpiresAt: e.ExpiresAt, LastAccessedAt: e.LastAccessedAt,
+	})
+	return n > 0, wrap(err, "insert remote media cache")
+}
+
+// LockRemoteMediaCache implements content.MediaRepository.
+func (r *MediaRepository) LockRemoteMediaCache(ctx context.Context, tx uow.Tx, url string) (content.RemoteMediaCacheEntry, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return content.RemoteMediaCacheEntry{}, err
+	}
+	row, err := q.LockRemoteMediaCache(ctx, url)
+	if err != nil {
+		return content.RemoteMediaCacheEntry{}, notFound(err, appcontent.ErrNotFound, "remote media cache "+url)
+	}
+	return remoteMediaCacheEntry(row), nil
+}
+
+// RecordBlobDeletion implements content.MediaRepository.
+func (r *MediaRepository) RecordBlobDeletion(ctx context.Context, tx uow.Tx, key string, deleteAfter time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.UpsertMediaBlobDeletion(ctx, postgresgen.UpsertMediaBlobDeletionParams{BlobKey: key, DeleteAfter: deleteAfter}), "record blob deletion")
+}
+
+// ForgetBlobDeletion implements content.MediaRepository.
+func (r *MediaRepository) ForgetBlobDeletion(ctx context.Context, tx uow.Tx, key string) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.DeleteMediaBlobDeletion(ctx, key)
+	return n > 0, wrap(err, "forget blob deletion")
+}
+
+// ListDueBlobDeletions implements content.MediaRepository.
+func (r *MediaRepository) ListDueBlobDeletions(ctx context.Context, now time.Time, limit int) ([]string, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	keys, err := r.db.reader().ListDueMediaBlobDeletions(ctx, postgresgen.ListDueMediaBlobDeletionsParams{Now: now, BatchLimit: n})
+	return keys, wrap(err, "list due blob deletions")
 }

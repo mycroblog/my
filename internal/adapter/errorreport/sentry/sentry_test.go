@@ -409,3 +409,31 @@ func TestSendFailureHidesTheDSN(t *testing.T) {
 		t.Errorf("the error repeats the DSN: %v", err)
 	}
 }
+
+// TestDoesNotFollowRedirects checks that a redirect of the intake is not followed, with the
+// client of the platform or one of its own, so that the key and the event never reach another
+// destination.
+func TestDoesNotFollowRedirects(t *testing.T) {
+	var reached sync.Map
+	other := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
+		reached.Store(req.URL.Path, req.Header.Get("X-Sentry-Auth"))
+	}))
+	t.Cleanup(other.Close)
+	for _, status := range []int{http.StatusFound, http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+		for name, hc := range map[string]*http.Client{"default": nil, "given": {Timeout: 5 * time.Second}} {
+			r := newReceiver(t)
+			r.respond(response{status: status, header: map[string]string{"Location": other.URL + "/elsewhere"}})
+			c, err := sentry.New(sentry.Options{DSN: r.dsn(""), HTTPClient: hc})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := c.SendError(t.Context(), event()); err == nil {
+				t.Errorf("%s client, %d: SendError() = nil, want an error", name, status)
+			}
+		}
+	}
+	reached.Range(func(k, v any) bool {
+		t.Errorf("the redirect target got %v with X-Sentry-Auth %q", k, v)
+		return true
+	})
+}

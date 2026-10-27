@@ -63,6 +63,22 @@ func (q *Queries) GetDataExport(ctx context.Context, id string) (GetDataExportRo
 	return i, err
 }
 
+const hasPendingDataExport = `-- name: HasPendingDataExport :one
+SELECT EXISTS (
+  SELECT 1 FROM data_exports e
+  WHERE e.user_id = $1::uuid
+    AND NOT EXISTS (SELECT 1 FROM data_export_results r WHERE r.export_id = e.id)
+)::boolean AS pending
+`
+
+// HasPendingDataExport reports whether the user has an export without a result.
+func (q *Queries) HasPendingDataExport(ctx context.Context, userID string) (bool, error) {
+	row := q.db.QueryRow(ctx, hasPendingDataExport, userID)
+	var pending bool
+	err := row.Scan(&pending)
+	return pending, err
+}
+
 const insertDataExport = `-- name: InsertDataExport :exec
 
 INSERT INTO data_exports (id, user_id, requested_at) VALUES ($1, $2, $3)
@@ -80,7 +96,7 @@ func (q *Queries) InsertDataExport(ctx context.Context, arg InsertDataExportPara
 	return err
 }
 
-const insertDataExportResult = `-- name: InsertDataExportResult :exec
+const insertDataExportResult = `-- name: InsertDataExportResult :execrows
 INSERT INTO data_export_results (export_id, outcome, blob_key, file_size, expires_at, completed_at)
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (export_id) DO NOTHING
@@ -96,8 +112,8 @@ type InsertDataExportResultParams struct {
 }
 
 // InsertDataExportResult records the end of a build; the first result of an export stands.
-func (q *Queries) InsertDataExportResult(ctx context.Context, arg InsertDataExportResultParams) error {
-	_, err := q.db.Exec(ctx, insertDataExportResult,
+func (q *Queries) InsertDataExportResult(ctx context.Context, arg InsertDataExportResultParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertDataExportResult,
 		arg.ExportID,
 		arg.Outcome,
 		arg.BlobKey,
@@ -105,7 +121,10 @@ func (q *Queries) InsertDataExportResult(ctx context.Context, arg InsertDataExpo
 		arg.ExpiresAt,
 		arg.CompletedAt,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const listDataExports = `-- name: ListDataExports :many
@@ -212,4 +231,61 @@ func (q *Queries) ListExpiredDataExports(ctx context.Context, arg ListExpiredDat
 		return nil, err
 	}
 	return items, nil
+}
+
+const listStalePendingDataExports = `-- name: ListStalePendingDataExports :many
+SELECT e.id FROM data_exports e
+WHERE e.requested_at < $1
+  AND NOT EXISTS (SELECT 1 FROM data_export_results r WHERE r.export_id = e.id)
+ORDER BY e.requested_at, e.id LIMIT $2
+`
+
+type ListStalePendingDataExportsParams struct {
+	RequestedBefore time.Time
+	BatchLimit      int32
+}
+
+// ListStalePendingDataExports returns the IDs of the exports without a result requested before
+// @requested_before, oldest first.
+func (q *Queries) ListStalePendingDataExports(ctx context.Context, arg ListStalePendingDataExportsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listStalePendingDataExports, arg.RequestedBefore, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockDataExport = `-- name: LockDataExport :one
+SELECT id FROM data_exports WHERE id = $1::uuid FOR SHARE
+`
+
+// LockDataExport locks an export against its deletion until the transaction ends.
+func (q *Queries) LockDataExport(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, lockDataExport, id)
+	var id_2 string
+	err := row.Scan(&id_2)
+	return id_2, err
+}
+
+const lockUserDataTransfers = `-- name: LockUserDataTransfers :exec
+SELECT id FROM users WHERE id = $1::uuid FOR UPDATE
+`
+
+// LockUserDataTransfers locks the user's row, so that the requests of the user's exports and
+// imports that check for one in progress run one at a time.
+func (q *Queries) LockUserDataTransfers(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, lockUserDataTransfers, userID)
+	return err
 }

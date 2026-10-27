@@ -532,6 +532,39 @@ func (q *Queries) InsertRemoteMedia(ctx context.Context, arg InsertRemoteMediaPa
 	return result.RowsAffected(), nil
 }
 
+const insertRemoteMediaCache = `-- name: InsertRemoteMediaCache :execrows
+INSERT INTO remote_media_cache (url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (url) DO NOTHING
+`
+
+type InsertRemoteMediaCacheParams struct {
+	Url            string
+	BlobKey        string
+	ContentType    string
+	FileSize       int64
+	FetchedAt      time.Time
+	ExpiresAt      time.Time
+	LastAccessedAt time.Time
+}
+
+// InsertRemoteMediaCache records a copy of a remote file unless the URL has an entry already.
+func (q *Queries) InsertRemoteMediaCache(ctx context.Context, arg InsertRemoteMediaCacheParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertRemoteMediaCache,
+		arg.Url,
+		arg.BlobKey,
+		arg.ContentType,
+		arg.FileSize,
+		arg.FetchedAt,
+		arg.ExpiresAt,
+		arg.LastAccessedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertRemoteStatusRevision = `-- name: InsertRemoteStatusRevision :exec
 
 INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version)
@@ -903,6 +936,29 @@ func (q *Queries) LockPoll(ctx context.Context, pollID string) (string, error) {
 	var id string
 	err := row.Scan(&id)
 	return id, err
+}
+
+const lockRemoteMediaCache = `-- name: LockRemoteMediaCache :one
+SELECT url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at
+FROM remote_media_cache WHERE url = $1 FOR UPDATE
+`
+
+// LockRemoteMediaCache reads the entry of @url in a transaction that replaces it, holding the
+// row until the transaction ends, so that a concurrent refresh of the URL waits and reads the
+// entry this one writes.
+func (q *Queries) LockRemoteMediaCache(ctx context.Context, url string) (RemoteMediaCache, error) {
+	row := q.db.QueryRow(ctx, lockRemoteMediaCache, url)
+	var i RemoteMediaCache
+	err := row.Scan(
+		&i.Url,
+		&i.BlobKey,
+		&i.ContentType,
+		&i.FileSize,
+		&i.FetchedAt,
+		&i.ExpiresAt,
+		&i.LastAccessedAt,
+	)
+	return i, err
 }
 
 const sumRemoteMediaCacheSize = `-- name: SumRemoteMediaCacheSize :one

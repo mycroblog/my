@@ -16,7 +16,7 @@ import (
 
 // InsertReaction implements content.InteractionRepository.
 func (r *InteractionRepository) InsertReaction(ctx context.Context, tx uow.Tx, re content.Reaction) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -35,7 +35,7 @@ func (r *InteractionRepository) InsertReaction(ctx context.Context, tx uow.Tx, r
 
 // DeleteReaction implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteReaction(ctx context.Context, tx uow.Tx, id string) (content.Reaction, bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Reaction{}, false, err
 	}
@@ -51,7 +51,7 @@ func (r *InteractionRepository) DeleteReaction(ctx context.Context, tx uow.Tx, i
 
 // DeleteAccountStatusReactions implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteAccountStatusReactions(ctx context.Context, tx uow.Tx, accountID, statusID, exceptKey string) ([]content.Reaction, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (r *InteractionRepository) DeleteAccountStatusReactions(ctx context.Context
 
 // AddReactions implements content.InteractionRepository.
 func (r *InteractionRepository) AddReactions(ctx context.Context, tx uow.Tx, statusID string, emoji content.ReactionEmoji, delta int64) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r *InteractionRepository) AddReactions(ctx context.Context, tx uow.Tx, sta
 
 // DeleteStatusReactionCounts implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteStatusReactionCounts(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (r *InteractionRepository) DeleteStatusReactionCounts(ctx context.Context, 
 
 // RebuildReactionCounts implements content.InteractionRepository.
 func (r *InteractionRepository) RebuildReactionCounts(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

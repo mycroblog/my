@@ -26,12 +26,12 @@ func (r *VoiceRepository) q(tx uow.Tx) (*postgresgen.Queries, error) {
 	if tx == nil {
 		return r.db.reader(), nil
 	}
-	return queries(tx)
+	return r.db.queries(tx)
 }
 
 // InsertRoom implements appvoice.Repository.
 func (r *VoiceRepository) InsertRoom(ctx context.Context, tx uow.Tx, room appvoice.Room) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (r *VoiceRepository) InsertRoom(ctx context.Context, tx uow.Tx, room appvoi
 
 // InsertRevision implements appvoice.Repository.
 func (r *VoiceRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev appvoice.Revision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (r *VoiceRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev app
 
 // InsertHostChange implements appvoice.Repository.
 func (r *VoiceRepository) InsertHostChange(ctx context.Context, tx uow.Tx, c appvoice.HostChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (r *VoiceRepository) InsertHostChange(ctx context.Context, tx uow.Tx, c app
 
 // InsertCohostChange implements appvoice.Repository.
 func (r *VoiceRepository) InsertCohostChange(ctx context.Context, tx uow.Tx, c appvoice.CohostChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (r *VoiceRepository) InsertCohostChange(ctx context.Context, tx uow.Tx, c a
 
 // InsertParticipation implements appvoice.Repository.
 func (r *VoiceRepository) InsertParticipation(ctx context.Context, tx uow.Tx, p appvoice.Participation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (r *VoiceRepository) InsertParticipation(ctx context.Context, tx uow.Tx, p 
 
 // InsertParticipationEnd implements appvoice.Repository.
 func (r *VoiceRepository) InsertParticipationEnd(ctx context.Context, tx uow.Tx, e appvoice.ParticipationEnd) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -114,7 +114,7 @@ func (r *VoiceRepository) InsertParticipationEnd(ctx context.Context, tx uow.Tx,
 
 // InsertRoleChange implements appvoice.Repository.
 func (r *VoiceRepository) InsertRoleChange(ctx context.Context, tx uow.Tx, c appvoice.RoleChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (r *VoiceRepository) InsertRoleChange(ctx context.Context, tx uow.Tx, c app
 
 // InsertSpeakGrant implements appvoice.Repository.
 func (r *VoiceRepository) InsertSpeakGrant(ctx context.Context, tx uow.Tx, g appvoice.SpeakGrant) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (r *VoiceRepository) InsertSpeakGrant(ctx context.Context, tx uow.Tx, g app
 
 // InsertHandRaise implements appvoice.Repository.
 func (r *VoiceRepository) InsertHandRaise(ctx context.Context, tx uow.Tx, h appvoice.HandRaise) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (r *VoiceRepository) InsertHandRaise(ctx context.Context, tx uow.Tx, h appv
 
 // InsertInvitation implements appvoice.Repository.
 func (r *VoiceRepository) InsertInvitation(ctx context.Context, tx uow.Tx, i appvoice.Invitation) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -162,7 +162,7 @@ func (r *VoiceRepository) InsertInvitation(ctx context.Context, tx uow.Tx, i app
 
 // InsertInvitationRevocation implements appvoice.Repository.
 func (r *VoiceRepository) InsertInvitationRevocation(ctx context.Context, tx uow.Tx, rev appvoice.InvitationRevocation) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -174,7 +174,7 @@ func (r *VoiceRepository) InsertInvitationRevocation(ctx context.Context, tx uow
 
 // InsertBan implements appvoice.Repository.
 func (r *VoiceRepository) InsertBan(ctx context.Context, tx uow.Tx, b appvoice.Ban) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -186,7 +186,7 @@ func (r *VoiceRepository) InsertBan(ctx context.Context, tx uow.Tx, b appvoice.B
 
 // InsertEnding implements appvoice.Repository.
 func (r *VoiceRepository) InsertEnding(ctx context.Context, tx uow.Tx, e appvoice.Ending) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -199,7 +199,7 @@ func (r *VoiceRepository) InsertEnding(ctx context.Context, tx uow.Tx, e appvoic
 
 // PutHostGrace implements appvoice.Repository.
 func (r *VoiceRepository) PutHostGrace(ctx context.Context, tx uow.Tx, g appvoice.HostGrace) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func (r *VoiceRepository) PutHostGrace(ctx context.Context, tx uow.Tx, g appvoic
 
 // DeleteHostGrace implements appvoice.Repository.
 func (r *VoiceRepository) DeleteHostGrace(ctx context.Context, tx uow.Tx, roomID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -456,7 +456,7 @@ func (r *VoiceRepository) SpeakGranted(ctx context.Context, tx uow.Tx, roomID, a
 
 // RefreshHead implements appvoice.Repository.
 func (r *VoiceRepository) RefreshHead(ctx context.Context, tx uow.Tx, roomID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -468,7 +468,7 @@ func (r *VoiceRepository) RefreshHead(ctx context.Context, tx uow.Tx, roomID str
 
 // RefreshParticipant implements appvoice.Repository.
 func (r *VoiceRepository) RefreshParticipant(ctx context.Context, tx uow.Tx, roomID, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -484,7 +484,7 @@ func (r *VoiceRepository) RefreshParticipant(ctx context.Context, tx uow.Tx, roo
 
 // RefreshRoomParticipants implements appvoice.Repository.
 func (r *VoiceRepository) RefreshRoomParticipants(ctx context.Context, tx uow.Tx, roomID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -500,7 +500,7 @@ func (r *VoiceRepository) RefreshRoomParticipants(ctx context.Context, tx uow.Tx
 
 // RebuildProjections implements appvoice.Repository.
 func (r *VoiceRepository) RebuildProjections(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild voice projections",
+	return r.db.execAll(ctx, tx, "rebuild voice projections",
 		(*postgresgen.Queries).DeleteAllVoiceRoomHeads, (*postgresgen.Queries).RebuildVoiceRoomHeads,
 		(*postgresgen.Queries).DeleteAllVoiceRoomParticipants, (*postgresgen.Queries).RebuildVoiceRoomParticipants)
 }
@@ -517,7 +517,7 @@ func (r *VoiceRepository) LockOpening(ctx context.Context, tx uow.Tx) error {
 }
 
 func (r *VoiceRepository) lock(ctx context.Context, tx uow.Tx, key string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

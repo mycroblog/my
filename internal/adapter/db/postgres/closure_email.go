@@ -22,7 +22,7 @@ func (r *IdentityRepository) ListVerifiedEmailUsers(ctx context.Context, after s
 
 // InsertServiceClosureEmail implements identity.Repository.
 func (r *IdentityRepository) InsertServiceClosureEmail(ctx context.Context, tx uow.Tx, e identity.ServiceClosureEmailRecord) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

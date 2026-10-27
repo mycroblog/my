@@ -349,10 +349,29 @@ func (p *MediaProxy) find(ctx context.Context, mediaID string) (content.RemoteMe
 	}, nil
 }
 
-// smallCacheURL is the key of the small variant of m in the remote media cache: its URL with
-// the variant and the purpose, which sizes it, as a fragment.
-func smallCacheURL(m content.RemoteMedia) string {
-	return m.RemoteURL + "#" + string(ProxySmall) + "-" + string(m.Purpose)
+// smallCacheURL is the key of the small variant of m in the remote media cache: its URL with a
+// fragment that names every input of the variant besides the file, so that a copy made from
+// other inputs is never served. The fragment holds the variant, the purpose, the box of the
+// purpose's small variant (which the configured sizes can change), and, when that box crops,
+// the declared focal point that the crop centres on ("#small-avatar-96x96c-f0.5,-0.25"). An
+// image without a declared focus is cropped around its centre, the same as a focus of 0,0.
+func smallCacheURL(m content.RemoteMedia, sizes media.Sizes) string {
+	b := sizes.For(media.Purpose(m.Purpose)).Small
+	var sb strings.Builder
+	sb.WriteString(m.RemoteURL + "#" + string(ProxySmall) + "-" + string(m.Purpose) + "-")
+	if b.MaxPixels > 0 {
+		sb.WriteString(strconv.FormatInt(b.MaxPixels, 10) + "px")
+	} else {
+		sb.WriteString(strconv.Itoa(b.Width) + "x" + strconv.Itoa(b.Height))
+	}
+	if b.MaxPixels <= 0 && b.Crop {
+		var x, y float64
+		if m.Focus != nil {
+			x, y = m.Focus.X, m.Focus.Y
+		}
+		sb.WriteString("c-f" + strconv.FormatFloat(x, 'g', -1, 64) + "," + strconv.FormatFloat(y, 'g', -1, 64))
+	}
+	return sb.String()
 }
 
 // openSmall serves the small still variant of a remote image (ADR-0054 §7). It makes it from the
@@ -366,7 +385,7 @@ func (p *MediaProxy) openSmall(ctx context.Context, m content.RemoteMedia, ttl t
 	case content.MediaTypeVideo, content.MediaTypeGIFV, content.MediaTypeAudio:
 		return nil, notFound("not an image")
 	}
-	key := smallCacheURL(m)
+	key := smallCacheURL(m, p.d.Sizes)
 	if cache {
 		if pm, err := p.openCopy(ctx, key, ttl); pm != nil || err != nil {
 			return pm, err
@@ -412,17 +431,7 @@ func (p *MediaProxy) openSmall(ctx context.Context, m content.RemoteMedia, ttl t
 // keepSmall keeps the small variant v of m in the remote media cache under key. A failure is
 // logged: the variant is served anyway and made again next time.
 func (p *MediaProxy) keepSmall(ctx context.Context, m content.RemoteMedia, key string, v media.Variant, ttl time.Duration) {
-	blobKey := remoteMediaKey(key)
-	info, err := p.d.Blobs.Put(ctx, blobKey, bytes.NewReader(v.Data), blob.PutOptions{ContentType: v.ContentType})
-	if err == nil {
-		now := p.d.Clock.Now()
-		e := content.RemoteMediaCacheEntry{
-			URL: key, BlobKey: blobKey, ContentType: v.ContentType, FileSize: info.Size,
-			FetchedAt: now, ExpiresAt: now.Add(ttl), LastAccessedAt: now,
-		}
-		err = p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return p.d.Repository.UpsertRemoteMediaCache(ctx, tx, e) })
-	}
-	if err != nil {
+	if _, err := p.keepCopy(ctx, key, bytes.NewReader(v.Data), v.ContentType, ttl); err != nil {
 		p.d.Logger.WarnContext(ctx, "small variant of remote media not cached", slog.String("media_id", m.MediaID), slog.Any("error", err))
 	}
 }

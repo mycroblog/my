@@ -63,6 +63,8 @@ type Meter struct {
 	// totals are the totals of the observable counters at the previous WriteGauges, by name
 	// and label set.
 	totals map[string]float64
+	// pending are the totals observed by the running WriteGauges, kept once its lines are written.
+	pending map[string]float64
 }
 
 type gauge struct {
@@ -137,11 +139,19 @@ func (m *Meter) WriteGauges(ctx context.Context) error {
 	}
 	b := &batch{}
 	bctx := context.WithValue(ctx, batchKey{}, b)
+	m.pending = map[string]float64{}
 	var errs []error
 	for _, g := range m.gauges {
 		errs = append(errs, g.f(ctx, gaugeObserver{m: m, ctx: bctx, g: g}))
 	}
-	m.flush(b)
+	if err := m.flush(b); err != nil {
+		// The increases were not written: keep the previous totals, so that the next call
+		// writes them again.
+		errs = append(errs, err)
+	} else {
+		maps.Copy(m.totals, m.pending)
+	}
+	m.pending = nil
 	return errors.Join(errs...)
 }
 
@@ -158,7 +168,10 @@ func (o gaugeObserver) Observe(v float64, l kernel.Labels) {
 	if o.g.counter {
 		key := seriesKey(o.g.i, l)
 		prev, seen := o.m.totals[key]
-		o.m.totals[key] = v
+		if p, ok := o.m.pending[key]; ok {
+			prev, seen = p, true
+		}
+		o.m.pending[key] = v
 		if seen && v >= prev {
 			v -= prev
 		}
@@ -184,7 +197,7 @@ type batchKey struct{}
 // when end is called.
 func (m *Meter) Begin(ctx context.Context) (context.Context, func()) {
 	b := &batch{}
-	return context.WithValue(ctx, batchKey{}, b), func() { m.flush(b) }
+	return context.WithValue(ctx, batchKey{}, b), func() { _ = m.flush(b) }
 }
 
 // batch is the measurements of one unit of work.
@@ -236,13 +249,13 @@ func (m *Meter) record(ctx context.Context, i kernel.Instrument, k kind, v float
 
 	b, _ := ctx.Value(batchKey{}).(*batch)
 	if b == nil {
-		m.write(&group{labels: labels, metrics: []*measure{newMeasure(i, k, v, n)}})
+		_ = m.write(&group{labels: labels, metrics: []*measure{newMeasure(i, k, v, n)}})
 		return
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.ended {
-		m.write(&group{labels: labels, metrics: []*measure{newMeasure(i, k, v, n)}})
+		_ = m.write(&group{labels: labels, metrics: []*measure{newMeasure(i, k, v, n)}})
 		return
 	}
 	g := b.group(labels)
@@ -256,7 +269,7 @@ func (m *Meter) record(ctx context.Context, i kernel.Instrument, k kind, v float
 		}
 		if len(ms.values) == maxValues {
 			// A document holds at most maxValues values of a metric: write those so far.
-			m.write(&group{labels: g.labels, metrics: []*measure{ms}})
+			_ = m.write(&group{labels: g.labels, metrics: []*measure{ms}})
 			ms.values = nil
 		}
 		ms.values = append(ms.values, v)
@@ -286,14 +299,16 @@ func (b *batch) group(labels []label) *group {
 	return g
 }
 
-func (m *Meter) flush(b *batch) {
+func (m *Meter) flush(b *batch) error {
 	b.mu.Lock()
 	groups := b.groups
 	b.groups, b.ended = nil, true
 	b.mu.Unlock()
+	var errs []error
 	for _, g := range groups {
-		m.write(g)
+		errs = append(errs, m.write(g))
 	}
+	return errors.Join(errs...)
 }
 
 // Line implements kernel.LineMeter: it adds to attrs the measurements of instruments in the
@@ -425,9 +440,9 @@ type metricDef struct {
 }
 
 // write writes g as one EMF line.
-func (m *Meter) write(g *group) {
+func (m *Meter) write(g *group) error {
 	if len(g.metrics) == 0 {
-		return
+		return nil
 	}
 	line := make(map[string]any, len(m.opts.Properties)+len(g.labels)+len(g.metrics)+1)
 	for k, v := range m.opts.Properties {
@@ -455,11 +470,12 @@ func (m *Meter) write(g *group) {
 	}
 	out, err := json.Marshal(line)
 	if err != nil {
-		return // only a NaN or an infinity fails, which no instrument records
+		return nil // only a NaN or an infinity fails, which no instrument records
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	_, _ = m.opts.Writer.Write(append(out, '\n'))
+	_, err = m.opts.Writer.Write(append(out, '\n'))
+	return err
 }
 
 // Unit returns the CloudWatch unit of a UCUM unit: Seconds, Milliseconds, Bytes, Count for the

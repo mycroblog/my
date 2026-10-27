@@ -14,6 +14,36 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const acquireOutboxRelayLease = `-- name: AcquireOutboxRelayLease :execrows
+INSERT INTO outbox_relay_leases (name, holder, lease_until)
+VALUES ($1, $2, $3)
+ON CONFLICT (name) DO UPDATE SET holder = excluded.holder, lease_until = excluded.lease_until
+WHERE outbox_relay_leases.holder = excluded.holder OR outbox_relay_leases.lease_until <= $4::timestamptz
+`
+
+type AcquireOutboxRelayLeaseParams struct {
+	Name       string
+	Holder     string
+	LeaseUntil time.Time
+	Now        time.Time
+}
+
+// AcquireOutboxRelayLease takes or renews the relay lease @name for @holder until
+// @lease_until, unless another holder's lease lasts beyond @now: it affects one row when
+// @holder holds the lease.
+func (q *Queries) AcquireOutboxRelayLease(ctx context.Context, arg AcquireOutboxRelayLeaseParams) (int64, error) {
+	result, err := q.db.Exec(ctx, acquireOutboxRelayLease,
+		arg.Name,
+		arg.Holder,
+		arg.LeaseUntil,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const claimJob = `-- name: ClaimJob :one
 UPDATE jobs AS j
 SET locked_by = $1, locked_until = $2, attempt = j.attempt + 1
@@ -268,6 +298,27 @@ DELETE FROM outbox_events WHERE id = $1
 func (q *Queries) DeleteOutboxEvent(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteOutboxEvent, id)
 	return err
+}
+
+const endOutboxRelayLease = `-- name: EndOutboxRelayLease :execrows
+UPDATE outbox_relay_leases SET lease_until = $1
+WHERE name = $2 AND holder = $3 AND lease_until > $1
+`
+
+type EndOutboxRelayLeaseParams struct {
+	Now    time.Time
+	Name   string
+	Holder string
+}
+
+// EndOutboxRelayLease ends the relay lease @name at @now when @holder still holds it: it
+// affects one row then, and none when the lease expired and another relay may have taken it.
+func (q *Queries) EndOutboxRelayLease(ctx context.Context, arg EndOutboxRelayLeaseParams) (int64, error) {
+	result, err := q.db.Exec(ctx, endOutboxRelayLease, arg.Now, arg.Name, arg.Holder)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const insertDeadJobFromClaim = `-- name: InsertDeadJobFromClaim :execrows
