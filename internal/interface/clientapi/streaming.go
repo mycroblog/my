@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strconv"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/domain/notification"
 )
 
 // Defaults of the streaming endpoint.
@@ -291,25 +289,30 @@ func (r *recentIDs) add(id string) {
 	r.set[id] = struct{}{}
 }
 
-// notifications sends the viewer's notifications after the last one sent, oldest first.
+// notifications sends the viewer's notifications after the last one sent, oldest first, a
+// page at a time until it has caught up, so that a burst larger than a page loses nothing.
 func (st *streamState) notifications(ctx context.Context) error {
-	ns, err := st.s.o.Notifications.List(ctx, st.viewer.AccountID, appnotification.Query{Limit: appnotification.MaxPageLimit})
-	if err != nil {
-		return fmt.Errorf("list the notifications of %s: %w", st.viewer.AccountID, err)
-	}
-	ns = slices.DeleteFunc(ns, func(n notification.Notification) bool { return n.ID <= st.lastNotification })
-	slices.Reverse(ns)
-	items, err := st.s.newNotifications(ctx, st.viewer, ns)
-	if err != nil {
-		return err
-	}
-	for i, item := range items {
-		if err := st.event("notification", item); err != nil {
+	for {
+		ns, err := st.s.o.Notifications.List(ctx, st.viewer.AccountID, appnotification.Query{
+			After: st.lastNotification, Limit: appnotification.MaxPageLimit,
+		})
+		if err != nil {
+			return fmt.Errorf("list the notifications of %s: %w", st.viewer.AccountID, err)
+		}
+		items, err := st.s.newNotifications(ctx, st.viewer, ns)
+		if err != nil {
 			return err
 		}
-		st.lastNotification = ns[i].ID
+		for i, item := range items {
+			if err := st.event("notification", item); err != nil {
+				return err
+			}
+			st.lastNotification = ns[i].ID
+		}
+		if len(ns) < appnotification.MaxPageLimit {
+			return nil
+		}
 	}
-	return nil
 }
 
 // event writes one event with data as its JSON.

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -484,6 +485,29 @@ func notificationLists(t *testing.T, e *notificationEnv) {
 	if !reflect.DeepEqual(paged, all) {
 		t.Errorf("pages = %+v, want %+v", paged, all)
 	}
+	// After pages forward, oldest first.
+	var forward []notification.Notification
+	after := "00000000-0000-0000-0000-000000000000"
+	for {
+		page, err := e.svc.List(ctx, alice, appnotification.Query{After: after, Limit: 2})
+		if err != nil {
+			t.Fatalf("List(after) = %v", err)
+		}
+		forward = append(forward, page...)
+		if len(page) < 2 {
+			break
+		}
+		after = page[len(page)-1].ID
+	}
+	oldestFirst := slices.Clone(all)
+	slices.Reverse(oldestFirst)
+	if !reflect.DeepEqual(forward, oldestFirst) {
+		t.Errorf("forward pages = %+v, want %+v", forward, oldestFirst)
+	}
+	if page, err := e.svc.List(ctx, alice, appnotification.Query{Types: []notification.Type{notification.TypeFollow}, After: follows[2].ID}); err != nil ||
+		len(page) != 2 || page[0].ID != follows[1].ID || page[1].ID != follows[0].ID {
+		t.Errorf("List(follow, after the oldest) = %+v, %v; want the two newer follows, oldest first", page, err)
+	}
 	page, err := e.svc.List(ctx, alice, appnotification.Query{Types: []notification.Type{notification.TypeFollow}, Before: follows[0].ID, Limit: 1})
 	if err != nil || len(page) != 1 || page[0].ID != follows[1].ID {
 		t.Errorf("List(follow, before the newest, 1) = %+v, %v; want the second follow", page, err)
@@ -527,6 +551,10 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 	}
 	checkUnread(1)
 
+	e.checkListed(t, alice, ns[0].ID, true)
+	e.checkListed(t, alice, other.ID, false) // bob's
+	e.checkListed(t, alice, e.ids.NewID(), false)
+
 	// Dismissing leaves the list and the unread count, once.
 	for range 2 {
 		if err := e.svc.Dismiss(ctx, alice, ns[0].ID); err != nil {
@@ -534,6 +562,7 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 		}
 	}
 	checkUnread(0)
+	e.checkListed(t, alice, ns[0].ID, false)
 	if err := e.svc.Dismiss(ctx, alice, other.ID); !errors.Is(err, appnotification.ErrNotFound) {
 		t.Errorf("Dismiss(bob's) = %v, want ErrNotFound", err)
 	}
@@ -542,6 +571,13 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 	}
 	if n, err := e.svc.UnreadCount(ctx, bob); err != nil || n != 1 {
 		t.Errorf("UnreadCount(bob) = %d, %v; want 1", n, err)
+	}
+}
+
+func (e *notificationEnv) checkListed(t *testing.T, accountID, id string, want bool) {
+	t.Helper()
+	if ok, err := e.svc.Listed(t.Context(), accountID, id); err != nil || ok != want {
+		t.Errorf("Listed(%s, %s) = %v, %v; want %v", accountID, id, ok, err, want)
 	}
 }
 
@@ -587,9 +623,14 @@ func notificationHidesLater(t *testing.T, e *notificationEnv) {
 	// A later mute without hide_notifications hides nothing; with it, it hides what came before.
 	mute(appgraph.MuteInput{})
 	checkSummaries(t, e, bob, all...)
+	listed := e.list(t, bob)
 	mute(appgraph.MuteInput{HideNotifications: true})
 	checkSummaries(t, e, bob, noticeOnly)
 	e.checkUnread(t, bob, 1)
+	// Listed agrees with the list.
+	for _, n := range listed {
+		e.checkListed(t, bob, n.ID, n.Type == notification.TypeModerationNotice)
+	}
 	// Replacing it with a mute without hide_notifications, or unmuting, shows them again.
 	mute(appgraph.MuteInput{})
 	checkSummaries(t, e, bob, all...)

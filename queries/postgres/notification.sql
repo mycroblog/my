@@ -40,6 +40,42 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
 ORDER BY n.id DESC
 LIMIT sqlc.arg(page_limit);
 
+-- ListNotificationsAfter is ListNotifications in the other direction: the notifications whose
+-- ID is greater than after, oldest first.
+-- name: ListNotificationsAfter :many
+SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.dedupe_key, n.created_at
+FROM notifications n
+WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
+  AND n.id > sqlc.arg(after)::uuid
+  AND (sqlc.arg(all_types)::boolean OR n.type = ANY(sqlc.arg(types)::text[]))
+  AND NOT (n.type = ANY(sqlc.arg(hidden_types)::text[]))
+  AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
+    WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > sqlc.arg(now)::timestamptz))
+  AND NOT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
+    WHERE dx.viewer_account_id = n.recipient_account_id
+      AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
+  AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+ORDER BY n.id ASC
+LIMIT sqlc.arg(page_limit);
+
+-- NotificationListed reports whether ListNotifications would list the notification id of the
+-- recipient.
+-- name: NotificationListed :one
+SELECT EXISTS (SELECT 1 FROM notifications n
+WHERE n.id = sqlc.arg(id)::uuid AND n.recipient_account_id = sqlc.arg(recipient_account_id)
+  AND NOT (n.type = ANY(sqlc.arg(hidden_types)::text[]))
+  AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
+    WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > sqlc.arg(now)::timestamptz))
+  AND NOT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
+    WHERE dx.viewer_account_id = n.recipient_account_id
+      AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
+  AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id));
+
 -- CountNotificationsAfter counts the notifications of a recipient after the ID after that
 -- ListNotifications would return; an empty after counts them all. hidden_types is that of
 -- ListNotifications.

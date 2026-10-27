@@ -449,6 +449,93 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 	return items, nil
 }
 
+const listNotificationsAfter = `-- name: ListNotificationsAfter :many
+SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.dedupe_key, n.created_at
+FROM notifications n
+WHERE n.recipient_account_id = ?1
+  AND n.id > CAST(?2 AS TEXT)
+  AND (CAST(?3 AS TEXT) = '' OR instr(CAST(?3 AS TEXT), ',' || n.type || ',') > 0)
+  AND instr(CAST(?4 AS TEXT), ',' || n.type || ',') = 0
+  AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
+    WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > CAST(?5 AS INTEGER)))
+  AND NOT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
+    WHERE dx.viewer_account_id = n.recipient_account_id
+      AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
+  AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+ORDER BY n.id ASC
+LIMIT ?6
+`
+
+type ListNotificationsAfterParams struct {
+	RecipientAccountID string
+	After              string
+	Types              string
+	HiddenTypes        string
+	Now                int64
+	PageLimit          int64
+}
+
+// ListNotificationsAfter is ListNotifications in the other direction: the notifications whose
+// ID is greater than after, oldest first.
+func (q *Queries) ListNotificationsAfter(ctx context.Context, arg ListNotificationsAfterParams) ([]Notification, error) {
+	rows, err := q.db.QueryContext(ctx, listNotificationsAfter,
+		arg.RecipientAccountID,
+		arg.After,
+		arg.Types,
+		arg.HiddenTypes,
+		arg.Now,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Notification{}
+	for rows.Next() {
+		var i Notification
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecipientAccountID,
+			&i.Type,
+			&i.SourceAccountID,
+			&i.SourceDomain,
+			&i.StatusID,
+			&i.ModerationActionID,
+			&i.ReportID,
+			&i.SubjectUserID,
+			&i.SeveranceID,
+			&i.AppealID,
+			&i.CustomEmojiRequestID,
+			&i.SupporterSubscriptionID,
+			&i.ReactionEmoji,
+			&i.ReactionCustomEmojiID,
+			&i.AccountMoveID,
+			&i.AccountMoveOutcome,
+			&i.ServiceClosureEventID,
+			&i.ServiceClosureChange,
+			&i.VoiceRoomID,
+			&i.ErrorGroupChange,
+			&i.ErrorGroupID,
+			&i.ErrorGroupHour,
+			&i.DedupeKey,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotifiedStatusIDs = `-- name: ListNotifiedStatusIDs :many
 SELECT DISTINCT status_id FROM notifications WHERE status_id IS NOT NULL ORDER BY status_id
 `
@@ -476,6 +563,41 @@ func (q *Queries) ListNotifiedStatusIDs(ctx context.Context) ([]sql.NullString, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const notificationListed = `-- name: NotificationListed :one
+SELECT EXISTS (SELECT 1 FROM notifications n
+WHERE n.id = ?1 AND n.recipient_account_id = ?2
+  AND instr(CAST(?3 AS TEXT), ',' || n.type || ',') = 0
+  AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
+    WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > CAST(?4 AS INTEGER)))
+  AND NOT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
+    WHERE dx.viewer_account_id = n.recipient_account_id
+      AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
+  AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id))
+`
+
+type NotificationListedParams struct {
+	ID                 string
+	RecipientAccountID string
+	HiddenTypes        string
+	Now                int64
+}
+
+// NotificationListed reports whether ListNotifications would list the notification id of the
+// recipient.
+func (q *Queries) NotificationListed(ctx context.Context, arg NotificationListedParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, notificationListed,
+		arg.ID,
+		arg.RecipientAccountID,
+		arg.HiddenTypes,
+		arg.Now,
+	)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const upsertNotificationExclusion = `-- name: UpsertNotificationExclusion :exec

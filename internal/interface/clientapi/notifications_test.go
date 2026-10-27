@@ -54,9 +54,14 @@ func (f *fakeNotifications) List(_ context.Context, accountID string, q appnotif
 			return nil, notification.ErrInvalidType
 		}
 	}
+	visible := f.visible(accountID)
+	if q.After != "" {
+		slices.Reverse(visible) // oldest first
+	}
 	var out []notification.Notification
-	for _, n := range f.visible(accountID) {
-		if (q.Before == "" || n.ID < q.Before) && (len(q.Types) == 0 || slices.Contains(q.Types, n.Type)) && len(out) < q.Limit {
+	for _, n := range visible {
+		if (q.Before == "" || q.After != "" || n.ID < q.Before) && (q.After == "" || n.ID > q.After) &&
+			(len(q.Types) == 0 || slices.Contains(q.Types, n.Type)) && len(out) < q.Limit {
 			out = append(out, n)
 		}
 	}
@@ -128,8 +133,8 @@ func newNotificationEnv(t *testing.T) (*authEnv, *fakeNotifications) {
 }
 
 // newNotificationEnvWithViews is newNotificationEnv that also returns the statuses that alice
-// may see: only statusID.
-func newNotificationEnvWithViews(t *testing.T) (*authEnv, *fakeNotifications, *fakeViews) {
+// may see: only statusID. tweaks change the options further.
+func newNotificationEnvWithViews(t *testing.T, tweaks ...func(*clientapi.Options)) (*authEnv, *fakeNotifications, *fakeViews) {
 	t.Helper()
 	at := time.Date(2026, 10, 15, 0, 0, 0, 0, time.UTC)
 	f := &fakeNotifications{dismissed: map[string]bool{}, markers: map[string]string{}}
@@ -168,6 +173,9 @@ func newNotificationEnvWithViews(t *testing.T) (*authEnv, *fakeNotifications, *f
 		o.TimelineReader = views
 		o.OwnModeration = &fakeOwnModeration{on: map[string][]appmoderation.TargetActionView{aliceAccountID: aliceActions()}}
 		o.Accounts.(fakeAccounts)[bobAccountID] = o.Accounts.(fakeAccounts)[aliceAccountID]
+		for _, tweak := range tweaks {
+			tweak(o)
+		}
 	})
 	return e, f, views
 }
