@@ -45,7 +45,8 @@ GitHub や Google、組織の IdP（Keycloak・Authentik・Microsoft Entra な�
 [REST API endpoints for emails（GitHub Docs）](https://docs.github.com/en/rest/users/emails)、
 [OAuth API methods（Mastodon documentation）](https://docs.joinmastodon.org/methods/oauth/)、
 [OAuth Scopes（Mastodon documentation）](https://docs.joinmastodon.org/api/oauth-scopes/)、
-[Mastodon 4.4 for Developers（Mastodon Blog）](https://blog.joinmastodon.org/2025/07/mastodon-4-4-for-devs/)。
+[Mastodon 4.4 for Developers（Mastodon Blog）](https://blog.joinmastodon.org/2025/07/mastodon-4-4-for-devs/)、
+[OpenID Connect（Sign in with Google）](https://developers.google.com/identity/openid-connect/openid-connect)。
 
 ## Decision Drivers（判断基準）
 
@@ -134,7 +135,12 @@ IdP の種類について:
 
 - `allow_signup`（既定は偽）: その IdP から新しく登録できるか
 - `allow_link`（既定は真）: 既存のアカウントにひも付けられるか
-- 登録とひも付けを許す条件（任意）: `oidc` はメールアドレスのドメインの許可リスト、`github` は所属する Organization の許可リスト（`read:org` scope）
+- 利用者を絞る条件（任意）。登録とひも付けだけでなく、ログインのたびに確かめ、満たさなければ断る。
+  - `oidc`: ID トークンの claim と、許す値のリストの組。例えば Google Workspace の組織の人だけに絞るには `hd`（組織のドメイン）を使う。
+    Google は、組織に属するかをメールアドレスのドメインで判断せず `hd` で確かめるよう求めているので、メールアドレスのドメインでは絞らない。
+    認可要求にも同じ値を `hd` として付けるが、これはアカウントを選ぶ画面の補助で、判断は ID トークンの claim で行う。
+  - `github`: 所属する Organization の許可リスト（`read:org` scope）
+  - `mastodon`: 条件を持たない（IdP にしたサーバーの利用者すべてが対象）
 
 ### 5. IdP への HTTP
 
