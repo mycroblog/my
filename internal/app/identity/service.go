@@ -75,6 +75,11 @@ type Deps struct {
 	// ID tokens; with HTTP, which exchanges the codes for tokens, it turns on signing in and
 	// signing up with them (external_login.go, ADR-0106 §3). Nil turns them off.
 	OIDC OIDCClient
+	// LoginProviderDomainRestricted reports whether a host, the server of a mastodon login
+	// provider, or one of its parent domains has a domain action in effect (FR-702), which
+	// refuses signing in, signing up, and linking with that provider (ADR-0106 §1). Nil
+	// restricts no server.
+	LoginProviderDomainRestricted func(ctx context.Context, host string) (bool, error)
 	// MetadataDocumentClients returns whether the instance accepts those clients (the
 	// oauth_metadata_document_clients setting); it is read per request, so a change applies to
 	// the next one. Nil means it does.

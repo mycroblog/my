@@ -95,7 +95,7 @@ func (s *Service) needExternalLoginDeps() error {
 
 // externalLoginKind reports whether users sign in with providers of kind k.
 func externalLoginKind(k identity.LoginProviderKind) bool {
-	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub
+	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub || k == identity.LoginProviderMastodon
 }
 
 // ExternalLoginProvider is a provider that the sign-in page offers.
@@ -121,6 +121,13 @@ func (s *Service) ExternalLoginProviders(ctx context.Context) ([]ExternalLoginPr
 	var out []ExternalLoginProvider
 	for _, p := range slices.Backward(ps) {
 		if p.State == identity.LoginProviderEnabled && externalLoginKind(p.Settings.Kind) {
+			// A Mastodon server under a domain action has no button.
+			switch err := s.checkLoginProviderServer(ctx, p); {
+			case errors.Is(err, ErrLoginProviderUnavailable):
+				continue
+			case err != nil:
+				return nil, err
+			}
 			out = append(out, ExternalLoginProvider{
 				ID: p.ID, Kind: p.Settings.Kind, DisplayName: p.Settings.DisplayName, AllowSignup: p.Settings.AllowSignup,
 			})
@@ -143,6 +150,9 @@ func (s *Service) enabledLoginProvider(ctx context.Context, id string) (identity
 	}
 	if p.State != identity.LoginProviderEnabled || !externalLoginKind(p.Settings.Kind) {
 		return identity.LoginProvider{}, ErrLoginProviderUnavailable
+	}
+	if err := s.checkLoginProviderServer(ctx, p); err != nil {
+		return identity.LoginProvider{}, err
 	}
 	return p, nil
 }
@@ -194,8 +204,11 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 	if err != nil {
 		return ExternalLoginStart{}, err
 	}
-	if p.Settings.Kind == identity.LoginProviderGitHub {
+	switch p.Settings.Kind {
+	case identity.LoginProviderGitHub:
 		return s.beginGitHub(ctx, p, returnTo)
+	case identity.LoginProviderMastodon:
+		return s.beginMastodonLogin(ctx, p, returnTo)
 	}
 	op, err := s.d.OIDC.Discover(ctx, p.Settings.Issuer)
 	if err != nil {
@@ -320,9 +333,12 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 		return out, fmt.Errorf("%w: provider %s answered %q", ErrExternalLoginFailed, p.ID, in.Error)
 	}
 	var tok IDToken
-	if p.Settings.Kind == identity.LoginProviderGitHub {
+	switch p.Settings.Kind {
+	case identity.LoginProviderGitHub:
 		tok, err = s.gitHubIdentity(ctx, p, in.Code, t)
-	} else {
+	case identity.LoginProviderMastodon:
+		tok, err = s.mastodonAccount(ctx, p, in.Code, t)
+	default:
 		tok, err = s.oidcIDToken(ctx, p, in.Code, t)
 	}
 	if errors.Is(err, ErrInvalidIDToken) {

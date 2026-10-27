@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 description: |
   A new login provider. `allow_signup` is false and `allow_link` true unless given.
+  `client_id` and `client_secret` are required, except for `mastodon`: without both, the
+  server registers a client at the Mastodon server.
 type: object
-required: [kind, display_name, client_id, client_secret]
+required: [kind, display_name]
 properties:
   kind:
     $ref: ./LoginProviderKind.yaml
