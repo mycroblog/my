@@ -96,6 +96,9 @@ type App struct {
 	Meter kernel.Meter
 	// Tracer is the tracing adapter that cfg.TracesExporter selects (ADR-0063).
 	Tracer kernel.Tracer
+	// ErrorReporter receives the error reports of every module and hands them to its sinks:
+	// those the modules add and the exporter that cfg.ErrorsExporter selects (ADR-0103).
+	ErrorReporter *ErrorReporter
 	// MetricsSnapshot reports the instance-wide gauges (ADR-0055 §4); nil when Meter records
 	// nothing.
 	MetricsSnapshot *metrics.Service
@@ -361,6 +364,10 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		_ = a.Close()
 		return nil, err
 	}
+	if err := a.setUpErrorReporter(ctx, cfg, opts); err != nil {
+		_ = a.Close()
+		return nil, err
+	}
 	if a.KeyManager, err = newKeyManager(cfg); err != nil {
 		_ = a.Close()
 		return nil, err
@@ -587,6 +594,8 @@ func (a *App) Close() error {
 	if a.valkey != nil {
 		a.valkey.Close()
 	}
+	// The sinks of the error reports may write to the database and measure what they send.
+	a.closeErrorReporter()
 	if a.closeMeter != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), meterCloseTimeout)
 		_ = a.closeMeter(ctx) // the last measurements are lost when the collector is down

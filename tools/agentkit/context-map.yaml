@@ -189,6 +189,15 @@ entries:
     userdocs: ["docs/operations/running.md#metrics", "docs/operations/alerts.md"]
     notes:
       - "Every metric (kernel.Instrument) is listed in docs/operations/running.md#metrics (`agentkit docs inventory`); a renamed metric or label also updates deploy/monitoring and docs/operations/alerts.md."
+  - name: error-reporting
+    paths: ["internal/app/kernel/errorreport.go", "internal/app/kernel/errorreport_test.go", "internal/platform/errorreport.go", "internal/platform/errorreport_test.go"]
+    docs: ["docs/adr/0103-error-reporting.md", "docs/architecture/overview.md#3-ポート一覧"]
+    userdocs: ["docs/reference/configuration.md"]
+    notes:
+      - "kernel.ErrorReporter and ErrorEvent use the standard library only; every report goes through the one platform.ErrorReporter, which fills the version, role, environment, and correlation IDs and hands the event to its sinks."
+      - "A new output is an ErrorSink (ErrorSinkCloser when it flushes at close) added with App.ErrorReporter.AddSink from the setup of its module; an exporter of errors_exporter registers its ErrorExporter in errorExporters from the init of its own file and flips its choice to inV0 in the config schema."
+      - "Sinks never report their own failures, never block a request for long, and run concurrently; the sink that panics is skipped."
+      - "Start goroutines with kernel.Go(ctx, name, reporter, fn): its panic is reported as fatal and stops Serve through ErrorReporter.StopProcess."
   - name: cli-admin
     paths: ["cmd/my/admin.go", "cmd/my/role.go", "cmd/my/audit.go"]
     userdocs: ["docs/operations/admin-cli.md"]

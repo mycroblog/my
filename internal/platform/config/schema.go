@@ -1104,6 +1104,32 @@ var schema = []field{
 		},
 		set: func(c *Config, v string) { c.TracesFlush = v },
 	},
+	{
+		key: "errors_exporter",
+		doc: "Where the error reports also go: the panics, the errors behind a 5xx response or a job that used up its retries, the startup failures, and the uncaught errors of the web client, each with its stack and a fingerprint that groups its repeats. The log line of each report and the error groups in the database are kept whatever this setting.",
+		def: "none",
+		choices: []choice{
+			{value: "none", inV0: true, doc: "Only the log line and the error groups in the database."},
+			{value: "sentry", doc: "Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking."},
+			{value: "otlp", doc: "Also as OpenTelemetry log records of exceptions over OTLP/HTTP, to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`."},
+		},
+		set: func(c *Config, v string) { c.ErrorsExporter = v },
+	},
+	{
+		key:          "errors_sentry_dsn",
+		doc:          "DSN of the project that receives the error reports of `errors_exporter = sentry`, as the service shows it, such as `https://<key>@o0.ingest.sentry.io/<project>`.",
+		secret:       true,
+		requiredWhen: "when `errors_exporter` is `sentry`",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.ErrorsSentryDSN = v },
+	},
+	{
+		key:   "errors_environment",
+		doc:   "Name of the environment that every error report carries, such as `staging`, to tell the reports of several deployments apart: up to 64 letters, digits, dots, hyphens, and underscores.",
+		def:   "production",
+		check: checkEnvironmentName,
+		set:   func(c *Config, v string) { c.ErrorsEnvironment = v },
+	},
 }
 
 // crossChecks rejects missing conditional settings and contradictory combinations.
@@ -1187,6 +1213,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	issues = append(issues, voiceChecks(vals, present)...)
+	if vals["errors_exporter"] == "sentry" && !present["errors_sentry_dsn"] {
+		issues = append(issues, Issue{Key: "errors_sentry_dsn", Missing: true, Message: "required when errors_exporter is sentry"})
+	}
 	if vals["billing_aws_filter"] == "tag" && !present["billing_aws_tag"] {
 		issues = append(issues, Issue{Key: "billing_aws_tag", Missing: true, Message: "required when billing_aws_filter is tag"})
 	}
@@ -1214,6 +1243,15 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 func checkNotBlank(v string) error {
 	if strings.TrimSpace(v) == "" {
 		return errors.New("must not be blank")
+	}
+	return nil
+}
+
+// checkEnvironmentName accepts the environment names that the error trackers take: 1 to 64
+// letters, digits, dots, hyphens, and underscores.
+func checkEnvironmentName(v string) error {
+	if len(v) > 64 || strings.Trim(v, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-") != "" {
+		return errors.New("must be up to 64 letters, digits, dots, hyphens, and underscores, such as staging")
 	}
 	return nil
 }

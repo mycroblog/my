@@ -172,6 +172,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`traces_exporter`](#traces_exporter) | `MY_TRACES_EXPORTER` | `none` | no | no |
 | [`traces_sample_ratio`](#traces_sample_ratio) | `MY_TRACES_SAMPLE_RATIO` | `0.01` | no | no |
 | [`traces_flush`](#traces_flush) | `MY_TRACES_FLUSH` | `batch` | no | no |
+| [`errors_exporter`](#errors_exporter) | `MY_ERRORS_EXPORTER` | `none` | no | no |
+| [`errors_sentry_dsn`](#errors_sentry_dsn) | `MY_ERRORS_SENTRY_DSN` | none | when `errors_exporter` is `sentry` | yes |
+| [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | `production` | no | no |
 
 ## Settings
 
@@ -1328,6 +1331,36 @@ When the spans of `traces_exporter = otlp` are sent.
 | --- | --- | --- |
 | `batch` | yes | In batches, every few seconds, in the background; for processes that keep running (self-hosted). |
 | `unit` | yes | Also at the end of every recorded HTTP request and job, before it returns, to a collector on the same host; for the platforms that throttle or freeze an idle instance (Cloud Run with request-based billing, AWS Lambda). A request that is not recorded sends nothing. |
+
+### `errors_exporter`
+
+Where the error reports also go: the panics, the errors behind a 5xx response or a job that used up its retries, the startup failures, and the uncaught errors of the web client, each with its stack and a fingerprint that groups its repeats. The log line of each report and the error groups in the database are kept whatever this setting.
+
+- Environment variable: `MY_ERRORS_EXPORTER`
+- Default: `none`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `none` | yes | Only the log line and the error groups in the database. |
+| `sentry` | not in v0 | Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking. |
+| `otlp` | not in v0 | Also as OpenTelemetry log records of exceptions over OTLP/HTTP, to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`. |
+
+### `errors_sentry_dsn`
+
+DSN of the project that receives the error reports of `errors_exporter = sentry`, as the service shows it, such as `https://<key>@o0.ingest.sentry.io/<project>`.
+
+- Environment variable: `MY_ERRORS_SENTRY_DSN` or `MY_ERRORS_SENTRY_DSN_FILE`
+- Default: none
+- Required: when `errors_exporter` is `sentry`
+
+### `errors_environment`
+
+Name of the environment that every error report carries, such as `staging`, to tell the reports of several deployments apart: up to 64 letters, digits, dots, hyphens, and underscores.
+
+- Environment variable: `MY_ERRORS_ENVIRONMENT`
+- Default: `production`
+- Required: no
 
 ## Renamed and removed settings
 

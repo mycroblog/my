@@ -229,6 +229,11 @@ type Config struct {
 	TracesExporter    string
 	TracesSampleRatio float64
 	TracesFlush       string
+	// ErrorsExporter is where the error reports also go, ErrorsSentryDSN the DSN of sentry, and
+	// ErrorsEnvironment the environment that every report carries (ADR-0103 §9).
+	ErrorsExporter    string
+	ErrorsSentryDSN   string
+	ErrorsEnvironment string
 }
 
 // ServerOrigin returns the origin at which browsers reach the server itself: its sign-in screens,
@@ -386,6 +391,9 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("traces_exporter", c.TracesExporter),
 		slog.Float64("traces_sample_ratio", c.TracesSampleRatio),
 		slog.String("traces_flush", c.TracesFlush),
+		slog.String("errors_exporter", c.ErrorsExporter),
+		slog.String("errors_sentry_dsn", redact(c.ErrorsSentryDSN != "")),
+		slog.String("errors_environment", c.ErrorsEnvironment),
 	)
 }
 
