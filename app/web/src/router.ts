@@ -18,8 +18,12 @@ export const routerOptions = {
   defaultPendingComponent: RoutePending,
   // Start loading a page's code and data when the pointer rests on or touches a link to it.
   defaultPreload: "intent",
-  // TanStack Query caches the data (web-client/README.md S1), so the router keeps no preloaded data of its own.
-  defaultPreloadStaleTime: 0,
+  // TanStack Query caches the data (web-client/README.md S1), so the router keeps no data of its own: every match is
+  // stale at once, and a page entered again runs its loader, which returns what the cache holds unless a write marked
+  // it stale. Not 0: the router compares the match's age with Date.now(), and a wall clock that steps back (an NTP
+  // correction, a virtual machine syncing with its host) would make a match look fresh and skip that loader.
+  defaultStaleTime: Number.NEGATIVE_INFINITY,
+  defaultPreloadStaleTime: Number.NEGATIVE_INFINITY,
   // A page visited before renders only once its loader has ended, not from its previous match while the loader
   // runs (TanStack Router's default "background"): a loader returns at once what is cached and not marked
   // stale, and fetches again what a write has marked, so that the page never shows what it was before the
