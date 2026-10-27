@@ -1,0 +1,7 @@
+{{define "external_logins"}}{{with .External}}<section class="form" aria-labelledby="external-logins-heading">
+<h2 id="external-logins-heading" class="hint">{{$.L.ServerAuthExternalHeading}}</h2>
+<ul class="actions">
+{{range .}}<li><a class="button button-secondary" href="{{.URL}}" dir="auto">{{.Label}}</a></li>
+{{end}}</ul>
+</section>
+{{end}}{{end}}

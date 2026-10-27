@@ -41,6 +41,10 @@ type signUpForm struct {
 	Errors map[string]string
 
 	UsernameMax, PasswordMin, PasswordMax, ReasonMax int
+
+	// External is the sign-up of an account at an external login provider, which has no
+	// password (external.go); nil for the password form.
+	External *externalSignUpForm
 }
 
 func newSignUpForm(l *i18n.Localizer, mode identity.RegistrationMode) *signUpForm {
@@ -87,6 +91,9 @@ func (h *Handler) renderSignUp(w http.ResponseWriter, r *http.Request, status in
 	}
 	if !p.SignUp.Closed {
 		p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignUp)
+		if p.SignUp.External == nil {
+			p.External = h.externalButtons(r, "", true)
+		}
 	}
 	h.render(w, r, status, pageSignUp, p)
 }
@@ -148,25 +155,19 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 
 // check sets the error of every field that the identity module would reject.
 func (f *signUpForm) check(l *i18n.Localizer, password string) {
-	if appaccount.ValidateUsername(f.Username) != nil {
-		f.Errors[fieldUsername] = l.ServerAuthSignUpUsernameInvalid(float64(f.UsernameMax))
-	}
-	if identity.ValidateEmail(f.Email) != nil {
-		f.Errors[fieldEmail] = l.ServerAuthSignUpEmailInvalid()
-	}
+	f.checkFields(l)
 	if identity.ValidatePassword(password) != nil {
 		f.Errors[fieldPassword] = l.ServerAuthSignUpPasswordInvalid(float64(f.PasswordMax), float64(f.PasswordMin))
-	}
-	if f.NeedInvite && identity.NormalizeInviteCode(f.InviteCode) == "" {
-		f.Errors[fieldInvite] = l.ServerAuthSignUpInviteRequired()
-	}
-	if f.AskReason && identity.ValidateRegistrationReason(strings.TrimSpace(f.Reason)) != nil {
-		f.Errors[fieldReason] = l.ServerAuthSignUpReasonInvalid(float64(f.ReasonMax))
 	}
 }
 
 // signUpFailed shows the form again with what SignUp rejected.
 func (h *Handler) signUpFailed(w http.ResponseWriter, r *http.Request, p page, err error) {
+	h.signUpFailedWith(w, r, p, err, func(status int, p page) { h.renderSignUp(w, r, status, p) })
+}
+
+// signUpFailedWith sets on p what a sign-up rejected and renders it with render.
+func (h *Handler) signUpFailedWith(w http.ResponseWriter, r *http.Request, p page, err error, render func(status int, p page)) {
 	f, l := p.SignUp, p.L
 	status := http.StatusUnprocessableEntity
 	var limited *kernel.RateLimitedError
@@ -211,7 +212,7 @@ func (h *Handler) signUpFailed(w http.ResponseWriter, r *http.Request, p page, e
 	if len(f.Errors) > 0 {
 		p.Error = l.ServerAuthSignUpErrorSummary()
 	}
-	h.renderSignUp(w, r, status, p)
+	render(status, p)
 }
 
 // statusView is what the status page says about an account that cannot be used yet.

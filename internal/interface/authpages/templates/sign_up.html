@@ -1,12 +1,14 @@
 {{define "content"}}
-<h1>{{.L.ServerAuthSignUpTitle}}</h1>
+<h1 dir="auto">{{.Title}}</h1>
 {{with .SignUp}}{{if .Closed}}
 <p>{{$.L.ServerAuthSignUpClosed}}</p>
 <p class="links"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
 {{else}}
 {{if $.Error}}<p id="sign-up-error" class="alert" role="alert">{{$.Error}}</p>{{end}}
-<form class="form" method="post" action="/auth/sign_up">
+<form class="form" method="post" action="{{if .External}}/auth/external/sign_up{{else}}/auth/sign_up{{end}}">
 <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+{{with .External}}<input type="hidden" name="ticket" value="{{.Ticket}}">
+{{end}}
 <div class="field">
 <label for="sign-up-username">{{$.L.ServerAuthSignUpUsernameLabel}}</label>
 <p id="sign-up-username-hint" class="hint">{{.UsernameHint}}</p>
@@ -15,16 +17,16 @@
 </div>
 <div class="field">
 <label for="sign-up-email">{{$.L.ServerAuthSignUpEmailLabel}}</label>
-<p id="sign-up-email-hint" class="hint">{{$.L.ServerAuthSignUpEmailHint}}</p>
+<p id="sign-up-email-hint" class="hint">{{with .External}}{{or .EmailVerifiedHint $.L.ServerAuthExternalSignUpEmailHint}}{{else}}{{$.L.ServerAuthSignUpEmailHint}}{{end}}</p>
 {{with .Errors.email}}<p id="sign-up-email-error" class="field-error">{{.}}</p>{{end}}
 <input id="sign-up-email" name="email" type="email" value="{{.Email}}" autocomplete="username" autocapitalize="none" spellcheck="false" required aria-describedby="sign-up-email-hint{{if .Errors.email}} sign-up-email-error{{end}}"{{if .Errors.email}} aria-invalid="true"{{end}}>
 </div>
-<div class="field">
+{{if not .External}}<div class="field">
 <label for="sign-up-password">{{$.L.ServerAuthSignUpPasswordLabel}}</label>
 <p id="sign-up-password-hint" class="hint">{{.PasswordHint}}</p>
 {{with .Errors.password}}<p id="sign-up-password-error" class="field-error">{{.}}</p>{{end}}
 <input id="sign-up-password" name="password" type="password" autocomplete="new-password" required minlength="{{.PasswordMin}}" maxlength="{{.PasswordMax}}" aria-describedby="sign-up-password-hint{{if .Errors.password}} sign-up-password-error{{end}}"{{if .Errors.password}} aria-invalid="true"{{end}}>
-</div>
+</div>{{end}}
 {{if .NeedInvite}}<div class="field">
 <label for="sign-up-invite">{{$.L.ServerAuthSignUpInviteLabel}}</label>
 <p id="sign-up-invite-hint" class="hint">{{$.L.ServerAuthSignUpInviteHint}}</p>
@@ -47,6 +49,6 @@
 <button class="button" type="submit"{{if $.Documents}} aria-describedby="sign-up-agreement"{{end}}>{{$.L.ServerAuthSignUpSubmit}}</button>
 </div>
 </form>
-<p class="links"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
+{{template "external_logins" $}}<p class="links"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
 {{end}}{{end}}
 {{end}}

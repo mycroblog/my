@@ -71,6 +71,10 @@ type Deps struct {
 	// HTTP fetches the Client ID Metadata Documents of OAuth clients whose client_id is an https
 	// URL (ADR-0090 §1); nil turns such clients off.
 	HTTP kernel.HTTPClient
+	// OIDC discovers the OpenID Connect providers that administrators set up and verifies their
+	// ID tokens; with HTTP, which exchanges the codes for tokens, it turns on signing in and
+	// signing up with them (external_login.go, ADR-0106 §3). Nil turns them off.
+	OIDC OIDCClient
 	// MetadataDocumentClients returns whether the instance accepts those clients (the
 	// oauth_metadata_document_clients setting); it is read per request, so a change applies to
 	// the next one. Nil means it does.
@@ -149,6 +153,9 @@ type RegisterInput struct {
 	DisplayName string
 	// Locale is the new user's UI locale, a BCP 47 tag; empty means Deps.DefaultLocale.
 	Locale string
+	// passwordless creates the user without a password: a user who signs in with an external
+	// login provider only (SignUpExternal).
+	passwordless bool
 }
 
 // Registration is the result of RegisterLocalUser.
@@ -240,7 +247,8 @@ func (s *Service) CreateAdmin(ctx context.Context, in CreateAdminInput) (Registr
 // preparedUser is a new user with everything slow (hashing, key generation) done, ready to be
 // written by writeUser; a retried transaction writes the same values.
 type preparedUser struct {
-	user  identity.User
+	user identity.User
+	// cred is the password; its ID is "" for a user without one.
 	cred  identity.PasswordCredential
 	prefs identity.Preferences
 	acct  *account.PreparedLocalAccount
@@ -251,8 +259,10 @@ func (p *preparedUser) registration() Registration {
 }
 
 func (s *Service) prepareUser(ctx context.Context, in RegisterInput) (*preparedUser, error) {
-	if err := identity.ValidatePassword(in.Password); err != nil {
-		return nil, err
+	if !in.passwordless {
+		if err := identity.ValidatePassword(in.Password); err != nil {
+			return nil, err
+		}
 	}
 	now := s.d.Clock.Now()
 	user := identity.User{ID: s.d.IDs.NewID(), CreatedAt: now}
@@ -275,20 +285,26 @@ func (s *Service) prepareUser(ctx context.Context, in RegisterInput) (*preparedU
 	if err != nil {
 		return nil, err
 	}
+	p := &preparedUser{user: user, prefs: prefs, acct: acct}
+	if in.passwordless {
+		return p, nil
+	}
 	hash, err := s.d.Passwords.Hash(ctx, in.Password)
 	if err != nil {
 		return nil, err
 	}
-	cred := identity.PasswordCredential{ID: s.d.IDs.NewID(), UserID: user.ID, Hash: hash, SetAt: now}
-	return &preparedUser{user: user, cred: cred, prefs: prefs, acct: acct}, nil
+	p.cred = identity.PasswordCredential{ID: s.d.IDs.NewID(), UserID: user.ID, Hash: hash, SetAt: now}
+	return p, nil
 }
 
 func (s *Service) writeUser(ctx context.Context, tx uow.Tx, p *preparedUser) error {
 	if err := s.d.Repository.InsertUser(ctx, tx, p.user); err != nil {
 		return err
 	}
-	if err := s.d.Repository.InsertPasswordCredential(ctx, tx, p.cred); err != nil {
-		return err
+	if p.cred.ID != "" {
+		if err := s.d.Repository.InsertPasswordCredential(ctx, tx, p.cred); err != nil {
+			return err
+		}
 	}
 	if err := s.d.Repository.InsertPreferences(ctx, tx, p.prefs); err != nil {
 		return err

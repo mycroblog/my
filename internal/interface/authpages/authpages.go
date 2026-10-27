@@ -190,6 +190,9 @@ type Options struct {
 	// MailUnsubscribe serves the unsubscribe links of notification emails (mail_unsubscribe.go);
 	// nil leaves them out.
 	MailUnsubscribe MailUnsubscribe
+	// ExternalLogins signs in and signs up with the external login providers that
+	// administrators set up (external.go); nil leaves them out.
+	ExternalLogins ExternalLogins
 }
 
 // Handler serves the screens.
@@ -233,7 +236,7 @@ func New(o Options) *Handler {
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
 		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed} {
-		h.pages[name] = template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/"+name+".html"))
+		h.pages[name] = template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/external_logins.html", "templates/"+name+".html"))
 	}
 	h.cop.SetDenyHandler(http.HandlerFunc(h.crossOrigin))
 	return h
@@ -270,6 +273,12 @@ func (h *Handler) Register(r Router) {
 		// Mail providers send the one-click POST from their servers (mail_unsubscribe.go).
 		r.Handle("GET "+PathMailUnsubscribe, http.HandlerFunc(h.mailUnsubscribePage))
 		r.Handle("POST "+PathMailUnsubscribe, http.HandlerFunc(h.mailUnsubscribe))
+	}
+	if h.o.ExternalLogins != nil {
+		// The provider's redirect back is a GET from its site, which the state checks (external.go).
+		r.Handle("GET "+pathExternalStart, http.HandlerFunc(h.externalStart))
+		r.Handle("GET "+pathExternalCallback, http.HandlerFunc(h.externalCallback))
+		r.Handle("POST "+PathExternalSignUp, h.cop.Handler(http.HandlerFunc(h.externalSignUp)))
 	}
 	if h.o.OAuth != nil {
 		r.Handle("GET "+PathAuthorize, http.HandlerFunc(h.authorizePage))
@@ -320,6 +329,9 @@ type page struct {
 	// Passkey is the passkey form of the sign-in page; the page's Content-Security-Policy admits
 	// this site's scripts when it is set.
 	Passkey *passkeyView
+	// External are the links to the external login providers of the sign-in and registration
+	// pages (external.go).
+	External []externalButton
 	// Documents are the links to the published documents, in the footer of every page and on
 	// the registration form; render fills them.
 	Documents []documentLink
@@ -442,6 +454,7 @@ func (h *Handler) renderSignInPage(w http.ResponseWriter, r *http.Request, statu
 	}
 	p.CanSignUp = err == nil && mode != identity.RegistrationClosed
 	p.CanResetPassword = h.passwordResetEnabled()
+	p.External = h.externalButtons(r, returnTo, false)
 	p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignIn)
 	h.render(w, r, status, pageSignIn, p)
 }
