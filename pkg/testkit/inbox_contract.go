@@ -73,6 +73,7 @@ func InboxContract(t *testing.T, newHarness InboxFactory) {
 		{"SynthesizesTheURIOfAnActivityWithoutID", inboxSynthesizesURI},
 		{"MarksActivitiesOfOtherSignersForRefetch", inboxMarksRefetch},
 		{"RefusesWithoutTouchingTheDatabaseOrTheQueue", inboxRefuses},
+		{"ChargesTheDomainLimitOnlyToVerifiedSignatures", inboxChargesDomainLimitAfterVerification},
 		{"DropsAnUnknownActorsOwnDelete", inboxDropsUnknownSelfDelete},
 		{"MarksTheSignersServerAvailable", inboxMarksServerAvailable},
 		{"RecordsTombstonesOnce", inboxRecordsTombstonesOnce},
@@ -540,6 +541,28 @@ func inboxRefuses(t *testing.T, e *inboxEnv) {
 	}
 }
 
+// inboxChargesDomainLimitAfterVerification checks that requests whose signature does not verify
+// leave the signing server's rate limit to the server itself.
+func inboxChargesDomainLimitAfterVerification(t *testing.T, e *inboxEnv) {
+	in := e.inbox(kernel.Limit{}, kernel.Limit{Name: "test", Max: 1, Window: time.Hour})
+	for i := range 3 {
+		_, err := e.receive(t, in, inboxPost{body: inboxCreate(t, fmt.Sprintf("%s/activities/unverified/%d", inboxAlice, i)), signature: inboxAliceKey + " no"})
+		var rej *appfederation.InboxRejection
+		if !errors.As(err, &rej) || rej.Status != http.StatusUnauthorized {
+			t.Fatalf("unverified request %d: Receive = %v, want 401", i, err)
+		}
+	}
+	got, err := e.receive(t, in, inboxPost{body: inboxCreate(t, inboxAlice+"/activities/verified"), signature: inboxAliceKey + " yes"})
+	if err != nil || !got.Recorded {
+		t.Fatalf("verified request: Receive = %+v, %v; want recorded within the domain limit", got, err)
+	}
+	_, err = e.receive(t, in, inboxPost{body: inboxCreate(t, inboxAlice+"/activities/verified/2"), signature: inboxAliceKey + " yes"})
+	var rej *appfederation.InboxRejection
+	if !errors.As(err, &rej) || rej.Status != http.StatusTooManyRequests {
+		t.Errorf("second verified request: Receive = %v, want 429", err)
+	}
+}
+
 func inboxDropsUnknownSelfDelete(t *testing.T, e *inboxEnv) {
 	in := e.inbox(kernel.Limit{}, kernel.Limit{})
 	stranger := "https://remote.example/users/gone"
@@ -602,7 +625,7 @@ func inboxRecordsTombstonesOnce(t *testing.T, e *inboxEnv) {
 	first := federation.RemoteObjectTombstone{
 		URI: note, ActorURI: inboxAlice, ActivityURI: inboxAlice + "/activities/delete-1", ReceivedAt: e.clock.Now(),
 	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note); err != nil || ok {
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || ok {
 		t.Fatalf("RemoteObjectTombstoned before = %t, %v; want false", ok, err)
 	}
 	insert := func(ts federation.RemoteObjectTombstone) bool {
@@ -627,11 +650,15 @@ func inboxRecordsTombstonesOnce(t *testing.T, e *inboxEnv) {
 	if insert(again) {
 		t.Error("InsertRemoteObjectTombstone again = true, want the first tombstone to stay")
 	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note); err != nil || !ok {
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, inboxAlice); err != nil || !ok {
 		t.Errorf("RemoteObjectTombstoned = %t, %v; want true", ok, err)
 	}
-	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, inboxAlice+"/notes/other"); err != nil || ok {
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, inboxAlice+"/notes/other", inboxAlice); err != nil || ok {
 		t.Errorf("RemoteObjectTombstoned(other) = %t, %v; want false", ok, err)
+	}
+	// The tombstone holds back only what its actor owns.
+	if ok, err := e.h.Inbox.RemoteObjectTombstoned(ctx, note, "https://remote.example/users/carol"); err != nil || ok {
+		t.Errorf("RemoteObjectTombstoned(another actor) = %t, %v; want false", ok, err)
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -33,7 +34,7 @@ type RemoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
 	AcceptQuote(ctx context.Context, statusID, authorizationURI string) (bool, error)
 	RejectQuote(ctx context.Context, statusID string) (bool, error)
-	RevokeQuoteAuthorization(ctx context.Context, uri string) ([]string, error)
+	RevokeQuoteAuthorization(ctx context.Context, uri, issuerAccountID string) ([]string, error)
 }
 
 // verifyQuotePayload is the payload of JobVerifyQuote.
@@ -164,7 +165,7 @@ func (h *StatusHandlers) verifyQuote(ctx context.Context, p verifyQuotePayload) 
 		if h.d.Approvals == nil {
 			return nil
 		}
-		ok, err := h.d.Approvals.VerifyLocalQuoteAuthorization(ctx, lastSegment(p.Authorization), st.URI, quoted.ID)
+		ok, err := h.d.Approvals.VerifyLocalQuoteAuthorization(ctx, lastSegment(p.Authorization), st.URI, st.AuthorAccountID, quoted.ID)
 		if err != nil || !ok || !h.isLocal(federation.IRI(p.Authorization)) {
 			return errors.Join(err, errNotApproved(ok, p.Authorization))
 		}
@@ -221,12 +222,13 @@ func checkQuoteAuthorization(ctx context.Context, fetcher DocumentFetcher, uri, 
 	return nil
 }
 
-// revokeQuoteAuthorization takes the Delete of id by the actor of a, which is no stored post, as
-// the revocation of a QuoteAuthorization (ADR-0069 §2). It reports whether id approved a quote.
-func (h *StatusHandlers) revokeQuoteAuthorization(ctx context.Context, id federation.IRI) (bool, error) {
+// revokeQuoteAuthorization takes the Delete of id by issuer, which is no stored post, as the
+// revocation of a QuoteAuthorization (ADR-0069 §2): only of the quotes of the issuer's statuses.
+// It reports whether id approved such a quote.
+func (h *StatusHandlers) revokeQuoteAuthorization(ctx context.Context, id federation.IRI, issuer appaccount.Actor) (bool, error) {
 	if h.d.Quotes == nil {
 		return false, nil
 	}
-	revoked, err := h.d.Quotes.RevokeQuoteAuthorization(ctx, string(id))
+	revoked, err := h.d.Quotes.RevokeQuoteAuthorization(ctx, string(id), issuer.Account.ID)
 	return len(revoked) > 0, err
 }

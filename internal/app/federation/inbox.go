@@ -27,7 +27,8 @@ const JobInbox = "federation.inbox"
 const InboxMaxBodyBytes = 1 << 20
 
 // Rate limits of the inbox (ADR-0019 §5): per client IP before the signature is parsed, and per
-// signing server (the host of the keyId) before the request costs a key lookup.
+// signing server (the host of the keyId) once the signature has verified, so that only the
+// server itself uses up its limit.
 var (
 	InboxIPLimit     = kernel.Limit{Name: "inbox.ip", Max: 1000, Window: 5 * time.Minute}
 	InboxDomainLimit = kernel.Limit{Name: "inbox.domain", Max: 2000, Window: 5 * time.Minute}
@@ -76,12 +77,17 @@ type InboxRepository interface {
 
 	FindReceivedActivity(ctx context.Context, activityURI federation.IRI) (federation.ReceivedActivity, error)
 	FindReceivedDocument(ctx context.Context, activityURI federation.IRI) ([]byte, error)
+	// ReleaseUnconfirmedActivity removes a received activity of trust refetch with its document,
+	// so that the activity is recorded again when it next arrives, and reports whether there was
+	// one. An activity of trust signed stays.
+	ReleaseUnconfirmedActivity(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (bool, error)
 
 	// InsertRemoteObjectTombstone records a tombstone unless its URI has one, and reports whether
 	// it did: the first tombstone stays.
 	InsertRemoteObjectTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteObjectTombstone) (bool, error)
-	// RemoteObjectTombstoned reports whether uri has a tombstone.
-	RemoteObjectTombstoned(ctx context.Context, uri federation.IRI) (bool, error)
+	// RemoteObjectTombstoned reports whether uri has a tombstone that actorURI left: a tombstone
+	// holds back only the objects and activities of the actor whose Delete or Undo left it.
+	RemoteObjectTombstoned(ctx context.Context, uri, actorURI federation.IRI) (bool, error)
 	// InsertRemoteFollowTombstone records the tombstone of a pair unless its Undo has one, and
 	// reports whether it did.
 	InsertRemoteFollowTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteFollowTombstone) (bool, error)
@@ -291,21 +297,17 @@ func (i *Inbox) receive(ctx context.Context, in InboxRequest, typ *string) (Rece
 	if suspended {
 		return Received{Rejection: &InboxRejection{Status: http.StatusForbidden, Err: fmt.Errorf("%s is suspended", keyHost)}}, nil
 	}
-	// 6. The signing server's rate limit.
-	if rej := i.take(ctx, i.d.DomainLimit, keyHost); rej != nil {
-		return Received{Rejection: rej}, nil
-	}
-	// 7. The body digest, with the other checks that need no key (components, time window).
+	// 6. The body digest, with the other checks that need no key (components, time window).
 	if cerr := i.d.Signatures.Check(r, sig); cerr != nil {
 		return Received{Rejection: rejection(cerr)}, nil
 	}
-	// 8. id, type, actor, and object.
+	// 7. id, type, actor, and object.
 	env, err := federation.ReadEnvelope(r.Body, CanonicalHost)
 	if err != nil {
 		return Received{Rejection: &InboxRejection{Status: http.StatusBadRequest, Err: err}}, nil
 	}
 	*typ = activityTypeLabel(env.Type)
-	// 9. An unknown actor's Delete or Update of itself.
+	// 8. An unknown actor's Delete or Update of itself.
 	if env.SelfRemoval() {
 		switch _, err := i.d.Accounts.FindByURI(ctx, string(env.Actor)); {
 		case errors.Is(err, appaccount.ErrNotFound):
@@ -314,13 +316,17 @@ func (i *Inbox) receive(ctx context.Context, in InboxRequest, typ *string) (Rece
 			return Received{}, err
 		}
 	}
-	// 10, 11. The key, fetched when unknown or stale, and the signature.
+	// 9, 10. The key, fetched when unknown or stale, and the signature.
 	v, rejected, err := i.d.Signatures.Verify(ctx, r, sig)
 	if err != nil {
 		return Received{}, err
 	}
 	if rejected != nil {
 		return Received{Rejection: rejection(rejected)}, nil
+	}
+	// 11. The signing server's rate limit, charged only to a server whose signature verified.
+	if rej := i.take(ctx, i.d.DomainLimit, keyHost); rej != nil {
+		return Received{Rejection: rej}, nil
 	}
 	// 12. The signer against the actor.
 	owner, ok := signer(v)

@@ -61,6 +61,19 @@ func (r *FederationRepository) FindReceivedDocument(ctx context.Context, activit
 	return doc, nil
 }
 
+// ReleaseUnconfirmedActivity implements federation.InboxRepository.
+func (r *FederationRepository) ReleaseUnconfirmedActivity(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.DeleteUnconfirmedReceivedActivity(ctx, string(activityURI))
+	if err != nil || n == 0 {
+		return false, wrap(err, "delete unconfirmed received activity")
+	}
+	return true, wrap(q.DeleteReceivedActivityDocument(ctx, string(activityURI)), "delete received activity document")
+}
+
 // InsertRemoteObjectTombstone implements federation.InboxRepository.
 func (r *FederationRepository) InsertRemoteObjectTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteObjectTombstone) (bool, error) {
 	q, err := queries(tx)
@@ -74,7 +87,7 @@ func (r *FederationRepository) InsertRemoteObjectTombstone(ctx context.Context, 
 }
 
 // RemoteObjectTombstoned implements federation.InboxRepository.
-func (r *FederationRepository) RemoteObjectTombstoned(ctx context.Context, uri federation.IRI) (bool, error) {
-	ok, err := r.db.reader().HasRemoteObjectTombstone(ctx, string(uri))
+func (r *FederationRepository) RemoteObjectTombstoned(ctx context.Context, uri, actorURI federation.IRI) (bool, error) {
+	ok, err := r.db.reader().HasRemoteObjectTombstone(ctx, sqlitegen.HasRemoteObjectTombstoneParams{Uri: string(uri), ActorUri: string(actorURI)})
 	return ok, wrap(err, "read remote object tombstone")
 }

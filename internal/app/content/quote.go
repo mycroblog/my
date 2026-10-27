@@ -328,10 +328,12 @@ func (s *Service) quoteCommand(ctx context.Context, statusID string, kind conten
 	return changed, err
 }
 
-// RevokeQuoteAuthorization records that the QuoteAuthorization uri is deleted (ADR-0069 §2): the
-// quotes it approved are revoked. It returns the statuses whose quotes it revoked.
-func (s *Service) RevokeQuoteAuthorization(ctx context.Context, uri string) ([]string, error) {
-	if s.d.Quotes == nil || uri == "" {
+// RevokeQuoteAuthorization records that the QuoteAuthorization uri, deleted by the account
+// issuerAccountID, is deleted (ADR-0069 §2): the quotes it approved of statuses of the issuer are
+// revoked. An authorization only its issuer, the author of the quoted status, takes back; the
+// quotes of statuses of other accounts stay. It returns the statuses whose quotes it revoked.
+func (s *Service) RevokeQuoteAuthorization(ctx context.Context, uri, issuerAccountID string) ([]string, error) {
+	if s.d.Quotes == nil || uri == "" || issuerAccountID == "" {
 		return nil, nil
 	}
 	states, err := s.d.Quotes.ListQuoteStatesByAuthorization(ctx, uri)
@@ -340,6 +342,12 @@ func (s *Service) RevokeQuoteAuthorization(ctx context.Context, uri string) ([]s
 	}
 	var revoked []string
 	for _, qs := range states {
+		switch issued, err := s.quotesStatusOf(ctx, qs.StatusID, issuerAccountID); {
+		case err != nil:
+			return revoked, err
+		case !issued:
+			continue
+		}
 		changed, err := s.quoteCommand(ctx, qs.StatusID, content.QuoteEventRevoked, uri)
 		switch {
 		case errors.Is(err, ErrNotFound):
@@ -350,4 +358,24 @@ func (s *Service) RevokeQuoteAuthorization(ctx context.Context, uri string) ([]s
 		}
 	}
 	return revoked, nil
+}
+
+// quotesStatusOf reports whether the status statusID quotes a status of accountID. A status
+// that quotes nothing, or whose quoted status is not stored, does not.
+func (s *Service) quotesStatusOf(ctx context.Context, statusID, accountID string) (bool, error) {
+	q, err := s.d.Quotes.FindQuote(ctx, statusID)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	quoted, err := s.d.Repository.FindStatusByURI(ctx, q.QuotedURI)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return quoted.AuthorAccountID == accountID, nil
 }

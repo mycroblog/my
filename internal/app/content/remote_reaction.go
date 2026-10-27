@@ -46,8 +46,12 @@ type RemoteReactionEmoji struct {
 	// Custom is the custom emoji, its Shortcode without colons.
 	Custom *RemoteEmojiInput
 	// Domain is the domain of the custom emoji: the host of its Emoji's id, or the reacting
-	// account's domain when the Emoji has no id (ADR-0052 §1).
+	// account's domain when the Emoji has no id (ADR-0052 §1); "" for an emoji of this server.
 	Domain string
+	// Borrowed reports a custom emoji of another server than the reacting account's. Only that
+	// server's documents record its emoji: a borrowed emoji is taken only when it is stored
+	// already, and the reaction changes nothing of it.
+	Borrowed bool
 }
 
 // RemoteReactionInput is the reaction that an EmojiReact, or a Like with an emoji, of a remote
@@ -100,7 +104,16 @@ func (s *Interactions) RecordRemoteReaction(ctx context.Context, in RemoteReacti
 		if err := s.ensureLive(ctx, tx, st.ID); err != nil {
 			return err
 		}
-		if c := in.Emoji.Custom; c != nil {
+		if c := in.Emoji.Custom; c != nil && in.Emoji.Borrowed {
+			emoji, err := s.d.Statuses.FindCustomEmojiByShortcode(ctx, c.Shortcode, in.Emoji.Domain)
+			if errors.Is(err, ErrNotFound) {
+				return fmt.Errorf("custom emoji %q of %s is not stored: %w", c.Shortcode, in.Emoji.Domain, content.ErrInvalidReaction)
+			}
+			if err != nil {
+				return err
+			}
+			r.Emoji = content.ReactionEmoji{CustomEmojiID: emoji.ID}
+		} else if c != nil {
 			if s.d.RecordRemoteEmojis == nil {
 				return errors.New("content: remote custom emoji reactions need a custom emoji recorder")
 			}
@@ -186,7 +199,7 @@ func (s *Interactions) RemoveRemoteReaction(ctx context.Context, in RemoteReacti
 func remoteUnicode(e RemoteReactionEmoji) (string, error) {
 	switch c := e.Custom; {
 	case c != nil && e.Unicode == "":
-		if c.Shortcode == "" || c.ImageURL == "" || e.Domain == "" {
+		if c.Shortcode == "" || c.ImageURL == "" || (e.Domain == "" && !e.Borrowed) {
 			return "", fmt.Errorf("custom emoji %q: %w", c.Shortcode, content.ErrInvalidReaction)
 		}
 		return "", nil

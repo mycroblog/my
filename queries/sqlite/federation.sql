@@ -20,6 +20,14 @@ ON CONFLICT (activity_uri) DO NOTHING;
 -- name: GetReceivedActivityDocument :one
 SELECT document FROM received_activity_documents WHERE activity_uri = @activity_uri;
 
+-- DeleteUnconfirmedReceivedActivity removes an activity received with trust refetch, which its
+-- origin did not confirm; zero rows means there is none.
+-- name: DeleteUnconfirmedReceivedActivity :execrows
+DELETE FROM received_activities WHERE activity_uri = @activity_uri AND trust = 'refetch';
+
+-- name: DeleteReceivedActivityDocument :exec
+DELETE FROM received_activity_documents WHERE activity_uri = @activity_uri;
+
 -- DeleteReceivedActivityDocumentsBefore removes at most @batch_limit documents of activities
 -- received before @received_before.
 -- name: DeleteReceivedActivityDocumentsBefore :execrows
@@ -47,7 +55,7 @@ VALUES (@uri, @actor_uri, @activity_uri, @received_at)
 ON CONFLICT (uri) DO NOTHING;
 
 -- name: HasRemoteObjectTombstone :one
-SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = @uri);
+SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = @uri AND actor_uri = @actor_uri);
 
 -- name: DeleteRemoteObjectTombstonesBefore :execrows
 DELETE FROM remote_object_tombstones

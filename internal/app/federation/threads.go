@@ -46,9 +46,10 @@ const (
 var ErrNotTaken = errors.New("federation: the remote object is not taken")
 
 // RemoteObjectTombstones tells which URIs have a tombstone of a Delete or Undo whose object was
-// unknown (federation.md §3.3). InboxRepository implements it.
+// unknown (federation.md §3.3), left by the actor that owns the object. InboxRepository
+// implements it.
 type RemoteObjectTombstones interface {
-	RemoteObjectTombstoned(ctx context.Context, uri federation.IRI) (bool, error)
+	RemoteObjectTombstoned(ctx context.Context, uri, actorURI federation.IRI) (bool, error)
 }
 
 // fetchObjectPayload is the payload of JobFetchObject.
@@ -362,7 +363,7 @@ func (h *StatusHandlers) collection(ctx context.Context, r federation.Ref, post 
 // tombstone keeps target. It fails with ErrNotTaken or the errors of Fetcher.Fetch; other
 // errors come from the stores.
 func (h *StatusHandlers) fetchStatus(ctx context.Context, target federation.IRI) (appcontent.Status, *federation.Object, error) {
-	if err := h.untombstoned(ctx, target); err != nil {
+	if err := h.untombstoned(ctx, target, ""); err != nil {
 		return appcontent.Status{}, nil, err
 	}
 	got, err := h.d.Fetcher.Fetch(ctx, string(target))
@@ -405,7 +406,7 @@ func (h *StatusHandlers) fetchedWith(ctx context.Context, got *Fetched, opts sto
 	case !errors.Is(err, appcontent.ErrNotFound):
 		return appcontent.Status{}, err
 	}
-	if err := h.untombstoned(ctx, obj.ID); err != nil {
+	if err := h.untombstoned(ctx, obj.ID, obj.AttributedTo); err != nil {
 		return appcontent.Status{}, err
 	}
 	author, err := h.d.Actors.Resolve(ctx, string(obj.AttributedTo))
@@ -429,14 +430,16 @@ func (h *StatusHandlers) fetchedWith(ctx context.Context, got *Fetched, opts sto
 	return h.store(ctx, author, obj, opts)
 }
 
-// untombstoned fails with ErrNotTaken when a deletion or a tombstone keeps uri.
-func (h *StatusHandlers) untombstoned(ctx context.Context, uri federation.IRI) error {
+// untombstoned fails with ErrNotTaken when a deletion keeps uri, or a tombstone that owner, the
+// actor the post is attributed to, left; "" checks the deletions only, before the post's owner
+// is known.
+func (h *StatusHandlers) untombstoned(ctx context.Context, uri, owner federation.IRI) error {
 	deleted, err := h.d.Statuses.Tombstoned(ctx, string(uri))
 	if err != nil {
 		return err
 	}
-	if !deleted && h.d.Tombstones != nil {
-		if deleted, err = h.d.Tombstones.RemoteObjectTombstoned(ctx, uri); err != nil {
+	if !deleted && owner != "" && h.d.Tombstones != nil {
+		if deleted, err = h.d.Tombstones.RemoteObjectTombstoned(ctx, uri, owner); err != nil {
 			return err
 		}
 	}
