@@ -1,6 +1,6 @@
 # ADR-0105: 利用料金の取り込みの要求の予約
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-27
 - Deciders: @rosylilly
 - Issue: #1469
@@ -13,7 +13,7 @@
 この数え方では、記録の前の試行は数に入りません。同じ事業者の試行が同時に走る（定期のジョブと手動の取り込み、ジョブの再試行とリースの切れた二重の実行、複数のレプリカ）と、
 どの試行も同じ残りを読んで呼ぶので、合わせて日の上限を超えて課金されます。§4 が許すずれ（「プロセスが要求の後・記録の前に止まると数えられない」、1 回につき 4 要求まで）は 1 つの試行が止まった場合だけのもので、同時の試行のずれは試行の数だけ大きくなります。
 
-決定者は 2026-10-27 に、#1552 が実装した予約の規則を「採用し Proposed ADR で supersede」すると答えました。この ADR は、その規則で ADR-0068 §4 の数え方を置き換える案です。ADR-0068 の上限の値と、上限に達したときの扱いは変えません。
+決定者は 2026-10-27 に、#1552 が実装した予約の規則を「採用し Proposed ADR で supersede」すると答えました。この ADR は、その規則で ADR-0068 §4 の数え方を置き換えます。ADR-0068 の上限の値と、上限に達したときの扱いは変えません。
 
 ## Decision Drivers（判断基準）
 
@@ -30,9 +30,7 @@
 
 ## Decision（決定）
 
-> Proposed の間は推奨案。Accepted にするのは人間の Decider のみ。
-
-**推奨案は A** です。ADR-0068 §4 の「数えるのは、§5 の `billing_import_runs` の `requests` の、その UTC の日・その UTC の暦月の `occurred_at` の行の合計」と、それに続くハンドラの手順を、次の規則で置き換えます。ADR-0068 §4 の上限の値（`billing_aws_max_requests_per_day`・`_per_month`）、`request_cap` の扱い、Google Cloud の上限は変えません。
+**A を採用します。**ADR-0068 §4 の「数えるのは、§5 の `billing_import_runs` の `requests` の、その UTC の日・その UTC の暦月の `occurred_at` の行の合計」と、それに続くハンドラの手順を、次の規則で置き換えます。ADR-0068 §4 の上限の値（`billing_aws_max_requests_per_day`・`_per_month`）、`request_cap` の扱い、Google Cloud の上限は変えません。
 
 - 試行は事業者を呼ぶ前に、事業者ごとに 1 つずつ走るトランザクション（PostgreSQL は事業者ごとのトランザクションのアドバイザリロック、SQLite は書き込みのトランザクションが 1 つずつ走ること）で次を順に決めます。
   1. 同じ `run_key` の試行がすでに成功していれば、何も呼ばず、何も記録せずにジョブを成功で終えます。
@@ -59,11 +57,11 @@ A は予約の行を 1 つ書くだけで、呼び出しはロックの外です
 - 悪い: 同じ事業者の試行は 1 つずつしか呼べず、重なった試行は 1 分ずつ遅れます。止まった試行があると、次の取り込みは最大 15 分待ちます。
 - 悪い: `billing_import_reservations` の行は試行ごとに増えます。
 - 実装（`internal/app/finance` の `Service.reserve`、両方言の `billing_import_reservations`）、[データモデル](../architecture/data-model/04-tables/12-finance.md)、運用の文書（`docs/operations/billing-import.md`）は、すでにこの規則のとおりです。
-- この ADR が Accepted になったら、ADR-0068 の Status の行に、§4 の数え方をこの ADR が置き換えると注記します。
+- ADR-0068 の Status の行に、§4 の数え方をこの ADR が置き換えると注記しています。
 
 ## Pros and Cons of the Options（詳細比較・任意）
 
-| | A: 呼ぶ前に予約（推奨） | B: 記録の後に数える | C: 呼び出しの間ロック |
+| | A: 呼ぶ前に予約（採用） | B: 記録の後に数える | C: 呼び出しの間ロック |
 | --- | --- | --- | --- |
 | 同時の試行で上限を超えない | ○ | ×（試行の数だけずれる） | ○ |
 | トランザクションに外への I/O がない | ○ | ○ | × |
