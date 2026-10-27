@@ -26,7 +26,7 @@
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
-# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go; app/bun.lock: ui
+# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; app/bun.lock: ui
 # and web), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
@@ -82,8 +82,9 @@ classify() {
       return
       ;;
     # The dependencies of one toolchain: the contexts that build with them.
+    # pkg/mykit/integration and pkg/mybot/integration resolve the server's dependencies, so a bump leaves them untidy.
     go.mod | go.sum)
-      select_contexts go
+      select_contexts go mykit
       return
       ;;
     app/bun.lock | app/bunfig.toml | app/package.json)

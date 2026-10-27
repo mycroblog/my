@@ -14,17 +14,13 @@
 # mybot-integration-test) live in pkg/mybot/integration, of the same shape: an echo bot against that server, and the
 # fake server of pkg/mybot/mybottest against the spec (ADR-0094 §10). They are part of this check, so they run in
 # `check:changed` and in the merge queue's `check` (the repo job of ci.yml) whenever the mykit context is selected:
-# a change of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
+# a change of the root go.mod or go.sum (a Dependabot bump leaves the integration modules untidy, which mod-check and
+# mybot-mod-check catch), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
 # internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
 # to the slow suite (ADR-0079).
 version: "3"
 
 vars:
-  # The integration modules require the server module's dependencies at the versions their go.mod lists. GOFLAGS
-  # -mod=mod lets a dependency update of the root go.mod (Dependabot) raise them instead of failing the build until
-  # pkg/mykit/integration/go.mod and pkg/mybot/integration/go.mod are tidied too; commit the go.mod and go.sum that a
-  # run updates.
-  INTEGRATION_GOFLAGS: -mod=mod
   # Permissive licenses only (ADR-0093 §2): the library's dependencies reach its users, so no copyleft license,
   # not even one compatible with AGPL-3.0 such as the GPL or MPL-2.0.
   MYKIT_ALLOWED_LICENSES: 0BSD,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,Unlicense,Zlib
@@ -42,13 +38,13 @@ tasks:
       - for: [pkg/mykit, pkg/mybot]
         cmd: cd {{.ITEM}} && go mod download && go build ./... && go test -run '^$' ./...
       - for: [pkg/mykit/integration, pkg/mybot/integration]
-        cmd: cd {{.ITEM}} && GOFLAGS={{.INTEGRATION_GOFLAGS}} go test -run '^$' ./...
+        cmd: cd {{.ITEM}} && go test -run '^$' ./...
 
   mod-check:
-    desc: Fail if pkg/mykit/go.mod and go.sum are not tidy
-    dir: pkg/mykit
+    desc: Fail if go.mod and go.sum of pkg/mykit and of its integration module are not tidy
     cmds:
-      - go mod tidy -diff
+      - for: [pkg/mykit, pkg/mykit/integration]
+        cmd: cd {{.ITEM}} && go mod tidy -diff
 
   server-dep-check:
     desc: Fail if pkg/mykit/go.mod requires or replaces the server module, or the root go.mod names pkg/mykit or its integration module (scripts/mykit-mod-check.sh)
@@ -77,16 +73,12 @@ tasks:
   integration-vet:
     desc: Run go vet on the integration tests of pkg/mykit (pkg/mykit/integration)
     dir: pkg/mykit/integration
-    env:
-      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
     cmds:
       - go vet ./...
 
   integration-test:
     desc: Run the integration tests of pkg/mykit - the Go client against a server in the test process (pkg/mykit/integration)
     dir: pkg/mykit/integration
-    env:
-      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
     cmds:
       - go test ./...
 
@@ -199,10 +191,10 @@ tasks:
       - deno run --no-lock --allow-read --allow-write --allow-env test/runtimes.mjs
 
   mybot-mod-check:
-    desc: Fail if pkg/mybot/go.mod and go.sum are not tidy
-    dir: pkg/mybot
+    desc: Fail if go.mod and go.sum of pkg/mybot and of its integration module are not tidy
     cmds:
-      - go mod tidy -diff
+      - for: [pkg/mybot, pkg/mybot/integration]
+        cmd: cd {{.ITEM}} && go mod tidy -diff
 
   mybot-server-dep-check:
     desc: Fail if pkg/mybot/go.mod requires or replaces the server module, or replaces anything but pkg/mykit with ../mykit (scripts/mykit-mod-check.sh)
@@ -245,15 +237,11 @@ tasks:
   mybot-integration-vet:
     desc: Run go vet on the integration tests of pkg/mybot (pkg/mybot/integration)
     dir: pkg/mybot/integration
-    env:
-      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
     cmds:
       - go vet ./...
 
   mybot-integration-test:
     desc: Run the integration tests of pkg/mybot - an echo bot against a server in the test process, and the fake server of mybottest against the spec (pkg/mybot/integration)
     dir: pkg/mybot/integration
-    env:
-      GOFLAGS: "{{.INTEGRATION_GOFLAGS}}"
     cmds:
       - go test ./...
