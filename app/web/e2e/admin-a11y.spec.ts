@@ -35,7 +35,7 @@ const moderator = {
   ai_opt_out: false,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
-  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps", "manage_service_closure"],
+  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps", "manage_service_closure", "manage_errors"],
 };
 
 /** The reported account: a long display name, local. */
@@ -360,6 +360,49 @@ const deadJob = {
   failed_at: "2026-10-17T10:00:00Z",
 };
 
+/** An open error group with a long place, type and message, as GET /admin/error_groups lists it. */
+const errorGroup: Schemas["ErrorGroup"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+  fingerprint: "0123456789abcdef0123456789abcdef",
+  state: "open",
+  state_since: "2026-10-20T00:00:00Z",
+  source: "server",
+  kind: "panic",
+  where: "client_api GET /api/v1/accounts/{id}/statuses/{status_id}/favourited_by",
+  type: "*github.com/mycroblog/my/internal/adapter/db/postgres.constraintViolationError",
+  message: "runtime error: invalid memory address or nil pointer dereference in a very long message that goes on",
+  count_24h: 3,
+  count_7d: 12,
+  first_seen_at: "2026-10-20T00:00:00Z",
+  last_seen_at: "2026-10-21T05:30:00Z",
+  first_version: "0.3.0",
+  last_version: "0.3.1",
+};
+
+/** The request of the group's latest occurrence, which the detail shows. */
+const errorRequestId = "01JB0000000000000000000000";
+
+/** The group with its latest occurrence and hourly counts, as GET /admin/error_groups/{id} answers. */
+const errorGroupDetail: Schemas["ErrorGroupDetail"] = {
+  ...errorGroup,
+  sample: {
+    type: "*fmt.wrapError > *github.com/mycroblog/my/internal/adapter/db/postgres.constraintViolationError",
+    message: "runtime error: invalid memory address or nil pointer dereference",
+    stack:
+      "goroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).FavouritedByWithAVeryLongFunctionName(...)\n\tgithub.com/mycroblog/my/internal/app/status/favourited_by.go:42 +0x32",
+    request_id: errorRequestId,
+    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+    version: "0.3.1",
+    role: "all",
+    occurred_at: "2026-10-21T05:30:00Z",
+  },
+  hourly_counts: [
+    { hour: "2026-10-20T00:00:00Z", count: 9, last_version: "0.3.0" },
+    { hour: "2026-10-21T05:00:00Z", count: 3, last_version: "0.3.1" },
+  ],
+  events: [],
+};
+
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
 }
@@ -457,6 +500,8 @@ async function moderatorServer(page: Page) {
     }
     if (key === "GET /admin/queue") return json(route, { adapter: "db", pending_listing: true, counts: [{ state: "dead", type: deadJob.type, count: 1 }] });
     if (key === "GET /admin/jobs") return json(route, { items: [deadJob] });
+    if (key === "GET /admin/error_groups") return json(route, { items: [errorGroup] });
+    if (key === `GET /admin/error_groups/${errorGroup.id}`) return json(route, errorGroupDetail);
     if (key === "GET /admin/instance_texts") return json(route, { items: [documentText, instanceName] });
     if (key === "GET /admin/theme") return json(route, adminTheme);
     if (key === "GET /admin/settings") return json(route, instanceSettings);
@@ -651,6 +696,8 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "moderation.instances_.$domain": { path: `/moderation/instances/${longDomain}`, ready: longDomain },
   "admin.custom-emojis": { path: "/admin/custom-emojis", ready: customEmoji.category ?? "" },
   "admin.jobs": { path: "/admin/jobs?state=dead", ready: deadJob.type },
+  "admin.errors": { path: "/admin/errors", ready: errorGroup.where },
+  "admin.errors_.$id": { path: `/admin/errors/${errorGroup.id}`, ready: errorRequestId },
   "admin.webhooks": { path: "/admin/webhooks", ready: webhook.description ?? "" },
   "admin.webhooks_.$id": { path: `/admin/webhooks/${webhook.id}`, ready: webhookDelivery.message_id },
   "admin.closure": { path: "/admin/closure", ready: announcedClosure.message ?? "" },
