@@ -30,10 +30,10 @@ prints the directory's `README.md`.
 
 | Step | Run |
 | --- | --- |
-| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, or waits for an open issue |
+| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, waits for an open issue, or has a dependency whose state cannot be read |
 | Verify (§5) | `check`: `scripts/task.sh check:changed` with the contexts it checks, only the failing lines, and the documents of `docs impact` the change does not touch |
-| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm] [--footer text] [--base <branch>]`: refuses while a document of `docs impact` is neither changed nor given a reason |
-| Wait for CI (§6) | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them. Only the latest run of each check counts |
+| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm] [--footer text] [--base <branch>]`: refuses while a document of `docs impact` is neither changed nor given a reason; copies the issue's acceptance criteria with their checked state; ticks the `check` item only when `agentkit check` passed on this tree against this commit of the base |
+| Wait for CI (§6) | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them. Only the latest run of each check counts, and CI passes only when the required `check` gate of the CI workflow has reported and succeeded |
 | Resolve a conflict (§7) | `git merge origin/main`, `regen`, `check`, push |
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
 | Stop (§8) | `issue block <n> --reason-file f` |

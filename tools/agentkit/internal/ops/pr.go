@@ -35,11 +35,18 @@ type OpenOptions struct {
 	NoPush     bool
 }
 
-var reCheckbox = regexp.MustCompile(`^\s*- \[[ xX]\]\s+(.*)$`)
+var reCheckbox = regexp.MustCompile(`^\s*- \[([ xX])\]\s+(.*)$`)
 
-// acceptanceCriteria returns the checklist under the issue's "Acceptance criteria" heading.
-func acceptanceCriteria(body string) []string {
-	var out []string
+// criterion is one item of the issue's acceptance criteria and whether the issue has it checked.
+type criterion struct {
+	Text    string
+	Checked bool
+}
+
+// acceptanceCriteria returns the checklist under the issue's "Acceptance criteria" heading, each item with its
+// checked state.
+func acceptanceCriteria(body string) []criterion {
+	var out []criterion
 	in := false
 	for _, l := range strings.Split(body, "\n") {
 		if strings.HasPrefix(l, "#") {
@@ -47,7 +54,7 @@ func acceptanceCriteria(body string) []string {
 			continue
 		}
 		if m := reCheckbox.FindStringSubmatch(l); in && m != nil {
-			out = append(out, m[1])
+			out = append(out, criterion{Text: m[2], Checked: m[1] != " "})
 		}
 	}
 	return out
@@ -55,7 +62,7 @@ func acceptanceCriteria(body string) []string {
 
 // Open pushes the branch and opens its pull request from .github/pull_request_template.md's sections: the
 // summary, Closes #N (or Stacked on #M first), the commit subjects as the changes, the issue's acceptance
-// criteria checked, the decisions, the documentation (docsync.Section: it refuses to open the PR while a document
+// criteria with the checked state they have in the issue, the decisions, the documentation (docsync.Section: it refuses to open the PR while a document
 // that describes the changed paths is neither changed nor given a reason), and the checklist (`scripts/task.sh check` checked when `agentkit check` passed on
 // this content of the tree). It comments the PR on the issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
@@ -125,7 +132,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		fmt.Fprintf(&b, "- %s\n", s)
 	}
 	b.WriteString("\n## Acceptance criteria\n\n")
-	var ac []string
+	var ac []criterion
 	if is != nil {
 		ac = acceptanceCriteria(is.Body)
 	}
@@ -136,14 +143,14 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		b.WriteString("- [ ] (the issue has no checklist)\n")
 	}
 	for _, a := range ac {
-		fmt.Fprintf(&b, "- [x] %s\n", a)
+		fmt.Fprintf(&b, "- [%s] %s\n", mark(a.Checked), a.Text)
 	}
 	decisions := strings.TrimSpace(o.Decisions)
 	if decisions == "" {
 		decisions = "None"
 	}
 	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n%s\n## Checklist\n\n", decisions, docSection)
-	fmt.Fprintf(&b, "- [%s] `scripts/task.sh check` passes locally\n", mark(CheckPassed(r)))
+	fmt.Fprintf(&b, "- [%s] `scripts/task.sh check` passes locally\n", mark(CheckPassed(r, "origin/"+o.Base)))
 	fmt.Fprintf(&b, "- [%s] Docs / i18n catalogs updated where needed\n", mark(o.Confirm))
 	fmt.Fprintf(&b, "- [%s] No secrets, no unrelated changes\n", mark(o.Confirm))
 	if o.Footer != "" {
@@ -171,7 +178,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		}
 	}
 	note := ""
-	if !CheckPassed(r) {
+	if !CheckPassed(r, "origin/"+o.Base) {
 		note = " (the check item is unchecked: run `agentkit check` and tick it)"
 	}
 	return url + note, nil
@@ -284,7 +291,9 @@ func viewPR(n int) (prState, error) {
 
 // summarize returns the CI result of a pull request (none, failed, pending, cancelled, passed) from the latest
 // run of each check, the names of the failed checks (of the cancelled ones for cancelled), and whether any
-// check is still running. Cancelled is a run that someone stopped, or that no newer run replaced.
+// check is still running. Cancelled is a run that someone stopped, or that no newer run replaced. It is
+// passed only when the required gate (the CI workflow's `check`) is among the checks and passed: other checks passing
+// while the gate has not reported yet is pending.
 func summarize(cs []check) (string, []string, bool) {
 	if len(cs) == 0 {
 		return "none", nil, false
@@ -310,8 +319,28 @@ func summarize(cs []check) (string, []string, bool) {
 		return "pending", nil, true
 	case len(cancelled) > 0:
 		return "cancelled", cancelled, false
+	case !gatePassed(cs):
+		// The other checks passed, but the required gate has not reported (or is not a success yet).
+		return "pending", nil, true
 	}
 	return "passed", nil, false
+}
+
+// gate is the required status check of the protect-main ruleset: the `check` job of the CI workflow, which
+// passes only when every job it needs passed or was skipped.
+const (
+	gateName     = "check"
+	gateWorkflow = "CI"
+)
+
+// gatePassed reports whether the latest run of the required gate is in cs and passed.
+func gatePassed(cs []check) bool {
+	for _, c := range latest(cs) {
+		if c.name() == gateName && (c.WorkflowName == gateWorkflow || c.WorkflowName == "") && c.result() == "passed" {
+			return true
+		}
+	}
+	return false
 }
 
 // WaitResult is how Wait ended: the exit status and the lines to print.
@@ -422,41 +451,74 @@ func transitions(old prSnapshot, had bool, cur prSnapshot) []string {
 	return out
 }
 
-const queueQuery = `query($owner: String!, $name: String!) {
+const queueQuery = `query($owner: String!, $name: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
-    pullRequests(states: OPEN, first: 100) { nodes { number mergeQueueEntry { state } } }
+    pullRequests(states: OPEN, first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes { number mergeQueueEntry { state } }
+    }
   }
 }`
+
+// queuePage is one page of the open pull requests with their merge queue entry.
+type queuePage struct {
+	Nodes []struct {
+		Number          int `json:"number"`
+		MergeQueueEntry *struct {
+			State string `json:"state"`
+		} `json:"mergeQueueEntry"`
+	} `json:"nodes"`
+	PageInfo struct {
+		HasNextPage bool   `json:"hasNextPage"`
+		EndCursor   string `json:"endCursor"`
+	} `json:"pageInfo"`
+}
+
+// collectQueued reads every page that fetch returns, so that a repository with more than one page of open pull
+// requests does not lose the queue entries of the later ones.
+func collectQueued(fetch func(cursor string) (queuePage, error)) (map[int]bool, error) {
+	out := map[int]bool{}
+	cursor := ""
+	for {
+		page, err := fetch(cursor)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range page.Nodes {
+			if n.MergeQueueEntry != nil {
+				out[n.Number] = true
+			}
+		}
+		if !page.PageInfo.HasNextPage {
+			return out, nil
+		}
+		cursor = page.PageInfo.EndCursor
+	}
+}
 
 // queuedPRs returns the open pull requests that are in the merge queue. A pull request in the queue has no
 // auto-merge request, and gh pr list cannot report the queue, so it is read through GraphQL.
 func queuedPRs() (map[int]bool, error) {
 	owner, name, _ := strings.Cut(gh.Repo(), "/")
-	var resp struct {
-		Data struct {
-			Repository struct {
-				PullRequests struct {
-					Nodes []struct {
-						Number          int `json:"number"`
-						MergeQueueEntry *struct {
-							State string `json:"state"`
-						} `json:"mergeQueueEntry"`
-					} `json:"nodes"`
-				} `json:"pullRequests"`
-			} `json:"repository"`
-		} `json:"data"`
-	}
-	if err := gh.JSON(&resp, "api", "graphql", "-f", "query="+queueQuery, "-F", "owner="+owner, "-F", "name="+name); err != nil {
-		return nil, err
-	}
-	out := map[int]bool{}
-	for _, n := range resp.Data.Repository.PullRequests.Nodes {
-		if n.MergeQueueEntry != nil {
-			out[n.Number] = true
+	return collectQueued(func(cursor string) (queuePage, error) {
+		args := []string{"api", "graphql", "-f", "query=" + queueQuery, "-F", "owner=" + owner, "-F", "name=" + name}
+		if cursor != "" {
+			args = append(args, "-F", "cursor="+cursor)
 		}
-	}
-	return out, nil
+		var resp struct {
+			Data struct {
+				Repository struct {
+					PullRequests queuePage `json:"pullRequests"`
+				} `json:"repository"`
+			} `json:"data"`
+		}
+		err := gh.JSON(&resp, args...)
+		return resp.Data.Repository.PullRequests, err
+	})
 }
+
+// openLimit is how many open pull requests Watch lists; a repository with more is reported, not silently cut.
+const openLimit = 1000
 
 // Watch prints one line per event of the watched pull requests — opened, merged, closed, conflicting,
 // ci-failed, ci-cancelled, ci-green, queued, dequeued (out of the merge queue, or auto-merge off, while open) — until every
@@ -469,7 +531,7 @@ func Watch(w io.Writer, nums []int, interval time.Duration) error {
 		watched[n] = true
 	}
 	prev := map[int]prSnapshot{}
-	first := true
+	first, warned := true, false
 	emit := func(n int, title, event string) {
 		fmt.Fprintf(w, "%s #%d %s — %s\n", time.Now().Format("15:04"), n, event, title)
 		if f, ok := w.(*os.File); ok {
@@ -478,9 +540,13 @@ func Watch(w io.Writer, nums []int, interval time.Duration) error {
 	}
 	for {
 		var open []prState
-		if err := gh.JSON(&open, "pr", "list", "-R", gh.Repo(), "--state", "open", "--limit", "100", "--json", prFields); err != nil {
+		if err := gh.JSON(&open, "pr", "list", "-R", gh.Repo(), "--state", "open", "--limit", strconv.Itoa(openLimit), "--json", prFields); err != nil {
 			time.Sleep(interval)
 			continue
+		}
+		if len(open) >= openLimit && !warned {
+			warned = true
+			fmt.Fprintf(w, "%s warning — %d open pull requests: the list is cut at %d, so the later ones are not watched\n", time.Now().Format("15:04"), len(open), openLimit)
 		}
 		queue, err := queuedPRs()
 		if err != nil {

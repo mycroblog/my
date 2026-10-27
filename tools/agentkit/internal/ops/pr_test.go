@@ -50,6 +50,7 @@ func run(workflow, name, conclusion string, job int) check {
 }
 
 func TestSummarize(t *testing.T) {
+	gate := run("CI", "check", "SUCCESS", 99)
 	cases := []struct {
 		name        string
 		cs          []check
@@ -59,10 +60,10 @@ func TestSummarize(t *testing.T) {
 	}{
 		{"no checks", nil, "none", nil, false},
 		{"cancelled run replaced by a passing one", []check{
-			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "SUCCESS", 20),
+			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "SUCCESS", 20), gate,
 		}, "passed", nil, false},
 		{"newer run listed first", []check{
-			run("CI", "lint", "SUCCESS", 20), run("CI", "lint", "CANCELLED", 10),
+			run("CI", "lint", "SUCCESS", 20), run("CI", "lint", "CANCELLED", 10), gate,
 		}, "passed", nil, false},
 		{"cancelled run replaced by a running one", []check{
 			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "", 20),
@@ -71,7 +72,7 @@ func TestSummarize(t *testing.T) {
 			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "FAILURE", 20), run("CI", "test", "SUCCESS", 21),
 		}, "failed", []string{"lint"}, false},
 		{"failure of an older run replaced by a pass", []check{
-			run("CI", "lint", "FAILURE", 10), run("CI", "lint", "SUCCESS", 20),
+			run("CI", "lint", "FAILURE", 10), run("CI", "lint", "SUCCESS", 20), gate,
 		}, "passed", nil, false},
 		{"only cancelled checks left", []check{
 			run("CI", "test", "CANCELLED", 11), run("CI", "lint", "CANCELLED", 10),
@@ -80,7 +81,22 @@ func TestSummarize(t *testing.T) {
 			run("CI", "check", "SUCCESS", 20), run("Nightly", "check", "FAILURE", 10),
 		}, "failed", []string{"check"}, false},
 		{"status context", []check{
+			{Typename: "StatusContext", Context: "ci/legacy", State: "SUCCESS"}, gate,
+		}, "passed", nil, false},
+		{"other checks passed, the gate has not reported", []check{
+			run("CI", "lint", "SUCCESS", 20), run("CI", "test", "SUCCESS", 21),
+		}, "pending", nil, true},
+		{"only a status context passed", []check{
 			{Typename: "StatusContext", Context: "ci/legacy", State: "SUCCESS"},
+		}, "pending", nil, true},
+		{"a check of another workflow named check is not the gate", []check{
+			run("Nightly", "check", "SUCCESS", 20), run("CI", "lint", "SUCCESS", 21),
+		}, "pending", nil, true},
+		{"the gate is running", []check{
+			run("CI", "lint", "SUCCESS", 20), run("CI", "check", "", 22),
+		}, "pending", nil, true},
+		{"the gate passed", []check{
+			run("CI", "lint", "SUCCESS", 20), run("CI", "check", "SUCCESS", 22),
 		}, "passed", nil, false},
 	}
 	for _, c := range cases {
