@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -177,62 +175,10 @@ func (s *Service) fetchMetadataDocument(ctx context.Context, clientID string, no
 }
 
 // metadataDocumentTTL returns how long a response with header h may be reused from now
-// (RFC 9111 §4.2.1): zero for no-store, no-cache, or a malformed directive; s-maxage, max-age, or
-// Expires (against Date) when present; DefaultMetadataDocumentTTL otherwise. It is at most
+// (kernel.ResponseTTL): DefaultMetadataDocumentTTL without a directive, at most
 // MaxMetadataDocumentTTL.
 func metadataDocumentTTL(h http.Header, now time.Time) time.Duration {
-	maxAge, sharedMaxAge := -1, -1
-	for _, line := range h.Values("Cache-Control") {
-		for _, directive := range strings.Split(line, ",") {
-			name, value, _ := strings.Cut(strings.TrimSpace(directive), "=")
-			value = strings.Trim(strings.TrimSpace(value), `"`)
-			switch strings.ToLower(strings.TrimSpace(name)) {
-			case "no-store", "no-cache":
-				return 0
-			case "max-age":
-				if maxAge = seconds(value); maxAge < 0 {
-					return 0
-				}
-			case "s-maxage":
-				if sharedMaxAge = seconds(value); sharedMaxAge < 0 {
-					return 0
-				}
-			}
-		}
-	}
-	var ttl time.Duration
-	switch {
-	case sharedMaxAge >= 0:
-		ttl = time.Duration(sharedMaxAge) * time.Second
-	case maxAge >= 0:
-		ttl = time.Duration(maxAge) * time.Second
-	case h.Get("Expires") != "":
-		expires, err := http.ParseTime(h.Get("Expires"))
-		if err != nil {
-			return 0
-		}
-		base := now
-		if date, err := http.ParseTime(h.Get("Date")); err == nil {
-			base = date
-		}
-		ttl = expires.Sub(base)
-	default:
-		ttl = DefaultMetadataDocumentTTL
-	}
-	return min(max(ttl, 0), MaxMetadataDocumentTTL)
-}
-
-// seconds parses a delta-seconds value; -1 when it is not one. A value too large to hold is
-// capped, as RFC 9111 §1.2.2 allows.
-func seconds(v string) int {
-	if v == "" || strings.Trim(v, "0123456789") != "" {
-		return -1
-	}
-	n, err := strconv.Atoi(v)
-	if err != nil {
-		return int(MaxMetadataDocumentTTL / time.Second)
-	}
-	return n
+	return kernel.ResponseTTL(h, now, DefaultMetadataDocumentTTL, MaxMetadataDocumentTTL)
 }
 
 // DenyOAuthClientHost records that no metadata document on host is fetched or used (ADR-0090
