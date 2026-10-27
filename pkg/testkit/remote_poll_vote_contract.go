@@ -197,8 +197,12 @@ func remoteVotesInLocalPolls(t *testing.T, e *remoteInteractionEnv) {
 	if len(updates) != 1 || updates[0].RunAt.Before(e.clock.Now().Add(appfederation.PollUpdateDelay-time.Minute)) {
 		t.Fatalf("poll update jobs = %+v, want one after the delay", updates)
 	}
-	if err := e.pollUpdates.Run(ctx, st.ID, poll.ID); err != nil {
-		t.Fatalf("PollUpdates.Run = %v", err)
+	// A run of the job again, as after a crash before the queue marked it done, records nothing.
+	updateJob := e.ids.NewID()
+	for range 2 {
+		if err := e.pollUpdates.Run(ctx, st.ID, poll.ID, updateJob); err != nil {
+			t.Fatalf("PollUpdates.Run = %v", err)
+		}
 	}
 	e.runPollJobs(t)
 	sent := e.questionsSent(t, st.ID)
@@ -212,7 +216,8 @@ func remoteVotesInLocalPolls(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("Question = %s", sent[0].Raw)
 	}
 
-	// At the end, the author and the local voter are notified, and the Update tells it.
+	// At the end, the author and the local voter are notified, and the Update tells it at once,
+	// also while a job of the votes waits (the queue of the env keeps every key it saw).
 	e.clock.Advance(2 * time.Hour)
 	e.expect(t, vote(bob+"/votes/4", "no"), appfederation.InboxDropped)
 	if wait, err := e.pollCloser.Close(ctx, poll.ID); err != nil || wait != 0 {
@@ -221,13 +226,17 @@ func remoteVotesInLocalPolls(t *testing.T, e *remoteInteractionEnv) {
 	if _, err := e.pollCloser.Close(ctx, poll.ID); err != nil {
 		t.Fatalf("Close again = %v", err)
 	}
+	closing := e.runPollJobs(t)
+	if len(closing) != 1 || !closing[0].RunAt.IsZero() {
+		t.Fatalf("poll update jobs at the end = %+v, want one to run at once", closing)
+	}
 	if n := e.notified(t, author, "", notification.TypePollClosed); n != 1 {
 		t.Errorf("poll_closed notifications of the author = %d, want 1", n)
 	}
 	if n := e.notified(t, voter, author, notification.TypePollClosed); n != 1 {
 		t.Errorf("poll_closed notifications of the voter = %d, want 1", n)
 	}
-	if err := e.pollUpdates.Run(ctx, st.ID, poll.ID); err != nil {
+	if err := e.pollUpdates.Run(ctx, st.ID, poll.ID, e.ids.NewID()); err != nil {
 		t.Fatalf("PollUpdates.Run = %v", err)
 	}
 	e.runPollJobs(t)

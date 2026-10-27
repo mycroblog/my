@@ -55,7 +55,8 @@ type RemoteInteractionFactory func(t *testing.T, opts uow.Options) RemoteInterac
 // between favourites and reactions delivers the Undo of what was in it before the next Like to
 // each inbox, also while an earlier delivery retries (ADR-0004 ordering keys), so that an inbox
 // of one reaction per account ends with what the sender has; and a local vote in a remote poll
-// sends a Create of a Note per choice to the poll's author (FR-112). The actors and the fetches are
+// sends a Create of a Note per choice to the poll's author (FR-112), the votes in a poll being
+// decided with the poll locked. The actors and the fetches are
 // in-memory stand-ins.
 func RemoteInteractionContract(t *testing.T, newHarness RemoteInteractionFactory) {
 	t.Helper()
@@ -72,6 +73,7 @@ func RemoteInteractionContract(t *testing.T, newHarness RemoteInteractionFactory
 		{"SendsReactionsInTheLikeSlot", remoteSendsReactions},
 		{"SendsPollVotes", remoteSendsPollVotes},
 		{"VotesInLocalPolls", remoteVotesInLocalPolls},
+		{"DecidesVotesWithThePollLocked", pollVotesDecidedUnderLock},
 		{"QuotesLocalPostsWithApprovals", remoteQuotesLocalPosts},
 		{"SendsQuoteRequestsAndTakesTheAnswers", remoteSendsQuoteRequests},
 		{"AnswersQuoteRequestsAndRevokesApprovals", remoteAnswersQuoteRequests},
@@ -87,8 +89,10 @@ type remoteInteractionEnv struct {
 	*remoteStatusEnv
 	ih           RemoteInteractionHarness
 	interactions *appcontent.Interactions
-	jobs         *fedJobs
-	handlers     *queue.JobHandlerRegistry
+	// interactionDeps are the ports of interactions, for an Interactions on other statuses.
+	interactionDeps appcontent.InteractionDeps
+	jobs            *fedJobs
+	handlers        *queue.JobHandlerRegistry
 	// emojiTags are the Emoji tags of the local custom emoji that reactions use, by emoji ID.
 	emojiTags map[string]appcontent.EmojiTag
 	// pollCloser ends polls and pollUpdates records the Updates of local polls (FR-112).
@@ -113,7 +117,7 @@ func newRemoteInteractionEnv(t *testing.T, newHarness RemoteInteractionFactory) 
 		emojiTags: map[string]appcontent.EmojiTag{},
 	}
 	appcontent.RegisterInteractionProjectors(rs.projectors, ih.Interactions)
-	e.interactions = appcontent.NewInteractions(appcontent.InteractionDeps{
+	e.interactionDeps = appcontent.InteractionDeps{
 		UnitOfWork: ih.UnitOfWork, Statuses: ih.Statuses, Interactions: ih.Interactions, Accounts: rs.accounts,
 		Relationships: rs.graph, RecordRemoteEmojis: rs.content.RecordRemoteEmojis, Quotes: ih.Quotes, Clock: rs.clock, IDs: rs.ids, Host: contractHost,
 		EmojiTags: func(_ context.Context, ids []string) ([]appcontent.EmojiTag, error) {
@@ -125,7 +129,8 @@ func newRemoteInteractionEnv(t *testing.T, newHarness RemoteInteractionFactory) 
 			}
 			return out, nil
 		},
-	})
+	}
+	e.interactions = appcontent.NewInteractions(e.interactionDeps)
 	appfederation.RegisterInteractionHandlers(rs.processor, appfederation.InteractionHandlersDeps{
 		Interactions: e.interactions, Statuses: rs.statuses,
 	})
