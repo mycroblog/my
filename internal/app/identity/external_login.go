@@ -76,10 +76,6 @@ const (
 // the provider's extra scopes.
 var oidcScopes = []string{"openid", "email", "profile"}
 
-// loginProviderSecretColumn binds a sealed client secret to its column, with the secret's ID
-// (login_provider_secrets.sealed_secret, ADR-0019 §6).
-const loginProviderSecretColumn = "login_provider_secrets.sealed_secret"
-
 // AADs that bind the sealed state of a sign-in and the ticket of a sign-up to their purpose.
 var (
 	externalLoginAAD  = kernel.AAD("external_login")
@@ -98,7 +94,9 @@ func (s *Service) needExternalLoginDeps() error {
 }
 
 // externalLoginKind reports whether users sign in with providers of kind k.
-func externalLoginKind(k identity.LoginProviderKind) bool { return k == identity.LoginProviderOIDC }
+func externalLoginKind(k identity.LoginProviderKind) bool {
+	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub
+}
 
 // ExternalLoginProvider is a provider that the sign-in page offers.
 type ExternalLoginProvider struct {
@@ -215,6 +213,9 @@ func (s *Service) BeginExternalLogin(ctx context.Context, providerID, returnTo s
 // beginAuthorization seals t for the cookie and returns the authorization request of provider p
 // for it, which asks the user to sign in again at the provider when t has AuthAfter.
 func (s *Service) beginAuthorization(ctx context.Context, p identity.LoginProvider, t externalLoginToken) (ExternalLoginStart, error) {
+	if p.Settings.Kind == identity.LoginProviderGitHub {
+		return s.beginGitHub(ctx, p, t)
+	}
 	op, err := s.d.OIDC.Discover(ctx, p.Settings.Issuer)
 	if err != nil {
 		return ExternalLoginStart{}, fmt.Errorf("%w: provider %s: %w", ErrExternalLoginFailed, p.ID, err)
@@ -235,8 +236,7 @@ func (s *Service) beginAuthorization(ctx context.Context, p identity.LoginProvid
 	q.Set("state", t.State)
 	q.Set("nonce", t.Nonce)
 	// PKCE goes out even to a provider that does not name S256, which ignores it (ADR-0106 §1).
-	challenge := sha256.Sum256([]byte(t.Verifier))
-	q.Set("code_challenge", base64.RawURLEncoding.EncodeToString(challenge[:]))
+	q.Set("code_challenge", pkceChallenge(t.Verifier))
 	q.Set("code_challenge_method", "S256")
 	// A condition on one hd (a Google Workspace domain) also goes out as the hint of the
 	// account chooser; the ID token's claim decides (ADR-0106 §4).
@@ -349,7 +349,7 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 	if in.Error != "" || in.Code == "" {
 		return out, fmt.Errorf("%w: provider %s answered %q", ErrExternalLoginFailed, p.ID, in.Error)
 	}
-	tok, err := s.oidcIDToken(ctx, p, in.Code, t)
+	tok, err := s.externalIdentity(ctx, p, in.Code, t)
 	if errors.Is(err, ErrInvalidIDToken) {
 		return out, fail(fmt.Errorf("%w: %w", ErrExternalLoginFailed, err))
 	}
@@ -402,6 +402,15 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 	return out, nil
 }
 
+// externalIdentity redeems code at provider p and returns the account there as the claims of an
+// ID token: the verified ID token of an OpenID Connect provider, or GitHub's account.
+func (s *Service) externalIdentity(ctx context.Context, p identity.LoginProvider, code string, t externalLoginToken) (IDToken, error) {
+	if p.Settings.Kind == identity.LoginProviderGitHub {
+		return s.gitHubIdentity(ctx, p, code, t)
+	}
+	return s.oidcIDToken(ctx, p, code, t)
+}
+
 // oidcIDToken exchanges code for the tokens of an OpenID Connect provider and returns its
 // verified ID token. It fails with an error wrapping ErrInvalidIDToken for a token that does not
 // verify or has no usable subject, and with one wrapping ErrExternalLoginFailed when the
@@ -443,7 +452,7 @@ func (s *Service) loginProviderClientSecret(ctx context.Context, providerID stri
 	if err != nil {
 		return "", fmt.Errorf("identity: the client secret of login provider %s: %w", providerID, err)
 	}
-	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, kernel.AAD(sec.ID, loginProviderSecretColumn))
+	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, kernel.AAD(sec.ID, identity.LoginProviderSecretColumn))
 	if err != nil {
 		return "", fmt.Errorf("identity: open the client secret of login provider %s: %w", providerID, err)
 	}
@@ -676,6 +685,12 @@ func (s *Service) writeExternalSignUp(ctx context.Context, tx uow.Tx, ext extern
 		return nil
 	}
 	return s.d.Repository.InsertEmailVerification(ctx, tx, identity.EmailVerification{EmailAddressID: emailID, VerifiedAt: now})
+}
+
+// pkceChallenge is the S256 code_challenge of a code_verifier (RFC 7636 §4.2).
+func pkceChallenge(verifier string) string {
+	sum := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
 // randomToken returns 256 random bits in base64url.

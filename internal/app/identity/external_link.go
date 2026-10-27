@@ -442,7 +442,7 @@ func (s *Service) finishExternalIntent(ctx context.Context, in ExternalLoginInpu
 	if in.Error != "" || in.Code == "" {
 		return out, fmt.Errorf("%w: provider %s answered %q", ErrExternalLoginFailed, p.ID, in.Error)
 	}
-	tok, err := s.oidcIDToken(ctx, p, in.Code, t)
+	tok, err := s.externalIdentity(ctx, p, in.Code, t)
 	if errors.Is(err, ErrInvalidIDToken) {
 		return out, fail(fmt.Errorf("%w: %w", ErrExternalLoginFailed, err))
 	}

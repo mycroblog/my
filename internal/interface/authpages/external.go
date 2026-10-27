@@ -64,7 +64,7 @@ type ExternalLogins interface {
 // externalButton is a link to a provider's start.
 type externalButton struct {
 	// Label is the button's text: an OpenID Connect provider's display name as its
-	// administrator wrote it, never translated.
+	// administrator wrote it, never translated; the translated text for a github provider.
 	Label string
 	URL   string
 }
@@ -85,8 +85,12 @@ func (h *Handler) externalButtons(r *http.Request, returnTo string, signUp bool)
 		if signUp && !p.AllowSignup {
 			continue
 		}
+		label := p.DisplayName
+		if p.Kind == identity.LoginProviderGitHub {
+			label = h.o.Locales.RequestLocalizer(r).ServerAuthExternalGithubButton()
+		}
 		out = append(out, externalButton{
-			Label: p.DisplayName,
+			Label: label,
 			URL:   withReturnTo(appidentity.ExternalLoginPathPrefix+p.ID+"/start", returnTo),
 		})
 	}

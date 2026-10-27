@@ -424,6 +424,13 @@ func (l *Localizer) ServerAuthExternalFailed() string {
 	return l.format("server:auth.external.failed", nil)
 }
 
+// ServerAuthExternalGithubButton formats "server:auth.external.github.button". Text of the button on the sign-in and registration pages that signs in with GitHub (a login provider of kind github that the server's administrators set up).
+//
+//	en: Sign in with GitHub
+func (l *Localizer) ServerAuthExternalGithubButton() string {
+	return l.format("server:auth.external.github.button", nil)
+}
+
 // ServerAuthExternalHeading formats "server:auth.external.heading". Heading above the buttons of the sign-in and registration pages that sign in with another service (an external login provider) that the server's administrators set up.
 //
 //	en: Or sign in with
