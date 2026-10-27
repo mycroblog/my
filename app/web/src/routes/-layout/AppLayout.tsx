@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the open voice chat
-// rooms and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// rooms (on a room's page, its raised hands and about the room instead) and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 import { AppShell } from "@my/ui";
 import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useRef } from "react";
@@ -10,7 +10,7 @@ import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
-import { VoiceCallBar, VoiceRail } from "../../features/voice";
+import { VoiceCallBar, VoiceRail, VoiceRoomAside } from "../../features/voice";
 import { hasClosed, useClosure } from "../../lib/closure";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
@@ -29,6 +29,9 @@ const wideQuery = "(min-width: 80rem)";
 
 /** The `md` breakpoint of Tailwind (48rem), from which the rail has the new-post button and nothing floats. */
 const mediumQuery = "(min-width: 48rem)";
+
+/** The path of a voice chat room's page (`/voice/{id}`, a trailing slash allowed), with the room's ID. */
+const voiceRoomPagePattern = /^\/voice\/([^/]+)\/?$/u;
 
 export function AppLayout() {
   const t = useT();
@@ -50,8 +53,10 @@ export function AppLayout() {
   // The admin and moderation screens are a mode of their own, with a frame and a menu of their own (ADR-0058).
   const pathname = useLocation({ select: (location) => location.pathname });
   const staffMode = isStaffMode(pathname);
-  // The voice chat pages list the rooms themselves, so the third column does not repeat them.
+  // The voice chat pages list the rooms themselves, so the third column does not repeat them; a room's page has its
+  // own blocks there instead.
   const onVoicePage = pathname === "/voice" || pathname.startsWith("/voice/");
+  const voiceRoomId = voiceRoomPagePattern.exec(pathname)?.[1];
   if (staffMode) {
     return (
       <ComposeProvider>
@@ -100,6 +105,11 @@ export function AppLayout() {
               {!onVoicePage && (
                 <ErrorBoundary fallback={null}>
                   <VoiceRail />
+                </ErrorBoundary>
+              )}
+              {voiceRoomId !== undefined && (
+                <ErrorBoundary fallback={null}>
+                  <VoiceRoomAside id={voiceRoomId} />
                 </ErrorBoundary>
               )}
               <ErrorBoundary fallback={null}>

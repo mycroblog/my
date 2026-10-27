@@ -32,7 +32,7 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
         notice={<CallErrors controls={controls} />}
       >
         <PlaybackButton controls={controls} />
-        <MicrophoneControl controls={controls} withDescription={false} withErrors={false} />
+        <MicrophoneControl controls={controls} />
         <LeaveCallButton controls={controls} withError={false} />
       </CallBar>
     </ShellDock>

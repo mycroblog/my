@@ -199,6 +199,50 @@
     "defaultMessage": "通話のルーム",
     "description": "Heading of the page of a voice chat room whose name is not shown."
   },
+  "voice.room.live": {
+    "defaultMessage": "ライブ",
+    "description": "The pill at the head of the page of an open voice chat room."
+  },
+  "voice.room.stats": {
+    "defaultMessage": "{people} · {duration}",
+    "description": "How many are in a voice chat room and how long it has been open, beside the Live pill. {people} is the count of people (\"3 people\"), {duration} how long (\"38 min\")."
+  },
+  "voice.room.open_minutes": {
+    "defaultMessage": "{minutes, number}分",
+    "description": "How long a voice chat room has been open, under an hour. {minutes} is the number of minutes."
+  },
+  "voice.room.open_hours": {
+    "defaultMessage": "{hours, number}時間{minutes, number}分",
+    "description": "How long a voice chat room has been open, an hour or more. {hours} and {minutes} are the numbers of hours and minutes."
+  },
+  "voice.room.share": {
+    "defaultMessage": "共有",
+    "description": "Accessible name and tooltip of the icon button that shares the link of a voice chat room."
+  },
+  "voice.room.share.copied": {
+    "defaultMessage": "ルームのリンクをコピーしました",
+    "description": "Message after the link of a voice chat room was copied to the clipboard."
+  },
+  "voice.room.share.failed": {
+    "defaultMessage": "ルームのリンクをコピーできませんでした",
+    "description": "Message when the link of a voice chat room could not be copied."
+  },
+  "voice.room.more": {
+    "defaultMessage": "その他の操作",
+    "description": "Accessible name and tooltip of the button and the name of the menu of a voice chat room for someone other than its host."
+  },
+  "voice.room.change_settings": {
+    "defaultMessage": "ルームの設定を変える",
+    "description": "The host's button in the About the room panel of a voice chat room that opens its settings."
+  },
+  "voice.stage.speakers": {
+    "defaultMessage": "話している人 · {count, number}",
+    "description": "Heading of the speakers of a voice chat room on its page. {count} is how many."
+  },
+  "voice.stage.listeners": {
+    "defaultMessage": "聞いている人 · {count, number}",
+    "description": "Heading of the listeners of a voice chat room on its page. {count} is how many."
+  },
   "voice.room.listed_notice": {
     "defaultMessage": "参加すると、このルームが見える全員にあなたの名前が表示されます。",
     "description": "Notice on the page of a voice chat room before joining it."
@@ -215,13 +259,9 @@
     "defaultMessage": "このルームに参加しています。",
     "description": "Shown on the page of a voice chat room that the user is in."
   },
-  "voice.room.participants": {
-    "defaultMessage": "参加者",
-    "description": "Heading of the list of the people in a voice chat room."
-  },
   "voice.room.details": {
     "defaultMessage": "ルームについて",
-    "description": "Accessible name of the list of a voice chat room's settings on its page."
+    "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
   },
   "voice.role.host": {
     "defaultMessage": "ホスト",
@@ -343,10 +383,6 @@
     "defaultMessage": "ルームを通報",
     "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
   },
-  "voice.call.title": {
-    "defaultMessage": "通話",
-    "description": "Heading of the controls of the voice chat call that the user is in."
-  },
   "voice.call.connecting": {
     "defaultMessage": "接続しています…",
     "description": "State of the voice chat call until it connects."
@@ -379,10 +415,6 @@
     "defaultMessage": "マイク",
     "description": "Label of the switch that turns the user's microphone on or off in a voice chat call."
   },
-  "voice.call.microphone.description": {
-    "defaultMessage": "オンの間、ほかの人に声が聞こえます。",
-    "description": "Explanation under the microphone switch of a voice chat call."
-  },
   "voice.call.microphone_failed": {
     "defaultMessage": "マイクを使えませんでした。もう一度試してください。",
     "description": "Error when the browser did not give the microphone."
@@ -399,10 +431,6 @@
     "defaultMessage": "挙手する",
     "description": "Button that asks the hosts of a voice chat room for permission to speak."
   },
-  "voice.call.lower_hand": {
-    "defaultMessage": "挙手を取り下げる",
-    "description": "Button that withdraws the user's raised hand in a voice chat room."
-  },
   "voice.call.leave": {
     "defaultMessage": "退出",
     "description": "Button that leaves the voice chat room, and the confirm button of the dialogs about leaving."
@@ -414,6 +442,42 @@
   "voice.call.cancel": {
     "defaultMessage": "キャンセル",
     "description": "Button that closes a dialog of a voice chat call without doing anything."
+  },
+  "voice.dock.label": {
+    "defaultMessage": "通話の操作",
+    "description": "Accessible name of the toolbar of the controls of a voice chat call at the bottom of the room's page."
+  },
+  "voice.dock.hands": {
+    "defaultMessage": "挙手",
+    "description": "The host's and co-hosts' button in the controls of a voice chat call that lists the raised hands."
+  },
+  "voice.hands.heading": {
+    "defaultMessage": "挙手している人 · {count, number}",
+    "description": "Heading of the list of the raised hands in a voice chat room. {count} is how many."
+  },
+  "voice.hands.count": {
+    "defaultMessage": "{count, plural, other {# 人が挙手中}}",
+    "description": "Read by assistive technology as the description of the Hands button: how many raised a hand."
+  },
+  "voice.hands.empty": {
+    "defaultMessage": "いま挙手している人はいません。",
+    "description": "Shown in the list of raised hands of a voice chat room when nobody raised a hand."
+  },
+  "voice.hands.allow": {
+    "defaultMessage": "許可",
+    "description": "Button of a raised hand that lets the participant speak."
+  },
+  "voice.hands.allow.label": {
+    "defaultMessage": "{name} さんが話すのを許可",
+    "description": "Accessible name of the Allow button of a raised hand. {name} is the participant's name."
+  },
+  "voice.hands.dismiss": {
+    "defaultMessage": "却下",
+    "description": "Button of a raised hand that puts the hand down."
+  },
+  "voice.hands.dismiss.label": {
+    "defaultMessage": "{name} さんの挙手を却下",
+    "description": "Accessible name of the Dismiss button of a raised hand. {name} is the participant's name."
   },
   "voice.call.action_failed": {
     "defaultMessage": "操作できませんでした：{reason}",
@@ -531,17 +595,29 @@
     "defaultMessage": "挙手中",
     "description": "Marker of a participant who raised a hand."
   },
-  "voice.participant.mic_on": {
-    "defaultMessage": "マイクオン",
-    "description": "Marker of a speaker whose microphone is on."
-  },
   "voice.participant.blocked": {
     "defaultMessage": "ブロック中",
     "description": "Marker of a participant whom the user blocks or who blocks the user."
   },
-  "voice.participant.reacted": {
-    "defaultMessage": "リアクション：",
-    "description": "Text for screen readers before the emoji a participant just reacted with."
+  "voice.participant.talking": {
+    "defaultMessage": "話しています",
+    "description": "Read by assistive technology for a participant of a voice chat room who is talking now (the ring around the avatar)."
+  },
+  "voice.participant.mic_off": {
+    "defaultMessage": "マイクオフ",
+    "description": "Read by assistive technology for a speaker of a voice chat room whose microphone is off (the badge on the avatar)."
+  },
+  "voice.participant.reacted_with": {
+    "defaultMessage": "{emoji} でリアクション",
+    "description": "Read by assistive technology for the reaction a participant of a voice chat room just sent. {emoji} is the emoji."
+  },
+  "voice.participant.profile": {
+    "defaultMessage": "プロフィールを見る",
+    "description": "Item of the menu of a participant of a voice chat room that opens the participant's profile."
+  },
+  "voice.participant.caption_separator": {
+    "defaultMessage": " · ",
+    "description": "What separates the parts of the line under a participant's name on the stage of a voice chat room (\"Host · You\")."
   },
   "voice.moderate.menu": {
     "defaultMessage": "{name} さんへの操作",

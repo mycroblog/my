@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
 // from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room, a room's page with
-// its participants and the notice before joining, the call after joining (its controls, a raised hand, and the call
-// bar that it keeps on other pages), all
+// its stage (the speakers and the listeners) and the notice before joining, the call after joining (its dock clear of
+// the tab bar, a raised hand, and the call bar that it keeps on other pages), all
 // axe-clean and without horizontal scroll; and the room's page of a visitor who is not signed in. `vite preview` has
 // no API, so the spec answers the token refresh and the client API with `page.route`, as a server with voice chat on
 // would (a call between two browsers needs a server with voice chat on, which e2e/server.ts does not configure).
@@ -20,6 +20,11 @@ function message(key: string): string {
   const text = readCatalog(locale)[key]?.defaultMessage;
   if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
   return text;
+}
+
+/** The client message `key` with its `{count, number}` argument replaced by `count`. */
+function counted(key: string, count: number): string {
+  return message(key).replace("{count, number}", String(count));
 }
 
 const alice: Schemas["Account"] = {
@@ -178,12 +183,14 @@ test.describe("the voice chat pages", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("opens a room's page with its participants and the notice before joining", async ({ page, makeAxeBuilder }) => {
+  test("opens a room's page with its stage and the notice before joining", async ({ page, makeAxeBuilder }) => {
     await page.getByRole("link", { name: room.name }).first().click();
     await expect(page.getByRole("heading", { level: 1, name: room.name })).toBeFocused();
+    await expect(page.getByText(message("voice.room.live"), { exact: true })).toBeVisible();
     await expect(page.getByText(message("voice.room.listed_notice"))).toBeVisible();
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
-    await expect(page.getByRole("region", { name: message("voice.room.participants") }).getByRole("listitem")).toHaveCount(2);
+    await expect(page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem")).toHaveCount(1);
+    await expect(page.getByRole("list", { name: counted("voice.stage.listeners", 1) }).getByRole("listitem")).toHaveCount(1);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -197,31 +204,40 @@ test.describe("the call of a room", () => {
     await page.getByRole("button", { name: message("voice.room.join") }).click();
   });
 
-  test("joins and shows the call's controls and everyone in it, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
-    const call = page.getByRole("region", { name: message("voice.call.title") });
-    await expect(call.getByRole("button", { name: message("voice.call.raise_hand") })).toBeVisible();
-    await expect(call.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+  test("joins and shows the dock, clear of the tab bar, and everyone on the stage, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
+    const dock = page.getByRole("toolbar", { name: message("voice.dock.label") });
+    await expect(dock.getByRole("button", { name: message("voice.call.raise_hand") })).toBeVisible();
+    await expect(dock.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     // A listener has no microphone.
-    await expect(call.getByRole("switch", { name: message("voice.call.microphone") })).toHaveCount(0);
-    const participants = page.getByRole("region", { name: message("voice.room.participants") });
-    await expect(participants.getByRole("listitem")).toHaveCount(3);
-    await expect(participants.getByText(message("voice.participant.you"))).toBeVisible();
+    await expect(dock.getByRole("button", { name: message("voice.call.microphone") })).toHaveCount(0);
+    await expect(page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem")).toHaveCount(1);
+    const listeners = page.getByRole("list", { name: counted("voice.stage.listeners", 2) });
+    await expect(listeners.getByRole("listitem")).toHaveCount(2);
+    await expect(listeners.getByText(message("voice.participant.you"))).toBeVisible();
+    // The dock stays in view, above the tab bar of phones (the projects below md have touch).
+    const dockBox = await dock.boundingBox();
+    const dockBottom = (dockBox?.y ?? 0) + (dockBox?.height ?? 0);
+    expect(dockBottom).toBeLessThanOrEqual(page.viewportSize()?.height ?? Number.POSITIVE_INFINITY);
+    if (hasTouch) {
+      const tabBar = await page.getByRole("navigation").first().boundingBox();
+      expect(dockBottom).toBeLessThanOrEqual(tabBar?.y ?? Number.POSITIVE_INFINITY);
+    }
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
 
-  test("raises a hand, which shows in the list, and leaves", async ({ page, makeAxeBuilder }) => {
-    const call = page.getByRole("region", { name: message("voice.call.title") });
-    await call.getByRole("button", { name: message("voice.call.raise_hand") }).click();
-    await expect(call.getByRole("button", { name: message("voice.call.lower_hand") })).toBeVisible();
-    await expect(page.getByRole("region", { name: message("voice.room.participants") }).getByText(message("voice.participant.hand_raised"))).toBeVisible();
+  test("raises a hand, which shows on the stage, and leaves", async ({ page, makeAxeBuilder }) => {
+    const dock = page.getByRole("toolbar", { name: message("voice.dock.label") });
+    await dock.getByRole("button", { name: message("voice.call.raise_hand") }).click();
+    await expect(dock.getByRole("button", { name: message("voice.call.raise_hand"), pressed: true })).toBeVisible();
+    await expect(page.getByRole("list", { name: counted("voice.stage.listeners", 2) }).getByText(message("voice.participant.hand_raised"))).toBeAttached();
     await expectNoAxeViolations(makeAxeBuilder);
-    await call.getByRole("button", { name: message("voice.call.leave") }).click();
+    await dock.getByRole("button", { name: message("voice.call.leave") }).click();
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
   });
 
   test("goes on across pages with the call bar, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
-    await expect(page.getByRole("region", { name: message("voice.call.title") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+    await expect(page.getByRole("toolbar", { name: message("voice.dock.label") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     await openFromNavigation(page, "/home", hasTouch);
     const bar = page.getByRole("region", { name: message("voice.bar.label"), exact: true });
     await expect(bar.getByRole("link", { name: room.name })).toBeVisible();

@@ -183,7 +183,8 @@ test.describe("voice chat moderation", () => {
     const sent = await serveApi(page);
     await page.goto(`/voice/${roomId}`);
     await expect(page.getByRole("heading", { level: 1, name: roomName })).toBeVisible();
-    await page.getByRole("button", { name: message("voice.room.report") }).click();
+    await page.getByRole("button", { name: message("voice.room.more") }).click();
+    await page.getByRole("menuitem", { name: message("voice.room.report") }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { level: 3, name: message("report.room.category.heading") })).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
