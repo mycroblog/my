@@ -56,6 +56,8 @@ type Server struct {
 	// held, while Disconnect holds the connections, is closed by Reconnect.
 	held    chan struct{}
 	changed chan struct{}
+	// opened, when a test sets it, runs after an event stream has answered.
+	opened func()
 }
 
 // Post is a post that the bot created with createStatus.
@@ -480,28 +482,25 @@ func (s *Server) listNotifications(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) streamEvents(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	held := s.held
-	s.mu.Unlock()
-	if held != nil {
+	// Subscribe before answering: once the bot sees the stream open and catches up, every notification that
+	// Inject adds reaches it on the stream or in the list, however late this goroutine runs.
+	st := &stream{events: make(chan event, 64), drop: make(chan struct{})}
+	for {
+		s.mu.Lock()
+		held := s.held
+		if held == nil {
+			s.streams[st] = struct{}{}
+			s.notifyLocked()
+			s.mu.Unlock()
+			break
+		}
+		s.mu.Unlock()
 		select {
 		case <-held:
 		case <-r.Context().Done():
 			return
 		}
 	}
-	st := &stream{events: make(chan event, 64), drop: make(chan struct{})}
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	flusher, _ := w.(http.Flusher)
-	if flusher != nil {
-		flusher.Flush()
-	}
-	s.mu.Lock()
-	s.streams[st] = struct{}{}
-	s.notifyLocked()
-	s.mu.Unlock()
 	defer func() {
 		s.mu.Lock()
 		if _, ok := s.streams[st]; ok {
@@ -510,6 +509,16 @@ func (s *Server) streamEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		s.mu.Unlock()
 	}()
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	flusher, _ := w.(http.Flusher)
+	if flusher != nil {
+		flusher.Flush()
+	}
+	if s.opened != nil {
+		s.opened()
+	}
 	ticker := time.NewTicker(heartbeat)
 	defer ticker.Stop()
 	for {
