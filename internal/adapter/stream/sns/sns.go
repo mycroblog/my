@@ -298,11 +298,7 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 		ReturnSubscriptionArn: true,
 	})
 	if err != nil {
-		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteTimeout)
-		defer cancel()
-		if derr := l.deleteQueue(cleanup); derr != nil {
-			b.log.WarnContext(ctx, "stream/sns: could not delete the queue of a failed listen; the sweep deletes it", slog.String("queue", name), slog.Any("error", derr))
-		}
+		b.deleteFailedQueue(ctx, l)
 		return nil, fmt.Errorf("stream/sns: subscribe queue %s: %w", name, err)
 	}
 	l.subscription = aws.ToString(sub.SubscriptionArn)
@@ -310,6 +306,32 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 	run, l.cancel = context.WithCancel(context.WithoutCancel(ctx))
 	kernel.Go(run, "stream.sns.receive", b.reporter, l.run)
 	return l, nil
+}
+
+// deleteFailedQueue deletes the queue of a Listen whose subscription failed. It deletes it
+// within ctx, so that Listen still returns by its deadline, and, when ctx ends first, goes on
+// in the background for up to deleteTimeout; a queue left behind is the sweep's.
+func (b *Bus) deleteFailedQueue(ctx context.Context, l *listener) {
+	warn := func(err error) {
+		b.log.Warn("stream/sns: could not delete the queue of a failed listen; the sweep deletes it", slog.String("queue", l.name), slog.Any("error", err))
+	}
+	if ctx.Err() == nil {
+		err := l.deleteQueue(ctx)
+		if err == nil {
+			return
+		}
+		if ctx.Err() == nil {
+			warn(err)
+			return
+		}
+	}
+	kernel.Go(context.WithoutCancel(ctx), "stream.sns.cleanup", b.reporter, func(bg context.Context) {
+		bg, cancel := context.WithTimeout(bg, deleteTimeout)
+		defer cancel()
+		if err := l.deleteQueue(bg); err != nil {
+			warn(err)
+		}
+	})
 }
 
 // listener is the open listener of one queue.
