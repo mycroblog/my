@@ -16,7 +16,7 @@ var _ appfederation.InstanceRepository = (*FederationRepository)(nil)
 
 // InsertRemoteInstance implements federation.InstanceRepository.
 func (r *FederationRepository) InsertRemoteInstance(ctx context.Context, tx uow.Tx, domain string, firstSeenAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -26,7 +26,7 @@ func (r *FederationRepository) InsertRemoteInstance(ctx context.Context, tx uow.
 
 // LatestNodeInfoObservation implements federation.InstanceRepository.
 func (r *FederationRepository) LatestNodeInfoObservation(ctx context.Context, tx uow.Tx, domain string) (federation.NodeInfoObservation, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return federation.NodeInfoObservation{}, err
 	}
@@ -42,7 +42,7 @@ func (r *FederationRepository) LatestNodeInfoObservation(ctx context.Context, tx
 
 // InsertNodeInfoObservation implements federation.InstanceRepository.
 func (r *FederationRepository) InsertNodeInfoObservation(ctx context.Context, tx uow.Tx, o federation.NodeInfoObservation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

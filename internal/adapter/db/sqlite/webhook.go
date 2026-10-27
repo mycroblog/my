@@ -26,7 +26,7 @@ func (d *DB) WebhookRepository() *WebhookRepository { return &WebhookRepository{
 
 // InsertEndpoint implements appwebhook.Repository.
 func (r *WebhookRepository) InsertEndpoint(ctx context.Context, tx uow.Tx, id, createdByUserID string, createdAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (r *WebhookRepository) InsertEndpoint(ctx context.Context, tx uow.Tx, id, c
 
 // InsertRevision implements appwebhook.Repository.
 func (r *WebhookRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev appwebhook.Revision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *WebhookRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev a
 
 // InsertSecret implements appwebhook.Repository.
 func (r *WebhookRepository) InsertSecret(ctx context.Context, tx uow.Tx, s webhook.Secret) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (r *WebhookRepository) InsertSecret(ctx context.Context, tx uow.Tx, s webho
 
 // InsertStateChange implements appwebhook.Repository.
 func (r *WebhookRepository) InsertStateChange(ctx context.Context, tx uow.Tx, c appwebhook.StateChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (r *WebhookRepository) InsertStateChange(ctx context.Context, tx uow.Tx, c 
 
 // UpsertHead implements appwebhook.Repository.
 func (r *WebhookRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appwebhook.Head) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (r *WebhookRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appwebh
 // HeadForUpdate implements appwebhook.Repository. A SQLite transaction holds the write lock, so
 // the row needs no lock of its own.
 func (r *WebhookRepository) HeadForUpdate(ctx context.Context, tx uow.Tx, endpointID string) (appwebhook.Head, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appwebhook.Head{}, err
 	}
@@ -175,7 +175,7 @@ func (r *WebhookRepository) endpoints(ctx context.Context, id string) ([]webhook
 
 // SubscribedEndpoints implements appwebhook.Repository.
 func (r *WebhookRepository) SubscribedEndpoints(ctx context.Context, tx uow.Tx, event webhook.EventType) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (r *WebhookRepository) Secrets(ctx context.Context, endpointID string, limi
 
 // InsertMessage implements appwebhook.Repository.
 func (r *WebhookRepository) InsertMessage(ctx context.Context, tx uow.Tx, m webhook.Message) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (r *WebhookRepository) InsertMessage(ctx context.Context, tx uow.Tx, m webh
 
 // InsertDelivery implements appwebhook.Repository.
 func (r *WebhookRepository) InsertDelivery(ctx context.Context, tx uow.Tx, d webhook.Delivery) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (r *WebhookRepository) FindSend(ctx context.Context, deliveryID string) (ap
 
 // InsertAttempt implements appwebhook.Repository.
 func (r *WebhookRepository) InsertAttempt(ctx context.Context, tx uow.Tx, a webhook.Attempt) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (r *WebhookRepository) InsertAttempt(ctx context.Context, tx uow.Tx, a webh
 
 // Failures implements appwebhook.Repository.
 func (r *WebhookRepository) Failures(ctx context.Context, tx uow.Tx, endpointID string) (*webhook.Failures, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (r *WebhookRepository) Failures(ctx context.Context, tx uow.Tx, endpointID 
 
 // UpsertFailures implements appwebhook.Repository.
 func (r *WebhookRepository) UpsertFailures(ctx context.Context, tx uow.Tx, endpointID string, f webhook.Failures) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func (r *WebhookRepository) UpsertFailures(ctx context.Context, tx uow.Tx, endpo
 
 // DeleteFailures implements appwebhook.Repository.
 func (r *WebhookRepository) DeleteFailures(ctx context.Context, tx uow.Tx, endpointID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func (r *WebhookRepository) deliveries(ctx context.Context, p sqlitegen.ListWebh
 
 // DeleteMessagesBefore implements appwebhook.Repository.
 func (r *WebhookRepository) DeleteMessagesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

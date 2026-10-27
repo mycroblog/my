@@ -24,21 +24,21 @@ import (
 // NewPostgres returns the queue kept in the PostgreSQL database d.
 func NewPostgres(d *postgres.DB, opts Options) *Queue {
 	opts.check()
-	return &Queue{db: d, st: postgresStore{}, opts: opts}
+	return &Queue{db: d, st: postgresStore{d}, opts: opts}
 }
 
 // NewPostgresOutbox returns the outbox kept in the PostgreSQL database d.
 func NewPostgresOutbox(d *postgres.DB, opts Options) *Outbox {
 	opts.check()
-	return &Outbox{db: d, st: postgresStore{}, opts: opts}
+	return &Outbox{db: d, st: postgresStore{d}, opts: opts}
 }
 
-type postgresStore struct{}
+type postgresStore struct{ db *postgres.DB }
 
 var _ store = postgresStore{}
 
-func postgresQueries(tx uow.Tx) (*postgresqueue.Queries, error) {
-	pgTx, err := postgres.PgxTx(tx)
+func (s postgresStore) queries(tx uow.Tx) (*postgresqueue.Queries, error) {
+	pgTx, err := s.db.PgxTx(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +70,8 @@ func int32Of(n int) int32 {
 	return int32(n)
 }
 
-func (postgresStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -87,8 +87,8 @@ func (postgresStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) erro
 	})
 }
 
-func (postgresStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.Job{}, false, err
 	}
@@ -146,16 +146,16 @@ func claimedJob(r postgresqueue.ClaimJobRow) queue.Job {
 	}
 }
 
-func (postgresStore) deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteClaimedJob(ctx, postgresqueue.DeleteClaimedJobParams{ID: id, LockedBy: &worker, Attempt: int32Of(attempt)})
 }
 
-func (postgresStore) release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -169,8 +169,8 @@ func (postgresStore) release(ctx context.Context, tx uow.Tx, id, worker string, 
 	})
 }
 
-func (postgresStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -183,8 +183,8 @@ func (postgresStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, wor
 	})
 }
 
-func (postgresStore) listDead(ctx context.Context, tx uow.Tx, jobType string, after queue.DeadJobPosition, limit int) ([]queue.DeadJob, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) listDead(ctx context.Context, tx uow.Tx, jobType string, after queue.DeadJobPosition, limit int) ([]queue.DeadJob, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -210,8 +210,8 @@ func (postgresStore) listDead(ctx context.Context, tx uow.Tx, jobType string, af
 	return out, nil
 }
 
-func (postgresStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -219,24 +219,24 @@ func (postgresStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runA
 	return err
 }
 
-func (postgresStore) deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteDeadJob(ctx, id)
 }
 
-func (postgresStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteDeadJobsBefore(ctx, postgresqueue.DeleteDeadJobsBeforeParams{FailedBefore: before, BatchLimit: int32Of(limit)})
 }
 
-func (postgresStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -252,8 +252,8 @@ func (postgresStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) e
 	})
 }
 
-func (postgresStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -277,16 +277,16 @@ func (postgresStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]qu
 	return out, nil
 }
 
-func (postgresStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.DeleteOutboxEvent(ctx, id)
 }
 
-func (postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.Backlog{}, err
 	}
@@ -305,8 +305,8 @@ func (postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (que
 	return b, err
 }
 
-func (postgresStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +340,7 @@ func (postgresStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, 
 }
 
 func (s postgresStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error) {
-	q, err := postgresQueries(tx)
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.JobSummary{}, err
 	}
@@ -366,8 +366,8 @@ func (s postgresStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) 
 	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: kernel.Normalize(b.OldestReadyAt)}, nil
 }
 
-func (postgresStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {
-	q, err := postgresQueries(tx)
+func (s postgresStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -377,8 +377,8 @@ func (postgresStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attem
 	})
 }
 
-func (postgresStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, after queue.AttemptPosition, limit int) ([]queue.Attempt, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, after queue.AttemptPosition, limit int) ([]queue.Attempt, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -398,8 +398,8 @@ func (postgresStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, 
 	return out, nil
 }
 
-func (postgresStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
-	q, err := postgresQueries(tx)
+func (s postgresStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}

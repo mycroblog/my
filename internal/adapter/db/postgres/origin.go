@@ -14,7 +14,7 @@ import (
 
 // InsertSessionOrigin implements identity.OriginRepository.
 func (r *IdentityRepository) InsertSessionOrigin(ctx context.Context, tx uow.Tx, o identity.SessionOrigin) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (r *IdentityRepository) InsertSessionOrigin(ctx context.Context, tx uow.Tx,
 
 // InsertRegistrationOrigin implements identity.OriginRepository.
 func (r *IdentityRepository) InsertRegistrationOrigin(ctx context.Context, tx uow.Tx, o identity.RegistrationOrigin) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *IdentityRepository) FindRegistrationOrigin(ctx context.Context, userID 
 
 // DeleteSessionOriginsBefore implements identity.OriginRepository.
 func (r *IdentityRepository) DeleteSessionOriginsBefore(ctx context.Context, tx uow.Tx, t time.Time, except []string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -76,7 +76,7 @@ func (r *IdentityRepository) DeleteSessionOriginsBefore(ctx context.Context, tx 
 
 // DeleteRegistrationOriginsBefore implements identity.OriginRepository.
 func (r *IdentityRepository) DeleteRegistrationOriginsBefore(ctx context.Context, tx uow.Tx, t time.Time, except []string, limit int) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

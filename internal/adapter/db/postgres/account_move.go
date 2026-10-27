@@ -13,7 +13,7 @@ import (
 
 // InsertMove implements account.Repository.
 func (r *AccountRepository) InsertMove(ctx context.Context, tx uow.Tx, m account.Move) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -33,7 +33,7 @@ func moveFrom(row postgresgen.AccountMove) account.Move {
 
 // LatestMove implements account.Repository.
 func (r *AccountRepository) LatestMove(ctx context.Context, tx uow.Tx, accountID string) (account.Move, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.Move{}, err
 	}
@@ -55,7 +55,7 @@ func (r *AccountRepository) FindMove(ctx context.Context, id string) (account.Mo
 
 // UpsertMoveState implements account.Repository.
 func (r *AccountRepository) UpsertMoveState(ctx context.Context, tx uow.Tx, s account.MoveState) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (r *AccountRepository) UpsertMoveState(ctx context.Context, tx uow.Tx, s ac
 
 // DeleteAllMoveStates implements account.Repository.
 func (r *AccountRepository) DeleteAllMoveStates(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *AccountRepository) FindMoveState(ctx context.Context, accountID string)
 
 // ListMoveRecords implements account.Repository.
 func (r *AccountRepository) ListMoveRecords(ctx context.Context, tx uow.Tx) ([]account.MoveRecord, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (r *AccountRepository) ListMoveStates(ctx context.Context) ([]account.MoveS
 
 // FindMoveStateTx implements account.Repository.
 func (r *AccountRepository) FindMoveStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.MoveState, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return account.MoveState{}, err
 	}
@@ -138,7 +138,7 @@ func (r *AccountRepository) FindMoveStateTx(ctx context.Context, tx uow.Tx, acco
 
 // InsertMoveCancellation implements account.Repository.
 func (r *AccountRepository) InsertMoveCancellation(ctx context.Context, tx uow.Tx, c account.MoveCancellation) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -148,7 +148,7 @@ func (r *AccountRepository) InsertMoveCancellation(ctx context.Context, tx uow.T
 
 // DeleteMoveState implements account.Repository.
 func (r *AccountRepository) DeleteMoveState(ctx context.Context, tx uow.Tx, accountID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

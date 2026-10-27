@@ -27,7 +27,7 @@ func openSQLite(t *testing.T, path string, apply bool) *sqlite.DB {
 	t.Cleanup(func() { _ = d.Close() })
 	if apply {
 		err := d.Tx(t.Context(), func(tx uow.Tx) error {
-			sqlTx, err := sqlite.SQLTx(tx)
+			sqlTx, err := d.SQLTx(tx)
 			if err != nil {
 				return err
 			}

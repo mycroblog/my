@@ -13,7 +13,7 @@ import (
 
 // InsertRemoteFollowTombstone implements federation.InboxRepository.
 func (r *FederationRepository) InsertRemoteFollowTombstone(ctx context.Context, tx uow.Tx, t federation.RemoteFollowTombstone) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -26,7 +26,7 @@ func (r *FederationRepository) InsertRemoteFollowTombstone(ctx context.Context, 
 
 // LiveRemoteFollowTombstone implements federation.InboxRepository.
 func (r *FederationRepository) LiveRemoteFollowTombstone(ctx context.Context, tx uow.Tx, actorURI, objectURI federation.IRI) (federation.RemoteFollowTombstone, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return federation.RemoteFollowTombstone{}, err
 	}

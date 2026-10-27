@@ -24,7 +24,7 @@ func (d *DB) GraphRepository() *GraphRepository { return &GraphRepository{db: d}
 
 // InsertFollow implements graph.Repository.
 func (r *GraphRepository) InsertFollow(ctx context.Context, tx uow.Tx, f graph.Follow) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func alreadyRecorded(err error, table, followID string) error {
 
 // InsertAcceptance implements graph.Repository.
 func (r *GraphRepository) InsertAcceptance(ctx context.Context, tx uow.Tx, a graph.Acceptance) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (r *GraphRepository) InsertAcceptance(ctx context.Context, tx uow.Tx, a gra
 
 // InsertRejection implements graph.Repository.
 func (r *GraphRepository) InsertRejection(ctx context.Context, tx uow.Tx, rej graph.Rejection) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (r *GraphRepository) InsertRejection(ctx context.Context, tx uow.Tx, rej gr
 
 // InsertTermination implements graph.Repository.
 func (r *GraphRepository) InsertTermination(ctx context.Context, tx uow.Tx, t graph.Termination) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (r *GraphRepository) InsertTermination(ctx context.Context, tx uow.Tx, t gr
 
 // UpsertPreferences implements graph.Repository.
 func (r *GraphRepository) UpsertPreferences(ctx context.Context, tx uow.Tx, p graph.Preferences) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func followFrom(row postgresgen.Follow) graph.Follow {
 
 // Follow implements graph.Repository.
 func (r *GraphRepository) Follow(ctx context.Context, tx uow.Tx, id string) (graph.Follow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Follow{}, err
 	}
@@ -113,7 +113,7 @@ func (r *GraphRepository) Follow(ctx context.Context, tx uow.Tx, id string) (gra
 
 // FollowByURI implements graph.Repository.
 func (r *GraphRepository) FollowByURI(ctx context.Context, tx uow.Tx, uri string) (graph.Follow, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Follow{}, err
 	}
@@ -139,7 +139,7 @@ func preferencesFrom(row postgresgen.FollowPreference) graph.Preferences {
 
 // Preferences implements graph.Repository.
 func (r *GraphRepository) Preferences(ctx context.Context, tx uow.Tx, followID string) (graph.Preferences, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Preferences{}, err
 	}
@@ -176,7 +176,7 @@ func edgesFrom(rows []postgresgen.FollowEdge) []graph.Edge {
 
 // Edge implements graph.Repository.
 func (r *GraphRepository) Edge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) (graph.Edge, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return graph.Edge{}, err
 	}
@@ -185,7 +185,7 @@ func (r *GraphRepository) Edge(ctx context.Context, tx uow.Tx, followerAccountID
 
 // ListEdgesOf implements graph.Repository.
 func (r *GraphRepository) ListEdgesOf(ctx context.Context, tx uow.Tx, accountID string) ([]graph.Edge, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func findEdge(ctx context.Context, q *postgresgen.Queries, followerAccountID, fo
 
 // InsertEdge implements graph.Repository.
 func (r *GraphRepository) InsertEdge(ctx context.Context, tx uow.Tx, e graph.Edge) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -229,7 +229,7 @@ func (r *GraphRepository) InsertEdge(ctx context.Context, tx uow.Tx, e graph.Edg
 
 // UpdateEdge implements graph.Repository.
 func (r *GraphRepository) UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edge) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (r *GraphRepository) UpdateEdge(ctx context.Context, tx uow.Tx, e graph.Edg
 
 // DeleteEdge implements graph.Repository.
 func (r *GraphRepository) DeleteEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID, followID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func (r *GraphRepository) DeleteEdge(ctx context.Context, tx uow.Tx, followerAcc
 
 // DeleteAllEdges implements graph.Repository.
 func (r *GraphRepository) DeleteAllEdges(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (r *GraphRepository) DeleteAllEdges(ctx context.Context, tx uow.Tx) error {
 
 // AddCounters implements graph.Repository.
 func (r *GraphRepository) AddCounters(ctx context.Context, tx uow.Tx, accountID string, followersDelta, followingDelta int64) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (r *GraphRepository) AddCounters(ctx context.Context, tx uow.Tx, accountID 
 
 // UpsertCounters implements graph.Repository.
 func (r *GraphRepository) UpsertCounters(ctx context.Context, tx uow.Tx, c graph.Counters) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func (r *GraphRepository) UpsertCounters(ctx context.Context, tx uow.Tx, c graph
 
 // DeleteAllCounters implements graph.Repository.
 func (r *GraphRepository) DeleteAllCounters(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (r *GraphRepository) DeleteAllCounters(ctx context.Context, tx uow.Tx) erro
 
 // ListHistories implements graph.Repository.
 func (r *GraphRepository) ListHistories(ctx context.Context, tx uow.Tx) ([]graph.History, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 
 // InsertReportReopening implements moderation.ReportNoteRepository.
 func (r *ModerationRepository) InsertReportReopening(ctx context.Context, tx uow.Tx, ro moderation.ReportReopening) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (r *ModerationRepository) InsertReportReopening(ctx context.Context, tx uow
 
 // InsertReportNote implements moderation.ReportNoteRepository.
 func (r *ModerationRepository) InsertReportNote(ctx context.Context, tx uow.Tx, n moderation.ReportNote) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

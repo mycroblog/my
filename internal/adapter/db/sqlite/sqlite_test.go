@@ -455,7 +455,7 @@ func TestUnitOfWorkContract(t *testing.T) {
 		return testkit.UnitOfWorkHarness{
 			UnitOfWork: db,
 			Insert: func(ctx context.Context, tx uow.Tx, name string) error {
-				q, err := queries(tx)
+				q, err := db.queries(tx)
 				if err != nil {
 					return err
 				}
@@ -546,7 +546,7 @@ func TestRetriesWhenTheDatabaseIsLocked(t *testing.T) {
 	}
 
 	err = db.Tx(t.Context(), func(tx uow.Tx) error {
-		q, err := queries(tx)
+		q, err := db.queries(tx)
 		if err != nil {
 			return err
 		}
@@ -571,7 +571,7 @@ func TestRetriesWhenTheDatabaseIsLocked(t *testing.T) {
 }
 
 func TestRejectsForeignTransactions(t *testing.T) {
-	if _, err := txOf(foreignTx{}); err == nil {
+	if _, err := (&DB{}).txOf(foreignTx{}); !errors.Is(err, ErrForeignTx) {
 		t.Fatal("txOf accepted a transaction of another adapter")
 	}
 }

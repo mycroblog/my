@@ -11,7 +11,7 @@ import (
 
 // InsertSensitivityOverride implements content.Repository.
 func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow.Tx, statusID, actionID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow
 
 // DeleteSensitivityOverridesOf implements content.Repository.
 func (r *StatusRepository) DeleteSensitivityOverridesOf(ctx context.Context, tx uow.Tx, actionID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

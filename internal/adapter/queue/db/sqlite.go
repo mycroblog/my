@@ -20,22 +20,22 @@ import (
 // NewSQLite returns the queue kept in the SQLite database d.
 func NewSQLite(d *sqlite.DB, opts Options) *Queue {
 	opts.check()
-	return &Queue{db: d, st: sqliteStore{}, opts: opts}
+	return &Queue{db: d, st: sqliteStore{d}, opts: opts}
 }
 
 // NewSQLiteOutbox returns the outbox kept in the SQLite database d.
 func NewSQLiteOutbox(d *sqlite.DB, opts Options) *Outbox {
 	opts.check()
-	return &Outbox{db: d, st: sqliteStore{}, opts: opts}
+	return &Outbox{db: d, st: sqliteStore{d}, opts: opts}
 }
 
 // sqliteStore stores timestamps as Unix milliseconds (data-model/01-conventions.md §1.2).
-type sqliteStore struct{}
+type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}
 
-func sqliteQueries(tx uow.Tx) (*sqlitequeue.Queries, error) {
-	db, err := sqlite.QueryTx(tx)
+func (s sqliteStore) queries(tx uow.Tx) (*sqlitequeue.Queries, error) {
+	db, err := s.db.QueryTx(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func fromMillis(ms int64) time.Time { return time.UnixMilli(ms).UTC() }
 
 func nullString(s string) sql.NullString { return sql.NullString{String: s, Valid: s != ""} }
 
-func (sqliteStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -65,8 +65,8 @@ func (sqliteStore) insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error 
 	})
 }
 
-func (sqliteStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.Job{}, false, err
 	}
@@ -95,16 +95,16 @@ func (sqliteStore) claim(ctx context.Context, tx uow.Tx, worker string, now, unt
 	}, true, nil
 }
 
-func (sqliteStore) deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteClaimedJob(ctx, sqlitequeue.DeleteClaimedJobParams{ID: id, LockedBy: nullString(worker), Attempt: int64(attempt)})
 }
 
-func (sqliteStore) release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -118,8 +118,8 @@ func (sqliteStore) release(ctx context.Context, tx uow.Tx, id, worker string, at
 	})
 }
 
-func (sqliteStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -132,8 +132,8 @@ func (sqliteStore) insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worke
 	})
 }
 
-func (sqliteStore) listDead(ctx context.Context, tx uow.Tx, jobType string, after queue.DeadJobPosition, limit int) ([]queue.DeadJob, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) listDead(ctx context.Context, tx uow.Tx, jobType string, after queue.DeadJobPosition, limit int) ([]queue.DeadJob, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +163,8 @@ func (sqliteStore) listDead(ctx context.Context, tx uow.Tx, jobType string, afte
 	return out, nil
 }
 
-func (sqliteStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -172,24 +172,24 @@ func (sqliteStore) requeueDead(ctx context.Context, tx uow.Tx, id string, runAt 
 	return err
 }
 
-func (sqliteStore) deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteDeadJob(ctx, id)
 }
 
-func (sqliteStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}
 	return q.DeleteDeadJobsBefore(ctx, sqlitequeue.DeleteDeadJobsBeforeParams{FailedBefore: millis(before), BatchLimit: int64(limit)})
 }
 
-func (sqliteStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -205,8 +205,8 @@ func (sqliteStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) err
 	})
 }
 
-func (sqliteStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -230,16 +230,16 @@ func (sqliteStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queu
 	return out, nil
 }
 
-func (sqliteStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
 	return q.DeleteOutboxEvent(ctx, id)
 }
 
-func (sqliteStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.Backlog{}, err
 	}
@@ -258,8 +258,8 @@ func (sqliteStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue
 	return b, err
 }
 
-func (sqliteStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func (sqliteStore) listPending(ctx context.Context, tx uow.Tx, now time.Time, f 
 }
 
 func (s sqliteStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error) {
-	q, err := sqliteQueries(tx)
+	q, err := s.queries(tx)
 	if err != nil {
 		return queue.JobSummary{}, err
 	}
@@ -323,8 +323,8 @@ func (s sqliteStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (q
 	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: b.OldestReadyAt}, nil
 }
 
-func (sqliteStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {
+	q, err := s.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -334,8 +334,8 @@ func (sqliteStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt
 	})
 }
 
-func (sqliteStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, after queue.AttemptPosition, limit int) ([]queue.Attempt, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, after queue.AttemptPosition, limit int) ([]queue.Attempt, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -359,8 +359,8 @@ func (sqliteStore) listAttempts(ctx context.Context, tx uow.Tx, jobID string, af
 	return out, nil
 }
 
-func (sqliteStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
-	q, err := sqliteQueries(tx)
+func (s sqliteStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
+	q, err := s.queries(tx)
 	if err != nil {
 		return 0, err
 	}

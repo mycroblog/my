@@ -15,9 +15,10 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// queries returns the generated queries bound to the PostgreSQL transaction behind tx.
-func queries(tx uow.Tx) (*postgresgen.Queries, error) {
-	pgTx, err := txOf(tx)
+// queries returns the generated queries bound to the PostgreSQL transaction behind tx, which
+// must be a transaction of d's database.
+func (d *DB) queries(tx uow.Tx) (*postgresgen.Queries, error) {
+	pgTx, err := d.txOf(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (d *DB) reader() *postgresgen.Queries {
 // transaction (their ...Tx variants): they run the method that reads outside transactions on a
 // repository over the copy.
 func (d *DB) in(tx uow.Tx) (*DB, error) {
-	pgTx, err := txOf(tx)
+	pgTx, err := d.txOf(tx)
 	if err != nil {
 		return nil, err
 	}

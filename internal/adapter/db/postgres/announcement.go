@@ -31,7 +31,7 @@ func fromNullTime(t *time.Time) time.Time {
 
 // InsertAnnouncement implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) InsertAnnouncement(ctx context.Context, tx uow.Tx, id string, createdAt time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *InstanceRepository) InsertAnnouncement(ctx context.Context, tx uow.Tx, 
 
 // InsertAnnouncementRevision implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) InsertAnnouncementRevision(ctx context.Context, tx uow.Tx, rev instance.AnnouncementRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (r *InstanceRepository) InsertAnnouncementRevision(ctx context.Context, tx 
 
 // InsertAnnouncementStateChange implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) InsertAnnouncementStateChange(ctx context.Context, tx uow.Tx, c instance.AnnouncementStateChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (r *InstanceRepository) InsertAnnouncementStateChange(ctx context.Context, 
 
 // AnnouncementHead implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) AnnouncementHead(ctx context.Context, tx uow.Tx, id string) (instance.AnnouncementHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.AnnouncementHead{}, err
 	}
@@ -83,7 +83,7 @@ func (r *InstanceRepository) AnnouncementHead(ctx context.Context, tx uow.Tx, id
 
 // UpsertAnnouncementHead implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) UpsertAnnouncementHead(ctx context.Context, tx uow.Tx, h instance.AnnouncementHead) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (r *InstanceRepository) UpsertAnnouncementHead(ctx context.Context, tx uow.
 
 // DeleteAllAnnouncementHeads implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) DeleteAllAnnouncementHeads(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (r *InstanceRepository) DeleteAllAnnouncementHeads(ctx context.Context, tx 
 
 // ListAnnouncementRevisionIDs implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) ListAnnouncementRevisionIDs(ctx context.Context, tx uow.Tx) ([]instance.AnnouncementHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (r *InstanceRepository) ListAnnouncementRevisionIDs(ctx context.Context, tx
 
 // ListAnnouncementStateChanges implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) ListAnnouncementStateChanges(ctx context.Context, tx uow.Tx) ([]instance.AnnouncementStateChange, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (r *InstanceRepository) ListAnnouncementStateChanges(ctx context.Context, t
 
 // Announcement implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) Announcement(ctx context.Context, tx uow.Tx, id string) (instance.Announcement, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return instance.Announcement{}, err
 	}
@@ -200,7 +200,7 @@ func announcementOf(row postgresgen.ListAnnouncementsRow) instance.Announcement 
 
 // InsertAnnouncementRead implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) InsertAnnouncementRead(ctx context.Context, tx uow.Tx, userID, announcementID string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (r *InstanceRepository) InsertAnnouncementRead(ctx context.Context, tx uow.
 
 // DeleteAnnouncementReadsOfUser implements appinstance.AnnouncementRepository.
 func (r *InstanceRepository) DeleteAnnouncementReadsOfUser(ctx context.Context, tx uow.Tx, userID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

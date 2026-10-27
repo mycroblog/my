@@ -42,8 +42,11 @@ func (probeEvent) EventType() string { return "testkit.probe_inserted" }
 // contract: commit on success; rollback on error and panic; bounded retries of ErrRetryable
 // failures in fresh transactions; no retry of other errors; respect for context cancellation;
 // isolation of uncommitted writes; concurrent writers; synchronous projectors running in
-// the same transaction as the command that emits their event; and commit hooks running once,
-// after the commit, for the events of the attempt that committed.
+// the same transaction as the command that emits their event; commit hooks running once,
+// after the commit, for the events of the attempt that committed; transactions bound to the
+// database that began them, even another database of the same adapter; conflicting writers
+// of one key, of which exactly one commits; and nothing committed when the context ends
+// before the commit. The factory is called twice by the case of another database.
 func UnitOfWorkContract(t *testing.T, newHarness UnitOfWorkFactory) {
 	t.Helper()
 	cases := []struct {
@@ -64,6 +67,9 @@ func UnitOfWorkContract(t *testing.T, newHarness UnitOfWorkFactory) {
 		{"RunsCommitHooksAfterTheCommit", uowRunsCommitHooks},
 		{"RunsNoCommitHooksOnRollback", uowRunsNoCommitHooksOnRollback},
 		{"RunsCommitHooksOnlyForTheCommittedAttempt", uowRunsCommitHooksOnce},
+		{"RejectsTransactionsOfAnotherDatabase", uowRejectsForeignTransactions},
+		{"CommitsOneOfConflictingWriters", uowCommitsOneOfConflictingWriters},
+		{"CommitsNothingWhenTheContextEndsBeforeTheCommit", uowCommitsNothingAfterCancel},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newHarness) })
@@ -422,5 +428,88 @@ func uowRunsCommitHooksOnce(t *testing.T, newHarness UnitOfWorkFactory) {
 	}
 	if want := []string{fmt.Sprintf("%[1]s[%[1]q]", NamedID("attempt-2"))}; !slices.Equal(*seen, want) {
 		t.Errorf("commit hooks saw %q, want %q", *seen, want)
+	}
+}
+
+// uowRejectsForeignTransactions hands a transaction of one database to the repository of
+// another database of the same adapter: the repository must refuse it, rather than write in the
+// database the transaction belongs to.
+func uowRejectsForeignTransactions(t *testing.T, newHarness UnitOfWorkFactory) {
+	a := newHarness(t, uow.Options{Retry: fastRetry})
+	b := newHarness(t, uow.Options{Retry: fastRetry})
+	err := a.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		if err := b.Insert(t.Context(), tx, NamedID("foreign")); err == nil {
+			t.Error("a repository of another database accepted the transaction")
+		}
+		return a.Insert(t.Context(), tx, NamedID("own"))
+	})
+	if err != nil {
+		t.Fatalf("Tx = %v", err)
+	}
+	wantKeys(t, a, NamedID("own"))
+	wantKeys(t, b)
+}
+
+// uowCommitsOneOfConflictingWriters runs concurrent transactions that insert the same key:
+// the unique key rejects all but one of them, whatever the backend's isolation, so that a
+// read-modify-write guarded by a constraint never commits twice (ADR-0003).
+func uowCommitsOneOfConflictingWriters(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: uow.RetryPolicy{MaxAttempts: 20}})
+	const writers = 8
+	key := NamedID("contended")
+	var (
+		ready sync.WaitGroup
+		wg    sync.WaitGroup
+	)
+	start := make(chan struct{})
+	errs := make(chan error, writers)
+	ready.Add(writers)
+	for range writers {
+		wg.Go(func() {
+			ready.Done()
+			<-start
+			errs <- h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error { return h.Insert(t.Context(), tx, key) })
+		})
+	}
+	ready.Wait()
+	close(start)
+	wg.Wait()
+	close(errs)
+	committed := 0
+	for err := range errs {
+		if err == nil {
+			committed++
+		}
+	}
+	if committed != 1 {
+		t.Errorf("%d of %d conflicting transactions committed, want 1", committed, writers)
+	}
+	wantKeys(t, h, key)
+}
+
+// uowCommitsNothingAfterCancel ends the context after the writes and before the commit: Tx
+// returns an error, and neither the writes nor the commit hooks take effect.
+func uowCommitsNothingAfterCancel(t *testing.T, newHarness UnitOfWorkFactory) {
+	var projectors uow.Projectors
+	h := newHarness(t, uow.Options{Retry: fastRetry, Projectors: &projectors})
+	seen := hookInto(t, h, &projectors)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	err := h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := h.Insert(ctx, tx, NamedID("a")); err != nil {
+			return err
+		}
+		if err := tx.Emit(ctx, probeEvent{key: NamedID("a")}); err != nil {
+			return err
+		}
+		cancel()
+		return nil
+	})
+	if err == nil {
+		t.Fatal("Tx = nil after its context ended before the commit")
+	}
+	wantKeys(t, h)
+	if len(*seen) > 0 {
+		t.Errorf("commit hooks ran for a transaction that did not commit: %q", *seen)
 	}
 }

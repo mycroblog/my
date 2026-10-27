@@ -12,7 +12,7 @@ import (
 
 // InsertAlias implements account.Repository.
 func (r *AccountRepository) InsertAlias(ctx context.Context, tx uow.Tx, a account.Alias) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -22,7 +22,7 @@ func (r *AccountRepository) InsertAlias(ctx context.Context, tx uow.Tx, a accoun
 
 // DeleteAlias implements account.Repository.
 func (r *AccountRepository) DeleteAlias(ctx context.Context, tx uow.Tx, accountID, uri string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -32,7 +32,7 @@ func (r *AccountRepository) DeleteAlias(ctx context.Context, tx uow.Tx, accountI
 
 // CountAliases implements account.Repository.
 func (r *AccountRepository) CountAliases(ctx context.Context, tx uow.Tx, accountID string) (int, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

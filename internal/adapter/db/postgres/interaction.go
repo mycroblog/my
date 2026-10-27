@@ -25,7 +25,7 @@ func (d *DB) InteractionRepository() *InteractionRepository { return &Interactio
 
 // InsertBoost implements content.InteractionRepository.
 func (r *InteractionRepository) InsertBoost(ctx context.Context, tx uow.Tx, b content.Boost) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (r *InteractionRepository) InsertBoost(ctx context.Context, tx uow.Tx, b co
 
 // InsertBoostRetraction implements content.InteractionRepository.
 func (r *InteractionRepository) InsertBoostRetraction(ctx context.Context, tx uow.Tx, br content.BoostRetraction) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (r *InteractionRepository) InsertBoostRetraction(ctx context.Context, tx uo
 
 // Boost implements content.InteractionRepository.
 func (r *InteractionRepository) Boost(ctx context.Context, tx uow.Tx, id string) (content.Boost, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Boost{}, err
 	}
@@ -69,7 +69,7 @@ func (r *InteractionRepository) Boost(ctx context.Context, tx uow.Tx, id string)
 
 // BoostEdge implements content.InteractionRepository.
 func (r *InteractionRepository) BoostEdge(ctx context.Context, tx uow.Tx, boosterAccountID, statusID string) (content.BoostEdge, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.BoostEdge{}, err
 	}
@@ -86,7 +86,7 @@ func boostEdge(ctx context.Context, q *postgresgen.Queries, boosterAccountID, st
 
 // InsertBoostEdge implements content.InteractionRepository.
 func (r *InteractionRepository) InsertBoostEdge(ctx context.Context, tx uow.Tx, e content.BoostEdge) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +99,7 @@ func (r *InteractionRepository) InsertBoostEdge(ctx context.Context, tx uow.Tx, 
 
 // DeleteBoostEdge implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteBoostEdge(ctx context.Context, tx uow.Tx, e content.BoostEdge) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -112,7 +112,7 @@ func (r *InteractionRepository) DeleteBoostEdge(ctx context.Context, tx uow.Tx, 
 
 // DeleteStatusBoostEdges implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteStatusBoostEdges(ctx context.Context, tx uow.Tx, statusID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (r *InteractionRepository) DeleteStatusBoostEdges(ctx context.Context, tx u
 
 // RebuildBoostEdges implements content.InteractionRepository.
 func (r *InteractionRepository) RebuildBoostEdges(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *InteractionRepository) ListBoostEdges(ctx context.Context) ([]content.B
 
 // AddBoosts implements content.InteractionRepository.
 func (r *InteractionRepository) AddBoosts(ctx context.Context, tx uow.Tx, statusID string, delta int64) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (r *InteractionRepository) AddBoosts(ctx context.Context, tx uow.Tx, status
 
 // AddFavourites implements content.InteractionRepository.
 func (r *InteractionRepository) AddFavourites(ctx context.Context, tx uow.Tx, statusID string, delta int64) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (r *InteractionRepository) Mentioned(ctx context.Context, statusID, account
 
 // InsertFavourite implements content.InteractionRepository.
 func (r *InteractionRepository) InsertFavourite(ctx context.Context, tx uow.Tx, f content.Favourite) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -191,7 +191,7 @@ func (r *InteractionRepository) InsertFavourite(ctx context.Context, tx uow.Tx, 
 
 // DeleteFavourite implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteFavourite(ctx context.Context, tx uow.Tx, accountID, statusID string) (content.Favourite, bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return content.Favourite{}, false, err
 	}
@@ -207,7 +207,7 @@ func (r *InteractionRepository) DeleteFavourite(ctx context.Context, tx uow.Tx, 
 
 // InsertBookmark implements content.InteractionRepository.
 func (r *InteractionRepository) InsertBookmark(ctx context.Context, tx uow.Tx, b content.Bookmark) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -222,7 +222,7 @@ func (r *InteractionRepository) InsertBookmark(ctx context.Context, tx uow.Tx, b
 
 // DeleteBookmark implements content.InteractionRepository.
 func (r *InteractionRepository) DeleteBookmark(ctx context.Context, tx uow.Tx, accountID, statusID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -235,7 +235,7 @@ func (r *InteractionRepository) DeleteBookmark(ctx context.Context, tx uow.Tx, a
 
 // InsertPin implements content.InteractionRepository.
 func (r *InteractionRepository) InsertPin(ctx context.Context, tx uow.Tx, p content.Pin) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -250,7 +250,7 @@ func (r *InteractionRepository) InsertPin(ctx context.Context, tx uow.Tx, p cont
 
 // HasPin implements content.InteractionRepository.
 func (r *InteractionRepository) HasPin(ctx context.Context, tx uow.Tx, accountID, statusID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -260,7 +260,7 @@ func (r *InteractionRepository) HasPin(ctx context.Context, tx uow.Tx, accountID
 
 // DeletePin implements content.InteractionRepository.
 func (r *InteractionRepository) DeletePin(ctx context.Context, tx uow.Tx, accountID, statusID string) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -273,7 +273,7 @@ func (r *InteractionRepository) DeletePin(ctx context.Context, tx uow.Tx, accoun
 
 // DeletePinsOf implements content.InteractionRepository.
 func (r *InteractionRepository) DeletePinsOf(ctx context.Context, tx uow.Tx, accountID string) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -283,7 +283,7 @@ func (r *InteractionRepository) DeletePinsOf(ctx context.Context, tx uow.Tx, acc
 
 // CountPins implements content.InteractionRepository.
 func (r *InteractionRepository) CountPins(ctx context.Context, tx uow.Tx, accountID string) (int64, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return 0, err
 	}

@@ -24,7 +24,7 @@ func runOutcome(r appfinance.Run) string {
 
 // InsertRun implements appfinance.Repository.
 func (r *FinanceRepository) InsertRun(ctx context.Context, tx uow.Tx, run appfinance.Run) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (r *FinanceRepository) ImportedHeadsForUpdate(ctx context.Context, tx uow.T
 	if len(months) == 0 {
 		return []appfinance.ImportedRevision{}, nil
 	}
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (r *FinanceRepository) ImportedHeadsForUpdate(ctx context.Context, tx uow.T
 
 // InsertImportedRevision implements appfinance.Repository.
 func (r *FinanceRepository) InsertImportedRevision(ctx context.Context, tx uow.Tx, rev appfinance.ImportedRevision) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -142,7 +142,7 @@ func (r *FinanceRepository) InsertImportedRevision(ctx context.Context, tx uow.T
 
 // UpsertImportedHead implements appfinance.Repository.
 func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, rev appfinance.ImportedRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -154,6 +154,6 @@ func (r *FinanceRepository) UpsertImportedHead(ctx context.Context, tx uow.Tx, r
 
 // RebuildImportedHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildImportedHeads(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild imported cost heads",
+	return r.db.execAll(ctx, tx, "rebuild imported cost heads",
 		(*postgresgen.Queries).DeleteAllImportedCostHeads, (*postgresgen.Queries).RebuildImportedCostHeads)
 }

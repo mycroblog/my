@@ -17,7 +17,7 @@ var _ appaccount.SearchTermRepository = (*AccountRepository)(nil)
 
 // ReplaceSearchTerms implements account.SearchTermRepository.
 func (r *AccountRepository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, accountID string, terms []account.SearchTerm) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (r *AccountRepository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, a
 
 // DeleteAllSearchTerms implements account.SearchTermRepository.
 func (r *AccountRepository) DeleteAllSearchTerms(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (r *AccountRepository) DeleteAllSearchTerms(ctx context.Context, tx uow.Tx)
 
 // ListAccountIDsWithUsernameTerm implements account.SearchTermRepository.
 func (r *AccountRepository) ListAccountIDsWithUsernameTerm(ctx context.Context, tx uow.Tx, term string) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (r *AccountRepository) ListAccountIDsWithUsernameTerm(ctx context.Context, 
 
 // ListHandleAccountIDs implements account.SearchTermRepository.
 func (r *AccountRepository) ListHandleAccountIDs(ctx context.Context, tx uow.Tx) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

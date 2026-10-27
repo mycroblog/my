@@ -57,7 +57,7 @@ func (r *DataUpgradeRepository) missingRecord(ctx context.Context) error {
 
 // RecordRun implements dbupgrade.Repository.
 func (r *DataUpgradeRepository) RecordRun(ctx context.Context, tx uow.Tx, key string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

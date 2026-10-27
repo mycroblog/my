@@ -17,7 +17,7 @@ import (
 
 // InsertPreferences implements identity.PreferencesRepository.
 func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p identity.Preferences) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 
 // UpdatePreferences implements identity.PreferencesRepository.
 func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p identity.Preferences) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func setTimeZone(ctx context.Context, q *postgresgen.Queries, p identity.Prefere
 
 // ReplaceTimelineLanguages implements identity.PreferencesRepository.
 func (r *IdentityRepository) ReplaceTimelineLanguages(ctx context.Context, tx uow.Tx, userID string, languages []string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (r *IdentityRepository) ReplaceTimelineLanguages(ctx context.Context, tx uo
 // LockPreferences implements identity.PreferencesRepository with SELECT ... FOR UPDATE on
 // user_preferences: every writer of a user's preferences updates that row, so they wait for tx.
 func (r *IdentityRepository) LockPreferences(ctx context.Context, tx uow.Tx, userID string) (appidentity.UserPreferences, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appidentity.UserPreferences{}, err
 	}

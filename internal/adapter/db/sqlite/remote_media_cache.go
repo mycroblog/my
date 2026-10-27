@@ -14,7 +14,7 @@ import (
 
 // UpsertRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx, e content.RemoteMediaCacheEntry) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *MediaRepository) UpsertRemoteMediaCache(ctx context.Context, tx uow.Tx,
 
 // TouchRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, at time.Time) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *MediaRepository) TouchRemoteMediaCache(ctx context.Context, tx uow.Tx, 
 
 // DeleteRemoteMediaCache implements content.MediaRepository.
 func (r *MediaRepository) DeleteRemoteMediaCache(ctx context.Context, tx uow.Tx, url string, fetchedAt time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

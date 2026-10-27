@@ -16,7 +16,7 @@ var _ appmoderation.AppealRepository = (*ModerationRepository)(nil)
 
 // InsertAppeal implements moderation.AppealRepository.
 func (r *ModerationRepository) InsertAppeal(ctx context.Context, tx uow.Tx, a moderation.Appeal) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (r *ModerationRepository) InsertAppeal(ctx context.Context, tx uow.Tx, a mo
 
 // InsertAppealDecision implements moderation.AppealRepository.
 func (r *ModerationRepository) InsertAppealDecision(ctx context.Context, tx uow.Tx, d moderation.AppealDecision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (r *ModerationRepository) InsertAppealDecision(ctx context.Context, tx uow.
 
 // UpsertAppealStatus implements moderation.AppealRepository.
 func (r *ModerationRepository) UpsertAppealStatus(ctx context.Context, tx uow.Tx, st moderation.AppealStatus) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (r *ModerationRepository) UpsertAppealStatus(ctx context.Context, tx uow.Tx
 
 // Appeal implements moderation.AppealRepository.
 func (r *ModerationRepository) Appeal(ctx context.Context, tx uow.Tx, id string) (moderation.AppealRecord, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return moderation.AppealRecord{}, err
 	}

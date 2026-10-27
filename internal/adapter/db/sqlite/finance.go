@@ -51,7 +51,7 @@ func fromNullDate(s sql.NullString) (*finance.Date, error) {
 
 // InsertItem implements appfinance.Repository.
 func (r *FinanceRepository) InsertItem(ctx context.Context, tx uow.Tx, item finance.CostItem) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (r *FinanceRepository) InsertItem(ctx context.Context, tx uow.Tx, item fina
 
 // InsertLabelRevision implements appfinance.Repository.
 func (r *FinanceRepository) InsertLabelRevision(ctx context.Context, tx uow.Tx, rev appfinance.LabelRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (r *FinanceRepository) InsertLabelRevision(ctx context.Context, tx uow.Tx, 
 
 // InsertPriceRevision implements appfinance.Repository.
 func (r *FinanceRepository) InsertPriceRevision(ctx context.Context, tx uow.Tx, rev appfinance.PriceRevision) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *FinanceRepository) InsertPriceRevision(ctx context.Context, tx uow.Tx, 
 
 // InsertEndChange implements appfinance.Repository.
 func (r *FinanceRepository) InsertEndChange(ctx context.Context, tx uow.Tx, c appfinance.EndChange) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (r *FinanceRepository) InsertEndChange(ctx context.Context, tx uow.Tx, c ap
 
 // InsertCancellation implements appfinance.Repository.
 func (r *FinanceRepository) InsertCancellation(ctx context.Context, tx uow.Tx, c appfinance.Cancellation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (r *FinanceRepository) InsertCancellation(ctx context.Context, tx uow.Tx, c
 
 // UpsertHead implements appfinance.Repository.
 func (r *FinanceRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appfinance.Head) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (r *FinanceRepository) UpsertHead(ctx context.Context, tx uow.Tx, h appfina
 
 // DeleteHead implements appfinance.Repository.
 func (r *FinanceRepository) DeleteHead(ctx context.Context, tx uow.Tx, costItemID string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (r *FinanceRepository) DeleteHead(ctx context.Context, tx uow.Tx, costItemI
 // CurrentForUpdate implements appfinance.Repository. A SQLite transaction holds the write lock,
 // so the row needs no lock of its own.
 func (r *FinanceRepository) CurrentForUpdate(ctx context.Context, tx uow.Tx, costItemID string) (appfinance.Current, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return appfinance.Current{}, err
 	}
@@ -241,6 +241,6 @@ func (r *FinanceRepository) items(ctx context.Context, id, before string, limit 
 
 // RebuildHeads implements appfinance.Repository.
 func (r *FinanceRepository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
-	return execAll(ctx, tx, "rebuild cost item heads",
+	return r.db.execAll(ctx, tx, "rebuild cost item heads",
 		(*sqlitegen.Queries).DeleteAllCostItemHeads, (*sqlitegen.Queries).RebuildCostItemHeads)
 }

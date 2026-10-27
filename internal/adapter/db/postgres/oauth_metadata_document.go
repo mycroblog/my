@@ -14,7 +14,7 @@ import (
 
 // UpsertOAuthClientMetadataDocument implements identity.Repository.
 func (r *IdentityRepository) UpsertOAuthClientMetadataDocument(ctx context.Context, tx uow.Tx, d identity.ClientMetadataDocument) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (r *IdentityRepository) FindOAuthClientMetadataDocument(ctx context.Context
 
 // InsertOAuthClientHostDenial implements identity.Repository.
 func (r *IdentityRepository) InsertOAuthClientHostDenial(ctx context.Context, tx uow.Tx, d identity.OAuthClientHostDenial) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -51,7 +51,7 @@ func (r *IdentityRepository) InsertOAuthClientHostDenial(ctx context.Context, tx
 
 // LiftOAuthClientHostDenials implements identity.Repository.
 func (r *IdentityRepository) LiftOAuthClientHostDenials(ctx context.Context, tx uow.Tx, host, byUserID string, at time.Time) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
@@ -82,7 +82,7 @@ func (r *IdentityRepository) ListOAuthClientHostDenials(ctx context.Context, bef
 
 // ListMetadataDocumentClientsOfHost implements identity.Repository.
 func (r *IdentityRepository) ListMetadataDocumentClientsOfHost(ctx context.Context, tx uow.Tx, host string) ([]identity.OAuthClient, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

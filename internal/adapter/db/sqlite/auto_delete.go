@@ -27,7 +27,7 @@ func (r *StatusRepository) FindAutoDeletePolicy(ctx context.Context, accountID s
 
 // SaveAutoDeletePolicy implements content.AutoDeleteRepository.
 func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, p content.AutoDeletePolicy) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (r *StatusRepository) ListEnabledAutoDeletePolicies(ctx context.Context, af
 // stamped with its publication time, so the scan of the author's statuses stops at the UUIDv7
 // floor just past before.
 func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.Tx, p content.AutoDeletePolicy, before time.Time, limit int) ([]content.Status, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}

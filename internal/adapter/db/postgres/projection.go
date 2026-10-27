@@ -21,6 +21,7 @@ import (
 // queries are built at run time, since they serve any table; table names come from the schema
 // and column names from the table, and both are quoted.
 type ProjectionStore struct {
+	db     *DB
 	tables []string
 
 	mu      sync.Mutex
@@ -31,12 +32,12 @@ var _ projection.Store = (*ProjectionStore)(nil)
 
 // ProjectionStore returns the store of the projection tables.
 func (d *DB) ProjectionStore() *ProjectionStore {
-	return &ProjectionStore{tables: schema.Tables(schema.Postgres), columns: map[string][]string{}}
+	return &ProjectionStore{db: d, tables: schema.Tables(schema.Postgres), columns: map[string][]string{}}
 }
 
 // Rows implements projection.Store. Timestamps are in UTC.
 func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, offset, limit int) ([]string, [][]any, error) {
-	pgTx, err := txOf(tx)
+	pgTx, err := s.db.txOf(tx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -76,7 +77,7 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 
 // Delete implements projection.Store.
 func (s *ProjectionStore) Delete(ctx context.Context, tx uow.Tx, table string, columns []string, rows [][]any) (int64, error) {
-	pgTx, err := txOf(tx)
+	pgTx, err := s.db.txOf(tx)
 	if err != nil {
 		return 0, err
 	}
@@ -93,7 +94,7 @@ func (s *ProjectionStore) Delete(ctx context.Context, tx uow.Tx, table string, c
 
 // Insert implements projection.Store.
 func (s *ProjectionStore) Insert(ctx context.Context, tx uow.Tx, table string, columns []string, rows [][]any) (int64, error) {
-	pgTx, err := txOf(tx)
+	pgTx, err := s.db.txOf(tx)
 	if err != nil {
 		return 0, err
 	}

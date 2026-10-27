@@ -15,7 +15,7 @@ import (
 
 // InsertDataExport implements identity.ExportRepository.
 func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e identity.DataExport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func (r *IdentityRepository) InsertDataExport(ctx context.Context, tx uow.Tx, e 
 
 // InsertDataExportResult implements identity.ExportRepository.
 func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (r *IdentityRepository) ListExpiredDataExports(ctx context.Context, t time.
 
 // DeleteDataExport implements identity.ExportRepository.
 func (r *IdentityRepository) DeleteDataExport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

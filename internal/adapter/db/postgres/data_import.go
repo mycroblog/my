@@ -14,7 +14,7 @@ import (
 
 // InsertDataImport implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i identity.DataImport) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *IdentityRepository) InsertDataImport(ctx context.Context, tx uow.Tx, i 
 // InsertDataImportItems implements identity.ImportRepository: the items of each import in one
 // statement.
 func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.Tx, items []identity.DataImportItem) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *IdentityRepository) InsertDataImportItems(ctx context.Context, tx uow.T
 
 // InsertDataImportResult implements identity.ImportRepository.
 func (r *IdentityRepository) InsertDataImportResult(ctx context.Context, tx uow.Tx, res identity.DataImportResult) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (r *IdentityRepository) ListDataImportsCreatedBefore(ctx context.Context, t
 
 // DeleteDataImport implements identity.ImportRepository.
 func (r *IdentityRepository) DeleteDataImport(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

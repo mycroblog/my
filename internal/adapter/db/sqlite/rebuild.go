@@ -14,7 +14,7 @@ import (
 
 // DeleteAllExclusions implements notification.Repository.
 func (r *NotificationRepository) DeleteAllExclusions(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (r *NotificationRepository) DeleteAllExclusions(ctx context.Context, tx uow
 
 // DeleteAllDeletedStatuses implements notification.Repository.
 func (r *NotificationRepository) DeleteAllDeletedStatuses(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *NotificationRepository) DeleteAllDeletedStatuses(ctx context.Context, t
 
 // ListNotifiedStatusIDs implements notification.Repository.
 func (r *NotificationRepository) ListNotifiedStatusIDs(ctx context.Context, tx uow.Tx) ([]string, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *NotificationRepository) ListNotifiedStatusIDs(ctx context.Context, tx u
 
 // ListRemoteHeads implements account.Repository.
 func (r *AccountRepository) ListRemoteHeads(ctx context.Context, tx uow.Tx) ([]account.RemoteHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (r *AccountRepository) ListRemoteHeads(ctx context.Context, tx uow.Tx) ([]a
 
 // ListLatestRemoteSnapshotHeads implements account.Repository.
 func (r *AccountRepository) ListLatestRemoteSnapshotHeads(ctx context.Context, tx uow.Tx) ([]account.RemoteHead, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (r *AccountRepository) ListLatestRemoteSnapshotHeads(ctx context.Context, t
 
 // DeleteAllRemoteHeads implements account.Repository.
 func (r *AccountRepository) DeleteAllRemoteHeads(ctx context.Context, tx uow.Tx) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}

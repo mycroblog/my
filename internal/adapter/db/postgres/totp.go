@@ -13,7 +13,7 @@ import (
 
 // InsertTOTPEnrollment implements identity.TOTPRepository.
 func (r *IdentityRepository) InsertTOTPEnrollment(ctx context.Context, tx uow.Tx, e identity.TOTPEnrollment, recoveryCodeHashes [][]byte) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (r *IdentityRepository) FindActiveTOTPEnrollment(ctx context.Context, userI
 
 // InsertTOTPEnrollmentRevocation implements identity.TOTPRepository.
 func (r *IdentityRepository) InsertTOTPEnrollmentRevocation(ctx context.Context, tx uow.Tx, rev identity.TOTPEnrollmentRevocation) error {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (r *IdentityRepository) InsertTOTPEnrollmentRevocation(ctx context.Context,
 
 // UseTOTPRecoveryCode implements identity.TOTPRepository.
 func (r *IdentityRepository) UseTOTPRecoveryCode(ctx context.Context, tx uow.Tx, u identity.TOTPRecoveryCodeUse) (bool, error) {
-	q, err := queries(tx)
+	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}

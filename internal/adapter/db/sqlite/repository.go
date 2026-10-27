@@ -17,9 +17,10 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// queries returns the generated queries bound to the SQLite transaction behind tx.
-func queries(tx uow.Tx) (*sqlitegen.Queries, error) {
-	db, err := QueryTx(tx)
+// queries returns the generated queries bound to the SQLite transaction behind tx, which must
+// be a transaction of d's database.
+func (d *DB) queries(tx uow.Tx) (*sqlitegen.Queries, error) {
+	db, err := d.QueryTx(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func (d *DB) reader() *sqlitegen.Queries {
 // transaction (their ...Tx variants): they run the method that reads outside transactions on a
 // repository over the copy.
 func (d *DB) in(tx uow.Tx) (*DB, error) {
-	sqlTx, err := txOf(tx)
+	sqlTx, err := d.txOf(tx)
 	if err != nil {
 		return nil, err
 	}
