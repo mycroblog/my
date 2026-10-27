@@ -74,15 +74,19 @@ type Options struct {
 	Tracer kernel.Tracer
 	// Webhook lists the destinations that the requests of kernel.HTTPPurposeWebhook may reach
 	// although the guard refuses them (webhook_allowed_destinations, ADR-0060).
-	Webhook WebhookDestinations
+	Webhook Destinations
+	// LoginProvider lists the destinations that the requests of kernel.HTTPPurposeLoginProvider
+	// may reach although the guard refuses them (login_provider_allowed_destinations, ADR-0106 §5).
+	LoginProvider Destinations
 }
 
-// WebhookDestinations are the destinations exempt from the guard for kernel.HTTPPurposeWebhook
-// alone: a URL whose host is one of Hosts, or an IP address in one of Prefixes, may use http and
-// any port, and the connection may go to any address (for Hosts) or to the addresses in Prefixes.
-// The requests of that purpose use connections of their own, so that no other purpose reuses
-// a connection to an exempt destination.
-type WebhookDestinations struct {
+// Destinations are the destinations exempt from the guard for one purpose alone
+// (kernel.HTTPPurposeWebhook or kernel.HTTPPurposeLoginProvider): a URL whose host is one of
+// Hosts, or an IP address in one of Prefixes, may use http and any port, and the connection may
+// go to any address (for Hosts) or to the addresses in Prefixes. The requests of each such
+// purpose use connections of their own, so that no other purpose reuses a connection to an
+// exempt destination.
+type Destinations struct {
 	// Hosts are lower-case host names without a trailing dot.
 	Hosts []string
 	// Prefixes are address ranges; an address is a /32 or /128 range.
@@ -90,7 +94,7 @@ type WebhookDestinations struct {
 }
 
 // host reports whether a URL host is exempt: one of Hosts, or an IP address in Prefixes.
-func (w WebhookDestinations) host(host string) bool {
+func (w Destinations) host(host string) bool {
 	name := strings.TrimSuffix(strings.ToLower(host), ".")
 	if slices.Contains(w.Hosts, name) {
 		return true
@@ -102,7 +106,7 @@ func (w WebhookDestinations) host(host string) bool {
 }
 
 // addr reports whether an address is in Prefixes.
-func (w WebhookDestinations) addr(a netip.Addr) bool {
+func (w Destinations) addr(a netip.Addr) bool {
 	a = a.Unmap()
 	for _, p := range w.Prefixes {
 		if p.Contains(a) {
@@ -120,7 +124,10 @@ type Client struct {
 	// webhook sends the requests of kernel.HTTPPurposeWebhook: it never follows a redirect, and
 	// its connections may reach the exempt destinations (Options.Webhook) through open.
 	webhook *http.Client
-	open    *net.Dialer
+	// loginProvider sends the requests of kernel.HTTPPurposeLoginProvider the same way, with the
+	// exempt destinations of Options.LoginProvider.
+	loginProvider *http.Client
+	open          *net.Dialer
 	// noRedirect sends the requests of kernel.HTTPPurposeClientMetadata through the guarded
 	// transport of http, but never follows a redirect.
 	noRedirect *http.Client
@@ -162,8 +169,13 @@ func New(opts Options) *Client {
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	c.webhook = &http.Client{
-		Transport: c.transport(c.dialWebhook),
+		Transport: c.transport(c.dialExempt(opts.Webhook)),
 		// Standard Webhooks: a redirect is a failure, never followed (ADR-0060).
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+	c.loginProvider = &http.Client{
+		Transport: c.transport(c.dialExempt(opts.LoginProvider)),
+		// Identity providers: a redirect is a failure, never followed (ADR-0106 §5).
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	return c
@@ -216,13 +228,16 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 		return nil, fmt.Errorf("%w: the URL must be absolute", kernel.ErrInvalidHTTPRequest)
 	}
 	client := c.http
+	var exempt Destinations
 	switch r.Purpose {
 	case kernel.HTTPPurposeWebhook:
-		client = c.webhook
+		client, exempt = c.webhook, c.opts.Webhook
+	case kernel.HTTPPurposeLoginProvider:
+		client, exempt = c.loginProvider, c.opts.LoginProvider
 	case kernel.HTTPPurposeClientMetadata:
 		client = c.noRedirect
 	}
-	if r.Purpose == kernel.HTTPPurposeWebhook && c.opts.Webhook.host(u.Hostname()) {
+	if exempt.host(u.Hostname()) {
 		if err := checkExemptURL(u); err != nil {
 			return nil, err
 		}
@@ -370,7 +385,7 @@ func (c *Client) checkURL(u *url.URL) error {
 	return nil
 }
 
-// checkExemptURL checks a URL of an exempt webhook destination: http or https, without user
+// checkExemptURL checks a URL of an exempt destination: http or https, without user
 // info, on any port.
 func checkExemptURL(u *url.URL) error {
 	switch {
@@ -389,14 +404,19 @@ func checkExemptURL(u *url.URL) error {
 	return nil
 }
 
-// dialWebhook dials for kernel.HTTPPurposeWebhook: an exempt host name connects to whatever it
-// resolves to, an address in the exempt ranges connects without the guard, and every other
-// address goes through dial's checks.
-func (c *Client) dialWebhook(ctx context.Context, network, address string) (net.Conn, error) {
-	w := c.opts.Webhook
+// dialExempt returns the dial function of a purpose with the exempt destinations w: an exempt
+// host name connects to whatever it resolves to, an address in the exempt ranges connects
+// without the guard, and every other address goes through dial's checks.
+func (c *Client) dialExempt(w Destinations) func(ctx context.Context, network, address string) (net.Conn, error) {
 	if len(w.Hosts) == 0 && len(w.Prefixes) == 0 {
-		return c.dial(ctx, network, address)
+		return c.dial
 	}
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		return c.dialExemptAddr(ctx, w, network, address)
+	}
+}
+
+func (c *Client) dialExemptAddr(ctx context.Context, w Destinations, network, address string) (net.Conn, error) {
 	host, portStr, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err

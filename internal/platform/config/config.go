@@ -124,6 +124,11 @@ type Config struct {
 	// reach although the SSRF guard refuses them (webhook_allowed_destinations, ADR-0060).
 	WebhookAllowedHosts    []string
 	WebhookAllowedPrefixes []netip.Prefix
+	// LoginProviderAllowedHosts and LoginProviderAllowedPrefixes are the destinations that the
+	// requests to external identity providers may reach although the SSRF guard refuses them
+	// (login_provider_allowed_destinations, ADR-0106 §5).
+	LoginProviderAllowedHosts    []string
+	LoginProviderAllowedPrefixes []netip.Prefix
 	// RemoteStatusRetention is how long an unreferenced remote post is kept after its publication;
 	// RemoteStatusMaxRetention bounds how long any remote post is kept, zero for no bound (ADR-0034).
 	RemoteStatusRetention    time.Duration
@@ -325,6 +330,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("profile", c.Profile),
 		slog.Bool("http_allow_private_networks", c.HTTPAllowPrivateNetworks),
 		slog.Any("webhook_allowed_destinations", append(slices.Clone(c.WebhookAllowedHosts), prefixStrings(c.WebhookAllowedPrefixes)...)),
+		slog.Any("login_provider_allowed_destinations", append(slices.Clone(c.LoginProviderAllowedHosts), prefixStrings(c.LoginProviderAllowedPrefixes)...)),
 		slog.Duration("remote_status_retention", c.RemoteStatusRetention),
 		slog.Duration("remote_status_max_retention", c.RemoteStatusMaxRetention),
 		slog.Duration("relay_status_retention", c.RelayStatusRetention),

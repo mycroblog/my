@@ -513,7 +513,9 @@ func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, mete
 	opts := httpclient.Options{
 		UserAgent: fmt.Sprintf("my/%s (+https://%s/)", version, cfg.Host), Meter: meter, Tracer: tracer,
 		// The webhooks alone may reach the internal destinations that the operator lists (ADR-0060).
-		Webhook: httpclient.WebhookDestinations{Hosts: cfg.WebhookAllowedHosts, Prefixes: cfg.WebhookAllowedPrefixes},
+		Webhook: httpclient.Destinations{Hosts: cfg.WebhookAllowedHosts, Prefixes: cfg.WebhookAllowedPrefixes},
+		// So may the requests to the external identity providers (ADR-0106 §5).
+		LoginProvider: httpclient.Destinations{Hosts: cfg.LoginProviderAllowedHosts, Prefixes: cfg.LoginProviderAllowedPrefixes},
 	}
 	if cfg.HTTPAllowPrivateNetworks {
 		logger.Warn("http_allow_private_networks is on: outbound HTTP can reach loopback and private networks; never use it in production")

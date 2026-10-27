@@ -45,6 +45,8 @@ func purposeLabel(p kernel.HTTPPurpose) string {
 		return "webhook"
 	case kernel.HTTPPurposeClientMetadata:
 		return "client_metadata"
+	case kernel.HTTPPurposeLoginProvider:
+		return "login_provider"
 	}
 	return "_OTHER"
 }

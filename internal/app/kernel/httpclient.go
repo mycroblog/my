@@ -61,6 +61,12 @@ const (
 	// (ADR-0090 §1). The client never follows a redirect for it: the 3xx answer is returned as
 	// is, and the caller refuses it. Its body is at most 5 KB, as the draft recommends.
 	HTTPPurposeClientMetadata
+	// HTTPPurposeLoginProvider talks to an external identity provider that an administrator
+	// configured (ADR-0106 §5): OpenID Connect Discovery, the JWKS, the token exchange, and the
+	// APIs of the presets. The client never follows a redirect for it: the 3xx answer is returned
+	// as is, and the caller refuses it. The deployment configuration may exempt some destinations
+	// from the guard for it alone (login_provider_allowed_destinations).
+	HTTPPurposeLoginProvider
 )
 
 // MaxRedirects is the number of redirects the HTTPClient follows for one request.
@@ -77,7 +83,7 @@ type HTTPLimits struct {
 
 // DefaultHTTPLimits returns the limits of ADR-0019 §1 for p (ADR-0042 §3 for
 // HTTPPurposeHumanCheck, ADR-0060 for HTTPPurposeWebhook, ADR-0090 §1 for
-// HTTPPurposeClientMetadata; HTTPPurposeWebPush reads at most the small error document of a push
+// HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider; HTTPPurposeWebPush reads at most the small error document of a push
 // service), and false for an unknown purpose.
 func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 	switch p {
@@ -95,6 +101,8 @@ func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 		return HTTPLimits{MaxBodyBytes: 64 << 10, Timeout: 30 * time.Second}, true
 	case HTTPPurposeClientMetadata:
 		return HTTPLimits{MaxBodyBytes: 5 << 10, Timeout: 10 * time.Second}, true
+	case HTTPPurposeLoginProvider:
+		return HTTPLimits{MaxBodyBytes: 256 << 10, Timeout: 15 * time.Second}, true
 	}
 	return HTTPLimits{}, false
 }

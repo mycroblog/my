@@ -340,6 +340,12 @@ entries:
   - name: adapter-user-facing
     paths: ["internal/adapter/captcha/**", "internal/adapter/webauthn/**", "internal/adapter/webpush/**", "internal/adapter/markdown/**", "internal/adapter/system/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/operations/captcha.md"]
+  - name: adapter-oidc
+    paths: ["internal/adapter/oidc/**", "internal/app/identity/oidc.go", "pkg/testkit/oidc_contract.go"]
+    docs: ["docs/adr/0106-external-login-providers.md#5-idp-への-http", "docs/adr/0019-security-baseline.md"]
+    notes:
+      - "OpenID Connect Discovery, the JWKS, and ID token verification use the standard library alone; every request goes through kernel.HTTPClient with HTTPPurposeLoginProvider."
+      - "ID tokens accept RS256, ES256, and EdDSA only, never none or an HMAC; the adapter passes testkit.OIDCClientContract."
   - name: captcha
     paths: ["internal/adapter/captcha/**"]
     userdocs: ["docs/operations/captcha.md"]

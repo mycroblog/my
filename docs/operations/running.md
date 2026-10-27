@@ -182,7 +182,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 | `my.adapter.operation.duration` | Histogram, seconds | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`), `my.operation`, `my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (`valkey` connections, and `stream.<stream>` subscribers) |
 | `my.adapter.reconnects` | Counter | `my.adapter` |
-| `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
+| `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
 | `http.client.open_connections` | UpDownCounter | None |
 | `my.readiness.failures` | Counter | None |
 

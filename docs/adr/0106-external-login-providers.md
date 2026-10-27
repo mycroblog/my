@@ -152,6 +152,12 @@ IdP の種類について:
 - Discovery、JWKS、トークンの交換、GitHub の API は、新しい用途 `kernel.HTTPPurposeLoginProvider` で `kernel.HTTPClient` を通す。
   リダイレクトはたどらず、応答の大きさに上限を置く。Discovery と JWKS は応答のキャッシュ指示に従い、上限を置いて使い回す。
   JWKS にない `kid` の ID トークンを受けたときは、間隔を空けて 1 度だけ取り直す。
+- Discovery・JWKS・ID トークンの検証は、ライブラリを足さず標準ライブラリ（`crypto/rsa`・`crypto/ecdsa`・`crypto/ed25519`）で書く
+  （identity の `OIDCClient` ポートと `internal/adapter/oidc`）。`github.com/coreos/go-oidc/v3`（Apache-2.0、`github.com/go-jose/go-jose/v4` に依存）と
+  `golang.org/x/oauth2`（BSD-3-Clause）はライセンスでは使えるが、`kernel.HTTPClient` は context に入れた `*http.Client` の `RoundTripper` に
+  包み直さないと差し込めず、go-oidc の JWKS は応答のキャッシュ指示に従わず、`kid` が見つからないたびに取り直し、`nonce` と `auth_time` は呼び出し側で確かめる必要がある。
+  この節の要件を満たすには結局ライブラリの外で書く部分が大きく、受ける `alg` が 3 つに限られるので、標準ライブラリだけのほうが小さく済む。
+  トークンの交換も `golang.org/x/oauth2` を使わず、`kernel.HTTPClient` へのフォームの `POST` として書く。
 - プライベートネットワーク上の IdP は、運営者の設定 `login_provider_allowed_destinations`（ホストか CIDR の許可リスト）にあるときだけ許す。
   管理の権限だけでは内部に届かない（ADR-0060 の (c) と同じ）。
 
@@ -180,7 +186,7 @@ IdP の種類について:
     （FR-002）と管理者が発行するリンク（`manage_login_recovery`）に頼る。運用文書にこの影響を書き、管理画面は無効にする前にひも付いた利用者の数を示す。
   - IdP の多要素認証と、このサーバーの TOTP が二重になる利用者がいる。
   - GitHub での再認証は、GitHub にログイン中の端末なら入力なしに通るので、パスワードやパスキーより弱い本人確認になる。
-  - JWT の検証と OIDC のクライアントのために依存を足す見込みがある（ライセンスの確認が要る）。
+  - JWT の検証と OIDC のクライアントを依存を足さずに自前で持つので、署名の検証とクレームの確認の正しさは、このリポジトリのコントラクトテスト（`testkit.OIDCClientContract`）で守る。
   - SAML と CAS の IdP は扱わない。
 - 後続で必要になる作業（Issue に分ける）
   - data-model §4.1 と `schema/<dialect>/01-identity.sql` の IdP とひも付けのテーブル
@@ -218,5 +224,3 @@ IdP の種類について:
 ## Open Questions / 要検証
 
 - GitHub の `GET /user/emails` に要る scope が `user:email` で足りるか（現行の文書の記述が一覧の操作について明確でない）
-- Go の OIDC クライアントと JWT の検証に使うライブラリ（`github.com/coreos/go-oidc/v3` と `golang.org/x/oauth2` など）のライセンスと、
-  `kernel.HTTPClient` を差し込めるか。標準ライブラリだけで書くほうが小さく済むか（実装の Issue で比べて決める）
