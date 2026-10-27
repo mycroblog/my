@@ -84,6 +84,12 @@ const postContent = tv({
   base: [
     "text-base leading-[1.85] wrap-anywhere text-fg",
     "[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-[3px] [&_a:hover]:text-accent-hover",
+    // The server shortens the text of a URL link as Mastodon does: the scheme (and "www.") and what follows the
+    // first characters are `invisible` spans, and the shown part is `ellipsis` when the rest is cut. The hidden parts
+    // take no room but stay visible to selection, so copying the link copies the whole URL (Tailwind's own
+    // `invisible` utility would only hide them and keep their width).
+    "[&_.invisible]:visible [&_.invisible]:absolute [&_.invisible]:inline-block [&_.invisible]:size-0 [&_.invisible]:overflow-hidden [&_.invisible]:text-[0px] [&_.invisible]:leading-0",
+    "[&_.ellipsis]:after:content-['…']",
     "[&_blockquote]:rounded-md [&_blockquote]:bg-surface-sunken [&_blockquote]:px-3 [&_blockquote]:py-2 [&_blockquote]:text-fg-muted",
     "[&_code]:rounded-sm [&_code]:bg-surface-sunken [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]",
     "[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-surface-sunken [&_pre]:p-3 [&_pre]:font-mono",
