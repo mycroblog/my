@@ -99,7 +99,7 @@ func TestRunConfig(t *testing.T) {
 			},
 			wantCode:   0,
 			wantStdout: []string{"configuration OK"},
-			wantAbsent: []string{"production"},
+			wantAbsent: []string{"running in production"},
 		},
 		{
 			name:       "the maintenance check skips the production checks",

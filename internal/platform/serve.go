@@ -36,12 +36,12 @@ type ServeOptions struct {
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs;
 //   - every role first ensures the built-in roles, giving admin every permission.
 //
-// When ctx ends, Serve stops accepting connections and claiming jobs, and waits up to
+// When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
 // ShutdownTimeout for the requests and the job in progress to finish. After the timeout it
 // cancels their contexts, closes the remaining connections, and waits for the job runner to
 // return. The open streams end when the shutdown starts; the broker of the streams closes then
 // in the web and all roles, and after the jobs in the worker role. Serve returns nil after a graceful shutdown and an error when it cannot listen,
-// the server fails, or the timeout was hit.
+// the server fails, a goroutine panicked, or the timeout was hit.
 func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if opts.ShutdownTimeout <= 0 {
 		opts.ShutdownTimeout = DefaultShutdownTimeout
@@ -96,6 +96,14 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		return err
 	}
 	serveErr := make(chan error, 2)
+	// The panic of a goroutine of kernel.Go stops the server as a failure (ADR-0103 §5).
+	fatal := make(chan error, 1)
+	defer a.ErrorReporter.setStop(func(cause error) {
+		select {
+		case fatal <- cause:
+		default: // a shutdown has already been asked for
+		}
+	})()
 	go func() { serveErr <- srv.Serve(ln) }()
 	if metricsSrv != nil {
 		go func() {
@@ -119,6 +127,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	case <-ctx.Done():
 	case err = <-serveErr:
 		err = fmt.Errorf("http server: %w", err)
+	case err = <-fatal:
 	}
 	a.Logger.InfoContext(ctx, "shutting down", slog.Duration("timeout", opts.ShutdownTimeout))
 	close(stopJobs)

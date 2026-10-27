@@ -222,6 +222,9 @@ On SIGTERM or SIGINT the server shuts down gracefully.
 3. After 25 seconds it cancels the context of the remaining requests and jobs, closes connections, and exits with code 1.
    A cancelled job is retried, and a job killed midway is picked up again by another worker when its lease expires.
 
+A panic in one of the server's background tasks starts the same shutdown, so that the server never keeps running in a broken state.
+The `serve failed` log line names the task, and the process exits with code 1 for the platform or the process manager to restart it.
+
 For work on the database, key-value store or queue, restart in maintenance mode (`MY_MAINTENANCE=true`) instead of stopping. See [Maintenance](maintenance.md).
 
 ## The job queue and failed (dead) jobs

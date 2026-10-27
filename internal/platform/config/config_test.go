@@ -75,6 +75,7 @@ func TestLoadValid(t *testing.T) {
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -97,6 +98,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -111,6 +113,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -124,6 +127,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 				PreviousKEKs: [][]byte{bytes.Repeat([]byte{1}, kekSize), bytes.Repeat([]byte{2}, kekSize)},
 			},
 		},
@@ -140,6 +144,7 @@ listen = "127.0.0.1:9000"
 				SMTPPort: 2525, SMTPUsername: "mailer", SMTPPassword: "hunter3", Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -155,6 +160,7 @@ listen = "127.0.0.1:9000"
 				Captcha: "turnstile", CaptchaSiteKey: "0x4AAA-site", CaptchaSecretKey: "0x4AAA-secret", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -168,6 +174,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -187,6 +194,7 @@ listen = "127.0.0.1:9000"
 				TrustedProxyHeader: "forwarded",
 				MetricsExporter:    "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -202,6 +210,7 @@ listen = "127.0.0.1:9000"
 				WebhookAllowedPrefixes: []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8"), netip.MustParsePrefix("192.0.2.10/32")},
 				MetricsExporter:        "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -223,6 +232,7 @@ listen = "127.0.0.1:9000"
 				KeyManager:               "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -241,6 +251,7 @@ listen = "127.0.0.1:9000"
 				KeyManager:        "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -257,6 +268,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -272,6 +284,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -287,6 +300,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 		{
@@ -302,6 +316,7 @@ listen = "127.0.0.1:9000"
 				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
 			},
 		},
 	}
@@ -372,6 +387,20 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{
 				`blob (MY_BLOB): "gcs" is not available in v0; want one of fs, s3`,
 				`key_manager (MY_KEY_MANAGER): "awskms" is not available in v0; want one of local`,
+			},
+		},
+		{
+			name: "error exporters not yet available",
+			env:  with(minimal(), "MY_ERRORS_EXPORTER", "sentry"),
+			want: []string{
+				`errors_exporter (MY_ERRORS_EXPORTER): "sentry" is not available in v0; want one of none`,
+			},
+		},
+		{
+			name: "invalid error environment",
+			env:  with(minimal(), "MY_ERRORS_ENVIRONMENT", "my staging"),
+			want: []string{
+				"errors_environment (MY_ERRORS_ENVIRONMENT): must be up to 64 letters, digits, dots, hyphens, and underscores, such as staging",
 			},
 		},
 		{
@@ -730,7 +759,7 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc",
 		"MY_VOICE_TURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
-		"MY_VOICE_JOIN_SECRET", "0123456789abcdef0123456789abcdef"), nil))
+		"MY_VOICE_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1"), nil))
 	if err != nil {
 		t.Fatal(err)
 	}
