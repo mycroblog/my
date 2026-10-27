@@ -108,7 +108,7 @@
     "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
   },
   "settings.autoplay.description": {
-    "defaultMessage": "Animated images (GIF) move by themselves; off, they move only while you point at or touch them. Either way they stay still when your device asks for reduced motion. Kept on this browser.",
+    "defaultMessage": "Animated images (GIF) and emoji move by themselves; off, a post or profile moves only while you point at it, while you move through it with the keyboard, or after you tap it, until you tap it again. Either way they stay still when your device asks for reduced motion. Kept on this browser.",
     "description": "Help text of the switch that turns the autoplay of animated images on or off."
   },
   "settings.autoplay.label": {

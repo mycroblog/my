@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { type ReactNode, useId } from "react";
+import { mergeProps, mergeRefs } from "react-aria";
 import { tv } from "tailwind-variants";
+import { useAnimationScope } from "./AnimationScope";
 import { FeedArticle, type FeedArticleProps } from "./Feed";
+import { AnimationsPlayContext } from "./Picture";
 import { VisuallyHidden } from "./VisuallyHidden";
 
 const postCard = tv({
@@ -103,6 +106,10 @@ export type PostCardProps = Omit<FeedArticleProps, "children" | "content" | "ari
  * have no context line, which would move the avatar down); on a narrow card with a line below, the rest
  * of the card is indented clear of it. The post a page is about is `highlighted`, with a `label` that
  * starts its name and its `details`.
+ *
+ * The card is an animation scope (`useAnimationScope`): while animations do not play by themselves, its avatar, emoji and
+ * animated media move while it is hovered or has keyboard focus inside, and from a tap on it (not on a control inside it)
+ * until another tap or until it scrolls off the screen.
  */
 export function PostCard({
   context,
@@ -119,9 +126,11 @@ export function PostCard({
   lineAbove = false,
   lineBelow = false,
   className,
+  ref,
   ...props
 }: PostCardProps) {
   const slots = postCard({ highlighted, lineAbove, lineBelow });
+  const scope = useAnimationScope<HTMLElement>();
   const id = useId();
   const labelId = `${id}-label`;
   const contextId = `${id}-context`;
@@ -130,32 +139,40 @@ export function PostCard({
   const contentId = `${id}-content`;
   const labelledBy = [...(label === undefined ? [] : [labelId]), ...(context === undefined ? [] : [contextId]), authorId, timeId].join(" ");
   return (
-    <FeedArticle {...props} aria-labelledby={labelledBy} aria-describedby={contentId} className={slots.base({ className })}>
-      {label !== undefined && <VisuallyHidden id={labelId}>{label}</VisuallyHidden>}
-      {(lineAbove || lineBelow) && <span aria-hidden="true" className={slots.line()} />}
-      {context !== undefined && (
-        <p id={contextId} className={slots.context()}>
-          {context}
-        </p>
-      )}
-      <div className={slots.grid()}>
-        <div className={slots.avatar()}>{avatar}</div>
-        <header className={slots.header()}>
-          <div id={authorId} className={slots.author()}>
-            {author}
+    <FeedArticle
+      {...mergeProps(props, scope.props)}
+      ref={mergeRefs(ref, scope.props.ref)}
+      aria-labelledby={labelledBy}
+      aria-describedby={contentId}
+      className={slots.base({ className })}
+    >
+      <AnimationsPlayContext value={scope.playing}>
+        {label !== undefined && <VisuallyHidden id={labelId}>{label}</VisuallyHidden>}
+        {(lineAbove || lineBelow) && <span aria-hidden="true" className={slots.line()} />}
+        {context !== undefined && (
+          <p id={contextId} className={slots.context()}>
+            {context}
+          </p>
+        )}
+        <div className={slots.grid()}>
+          <div className={slots.avatar()}>{avatar}</div>
+          <header className={slots.header()}>
+            <div id={authorId} className={slots.author()}>
+              {author}
+            </div>
+            <div id={timeId} className={slots.time()}>
+              {time}
+            </div>
+          </header>
+          <div id={contentId} className={slots.body()}>
+            {content}
           </div>
-          <div id={timeId} className={slots.time()}>
-            {time}
-          </div>
-        </header>
-        <div id={contentId} className={slots.body()}>
-          {content}
+          {media !== undefined && <div className={slots.body()}>{media}</div>}
+          {details !== undefined && <div className={slots.details()}>{details}</div>}
+          {reactions !== undefined && <div className={slots.reactions()}>{reactions}</div>}
+          {actions !== undefined && <div className={slots.actions()}>{actions}</div>}
         </div>
-        {media !== undefined && <div className={slots.body()}>{media}</div>}
-        {details !== undefined && <div className={slots.details()}>{details}</div>}
-        {reactions !== undefined && <div className={slots.reactions()}>{reactions}</div>}
-        {actions !== undefined && <div className={slots.actions()}>{actions}</div>}
-      </div>
+      </AnimationsPlayContext>
     </FeedArticle>
   );
 }
