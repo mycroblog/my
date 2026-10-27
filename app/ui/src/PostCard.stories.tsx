@@ -7,6 +7,7 @@ import { ContentWarning } from "./ContentWarning";
 import { MediaGrid } from "./MediaGrid";
 import { PostCard } from "./PostCard";
 import { PostCardAuthorLink, PostCardAvatarLink, PostCardBoostContext, PostCardNameLink, PostCardOrigin, PostCardTimeLink } from "./PostCardParts";
+import { AutoplayContext } from "./Picture";
 import { Text } from "./Text";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
@@ -103,6 +104,41 @@ export const WithMedia: Story = {
         audioLabels={{ play: "Play", pause: "Pause", seek: "Position" }}
       />
     ),
+  },
+};
+
+/**
+ * With animations off, the card plays its animations while it is hovered, has keyboard focus inside, or after a tap on
+ * it. The moving renditions stay behind the reduced-motion query, so this story only checks that they come and go; the
+ * other stories carry the card's screenshots.
+ */
+export const AutoplayOff: Story = {
+  tags: ["no-screenshot"],
+  args: {
+    avatar: (
+      <PostCardAvatarLink href="#profile">
+        <Avatar sources={{ still: [{ url: picture("#4f6d8f") }], animated: [{ url: picture("#b3261e") }] }} name="Alice" decorative />
+      </PostCardAvatarLink>
+    ),
+  },
+  render: (args) => (
+    <AutoplayContext value={false}>
+      <PostCard {...args} />
+    </AutoplayContext>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const article = canvas.getByRole("article", { name: /Alice\s+@alice\s+2h/ });
+    const moving = () => canvasElement.querySelector("source");
+    await expect(moving()).toBeNull();
+    await userEvent.hover(canvas.getByText(/Hello from the local timeline/));
+    await expect(moving()).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
+    await userEvent.unhover(article);
+    await expect(moving()).toBeNull();
+    const tap = () => userEvent.pointer([{ keys: "[TouchA>]", target: article }, { keys: "[/TouchA]", target: article }]);
+    await tap();
+    await expect(moving()).not.toBeNull();
+    await tap();
+    await expect(moving()).toBeNull();
   },
 };
 

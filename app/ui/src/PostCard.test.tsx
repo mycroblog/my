@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { Avatar } from "./Avatar";
+import { AutoplayContext } from "./Picture";
 import { PostCard, PostCardAuthor } from "./PostCard";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
@@ -49,6 +51,83 @@ describe("PostCard", () => {
     const article = screen.getByRole("article", { name: "Selected post Alice @alice 2h" });
     expect(article).toHaveAccessibleDescription("Hello");
     expect(screen.getByText("3 boosts")).toBeInTheDocument();
+  });
+});
+
+const dance = { still: [{ url: "/still.webp", width: 96 }], animated: [{ url: "/moving.webp", width: 96 }] };
+
+/** A post with an animated avatar and a link in its body, with animations that do not play by themselves unless `autoplay`. */
+function renderAnimatedPost(autoplay = false) {
+  render(
+    <AutoplayContext value={autoplay}>
+      <PostCard
+        avatar={<Avatar sources={dance} name="Alice" decorative />}
+        author="Alice @alice"
+        time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+        content={<PostContent html={serverSanitizedHtml('<p>Hello <a href="https://example.com/">there</a></p>')} lang="en" />}
+        actions={<button type="button">Reply</button>}
+      />
+    </AutoplayContext>,
+  );
+  const article = screen.getByRole("article", { name: "Alice @alice 2h" });
+  // eslint-disable-next-line testing-library/no-node-access -- <source> has no role.
+  const moves = () => article.querySelector("source") !== null;
+  return { article, moves };
+}
+
+describe("PostCard animations", () => {
+  it("plays them while the pointer is over the card", async () => {
+    const user = userEvent.setup();
+    const { article, moves } = renderAnimatedPost();
+    expect(moves()).toBe(false);
+    await user.hover(screen.getByText("Hello", { exact: false }));
+    expect(moves()).toBe(true);
+    await user.unhover(article);
+    expect(moves()).toBe(false);
+  });
+
+  it("plays them while keyboard focus is inside the card", async () => {
+    const user = userEvent.setup();
+    const { moves } = renderAnimatedPost();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "there" })).toHaveFocus();
+    expect(moves()).toBe(true);
+    await user.tab();
+    expect(moves()).toBe(true);
+    await user.tab();
+    expect(moves()).toBe(false);
+  });
+
+  it("starts and stops them with a tap on the card, but not with a tap on a control, a drag or a long press", async () => {
+    const user = userEvent.setup();
+    const { article, moves } = renderAnimatedPost();
+    const tap = (target: Element) => user.pointer([{ keys: "[TouchA>]", target }, { keys: "[/TouchA]", target }]);
+    await tap(screen.getByRole("button", { name: "Reply" }));
+    expect(moves()).toBe(false);
+    await tap(screen.getByRole("link", { name: "there" }));
+    expect(moves()).toBe(false);
+    await user.pointer([
+      { keys: "[TouchA>]", target: article, coords: { clientX: 10, clientY: 10 } },
+      { pointerName: "TouchA", target: article, coords: { clientX: 10, clientY: 80 } },
+      { keys: "[/TouchA]", target: article, coords: { clientX: 10, clientY: 80 } },
+    ]);
+    expect(moves()).toBe(false);
+    await user.pointer({ keys: "[TouchA>]", target: article });
+    await new Promise((resolve) => setTimeout(resolve, 550));
+    await user.pointer({ keys: "[/TouchA]", target: article });
+    expect(moves()).toBe(false);
+    await tap(article);
+    expect(moves()).toBe(true);
+    await tap(screen.getByText("Hello", { exact: false }));
+    expect(moves()).toBe(false);
+  });
+
+  it("changes nothing while animations play by themselves", async () => {
+    const user = userEvent.setup();
+    const { article, moves } = renderAnimatedPost(true);
+    expect(moves()).toBe(true);
+    await user.pointer([{ keys: "[TouchA>]", target: article }, { keys: "[/TouchA]", target: article }]);
+    expect(moves()).toBe(true);
   });
 });
 

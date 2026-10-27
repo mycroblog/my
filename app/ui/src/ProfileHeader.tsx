@@ -4,8 +4,9 @@
 // container, so the fields line up in rows once it is wide (web-client/README.md D2). Strings and content come in as props.
 import { type ReactNode, useState } from "react";
 import { tv } from "tailwind-variants";
+import { useAnimationScope } from "./AnimationScope";
 import { Avatar } from "./Avatar";
-import { type ImageSources, Picture } from "./Picture";
+import { AnimationsPlayContext, type ImageSources, Picture } from "./Picture";
 import { Tag } from "./Tag";
 
 const noTags: readonly string[] = [];
@@ -61,45 +62,52 @@ export type ProfileHeaderProps = {
   counts?: readonly ProfileHeaderCount[];
 };
 
-/** The profile's `<header>`. */
+/**
+ * The profile's `<header>`. It is an animation scope (`useAnimationScope`): while animations do not play by themselves, its
+ * avatar, header image and emoji move while it is hovered or has keyboard focus inside, and from a tap on it until another
+ * tap or until it scrolls off the screen.
+ */
 export function ProfileHeader({ image, avatar, avatarSeed, name, actions, heading, handle, badges, tags = noTags, note, fields, joined, counts = noCounts }: ProfileHeaderProps) {
   const styles = profileHeader();
+  const scope = useAnimationScope<HTMLElement>();
   return (
-    <header className={styles.root()}>
-      <ProfileHeaderImage sources={image} size="banner" />
-      <div className={styles.top()}>
-        <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
-        {actions}
-      </div>
-      <div className={styles.body()}>
-        <div className={styles.identity()}>
-          {heading}
-          {/* The handle reads left to right, and lines up with the page's start in either direction. */}
-          <p className={styles.handle()}>
-            <span dir="ltr">{handle}</span>
-          </p>
+    <header {...scope.props} className={styles.root()}>
+      <AnimationsPlayContext value={scope.playing}>
+        <ProfileHeaderImage sources={image} size="banner" />
+        <div className={styles.top()}>
+          <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
+          {actions}
         </div>
-        {badges}
-        {tags.length > 0 && (
-          <ul className={styles.tags()}>
-            {tags.map((tag) => (
-              <Tag key={tag} as="li" variant="pill">
-                {tag}
-              </Tag>
-            ))}
-          </ul>
-        )}
-        {note}
-        {fields}
-        <p className={styles.joined()}>{joined}</p>
-        {counts.length > 0 && (
-          <ul className={styles.counts()}>
-            {counts.map((count) => (
-              <li key={count.key}>{count.content}</li>
-            ))}
-          </ul>
-        )}
-      </div>
+        <div className={styles.body()}>
+          <div className={styles.identity()}>
+            {heading}
+            {/* The handle reads left to right, and lines up with the page's start in either direction. */}
+            <p className={styles.handle()}>
+              <span dir="ltr">{handle}</span>
+            </p>
+          </div>
+          {badges}
+          {tags.length > 0 && (
+            <ul className={styles.tags()}>
+              {tags.map((tag) => (
+                <Tag key={tag} as="li" variant="pill">
+                  {tag}
+                </Tag>
+              ))}
+            </ul>
+          )}
+          {note}
+          {fields}
+          <p className={styles.joined()}>{joined}</p>
+          {counts.length > 0 && (
+            <ul className={styles.counts()}>
+              {counts.map((count) => (
+                <li key={count.key}>{count.content}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </AnimationsPlayContext>
     </header>
   );
 }

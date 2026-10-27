@@ -17,7 +17,7 @@ import { mergeRefs } from "react-aria";
 import { tv } from "tailwind-variants";
 import { type CustomEmojiImage, insertCustomEmojis, noCustomEmojis } from "./CustomEmoji";
 import { ExternalLinkContext, type ExternalLinkSettings, externalRel } from "./ExternalLink";
-import { AutoplayContext } from "./Picture";
+import { useAnimationsPlay } from "./Picture";
 
 declare const sanitizedHtmlBrand: unique symbol;
 
@@ -130,7 +130,7 @@ export type PostContentProps = Omit<ComponentPropsWithRef<"div">, "children" | "
   emojis?: readonly CustomEmojiImage[] | undefined;
   /**
    * Whether animated emoji may move when the user allows motion; false shows their still images. The default is the
-   * app's `AutoplayContext`.
+   * app's `AutoplayContext`, or the post it is in while that plays (`AnimationsPlayContext`).
    */
   emojiMotion?: boolean | undefined;
 };
@@ -228,9 +228,9 @@ function emojiDrawer(html: SanitizedHtml, emojis: readonly CustomEmojiImage[], a
  * new tab (`ExternalLinkContext`).
  */
 export function PostContent({ html, framed, lang, onLinkClick, emojis = noCustomEmojis, emojiMotion: motion, size, lineClamp, className, ref, ...props }: PostContentProps) {
-  const autoplay = use(AutoplayContext);
+  const plays = useAnimationsPlay();
   const links = use(ExternalLinkContext);
-  const emojiMotion = motion ?? autoplay;
+  const emojiMotion = motion ?? plays;
   return (
     <div
       {...props}
