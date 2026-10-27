@@ -319,8 +319,12 @@ func (d *Deliverer) send(ctx context.Context, del federation.Delivery, document 
 	h := http.Header{}
 	h.Set("Content-Type", "application/activity+json")
 	h.Set("Accept", "application/activity+json, application/ld+json")
+	// A redirect is not followed: a 301, 302, or 303 would turn the POST into a GET whose
+	// success says nothing about the activity, and the signature names the inbox's URL. The 3xx
+	// is the answer, a permanent failure (federation.ClassifyResponse).
 	resp, err := d.d.Client.Do(ctx, &kernel.HTTPRequest{
 		Method: http.MethodPost, URL: string(del.InboxURL), Header: h, Body: document, Purpose: kernel.HTTPPurposeJSON,
+		NoRedirects: true,
 	}, key)
 	if err != nil {
 		if ctx.Err() != nil {

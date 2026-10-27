@@ -118,9 +118,10 @@ func (r *RemoteActors) getJSON(ctx context.Context, u string, v any) error {
 	}
 	resp, err := r.d.HTTP.Do(ctx, &kernel.HTTPRequest{
 		Method: http.MethodGet, URL: u, Header: http.Header{"Accept": {"application/json"}}, Purpose: kernel.HTTPPurposeJSON,
+		CheckRedirect: r.d.Fetcher.redirectPolicy(),
 	})
 	switch {
-	case errors.Is(err, kernel.ErrForbiddenDestination), errors.Is(err, kernel.ErrInvalidHTTPRequest),
+	case errors.Is(err, ErrFetchRefused), errors.Is(err, kernel.ErrForbiddenDestination), errors.Is(err, kernel.ErrInvalidHTTPRequest),
 		errors.Is(err, kernel.ErrTooManyRedirects), errors.Is(err, kernel.ErrResponseTooLarge):
 		return fmt.Errorf("%w: %s: %w", errNoNodeInfo, u, err)
 	case err != nil:
