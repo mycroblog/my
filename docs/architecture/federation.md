@@ -151,7 +151,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 状況 | 振る舞い |
 | --- | --- |
 | 同じアクティビティの再処理 | 対象テーブルの一意制約（`statuses (uri)`、`boosts (uri)`、`follows (uri)`、`follow_resends (uri)`、`favourites (uri)`、`blocks (uri)`、`reports (uri)`、版の `(status_id, seq)`）で no-op |
-| `Create` より先に `Delete` | `remote_object_tombstones` に URI と `Delete` の主体を記録する。後から届いた `Create` / `Update` / 取得は、その主体の（主体が `attributedTo` の）オブジェクトに tombstone があれば捨てる |
+| `Create` より先に `Delete` | `remote_object_tombstones` に URI と `Delete` の主体の組を記録する（同じ URI でも主体ごとに 1 行）。後から届いた `Create` / `Update` / 取得は、その主体の（主体が `attributedTo` の）オブジェクトに tombstone があれば捨てる |
 | `Create` より先に `Update` | 取り込み範囲（ADR-0034）に入るなら `Create` として扱う。`published` が 1 日より古いものは取り込まない（Mastodon と同じ） |
 | 古い `Update` が後から届く | `updated`（無ければ `published`）が現在版の `revised_at` 以下なら版を作らない |
 | `Follow` より先に `Undo Follow` | 埋め込みの `Follow` があれば、主体とその `object` の組を `remote_follow_tombstones` に記録し、後から届いた同じ組の最初の `Follow` を捨てる（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`object` が URI だけなら、その URI を tombstone に記録して同じ URI の `Follow` を捨てる |
@@ -164,7 +164,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - `remote_object_tombstones` は `InboxProcessor` が書きます。`Delete` / `Undo` のハンドラが無いか、ハンドラが `ErrUnknownObject` を返したとき、対象の URI が主体と同じオリジンで主体自身でなければ記録します（ほかのサーバーのオブジェクトを封じさせない。`federation.TombstoneFor`）。
   `Undo` が主体自身の `Follow` を埋め込んでいれば、URI の代わりに組を `remote_follow_tombstones` に記録します（`federation.FollowTombstoneFor`。主体自身の `Follow` しか封じない）。
 - `Delete` / `Undo` 以外のアクティビティは、ハンドラを呼ぶ前に、アクティビティの URI に同じ主体が残した tombstone があれば捨てます。`Create` / `Update`（自分自身の Actor 以外）は、オブジェクトの URI の tombstone でも捨てます。
-  tombstone は残した主体のものしか封じません（`InboxRepository.RemoteObjectTombstoned` は URI と主体で引く）。同じオリジンのほかの主体の `Delete` / `Undo` は、その主体のものではないオブジェクトやアクティビティを捨てさせません。取得した投稿は `attributedTo` の主体の tombstone で判定し、作者の分からない取得の前には `status_deletions` だけを見ます。
+  tombstone は残した主体のものしか封じません（tombstone のキーは URI と主体の組で、`InboxRepository.RemoteObjectTombstoned` もその組で引く）。同じオリジンのほかの主体の `Delete` / `Undo` は、その主体のものではないオブジェクトやアクティビティを捨てさせず、先に記録されていても持ち主自身の `Delete` / `Undo` の記録を妨げません。取得した投稿は `attributedTo` の主体の tombstone で判定し、作者の分からない取得の前には `status_deletions` だけを見ます。
   `Follow` は、主体と `object` の組に使い終えていない `remote_follow_tombstones` があれば捨て、同じトランザクションで自分の URI を `Undo` の `activity_uri` で `remote_object_tombstones` に記録します。
   これで組の tombstone は使い終わり、同じ `Follow` の再処理は URI の tombstone で捨てられ、その次の `Follow` は通ります。
 - アクティビティの `object` が URI だけのとき、受信した文書の中に埋め込まれていない対象は、ローカルの DB から引くか、取り込み範囲に入るときだけ取得します。
