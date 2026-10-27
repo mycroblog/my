@@ -7,6 +7,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
@@ -40,6 +41,7 @@ type projectionRepositories struct {
 	finance       finance.Repository
 	supporters    supporters.Repository
 	voice         voice.Repository
+	diagnostics   diagnostics.Repository
 }
 
 // projectionRepositories returns the repositories of the database that the projections rebuild.
@@ -48,6 +50,7 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions,
 		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, identities: r.identities, webhooks: r.hooks, relays: r.feds,
 		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
+		diagnostics: r.diagnostics,
 	}
 }
 
@@ -198,6 +201,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"voice_room_heads", "voice_room_participants"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return voice.RebuildProjections(ctx, u, r.voice)
+				},
+			},
+			{
+				Name: "diagnostics", Module: "diagnostics",
+				Tables: []string{"error_group_states"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return diagnostics.RebuildProjections(ctx, u, r.diagnostics)
 				},
 			},
 		},

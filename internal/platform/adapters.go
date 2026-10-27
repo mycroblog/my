@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
+	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -54,6 +55,7 @@ type repositories struct {
 	payments     supporters.PaymentRepository
 	supporters   supporters.Repository
 	voice        voice.Repository
+	diagnostics  diagnostics.Repository
 	retention    retentionRepositories
 	projections  projection.Store
 	dataUpgrades dbupgrade.Repository

@@ -24,6 +24,7 @@ import (
 	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
+	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
@@ -188,6 +189,9 @@ type App struct {
 	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
 	// ErrDisabled while Voice is off.
 	VoiceRooms *appvoice.Service
+	// Diagnostics groups the error reports in the database and changes the state of the groups
+	// (ADR-0103 §4 (2), §7).
+	Diagnostics *appdiagnostics.Service
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
@@ -458,6 +462,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
 		return nil, err
 	}
+	a.setUpDiagnostics(repos.diagnostics)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

@@ -14,6 +14,7 @@
 - [4.12 finance](12-finance.md)
 - [4.13 supporters](13-supporters.md)
 - [4.14 voice](14-voice.md)
+- [4.15 diagnostics](15-diagnostics.md)
 
 ### 4.0 所有モジュール
 
@@ -32,4 +33,5 @@
 | `finance` | `cost_items`, `cost_item_label_revisions`, `cost_item_price_revisions`, `cost_item_end_changes`, `cost_item_cancellations`, `billing_import_runs`, `imported_cost_revisions`, `income_movements` | `cost_item_heads`, `imported_cost_heads` |
 | `supporters` | `payment_webhook_receipts`, `payment_reconcile_runs`, `supporter_program_changes`, `supporter_plans`, `supporter_plan_revisions`, `supporter_plan_retirements`, `supporter_plan_prices`, `supporter_plan_price_archivals`, `supporter_customers`, `supporter_subscriptions`, `supporter_checkouts`, `supporter_subscription_links`, `supporter_subscription_transitions`, `supporter_grace_periods`, `supporter_scheduled_changes`, `supporter_subscription_reversals` | `supporter_plan_heads`, `supporter_plan_price_heads`, `supporter_subscription_heads`, `supporter_live_subscriptions`, `supporter_subscription_deadlines`, `supporter_listings` |
 | `voice` | `voice_rooms`, `voice_room_revisions`, `voice_room_revision_hashtags`, `voice_room_host_changes`, `voice_room_cohost_changes`, `voice_room_participations`, `voice_room_participation_ends`, `voice_room_role_changes`, `voice_room_speak_grants`, `voice_room_hand_raises`, `voice_room_invitations`, `voice_room_invitation_revocations`, `voice_room_bans`, `voice_room_endings` | `voice_room_heads`, `voice_room_participants`, `voice_room_host_graces` |
+| `diagnostics` | `error_groups`, `error_group_events` | `error_group_states`, `error_group_counts`, `error_group_samples` |
 | 基盤 | — | `outbox_events`, `jobs`, `dead_jobs`, `job_attempts`, `kv_entries`, `data_upgrade_runs` |

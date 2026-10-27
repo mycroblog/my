@@ -284,6 +284,16 @@ type DomainRestriction struct {
 	EffectiveUntil sql.NullInt64
 }
 
+type ErrorGroupEvent struct {
+	ID          string
+	GroupID     string
+	Kind        string
+	ActorKind   string
+	ActorUserID sql.NullString
+	Version     string
+	OccurredAt  int64
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
