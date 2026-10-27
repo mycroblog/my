@@ -30,7 +30,10 @@
 // is tried again until it succeeds, and then both are handed out oldest first. Every notification is recorded in
 // the Store after its handler returns (at least once), and one recorded before is skipped. Mode Polling reads the
 // notifications every minute instead. The new posts of the home timeline (OnStatus) come from the event stream
-// alone and are not caught up.
+// alone and are not caught up. Stream delivery is best effort: the catch-up covers the time the stream is closed,
+// not a notification that the server sends while the stream stays open but that never reaches the bot (a proxy
+// drops it), which no later catch-up finds; a bot that needs every notification uses Mode Polling, reconnects
+// periodically, or lists the notifications itself. A handler's error is logged and is not retried.
 //
 // Scheduled jobs: Every runs a handler at the times of a cron expression of five fields (minute hour day month
 // weekday; numbers, ranges a-b, steps */n, and lists a,b) in an IANA time zone, UTC by default. The times missed
