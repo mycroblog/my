@@ -721,6 +721,7 @@ kek = "nope"
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			skipExcluded(t, tt.env)
 			src := source(tt.env, tt.files)
 			src.File = tt.file
 			cfg, _, err := Load(src)
@@ -744,6 +745,17 @@ kek = "nope"
 				}
 			}
 		})
+	}
+}
+
+// skipExcluded skips a case whose environment selects an adapter that a build tag left out:
+// Load would report that before the issue the case checks.
+func skipExcluded(t *testing.T, env map[string]string) {
+	t.Helper()
+	for k, v := range env {
+		if tag, ok := excludedValues[strings.ToLower(strings.TrimPrefix(k, "MY_"))][v]; ok {
+			t.Skipf("the build tag %s leaves out %s = %s", tag, k, v)
+		}
 	}
 }
 
