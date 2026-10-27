@@ -26,7 +26,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 	a.UnitOfWork, a.ready, a.closer = d, d.Ready, func() error { d.Close(); return nil }
 	pool := d.Pool()
 	a.newPostgresBus = func(listenURL string) (stream.Bus, error) {
-		return pgstream.New(pgstream.Options{Pool: pool, ListenURL: listenURL})
+		return pgstream.New(pgstream.Options{Pool: pool, ListenURL: listenURL, Reporter: a.ErrorReporter})
 	}
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d

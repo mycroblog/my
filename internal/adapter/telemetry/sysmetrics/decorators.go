@@ -185,15 +185,16 @@ func (s *source) Bury(ctx context.Context, worker string, j queue.Job, lastErr s
 // Bus measures the sends and listens of the stream bus b, whose adapter is named adapter (such
 // as stream.postgres), and counts its listener as a long-lived connection: open from Listen
 // until it breaks or closes, and a reconnect when Listen follows an earlier listener.
-// Sweeping is not measured; take the Sweeper from b before wrapping it.
-func Bus(b stream.Bus, m kernel.Meter, adapter string) stream.Bus {
+// Sweeping is not measured; take the Sweeper from b before wrapping it. reporter receives a
+// panic of the goroutine that waits for the listener's end (kernel.Go).
+func Bus(b stream.Bus, m kernel.Meter, adapter string, reporter kernel.ErrorReporter) stream.Bus {
 	if kernel.IsNop(m) {
 		return b
 	}
 	return &bus{
 		next: b, ops: newOperations(m, adapter),
 		conns: m.UpDownCounter(AdapterConnections), reconnects: m.Counter(AdapterReconnects),
-		labels: kernel.NewLabels(LabelAdapter, adapter),
+		labels: kernel.NewLabels(LabelAdapter, adapter), reporter: reporter,
 	}
 }
 
@@ -203,6 +204,7 @@ type bus struct {
 	conns      kernel.UpDownCounter
 	reconnects kernel.Counter
 	labels     kernel.Labels
+	reporter   kernel.ErrorReporter
 
 	mu       sync.Mutex
 	listened bool
@@ -232,13 +234,13 @@ func (b *bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 	}
 	b.conns.Add(ctx, 1, b.labels)
 	tl := &listener{Listener: l, closed: make(chan struct{})}
-	go func() {
+	kernel.Go(ctx, "stream.metrics.listener", b.reporter, func(ctx context.Context) {
 		select {
 		case <-l.Broken():
 		case <-tl.closed:
 		}
 		b.conns.Add(ctx, -1, b.labels)
-	}()
+	})
 	return tl, nil
 }
 

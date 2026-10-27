@@ -16,6 +16,7 @@ import (
 	"golang.org/x/image/draw"
 	xwebp "golang.org/x/image/webp"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/media"
 )
 
@@ -89,7 +90,8 @@ func run[T any](ctx context.Context, p *Processor, data []byte, limits media.Lim
 		err error
 	}
 	done := make(chan result, 1)
-	go func() {
+	// The goroutine recovers the decoder's panic itself, as ErrCorrupt: kernel.Go has nothing to report.
+	kernel.Go(ctx, "media.native.process", nil, func(context.Context) {
 		defer func() { <-p.sem }()
 		defer func() {
 			if r := recover(); r != nil {
@@ -98,7 +100,7 @@ func run[T any](ctx context.Context, p *Processor, data []byte, limits media.Lim
 		}()
 		out, err := fn(probe)
 		done <- result{out: out, err: err}
-	}()
+	})
 	select {
 	case r := <-done:
 		return r.out, r.err

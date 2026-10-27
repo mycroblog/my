@@ -36,7 +36,7 @@ func TestStreamBusContractMiniredis(t *testing.T) {
 		m := miniredis.RunT(t)
 		c := open(t, "redis://"+m.Addr())
 		return testkit.StreamBus{
-			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, "") },
+			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, "", nil) },
 			Unreachable: unreachable,
 			// Closing the server cuts every connection; the publishers reconnect to the restarted one.
 			Break: func(t *testing.T) {
@@ -63,7 +63,7 @@ func TestStreamBusContractValkey(t *testing.T) {
 		name := strings.TrimSuffix(strings.ReplaceAll(s.KeyPrefix, ":", "-"), "-")
 		c := openNamed(t, s.URL, name)
 		return testkit.StreamBus{
-			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, s.KeyPrefix) },
+			NewBus:      func(*testing.T) stream.Bus { return streamvalkey.New(c, s.KeyPrefix, nil) },
 			Unreachable: unreachable,
 			Break:       func(t *testing.T) { killSubscribers(t, c, name) },
 			Resources:   func(t *testing.T) int { return numsub(t, c, streamvalkey.Channel(s.KeyPrefix)) },
@@ -76,8 +76,8 @@ func TestStreamBrokerContractRelay(t *testing.T) {
 	testkit.StreamBrokerContract(t, func(t *testing.T, o stream.HubOptions) testkit.StreamBroker {
 		m := miniredis.RunT(t)
 		c := open(t, "redis://"+m.Addr())
-		local := stream.NewRelay(streamvalkey.New(c, ""), stream.RelayOptions{Hub: o})
-		remote := stream.NewRelay(streamvalkey.New(c, ""), stream.RelayOptions{})
+		local := stream.NewRelay(streamvalkey.New(c, "", nil), stream.RelayOptions{Hub: o})
+		remote := stream.NewRelay(streamvalkey.New(c, "", nil), stream.RelayOptions{})
 		for _, r := range []*stream.Relay{local, remote} {
 			t.Cleanup(func() {
 				if err := r.Close(context.Background()); err != nil {
@@ -102,7 +102,7 @@ func TestStreamBrokerContractRelay(t *testing.T) {
 // again on a new connection.
 func TestSendOnCutConnection(t *testing.T) {
 	m := miniredis.RunT(t)
-	listening := streamvalkey.New(open(t, "redis://"+m.Addr()), "")
+	listening := streamvalkey.New(open(t, "redis://"+m.Addr()), "", nil)
 	const payload = "after the cut"
 	arrived := make(chan struct{}, 1)
 	l, err := listening.Listen(t.Context(), func(p []byte) {
@@ -129,7 +129,7 @@ func TestSendOnCutConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(c.Close)
-	sending := streamvalkey.New(c, "")
+	sending := streamvalkey.New(c, "", nil)
 	if err := sending.Send(t.Context(), []byte("before the cut")); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func (p *cutProxy) cut() {
 func TestBusesAreSeparate(t *testing.T) {
 	m := miniredis.RunT(t)
 	c := open(t, "redis://"+m.Addr())
-	a, b := streamvalkey.New(c, "a:"), streamvalkey.New(c, "b:")
+	a, b := streamvalkey.New(c, "a:", nil), streamvalkey.New(c, "b:", nil)
 	got := make(chan []byte, 1)
 	l, err := b.Listen(t.Context(), func(p []byte) { got <- p })
 	if err != nil {
@@ -237,7 +237,7 @@ func unreachable(t *testing.T) stream.Bus {
 	m := miniredis.RunT(t)
 	c := open(t, "redis://"+m.Addr())
 	m.Close()
-	return streamvalkey.New(c, "")
+	return streamvalkey.New(c, "", nil)
 }
 
 // open connects to the server at url and closes the client when t ends.

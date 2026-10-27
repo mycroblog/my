@@ -19,7 +19,7 @@ import (
 func (a *App) newPubSubBus(ctx context.Context, cfg *config.Config, processID string) (stream.Bus, func() error, error) {
 	b, err := pubsubstream.New(ctx, pubsubstream.Options{
 		Topic: cfg.StreamPubSubTopic, SubscriptionPrefix: cfg.StreamPubSubSubscriptionPrefix, ProcessID: processID,
-		Logger: a.Logger.With(slog.String("component", "stream")),
+		Logger: a.Logger.With(slog.String("component", "stream")), Reporter: a.ErrorReporter,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("stream = pubsub: %w", err)
