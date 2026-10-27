@@ -126,3 +126,16 @@ SELECT CAST(COALESCE(SUM(s.file_size), 0) AS BIGINT) FROM (
   SELECT u.file_size FROM uploaded_media u
   WHERE NOT EXISTS (SELECT 1 FROM media_processing_results p WHERE p.media_id = u.media_id)
 ) AS s;
+
+-- name: UpsertMediaBlobDeletion :exec
+INSERT INTO media_blob_deletions (blob_key, delete_after) VALUES (@blob_key, @delete_after)
+ON CONFLICT (blob_key) DO UPDATE SET delete_after = excluded.delete_after;
+
+-- name: DeleteMediaBlobDeletion :execrows
+DELETE FROM media_blob_deletions WHERE blob_key = @blob_key;
+
+-- ListDueMediaBlobDeletions returns at most @batch_limit keys due at or before @now, the earliest
+-- first, for the cleanup to delete.
+-- name: ListDueMediaBlobDeletions :many
+SELECT blob_key FROM media_blob_deletions WHERE delete_after <= @now
+ORDER BY delete_after, blob_key LIMIT @batch_limit;

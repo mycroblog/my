@@ -53,7 +53,12 @@ func (p FakeMediaProcessor) Process(ctx context.Context, data []byte, limits med
 	if err != nil {
 		return media.Output{}, err
 	}
-	sum := sha256.Sum256(append([]byte(req.Purpose), data...))
+	// The variants depend on the purpose and, as a crop would, on the focal point.
+	seed := []byte(req.Purpose)
+	if req.FocusX != 0 || req.FocusY != 0 {
+		seed = fmt.Appendf(seed, "@%g,%g", req.FocusX, req.FocusY)
+	}
+	sum := sha256.Sum256(append(seed, data...))
 	digest := hex.EncodeToString(sum[:8])
 	variant := func(kind string, w, h int) media.Variant {
 		return media.Variant{Data: fmt.Appendf(nil, "\x89PNG\r\n\x1A\n%s:%s", kind, digest), ContentType: "image/png", Extension: "png", Width: w, Height: h}

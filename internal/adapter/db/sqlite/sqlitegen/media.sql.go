@@ -12,6 +12,18 @@ import (
 	"database/sql"
 )
 
+const deleteMediaBlobDeletion = `-- name: DeleteMediaBlobDeletion :execrows
+DELETE FROM media_blob_deletions WHERE blob_key = ?1
+`
+
+func (q *Queries) DeleteMediaBlobDeletion(ctx context.Context, blobKey string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteMediaBlobDeletion, blobKey)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const deleteMediaDescription = `-- name: DeleteMediaDescription :exec
 DELETE FROM media_descriptions WHERE media_id = ?
 `
@@ -268,6 +280,41 @@ func (q *Queries) IsMediaAttached(ctx context.Context, mediaID string) (bool, er
 	return exists, err
 }
 
+const listDueMediaBlobDeletions = `-- name: ListDueMediaBlobDeletions :many
+SELECT blob_key FROM media_blob_deletions WHERE delete_after <= ?1
+ORDER BY delete_after, blob_key LIMIT ?2
+`
+
+type ListDueMediaBlobDeletionsParams struct {
+	Now        int64
+	BatchLimit int64
+}
+
+// ListDueMediaBlobDeletions returns at most @batch_limit keys due at or before @now, the earliest
+// first, for the cleanup to delete.
+func (q *Queries) ListDueMediaBlobDeletions(ctx context.Context, arg ListDueMediaBlobDeletionsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listDueMediaBlobDeletions, arg.Now, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var blob_key string
+		if err := rows.Scan(&blob_key); err != nil {
+			return nil, err
+		}
+		items = append(items, blob_key)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMediaProcessingResults = `-- name: ListMediaProcessingResults :many
 SELECT id, media_id, purpose, outcome, media_type, width, height, duration_ms, blurhash, processed_at
 FROM media_processing_results WHERE media_id = ? ORDER BY id
@@ -518,6 +565,21 @@ func (q *Queries) SumLocalMediaSize(ctx context.Context) (int64, error) {
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const upsertMediaBlobDeletion = `-- name: UpsertMediaBlobDeletion :exec
+INSERT INTO media_blob_deletions (blob_key, delete_after) VALUES (?1, ?2)
+ON CONFLICT (blob_key) DO UPDATE SET delete_after = excluded.delete_after
+`
+
+type UpsertMediaBlobDeletionParams struct {
+	BlobKey     string
+	DeleteAfter int64
+}
+
+func (q *Queries) UpsertMediaBlobDeletion(ctx context.Context, arg UpsertMediaBlobDeletionParams) error {
+	_, err := q.db.ExecContext(ctx, upsertMediaBlobDeletion, arg.BlobKey, arg.DeleteAfter)
+	return err
 }
 
 const upsertMediaDescription = `-- name: UpsertMediaDescription :exec

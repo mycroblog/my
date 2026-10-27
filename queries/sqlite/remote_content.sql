@@ -48,6 +48,19 @@ ON CONFLICT (url) DO UPDATE SET
   expires_at = excluded.expires_at,
   last_accessed_at = excluded.last_accessed_at;
 
+-- InsertRemoteMediaCache records a copy of a remote file unless the URL has an entry already.
+-- name: InsertRemoteMediaCache :execrows
+INSERT INTO remote_media_cache (url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at)
+VALUES (@url, @blob_key, @content_type, @file_size, @fetched_at, @expires_at, @last_accessed_at)
+ON CONFLICT (url) DO NOTHING;
+
+-- LockRemoteMediaCache reads the entry of @url in a transaction that replaces it. SQLite
+-- transactions take the write lock when they begin, so a concurrent refresh of the URL waits and
+-- reads the entry this one writes.
+-- name: LockRemoteMediaCache :one
+SELECT url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at
+FROM remote_media_cache WHERE url = @url;
+
 -- name: GetRemoteMediaCache :one
 SELECT url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at
 FROM remote_media_cache WHERE url = @url;

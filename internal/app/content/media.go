@@ -193,17 +193,31 @@ func (s *MediaService) Upload(ctx context.Context, in UploadInput) (Media, error
 		}
 		up.ContentType = probe.Format.ContentType()
 	}
+	// The keys are reserved before the blobs are written, so that a blob whose write fails
+	// after it was stored, or whose upload is never recorded, is still found and deleted.
+	journal := s.journal()
+	keys := []string{up.BlobKey}
+	if poster != nil {
+		keys = append(keys, posterKey(file.ID))
+	}
+	if err := journal.reserve(ctx, keys...); err != nil {
+		return Media{}, err
+	}
 	if _, err := s.d.Blobs.Put(ctx, up.BlobKey, bytes.NewReader(data), blob.PutOptions{ContentType: up.ContentType}); err != nil {
+		journal.discard(ctx, keys...)
 		return Media{}, err
 	}
 	if poster != nil {
 		if _, err := s.d.Blobs.Put(ctx, posterKey(file.ID), bytes.NewReader(poster), blob.PutOptions{}); err != nil {
-			_ = s.d.Blobs.Delete(context.WithoutCancel(ctx), up.BlobKey)
+			journal.discard(ctx, keys...)
 			return Media{}, err
 		}
 	}
 	job := processJob(file.ID, in.Purpose, "")
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := journal.keep(ctx, tx, keys...); err != nil {
+			return err
+		}
 		if err := s.d.Repository.InsertMediaFile(ctx, tx, file); err != nil {
 			return err
 		}
@@ -221,8 +235,11 @@ func (s *MediaService) Upload(ctx context.Context, in UploadInput) (Media, error
 		return nil
 	})
 	if err != nil {
-		_ = s.d.Blobs.Delete(context.WithoutCancel(ctx), up.BlobKey)
-		_ = s.d.Blobs.Delete(context.WithoutCancel(ctx), posterKey(file.ID))
+		// A commit that failed to answer may have recorded the upload.
+		if _, ferr := s.d.Repository.FindUploadedMedia(context.WithoutCancel(ctx), file.ID); !errors.Is(ferr, ErrNotFound) {
+			return Media{}, err
+		}
+		journal.discard(ctx, keys...)
 		return Media{}, err
 	}
 	if s.d.Outbox == nil {
@@ -812,7 +829,7 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 			// The source is a variant: keep the size of the original.
 			result.Width, result.Height = current.Width, current.Height
 		}
-		if err := s.storeVariants(ctx, &result, out); err != nil {
+		if err := s.storeVariants(ctx, &result, stillAndAnimated(out)); err != nil {
 			return queue.Retry(0, err)
 		}
 	case current != nil && (media.Rejected(err) || errors.Is(err, blob.ErrNotFound)):
@@ -827,17 +844,41 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 	return s.recordResult(ctx, up, result)
 }
 
-// recordResult records a processing result, then deletes the file as received.
+// recordResult records a processing result, then deletes the file as received. The variants of
+// a result that is not recorded, because the transaction failed or a concurrent run of the same
+// job recorded its result first, are deleted.
 func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult) queue.Result {
+	journal := s.journal()
+	keys := make([]string, 0, len(result.Variants))
+	for _, v := range result.Variants {
+		keys = append(keys, v.BlobKey)
+	}
+	lost := false
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		lost = false
 		// A concurrent run of the same job may have recorded its result first.
-		if done, err := s.d.Repository.HasProcessingResult(ctx, tx, result.MediaID, result.Purpose); err != nil || done {
+		done, err := s.d.Repository.HasProcessingResult(ctx, tx, result.MediaID, result.Purpose)
+		if err != nil {
+			return err
+		}
+		if done {
+			lost = true
+			return nil
+		}
+		if err := journal.keep(ctx, tx, keys...); err != nil {
 			return err
 		}
 		return s.d.Repository.InsertProcessingResult(ctx, tx, result)
 	})
 	if err != nil {
+		// A commit that failed to answer may have recorded the result.
+		if r, ferr := s.d.Repository.FindLatestProcessingResult(context.WithoutCancel(ctx), result.MediaID); ferr == nil && r.ID != result.ID || errors.Is(ferr, ErrNotFound) {
+			journal.discard(ctx, keys...)
+		}
 		return queue.Retry(0, err)
+	}
+	if lost {
+		journal.discard(ctx, keys...)
 	}
 	return s.deleteReceived(ctx, up)
 }
@@ -875,6 +916,7 @@ func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia,
 	case err != nil:
 		return retry(err)
 	}
+	var variants []sizedVariant
 	if poster != nil {
 		req.Purpose = media.PurposeAttachment
 		still, err := s.d.Processor.Process(ctx, poster, s.d.Limits, s.d.Sizes, req)
@@ -886,20 +928,16 @@ func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia,
 		default:
 			still.Animated = nil
 			result.Blurhash = still.Blurhash
-			if err := s.storeVariants(ctx, result, still); err != nil {
-				return retry(err)
-			}
+			variants = stillAndAnimated(still)
 		}
 	}
-	key := variantKey(up.MediaID, result.ID, content.SizeLarge, content.MotionAnimated, out.Extension)
-	info, err := s.d.Blobs.Put(ctx, key, bytes.NewReader(out.Data), blob.PutOptions{ContentType: out.ContentType})
-	if err != nil {
+	variants = append(variants, sizedVariant{
+		size: content.SizeLarge, motion: content.MotionAnimated,
+		v: media.Variant{Data: out.Data, ContentType: out.ContentType, Extension: out.Extension, Width: out.Width, Height: out.Height},
+	})
+	if err := s.storeVariants(ctx, result, variants); err != nil {
 		return retry(err)
 	}
-	result.Variants = append(result.Variants, content.MediaVariant{
-		ResultID: result.ID, Size: content.SizeLarge, Motion: content.MotionAnimated, BlobKey: key, ContentType: out.ContentType,
-		FileSize: info.Size, Width: out.Width, Height: out.Height,
-	})
 	return nil
 }
 
@@ -930,9 +968,17 @@ func sourceVariant(r content.MediaProcessingResult) content.MediaVariant {
 	return v
 }
 
-// storeVariants puts the variants of out in blob storage under keys of result and adds them to
-// result.
-func (s *MediaService) storeVariants(ctx context.Context, result *content.MediaProcessingResult, out media.Output) error {
+// sizedVariant is a variant of a processing result with its size and motion.
+type sizedVariant struct {
+	size   content.MediaSize
+	motion content.MediaMotion
+	v      media.Variant
+}
+
+// stillAndAnimated returns the variants of out: the still ones, and for an animation the
+// animated ones.
+func stillAndAnimated(out media.Output) []sizedVariant {
+	var vs []sizedVariant
 	sets := []struct {
 		motion content.MediaMotion
 		v      *media.Variants
@@ -942,19 +988,42 @@ func (s *MediaService) storeVariants(ctx context.Context, result *content.MediaP
 			continue
 		}
 		for i, size := range content.MediaSizes {
-			v := set.v.Variant(media.AllSizes[i])
-			key := variantKey(result.MediaID, result.ID, size, set.motion, v.Extension)
-			info, err := s.d.Blobs.Put(ctx, key, bytes.NewReader(v.Data), blob.PutOptions{ContentType: v.ContentType})
-			if err != nil {
-				return err
-			}
-			result.Variants = append(result.Variants, content.MediaVariant{
-				ResultID: result.ID, Size: size, Motion: set.motion, BlobKey: key, ContentType: v.ContentType,
-				FileSize: info.Size, Width: v.Width, Height: v.Height,
-			})
+			vs = append(vs, sizedVariant{size: size, motion: set.motion, v: set.v.Variant(media.AllSizes[i])})
 		}
 	}
+	return vs
+}
+
+// storeVariants puts variants in blob storage under keys of result and adds them to result.
+// The keys are reserved first, so that the blobs of a run that fails or loses to a concurrent
+// run are found and deleted (blobJournal); recordResult keeps them. A failed write deletes what
+// the run wrote.
+func (s *MediaService) storeVariants(ctx context.Context, result *content.MediaProcessingResult, variants []sizedVariant) error {
+	keys := make([]string, len(variants))
+	for i, sv := range variants {
+		keys[i] = variantKey(result.MediaID, result.ID, sv.size, sv.motion, sv.v.Extension)
+	}
+	journal := s.journal()
+	if err := journal.reserve(ctx, keys...); err != nil {
+		return err
+	}
+	for i, sv := range variants {
+		info, err := s.d.Blobs.Put(ctx, keys[i], bytes.NewReader(sv.v.Data), blob.PutOptions{ContentType: sv.v.ContentType})
+		if err != nil {
+			journal.discard(ctx, keys...)
+			return err
+		}
+		result.Variants = append(result.Variants, content.MediaVariant{
+			ResultID: result.ID, Size: sv.size, Motion: sv.motion, BlobKey: keys[i], ContentType: sv.v.ContentType,
+			FileSize: info.Size, Width: sv.v.Width, Height: sv.v.Height,
+		})
+	}
 	return nil
+}
+
+// journal returns the work list of blob deletions on the service's ports.
+func (s *MediaService) journal() blobJournal {
+	return blobJournal{uow: s.d.UnitOfWork, repo: s.d.Repository, blobs: s.d.Blobs, clock: s.d.Clock, logger: s.d.Logger}
 }
 
 func (s *MediaService) processBlob(ctx context.Context, key string, req media.Request) (media.Output, error) {
@@ -992,10 +1061,14 @@ func (s *MediaService) handleCleanup(ctx context.Context, _ queue.Job) queue.Res
 }
 
 // CleanupUnattached deletes the uploads older than the unattached TTL that no status revision
-// attaches and no referrer references, with their blobs, and returns how many it deleted. One
-// run looks at a bounded number of uploads; the next run continues. A blob whose deletion
-// fails after its rows are gone is logged and left behind.
+// attaches and no referrer references, with their blobs, and returns how many it deleted. It
+// first deletes the blobs that are due on the work list of blob deletions (blobJournal): those
+// of earlier deletions whose blob deletion failed, and those that a failed upload or processing
+// left. One run looks at a bounded number of uploads; the next run continues.
 func (s *MediaService) CleanupUnattached(ctx context.Context) (int, error) {
+	if _, err := s.journal().sweep(ctx); err != nil {
+		return 0, err
+	}
 	before := s.d.Clock.Now().Add(-s.d.UnattachedTTL)
 	deleted, after := 0, ""
 	for range cleanupMaxBatches {
@@ -1020,6 +1093,10 @@ func (s *MediaService) CleanupUnattached(ctx context.Context) (int, error) {
 	return deleted, nil
 }
 
+// deleteUnattached deletes an unattached upload. Its rows go in one transaction that records
+// its blob keys on the work list of blob deletions, unless a status revision attached it since
+// it was listed; then the blobs go, and a blob whose deletion fails stays on the list for the
+// next run.
 func (s *MediaService) deleteUnattached(ctx context.Context, id string) (bool, error) {
 	for _, r := range s.d.Referrers {
 		referenced, err := r.IsMediaReferenced(ctx, id)
@@ -1031,20 +1108,19 @@ func (s *MediaService) deleteUnattached(ctx context.Context, id string) (bool, e
 	if err != nil {
 		return false, err
 	}
+	journal := s.journal()
 	var deleted bool
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		deleted, err = s.d.Repository.DeleteUnattachedMedia(ctx, tx, id)
-		return err
+		if deleted, err = s.d.Repository.DeleteUnattachedMedia(ctx, tx, id); err != nil || !deleted {
+			return err
+		}
+		return journal.release(ctx, tx, keys...)
 	})
 	if err != nil || !deleted {
 		return false, err
 	}
-	for _, k := range keys {
-		if err := s.d.Blobs.Delete(ctx, k); err != nil {
-			s.d.Logger.WarnContext(ctx, "blob of a deleted upload left behind", slog.String("key", k), slog.Any("error", err))
-		}
-	}
+	journal.deleteNow(ctx, keys...)
 	return true, nil
 }
 

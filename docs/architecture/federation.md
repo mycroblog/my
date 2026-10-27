@@ -517,7 +517,10 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   `variant` は元のファイルそのものの `full` と、静止画の小さい版の `small` です（[ADR-0054](../adr/0054-media-variants-video-audio.md) §7）。
   - `small` は、記録したときの用途（`remote_media.purpose`: 添付・アイコン・ヘッダー・絵文字）の S の箱（ローカルの版と同じ、data-model §4.4）に縮めた静止画の WebP です。アニメーションは最初のフレームです。
     プロキシが `full` と同じように取得して（キャッシュがあればそこから読んで）、要求のたびに `media.Processor.Preview` で作ります。宣言が動画・音声・`gifv` のもの、中身が画像でないもの、処理できないものは 404 です。
-    `remote_media_policy` がそのファイルをキャッシュするときは、`remote_media_cache` に URL と用途を合わせたキー（`{URL}#small-{purpose}`）でも保存します。M / L は作らず、`full` を使います。
+    `remote_media_policy` がそのファイルをキャッシュするときは、`remote_media_cache` に、URL に `small` の入力をすべて加えたキーでも保存します。
+    キーは `{URL}#small-{purpose}-{箱}` で、箱は設定の大きさによる S の箱（面積なら `230400px`、幅×高さなら `96x96`）です。
+    箱が切り抜く（アイコン）ときは焦点も加えます（`{URL}#small-avatar-96x96c-f{x},{y}`。宣言がなければ中央の `f0,0`）。
+    同じ URL を別の所有者が別の焦点で宣言しても、大きさの設定を変えても、別の入力から作った版を返しません。M / L は作らず、`full` を使います。
   - クライアント API はリモートの画像の `small` にこの URL を、`medium` / `large` に `full` を載せます。リモートのアカウントのアイコン・ヘッダーと添付の `preview_url` が小さくなり、アニメーションを止めて表示できます。
 - プロキシ（`content.MediaProxy` と `internal/interface/media`）は、`HTTPClient` で元の URL を取得し、形式を中身の先頭のバイトで判定して（ADR-0019 §8。許可リストは JPEG / PNG / GIF / WebP / AVIF / MP4 / WebM / MP3 / Ogg で、SVG は拒否）、
   判定した `Content-Type`、`Cache-Control: public, max-age={remote_media_cache_ttl}`、`X-Content-Type-Options: nosniff`、`Content-Security-Policy: default-src 'none'; sandbox`、`Cross-Origin-Resource-Policy: cross-origin` を付けて中継します。
@@ -530,13 +533,17 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - インスタンス設定 `remote_media_policy`（`none` / `avatars` / `all`、既定 `none`）と `remote_media_cache_ttl`（秒、既定 86400）で、TTL 付きのキャッシュを選べます（FR-409）。
   - `none` では、プロキシは毎回取得して中継し、キャッシュを読みも書きもしません。
   - `all` ではすべてのリモートのメディアを、`avatars` ではプロフィールのアバター・ヘッダー（`account` モジュールの `IsMediaReferenced`）とカスタム絵文字の画像（`custom_emoji_images`）だけを、キャッシュします。
-  - キャッシュは URL ごとに 1 つで、Blob の非公開のキー `remote/{URL の SHA-256 の 16 進}` に置き、`remote_media_cache` に記録します。
+  - キャッシュは URL ごとに 1 つで、Blob の非公開のキー `remote/{URL の SHA-256 の 16 進}-{乱数}` に置き、`remote_media_cache` に記録します。
+    取得し直すたびに新しいキーに書くので、期限切れの複製を消すクリーンアップが、取得し直した複製の Blob を消すことはありません。
+    キーは書く前に `media_blob_deletions`（data-model §4.4）に猶予付きで記録し、行を記録するトランザクションで外します。置き換えた前の複製の Blob は同じトランザクションで削除待ちに記録し、次のクリーンアップが消します。
+    同じ URL を同時に取得し直したときは、前の行を読んでロックしてから置き換えるので、どちらの Blob も記録から漏れません。
     期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
     取得したファイルは中身で判定した形式とサイズの上限の検査を通したうえで Blob に最後まで書いてから返すので、上限を超えるもの・途中で切れたものは残りも返りもしません。
   - 返した時刻（`last_accessed_at`）は 1 時間より細かくは書きません。返すたびにデータベースへ書かないためです。
   - 1 時間ごとのジョブ `media.cleanup_remote` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
     容量の上限は Blob の費用に効くので、インスタンス設定ではなく運用者の設定です。1 回の実行で見る行数には上限があり、残りは次の実行が消します。
-    Blob を先に消してから行を消すので、途中で失敗しても行が残って次の実行が消し直し、どこからも指されない Blob は残りません。行は読んだときの `fetched_at` のままのときだけ消すので、その間に取得し直したものは残ります。
+    行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録してから Blob を消すので、Blob の削除に失敗してもキーが残って次の実行が消し直し、どこからも指されない Blob は残りません。
+    行は読んだときの `fetched_at` のままのときだけ消すので、その間に取得し直したものは行も Blob も残ります。
 - ドメイン単位の `media_fetch` の制限（`reject_media`）は、メディアの所有者のドメインと URL のホストの両方に当て、どちらかが制限されていればプロキシは取得せず 404 を返します。
   判定はポート `content.MediaFetchPolicy` を通します。実装は `moderation.FederationPolicy` です（§11）。
   `media_sensitive` の制限（`force_sensitive`）は表示のときに添付をセンシティブにします。

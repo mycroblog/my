@@ -38,6 +38,18 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 Both are returned with `Cross-Origin-Resource-Policy: cross-origin`, so pages from other origins can read them.
 
+## Who can open media URLs
+
+Media URLs are not access-controlled. Anyone who has the URL of a file can open it, without signing in, whatever the visibility of the post that attaches it.
+This holds with or without a CDN, and includes the attachments of followers-only posts and direct messages and the proxy URLs of remote media.
+
+- The URLs are hard to guess: a local file's URL contains identifiers with a random part, and a proxy URL carries a signature. Knowing one URL does not reveal others.
+- Anyone who saw a post can pass its media URLs on, and the URLs keep working for others.
+- Responses are marked `public`, so the CDN and any shared cache between the server and the reader may keep a copy (see the table above for how long).
+  This is what lets a CDN serve media without asking the server.
+
+Tell your users that a non-public post limits who sees the post, but does not stop someone who has the link of an attached file from opening the file.
+
 ## Deletion and the cache
 
 After you delete media, the CDN's cache keeps it for `max-age`. A deleted file can stay visible for up to a year for local media, and up to `remote_media_cache_ttl` for the proxy.
