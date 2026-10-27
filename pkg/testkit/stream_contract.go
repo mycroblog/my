@@ -52,7 +52,11 @@ type StreamBusFactory func(t *testing.T) StreamBus
 // reaches the listeners of every Bus on the broker, including the sender's, byte for byte; a
 // listener outlives the context of Listen; Close stops receiving, deletes the listener's
 // resources, and can be called again; Send and Listen return by their deadline when the broker
-// cannot be reached; and a cut listener closes Broken and a new one can listen again.
+// cannot be reached; a cut listener closes Broken and a new one can listen again; every payload
+// of a burst reaches an open listener; and a burst cut by a break delivers only payloads that
+// were sent, byte for byte, none after Close, and leaves a new listener receiving every payload
+// of the next burst. The payloads that a cut listener misses or receives twice are the accepted
+// semantics of stream.Bus and are not checked.
 func StreamBusContract(t *testing.T, newBus StreamBusFactory) {
 	t.Helper()
 	cases := []struct {
@@ -64,6 +68,8 @@ func StreamBusContract(t *testing.T, newBus StreamBusFactory) {
 		{"Closes", busCloses},
 		{"ReturnsWhenUnreachable", busReturnsWhenUnreachable},
 		{"Breaks", busBreaks},
+		{"DeliversABurst", busDeliversABurst},
+		{"BreaksDuringABurst", busBreaksDuringABurst},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -307,6 +313,117 @@ func busBreaks(t *testing.T, h StreamBus) {
 	busSend(t, h, b, p)
 	if !c.wait(p, h.Timeout) {
 		t.Error("a new listener after a break did not receive the payload")
+	}
+}
+
+// burstSize is the number of payloads of a burst in the stream contracts.
+const burstSize = 32
+
+// busBurst returns a burst of distinct payloads; a payload's index is its sequence number.
+func busBurst(t *testing.T) [][]byte {
+	t.Helper()
+	burst := make([][]byte, burstSize)
+	for i := range burst {
+		burst[i] = busPayload(t, 64+i)
+	}
+	return burst
+}
+
+// busMissing returns the sequence numbers of the payloads of burst that c has not received
+// within timeout.
+func busMissing(c *busCollector, burst [][]byte, timeout time.Duration) []int {
+	deadline := time.Now().Add(timeout)
+	var missing []int
+	for i, p := range burst {
+		if !c.wait(p, max(time.Until(deadline), 0)) {
+			missing = append(missing, i)
+		}
+	}
+	return missing
+}
+
+// busForeign returns how many payloads c received that are in none of bursts, and how many it
+// received in all.
+func busForeign(c *busCollector, bursts ...[][]byte) (foreign, received int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, p := range c.payloads {
+		known := false
+		for _, burst := range bursts {
+			if slices.ContainsFunc(burst, func(q []byte) bool { return bytes.Equal(p, q) }) {
+				known = true
+				break
+			}
+		}
+		if !known {
+			foreign++
+		}
+	}
+	return foreign, len(c.payloads)
+}
+
+func busDeliversABurst(t *testing.T, h StreamBus) {
+	sender, b := h.NewBus(t), h.NewBus(t)
+	c := newBusCollector()
+	busListen(t, h, b, c)
+	burst := busBurst(t)
+	for _, p := range burst {
+		busSend(t, h, sender, p)
+	}
+	if missing := busMissing(c, burst, 2*h.Timeout); len(missing) > 0 {
+		t.Errorf("an open listener missed the payloads %v of a burst of %d", missing, len(burst))
+	}
+	if foreign, _ := busForeign(c, burst); foreign > 0 {
+		t.Errorf("the listener received %d payloads that were not sent, or not byte for byte", foreign)
+	}
+}
+
+func busBreaksDuringABurst(t *testing.T, h StreamBus) {
+	if h.Break == nil {
+		t.Skip("the harness cannot break listeners")
+	}
+	sender, b := h.NewBus(t), h.NewBus(t)
+	c := newBusCollector()
+	l := busListen(t, h, b, c)
+	cut := busBurst(t)
+	for _, p := range cut[:len(cut)/2] {
+		busSend(t, h, sender, p)
+	}
+	h.Break(t)
+	for _, p := range cut[len(cut)/2:] {
+		// The sender may still be reconnecting: a payload it cannot send is lost, which the Bus
+		// allows.
+		ctx, cancel := context.WithTimeout(t.Context(), h.Timeout)
+		_ = sender.Send(ctx, p)
+		cancel()
+	}
+	select {
+	case <-l.Broken():
+	case <-time.After(h.Timeout):
+		t.Fatal("Broken was not closed after the listener was cut during a burst")
+	}
+	_ = busClose(t, h, l) // what is left may be gone already: an error is fine
+	foreign, received := busForeign(c, cut)
+	if foreign > 0 {
+		t.Errorf("the cut listener received %d payloads that were not sent, or not byte for byte", foreign)
+	}
+	time.Sleep(streamGrace)
+	if _, after := busForeign(c, cut); after != received {
+		t.Errorf("the cut listener received %d payloads after Close returned", after-received)
+	}
+
+	// A new listener receives every payload of the next burst.
+	c2 := newBusCollector()
+	busListen(t, h, b, c2)
+	next := busBurst(t)
+	for _, p := range next {
+		busSend(t, h, sender, p)
+	}
+	if missing := busMissing(c2, next, 2*h.Timeout); len(missing) > 0 {
+		t.Errorf("a new listener after the break missed the payloads %v of a burst of %d", missing, len(next))
+	}
+	if foreign, _ := busForeign(c2, cut, next); foreign > 0 {
+		t.Errorf("the new listener received %d payloads that were not sent, or not byte for byte", foreign)
 	}
 }
 
