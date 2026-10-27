@@ -36,7 +36,11 @@ type Group struct {
 	Message      string
 	Where        string
 	FirstVersion string
-	FirstSeenAt  time.Time
+	// Unauthenticated is true when the first occurrence was a web report sent without a
+	// session (kernel.ErrorEvent.Unauthenticated): the group notifies nobody until a report
+	// with a session confirms it.
+	Unauthenticated bool
+	FirstSeenAt     time.Time
 }
 
 // Head is the current state of a group (error_group_states).
@@ -116,6 +120,9 @@ type Repository interface {
 	CurrentByFingerprint(ctx context.Context, tx uow.Tx, fingerprint string) (Current, error)
 	CurrentForUpdate(ctx context.Context, tx uow.Tx, groupID string) (Current, error)
 	InsertEvent(ctx context.Context, tx uow.Tx, e Event) error
+	// InsertConfirmation records the first occurrence with a session of an unauthenticated
+	// group and reports whether it did: a group confirmed already writes nothing.
+	InsertConfirmation(ctx context.Context, tx uow.Tx, groupID string, at time.Time) (bool, error)
 	// UpsertHead sets the state of a group (the projector of the module's events).
 	UpsertHead(ctx context.Context, tx uow.Tx, h Head) error
 

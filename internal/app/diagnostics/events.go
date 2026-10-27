@@ -5,13 +5,16 @@ package diagnostics
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/diagnostics"
 )
 
 // Domain events of the diagnostics module. The administrators' notifications and the instance
-// webhooks subscribe to the first two (ADR-0103 §8).
+// webhooks subscribe to the first three (ADR-0103 §8): a new group notifies when it is created by
+// a report with a session (GroupCreated.Group.Unauthenticated is false) or, when it was created
+// without one, when it is confirmed.
 const (
 	// EventGroupCreated follows the first occurrence of a fingerprint, in the transaction that
 	// inserts its group.
@@ -19,25 +22,42 @@ const (
 	// EventGroupRegressed follows the recurrence of a resolved group with another version, in
 	// the transaction that records its regressed event.
 	EventGroupRegressed = "diagnostics.error_group_regressed"
+	// EventGroupConfirmed follows the first occurrence with a session of a group that a report
+	// without one created (ADR-0103 §6), once per group.
+	EventGroupConfirmed = "diagnostics.error_group_confirmed"
 	// EventGroupStateChanged follows a resolve, a mute, or an unmute, with the new state.
 	EventGroupStateChanged = "diagnostics.error_group_state_changed"
 )
 
-// GroupCreated carries the new group, whose state is open.
+// GroupCreated carries the new group, whose state is open. Group.Unauthenticated tells that its
+// first occurrence came without a session and notifies nobody (GroupConfirmed follows the first
+// one with a session).
 type GroupCreated struct{ Group Group }
 
 // EventType implements uow.Event.
 func (GroupCreated) EventType() string { return EventGroupCreated }
 
 // GroupRegressed carries the group that regressed and its regressed event, whose Version is the
-// version of the recurrence.
+// version of the recurrence. Unauthenticated tells that the recurrence was a web report sent
+// without a session.
 type GroupRegressed struct {
-	Group Group
-	Event Event
+	Group           Group
+	Event           Event
+	Unauthenticated bool
 }
 
 // EventType implements uow.Event.
 func (GroupRegressed) EventType() string { return EventGroupRegressed }
+
+// GroupConfirmed carries a group that a report without a session created, at the first
+// occurrence with one.
+type GroupConfirmed struct {
+	Group       Group
+	ConfirmedAt time.Time
+}
+
+// EventType implements uow.Event.
+func (GroupConfirmed) EventType() string { return EventGroupConfirmed }
 
 // GroupStateChanged carries the event of a resolve, a mute, or an unmute and the state it
 // leads to.

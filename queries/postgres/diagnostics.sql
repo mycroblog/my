@@ -5,12 +5,12 @@
 -- that the Recorder writes outside transactions.
 
 -- name: InsertErrorGroup :execrows
-INSERT INTO error_groups (id, fingerprint, source, kind, error_type, message, where_name, first_version, first_seen_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO error_groups (id, fingerprint, source, kind, error_type, message, where_name, first_version, unauthenticated, first_seen_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (fingerprint) DO NOTHING;
 
 -- name: GetErrorGroupCurrentByFingerprintForUpdate :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since, COALESCE(sm.version, g.first_version) AS last_version
 FROM error_groups g
 JOIN error_group_states s ON s.group_id = g.id
@@ -19,13 +19,17 @@ WHERE g.fingerprint = $1
 FOR UPDATE OF s;
 
 -- name: GetErrorGroupCurrentForUpdate :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since, COALESCE(sm.version, g.first_version) AS last_version
 FROM error_groups g
 JOIN error_group_states s ON s.group_id = g.id
 LEFT JOIN error_group_samples sm ON sm.group_id = g.id
 WHERE g.id = $1
 FOR UPDATE OF s;
+
+-- name: InsertErrorGroupConfirmation :execrows
+INSERT INTO error_group_confirmations (group_id, confirmed_at) VALUES ($1, $2)
+ON CONFLICT (group_id) DO NOTHING;
 
 -- name: InsertErrorGroupEvent :exec
 INSERT INTO error_group_events (id, group_id, kind, actor_kind, actor_user_id, version, occurred_at)
@@ -67,7 +71,7 @@ WHERE excluded.occurred_at >= error_group_samples.occurred_at;
 DELETE FROM error_group_counts WHERE hour_start < $1;
 
 -- name: GetErrorGroup :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since
 FROM error_groups g JOIN error_group_states s ON s.group_id = g.id
 WHERE g.id = $1;

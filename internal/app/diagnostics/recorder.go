@@ -42,7 +42,8 @@ type RecorderOptions struct {
 
 // Recorder is the output of the ErrorReporter that groups the reports in the database
 // (ADR-0103 §4 (2)). The first occurrence of a fingerprint and version in the process is written
-// at once (Service.RecordFirst: the group, a regression, the count, and the sample); the later
+// at once (Service.RecordFirst: the group, a regression or a confirmation, the count, and the
+// sample); the later
 // ones are counted in memory by hour and written every Interval and at Close, each count and
 // sample in one statement outside any transaction. The writes run in a goroutine of the
 // Recorder, which starts with the first report, so that ReceiveError never waits for the
@@ -67,7 +68,12 @@ type Recorder struct {
 	done    chan struct{}
 }
 
-type seenKey struct{ fingerprint, version string }
+// seenKey is what makes an occurrence a first one in the process: a new fingerprint, version,
+// or presence of a session (the first report with a session may confirm a group).
+type seenKey struct {
+	fingerprint, version string
+	unauthenticated      bool
+}
 
 // firstReport is a first occurrence waiting for its write, with the context of its report
 // without its cancellation: the values it carries stay, and a report made with a context that
@@ -116,7 +122,7 @@ func (r *Recorder) ReceiveError(ctx context.Context, ev kernel.ErrorEvent) {
 		return
 	}
 	r.startLocked()
-	k := seenKey{ev.Fingerprint, ev.Version}
+	k := seenKey{ev.Fingerprint, ev.Version, ev.Unauthenticated}
 	if _, ok := r.seen[k]; !ok {
 		if len(r.seen) >= maxSeen {
 			clear(r.seen)
@@ -218,7 +224,7 @@ func (r *Recorder) writeFirst(f firstReport) {
 	defer cancel()
 	if err := r.svc.RecordFirst(wctx, f.ev); err != nil {
 		r.mu.Lock()
-		delete(r.seen, seenKey{f.ev.Fingerprint, f.ev.Version})
+		delete(r.seen, seenKey{f.ev.Fingerprint, f.ev.Version, f.ev.Unauthenticated})
 		r.mu.Unlock()
 	}
 }

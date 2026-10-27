@@ -290,7 +290,7 @@ entries:
     notes:
       - "diagnostics.Recorder is an ErrorSink of platform.ErrorReporter: the first occurrence of a fingerprint and version in the process runs Service.RecordFirst (one short transaction for the group and a regression, then one statement each for the count and the sample); the rest are counted in memory by hour and flushed every 60 s and at App.Close. Writes run in the Recorder's goroutine and are dropped when they fail; the sink never reports its own errors."
       - "Counts and samples are current values written outside transactions with additive upserts keyed by the fingerprint; error_group_states is the projection of the group events (diagnostics.Next), rebuilt from the newest event of each group."
-      - "diagnostics.error_group_created and diagnostics.error_group_regressed are the events that the administrators' notifications and the webhooks subscribe to."
+      - "diagnostics.error_group_created, diagnostics.error_group_regressed, and diagnostics.error_group_confirmed are the events that the administrators' notifications and the webhooks subscribe to; a group created by an unauthenticated web report (Group.Unauthenticated) notifies only when the first report with a session confirms it."
   - name: app-infrastructure
     paths: ["internal/app/kernel/**", "internal/app/uow/**", "internal/app/queue/**", "internal/app/stream/**", "internal/app/projection/**", "internal/app/dbupgrade/**", "internal/app/blob/**", "internal/app/media/**", "internal/app/metrics/**"]
     docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]

@@ -38,7 +38,8 @@ func NewService(d Deps) *Service { return &Service{d: d} }
 // RecordFirst records the first occurrence of ev's fingerprint in this process (ADR-0103 §4 (2)):
 // in one short transaction, it inserts the group and emits GroupCreated when the fingerprint is
 // new, or records the regressed event and emits GroupRegressed when the group is resolved and
-// ev's version differs from the version it was resolved with. Then it adds the occurrence to the
+// ev's version differs from the version it was resolved with, and records the confirmation and
+// emits GroupConfirmed when the group was created without a session and ev has one. Then it adds the occurrence to the
 // hourly count and makes it the sample, each in one statement outside the transaction. An event
 // without a fingerprint records nothing.
 func (s *Service) RecordFirst(ctx context.Context, ev kernel.ErrorEvent) error {
@@ -63,6 +64,17 @@ func (s *Service) RecordFirst(ctx context.Context, ev kernel.ErrorEvent) error {
 		if err != nil {
 			return err
 		}
+		if cur.Group.Unauthenticated && !ev.Unauthenticated {
+			confirmed, err := s.d.Repository.InsertConfirmation(ctx, tx, cur.Group.ID, ev.Time)
+			if err != nil {
+				return err
+			}
+			if confirmed {
+				if err := tx.Emit(ctx, GroupConfirmed{Group: cur.Group, ConfirmedAt: ev.Time}); err != nil {
+					return err
+				}
+			}
+		}
 		if !diagnostics.Regresses(cur.Head.State, cur.Head.ResolvedVersion, g.FirstVersion) {
 			return nil
 		}
@@ -73,7 +85,7 @@ func (s *Service) RecordFirst(ctx context.Context, ev kernel.ErrorEvent) error {
 		if err := s.d.Repository.InsertEvent(ctx, tx, e); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, GroupRegressed{Group: cur.Group, Event: e})
+		return tx.Emit(ctx, GroupRegressed{Group: cur.Group, Event: e, Unauthenticated: ev.Unauthenticated})
 	})
 	if err != nil {
 		return fmt.Errorf("diagnostics: record the group of %s: %w", g.Fingerprint, err)
@@ -210,7 +222,8 @@ func groupOf(ev kernel.ErrorEvent) Group {
 	return Group{
 		Fingerprint: ev.Fingerprint, Source: string(source), Kind: string(kind),
 		ErrorType: diagnostics.CleanText(diagnostics.LastType(ev.Type)), Message: diagnostics.MessageHead(ev.Message),
-		Where: diagnostics.CleanText(ev.Where), FirstVersion: diagnostics.CleanText(ev.Version), FirstSeenAt: ev.Time,
+		Where: diagnostics.CleanText(ev.Where), FirstVersion: diagnostics.CleanText(ev.Version),
+		Unauthenticated: ev.Unauthenticated, FirstSeenAt: ev.Time,
 	}
 }
 

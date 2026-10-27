@@ -33,7 +33,8 @@ type DiagnosticsFactory func(t *testing.T, opts uow.Options) DiagnosticsHarness
 // processes see it at the same time; the occurrences are counted by hour, each once, also when
 // the flushes of several processes run concurrently, and the latest one is the sample; a
 // resolved group that recurs with the version it was resolved with is only counted, and one
-// that recurs with another version regresses to open and emits GroupRegressed; resolve, mute,
+// that recurs with another version regresses to open and emits GroupRegressed; a group that a web report without a session
+// created is confirmed once, by the first report with one; resolve, mute,
 // and unmute record only the changes they make; the counts older than 90 days are pruned; the
 // recorder of a process writes what it holds when it closes; and the projection of the states
 // rebuilds to what the events wrote.
@@ -45,6 +46,7 @@ func DiagnosticsRepositoryContract(t *testing.T, newHarness DiagnosticsFactory) 
 	}{
 		{"CreatesAGroupOnce", diagnosticsNewGroup},
 		{"CountsByHour", diagnosticsCountsByHour},
+		{"ConfirmsAGroupOfAReportWithoutASession", diagnosticsConfirm},
 		{"CountsConcurrentFlushesOnce", diagnosticsConcurrentFlushes},
 		{"CountsASameVersionRecurrence", diagnosticsSameVersion},
 		{"RegressesWithANewVersion", diagnosticsNewVersion},
@@ -67,6 +69,7 @@ type diagnosticsEnv struct {
 	mu        sync.Mutex
 	created   []appdiagnostics.GroupCreated
 	regressed []appdiagnostics.GroupRegressed
+	confirmed []appdiagnostics.GroupConfirmed
 }
 
 func newDiagnosticsEnv(t *testing.T, newHarness DiagnosticsFactory) *diagnosticsEnv {
@@ -86,6 +89,11 @@ func newDiagnosticsEnv(t *testing.T, newHarness DiagnosticsFactory) *diagnostics
 		e.mu.Lock()
 		defer e.mu.Unlock()
 		e.regressed = append(e.regressed, ev.(appdiagnostics.GroupRegressed))
+	})
+	projectors.OnCommit(appdiagnostics.EventGroupConfirmed, func(_ context.Context, ev uow.Event) {
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.confirmed = append(e.confirmed, ev.(appdiagnostics.GroupConfirmed))
 	})
 	e.svc = appdiagnostics.NewService(appdiagnostics.Deps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Diagnostics, Clock: clock, IDs: NewIDGenerator(clock),
@@ -250,6 +258,60 @@ func diagnosticsCountsByHour(t *testing.T, e *diagnosticsEnv) {
 	}
 	if n := e.total(t, g.ID); n != 6 {
 		t.Errorf("counted %d, want 6", n)
+	}
+}
+
+func diagnosticsConfirm(t *testing.T, e *diagnosticsEnv) {
+	ctx := t.Context()
+	web := func(unauthenticated bool) kernel.ErrorEvent {
+		ev := e.event("fp-web", "0.3.0")
+		ev.Source, ev.Kind, ev.Unauthenticated = kernel.ErrorSourceWeb, kernel.ErrorKindError, unauthenticated
+		return ev
+	}
+	r := e.recorder(t)
+	r.ReceiveError(ctx, web(true))
+	r.ReceiveError(ctx, web(true))
+	r.Flush(ctx)
+	created, _ := e.events()
+	if len(created) != 1 || !created[0].Group.Unauthenticated || created[0].Group.Source != "web" {
+		t.Fatalf("created = %+v, want one unauthenticated web group", created)
+	}
+	if g, _ := e.group(t, "fp-web"); !g.Unauthenticated {
+		t.Errorf("stored group = %+v, want unauthenticated", g)
+	}
+	e.mu.Lock()
+	n := len(e.confirmed)
+	e.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("confirmed %d times before a report with a session", n)
+	}
+	// Two processes get a report with a session: one confirmation.
+	a, b := e.recorder(t), e.recorder(t)
+	a.ReceiveError(ctx, web(false))
+	b.ReceiveError(ctx, web(false))
+	var wg sync.WaitGroup
+	for _, rec := range []*appdiagnostics.Recorder{a, b} {
+		wg.Go(func() { rec.Flush(ctx) })
+	}
+	wg.Wait()
+	r.ReceiveError(ctx, web(false))
+	r.Flush(ctx)
+	e.mu.Lock()
+	confirmed := append([]appdiagnostics.GroupConfirmed(nil), e.confirmed...)
+	e.mu.Unlock()
+	if len(confirmed) != 1 || confirmed[0].Group.Fingerprint != "fp-web" || !confirmed[0].ConfirmedAt.Equal(e.clock.Now()) {
+		t.Errorf("confirmed = %+v, want one", confirmed)
+	}
+	g, _ := e.group(t, "fp-web")
+	if n := e.total(t, g.ID); n != 5 {
+		t.Errorf("counted %d, want 5", n)
+	}
+	// A group created with a session is never confirmed.
+	c := e.recorder(t)
+	c.ReceiveError(ctx, e.event("fp-session", "1.0.0"))
+	c.Flush(ctx)
+	if created, _ := e.events(); len(created) != 2 || created[1].Group.Unauthenticated {
+		t.Errorf("created = %+v", created)
 	}
 }
 

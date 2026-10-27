@@ -13,6 +13,8 @@
 -- Resource: the errors of one fingerprint (ADR-0103 §1). error_type is the last type of the
 -- chain, message the first line of the scrubbed message (at most 200 runes), where_name the
 -- finite name of the place, and first_version the service.version of the first occurrence.
+-- unauthenticated marks a group whose first occurrence was a web report sent without a session,
+-- which notifies nobody (error_group_confirmations).
 CREATE TABLE error_groups (
   id TEXT NOT NULL PRIMARY KEY,
   fingerprint TEXT NOT NULL,
@@ -22,6 +24,7 @@ CREATE TABLE error_groups (
   message TEXT NOT NULL,
   where_name TEXT NOT NULL,
   first_version TEXT NOT NULL,
+  unauthenticated INTEGER NOT NULL CHECK (unauthenticated IN (0, 1)),
   first_seen_at INTEGER NOT NULL
 ) STRICT;
 CREATE UNIQUE INDEX error_groups_fingerprint ON error_groups (fingerprint);
@@ -68,6 +71,13 @@ CREATE TABLE error_group_events (
   CHECK ((kind = 'regressed') = (actor_kind = 'system'))
 ) STRICT;
 CREATE INDEX error_group_events_group_id_id ON error_group_events (group_id, id DESC);
+
+-- Event: the first occurrence with a session of a group whose first occurrence had none: from
+-- then on the group is one to notify, like a group that a report with a session created.
+CREATE TABLE error_group_confirmations (
+  group_id TEXT NOT NULL PRIMARY KEY,
+  confirmed_at INTEGER NOT NULL
+) STRICT;
 
 -- Projection: the current state of every group, from its newest event (open without one).
 -- resolved_version is the version of the resolved event while resolved, '' otherwise; since is

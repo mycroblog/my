@@ -30,18 +30,18 @@ func (r *DiagnosticsRepository) InsertGroup(ctx context.Context, tx uow.Tx, g ap
 	}
 	n, err := q.InsertErrorGroup(ctx, postgresgen.InsertErrorGroupParams{
 		ID: g.ID, Fingerprint: g.Fingerprint, Source: g.Source, Kind: g.Kind, ErrorType: g.ErrorType,
-		Message: g.Message, WhereName: g.Where, FirstVersion: g.FirstVersion, FirstSeenAt: g.FirstSeenAt,
+		Message: g.Message, WhereName: g.Where, FirstVersion: g.FirstVersion, Unauthenticated: g.Unauthenticated, FirstSeenAt: g.FirstSeenAt,
 	})
 	return n > 0, wrap(err, "insert error group")
 }
 
-func currentFromRow(id, fingerprint, source, kind, errorType, message, where, firstVersion string, firstSeenAt time.Time,
+func currentFromRow(id, fingerprint, source, kind, errorType, message, where, firstVersion string, unauthenticated bool, firstSeenAt time.Time,
 	state, resolvedVersion string, since time.Time, lastVersion string,
 ) appdiagnostics.Current {
 	return appdiagnostics.Current{
 		Group: appdiagnostics.Group{
 			ID: id, Fingerprint: fingerprint, Source: source, Kind: kind, ErrorType: errorType, Message: message,
-			Where: where, FirstVersion: firstVersion, FirstSeenAt: utc(firstSeenAt),
+			Where: where, FirstVersion: firstVersion, Unauthenticated: unauthenticated, FirstSeenAt: utc(firstSeenAt),
 		},
 		Head: appdiagnostics.Head{
 			GroupID: id, State: diagnostics.State(state), ResolvedVersion: resolvedVersion, Since: utc(since),
@@ -61,7 +61,7 @@ func (r *DiagnosticsRepository) CurrentByFingerprint(ctx context.Context, tx uow
 		return appdiagnostics.Current{}, notFound(err, appdiagnostics.ErrNotFound, "error group "+fingerprint)
 	}
 	return currentFromRow(row.ID, row.Fingerprint, row.Source, row.Kind, row.ErrorType, row.Message, row.WhereName,
-		row.FirstVersion, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion), nil
+		row.FirstVersion, row.Unauthenticated, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion), nil
 }
 
 // CurrentForUpdate implements appdiagnostics.Repository.
@@ -75,7 +75,7 @@ func (r *DiagnosticsRepository) CurrentForUpdate(ctx context.Context, tx uow.Tx,
 		return appdiagnostics.Current{}, notFound(err, appdiagnostics.ErrNotFound, "error group "+groupID)
 	}
 	return currentFromRow(row.ID, row.Fingerprint, row.Source, row.Kind, row.ErrorType, row.Message, row.WhereName,
-		row.FirstVersion, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion), nil
+		row.FirstVersion, row.Unauthenticated, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, row.LastVersion), nil
 }
 
 // InsertEvent implements appdiagnostics.Repository.
@@ -88,6 +88,16 @@ func (r *DiagnosticsRepository) InsertEvent(ctx context.Context, tx uow.Tx, e ap
 		ID: e.ID, GroupID: e.GroupID, Kind: string(e.Kind), ActorKind: string(e.Actor.Kind),
 		ActorUserID: toNullString(e.Actor.UserID), Version: e.Version, OccurredAt: e.OccurredAt,
 	}), "insert error group event")
+}
+
+// InsertConfirmation implements appdiagnostics.Repository.
+func (r *DiagnosticsRepository) InsertConfirmation(ctx context.Context, tx uow.Tx, groupID string, at time.Time) (bool, error) {
+	q, err := queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertErrorGroupConfirmation(ctx, postgresgen.InsertErrorGroupConfirmationParams{GroupID: groupID, ConfirmedAt: at})
+	return n > 0, wrap(err, "insert error group confirmation")
 }
 
 // UpsertHead implements appdiagnostics.Repository.
@@ -130,7 +140,7 @@ func (r *DiagnosticsRepository) FindGroup(ctx context.Context, id string) (appdi
 		return appdiagnostics.Group{}, appdiagnostics.Head{}, notFound(err, appdiagnostics.ErrNotFound, "error group "+id)
 	}
 	c := currentFromRow(row.ID, row.Fingerprint, row.Source, row.Kind, row.ErrorType, row.Message, row.WhereName,
-		row.FirstVersion, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, "")
+		row.FirstVersion, row.Unauthenticated, row.FirstSeenAt, row.State, row.ResolvedVersion, row.Since, "")
 	return c.Group, c.Head, nil
 }
 

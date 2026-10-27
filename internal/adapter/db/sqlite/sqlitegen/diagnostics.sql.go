@@ -67,7 +67,7 @@ func (q *Queries) DeleteErrorGroupStates(ctx context.Context) error {
 }
 
 const getErrorGroup = `-- name: GetErrorGroup :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since
 FROM error_groups g JOIN error_group_states s ON s.group_id = g.id
 WHERE g.id = ?
@@ -82,6 +82,7 @@ type GetErrorGroupRow struct {
 	Message         string
 	WhereName       string
 	FirstVersion    string
+	Unauthenticated int64
 	FirstSeenAt     int64
 	State           string
 	ResolvedVersion string
@@ -100,6 +101,7 @@ func (q *Queries) GetErrorGroup(ctx context.Context, id string) (GetErrorGroupRo
 		&i.Message,
 		&i.WhereName,
 		&i.FirstVersion,
+		&i.Unauthenticated,
 		&i.FirstSeenAt,
 		&i.State,
 		&i.ResolvedVersion,
@@ -109,7 +111,7 @@ func (q *Queries) GetErrorGroup(ctx context.Context, id string) (GetErrorGroupRo
 }
 
 const getErrorGroupCurrent = `-- name: GetErrorGroupCurrent :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since, COALESCE(sm.version, g.first_version) AS last_version
 FROM error_groups g
 JOIN error_group_states s ON s.group_id = g.id
@@ -126,6 +128,7 @@ type GetErrorGroupCurrentRow struct {
 	Message         string
 	WhereName       string
 	FirstVersion    string
+	Unauthenticated int64
 	FirstSeenAt     int64
 	State           string
 	ResolvedVersion string
@@ -145,6 +148,7 @@ func (q *Queries) GetErrorGroupCurrent(ctx context.Context, id string) (GetError
 		&i.Message,
 		&i.WhereName,
 		&i.FirstVersion,
+		&i.Unauthenticated,
 		&i.FirstSeenAt,
 		&i.State,
 		&i.ResolvedVersion,
@@ -155,7 +159,7 @@ func (q *Queries) GetErrorGroupCurrent(ctx context.Context, id string) (GetError
 }
 
 const getErrorGroupCurrentByFingerprint = `-- name: GetErrorGroupCurrentByFingerprint :one
-SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.first_seen_at,
+SELECT g.id, g.fingerprint, g.source, g.kind, g.error_type, g.message, g.where_name, g.first_version, g.unauthenticated, g.first_seen_at,
   s.state, s.resolved_version, s.since, COALESCE(sm.version, g.first_version) AS last_version
 FROM error_groups g
 JOIN error_group_states s ON s.group_id = g.id
@@ -172,6 +176,7 @@ type GetErrorGroupCurrentByFingerprintRow struct {
 	Message         string
 	WhereName       string
 	FirstVersion    string
+	Unauthenticated int64
 	FirstSeenAt     int64
 	State           string
 	ResolvedVersion string
@@ -191,6 +196,7 @@ func (q *Queries) GetErrorGroupCurrentByFingerprint(ctx context.Context, fingerp
 		&i.Message,
 		&i.WhereName,
 		&i.FirstVersion,
+		&i.Unauthenticated,
 		&i.FirstSeenAt,
 		&i.State,
 		&i.ResolvedVersion,
@@ -238,21 +244,22 @@ func (q *Queries) GetErrorGroupSample(ctx context.Context, groupID string) (GetE
 const insertErrorGroup = `-- name: InsertErrorGroup :execrows
 
 
-INSERT INTO error_groups (id, fingerprint, source, kind, error_type, message, where_name, first_version, first_seen_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO error_groups (id, fingerprint, source, kind, error_type, message, where_name, first_version, unauthenticated, first_seen_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (fingerprint) DO NOTHING
 `
 
 type InsertErrorGroupParams struct {
-	ID           string
-	Fingerprint  string
-	Source       string
-	Kind         string
-	ErrorType    string
-	Message      string
-	WhereName    string
-	FirstVersion string
-	FirstSeenAt  int64
+	ID              string
+	Fingerprint     string
+	Source          string
+	Kind            string
+	ErrorType       string
+	Message         string
+	WhereName       string
+	FirstVersion    string
+	Unauthenticated int64
+	FirstSeenAt     int64
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
@@ -269,8 +276,27 @@ func (q *Queries) InsertErrorGroup(ctx context.Context, arg InsertErrorGroupPara
 		arg.Message,
 		arg.WhereName,
 		arg.FirstVersion,
+		arg.Unauthenticated,
 		arg.FirstSeenAt,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const insertErrorGroupConfirmation = `-- name: InsertErrorGroupConfirmation :execrows
+INSERT INTO error_group_confirmations (group_id, confirmed_at) VALUES (?, ?)
+ON CONFLICT (group_id) DO NOTHING
+`
+
+type InsertErrorGroupConfirmationParams struct {
+	GroupID     string
+	ConfirmedAt int64
+}
+
+func (q *Queries) InsertErrorGroupConfirmation(ctx context.Context, arg InsertErrorGroupConfirmationParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertErrorGroupConfirmation, arg.GroupID, arg.ConfirmedAt)
 	if err != nil {
 		return 0, err
 	}
