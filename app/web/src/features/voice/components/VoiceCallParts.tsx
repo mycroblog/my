@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The parts of a call that the room's page and the call bar share (ADR-0100 §5, §6; ADR-0101 §7): the call's state
-// in a few words, the microphone switch with why the browser refused it, the button that plays the sound the browser
-// blocked, and leaving, which asks the host of a room with others in it for the next host or the end of the room.
-import { Button, ConfirmDialog, InlineError, Radio, RadioGroup, Switch } from "@my/ui";
+// in a few words, the call bar's microphone switch, what failed (why the browser refused the microphone, leaving), the
+// button that plays the sound the browser blocked, and leaving, which asks the host of a room with others in it for
+// the next host or the end of the room.
+import { Button, CallDockButton, ConfirmDialog, InlineError, LeaveIcon, Radio, RadioGroup, Switch } from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
@@ -27,22 +28,14 @@ export function callPhaseText(t: ReturnType<typeof useT>, controls: VoiceCallCon
   return t(phaseLabels[controls.phase]);
 }
 
-/** The microphone switch of a speaker; with `withErrors`, why it could not turn on (otherwise CallErrors says it). */
-export function MicrophoneControl({ controls, withDescription, withErrors }: { controls: VoiceCallControls; withDescription: boolean; withErrors: boolean }) {
+/** The microphone switch of a speaker in the call bar; CallErrors says why it could not turn on. */
+export function MicrophoneControl({ controls }: { controls: VoiceCallControls }) {
   const t = useT();
   if (!controls.isSpeaker) return null;
   return (
-    <>
-      <Switch
-        isSelected={controls.micOn}
-        onChange={controls.setMicrophone}
-        isDisabled={controls.micPending}
-        {...(withDescription && { description: t("client:voice.call.microphone.description") })}
-      >
-        {t("client:voice.call.microphone")}
-      </Switch>
-      {withErrors && <MicrophoneErrors controls={controls} />}
-    </>
+    <Switch isSelected={controls.micOn} onChange={controls.setMicrophone} isDisabled={controls.micPending}>
+      {t("client:voice.call.microphone")}
+    </Switch>
   );
 }
 
@@ -65,16 +58,29 @@ function MicrophoneErrors({ controls }: { controls: VoiceCallControls }) {
   );
 }
 
-/** What failed in the call (the microphone, leaving), for the notice of the call bar; null for nothing. */
-export function CallErrors({ controls }: { controls: VoiceCallControls }) {
+/** Whether something failed in the call: the microphone (of a speaker), leaving, or `actionError`. */
+export function hasCallErrors(controls: VoiceCallControls, actionError?: string): boolean {
+  return (controls.isSpeaker && (controls.micError !== undefined || controls.micRefused !== undefined)) || controls.leaveError !== undefined || actionError !== undefined;
+}
+
+/**
+ * What failed in the call (the microphone, leaving, and on the room's page the user's last operation, `actionError`),
+ * for the notice of the call bar or the dock; null for nothing.
+ */
+export function CallErrors({ controls, actionError }: { controls: VoiceCallControls; actionError?: string | undefined }) {
   const t = useT();
-  if (controls.micError === undefined && controls.micRefused === undefined && controls.leaveError === undefined) return null;
+  if (!hasCallErrors(controls, actionError)) return null;
   return (
     <>
       {controls.isSpeaker && <MicrophoneErrors controls={controls} />}
       {controls.leaveError !== undefined && (
         <InlineError size="inherit" alert>
           {t("client:voice.call.leave_failed", { reason: controls.leaveError })}
+        </InlineError>
+      )}
+      {actionError !== undefined && (
+        <InlineError size="inherit" alert>
+          {t("client:voice.call.action_failed", { reason: actionError })}
         </InlineError>
       )}
     </>
@@ -92,22 +98,27 @@ export function PlaybackButton({ controls }: { controls: VoiceCallControls }) {
   );
 }
 
-/** The leave button and its dialog: the host of a room with others in it hands it over or ends it (ADR-0100 §6). */
-export function LeaveCallButton({ controls, withError = true }: { controls: VoiceCallControls; withError?: boolean }) {
+/**
+ * The leave button and its dialog: the host of a room with others in it hands it over or ends it (ADR-0100 §6). It is
+ * the last control of the room page's dock (`look="dock"`) or a button of the call bar.
+ */
+export function LeaveCallButton({ controls, withError = true, look = "button" }: { controls: VoiceCallControls; withError?: boolean; look?: "button" | "dock" }) {
   const t = useT();
   const [asking, setAsking] = useState(false);
+  const onPress = () => {
+    if (controls.mustChoose) setAsking(true);
+    else controls.leave(undefined);
+  };
+  const isPending = controls.isLeaving && !asking;
   return (
     <>
-      <Button
-        variant="danger"
-        onPress={() => {
-          if (controls.mustChoose) setAsking(true);
-          else controls.leave(undefined);
-        }}
-        isPending={controls.isLeaving && !asking}
-      >
-        {t("client:voice.call.leave")}
-      </Button>
+      {look === "dock" ? (
+        <CallDockButton label={t("client:voice.call.leave")} icon={<LeaveIcon />} showLabel variant="danger" onPress={onPress} isPending={isPending} />
+      ) : (
+        <Button variant="danger" onPress={onPress} isPending={isPending}>
+          {t("client:voice.call.leave")}
+        </Button>
+      )}
       {withError && controls.leaveError !== undefined && !asking && (
         <InlineError size="inherit" alert>
           {t("client:voice.call.leave_failed", { reason: controls.leaveError })}

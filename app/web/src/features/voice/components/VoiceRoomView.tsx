@@ -1,41 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page of a room (/voice/{id}, ADR-0100 §9): the room's name as the page's heading, its host, description,
-// hashtags and settings, the host's button to its settings (to anyone else, the button that reports the room), and
-// the call (VoiceCallPanel): joining, the call's controls, and everyone in it by name, speakers and listeners alike. To a visitor who does not see the room, its summary: that only the users of this
-// server join, with the way to sign in; a room that ended says so, by its name when the summary has one.
-import { AccountItem, Button, Callout, Cluster, DescriptionItem, DescriptionList, Hint, Link, RegionError, Spinner, Stack, Tag, Text } from "@my/ui";
-import { type ReactNode, useState } from "react";
-import { handleOf } from "../../../lib/handle";
+// The page of a room (/voice/{id}, ADR-0100 §9): to a signed-in user who sees the room, the stage (VoiceStage): the
+// room's head with its name as the page's heading, the speakers and the listeners, and the dock of the call; on wide
+// screens the third column adds the raised hands and about the room (VoiceRoomAside). To a visitor who does not see
+// the room, its summary: that only the users of this server join, with the way to sign in; a room that ended says
+// so, by its name when the summary has one.
+import { Callout, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
+import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
-import { imageSources } from "../../../lib/images";
-import { profilePath } from "../../../lib/paths";
-import { ReportDialog } from "../../report";
-import { type VoiceAccount, type VoiceRoom, voiceRoomPath } from "../api/voice";
+import { voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
-import { VoiceCallPanel } from "./VoiceCallPanel";
-import { speakerLabels, visibilityLabels, VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
+import { AccountLink } from "./VoiceRoomAside";
+import { VoiceStage } from "./VoiceStage";
 
 export type VoiceRoomViewProps = {
   id: string;
   /** Renders the page heading (the route's level-one heading) around its text. */
   renderHeading: (text: ReactNode) => ReactNode;
 };
-
-type AccountLike = Pick<VoiceAccount, "id" | "acct" | "username" | "display_name" | "avatar">;
-
-/** An account as a link to its profile, as wide as its text. */
-function AccountLink({ account }: { account: AccountLike }) {
-  return (
-    <AccountItem
-      name={account.display_name || account.username}
-      handle={handleOf(account.acct)}
-      avatar={imageSources(account.avatar)}
-      avatarSeed={account.id}
-      href={profilePath(account.acct)}
-      layout="inline"
-    />
-  );
-}
 
 export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
   const t = useT();
@@ -107,79 +88,6 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       );
     }
     case "room":
-      return (
-        <>
-          {renderHeading(<span dir="auto">{page.room.name}</span>)}
-          <RoomBody room={page.room} isHost={page.isHost} />
-          <VoiceCallPanel room={page.room} />
-        </>
-      );
+      return <VoiceStage room={page.room} isHost={page.isHost} renderHeading={renderHeading} />;
   }
-}
-
-/** The room's host, description, hashtags and settings, and the host's button to change them. */
-function RoomBody({ room, isHost }: { room: VoiceRoom; isHost: boolean }) {
-  const t = useT();
-  const [formOpen, setFormOpen] = useState(false);
-  return (
-    <Stack gap="4">
-      <Cluster gap="3" align="center">
-        <Hint as="span">{t("client:voice.room.hosted_by")}</Hint>
-        <AccountLink account={room.host} />
-      </Cluster>
-      {room.description !== "" && (
-        <Text as="p" whitespace="preLine" dir="auto" wrap="anywhere">
-          {room.description}
-        </Text>
-      )}
-      {room.hashtags.length > 0 && (
-        <Cluster as="ul" gap="1" aria-label={t("client:voice.form.hashtags")}>
-          {room.hashtags.map((tag) => (
-            <Tag key={tag} as="li" variant="pill" dir="auto">
-              <Link href={`/tags/${encodeURIComponent(tag)}`} variant="standalone">
-                {t("client:tag.title", { tag })}
-              </Link>
-            </Tag>
-          ))}
-        </Cluster>
-      )}
-      <DescriptionList columns={2}>
-        <DescriptionItem term={t("client:voice.form.visibility")}>{t(visibilityLabels[room.visibility])}</DescriptionItem>
-        <DescriptionItem term={t("client:voice.form.speakers")}>{t(speakerLabels[room.speakers])}</DescriptionItem>
-      </DescriptionList>
-      {isHost ? (
-        <div>
-          <Button
-            onPress={() => {
-              setFormOpen(true);
-            }}
-          >
-            {t("client:voice.form.edit_title")}
-          </Button>
-          <VoiceRoomFormDialog room={room} isOpen={formOpen} onOpenChange={setFormOpen} />
-        </div>
-      ) : (
-        <ReportRoom room={room} />
-      )}
-    </Stack>
-  );
-}
-
-/** Reporting the room to the moderators (ADR-0100 §11): the report targets its current host and names the room. */
-function ReportRoom({ room }: { room: VoiceRoom }) {
-  const t = useT();
-  const [isReporting, setIsReporting] = useState(false);
-  return (
-    <div>
-      <Button
-        variant="ghost"
-        onPress={() => {
-          setIsReporting(true);
-        }}
-      >
-        {t("client:voice.room.report")}
-      </Button>
-      <ReportDialog account={room.host} voiceRoom={{ id: room.id, name: room.name }} isOpen={isReporting} onOpenChange={setIsReporting} />
-    </div>
-  );
 }

@@ -6,7 +6,7 @@
 // hashtag's page, the profile, and the settings' history show the rooms.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { instanceFixture, otherAccountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
@@ -36,6 +36,20 @@ function voiceOn(rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()], starters:
     ),
   );
 }
+
+/** Makes the screen as wide as xl (80rem), where the layout has the third column; jsdom has no matchMedia otherwise. */
+function stubWideScreen() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(min-width: 80rem)" || query === "(min-width: 48rem)",
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("while the server has voice chat off", () => {
   beforeEach(() => {
@@ -198,15 +212,21 @@ describe("starting a room", () => {
 });
 
 describe("the page of a room", () => {
-  test("lists everyone with their role, and says that this browser cannot join without WebRTC", async () => {
+  test("shows the stage: the room's head, the speakers and the listeners with their roles, and that this browser cannot join without WebRTC", async () => {
     server.use(signedInHandler);
-    voiceOn([voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(carol, { cohost: true })] })]);
+    voiceOn([voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(carol, { cohost: true, hand_raised: true })] })]);
     await renderApp({ path: `/voice/${roomId}` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();
-    const participants = screen.getByRole("region", { name: "Participants" });
-    const items = within(participants).getAllByRole("listitem");
-    expect(items.map((item) => item.textContent)).toEqual([expect.stringMatching(/Bob.*Host/u), expect.stringMatching(/Carol.*Co-host/u)]);
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText(/^2 people · /u)).toBeInTheDocument();
+    expect(screen.getByText("Talking about the week's music.")).toHaveAttribute("dir", "auto");
+    expect(screen.getByRole("link", { name: "#music" })).toBeInTheDocument();
+    const speakers = screen.getByRole("list", { name: "Speakers · 1" });
+    expect(within(speakers).getAllByRole("listitem").map((item) => item.textContent)).toEqual([expect.stringMatching(/Bob.*Host/u)]);
+    const listeners = screen.getByRole("list", { name: "Listeners · 1" });
+    expect(within(listeners).getAllByRole("listitem").map((item) => item.textContent)).toEqual([expect.stringMatching(/Carol.*Co-host.*Hand raised/u)]);
+    expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Room settings" })).not.toBeInTheDocument();
     // jsdom has no RTCPeerConnection: the call (call.test.tsx) needs one.
     expect(screen.getByText("This browser can't join voice chat. Open the room in a browser that supports calls, over HTTPS.")).toBeInTheDocument();
@@ -238,7 +258,21 @@ describe("the page of a room", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
     expect(updates).toEqual([{ speakers: "everyone" }]);
-    expect(await screen.findByText("Everyone who joins")).toBeInTheDocument();
+  });
+
+  test("on wide screens, the third column says who sees the room and who speaks, with the host's button to the settings", async () => {
+    stubWideScreen();
+    server.use(signedInHandler);
+    voiceOn([ownRoomFixture()]);
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    const about = await screen.findByRole("complementary", { name: "About the room" });
+    expect(within(about).getByText("Everyone on this server")).toBeInTheDocument();
+    expect(within(about).getByText("Only people the hosts let speak")).toBeInTheDocument();
+    expect(within(about).getByRole("link", { name: /Alice/u })).toBeInTheDocument();
+    // The rooms of the third column are the page's own: it lists no other room.
+    expect(screen.queryByRole("complementary", { name: "Voice chat" })).not.toBeInTheDocument();
+    await user.click(await within(about).findByRole("button", { name: "Change the room's settings" }));
+    expect(await screen.findByRole("dialog", { name: "Room settings" })).toBeInTheDocument();
   });
 
   test("reports the room with its host as the target, without a posts step", async () => {
@@ -254,7 +288,8 @@ describe("the page of a room", () => {
       }
     });
     const { user } = await renderApp({ path: `/voice/${roomId}` });
-    await user.click(await screen.findByRole("button", { name: "Report room" }));
+    await user.click(await screen.findByRole("button", { name: "More actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Report room" }));
     const dialog = await screen.findByRole("dialog", { name: "Report the room ⁨Friday night radio⁩" });
     const heading = within(dialog).getByRole("heading", { name: "Why are you reporting this room?" });
     await waitFor(() => {
@@ -278,7 +313,7 @@ describe("the page of a room", () => {
     voiceOn([ownRoomFixture()]);
     await renderApp({ path: `/voice/${roomId}` });
     expect(await screen.findByRole("button", { name: "Room settings" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Report room" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
   });
 
   test("tells a visitor who is not signed in that only this server's users join, with the summary the server shows", async () => {

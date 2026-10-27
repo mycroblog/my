@@ -199,6 +199,50 @@
     "defaultMessage": "Voice chat room",
     "description": "Heading of the page of a voice chat room whose name is not shown."
   },
+  "voice.room.live": {
+    "defaultMessage": "Live",
+    "description": "The pill at the head of the page of an open voice chat room."
+  },
+  "voice.room.stats": {
+    "defaultMessage": "{people} · {duration}",
+    "description": "How many are in a voice chat room and how long it has been open, beside the Live pill. {people} is the count of people (\"3 people\"), {duration} how long (\"38 min\")."
+  },
+  "voice.room.open_minutes": {
+    "defaultMessage": "{minutes, number} min",
+    "description": "How long a voice chat room has been open, under an hour. {minutes} is the number of minutes."
+  },
+  "voice.room.open_hours": {
+    "defaultMessage": "{hours, number} hr {minutes, number} min",
+    "description": "How long a voice chat room has been open, an hour or more. {hours} and {minutes} are the numbers of hours and minutes."
+  },
+  "voice.room.share": {
+    "defaultMessage": "Share",
+    "description": "Accessible name and tooltip of the icon button that shares the link of a voice chat room."
+  },
+  "voice.room.share.copied": {
+    "defaultMessage": "Copied the room's link",
+    "description": "Message after the link of a voice chat room was copied to the clipboard."
+  },
+  "voice.room.share.failed": {
+    "defaultMessage": "Couldn't copy the room's link",
+    "description": "Message when the link of a voice chat room could not be copied."
+  },
+  "voice.room.more": {
+    "defaultMessage": "More actions",
+    "description": "Accessible name and tooltip of the button and the name of the menu of a voice chat room for someone other than its host."
+  },
+  "voice.room.change_settings": {
+    "defaultMessage": "Change the room's settings",
+    "description": "The host's button in the About the room panel of a voice chat room that opens its settings."
+  },
+  "voice.stage.speakers": {
+    "defaultMessage": "Speakers · {count, number}",
+    "description": "Heading of the speakers of a voice chat room on its page. {count} is how many."
+  },
+  "voice.stage.listeners": {
+    "defaultMessage": "Listeners · {count, number}",
+    "description": "Heading of the listeners of a voice chat room on its page. {count} is how many."
+  },
   "voice.room.listed_notice": {
     "defaultMessage": "When you join, your name is listed for everyone who can see this room.",
     "description": "Notice on the page of a voice chat room before joining it."
@@ -215,13 +259,9 @@
     "defaultMessage": "You are in this room.",
     "description": "Shown on the page of a voice chat room that the user is in."
   },
-  "voice.room.participants": {
-    "defaultMessage": "Participants",
-    "description": "Heading of the list of the people in a voice chat room."
-  },
   "voice.room.details": {
     "defaultMessage": "About the room",
-    "description": "Accessible name of the list of a voice chat room's settings on its page."
+    "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
   },
   "voice.role.host": {
     "defaultMessage": "Host",
@@ -343,10 +383,6 @@
     "defaultMessage": "Report room",
     "description": "Button on the page of a voice chat room that opens the dialog reporting the room to the moderators."
   },
-  "voice.call.title": {
-    "defaultMessage": "Call",
-    "description": "Heading of the controls of the voice chat call that the user is in."
-  },
   "voice.call.connecting": {
     "defaultMessage": "Connecting…",
     "description": "State of the voice chat call until it connects."
@@ -379,10 +415,6 @@
     "defaultMessage": "Microphone",
     "description": "Label of the switch that turns the user's microphone on or off in a voice chat call."
   },
-  "voice.call.microphone.description": {
-    "defaultMessage": "Others hear you while it is on.",
-    "description": "Explanation under the microphone switch of a voice chat call."
-  },
   "voice.call.microphone_failed": {
     "defaultMessage": "Couldn't use the microphone. Try again.",
     "description": "Error when the browser did not give the microphone."
@@ -399,10 +431,6 @@
     "defaultMessage": "Raise hand",
     "description": "Button that asks the hosts of a voice chat room for permission to speak."
   },
-  "voice.call.lower_hand": {
-    "defaultMessage": "Lower hand",
-    "description": "Button that withdraws the user's raised hand in a voice chat room."
-  },
   "voice.call.leave": {
     "defaultMessage": "Leave",
     "description": "Button that leaves the voice chat room, and the confirm button of the dialogs about leaving."
@@ -414,6 +442,42 @@
   "voice.call.cancel": {
     "defaultMessage": "Cancel",
     "description": "Button that closes a dialog of a voice chat call without doing anything."
+  },
+  "voice.dock.label": {
+    "defaultMessage": "Call controls",
+    "description": "Accessible name of the toolbar of the controls of a voice chat call at the bottom of the room's page."
+  },
+  "voice.dock.hands": {
+    "defaultMessage": "Hands",
+    "description": "The host's and co-hosts' button in the controls of a voice chat call that lists the raised hands."
+  },
+  "voice.hands.heading": {
+    "defaultMessage": "Raised hands · {count, number}",
+    "description": "Heading of the list of the raised hands in a voice chat room. {count} is how many."
+  },
+  "voice.hands.count": {
+    "defaultMessage": "{count, plural, one {# raised hand} other {# raised hands}}",
+    "description": "Read by assistive technology as the description of the Hands button: how many raised a hand."
+  },
+  "voice.hands.empty": {
+    "defaultMessage": "No raised hands right now.",
+    "description": "Shown in the list of raised hands of a voice chat room when nobody raised a hand."
+  },
+  "voice.hands.allow": {
+    "defaultMessage": "Allow",
+    "description": "Button of a raised hand that lets the participant speak."
+  },
+  "voice.hands.allow.label": {
+    "defaultMessage": "Allow {name} to speak",
+    "description": "Accessible name of the Allow button of a raised hand. {name} is the participant's name."
+  },
+  "voice.hands.dismiss": {
+    "defaultMessage": "Dismiss",
+    "description": "Button of a raised hand that puts the hand down."
+  },
+  "voice.hands.dismiss.label": {
+    "defaultMessage": "Dismiss {name}'s raised hand",
+    "description": "Accessible name of the Dismiss button of a raised hand. {name} is the participant's name."
   },
   "voice.call.action_failed": {
     "defaultMessage": "Couldn't do that: {reason}",
@@ -531,17 +595,29 @@
     "defaultMessage": "Hand raised",
     "description": "Marker of a participant who raised a hand."
   },
-  "voice.participant.mic_on": {
-    "defaultMessage": "Mic on",
-    "description": "Marker of a speaker whose microphone is on."
-  },
   "voice.participant.blocked": {
     "defaultMessage": "Blocked",
     "description": "Marker of a participant whom the user blocks or who blocks the user."
   },
-  "voice.participant.reacted": {
-    "defaultMessage": "Reacted:",
-    "description": "Text for screen readers before the emoji a participant just reacted with."
+  "voice.participant.talking": {
+    "defaultMessage": "Talking",
+    "description": "Read by assistive technology for a participant of a voice chat room who is talking now (the ring around the avatar)."
+  },
+  "voice.participant.mic_off": {
+    "defaultMessage": "Microphone off",
+    "description": "Read by assistive technology for a speaker of a voice chat room whose microphone is off (the badge on the avatar)."
+  },
+  "voice.participant.reacted_with": {
+    "defaultMessage": "Reacted with {emoji}",
+    "description": "Read by assistive technology for the reaction a participant of a voice chat room just sent. {emoji} is the emoji."
+  },
+  "voice.participant.profile": {
+    "defaultMessage": "View profile",
+    "description": "Item of the menu of a participant of a voice chat room that opens the participant's profile."
+  },
+  "voice.participant.caption_separator": {
+    "defaultMessage": " · ",
+    "description": "What separates the parts of the line under a participant's name on the stage of a voice chat room (\"Host · You\")."
   },
   "voice.moderate.menu": {
     "defaultMessage": "Actions for {name}",
