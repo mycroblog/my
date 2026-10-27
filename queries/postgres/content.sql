@@ -83,6 +83,12 @@ SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_r
 FROM statuses s
 WHERE s.uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id);
 
+-- LockStatusKey takes a transaction-scoped advisory lock on a key of the content module's
+-- status projections (a status, or a URI with its replies), so that the projectors of one
+-- thread serialize under READ COMMITTED.
+-- name: LockStatusKey :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
 -- name: ListLiveRepliesTo :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
   s.conversation_uri, s.published_at
