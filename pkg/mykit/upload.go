@@ -39,6 +39,11 @@ type MediaUploadInput struct {
 // the file in its current state, usually processing: poll GetMediaWithResponse until it is ready or failed.
 // The body is read once, so the upload is never sent again: not after a 401 (get a fresh token first, as the
 // TokenSource does when the token has expired) and not after a 429 or 503.
+//
+// The readers stay the caller's: UploadMedia never closes them. It reads them from a goroutine of its own, and
+// returns when the request ends or ctx ends even while a Read blocks; that goroutine then makes no further Read,
+// but it lives on until the pending Read returns. With a source whose Read can block (a pipe, a socket, a
+// terminal), make it return after UploadMedia returns, for example by closing the source.
 func (a *API) UploadMedia(ctx context.Context, in MediaUploadInput) (*MediaAttachment, error) {
 	if in.File.Body == nil {
 		return nil, errors.New("mykit: UploadMedia: File.Body is nil")
@@ -48,10 +53,18 @@ func (a *API) UploadMedia(ctx context.Context, in MediaUploadInput) (*MediaAttac
 	go func() {
 		pw.CloseWithError(writeMediaUpload(mw, in))
 	}()
+	// When ctx ends, the request stops reading the body at once, even while a Read of a source blocks: the HTTP
+	// transport waits for the body to stop before it returns.
+	stop := context.AfterFunc(ctx, func() { _ = pr.CloseWithError(context.Cause(ctx)) })
+	defer stop()
 	resp, err := a.UploadMediaWithBodyWithResponse(ctx, mw.FormDataContentType(), pr)
 	// Stop the writer when the request ended before it read the whole body.
 	_ = pr.CloseWithError(io.ErrClosedPipe)
 	if err != nil {
+		if cerr := ctx.Err(); cerr != nil && !errors.Is(err, cerr) {
+			// The body closed by ctx may have failed the request first; errors.Is sees ctx's error all the same.
+			err = fmt.Errorf("%w (%w)", err, cerr)
+		}
 		return nil, err
 	}
 	if resp.JSON202 == nil {

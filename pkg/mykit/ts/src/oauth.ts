@@ -90,7 +90,8 @@ export async function tokenRequest(oauth: OAuthConfig, params: Record<string, st
   let response: Response;
   let body: string;
   try {
-    response = await fetch(new Request(endpoint, { method: "POST", headers, body: form }));
+    // The grant goes to the token endpoint of the server only: a redirect is its answer, never followed.
+    response = await fetch(new Request(endpoint, { method: "POST", headers, body: form, redirect: "manual" }));
     body = await response.text();
   } catch (error) {
     if (isAbort(error)) throw error;

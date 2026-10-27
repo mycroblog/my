@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, test } from "bun:test";
-import { EventStreamParser, type ServerSentEvent } from "./sse.js";
+import { EventStreamParser, EventTooLargeError, maxEventLength, type ServerSentEvent } from "./sse.js";
 
 function parseAll(...pieces: string[]): ServerSentEvent[] {
   const parser = new EventStreamParser();
@@ -41,6 +41,16 @@ describe("EventStreamParser", () => {
 
   test("ignores a leading byte order mark, and fields it does not use", () => {
     expect(parseAll("﻿id: 7\nretry: 10\ndata: x\n\n")).toEqual([{ event: "message", data: "x" }]);
+  });
+
+  test("throws at an event whose data lines add up to more than maxEventLength, or at a longer line", () => {
+    const line = `data: ${"x".repeat(1 << 20)}\n`;
+    const parser = new EventStreamParser();
+    expect(() => {
+      for (let i = 0; i <= maxEventLength >> 20; i++) parser.push(line);
+    }).toThrow(EventTooLargeError);
+    expect(() => new EventStreamParser().push("x".repeat(maxEventLength + 1))).toThrow(EventTooLargeError);
+    expect(parseAll(line.repeat(2), "\n")).toHaveLength(1);
   });
 
   test("discards an event that the stream ended before completing", () => {

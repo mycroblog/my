@@ -4,6 +4,7 @@ import { createClient } from "./client.js";
 import { NetworkError, ProblemError, problemTypeAboutBlank } from "./problem.js";
 import { fakeFetch, fakeSleep, json, problem, server, statusPage } from "./test/fake.js";
 import { staticToken, type TokenSource } from "./token.js";
+import { sleepSignal } from "./transport.js";
 
 const createStatusBody = { text: "hello", visibility: "public" as const };
 
@@ -219,6 +220,29 @@ describe("retries after 429 and 503", () => {
     expect(keys[1]).not.toBe(keys[2] ?? "");
   });
 
+  test("an Idempotency-Key on an operation that takes none does not make it retried", async () => {
+    const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
+    const error = (await api
+      .POST("/accounts/{id}/follow", { params: { path: { id: "a1" } }, headers: { "Idempotency-Key": "mine" } })
+      .catch((e: unknown) => e)) as ProblemError;
+    expect(error.status).toBe(429);
+    expect(f.requests).toHaveLength(1);
+    expect(s.waits).toEqual([]);
+  });
+
+  test("a post that got no answer reports its Idempotency-Key, to send it again with", async () => {
+    const f = fakeFetch(() => Promise.reject(new TypeError("connection reset")));
+    const api = createClient({ server, fetch: f.fetch });
+    const error = (await api.POST("/statuses", { body: createStatusBody }).catch((e: unknown) => e)) as NetworkError;
+    expect(error).toBeInstanceOf(NetworkError);
+    expect(error.idempotencyKey).toBe(f.requests[0]?.request.headers.get("Idempotency-Key") ?? "");
+    expect(error.idempotencyKey).not.toBe("");
+    const get = (await api.GET("/timelines/home").catch((e: unknown) => e)) as NetworkError;
+    expect(get.idempotencyKey).toBeUndefined();
+  });
+
   test("retries can be turned off", async () => {
     const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
     const api = createClient({ server, fetch: f.fetch, retry: { disabled: true } });
@@ -261,5 +285,20 @@ describe("retries after 429 and 503", () => {
     const error = await pending;
     expect(error).toBeInstanceOf(DOMException);
     expect(f.requests).toHaveLength(1);
+  });
+});
+
+describe("sleepSignal", () => {
+  test("a wait longer than setTimeout holds does not end at once", async () => {
+    const controller = new AbortController();
+    let ended = false;
+    const sleeping = sleepSignal(1e15, controller.signal).then(
+      () => (ended = true),
+      () => undefined,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(ended).toBe(false);
+    controller.abort();
+    await sleeping;
   });
 });

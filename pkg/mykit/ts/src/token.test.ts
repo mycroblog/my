@@ -104,6 +104,25 @@ describe("RefreshingTokenSource", () => {
     expect(source.token?.refreshToken).toBe("r1");
   });
 
+  test("tokens that onTokens failed to save are saved again before they are handed out, without a renewal", async () => {
+    const endpoint = tokenEndpoint();
+    let failing = 2;
+    const saved: string[] = [];
+    const source = new RefreshingTokenSource(oauth(endpoint.fetch), { accessToken: "a0", refreshToken: "r0", expiresAt: 0 }, (t) => {
+      if (failing > 0) {
+        failing--;
+        throw new Error("disk full");
+      }
+      saved.push(t.refreshToken ?? "");
+    });
+    expect(String(await source.getAccessToken().catch((e: unknown) => e))).toContain("disk full");
+    expect(String(await source.getAccessToken().catch((e: unknown) => e))).toContain("disk full");
+    expect(await source.refresh("a0")).toBe("a1");
+    expect(await source.getAccessToken()).toBe("a1");
+    expect(endpoint.grants).toHaveLength(1);
+    expect(saved).toEqual(["r1"]);
+  });
+
   test("an error answer of the token endpoint is an OAuthError", async () => {
     const f = fakeFetch(() => json(400, { error: "invalid_grant", error_description: "revoked" }));
     const source = new RefreshingTokenSource(oauth(f.fetch), { accessToken: "a0", refreshToken: "r0" });
@@ -124,6 +143,14 @@ describe("PKCE and the code exchange", () => {
     const v = newCodeVerifier();
     expect(v).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(newCodeVerifier()).not.toBe(v);
+  });
+
+  test("a redirect of the token endpoint is not followed", async () => {
+    const f = fakeFetch(() => new Response(null, { status: 307, headers: { Location: "https://elsewhere.example/oauth/token" } }));
+    const error = (await exchange(oauth(f.fetch), "code1", "verifier1").catch((e: unknown) => e)) as OAuthError;
+    expect(error).toBeInstanceOf(OAuthError);
+    expect(error.status).toBe(307);
+    expect(f.requests[0]?.request.redirect).toBe("manual");
   });
 
   test("a public client sends its client_id in the form", async () => {

@@ -15,3 +15,20 @@ export function acceptsIdempotencyKey(method: string, schemaPath: string): boole
   const m = method.toUpperCase();
   return idempotencyKeyOperations.some((op) => op.method === m && op.path === schemaPath);
 }
+
+/**
+ * Whether a request to `path`, the path of its URL under the client API's base path, is one of
+ * idempotencyKeyOperations; a `{param}` of the spec path matches one non-empty segment.
+ */
+export function acceptsIdempotencyKeyAt(method: string, path: string): boolean {
+  const m = method.toUpperCase();
+  const segments = path.split("/");
+  return idempotencyKeyOperations.some((op) => {
+    const pattern = op.path.split("/");
+    return (
+      op.method === m &&
+      pattern.length === segments.length &&
+      pattern.every((p, i) => (p.startsWith("{") && p.endsWith("}") ? segments[i] !== "" : p === segments[i]))
+    );
+  });
+}

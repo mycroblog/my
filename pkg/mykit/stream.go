@@ -25,7 +25,7 @@ const (
 	streamBaseDelay = time.Second
 	// streamMaxDelay is the longest wait between failed connections.
 	streamMaxDelay = time.Minute
-	// maxEventBytes bounds a line of the stream, and so the data of one event.
+	// maxEventBytes bounds a line of the stream, and the data of one event (its data lines, each with its LF).
 	maxEventBytes = 4 << 20
 )
 
@@ -164,7 +164,11 @@ func (a *API) streamOnce(ctx context.Context, opts *StreamOptions, heartbeat tim
 	sc.Split(scanLines)
 	var parser eventParser
 	for sc.Scan() {
-		ev, ok := parser.line(sc.Text())
+		ev, ok, err := parser.line(sc.Text())
+		if err != nil {
+			*failures++
+			return -1, causeOf(ctx, &NetworkError{Method: http.MethodGet, URL: resp.Request.URL.Redacted(), Err: err})
+		}
 		if !ok {
 			watchdog.Reset(heartbeat)
 			continue
@@ -342,19 +346,24 @@ type eventParser struct {
 	hasData bool
 }
 
-// line processes one line and reports the event that a blank line dispatched.
-func (p *eventParser) line(line string) (rawEvent, bool) {
+// errEventTooLarge is the failure of a stream whose event has more than maxEventBytes of data.
+var errEventTooLarge = errors.New("a stream event is larger than 4 MiB")
+
+// line processes one line and reports the event that a blank line dispatched. It fails with errEventTooLarge
+// when the data of the event grows beyond maxEventBytes.
+func (p *eventParser) line(line string) (rawEvent, bool, error) {
 	if !p.started {
 		p.started = true
 		// A leading byte order mark is not part of the stream.
 		line = strings.TrimPrefix(line, "\uFEFF")
 	}
 	if line == "" {
-		return p.dispatch()
+		ev, ok := p.dispatch()
+		return ev, ok, nil
 	}
 	if line[0] == ':' {
 		// A comment, such as ": heartbeat".
-		return rawEvent{}, false
+		return rawEvent{}, false, nil
 	}
 	field, value := line, ""
 	if i := strings.IndexByte(line, ':'); i >= 0 {
@@ -367,11 +376,14 @@ func (p *eventParser) line(line string) (rawEvent, bool) {
 	case "event":
 		p.name = value
 	case "data":
+		if p.data.Len()+len(value)+1 > maxEventBytes {
+			return rawEvent{}, false, errEventTooLarge
+		}
 		p.data.WriteString(value)
 		p.data.WriteByte('\n')
 		p.hasData = true
 	}
-	return rawEvent{}, false
+	return rawEvent{}, false, nil
 }
 
 func (p *eventParser) dispatch() (rawEvent, bool) {

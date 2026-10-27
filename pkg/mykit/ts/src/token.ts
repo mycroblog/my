@@ -52,8 +52,10 @@ export type OnTokens = (token: Token) => void | Promise<void>;
  * The TokenSource of a client that holds a refresh token: it renews the access token with the refresh_token grant
  * when it expires or the server refuses it. Renewals are serialized, so that concurrent requests that meet a 401
  * renew it once: a used refresh token sent again revokes the whole token family. Every renewal passes the new tokens
- * to `onTokens`; when it throws, the new tokens are kept in the source and the request that needed them fails with
- * its error.
+ * to `onTokens`; when it throws, the new tokens are kept in the source, the request that needed them fails with its
+ * error, and every later request passes them to `onTokens` again before it uses them, until `onTokens` saves them.
+ * The source never hands out tokens that `onTokens` has not saved, so an app that restarts after a failed save does
+ * not lose the only valid refresh token while requests went on with it.
  */
 export class RefreshingTokenSource implements TokenSource {
   readonly #oauth: OAuthConfig;
@@ -62,6 +64,10 @@ export class RefreshingTokenSource implements TokenSource {
   #token: Token | null;
   /** The renewal in flight, which the requests that need a token meanwhile wait for. */
   #renewal: Promise<Token> | null = null;
+  /** Whether `onTokens` has not saved #token, the tokens of the last renewal. */
+  #unsaved = false;
+  /** The save in flight, which the requests that need a token meanwhile wait for. */
+  #saving: Promise<void> | null = null;
 
   /**
    * Starts from `token` (from `exchange`, or saved before) and renews it through the token endpoint of `oauth`.
@@ -82,6 +88,7 @@ export class RefreshingTokenSource implements TokenSource {
   /** The current access token, renewed first when it has expired. */
   async getAccessToken(): Promise<string | null> {
     if (this.#renewal !== null) return (await this.#renewal).accessToken;
+    await this.#save();
     if (valid(this.#token, this.#now())) return this.#token.accessToken;
     return (await this.#renew()).accessToken;
   }
@@ -92,6 +99,7 @@ export class RefreshingTokenSource implements TokenSource {
    */
   async refresh(refused: string): Promise<string | null> {
     if (this.#renewal !== null) return (await this.#renewal).accessToken;
+    await this.#save();
     if (valid(this.#token, this.#now()) && this.#token.accessToken !== refused) return this.#token.accessToken;
     return (await this.#renew()).accessToken;
   }
@@ -112,7 +120,22 @@ export class RefreshingTokenSource implements TokenSource {
     const token = await tokenRequest(this.#oauth, { grant_type: "refresh_token", refresh_token: current.refreshToken });
     token.refreshToken ??= current.refreshToken;
     this.#token = token;
-    await this.#onTokens?.(token);
+    this.#unsaved = true;
+    await this.#save();
     return token;
+  }
+
+  /** Passes the tokens of the last renewal to `onTokens` when it has not saved them yet, once for every caller. */
+  #save(): Promise<void> {
+    if (!this.#unsaved) return Promise.resolve();
+    this.#saving ??= this.#persist().finally(() => {
+      this.#saving = null;
+    });
+    return this.#saving;
+  }
+
+  async #persist(): Promise<void> {
+    if (this.#token !== null) await this.#onTokens?.(this.#token);
+    this.#unsaved = false;
   }
 }

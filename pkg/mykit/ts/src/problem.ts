@@ -100,10 +100,17 @@ export class NetworkError extends Error {
   override readonly name = "NetworkError";
   readonly method: string;
   readonly url: string;
+  /**
+   * The Idempotency-Key of a request to an operation that takes one, such as posting a status; undefined for any
+   * other request. The server may have applied the request without the answer arriving: send it again with this key
+   * (its `Idempotency-Key` header parameter) to have it applied once.
+   */
+  readonly idempotencyKey: string | undefined;
 
-  constructor(method: string, url: string, cause: unknown) {
+  constructor(method: string, url: string, cause: unknown, idempotencyKey?: string) {
     super(`mykit: ${method} ${url}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
     this.method = method;
     this.url = url;
+    this.idempotencyKey = idempotencyKey;
   }
 }
