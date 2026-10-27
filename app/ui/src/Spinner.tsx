@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { ComponentPropsWithRef } from "react";
-import { ProgressBar } from "react-aria-components";
+import type { Ref } from "react";
+import { useProgressBar } from "react-aria";
 import { tv, type VariantProps } from "tailwind-variants";
 
 const spinner = tv({
@@ -21,25 +21,25 @@ const spinner = tv({
   defaultVariants: { size: "md" },
 });
 
-export type SpinnerProps = Omit<
-  ComponentPropsWithRef<typeof ProgressBar>,
-  "children" | "className" | "value" | "minValue" | "maxValue" | "isIndeterminate" | "formatOptions" | "valueLabel" | "aria-label"
-> &
-  VariantProps<typeof spinner> & {
-    /** What is in progress ("Loading posts"). It is the progress bar's accessible name. */
-    label: string;
-    className?: string;
-  };
+export type SpinnerProps = VariantProps<typeof spinner> & {
+  /** What is in progress ("Loading posts"). It is the progress bar's accessible name. */
+  label: string;
+  className?: string;
+  ref?: Ref<HTMLSpanElement>;
+};
 
 /**
  * An indeterminate progress indicator: an indeterminate `progressbar` named by `label`. It spins only
  * under `motion-safe`. Inside a region that is loading, the region also sets `aria-busy="true"`.
+ * It is a `span` (React Aria's `useProgressBar` rather than the `div` of its `ProgressBar`), so that it
+ * is phrasing content and may sit in a paragraph, a label, or a button.
  */
-export function Spinner({ label, size, className, ...props }: SpinnerProps) {
+export function Spinner({ label, size, className, ref }: SpinnerProps) {
   const { base, ring } = spinner({ size });
+  const { progressBarProps } = useProgressBar({ "aria-label": label, isIndeterminate: true });
   return (
-    <ProgressBar {...props} aria-label={label} isIndeterminate className={base({ className })}>
+    <span {...progressBarProps} ref={ref} className={base({ className })}>
       <span aria-hidden="true" className={ring()} />
-    </ProgressBar>
+    </span>
   );
 }
