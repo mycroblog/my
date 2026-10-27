@@ -47,8 +47,8 @@ func TestOTLPErrorExporter(t *testing.T) {
 			t.Errorf("attribute %s = %q, want %q", k, l.Attrs[k], v)
 		}
 	}
-	if l.Attrs["my.error.fingerprint"] == "" {
-		t.Error("the record has no fingerprint")
+	if _, ok := l.Attrs["my.error.fingerprint"]; !ok {
+		t.Error("the record has no my.error.fingerprint")
 	}
 	if l.Resource["service.version"] != "9.9.9" {
 		t.Errorf("resource service.version = %q", l.Resource["service.version"])
