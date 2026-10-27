@@ -286,6 +286,16 @@ type DomainRestriction struct {
 	EffectiveUntil *time.Time
 }
 
+type ErrorGroupEvent struct {
+	ID          string
+	GroupID     string
+	Kind        string
+	ActorKind   string
+	ActorUserID *string
+	Version     string
+	OccurredAt  time.Time
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
