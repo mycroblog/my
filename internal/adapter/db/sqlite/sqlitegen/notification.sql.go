@@ -113,6 +113,18 @@ func (q *Queries) DeleteAllNotificationExclusions(ctx context.Context) error {
 	return err
 }
 
+const deleteErrorGroupNoticesBefore = `-- name: DeleteErrorGroupNoticesBefore :execrows
+DELETE FROM error_group_notice_hours WHERE hour_start < ?
+`
+
+func (q *Queries) DeleteErrorGroupNoticesBefore(ctx context.Context, hourStart int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteErrorGroupNoticesBefore, hourStart)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const deleteNotificationDomainExclusion = `-- name: DeleteNotificationDomainExclusion :exec
 DELETE FROM notification_domain_exclusions WHERE viewer_account_id = ? AND domain = ?
 `

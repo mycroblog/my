@@ -38,6 +38,12 @@ func (r *NotificationRepository) ErrorGroupNotices(ctx context.Context, hour tim
 	return n, wrap(err, "get error group notices")
 }
 
+// DeleteErrorGroupNoticesBefore implements notification.Repository.
+func (r *NotificationRepository) DeleteErrorGroupNoticesBefore(ctx context.Context, before time.Time) (int64, error) {
+	n, err := r.db.reader().DeleteErrorGroupNoticesBefore(ctx, before)
+	return n, wrap(err, "delete error group notices")
+}
+
 // InsertNotification implements notification.Repository.
 func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error) {
 	q, err := queries(tx)

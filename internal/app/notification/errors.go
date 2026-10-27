@@ -8,6 +8,7 @@ import (
 	"time"
 
 	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
@@ -84,4 +85,37 @@ func (s *Service) ErrorGroupOthers(ctx context.Context, n notification.Notificat
 		return 0, fmt.Errorf("notification: the error group notices of %s: %w", n.ErrorGroupHour, err)
 	}
 	return max(notices-notification.ErrorGroupHourlyCap, 0), nil
+}
+
+const (
+	// JobPruneErrorGroupNotices deletes the hourly notices older than
+	// notification.ErrorGroupNoticeRetention.
+	JobPruneErrorGroupNotices = "notification.prune_error_group_notices"
+	// PruneErrorGroupNoticesInterval is the period of the prune's schedule.
+	PruneErrorGroupNoticesInterval = 24 * time.Hour
+)
+
+// PruneErrorGroupNotices deletes the notices of the hours older than
+// notification.ErrorGroupNoticeRetention and returns how many hours it deleted. It is safe to
+// repeat.
+func (s *Service) PruneErrorGroupNotices(ctx context.Context) (int64, error) {
+	before := notification.ErrorGroupHour(s.d.Clock.Now().Add(-notification.ErrorGroupNoticeRetention))
+	n, err := s.d.Repository.DeleteErrorGroupNoticesBefore(ctx, before)
+	if err != nil {
+		return n, fmt.Errorf("notification: prune the error group notices: %w", err)
+	}
+	return n, nil
+}
+
+// RegisterErrorGroupJobs registers the JobPruneErrorGroupNotices handler and its daily schedule.
+func (s *Service) RegisterErrorGroupJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
+	reg.Register(JobPruneErrorGroupNotices, func(ctx context.Context, _ queue.Job) queue.Result {
+		if _, err := s.PruneErrorGroupNotices(ctx); err != nil {
+			return queue.Retry(0, err)
+		}
+		return queue.Done()
+	})
+	sched.Add(queue.Schedule{
+		Name: JobPruneErrorGroupNotices, Every: PruneErrorGroupNoticesInterval, Job: queue.NewJob{Type: JobPruneErrorGroupNotices},
+	})
 }
