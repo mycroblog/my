@@ -14,13 +14,16 @@ configure({ asyncUtilTimeout: 10_000 });
 // articles are measured. A no-op keeps jsdom from logging "Not implemented" for every test.
 window.scrollTo = () => undefined;
 // Nor does it give elements scrollTo, which the EmojiPicker's virtualizer scrolls its grid with; jsdom keeps an
-// element's scrollTop, so this one sets it and tells the listeners, as a browser's instant scroll does.
+// element's scrollTop, so this one sets it and tells the listeners, as a browser's instant scroll does. Like a
+// browser, it fires no scroll event when the position stays the same: the virtualizer scrolls to its current offset
+// in a layout effect when it mounts, and a scroll event there would make it flushSync while React commits.
 Element.prototype.scrollTo = function scrollTo(this: Element, options?: ScrollToOptions | number) {
+  const { scrollTop, scrollLeft } = this;
   if (typeof options === "object") {
     if (options.top !== undefined) this.scrollTop = options.top;
     if (options.left !== undefined) this.scrollLeft = options.left;
   }
-  this.dispatchEvent(new Event("scroll"));
+  if (this.scrollTop !== scrollTop || this.scrollLeft !== scrollLeft) this.dispatchEvent(new Event("scroll"));
 };
 // Nor does jsdom draw: without the canvas package, getContext logs "Not implemented". A canvas without a context
 // is what a browser without a 2D canvas gives, and Blurhash then draws nothing.
