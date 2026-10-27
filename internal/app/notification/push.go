@@ -116,6 +116,15 @@ type PushAudience interface {
 	Locale(ctx context.Context, accountID string) (string, error)
 	// Account returns how a message names an account; ErrNotFound when the account is gone.
 	Account(ctx context.Context, accountID string) (PushAccount, error)
+	// StatusVisible reports whether the local account may see the status now, by the content
+	// module's single visibility policy; false for a missing or deleted status.
+	StatusVisible(ctx context.Context, accountID, statusID string) (bool, error)
+}
+
+// PushNotifications tells whether a notification is still in its recipient's list.
+// *Service implements it.
+type PushNotifications interface {
+	Listed(ctx context.Context, accountID, id string) (bool, error)
 }
 
 // JobPush is the job that sends one notification to one Web Push subscription.
@@ -188,6 +197,10 @@ type PushDeps struct {
 	// ErrPushUnavailable and the server key is "".
 	Sender   PushSender
 	Audience PushAudience
+	// Notifications rechecks, when a message is sent, that its notification is still listed:
+	// a block, a mute, a domain mute, a dismissal, or a deleted status since the notification
+	// was created drops the message. nil skips the check.
+	Notifications PushNotifications
 	// Messages words the messages; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
 	// Host names the instance in a message whose source is the instance, when InstanceName
@@ -336,6 +349,12 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 	if !active {
 		return s.retire(ctx, sub.ID)
 	}
+	switch shown, err := s.stillShown(ctx, job); {
+	case err != nil:
+		return queue.Retry(0, err)
+	case !shown:
+		return queue.Done() // the recipient no longer sees the notification or its status
+	}
 	payload, err := s.message(ctx, job)
 	if errors.Is(err, ErrNotFound) {
 		return queue.Done() // the account the message names is gone
@@ -356,6 +375,22 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 		return queue.Fail(fmt.Errorf("notification: the push service refused %s with %d", job.NotificationID, res.StatusCode))
 	}
 	return queue.Retry(res.RetryAfter, fmt.Errorf("notification: the push service answered %s with %d", job.NotificationID, res.StatusCode))
+}
+
+// stillShown reports whether job's notification may still reach its recipient at the time of
+// sending, which can be long after the notification was created: the notification list still
+// shows it (no block, mute, or dismissal since), and the recipient may still see its status.
+func (s *PushService) stillShown(ctx context.Context, job pushJob) (bool, error) {
+	if s.d.Notifications != nil {
+		listed, err := s.d.Notifications.Listed(ctx, job.AccountID, job.NotificationID)
+		if err != nil || !listed {
+			return false, err
+		}
+	}
+	if job.StatusID == "" {
+		return true, nil
+	}
+	return s.d.Audience.StatusVisible(ctx, job.AccountID, job.StatusID)
 }
 
 // retire deletes a subscription that can take no more messages.

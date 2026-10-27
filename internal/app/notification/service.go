@@ -38,12 +38,18 @@ const (
 	MaxPageLimit     = 80
 )
 
-// Query selects a page of an account's notifications, newest first.
+// Query selects a page of an account's notifications, newest first, or oldest first after a
+// cursor (After).
 type Query struct {
 	// Types keeps only notifications of these types; empty keeps every type.
 	Types []notification.Type
 	// Before is the ID of the last notification of the previous page; "" starts at the newest.
 	Before string
+	// After, when set, pages forward instead: the page holds the notifications whose ID is
+	// greater than After, oldest first, and Before is ignored. A reader that follows new
+	// notifications passes the ID of the last one it has, so that a burst larger than a page
+	// takes several pages and none is skipped.
+	After string
 	// Limit is the page size; zero or less means DefaultPageLimit, and it is capped at MaxPageLimit.
 	Limit int
 }
@@ -58,7 +64,8 @@ func (q Query) limit() int {
 	return q.Limit
 }
 
-// List returns accountID's notifications that are not dismissed, newest first. It leaves out
+// List returns accountID's notifications that are not dismissed, newest first (oldest first
+// with q.After). It leaves out
 // the notifications from accounts that accountID blocks or is blocked by, or mutes with
 // hide_notifications, at the time of reading, also those notified before the block or mute,
 // and the notifications about deleted statuses. It also leaves out the moderator notifications
@@ -75,7 +82,21 @@ func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notifi
 	if err != nil {
 		return nil, err
 	}
+	if q.After != "" {
+		return s.d.Repository.ListNotificationsAfter(ctx, accountID, q.Types, hidden, q.After, q.limit(), s.d.Clock.Now())
+	}
 	return s.d.Repository.ListNotifications(ctx, accountID, q.Types, hidden, q.Before, q.limit(), s.d.Clock.Now())
+}
+
+// Listed reports whether List would return accountID's notification id now: it exists for
+// accountID, is not dismissed, and no block, mute, domain mute, deleted status, or lost
+// permission hides it. The Web Push job checks it before sending.
+func (s *Service) Listed(ctx context.Context, accountID, id string) (bool, error) {
+	hidden, err := s.hiddenTypes(ctx, accountID)
+	if err != nil {
+		return false, err
+	}
+	return s.d.Repository.NotificationListed(ctx, accountID, id, hidden, s.d.Clock.Now())
 }
 
 // ReadMarker returns accountID's read marker; an account that has read nothing has a marker

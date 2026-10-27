@@ -348,3 +348,8 @@ func (a *stubPushAudience) Locale(context.Context, string) (string, error) { ret
 func (a *stubPushAudience) Account(context.Context, string) (appnotification.PushAccount, error) {
 	return appnotification.PushAccount{DisplayName: "Carol", Acct: "carol@remote.example"}, nil
 }
+
+// StatusVisible shows every status: the recheck of visibility is the push job's own test.
+func (a *stubPushAudience) StatusVisible(context.Context, string, string) (bool, error) {
+	return true, nil
+}

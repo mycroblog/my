@@ -193,6 +193,33 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, recipien
 	return out, nil
 }
 
+// ListNotificationsAfter implements notification.Repository.
+func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, after string, limit int, now time.Time) ([]notification.Notification, error) {
+	n, err := toInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListNotificationsAfter(ctx, postgresgen.ListNotificationsAfterParams{
+		RecipientAccountID: recipientAccountID, After: after, AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden), Now: now, PageLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list notifications after")
+	}
+	out := make([]notification.Notification, len(rows))
+	for i, row := range rows {
+		out[i] = notificationFrom(row)
+	}
+	return out, nil
+}
+
+// NotificationListed implements notification.Repository.
+func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden []notification.Type, now time.Time) (bool, error) {
+	ok, err := r.db.reader().NotificationListed(ctx, postgresgen.NotificationListedParams{
+		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeNames(hidden), Now: now,
+	})
+	return ok, wrap(err, "notification listed")
+}
+
 // CountNotificationsAfter implements notification.Repository.
 func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden []notification.Type, now time.Time) (int64, error) {
 	n, err := r.db.reader().CountNotificationsAfter(ctx, postgresgen.CountNotificationsAfterParams{

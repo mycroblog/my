@@ -35,7 +35,7 @@ func (a *App) setUpDelivery(repo federation.Repository) error {
 	a.Deliverer.RegisterJobs(a.Handlers)
 	federation.NewProber(federation.ProbeDeps{
 		Repository: repo, Health: a.InstanceHealth, HTTP: a.HTTPClient, Jobs: a.Jobs, Logger: a.Logger,
-		Modes: federationModes{a},
+		Modes: federationModes{a}, Domains: a.ModerationPolicy, Host: a.Config.Host,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
 }

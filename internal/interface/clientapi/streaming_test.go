@@ -5,6 +5,8 @@ package clientapi_test
 import (
 	"bufio"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +15,9 @@ import (
 	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/stream"
+	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -233,4 +237,78 @@ func TestStreamingWithoutBroker(t *testing.T) {
 	if res.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("status = %d, want 503", res.StatusCode)
 	}
+}
+
+// TestStreamingIdleOverHTTP2 checks that an idle stream over HTTP/2 stays open past the write
+// timeout of its last write until the next heartbeat: HTTP/2 resets a stream whose write
+// deadline passes even while nothing is being written.
+func TestStreamingIdleOverHTTP2(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{})
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Streams, o.StreamHeartbeat, o.StreamWriteTimeout = hub, 300*time.Millisecond, 50*time.Millisecond
+	})
+	srv := httptest.NewUnstartedServer(e.h)
+	srv.EnableHTTP2 = true
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+
+	_, res, r := openStream(t.Context(), t, srv, "read")
+	if res.ProtoMajor != 2 {
+		t.Fatalf("protocol = %s, want HTTP/2", res.Proto)
+	}
+	if line := readLine(t, r); line != ": connected" {
+		t.Fatalf("first line = %q, want the connected comment", line)
+	}
+	for range 2 {
+		if line := readLine(t, r); line != ": heartbeat" {
+			t.Fatalf("line = %q, want a heartbeat", line)
+		}
+	}
+}
+
+// TestStreamingNotificationBurst checks that a stream sends every notification of a burst
+// larger than a page of the list, oldest first, and each once.
+func TestStreamingNotificationBurst(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{})
+	e, f, _ := newNotificationEnvWithViews(t, func(o *clientapi.Options) { o.Streams = hub })
+	srv := httptest.NewServer(e.h)
+	t.Cleanup(srv.Close)
+
+	_, _, r := openStream(t.Context(), t, srv, "read")
+	if line := readLine(t, r); line != ": connected" {
+		t.Fatalf("first line = %q, want the connected comment", line)
+	}
+	// IDs after the time the stream opened, growing with i.
+	burstID := func(i int) string { return fmt.Sprintf("ffff0000-0000-7000-8000-%012d", i) }
+	add := func(i int) {
+		f.ns = append(f.ns, notification.Notification{
+			ID: burstID(i), RecipientAccountID: aliceAccountID, Type: notification.TypeFollow, SourceAccountID: bobAccountID,
+			CreatedAt: time.Date(2026, 10, 16, 0, 0, 0, 0, time.UTC),
+		})
+	}
+	expect := func(i int) {
+		t.Helper()
+		if line := readLine(t, r); line != "event: notification" {
+			t.Fatalf("line = %q, want notification %d", line, i)
+		}
+		var n clientapi.Notification
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(readLine(t, r), "data: ")), &n); err != nil {
+			t.Fatal(err)
+		}
+		if n.Id != burstID(i) {
+			t.Fatalf("notification %d = %s, want %s", i, n.Id, burstID(i))
+		}
+	}
+	burst := appnotification.MaxPageLimit + 1
+	for i := range burst {
+		add(i)
+	}
+	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
+	for i := range burst {
+		expect(i)
+	}
+	// The next signal sends only the notification after the burst.
+	add(burst)
+	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
+	expect(burst)
 }

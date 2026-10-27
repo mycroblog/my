@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strconv"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/domain/notification"
 )
 
 // Defaults of the streaming endpoint.
@@ -27,9 +25,9 @@ const (
 	// DefaultStreamHeartbeat is how often an idle stream sends a comment line, which keeps
 	// proxies from closing it and lets the server notice a client that has gone.
 	DefaultStreamHeartbeat = 30 * time.Second
-	// streamWriteTimeout bounds each write to a stream, so that a client that stops reading
-	// releases its stream.
-	streamWriteTimeout = 10 * time.Second
+	// DefaultStreamWriteTimeout bounds each write to a stream, so that a client that stops
+	// reading releases its stream.
+	DefaultStreamWriteTimeout = 10 * time.Second
 	// streamRetryAfter is the Retry-After, in seconds, of a stream refused because the broker
 	// is unavailable or shutting down.
 	streamRetryAfter = 5
@@ -291,25 +289,30 @@ func (r *recentIDs) add(id string) {
 	r.set[id] = struct{}{}
 }
 
-// notifications sends the viewer's notifications after the last one sent, oldest first.
+// notifications sends the viewer's notifications after the last one sent, oldest first, a
+// page at a time until it has caught up, so that a burst larger than a page loses nothing.
 func (st *streamState) notifications(ctx context.Context) error {
-	ns, err := st.s.o.Notifications.List(ctx, st.viewer.AccountID, appnotification.Query{Limit: appnotification.MaxPageLimit})
-	if err != nil {
-		return fmt.Errorf("list the notifications of %s: %w", st.viewer.AccountID, err)
-	}
-	ns = slices.DeleteFunc(ns, func(n notification.Notification) bool { return n.ID <= st.lastNotification })
-	slices.Reverse(ns)
-	items, err := st.s.newNotifications(ctx, st.viewer, ns)
-	if err != nil {
-		return err
-	}
-	for i, item := range items {
-		if err := st.event("notification", item); err != nil {
+	for {
+		ns, err := st.s.o.Notifications.List(ctx, st.viewer.AccountID, appnotification.Query{
+			After: st.lastNotification, Limit: appnotification.MaxPageLimit,
+		})
+		if err != nil {
+			return fmt.Errorf("list the notifications of %s: %w", st.viewer.AccountID, err)
+		}
+		items, err := st.s.newNotifications(ctx, st.viewer, ns)
+		if err != nil {
 			return err
 		}
-		st.lastNotification = ns[i].ID
+		for i, item := range items {
+			if err := st.event("notification", item); err != nil {
+				return err
+			}
+			st.lastNotification = ns[i].ID
+		}
+		if len(ns) < appnotification.MaxPageLimit {
+			return nil
+		}
 	}
-	return nil
 }
 
 // event writes one event with data as its JSON.
@@ -321,15 +324,24 @@ func (st *streamState) event(name string, data any) error {
 	return st.write("event: " + name + "\ndata: " + string(b) + "\n\n")
 }
 
-// write writes and flushes text, within streamWriteTimeout.
+// write writes and flushes text, within the stream write timeout. A flushed write clears the
+// deadline again: HTTP/2 resets a stream whose deadline passes even while it is idle, so a
+// deadline left in place would end every idle stream before its next heartbeat.
 func (st *streamState) write(text string) error {
-	if err := st.rc.SetWriteDeadline(time.Now().Add(streamWriteTimeout)); err != nil && !errors.Is(err, http.ErrNotSupported) {
+	timeout := st.s.o.StreamWriteTimeout
+	if timeout <= 0 {
+		timeout = DefaultStreamWriteTimeout
+	}
+	if err := st.rc.SetWriteDeadline(time.Now().Add(timeout)); err != nil && !errors.Is(err, http.ErrNotSupported) {
 		return errors.Join(errStreamWrite, err)
 	}
 	if _, err := st.w.Write([]byte(text)); err != nil {
 		return errors.Join(errStreamWrite, err)
 	}
 	if err := st.rc.Flush(); err != nil {
+		return errors.Join(errStreamWrite, err)
+	}
+	if err := st.rc.SetWriteDeadline(time.Time{}); err != nil && !errors.Is(err, http.ErrNotSupported) {
 		return errors.Join(errStreamWrite, err)
 	}
 	return nil

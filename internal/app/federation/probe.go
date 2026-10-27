@@ -39,6 +39,11 @@ type ProbeDeps struct {
 	Health     *Health
 	// HTTP fetches the NodeInfo documents, unsigned.
 	HTTP kernel.HTTPClient
+	// Domains and Host are the domain blocks of fetches (Fetcher): the probe never requests a
+	// suspended server or this instance's Host, neither first nor on a redirect hop. A nil
+	// Domains refuses only Host.
+	Domains DomainPolicy
+	Host    string
 	// Jobs enqueues the next batch, outside any transaction.
 	Jobs queue.JobQueue
 	// Batch is the number of servers per job; zero means ProbeBatch.
@@ -51,7 +56,11 @@ type ProbeDeps struct {
 }
 
 // Prober runs JobProbeInstances.
-type Prober struct{ d ProbeDeps }
+type Prober struct {
+	d ProbeDeps
+	// policy applies the domain blocks of fetches to the probe's requests.
+	policy *Fetcher
+}
 
 // NewProber returns the probe on d.
 func NewProber(d ProbeDeps) *Prober {
@@ -61,7 +70,11 @@ func NewProber(d ProbeDeps) *Prober {
 	if d.Logger == nil {
 		d.Logger = slog.Default()
 	}
-	return &Prober{d: d}
+	domains := d.Domains
+	if domains == nil {
+		domains = NoDomainRestrictions{}
+	}
+	return &Prober{d: d, policy: NewFetcher(FetcherDeps{Domains: domains, Host: d.Host})}
 }
 
 // probePayload is the payload of JobProbeInstances: the cursor, the last domain of the previous
@@ -152,9 +165,14 @@ func (p *Prober) probe(ctx context.Context, domain string) error {
 }
 
 func (p *Prober) getJSON(ctx context.Context, u string, v any) error {
+	if err := p.policy.checkRedirect(ctx, u); err != nil {
+		return err
+	}
 	h := http.Header{}
 	h.Set("Accept", "application/json")
-	resp, err := p.d.HTTP.Do(ctx, &kernel.HTTPRequest{Method: http.MethodGet, URL: u, Header: h, Purpose: kernel.HTTPPurposeJSON})
+	resp, err := p.d.HTTP.Do(ctx, &kernel.HTTPRequest{
+		Method: http.MethodGet, URL: u, Header: h, Purpose: kernel.HTTPPurposeJSON, CheckRedirect: p.policy.checkRedirect,
+	})
 	if err != nil {
 		return err
 	}

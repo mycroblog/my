@@ -80,6 +80,12 @@ type Repository interface {
 	// target, no domain exclusion of the recipient covers its source domain, and its status, if
 	// any, is not recorded as deleted.
 	ListNotifications(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, before string, limit int, now time.Time) ([]notification.Notification, error)
+	// ListNotificationsAfter is ListNotifications in the other direction: the recipient's
+	// visible notifications whose ID is greater than after, oldest first, at most limit.
+	ListNotificationsAfter(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, after string, limit int, now time.Time) ([]notification.Notification, error)
+	// NotificationListed reports whether the notification id is the recipient's and visible
+	// as in ListNotifications with hidden.
+	NotificationListed(ctx context.Context, recipientAccountID, id string, hidden []notification.Type, now time.Time) (bool, error)
 	// CountNotificationsAfter counts the recipient's visible notifications, as in
 	// ListNotifications with hidden, whose ID is greater than after ("" counts them all).
 	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden []notification.Type, now time.Time) (int64, error)
