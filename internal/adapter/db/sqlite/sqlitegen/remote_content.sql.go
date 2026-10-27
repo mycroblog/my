@@ -535,6 +535,39 @@ func (q *Queries) InsertRemoteMedia(ctx context.Context, arg InsertRemoteMediaPa
 	return result.RowsAffected()
 }
 
+const insertRemoteMediaCache = `-- name: InsertRemoteMediaCache :execrows
+INSERT INTO remote_media_cache (url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+ON CONFLICT (url) DO NOTHING
+`
+
+type InsertRemoteMediaCacheParams struct {
+	Url            string
+	BlobKey        string
+	ContentType    string
+	FileSize       int64
+	FetchedAt      int64
+	ExpiresAt      int64
+	LastAccessedAt int64
+}
+
+// InsertRemoteMediaCache records a copy of a remote file unless the URL has an entry already.
+func (q *Queries) InsertRemoteMediaCache(ctx context.Context, arg InsertRemoteMediaCacheParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertRemoteMediaCache,
+		arg.Url,
+		arg.BlobKey,
+		arg.ContentType,
+		arg.FileSize,
+		arg.FetchedAt,
+		arg.ExpiresAt,
+		arg.LastAccessedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const insertRemoteStatusRevision = `-- name: InsertRemoteStatusRevision :exec
 
 INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version)
@@ -920,6 +953,29 @@ func (q *Queries) ListRemoteMedia(ctx context.Context, mediaIds string) ([]Remot
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockRemoteMediaCache = `-- name: LockRemoteMediaCache :one
+SELECT url, blob_key, content_type, file_size, fetched_at, expires_at, last_accessed_at
+FROM remote_media_cache WHERE url = ?1
+`
+
+// LockRemoteMediaCache reads the entry of @url in a transaction that replaces it. SQLite
+// transactions take the write lock when they begin, so a concurrent refresh of the URL waits and
+// reads the entry this one writes.
+func (q *Queries) LockRemoteMediaCache(ctx context.Context, url string) (RemoteMediaCache, error) {
+	row := q.db.QueryRowContext(ctx, lockRemoteMediaCache, url)
+	var i RemoteMediaCache
+	err := row.Scan(
+		&i.Url,
+		&i.BlobKey,
+		&i.ContentType,
+		&i.FileSize,
+		&i.FetchedAt,
+		&i.ExpiresAt,
+		&i.LastAccessedAt,
+	)
+	return i, err
 }
 
 const sumRemoteMediaCacheSize = `-- name: SumRemoteMediaCacheSize :one

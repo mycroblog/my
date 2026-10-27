@@ -73,4 +73,4 @@
 | FR-704 監査ログ | M | `audit_log_entries` |
 | FR-705 インスタンス設定 | M | `instance_setting_revisions`, `instance_text_revisions`, `instance_rules` とその版 |
 | FR-801 CLI | M | `dead_jobs`, `data_upgrade_runs`（`my db upgrade`）, §9 の再構築、管理者作成（`users`, `user_primary_emails`, `user_role_grants`） |
-| FR-803 定期クリーンアップ | M | `received_activities`, `received_activity_documents`, `remote_object_tombstones`, `remote_follow_tombstones`, `outbound_activity_documents`, 保持期間を過ぎたリモートの投稿, `delivery_attempts`, `remote_media_cache`, 参照されない `link_cards` と `link_card_media`, 未添付の `media_files`, `kv_entries`, `webhook_messages` とその配送・試行, 期限切れの制限 |
+| FR-803 定期クリーンアップ | M | `received_activities`, `received_activity_documents`, `remote_object_tombstones`, `remote_follow_tombstones`, `outbound_activity_documents`, 保持期間を過ぎたリモートの投稿, `delivery_attempts`, `remote_media_cache`, `media_blob_deletions`, 参照されない `link_cards` と `link_card_media`, 未添付の `media_files`, `kv_entries`, `webhook_messages` とその配送・試行, 期限切れの制限 |
