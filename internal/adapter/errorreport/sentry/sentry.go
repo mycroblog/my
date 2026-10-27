@@ -6,7 +6,7 @@
 // written on net/http, not sentry-go: the reporter already scrubs, fingerprints, limits, and
 // queues the events, and the SDK would add the hostname, read SENTRY_* variables, and run git.
 //
-// A Client sends one event per SendError and never retries. It follows the rate limits of the
+// A Client sends one event per SendError, never retries, and never follows a redirect. It follows the rate limits of the
 // receiver: after a 429 (Retry-After, or 60 seconds when the response says nothing) and after
 // any response whose X-Sentry-Rate-Limits covers the error category, SendError drops the events
 // until the limit ends and returns an error whose Dropped method reports true.
@@ -55,7 +55,7 @@ type Options struct {
 	// DSN is the errors_sentry_dsn: https://<public key>[:<secret key>]@<host>[/<path>]/<project>.
 	DSN string
 	// HTTPClient sends the envelopes; it should have a timeout. Nil uses a client with a
-	// 10-second timeout.
+	// 10-second timeout. The Client uses a copy that never follows a redirect.
 	HTTPClient *http.Client
 	// Version is the server version, sent in the sentry_client of the authentication header.
 	Version string
@@ -83,10 +83,16 @@ func New(o Options) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Client{endpoint: d.EnvelopeURL(), http: o.HTTPClient, now: o.Now, eventID: o.EventID}
-	if c.http == nil {
+	c := &Client{endpoint: d.EnvelopeURL(), now: o.Now, eventID: o.EventID}
+	if o.HTTPClient != nil {
+		h := *o.HTTPClient
+		c.http = &h
+	} else {
 		c.http = &http.Client{Timeout: 10 * time.Second}
 	}
+	// A redirect is never followed: it would carry the key of X-Sentry-Auth and the event to
+	// wherever the intake points. The 3xx is the answer, a failure.
+	c.http.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	if c.now == nil {
 		c.now = time.Now
 	}
