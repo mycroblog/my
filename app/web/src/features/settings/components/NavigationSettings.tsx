@@ -10,6 +10,7 @@ import {
   SaveIndicator,
   Section,
   Stack,
+  TabBarPreview,
   Tooltip,
   TooltipTrigger,
 } from "@my/ui";
@@ -35,7 +36,7 @@ const timelineOf: Partial<Record<NavigationEntryId, "local" | "federated">> = { 
  * WAI-ARIA APG's rearrangeable list (Up and Down buttons, a confirmation in a live region, the focus staying with
  * the moved item) with native tab stops instead of a listbox, so that every control is a plain button or checkbox.
  * A change applies at once and is kept on this browser, like the theme. Each row says whether the item is in the
- * phones' tab bar or in their menu.
+ * phones' tab bar or in their menu, and a preview of the tab bar above the list shows the result of a change at once.
  */
 export function NavigationSettings() {
   const t = useT();
@@ -63,9 +64,12 @@ export function NavigationSettings() {
   };
   // The place on phones of each shown item: the first ones in the tab bar, the rest in the menu's sheet.
   const shownIds = entries.filter((entry) => entry.shown).map((entry) => entry.id);
-  const placeOf = (id: NavigationEntryId) => {
+  const isUnavailable = (id: NavigationEntryId) => {
     const timeline = timelineOf[id];
-    if (timeline !== undefined && !timelines[timeline]) return t("client:settings.navigation.unavailable");
+    return timeline !== undefined && !timelines[timeline];
+  };
+  const placeOf = (id: NavigationEntryId) => {
+    if (isUnavailable(id)) return t("client:settings.navigation.unavailable");
     const position = shownIds.indexOf(id);
     if (position < 0) return t("client:settings.navigation.hidden");
     return position < tabBarLimit
@@ -77,6 +81,15 @@ export function NavigationSettings() {
       title={t("client:settings.navigation.title")}
       description={t("client:settings.navigation.description", { count: tabBarLimit })}
     >
+      {/* The tab bar as the app draws it: the first shown items, without a timeline the server does not serve. */}
+      <TabBarPreview
+        items={shownIds
+          .slice(0, tabBarLimit)
+          .filter((id) => !isUnavailable(id))
+          .map((id) => ({ id, icon: navigationEntryIcons[id], label: t(navigationEntryLabels[id]) }))}
+        menuLabel={t("client:shell.nav.menu")}
+        caption={t("client:settings.navigation.preview")}
+      />
       <Stack as="ol" divided border="lg">
         {entries.map((entry, index) => {
           const name = t(navigationEntryLabels[entry.id]);

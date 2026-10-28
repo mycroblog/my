@@ -2,7 +2,7 @@
 // The display, posting, and timeline preferences (/settings/preferences; web-client/screens/settings-preferences.md) in
 // the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 
 const meta = {
@@ -37,6 +37,22 @@ export const Normal: Story = {
     await userEvent.click(autoInsert);
     await expect(autoInsert).toBeChecked();
     await expect(await canvas.findByText("Saved", { selector: "[data-autosave] span" })).toBeInTheDocument();
+  },
+};
+
+/** Moving Profile up puts it in the tab bar: the preview of the phones' tab bar shows it at once, before Menu. */
+export const NavigationMoved: Story = {
+  play: async (context) => {
+    const { canvas, userEvent } = context;
+    await settled(context);
+    const preview = canvas.getByRole("figure", { name: "Tab bar on phones" });
+    const labels = () =>
+      within(preview)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent);
+    await expect(labels()).toEqual(["Home", "Local", "Federated", "Notifications", "Search", "Menu"]);
+    await userEvent.click(canvas.getByRole("button", { name: "Move Profile up" }));
+    await expect(labels()).toEqual(["Home", "Local", "Federated", "Notifications", "Profile", "Menu"]);
   },
 };
 

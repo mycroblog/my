@@ -392,6 +392,13 @@ describe("navigation", () => {
       "In the menu on phones",
     );
     expect(within(section).getByRole("button", { name: "Move Home up" })).toBeDisabled();
+    // The preview of the tab bar: the first five shown items, then Menu.
+    const preview = within(section).getByRole("figure", { name: "Tab bar on phones" });
+    const previewItems = () =>
+      within(preview)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent);
+    expect(previewItems()).toEqual(["Home", "Local", "Federated", "Notifications", "Search", "Menu"]);
 
     // Enter on Move up moves the item; the focus stays on the moved item's button and the move is announced.
     within(section).getByRole("button", { name: "Move Profile up" }).focus();
@@ -406,6 +413,7 @@ describe("navigation", () => {
     expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription(
       "In the menu on phones",
     );
+    expect(previewItems()).toEqual(["Home", "Local", "Federated", "Notifications", "Profile", "Menu"]);
 
     // Down on the item before the last moves it to the end, and the focus goes to its Move up, Move down being disabled.
     within(section).getByRole("button", { name: "Move Bookmarks down" }).focus();
@@ -420,6 +428,7 @@ describe("navigation", () => {
     await user.keyboard(" ");
     expect(within(section).getByRole("checkbox", { name: "Local" })).not.toBeChecked();
     expect(within(section).getByRole("checkbox", { name: "Local" })).toHaveAccessibleDescription("Hidden");
+    expect(previewItems()).toEqual(["Home", "Federated", "Notifications", "Profile", "Search", "Menu"]);
 
     expect(navigationKey.read()).toEqual({
       order: ["home", "local", "public", "notifications", "profile", "search", "settings", "bookmarks"],
@@ -457,6 +466,12 @@ describe("navigation", () => {
     expect(within(section).getByRole("checkbox", { name: "Local" })).toHaveAccessibleDescription(
       "In the tab bar on phones",
     );
+    // The preview leaves it out, as the tab bar does.
+    expect(
+      within(within(section).getByRole("figure", { name: "Tab bar on phones" }))
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["Home", "Local", "Notifications", "Search", "Menu"]);
   });
 
   test("is in Japanese in the ja locale", async () => {
