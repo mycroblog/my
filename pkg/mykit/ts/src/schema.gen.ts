@@ -12703,6 +12703,12 @@ export interface components {
             edited_at?: string;
             /** @description The attached media, in order. */
             media_attachments: components["schemas"]["MediaAttachment"][];
+            /**
+             * @description The number of media attachments of a remote status that the server left out: it keeps
+             *     the first four attachments of a remote post. Clients show that there are more and link
+             *     to `url` (or `uri`). Omitted when none were left out.
+             */
+            omitted_media_count?: number;
             /** @description The accounts the text mentions. */
             mentions: components["schemas"]["StatusMention"][];
             /** @description The hashtags of the text. */
