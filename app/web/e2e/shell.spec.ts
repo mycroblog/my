@@ -182,6 +182,20 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
     await expectNoHorizontalScroll(page);
   });
 
+  test("ends the page with one footer and no column about the server, at every width", async ({ page }) => {
+    await page.goto("/local");
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+    const footer = page.getByRole("contentinfo");
+    await expect(footer).toHaveCount(1);
+    await expect(footer.locator('a[href="/about"]')).toBeVisible();
+    // The footer is the end of the page: nothing follows it, and nothing below the screen's height is blank.
+    const box = await footer.boundingBox();
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(height, 0);
+    await expectNoHorizontalScroll(page);
+  });
+
   test("sends a page that needs a session to sign in, which comes back to it", async ({ page }) => {
     await page.goto("/notifications");
     await expect(page).toHaveURL(/\/login\?/);

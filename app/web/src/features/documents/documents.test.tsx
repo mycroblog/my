@@ -19,11 +19,13 @@ function publish(documents: { terms_url?: string; privacy_policy_url?: string })
 }
 
 describe("the links to the server's documents", () => {
-  test("are on the sign-in page and open the page in the same tab", async () => {
+  test("are in the footer of signed-out pages and open the page in the same tab", async () => {
     publish({ terms_url: termsUrl, privacy_policy_url: privacyUrl });
-    await renderApp({ path: "/login" });
+    await renderApp({ path: "/local" });
 
-    const links = await screen.findByRole("navigation", { name: "Terms and policies" });
+    const links = await within(await screen.findByRole("contentinfo")).findByRole("navigation", {
+      name: "Terms and policies",
+    });
     expect(
       within(links)
         .getAllByRole("link")
@@ -37,8 +39,10 @@ describe("the links to the server's documents", () => {
 
   test("leave out a document the server does not publish, and are not there without any", async () => {
     publish({ privacy_policy_url: privacyUrl });
-    const view = await renderApp({ path: "/login" });
-    const links = await screen.findByRole("navigation", { name: "Terms and policies" });
+    const view = await renderApp({ path: "/local" });
+    const links = await within(await screen.findByRole("contentinfo")).findByRole("navigation", {
+      name: "Terms and policies",
+    });
     expect(
       within(links)
         .getAllByRole("link")
@@ -47,7 +51,7 @@ describe("the links to the server's documents", () => {
     view.unmount();
 
     publish({});
-    const { queryClient } = await renderApp({ path: "/login" });
+    const { queryClient } = await renderApp({ path: "/local" });
     // The links would be there once the instance has loaded.
     await waitFor(() => {
       expect(queryClient.getQueryCache().find({ queryKey: ["get", "/instance"] })?.state.status).toBe("success");

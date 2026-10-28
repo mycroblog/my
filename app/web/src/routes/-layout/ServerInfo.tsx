@@ -9,7 +9,8 @@ import { ServerNameLink } from "./ServerNameLink";
 /**
  * In the third column on wide screens (xl): which server this is (its name links to the root address), a link to
  * its information page, and the links to its terms of service and privacy policy when it publishes them. Narrower
- * layouts leave it out; the menu and the settings have the links.
+ * layouts leave it out; the menu and the settings have the links. Signed-out pages have no third column, and never
+ * show it: their footer (`SiteFooter`) has the links.
  */
 export function ServerInfo() {
   const t = useT();

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The landing page (docs/architecture/web-client/screens/landing.md): the server's calling card, then three sections
-// under a progress line (what kind of place this is, what people agree to, how to join), then a footer with the links
-// to the information page, the documents, and the software the server runs.
+// under a progress line (what kind of place this is, what people agree to, how to join). The footer with the links to
+// the information page, the documents and the software the server runs is the shell's (routes/-layout/SiteFooter.tsx).
 import {
   AccountItem,
   Box,
@@ -30,9 +30,6 @@ import {
 import { type ReactNode, useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
-import { aboutPath } from "../../../lib/paths";
-import { SourceCodeLink } from "../../about";
-import { DocumentLinks } from "../../documents";
 import { useSignIn } from "../../session";
 import { StatusCard } from "../../status";
 import type { RecentPost } from "../api/landing";
@@ -104,7 +101,6 @@ export function Landing({ heading }: LandingProps) {
           <Join landing={landing} />
         </Section>
       </SectionProgress>
-      <Footer sourceUrl={landing.sourceUrl} />
     </Stack>
   );
 }
@@ -425,26 +421,5 @@ function Join({ landing }: { landing: LandingData }) {
         <Steps steps={elsewhere} labelledBy={elsewhereId} />
       </Stack>
     </>
-  );
-}
-
-/** The links to the information page and the documents, and the software the server runs with its source code. */
-function Footer({ sourceUrl }: { sourceUrl: string | undefined }) {
-  const t = useT();
-  return (
-    <Box as="footer" border="top" paddingTop="4">
-      <Stack gap="3">
-        <Cluster gap="4" rowGap="1" align="center" textSize="sm">
-          <Link href={aboutPath} variant="standalone">
-            {t("client:shell.about.more")}
-          </Link>
-          <DocumentLinks />
-        </Cluster>
-        <Cluster gap="2" rowGap="1" align="center" textSize="sm">
-          <Hint as="span">{t("client:landing.powered_by")}</Hint>
-          {sourceUrl !== undefined && <SourceCodeLink url={sourceUrl} />}
-        </Cluster>
-      </Stack>
-    </Box>
   );
 }

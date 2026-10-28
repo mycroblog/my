@@ -235,6 +235,18 @@ const aside = (
   </AsidePanel>
 );
 
+/** The signed-out pages' footer: the server's information page and its documents. */
+const signedOutFooter = (
+  <Text as="p" size="sm">
+    <Link href="#about" variant="standalone">
+      More about this server
+    </Link>{" "}
+    <Link href="#terms" variant="standalone">
+      Terms of service
+    </Link>
+  </Text>
+);
+
 const meta = {
   title: "Shell/AppShell",
   component: AppShell,
@@ -417,7 +429,24 @@ export const SignedOutTablet: Story = {
 /** Signed out on a phone: the links wrap under the brand instead of scrolling sideways. */
 export const SignedOutPhone: Story = {
   globals: atViewport("phone"),
-  args: { navigation: <SignedOutNav />, navigationPlacement: "top" },
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", footer: signedOutFooter },
+};
+
+/**
+ * Signed out on a desktop: one column under the top bar, ending with the footer. The top bar's pages have no third
+ * column, so the shell leaves out the `aside` it is given.
+ */
+export const SignedOutDesktop: Story = {
+  globals: atViewport("desktop"),
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", aside, footer: signedOutFooter },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole("complementary")).toBeNull();
+    const footer = canvas.getByRole("contentinfo");
+    await expect(within(footer).getByRole("link", { name: "More about this server" })).toBeVisible();
+    // The footer ends the page: nothing, and no blank strip, comes after it.
+    const { bottom } = footer.getBoundingClientRect();
+    await expect(bottom + window.scrollY).toBeCloseTo(document.documentElement.scrollHeight, 0);
+  },
 };
 
 /** The app's offline bar before the shell, as the app's layout renders it. */
