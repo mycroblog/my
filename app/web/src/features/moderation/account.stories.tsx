@@ -121,7 +121,9 @@ export const Remote: Story = { parameters: { screen: { path: `/moderation/accoun
 export const Clean: Story = answering(...accountsApi([adminAccountDetailFixture(otherAccountFixture)]));
 
 /** An account that does not exist. */
-export const NotFound: Story = { parameters: { screen: { path: `/moderation/accounts/${storyId("aa", 404)}`, errorPage: "request" } } };
+export const NotFound: Story = {
+  parameters: { screen: { path: `/moderation/accounts/${storyId("aa", 404)}`, errorPage: "request" } },
+};
 
 /** The account has not arrived yet. */
 export const Loading: Story = loadingOn("get", "/admin/accounts/:id");
