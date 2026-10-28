@@ -443,9 +443,33 @@
     "defaultMessage": "Changes are saved as soon as you make them.",
     "description": "Text at the top of the preferences page."
   },
+  "settings.preferences.display.title": {
+    "defaultMessage": "Display",
+    "description": "Heading of the section of the preferences page with the display language, the time zone, the color theme and the autoplay of animations."
+  },
+  "settings.preferences.display.description": {
+    "defaultMessage": "The language and the time zone are saved to your account; the theme and animations are kept on this browser.",
+    "description": "Description under the display section of the preferences page: where each of its settings is saved."
+  },
+  "settings.preferences.posting.title": {
+    "defaultMessage": "New posts",
+    "description": "Heading of the section of the preferences page with what new posts start with: the visibility, who may quote, the language, and whether every attachment needs a description."
+  },
+  "settings.preferences.posting.description": {
+    "defaultMessage": "New posts start with these choices, which you can change in each post. Saved to your account.",
+    "description": "Description under the section of the preferences page with what new posts start with."
+  },
+  "settings.preferences.timeline.title": {
+    "defaultMessage": "Timelines",
+    "description": "Heading of the section of the preferences page with the languages of the timelines and the automatic insertion of new posts."
+  },
+  "settings.preferences.timeline.description": {
+    "defaultMessage": "Which posts the timelines show, and how new ones arrive. Saved to your account.",
+    "description": "Description under the timelines section of the preferences page."
+  },
   "settings.preferences.title": {
-    "defaultMessage": "Display and posting",
-    "description": "Heading and document title of the settings page with the language, time zone, theme, post defaults and timeline languages."
+    "defaultMessage": "Display, posting, and timelines",
+    "description": "Heading and document title of the settings page with the display (language, time zone, theme), the navigation, the defaults of new posts and the timelines."
   },
   "settings.profile.avatar": {
     "defaultMessage": "Avatar",
@@ -612,8 +636,8 @@
     "description": "Label of the switch that turns on Web Push notifications for this browser and signed-in session."
   },
   "settings.push.enable.description": {
-    "defaultMessage": "New notifications appear on this device even when the app is closed.",
-    "description": "Help text of the switch that turns on Web Push notifications."
+    "defaultMessage": "New notifications show on this device even while the app is closed. Choose which kinds in the Push column of the tables below.",
+    "description": "Description of the switch that turns on Web Push on this device: what it does, and that its kinds are chosen in the Push column of the tables."
   },
   "settings.push.failed": {
     "defaultMessage": "Push notifications could not be set up on this device. Try again later.",
@@ -2028,8 +2052,8 @@
     "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
   },
   "settings.notifications.table.description": {
-    "defaultMessage": "Choose how each kind of notification reaches you. A kind turned off in the app is not created, so it does not arrive by push, email, or sound either; the notifications you already have stay. A checked box that cannot be changed is always on.",
-    "description": "Help text above the tables of the notification settings: turning a kind off in the app stops it everywhere, and disabled checked boxes are always on."
+    "defaultMessage": "Choose how each kind of notification reaches you, or a whole column with its All box. A kind turned off in the app is not created, so it does not arrive by push, email, or sound either; the notifications you already have stay.",
+    "description": "Help text above the tables of the notification settings: a row or a whole column (its All box), and turning a kind off in the app stops it everywhere."
   },
   "settings.notifications.section.ordinary": {
     "defaultMessage": "From other people",
@@ -2046,6 +2070,22 @@
   "settings.notifications.column.type": {
     "defaultMessage": "Notification",
     "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
+  },
+  "settings.notifications.column.all": {
+    "defaultMessage": "All: {channel}, {section}",
+    "description": "Accessible name of a checkbox of the All row of a notification settings table, which turns every cell of its column on or off at once. Starts with the row header (settings.notifications.column.all.short). {channel} is the column (In the app, Push, Email, Sound); {section} is the table's heading."
+  },
+  "settings.notifications.column.all.short": {
+    "defaultMessage": "All",
+    "description": "Row header of the first row of a notification settings table, whose checkboxes turn a whole column on or off."
+  },
+  "settings.notifications.row.in_app_off": {
+    "defaultMessage": "Off in the app, so it does not arrive any other way.",
+    "description": "Note under the name of a row of the notification settings table whose in-app cell is off, which is why its other cells cannot be changed."
+  },
+  "settings.notifications.row.always_on": {
+    "defaultMessage": "Always on: {channels}.",
+    "description": "Note under the name of a row of the notification settings table with cells that cannot be turned off. {channels} is a list of the column names (In the app, Email)."
   },
   "settings.notifications.channel.in_app": {
     "defaultMessage": "In the app",
