@@ -986,10 +986,12 @@
     // - Avatar: the silhouette that fills an avatar without an image, at a fraction of the avatar's size.
     // - QrCode: a QR code that the server encoded, drawn from its path data; a picture of data, not an icon.
     // - EmptyState.stories: a stand-in for the illustration a caller passes, which is a picture and not an icon.
+    // - TrendChart, Sparkline: the data charts of ADR-0113, which draw values (bars, lines, grid lines) and not icons.
     // Tests are exempt too (below): they render stand-in children.
     {
       "files": [
         "ui/src/{Checkbox,Select,ContentWarning,Tooltip,Avatar,QrCode}.tsx",
+        "ui/src/{TrendChart,Sparkline}.tsx",
         "ui/src/EmptyState.stories.tsx"
       ],
       "jsPlugins": [
