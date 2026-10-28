@@ -227,6 +227,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
   | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
   | Supporter list | `supporter_list_visibility` |
+  | Landing page | `public_counts`, `public_operators` |
   | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
   | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
 

@@ -826,5 +826,29 @@
   "admin.settings.invites.max_expires_in.description": {
     "defaultMessage": "利用者は招待ごとに、この期間までの有効期間を選びます。",
     "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "トップページ",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "ログインしていない人がこのサーバーのアドレスで見るページに、名前・説明・ルールのほかに何を出すか。",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "サーバーの数を見せる",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "利用者の数、この 7 日の日ごとの公開の投稿の数、サーバーが動き始めた時期。数えるのは公開の投稿だけで、数は数分ごとに更新します。",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.landing.operators": {
+    "defaultMessage": "運営している人を見せる",
+    "description": "Checkbox of whether the landing page lists the people who run the server."
+  },
+  "admin.settings.landing.operators.description": {
+    "defaultMessage": "スタッフのロール（管理者・モデレーター、またはモデレーションかサーバーの権限を持つロール）のバッジをプロフィールに出している、このサーバーのアカウントと、そのバッジ。バッジを出していないスタッフは載せません。",
+    "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
   }
 }
