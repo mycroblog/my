@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ReactElement } from "react";
 import { expect } from "storybook/test";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
@@ -407,4 +408,75 @@ export const Visibilities: Story = {
       await expect(canvas.getByRole("article", { name: new RegExp(`2h\\s+${label}$`) })).toBeInTheDocument();
     }
   },
+};
+
+/**
+ * Checks that the time and the visibility end the header row (its inline end, so a right-to-left card mirrors) and
+ * that the author stays in the room before them.
+ */
+async function expectTimeAtRowEnd(canvasElement: HTMLElement) {
+  const header = canvasElement.querySelector("header");
+  const author = header?.firstElementChild;
+  const time = header?.lastElementChild;
+  if (header == null || author == null || time == null) throw new Error("the card has no header");
+  const row = header.getBoundingClientRect();
+  const timeBox = time.getBoundingClientRect();
+  const authorBox = author.getBoundingClientRect();
+  if (getComputedStyle(header).direction === "rtl") {
+    await expect(timeBox.left).toBeCloseTo(row.left, 0);
+    await expect(authorBox.left).toBeGreaterThanOrEqual(timeBox.right - 0.5);
+  } else {
+    await expect(timeBox.right).toBeCloseTo(row.right, 0);
+    await expect(authorBox.right).toBeLessThanOrEqual(timeBox.left + 0.5);
+  }
+}
+
+/** The card in a column of the given width: the card's own width decides its layout, not the viewport. */
+function atWidth(inlineSize: number) {
+  return [
+    (Story: () => ReactElement) => (
+      <div style={{ inlineSize }}>
+        <Story />
+      </div>
+    ),
+  ];
+}
+
+const longAuthor = (
+  <Author
+    name="Bartholomew Montgomery-Fitzwilliam the Third"
+    handle="@bartholomew@a-rather-long-community-server-name.social.example.com"
+  />
+);
+
+/** A narrow card (below `@sm`): the time ends the header row. */
+export const NarrowCard: Story = {
+  decorators: atWidth(320),
+  play: async ({ canvasElement }) => expectTimeAtRowEnd(canvasElement),
+};
+
+/** A medium card (`@sm` up to `@md`): the name and handle share a row and the time still ends it. */
+export const MediumCard: Story = {
+  decorators: atWidth(480),
+  play: async ({ canvasElement }) => expectTimeAtRowEnd(canvasElement),
+};
+
+/** A wide card (from `@md`, the avatar in its own column): the time ends the header row. */
+export const WideCard: Story = {
+  decorators: atWidth(720),
+  play: async ({ canvasElement }) => expectTimeAtRowEnd(canvasElement),
+};
+
+/** A long name and domain on a medium card are cut before the time, which stays at the end. */
+export const MediumCardLongNames: Story = {
+  decorators: atWidth(480),
+  args: { author: longAuthor },
+  play: async ({ canvasElement }) => expectTimeAtRowEnd(canvasElement),
+};
+
+/** A long name and domain on a wide card are cut before the time, which stays at the end. */
+export const WideCardLongNames: Story = {
+  decorators: atWidth(720),
+  args: { author: longAuthor },
+  play: async ({ canvasElement }) => expectTimeAtRowEnd(canvasElement),
 };

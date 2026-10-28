@@ -443,9 +443,33 @@
     "defaultMessage": "変更はすぐに保存されます。",
     "description": "Text at the top of the preferences page."
   },
+  "settings.preferences.display.title": {
+    "defaultMessage": "表示",
+    "description": "Heading of the section of the preferences page with the display language, the time zone, the color theme and the autoplay of animations."
+  },
+  "settings.preferences.display.description": {
+    "defaultMessage": "言語とタイムゾーンはアカウントに、テーマとアニメーションはこのブラウザに保存します。",
+    "description": "Description under the display section of the preferences page: where each of its settings is saved."
+  },
+  "settings.preferences.posting.title": {
+    "defaultMessage": "投稿の既定値",
+    "description": "Heading of the section of the preferences page with what new posts start with: the visibility, who may quote, the language, and whether every attachment needs a description."
+  },
+  "settings.preferences.posting.description": {
+    "defaultMessage": "新しい投稿は、ここで選んだ値で始まります（投稿ごとに変えられます）。アカウントに保存します。",
+    "description": "Description under the section of the preferences page with what new posts start with."
+  },
+  "settings.preferences.timeline.title": {
+    "defaultMessage": "タイムライン",
+    "description": "Heading of the section of the preferences page with the languages of the timelines and the automatic insertion of new posts."
+  },
+  "settings.preferences.timeline.description": {
+    "defaultMessage": "タイムラインに出す投稿と、新しい投稿の出し方です。アカウントに保存します。",
+    "description": "Description under the timelines section of the preferences page."
+  },
   "settings.preferences.title": {
-    "defaultMessage": "表示と投稿",
-    "description": "Heading and document title of the settings page with the language, time zone, theme, post defaults and timeline languages."
+    "defaultMessage": "表示・投稿・タイムライン",
+    "description": "Heading and document title of the settings page with the display (language, time zone, theme), the navigation, the defaults of new posts and the timelines."
   },
   "settings.profile.avatar": {
     "defaultMessage": "アイコン",
@@ -612,8 +636,8 @@
     "description": "Label of the switch that turns on Web Push notifications for this browser and signed-in session."
   },
   "settings.push.enable.description": {
-    "defaultMessage": "アプリを閉じているときも、新しい通知がこの端末に表示されます。",
-    "description": "Help text of the switch that turns on Web Push notifications."
+    "defaultMessage": "アプリを閉じているときも、新しい通知がこの端末に表示されます。表示する種類は、下の表の「プッシュ」の列で選びます。",
+    "description": "Description of the switch that turns on Web Push on this device: what it does, and that its kinds are chosen in the Push column of the tables."
   },
   "settings.push.failed": {
     "defaultMessage": "この端末でプッシュ通知を設定できませんでした。しばらくしてからもう一度試してください。",
@@ -2028,8 +2052,8 @@
     "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
   },
   "settings.notifications.table.description": {
-    "defaultMessage": "通知の種類ごとに、受け取り方を選びます。アプリ内でオフにした種類の通知は作られないので、プッシュ・メール・音でも届きません（届いている通知は残ります）。チェックが入ったまま変えられない項目は、常にオンです。",
-    "description": "Help text above the tables of the notification settings: turning a kind off in the app stops it everywhere, and disabled checked boxes are always on."
+    "defaultMessage": "通知の種類ごとに、または列の「すべて」で列ごとに、受け取り方を選びます。アプリ内でオフにした種類の通知は作られないので、プッシュ・メール・音でも届きません（届いている通知は残ります）。",
+    "description": "Help text above the tables of the notification settings: a row or a whole column (its All box), and turning a kind off in the app stops it everywhere."
   },
   "settings.notifications.section.ordinary": {
     "defaultMessage": "ほかの人からの通知",
@@ -2046,6 +2070,22 @@
   "settings.notifications.column.type": {
     "defaultMessage": "通知",
     "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
+  },
+  "settings.notifications.column.all": {
+    "defaultMessage": "すべて：{section}の{channel}",
+    "description": "Accessible name of a checkbox of the All row of a notification settings table, which turns every cell of its column on or off at once. Starts with the row header (settings.notifications.column.all.short). {channel} is the column (In the app, Push, Email, Sound); {section} is the table's heading."
+  },
+  "settings.notifications.column.all.short": {
+    "defaultMessage": "すべて",
+    "description": "Row header of the first row of a notification settings table, whose checkboxes turn a whole column on or off."
+  },
+  "settings.notifications.row.in_app_off": {
+    "defaultMessage": "アプリ内がオフなので、ほかの経路でも届きません。",
+    "description": "Note under the name of a row of the notification settings table whose in-app cell is off, which is why its other cells cannot be changed."
+  },
+  "settings.notifications.row.always_on": {
+    "defaultMessage": "常にオン：{channels}。",
+    "description": "Note under the name of a row of the notification settings table with cells that cannot be turned off. {channels} is a list of the column names (In the app, Email)."
   },
   "settings.notifications.channel.in_app": {
     "defaultMessage": "アプリ内",

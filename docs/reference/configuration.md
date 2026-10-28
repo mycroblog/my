@@ -107,6 +107,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`http_allow_private_networks`](#http_allow_private_networks) | `MY_HTTP_ALLOW_PRIVATE_NETWORKS` | `false` | no | no |
 | [`webhook_allowed_destinations`](#webhook_allowed_destinations) | `MY_WEBHOOK_ALLOWED_DESTINATIONS` | none | no | no |
 | [`login_provider_allowed_destinations`](#login_provider_allowed_destinations) | `MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS` | none | no | no |
+| [`push_allowed_destinations`](#push_allowed_destinations) | `MY_PUSH_ALLOWED_DESTINATIONS` | none | no | no |
 | [`remote_status_retention`](#remote_status_retention) | `MY_REMOTE_STATUS_RETENTION` | `2160h` | no | no |
 | [`remote_status_max_retention`](#remote_status_max_retention) | `MY_REMOTE_STATUS_MAX_RETENTION` | none | no | no |
 | [`relay_status_retention`](#relay_status_retention) | `MY_RELAY_STATUS_RETENTION` | `168h` | no | no |
@@ -751,6 +752,14 @@ Destinations on loopback or a private network that the external sign-in provider
 - Default: none
 - Required: no
 
+### `push_allowed_destinations`
+
+For development only: destinations on loopback or a private network that the Web Push sends may reach, such as a fake push service on the same host: comma-separated host names, IP addresses, and CIDRs such as `localhost, 127.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the Web Push sends alone, it also allows any port, still over `https` and without following a redirect. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Every other outbound request keeps the guard. The `production` profile refuses it, and the server logs a warning at start when it is set. Empty allows none.
+
+- Environment variable: `MY_PUSH_ALLOWED_DESTINATIONS`
+- Default: none
+- Required: no
+
 ### `remote_status_retention`
 
 How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).
@@ -932,6 +941,7 @@ The payment provider of the supporters: local users subscribe to paid plans on i
 | `none` | yes | No payments: the webhook endpoint and the reconciliation do not run. |
 | `stripe` | yes | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
 | `payjp` | yes | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
+| `fake` | yes | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting. |
 
 ### `payments_stripe_secret_key`
 

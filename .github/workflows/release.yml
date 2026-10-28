@@ -12,6 +12,11 @@ name: Release
 # exactly, as X.Y.Z with npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the
 # dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
+# No release ever publishes a test build (docs/reference/build-tags.md): a job of this workflow that publishes a server
+# binary or image, such as the container image of ghcr.io/mycroblog/my (#30), runs scripts/check-release-build.sh on
+# each binary it publishes, which fails on the test-only build tag e2e_fakes; the Dockerfile refuses that tag and runs
+# the same check on the binary it builds.
+#
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
 # gate can be tried on a branch without making a release of it. The suite's upgrade job upgrades from the latest patch
 # of the previous minor version; a pre-release may name another tag in `previous`, so that the job runs before any

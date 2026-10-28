@@ -3,8 +3,13 @@
 // Package fake is a supporters.PaymentProvider that keeps the provider's side in memory, for
 // tests (ADR-0074 §1, §6). Its tests run testkit.PaymentProviderContract on it; the tests of the
 // supporters module drive the provider's side through its methods (PutSubscription, PutMoney,
-// PutChange, Fail) and send it webhook deliveries signed by Deliver. It is never part of the
-// server's binary.
+// PutChange, Fail) and send it webhook deliveries signed by Deliver.
+//
+// It is never part of a released binary: only a test build with the build tag e2e_fakes links it
+// into the server, as payments_provider = fake (NewPages), which serves a checkout page
+// where the buyer pays, fails, or cancels without any money moving (ADR-0117 §2). Such a build
+// refuses to start outside profile = development, and the checks of the build tags, the
+// Dockerfile, and the release keep the tag out of the released binaries and images.
 //
 // Its webhooks look like the provider's: a JSON body with id, type, livemode, created, and
 // data.object.{id, object}, and a header Fake-Signature: t=<unix>,v1=<hex>[,v1=...] whose v1 is
@@ -62,6 +67,10 @@ type Options struct {
 	PageSize int
 	// ChangesWindow defaults to DefaultChangesWindow.
 	ChangesWindow time.Duration
+	// Pages makes StartCheckout and PortalURL return the URLs of the provider's own pages, which
+	// PageProvider serves, on the origin of the success and return URLs and with refs that cannot
+	// be guessed; NewPages sets it. Without it, the URLs are on CheckoutHost and PortalHost.
+	Pages bool
 }
 
 // Provider is the fake supporters.PaymentProvider. It is safe for concurrent use.
@@ -79,6 +88,8 @@ type Provider struct {
 	subs         []supporters.SubscriptionSnapshot
 	money        []booked
 	changes      []supporters.Notice
+	planNames    map[string]string // by plan ID
+	portals      map[string]*portal
 }
 
 type price struct {
@@ -91,6 +102,8 @@ type price struct {
 type checkout struct {
 	result    supporters.CheckoutResult
 	expiresAt time.Time
+	// req is the request of a checkout that StartCheckout made, which its page shows.
+	req *supporters.CheckoutRequest
 }
 
 // booked is a money movement with what its webhooks name and the order in which it became final.
@@ -127,7 +140,7 @@ func New(o Options) *Provider {
 	}
 	return &Provider{
 		o: o, products: map[string]supporters.ProductRef{}, checkouts: map[supporters.CheckoutRef]*checkout{},
-		checkoutKeys: map[string]supporters.CheckoutRef{},
+		checkoutKeys: map[string]supporters.CheckoutRef{}, planNames: map[string]string{}, portals: map[string]*portal{},
 	}
 }
 
@@ -197,6 +210,11 @@ func (p *Provider) PutMoney(m supporters.MoneyMovement) { p.PutMoneyObject(m.ID,
 func (p *Provider) PutMoneyObject(object string, m supporters.MoneyMovement) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.putMoney(object, m)
+}
+
+// putMoney is PutMoneyObject with p.mu held.
+func (p *Provider) putMoney(object string, m supporters.MoneyMovement) {
 	m.OccurredOn = supporters.DateOf(m.OccurredAt.In(p.o.Location))
 	p.seq++
 	for i := range p.money {
@@ -383,6 +401,7 @@ func (p *Provider) EnsurePlan(ctx context.Context, spec supporters.PlanSpec) (su
 			return supporters.PlanRefs{}, fmt.Errorf("%w: price %+v", supporters.ErrPaymentInvalidRequest, s)
 		}
 	}
+	p.planNames[spec.PlanID] = spec.Name
 	product, ok := p.products[spec.PlanID]
 	if !ok {
 		product = supporters.ProductRef(p.newRef("prod"))
@@ -428,9 +447,17 @@ func (p *Provider) StartCheckout(ctx context.Context, req supporters.CheckoutReq
 		return supporters.Checkout{}, fmt.Errorf("%w: a checkout needs our ID and an active price", supporters.ErrPaymentInvalidRequest)
 	}
 	ref := supporters.CheckoutRef(p.newRef("cs"))
+	if p.o.Pages {
+		if _, err := p.pageURL(req.SuccessURL, ""); err != nil || !sameOrigin(req.SuccessURL, req.CancelURL) {
+			return supporters.Checkout{}, fmt.Errorf("%w: a checkout needs return URLs on one origin", supporters.ErrPaymentInvalidRequest)
+		}
+		// The page's URL is a bearer token of the checkout, as a hosted checkout's.
+		ref = supporters.CheckoutRef("cs_" + randomToken())
+	}
+	r := req
 	p.checkouts[ref] = &checkout{
 		result:    supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutOpen, LocalID: req.LocalID, Customer: req.Customer},
-		expiresAt: p.o.Now().Add(time.Hour),
+		expiresAt: p.o.Now().Add(time.Hour), req: &r,
 	}
 	if req.Key != "" {
 		p.checkoutKeys[req.Key] = ref
@@ -439,9 +466,12 @@ func (p *Provider) StartCheckout(ctx context.Context, req supporters.CheckoutReq
 }
 
 func (p *Provider) checkoutOf(ref supporters.CheckoutRef) supporters.Checkout {
-	return supporters.Checkout{
-		Ref: ref, RedirectURL: "https://" + CheckoutHost + "/c/" + url.PathEscape(string(ref)), ExpiresAt: p.checkouts[ref].expiresAt,
+	c := p.checkouts[ref]
+	redirect := "https://" + CheckoutHost + "/c/" + url.PathEscape(string(ref))
+	if p.o.Pages && c.req != nil {
+		redirect, _ = p.pageURL(c.req.SuccessURL, pageCheckout+url.PathEscape(string(ref))) // StartCheckout checked the URL
 	}
+	return supporters.Checkout{Ref: ref, RedirectURL: redirect, ExpiresAt: c.expiresAt}
 }
 
 // GetCheckout implements supporters.PaymentProvider.
@@ -470,6 +500,21 @@ func (p *Provider) PortalURL(ctx context.Context, customer supporters.CustomerRe
 	}
 	if customer == "" {
 		return "", fmt.Errorf("%w: no customer", supporters.ErrPaymentInvalidRequest)
+	}
+	if p.o.Pages {
+		token := randomToken()
+		u, err := p.pageURL(returnURL, pagePortal+token)
+		if err != nil {
+			return "", err
+		}
+		now := p.o.Now()
+		for k, pt := range p.portals {
+			if !now.Before(pt.expiresAt) {
+				delete(p.portals, k)
+			}
+		}
+		p.portals[token] = &portal{customer: customer, returnURL: returnURL, expiresAt: p.o.Now().Add(time.Hour)}
+		return u, nil
 	}
 	return "https://" + PortalHost + "/p/" + url.PathEscape(string(customer)) + "?return=" + url.QueryEscape(returnURL), nil
 }

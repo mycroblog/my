@@ -35,7 +35,8 @@ import {
 } from "../hooks/useNotificationSettings";
 
 /**
- * The notification settings (FR-210, ADR-0109 §1): Web Push on this device and the notification sound above a table
+ * The notification settings (FR-210, ADR-0109 §1) in the sections of their screen requirements
+ * (web-client/screens/settings-notifications.md): Web Push on this device and the notification sound above a table
  * per section of the notification types × the channels (in the app, Web Push, email, sound). Every control saves its
  * value as soon as it changes.
  */
@@ -49,18 +50,10 @@ export function NotificationSettings() {
       <PushNotifications push={view.push} />
       <NotificationSound sound={view.sound} />
       <EmailDelivery suppression={view.emailSuppression} />
-      <Stack gap="6">
-        <Hint id={tableHintId}>{t("client:settings.notifications.table.description")}</Hint>
-        {view.sections.map((section) => (
-          <NotificationTable
-            key={section.section}
-            section={section}
-            channels={view.channels}
-            describedBy={tableHintId}
-          />
-        ))}
-        {view.error !== undefined && <InlineError alert>{view.error}</InlineError>}
-      </Stack>
+      <Hint id={tableHintId}>{t("client:settings.notifications.table.description")}</Hint>
+      {view.sections.map((section) => (
+        <NotificationTable key={section.section} section={section} channels={view.channels} describedBy={tableHintId} />
+      ))}
     </Stack>
   );
 }
@@ -68,7 +61,10 @@ export function NotificationSettings() {
 /**
  * One section of the notification types as a table to read (the native table, which assistive technology reads by
  * row and column): a row per notification type, named by its row header, and a checkbox per shown channel, named by
- * its row and its column, since a checkbox in a cell has no label of its own.
+ * its row and its column, since a checkbox in a cell has no label of its own. The first row, All, has a checkbox per column
+ * that turns the column of the section on or off at once (mixed while only some of its cells are on); a row whose
+ * cells cannot all change says why under its name, and that note describes those cells. A save the server refuses
+ * says why under the table, where the cell was pressed.
  */
 function NotificationTable({
   section,
@@ -82,8 +78,10 @@ function NotificationTable({
   const t = useT();
   const labels = useSaveLabels();
   const headingId = useId();
+  const noteId = useId();
+  const sectionName = t(section.label);
   return (
-    <Section title={t(section.label)} headingId={headingId}>
+    <Section title={sectionName} headingId={headingId}>
       <Table density="compact" aria-labelledby={headingId} aria-describedby={describedBy}>
         <TableHead>
           <TableColumnHeader>{t("client:settings.notifications.column.type")}</TableColumnHeader>
@@ -92,35 +90,71 @@ function NotificationTable({
           ))}
         </TableHead>
         <TableBody>
-          {section.rows.map((row) => (
-            <TableRow key={row.group}>
-              <TableRowHeader>{t(row.label)}</TableRowHeader>
-              {channels.map((channel) => {
-                const cell = row.cells[channel];
-                return (
-                  <TableCell key={channel}>
-                    {cell !== undefined && (
-                      // The save mark of the cell, beside its checkbox: its icon, with the words for assistive technology.
-                      <Cluster gap="1" align="center" wrap={false}>
-                        <Checkbox
-                          aria-label={t("client:settings.notifications.cell", {
-                            type: t(row.label),
-                            channel: t(notificationChannelLabels[channel]),
-                          })}
-                          isSelected={cell.selected}
-                          isDisabled={cell.disabled}
-                          onChange={cell.onChange}
-                        />
-                        <SaveIndicator state={cell.saveState} labels={labels} display="icon" />
-                      </Cluster>
+          <TableRow>
+            <TableRowHeader>{t("client:settings.notifications.column.all.short")}</TableRowHeader>
+            {channels.map((channel) => {
+              const column = section.columns[channel];
+              return (
+                <TableCell key={channel}>
+                  {column !== undefined && (
+                    <Checkbox
+                      aria-label={t("client:settings.notifications.column.all", {
+                        channel: t(notificationChannelLabels[channel]),
+                        section: sectionName,
+                      })}
+                      isSelected={column.selected}
+                      isIndeterminate={column.indeterminate}
+                      isDisabled={column.disabled}
+                      onChange={column.onChange}
+                    />
+                  )}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+          {section.rows.map((row) => {
+            const rowNoteId = `${noteId}-${row.group}`;
+            return (
+              <TableRow key={row.group}>
+                <TableRowHeader>
+                  <Stack gap="1">
+                    <span>{t(row.label)}</span>
+                    {row.note !== undefined && (
+                      <Hint as="span" id={rowNoteId}>
+                        {row.note}
+                      </Hint>
                     )}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          ))}
+                  </Stack>
+                </TableRowHeader>
+                {channels.map((channel) => {
+                  const cell = row.cells[channel];
+                  return (
+                    <TableCell key={channel}>
+                      {cell !== undefined && (
+                        // The save mark of the cell, beside its checkbox: its icon, with the words for assistive technology.
+                        <Cluster gap="1" align="center" wrap={false}>
+                          <Checkbox
+                            aria-label={t("client:settings.notifications.cell", {
+                              type: t(row.label),
+                              channel: t(notificationChannelLabels[channel]),
+                            })}
+                            {...(cell.disabled && row.note !== undefined && { "aria-describedby": rowNoteId })}
+                            isSelected={cell.selected}
+                            isDisabled={cell.disabled}
+                            onChange={cell.onChange}
+                          />
+                          <SaveIndicator state={cell.saveState} labels={labels} display="icon" />
+                        </Cluster>
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
+      {section.error !== undefined && <InlineError alert>{section.error}</InlineError>}
     </Section>
   );
 }

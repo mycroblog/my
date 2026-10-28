@@ -19,6 +19,7 @@ import { instanceFixture, preferencesFixture, type Schemas, viewerFixture } from
 import { apiBase, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 import { notificationSoundKey } from "../../lib/storage";
 
 function keyBytes(text: string): Uint8Array<ArrayBuffer> {
@@ -154,10 +155,11 @@ function columnHeaders(name: string): string[] {
     .map((header) => header.textContent);
 }
 
+/** The names of the table's rows of notification types: the row headers after the All row, without their notes. */
 function rowHeaders(name: string): string[] {
-  return within(table(name))
-    .getAllByRole("rowheader")
-    .map((header) => header.textContent);
+  const [all, ...rows] = within(table(name)).getAllByRole("rowheader");
+  expect(all).toHaveTextContent(/^All$/);
+  return rows.map((header) => (header.querySelector("span") ?? header).textContent);
 }
 
 async function openSettings() {
@@ -306,6 +308,56 @@ describe("the table", () => {
     expect(email).toBeChecked();
   });
 
+  test("a column's All box turns the cells of its section that can change on and off, in one save", async () => {
+    const api = settingsServer();
+    const { user } = await openSettings();
+    const all = screen.getByRole("checkbox", { name: "All: Email, From other people" });
+    expect(all).not.toBeChecked();
+
+    await user.click(screen.getByRole("checkbox", { name: "Mentions: Email" }));
+    // Some of the column is on.
+    await waitFor(() => {
+      expect(all).toBePartiallyChecked();
+    });
+
+    await user.click(all);
+
+    await waitFor(() => {
+      expect(api.patches).toHaveLength(2);
+    });
+    // Mentions was on already; every other row of the section changes in the same request.
+    expect(api.patches[1]?.changes.map((change) => change.group)).toEqual(
+      ordinaryNotificationRows.map((row) => row.group).filter((group) => group !== "mention"),
+    );
+    expect(api.patches[1]?.changes.every((change) => change.channel === "email" && change.enabled)).toBe(true);
+    expect(all).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Boosts: Email" })).toBeChecked();
+    // The other section's column stays as it was.
+    expect(screen.getByRole("checkbox", { name: "All: Email, From this server" })).not.toBeChecked();
+  });
+
+  test("a row whose cells cannot change says why under its name, which describes those cells", async () => {
+    settingsServer();
+    const { user } = await openSettings();
+    const moderation = screen.getByRole("checkbox", { name: "Notices from the moderators: In the app" });
+    expect(moderation).toHaveAccessibleDescription("Always on: In the app.");
+
+    await user.click(screen.getByRole("checkbox", { name: "Boosts: In the app" }));
+
+    expect(screen.getByRole("checkbox", { name: "Boosts: Email" })).toHaveAccessibleDescription(
+      "Off in the app, so it does not arrive any other way.",
+    );
+    // A cell that can change has no such note.
+    expect(screen.getByRole("checkbox", { name: "Mentions: Email" })).not.toHaveAccessibleDescription();
+  });
+
+  test("the sections follow the screen's requirements", async () => {
+    settingsServer();
+    await openSettings();
+    // docs/architecture/web-client/screens/settings-notifications.md §3 (no Web Push in jsdom, emails reach the address)
+    expect(sectionHeadings()).toEqual(["Notification sound", "From other people", "From this server"]);
+  });
+
   test("says why a change was not saved, and shows the saved value again", async () => {
     server.use(
       http.patch(`${apiBase}/preferences/notifications`, ({ request }) =>
@@ -322,7 +374,10 @@ describe("the table", () => {
 
     await user.click(email);
 
-    expect(await screen.findByText("The row cannot be changed.")).toBeInTheDocument();
+    // Under the table of the cell, not at the end of the page.
+    expect(
+      await within(screen.getByRole("region", { name: "From other people" })).findByText("The row cannot be changed."),
+    ).toBeInTheDocument();
     expect(email).not.toBeChecked();
   });
 

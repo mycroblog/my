@@ -55,6 +55,38 @@
     "defaultMessage": "PAY.JP が応答しません。しばらくしてから試してください。",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
+  "payments.fake.cancel": {
+    "defaultMessage": "取り消す",
+    "description": "Button of the fake provider's checkout page that goes back without subscribing."
+  },
+  "payments.fake.fail": {
+    "defaultMessage": "支払いを失敗させる",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "payments.fake.failed": {
+    "defaultMessage": "指示どおり支払いを失敗させました。支払うか取り消してください。",
+    "description": "Alert of the fake provider's checkout page after its fail button."
+  },
+  "payments.fake.notice": {
+    "defaultMessage": "試験用のビルドの決済です。事業者の画面の代わりで、お金は動きません。",
+    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0117 §2)."
+  },
+  "payments.fake.pay": {
+    "defaultMessage": "支払う",
+    "description": "Button of the fake provider's checkout page that records the subscription as paid."
+  },
+  "payments.fake.portal": {
+    "defaultMessage": "試験用のビルドには、管理する支払い方法や請求書がありません。",
+    "description": "Text of the fake provider's portal page."
+  },
+  "payments.fake.price_month": {
+    "defaultMessage": "月額 {amount} {currency}",
+    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.fake.price_year": {
+    "defaultMessage": "年額 {amount} {currency}",
+    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
   "payments.name": {
     "defaultMessage": "カードの名義",
     "description": "Label of the card holder's name field of the PAY.JP checkout and card pages."

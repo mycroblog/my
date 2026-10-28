@@ -588,6 +588,14 @@ var schema = []field{
 		},
 	},
 	{
+		key:   "push_allowed_destinations",
+		doc:   "For development only: destinations on loopback or a private network that the Web Push sends may reach, such as a fake push service on the same host: comma-separated host names, IP addresses, and CIDRs such as `localhost, 127.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the Web Push sends alone, it also allows any port, still over `https` and without following a redirect. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Every other outbound request keeps the guard. The `production` profile refuses it, and the server logs a warning at start when it is set. Empty allows none.",
+		check: checkDestinations,
+		set: func(c *Config, v string) {
+			c.PushAllowedHosts, c.PushAllowedPrefixes = parseDestinations(v)
+		},
+	},
+	{
 		key:   "remote_status_retention",
 		doc:   "How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).",
 		def:   "2160h",
@@ -748,6 +756,7 @@ var schema = []field{
 			{value: "none", inV0: true, doc: "No payments: the webhook endpoint and the reconciliation do not run."},
 			{value: "stripe", inV0: true, doc: "Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out."},
 			{value: "payjp", inV0: true, doc: "PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out."},
+			{value: "fake", inV0: true, doc: "Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting."},
 		},
 		set: func(c *Config, v string) { c.PaymentsProvider = v },
 	},
@@ -1236,8 +1245,14 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if slices.Contains(splitList(vals["billing_sources"]), "gcp") && vals["billing_gcp_method"] == "budget" && !present["billing_gcp_budget_subscription"] {
 		issues = append(issues, Issue{Key: "billing_gcp_budget_subscription", Missing: true, Message: "required when billing_sources includes gcp and billing_gcp_method is budget"})
 	}
+	if vals["payments_provider"] == "fake" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "payments_provider", Message: "fake is refused in the production profile: it records payments as paid without any money moving; set profile = development"})
+	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})
+	}
+	if vals["push_allowed_destinations"] != "" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "push_allowed_destinations", Message: "is refused in the production profile; set profile = development"})
 	}
 	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == vals["listen"] {
 		issues = append(issues, Issue{Key: "metrics_listen", Message: "must differ from listen: the metrics are never served on the public listener"})
