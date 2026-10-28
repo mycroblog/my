@@ -6,6 +6,9 @@ import {
   Dialog,
   DialogActions,
   Hint,
+  IconButton,
+  IconToggleButton,
+  type IconToggleButtonProps,
   Menu,
   MenuItem,
   MenuTrigger,
@@ -15,8 +18,6 @@ import {
   Stack,
   StarIcon,
   Text,
-  ToggleButton,
-  type ToggleButtonProps,
 } from "@my/ui";
 import { type ReactNode, useId, useState } from "react";
 import { useIntl } from "react-intl";
@@ -71,16 +72,16 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
 
   return (
     <>
-      <Button
+      <IconButton
         variant="subtle"
         size="toolbar"
-        aria-label={t("client:status.action.reply")}
+        label={t("client:status.action.reply")}
         {...(replyDescription !== "" && { "aria-describedby": replyDescription })}
         onPress={actions.reply}
       >
         <ReplyIcon />
         <Count id={repliesId} value={post.replies_count} />
-      </Button>
+      </IconButton>
       <RelationButton
         label={t("client:status.action.boost")}
         toggle={actions.boost}
@@ -89,15 +90,15 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
         describedBy={note}
       />
       {actions.quote !== null && (
-        <Button
+        <IconButton
           variant="subtle"
           size="toolbar"
-          aria-label={t("client:status.action.quote")}
+          label={t("client:status.action.quote")}
           onPress={actions.quote.onPress}
           isDisabled={actions.quote.isDisabled}
         >
           <QuoteIcon />
-        </Button>
+        </IconButton>
       )}
       <RelationButton
         label={t("client:status.action.favourite")}
@@ -118,9 +119,9 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
         icon={(on) => <BookmarkIcon filled={on} />}
       />
       <MenuTrigger>
-        <Button variant="subtle" size="toolbar" aria-label={t("client:status.action.more")}>
+        <IconButton variant="subtle" size="toolbar" label={t("client:status.action.more")}>
           <MoreIcon />
-        </Button>
+        </IconButton>
         <Menu aria-label={t("client:status.action.more")} placement="bottom end">
           <MenuItem onAction={actions.copyLink}>{t("client:status.action.copy_link")}</MenuItem>
           {actions.canReport && (
@@ -233,7 +234,7 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
 type RelationButtonProps = {
   label: string;
   toggle: RelationToggle;
-  tone: NonNullable<ToggleButtonProps["tone"]>;
+  tone: NonNullable<IconToggleButtonProps["tone"]>;
   icon: (on: boolean) => ReactNode;
   /** The id of another description of the toggle: the note that the action does not reach the post's server. */
   describedBy?: string | undefined;
@@ -244,8 +245,8 @@ function RelationButton({ label, toggle, tone, icon, describedBy }: RelationButt
   const hasCount = toggle.count !== null && toggle.count > 0;
   const description = [hasCount ? countId : undefined, describedBy].filter((id) => id !== undefined).join(" ");
   return (
-    <ToggleButton
-      aria-label={label}
+    <IconToggleButton
+      label={label}
       {...(description !== "" && { "aria-describedby": description })}
       tone={tone}
       isSelected={toggle.isSelected}
@@ -254,7 +255,7 @@ function RelationButton({ label, toggle, tone, icon, describedBy }: RelationButt
     >
       {icon(toggle.isSelected)}
       {toggle.count !== null && <Count id={countId} value={toggle.count} />}
-    </ToggleButton>
+    </IconToggleButton>
   );
 }
 

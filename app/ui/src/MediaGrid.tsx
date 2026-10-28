@@ -8,6 +8,7 @@ import { formatClock } from "./clock";
 import { AltTextIcon, HideMediaIcon, PlayIcon } from "./Icons";
 import { MediaViewer, type MediaViewerLabels } from "./MediaViewer";
 import { type ImageSources, Picture, useAnimationsPlay } from "./Picture";
+import { Tooltip, TooltipTrigger } from "./Tooltip";
 import { VisuallyHidden } from "./VisuallyHidden";
 
 const mediaGrid = tv({
@@ -377,23 +378,27 @@ export function MediaGrid({
         ),
       )}
       {sensitive && (
-        <ToggleButton
-          isSelected={revealed}
-          onChange={(next) => {
-            setUncontrolled(next);
-            onRevealedChange?.(next);
-          }}
-          className={slots.toggle()}
-        >
-          {revealed ? (
-            <>
-              <HideMediaIcon />
-              <VisuallyHidden>{revealLabel}</VisuallyHidden>
-            </>
-          ) : (
-            revealLabel
-          )}
-        </ToggleButton>
+        // Once the media are shown it is only an icon, which shows its name as a tooltip (G12).
+        <TooltipTrigger isDisabled={!revealed}>
+          <ToggleButton
+            isSelected={revealed}
+            onChange={(next) => {
+              setUncontrolled(next);
+              onRevealedChange?.(next);
+            }}
+            className={slots.toggle()}
+          >
+            {revealed ? (
+              <>
+                <HideMediaIcon />
+                <VisuallyHidden>{revealLabel}</VisuallyHidden>
+              </>
+            ) : (
+              revealLabel
+            )}
+          </ToggleButton>
+          <Tooltip>{revealLabel}</Tooltip>
+        </TooltipTrigger>
       )}
       {viewerLabels !== undefined && viewable.length > 0 && (
         <MediaViewer

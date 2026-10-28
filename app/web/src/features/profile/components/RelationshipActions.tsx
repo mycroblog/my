@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogActions,
   Hint,
+  IconButton,
   Link,
   Menu,
   MenuItem,
@@ -132,9 +133,9 @@ function OtherActions({ account, name, state, showMenu }: OtherActionsProps) {
         )}
         {showMenu && (
           <MenuTrigger>
-            <Button variant="ghost" size="compact" isPending={isPending} aria-label={moreLabel}>
+            <IconButton variant="ghost" size="compact" isPending={isPending} label={moreLabel}>
               <MoreIcon />
-            </Button>
+            </IconButton>
             <Menu
               aria-label={moreLabel}
               placement="bottom end"

@@ -244,7 +244,11 @@ Icons are part of the kit, so that every screen draws the same shapes at the sam
   `app/.oxlintrc.json`, are the marks of a control's own drawing (the check of `Checkbox`, the chevrons of `Select`
   and `ContentWarning`, the arrow of `Tooltip`, the silhouette of `Avatar`) and stand-in content in tests and stories.
 - They are decorative: `aria-hidden="true"` and `focusable="false"`. The meaning is in the visible label or the accessible
-  name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text.
+  name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text: `IconButton` and
+  `IconToggleButton` take the text once as `label` and give it to both (`ghost` and `icon` by default for `IconButton`; any
+  `variant` and `size` of `Button`, such as `subtle` and `toolbar` in a post's action bar). Oxlint (`restrict/icons`)
+  rejects a `Button` or `ToggleButton` whose children are an icon and no words outside a `TooltipTrigger`; a description
+  the caller passes (a count's `aria-describedby`) stays while the tooltip, which repeats the name, is open.
 - The control sizes its icon: `Button`, `ToggleButton` and `Link` size a child `svg` (`size-5` in buttons, also in a
   `toolbar` button among toggles, `size-4` in a small button and next to a link's text), and a `navigation` link sizes
   every `svg` in it at `size-6`. An icon sets no size of its own, and neither does the screen that places it, so it never

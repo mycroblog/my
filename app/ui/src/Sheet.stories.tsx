@@ -52,6 +52,14 @@ export const FocusTrapAndReturn: Story = {
       await userEvent.tab();
       await expect(sheet).toContainElement(document.activeElement as HTMLElement);
     }
+    // Esc closes the innermost layer first: the tooltip of the ×, when the × has the keyboard focus (G12), then the
+    // sheet. The modal hides the tooltip's portal from assistive technology; the × keeps its own name.
+    if (canvas.getByRole("button", { name: "Close" }) === document.activeElement) {
+      await expect(await canvas.findByRole("tooltip", { hidden: true })).toHaveTextContent("Close");
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(canvas.queryByRole("tooltip", { hidden: true })).not.toBeInTheDocument());
+      await expect(sheet).toBeInTheDocument();
+    }
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(canvas.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
