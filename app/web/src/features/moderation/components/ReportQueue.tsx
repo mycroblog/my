@@ -2,7 +2,8 @@
 // The report queue below its heading (FR-701, FR-710): the reports that await the moderators and those handled,
 // newest first, in the admin mode's list form: a toolbar with the state filter (kept in the URL by the route,
 // web-client/README.md S3), a table of one page, and previous / next. Each row's first cell links to the report's page,
-// where it is handled.
+// where it is handled. An open report shows its category, how long it has waited and who handles it as badges
+// (ADR-0110 P3), so that the grave and the old ones stand out.
 import {
   EmptyState,
   Link,
@@ -18,9 +19,9 @@ import {
 } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type Report, type ReportFilter, reportFilters } from "../api/reports";
-import { handleOf, isolate, reportCategoryLabels, reportOutcomeLabels, useReports } from "../hooks/useReports";
+import { handleOf, isolate, reportOutcomeLabels, useReports } from "../hooks/useReports";
 import { DateTime, RecordTable, RequirePermission } from "./parts";
-import { AccountLabel, AssigneeName } from "./reportParts";
+import { AccountLabel, ReportAssigneeBadge, ReportCategoryBadge, ReportWaitBadge } from "./reportParts";
 
 const filterLabels: Readonly<Record<ReportFilter, ClientMessageKey>> = {
   open: "client:admin.reports.filter.open",
@@ -100,7 +101,7 @@ function ReportList({ filter }: { filter: ReportFilter }) {
             {t(resolved ? "client:admin.report.outcome" : "client:admin.report.assignee")}
           </TableColumnHeader>
           <TableColumnHeader>
-            {t(resolved ? "client:admin.report.resolved_at" : "client:admin.report.filed_at")}
+            {t(resolved ? "client:admin.report.resolved_at" : "client:admin.reports.column.waiting")}
           </TableColumnHeader>
         </>
       }
@@ -132,7 +133,9 @@ function ReportRow({ report }: { report: Report }) {
           )}
         </Stack>
       </TableRowHeader>
-      <TableCell>{t(reportCategoryLabels[report.category])}</TableCell>
+      <TableCell>
+        <ReportCategoryBadge category={report.category} />
+      </TableCell>
       <TableCell wrap="anywhere">
         <AccountLabel account={report.reporter_account} />
       </TableCell>
@@ -143,14 +146,16 @@ function ReportRow({ report }: { report: Report }) {
           ) : (
             t(reportOutcomeLabels[report.outcome])
           )
-        ) : report.assignee_account_id === undefined ? (
-          t("client:admin.report.assignee.none")
         ) : (
-          <AssigneeName id={report.assignee_account_id} />
+          <ReportAssigneeBadge id={report.assignee_account_id} />
         )}
       </TableCell>
       <TableCell>
-        <DateTime value={report.state === "resolved" ? report.state_changed_at : report.filed_at} />
+        {report.state === "resolved" ? (
+          <DateTime value={report.state_changed_at} />
+        ) : (
+          <ReportWaitBadge filedAt={report.filed_at} />
+        )}
       </TableCell>
     </TableRow>
   );
