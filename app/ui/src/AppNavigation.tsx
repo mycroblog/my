@@ -389,7 +389,7 @@ export function AppNavMenu({ label, badge, isOpen, onOpenChange, title, closeLab
         <Button variant="ghost" className={slots.item()} {...(badge !== undefined && { "aria-label": badge.name })}>
           <span className={slots.pill()}>
             <MenuIcon />
-            {badge !== undefined && <Badge count={badge.count} label={badge.label} className={slots.badge()} />}
+            {badge !== undefined && <Badge count={badge.count} decorative className={slots.badge()} />}
           </span>
           <span className={slots.label()}>{label}</span>
         </Button>
@@ -438,7 +438,7 @@ export function AppNavMenuLink({ href, icon, label, current = false, badge, sepa
       >
         {icon}
         {label}
-        {badge !== undefined && <Badge count={badge.count} label={badge.label} />}
+        {badge !== undefined && <Badge count={badge.count} decorative />}
       </Link>
     </li>
   );
