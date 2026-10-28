@@ -10514,8 +10514,8 @@ type Preferences struct {
 	DefaultVisibility Visibility `json:"default_visibility"`
 
 	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
-	// After a `hard_bounce`, the user asks for the verification email again to show that the
-	// address works.
+	// After a `hard_bounce`, the user asks for the verification email again
+	// (`POST /accounts/email/verification`) to show that the address works.
 	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag.
@@ -15474,6 +15474,20 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/delete (the `DeleteOwnAccount` operationId).
 	DeleteOwnAccount(ctx context.Context, body DeleteOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResendVerificationEmail Send the authenticated user a new verification email
+	//
+	// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+	// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+	// following its link shows that the address works and lifts the suppression. Earlier links
+	// keep working until they expire. The email is queued and sent in the background, so a 202
+	// does not tell whether it arrived. A user whose address is verified and not suppressed by a
+	// hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+	// address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+	// emails per user are sent every hour; more get a 429 with `Retry-After`.
+	//
+	// Corresponds with POST /accounts/email/verification (the `ResendVerificationEmail` operationId).
+	ResendVerificationEmail(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// LookupAccount Look up or resolve an account by its handle or URL
 	//
@@ -20692,6 +20706,30 @@ func (c *Client) DeleteOwnAccountWithBody(ctx context.Context, contentType strin
 // Corresponds with POST /accounts/delete (the `DeleteOwnAccount` operationId).
 func (c *Client) DeleteOwnAccount(ctx context.Context, body DeleteOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteOwnAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResendVerificationEmail Send the authenticated user a new verification email
+//
+// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+// following its link shows that the address works and lifts the suppression. Earlier links
+// keep working until they expire. The email is queued and sent in the background, so a 202
+// does not tell whether it arrived. A user whose address is verified and not suppressed by a
+// hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+// address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+// emails per user are sent every hour; more get a 429 with `Retry-After`.
+//
+// Corresponds with POST /accounts/email/verification (the `ResendVerificationEmail` operationId).
+func (c *Client) ResendVerificationEmail(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResendVerificationEmailRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -30059,6 +30097,33 @@ func NewDeleteOwnAccountRequestWithBody(server string, contentType string, body 
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewResendVerificationEmailRequest constructs an http.Request for the ResendVerificationEmail method
+func NewResendVerificationEmailRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/email/verification")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -44323,6 +44388,22 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/delete (the `DeleteOwnAccount` operationId).
 	DeleteOwnAccountWithResponse(ctx context.Context, body DeleteOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteOwnAccountResponse, error)
 
+	// ResendVerificationEmailWithResponse Send the authenticated user a new verification email
+	//
+	// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+	// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+	// following its link shows that the address works and lifts the suppression. Earlier links
+	// keep working until they expire. The email is queued and sent in the background, so a 202
+	// does not tell whether it arrived. A user whose address is verified and not suppressed by a
+	// hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+	// address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+	// emails per user are sent every hour; more get a 429 with `Retry-After`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/email/verification (the `ResendVerificationEmail` operationId).
+	ResendVerificationEmailWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ResendVerificationEmailResponse, error)
+
 	// LookupAccountWithResponse Look up or resolve an account by its handle or URL
 	//
 	// Finds `username` (a local account), `username@domain`, or the `https` URL of an actor
@@ -50064,6 +50145,57 @@ func (r DeleteOwnAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DeleteOwnAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ResendVerificationEmailResponseDefaultHeaders the declared response headers of an HTTP default response for ResendVerificationEmail
+type ResendVerificationEmailResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ResendVerificationEmailResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ResendVerificationEmailResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ResendVerificationEmailResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ResendVerificationEmailResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResendVerificationEmailResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResendVerificationEmailResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResendVerificationEmailResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -71124,6 +71256,28 @@ func (c *ClientWithResponses) DeleteOwnAccountWithResponse(ctx context.Context, 
 	return ParseDeleteOwnAccountResponse(rsp)
 }
 
+// ResendVerificationEmailWithResponse Send the authenticated user a new verification email
+//
+// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+// following its link shows that the address works and lifts the suppression. Earlier links
+// keep working until they expire. The email is queued and sent in the background, so a 202
+// does not tell whether it arrived. A user whose address is verified and not suppressed by a
+// hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+// address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+// emails per user are sent every hour; more get a 429 with `Retry-After`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/email/verification (the `ResendVerificationEmail` operationId).
+func (c *ClientWithResponses) ResendVerificationEmailWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ResendVerificationEmailResponse, error) {
+	rsp, err := c.ResendVerificationEmail(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResendVerificationEmailResponse(rsp)
+}
+
 // LookupAccountWithResponse Look up or resolve an account by its handle or URL
 //
 // Finds `username` (a local account), `username@domain`, or the `https` URL of an actor
@@ -79386,6 +79540,69 @@ func ParseDeleteOwnAccountResponse(rsp *http.Response) (*DeleteOwnAccountRespons
 	switch {
 	case true:
 		var headers DeleteOwnAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseResendVerificationEmailResponse parses an HTTP response from a ResendVerificationEmailWithResponse call
+func ParseResendVerificationEmailResponse(rsp *http.Response) (*ResendVerificationEmailResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResendVerificationEmailResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 202:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers ResendVerificationEmailResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

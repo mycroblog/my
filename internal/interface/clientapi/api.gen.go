@@ -10512,8 +10512,8 @@ type Preferences struct {
 	DefaultVisibility Visibility `json:"default_visibility"`
 
 	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
-	// After a `hard_bounce`, the user asks for the verification email again to show that the
-	// address works.
+	// After a `hard_bounce`, the user asks for the verification email again
+	// (`POST /accounts/email/verification`) to show that the address works.
 	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag.
@@ -13913,6 +13913,9 @@ type ServerInterface interface {
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
+	// ResendVerificationEmail Send the authenticated user a new verification email
+	// (POST /accounts/email/verification)
+	ResendVerificationEmail(w http.ResponseWriter, r *http.Request)
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams)
@@ -14946,6 +14949,20 @@ func (siw *ServerInterfaceWrapper) DeleteOwnAccount(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteOwnAccount(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResendVerificationEmail operation middleware
+func (siw *ServerInterfaceWrapper) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResendVerificationEmail(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24400,6 +24417,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/password", wrapper.GetPasswordStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password/remove", wrapper.RemovePassword)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/email/verification", wrapper.ResendVerificationEmail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports", wrapper.ListDataExports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exports", wrapper.RequestDataExport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/{id}/archive", wrapper.DownloadDataExport)
@@ -25317,6 +25335,51 @@ type DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitDeleteOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResendVerificationEmailRequestObject struct {
+}
+
+type ResendVerificationEmailResponseObject interface {
+	VisitResendVerificationEmailResponse(w http.ResponseWriter) error
+}
+
+type ResendVerificationEmail202Response struct {
+}
+
+func (response ResendVerificationEmail202Response) VisitResendVerificationEmailResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse) VisitResendVerificationEmailResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -44675,6 +44738,9 @@ type StrictServerInterface interface {
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
+	// ResendVerificationEmail Send the authenticated user a new verification email
+	// (POST /accounts/email/verification)
+	ResendVerificationEmail(ctx context.Context, request ResendVerificationEmailRequestObject) (ResendVerificationEmailResponseObject, error)
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(ctx context.Context, request LookupAccountRequestObject) (LookupAccountResponseObject, error)
@@ -45801,6 +45867,30 @@ func (sh *strictHandler) DeleteOwnAccount(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteOwnAccountResponseObject); ok {
 		if err := validResponse.VisitDeleteOwnAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResendVerificationEmail operation middleware
+func (sh *strictHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+	var request ResendVerificationEmailRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResendVerificationEmail(ctx, request.(ResendVerificationEmailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResendVerificationEmail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResendVerificationEmailResponseObject); ok {
+		if err := validResponse.VisitResendVerificationEmailResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
