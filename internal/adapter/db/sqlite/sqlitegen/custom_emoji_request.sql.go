@@ -13,18 +13,23 @@ import (
 )
 
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
-SELECT CAST((SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = ?1 AND e.domain = '')
-  + (SELECT COUNT(*) FROM custom_emoji_pending_requests p
-    WHERE p.requester_user_id = ?1 AND p.reserved_shortcode IS NOT NULL) AS INTEGER) AS used
+SELECT CAST((SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = ?1 AND e.domain = '') AS INTEGER) AS made,
+  CAST((SELECT COUNT(*) FROM custom_emoji_pending_requests p
+    WHERE p.requester_user_id = ?1 AND p.reserved_shortcode IS NOT NULL) AS INTEGER) AS pending
 `
 
+type CountCustomEmojiUsageRow struct {
+	Made    int64
+	Pending int64
+}
+
 // CountCustomEmojiUsage counts what the limit of a creator counts (ADR-0070 section 4): the local emoji
-// that the user made and their pending requests to create one.
-func (q *Queries) CountCustomEmojiUsage(ctx context.Context, userID sql.NullString) (int64, error) {
+// that the user made and their pending requests to create one, apart.
+func (q *Queries) CountCustomEmojiUsage(ctx context.Context, userID sql.NullString) (CountCustomEmojiUsageRow, error) {
 	row := q.db.QueryRowContext(ctx, countCustomEmojiUsage, userID)
-	var used int64
-	err := row.Scan(&used)
-	return used, err
+	var i CountCustomEmojiUsageRow
+	err := row.Scan(&i.Made, &i.Pending)
+	return i, err
 }
 
 const customEmojiShortcodeReserved = `-- name: CustomEmojiShortcodeReserved :one

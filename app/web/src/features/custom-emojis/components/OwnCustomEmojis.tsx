@@ -81,13 +81,13 @@ export function OwnCustomEmojis() {
 }
 
 /**
- * How many emoji the user has (with their pending requests to create one) against their limit: a meter, in the danger
- * tone once the limit is reached; without a limit, a line that says so.
+ * How many emoji the user has (with their pending requests to create one) against their limit: a meter whose pending
+ * part is a lighter segment, in the danger tone once the limit is reached; without a limit, a line that says so.
  */
 function Usage() {
   const t = useT();
-  const { used, limit } = useOwnCustomEmojis();
-  if (limit === undefined) return <Hint>{t("client:custom_emojis.usage.unlimited", { used })}</Hint>;
+  const { used, pending, limit } = useOwnCustomEmojis();
+  if (limit === undefined) return <Hint>{t("client:custom_emojis.usage.unlimited", { used, pending })}</Hint>;
   const full = used >= limit;
   return (
     <ProgressMeter
@@ -95,7 +95,8 @@ function Usage() {
       label={t("client:custom_emojis.usage.label")}
       value={Math.min(used, limit)}
       maxValue={Math.max(limit, 1)}
-      valueText={t("client:custom_emojis.usage.value", { used, limit, full: full ? "true" : "false" })}
+      pending={pending}
+      valueText={t("client:custom_emojis.usage.value", { used, pending, limit, full: full ? "true" : "false" })}
       tone={full ? "danger" : "normal"}
     />
   );

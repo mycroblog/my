@@ -37,12 +37,19 @@ function failure(t: Translate, error: unknown): string {
   return error instanceof MediaProcessingError ? t("client:custom_emojis.image_failed") : errorMessage(error);
 }
 
-/** The user's emoji, newest first, with what they used of their limit: `limit` is undefined for no limit. */
-export function useOwnCustomEmojis(): PagedList<OwnCustomEmoji> & { used: number; limit: number | undefined } {
+/**
+ * The user's emoji, newest first, with what they used of their limit: `pending` is the part of `used` that their pending
+ * requests take, and `limit` is undefined for no limit.
+ */
+export function useOwnCustomEmojis(): PagedList<OwnCustomEmoji> & {
+  used: number;
+  pending: number;
+  limit: number | undefined;
+} {
   const api = useApi();
   const query = useSuspenseInfiniteQuery(ownCustomEmojisQueryOptions(api));
   const first = query.data.pages[0];
-  return { ...toPagedList(query), used: first?.used ?? 0, limit: first?.limit };
+  return { ...toPagedList(query), used: first?.used ?? 0, pending: first?.pending ?? 0, limit: first?.limit };
 }
 
 /** The user's requests in every state, newest first. */

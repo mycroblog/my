@@ -16,12 +16,12 @@
     "description": "Label of the meter of how many custom emoji the user has against their limit."
   },
   "custom_emojis.usage.value": {
-    "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個（上限。審査中の申請を含みます）} other {{used, number} / {limit, number} 個（審査中の申請を含みます）}}",
-    "description": "The value of the meter of the user's custom emoji. {used} counts the user's emoji and pending requests to create one; {limit} is how many they may have; {full} is true when they reached it."
+    "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個（上限{pending, plural, =0 {} other {。うち審査中 # 個}}）} other {{used, number} / {limit, number} 個{pending, plural, =0 {} other {（うち審査中 # 個）}}}}",
+    "description": "The value of the meter of the user's custom emoji. {used} counts the user's emoji and pending requests to create one; {pending} is how many of them are pending requests; {limit} is how many they may have; {full} is true when they reached it."
   },
   "custom_emojis.usage.unlimited": {
-    "defaultMessage": "{used, plural, other {カスタム絵文字を # 個使っています（審査中の申請を含みます）。上限はありません。}}",
-    "description": "How many custom emoji the user has when their roles set no limit. {used} counts the user's emoji and pending requests to create one."
+    "defaultMessage": "{used, plural, other {カスタム絵文字を # 個使っています}}{pending, plural, =0 {} other {（うち審査中 # 個）}}。上限はありません。",
+    "description": "How many custom emoji the user has when their roles set no limit. {used} counts the user's emoji and pending requests to create one; {pending} is how many of them are pending requests."
   },
   "custom_emojis.image": {
     "defaultMessage": "画像",

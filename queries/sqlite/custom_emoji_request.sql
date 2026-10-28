@@ -29,11 +29,11 @@ SELECT CAST(EXISTS (SELECT 1 FROM custom_emoji_pending_requests WHERE reserved_s
 SELECT request_id FROM custom_emoji_pending_requests WHERE emoji_id = CAST(@emoji_id AS TEXT);
 
 -- CountCustomEmojiUsage counts what the limit of a creator counts (ADR-0070 section 4): the local emoji
--- that the user made and their pending requests to create one.
+-- that the user made and their pending requests to create one, apart.
 -- name: CountCustomEmojiUsage :one
-SELECT CAST((SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = sqlc.arg(user_id) AND e.domain = '')
-  + (SELECT COUNT(*) FROM custom_emoji_pending_requests p
-    WHERE p.requester_user_id = sqlc.arg(user_id) AND p.reserved_shortcode IS NOT NULL) AS INTEGER) AS used;
+SELECT CAST((SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = sqlc.arg(user_id) AND e.domain = '') AS INTEGER) AS made,
+  CAST((SELECT COUNT(*) FROM custom_emoji_pending_requests p
+    WHERE p.requester_user_id = sqlc.arg(user_id) AND p.reserved_shortcode IS NOT NULL) AS INTEGER) AS pending;
 
 -- IsMediaOfPendingCustomEmojiRequest reports whether a pending request uses @media_id as its
 -- image, which keeps the upload from the cleanup of the unattached uploads.

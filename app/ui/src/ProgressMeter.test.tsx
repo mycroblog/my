@@ -20,4 +20,28 @@ describe("ProgressMeter", () => {
     );
     expect(screen.getByRole("meter", { name: "Storage used" })).toHaveAttribute("aria-valuetext", "4 / 5 GB");
   });
+
+  it("draws the pending part of the value as a segment at the end of the fill", () => {
+    const { container, rerender } = render(
+      <ProgressMeter
+        kind="meter"
+        label="Emoji used"
+        value={4}
+        maxValue={5}
+        valueText="4 of 5, 1 of them pending"
+        pending={1}
+      />,
+    );
+    expect(screen.getByRole("meter", { name: "Emoji used" })).toHaveAttribute(
+      "aria-valuetext",
+      "4 of 5, 1 of them pending",
+    );
+    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- the bar is decorative, without a role.
+    const segments = () => container.querySelectorAll<HTMLElement>("[aria-hidden='true'] > span > span");
+    expect(segments()).toHaveLength(2);
+    expect(segments()[1]?.style.inlineSize).toBe("25%");
+
+    rerender(<ProgressMeter kind="meter" label="Emoji used" value={4} maxValue={5} valueText="4 of 5" pending={0} />);
+    expect(segments()).toHaveLength(1);
+  });
 });

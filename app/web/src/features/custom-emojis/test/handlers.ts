@@ -50,7 +50,9 @@ const createdRequestId = "0199f0e0-0000-7000-8000-00000000e101";
 export const handlers = [
   // operationIds listOwnCustomEmojis, updateOwnCustomEmoji, deleteOwnCustomEmoji.
   http.get(`${apiBase}/custom_emojis/mine`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ items: [], used: 0 } satisfies Schemas["OwnCustomEmojiPage"])),
+    withViewer(request, () =>
+      HttpResponse.json({ items: [], used: 0, pending: 0 } satisfies Schemas["OwnCustomEmojiPage"]),
+    ),
   ),
   http.patch(`${apiBase}/custom_emojis/mine/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["UpdateOwnCustomEmojiRequest"];

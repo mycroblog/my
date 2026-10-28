@@ -162,9 +162,9 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequestsByID(ctx context.Context,
 }
 
 // CountCustomEmojiUsage implements content.CustomEmojiRequestRepository.
-func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string) (int, error) {
-	n, err := r.db.reader().CountCustomEmojiUsage(ctx, userID)
-	return int(n), wrap(err, "count custom emoji usage")
+func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string) (made, pending int, err error) {
+	row, err := r.db.reader().CountCustomEmojiUsage(ctx, userID)
+	return int(row.Made), int(row.Pending), wrap(err, "count custom emoji usage")
 }
 
 // IsMediaOfPendingCustomEmojiRequest implements content.CustomEmojiRequestRepository.
