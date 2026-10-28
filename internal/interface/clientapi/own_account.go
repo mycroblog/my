@@ -29,6 +29,9 @@ const (
 	ProblemTypeExportInProgress = "/api/v1/problems/export-in-progress"
 	// ProblemTypeExportNotReady is the problem of a download of an export without an archive.
 	ProblemTypeExportNotReady = "/api/v1/problems/export-not-ready"
+	// ProblemTypeEmailAlreadyVerified is the problem of a request for a verification email for
+	// an address that is verified and receives email.
+	ProblemTypeEmailAlreadyVerified = "/api/v1/problems/email-already-verified"
 )
 
 var (
@@ -46,6 +49,42 @@ type OwnAccount interface {
 	ChangePassword(ctx context.Context, in appidentity.ChangePasswordInput) error
 	RemovePassword(ctx context.Context, in appidentity.RemovePasswordInput) error
 	DeleteOwnAccount(ctx context.Context, userID string, c appidentity.Confirmation) error
+}
+
+// VerificationEmails sends the viewer a new verification email; *appidentity.Service implements
+// it.
+type VerificationEmails interface {
+	ResendVerificationEmail(ctx context.Context, userID string) error
+}
+
+// ResendVerificationEmail serves POST /api/v1/accounts/email/verification. The use case queues
+// the email through the outbox and bounds the requests of each user (ADR-0086).
+func (s *Server) ResendVerificationEmail(ctx context.Context, _ ResendVerificationEmailRequestObject) (ResendVerificationEmailResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.VerificationEmails == nil || !s.o.SendsEmail {
+		return ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	err = s.o.VerificationEmails.ResendVerificationEmail(ctx, v.UserID)
+	l := s.Localizer(ctx)
+	var limited *kernel.RateLimitedError
+	switch {
+	case errors.As(err, &limited):
+		retry := seconds(limited.RetryAfter)
+		p := s.problem(ctx, http.StatusTooManyRequests, ProblemTypeBlank, l.ServerErrorsRateLimited(), l.ServerErrorsRateLimitedDetail(retry))
+		p.Headers.RetryAfter = &retry
+		return ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse(p), nil
+	case errors.Is(err, appidentity.ErrAlreadyVerified):
+		return ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse(
+			s.problem(ctx, http.StatusConflict, ProblemTypeEmailAlreadyVerified, l.ServerErrorsEmailAlreadyVerified(), "")), nil
+	case errors.Is(err, appidentity.ErrNotFound):
+		return ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: send user %s a verification email: %w", v.UserID, err)
+	}
+	return ResendVerificationEmail202Response{}, nil
 }
 
 // GetPasswordStatus serves GET /api/v1/accounts/password.

@@ -43,6 +43,10 @@
     "defaultMessage": "The request conflicts with the current state of the resource.",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
+  "errors.email.already_verified": {
+    "defaultMessage": "The email address is already verified.",
+    "description": "Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email."
+  },
   "errors.email.not_suppressed": {
     "defaultMessage": "The email address is not suppressed.",
     "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
