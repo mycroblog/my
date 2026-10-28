@@ -681,7 +681,7 @@
   },
   "settings.theme.label": {
     "defaultMessage": "テーマ",
-    "description": "Label of the radio group that chooses the app's color theme, on the preferences page and in the navigation menu's sheet."
+    "description": "Label of the radio group that chooses the app's color theme, on the preferences page."
   },
   "settings.theme.light": {
     "defaultMessage": "ライト",

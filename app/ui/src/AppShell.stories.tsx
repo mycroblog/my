@@ -174,9 +174,6 @@ function SampleNav({
           <AppNavMenuLink href="#moderation" icon={<ModerationIcon />} label="Moderation" badge={pending} separated />
           <AppNavMenuLink href="#admin" icon={<AdminIcon />} label="Administration" />
         </AppNavMenuList>
-        <AppNavMenuSection separator="4">
-          <Hint>The color theme switch goes here.</Hint>
-        </AppNavMenuSection>
         <AppNavMenuSection separator="3">
           <ServerNameLink name={serverName} description="The server's top page" />
         </AppNavMenuSection>

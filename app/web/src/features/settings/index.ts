@@ -23,7 +23,6 @@ export { instanceQueryOptions } from "./api/me";
 export { NotificationSettings } from "./components/NotificationSettings";
 export { ProfileForm } from "./components/ProfileForm";
 export { SettingsMenu } from "./components/SettingsMenu";
-export { ThemeRadioGroup } from "./components/ThemeRadioGroup";
 // The navigation's items as the user arranges them on this browser, which the app's navigation follows.
 export { navigationEntryIcons } from "./components/navigationEntryIcons";
 export {

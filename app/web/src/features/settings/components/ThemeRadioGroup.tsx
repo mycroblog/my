@@ -9,23 +9,17 @@ const labels: Record<Theme, ClientMessageKey> = {
   dark: "client:settings.theme.dark",
 };
 
-export type ThemeRadioGroupProps = {
-  /** The preferences page stacks the options with the group's description; the menu's sheet lays them out in a row. */
-  layout?: "page" | "sheet";
-};
-
 /**
  * The color theme: the OS setting, light or dark (a radio group, WAI-ARIA APG: the arrow keys move and check).
  * A choice applies at once and is kept on this browser (lib/theme), so it needs no saving and no sign-in.
  */
-export function ThemeRadioGroup({ layout = "page" }: ThemeRadioGroupProps) {
+export function ThemeRadioGroup() {
   const t = useT();
   const theme = useTheme();
   return (
     <RadioGroup
       label={t("client:settings.theme.label")}
-      {...(layout === "page" && { description: t("client:settings.theme.description") })}
-      orientation={layout === "page" ? "vertical" : "horizontal"}
+      description={t("client:settings.theme.description")}
       value={theme}
       onChange={(value) => {
         const chosen = themes.find((candidate) => candidate === value);
