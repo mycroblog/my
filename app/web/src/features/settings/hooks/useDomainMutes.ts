@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The domains the user mutes (FR-304): the list, muting a domain with a form, and unmuting one from its row. The server
 // keeps a domain in IDNA A-labels; the screen shows it with the U-labels it stands for (lib/idn).
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -56,7 +56,7 @@ export function useUnmuteDomain(): UnmuteDomain {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const unmute = useMutation({
     ...unmuteDomainMutation(api),
     onSuccess: async () => {
@@ -70,10 +70,10 @@ export function useUnmuteDomain(): UnmuteDomain {
         onSuccess: () => {
           removeDomainMute(queryClient, api, domain);
           onDone();
-          announce(t("client:settings.domain_mutes.unmuted", { domain: domainInText(domain) }));
+          notice.inPlace(t("client:settings.domain_mutes.unmuted", { domain: domainInText(domain) }));
         },
         onError: (error) => {
-          announce(errorMessage(error), "assertive");
+          notice.inPlace(errorMessage(error), "assertive");
         },
       });
     },

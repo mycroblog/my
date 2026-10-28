@@ -2,7 +2,7 @@
 // The user's passkeys (FR-004): the list, the form that registers one (its name and the password that confirms it, or
 // for a user without a password another passkey, then the browser's prompt), and removing one from its row. A wrong
 // password is the password field's error; any other failure an alert next to the form (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -155,7 +155,7 @@ export function useRemovePasskey(): RemovePasskey {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const remove = useMutation({
     ...removePasskeyMutation(api),
     onSuccess: async () => {
@@ -172,7 +172,7 @@ export function useRemovePasskey(): RemovePasskey {
       remove.mutate(passkey.id, {
         onSuccess: () => {
           onDone();
-          announce(t("client:settings.passkeys.removed", { name: passkey.name }));
+          notice.inPlace(t("client:settings.passkeys.removed", { name: passkey.name }));
         },
       });
     },

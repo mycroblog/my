@@ -37,8 +37,8 @@ export type MiniPlayerProps = {
   title: ReactNode;
   /** Who is talking ("Haruka is talking"), or the call's state while it is not connected ("Reconnecting…"). */
   status?: ReactNode;
-  /** The controls: `CallDockButton`s with `size="sm"` (the microphone, leaving). */
-  children: ReactNode;
+  /** The controls: `CallDockButton`s with `size="sm"` (the microphone, leaving); none once the call has ended. */
+  children?: ReactNode;
   /** What failed (the microphone, leaving), on a row of its own; nothing for none. */
   notice?: ReactNode;
 };
@@ -56,7 +56,7 @@ export function MiniPlayer({ label, avatars, title, status, children, notice }: 
         <div className={slots.title()}>{title}</div>
         {status !== undefined && status !== null && <div className={slots.status()}>{status}</div>}
       </div>
-      <div className={slots.actions()}>{children}</div>
+      {children !== undefined && children !== null && <div className={slots.actions()}>{children}</div>}
       {notice !== undefined && notice !== null && notice !== false && <div className={slots.notice()}>{notice}</div>}
     </section>
   );

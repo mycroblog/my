@@ -51,3 +51,4 @@ L3 のうち、今ある検査は次のとおり。
   1 つのまとまりの項目は 7 個までにする（ADR-0110 §5・§6）。`@my/ui/testing` の `watchNavMenus` が、`app/web` の各テストの描いた `NavMenu` を見て、
   アイコンのない項目か 8 個以上の項目を持つまとまりがあればそのテストを失敗させる。機能の部品が `RailItem` で項目を並べることは、`restrict/pattern` が禁じる。
   アプリのナビゲーション（レールとメニューのシート）は、運営の領域（モデレーション・管理）の前に線を引き、利用者の項目と分ける。
+- **読み上げだけの結果**: 機能のフックと部品は `useAnnouncer` を呼ばず、結果の見える置き場を言う `@my/ui` の `useNotice`（`inPlace` か `toast`）を使う（Oxlint の `restrict/feature`、§16 の G25）。すぐ保存する操作は `AutosaveControl` の必須の `state` で保存の状態を受け取る（G24）。

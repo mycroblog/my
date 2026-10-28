@@ -3,7 +3,7 @@
 // the final confirmation and the way to the provider's hosted checkout, the return from it, the user's subscription
 // with changing the plan, cancelling, resuming and withdrawing a scheduled change, and the provider's portal. The Tauri
 // app shows none of it (§14).
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi, useLeaveApp } from "../../../lib/auth/SessionProvider";
@@ -188,7 +188,7 @@ export function useSubscriptionCommands() {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...subscriptionCommandMutation(api),
@@ -196,7 +196,7 @@ export function useSubscriptionCommands() {
       await cacheSubscription(api, queryClient, subscription);
       const message = t(commandDone[command.kind]);
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
     },
   });
   return {

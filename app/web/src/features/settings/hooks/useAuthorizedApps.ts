@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The apps the user authorized (ADR-0090 §5): the list and revoking one. Revoking the server's own web client ends
 // the session of every browser, this one included: the app then signs out here and opens the sign-in page.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useApi, useSession } from "../../../lib/auth/SessionProvider";
@@ -42,7 +42,7 @@ export function useRevokeApp(): RevokeApp {
   const navigate = useNavigate();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const revoke = useMutation({
     mutationKey: revokeAuthorizedAppMutation(api).mutationKey,
     mutationFn: async (app: AuthorizedApp) => {
@@ -70,7 +70,7 @@ export function useRevokeApp(): RevokeApp {
       revoke.mutate(app, {
         onSuccess: () => {
           onDone();
-          announce(t("client:settings.authorized_apps.revoked", { name: app.name }));
+          notice.inPlace(t("client:settings.authorized_apps.revoked", { name: app.name }));
         },
       });
     },

@@ -207,6 +207,7 @@ ruleTester.run("restrict/feature (a feature's hooks and components)", restrict.r
     },
     { code: "const job = queryClient.getQueryData(key);", options: feature },
     { code: "const last = queryClient.isMutating({ mutationKey }) <= 1;", options: feature },
+    { code: "const notice = useNotice(); notice.inPlace(t('client:shell.save.saved'));", options: feature },
   ],
   invalid: [
     // S1
@@ -214,6 +215,8 @@ ruleTester.run("restrict/feature (a feature's hooks and components)", restrict.r
     { ...fails("void queryClient.invalidateQueries({ queryKey });"), options: feature },
     { ...fails("client.setQueriesData({ predicate }, update);"), options: feature },
     { ...fails("queryClient.removeQueries({ queryKey, exact: true });"), options: feature },
+    // G25
+    { ...fails("const announce = useAnnouncer();"), options: feature },
   ],
 });
 

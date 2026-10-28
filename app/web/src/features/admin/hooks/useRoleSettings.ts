@@ -3,7 +3,7 @@
 // role, changing its position and permissions, giving it a badge (ADR-0071), and deleting it. The viewer changes only
 // the roles at or below their highest one and only the permissions their roles grant; admin changes only its badge,
 // and neither built-in role is deleted. A refused input stays next to its field; what a change did is announced and kept in a StatusMessage.
-import { type BadgeColor, useAnnouncer } from "@my/ui";
+import { type BadgeColor, useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -165,7 +165,7 @@ export function useNewRoleForm(rights: RoleRights) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [draft, setDraft] = useState<RoleDraft>(emptyDraft);
   const [invalid, setInvalid] = useState<RoleFieldError | undefined>(undefined);
   const [status, setStatus] = useState<string | undefined>(undefined);
@@ -179,7 +179,7 @@ export function useNewRoleForm(rights: RoleRights) {
       setDraft(emptyDraft);
       const message = t("client:admin.roles.created", { role: isolatedRoleKey(role.key) });
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
     },
   });
   return {
@@ -252,13 +252,13 @@ export function useRoleActions(rights: RoleRights, onDeleted: (id: string) => vo
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const update = useMutation(updateRoleMutation(api));
   const remove = useMutation(deleteRoleMutation(api));
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   return {
     update: async (role, draft) => {

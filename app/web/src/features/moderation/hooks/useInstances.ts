@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The health of remote servers (federation.md §7.3): the list under a state filter, and one server's health
 // with the history of its availability and marking it available again.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -39,7 +39,7 @@ export function useInstance(domain: string): InstanceView {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const toast = useToast();
   const health = useSuspenseQuery(instanceQueryOptions(api, domain));
   const events = useSuspenseInfiniteQuery(availabilityEventsQueryOptions(api, domain));
@@ -49,7 +49,7 @@ export function useInstance(domain: string): InstanceView {
       // The lists show the server's state: it is marked available once they are fetched again (the button stays
       // pending until then), so that going back to a list shows the server as it is now (cacheMarkedAvailable).
       await cacheMarkedAvailable(api, queryClient, domain, next);
-      announce(t("client:admin.instance.marked_available", { domain }));
+      notice.inPlace(t("client:admin.instance.marked_available", { domain }));
     },
     // The server keeps its state; the failure is shown and the button stays (web-client/README.md E2).
     onError: (error) => {

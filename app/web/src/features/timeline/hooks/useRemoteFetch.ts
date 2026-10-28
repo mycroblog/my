@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -21,21 +21,21 @@ export function useRemoteFetch(accountId: string, filter: AccountTimelineFilter)
   const api = useApi();
   const queryClient = useQueryClient();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const { data } = useSuspenseInfiniteQuery(timelineQueryOptions(api, { kind: "account", id: accountId, filter }));
   const fetching = remoteFetchStarted(data);
   const message = t("client:profile.remote.fetching");
 
   useEffect(() => {
     if (!fetching) return;
-    announce(message, "polite");
+    notice.inPlace(message, "polite");
     const timer = setTimeout(() => {
       void rereadRemoteAccountPosts(queryClient, api, { kind: "account", id: accountId, filter });
     }, remoteFetchRereadDelay);
     return () => {
       clearTimeout(timer);
     };
-  }, [fetching, message, announce, queryClient, api, accountId, filter]);
+  }, [fetching, message, notice, queryClient, api, accountId, filter]);
 
   return fetching;
 }

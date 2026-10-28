@@ -263,12 +263,18 @@ describe("a listener in the call", () => {
     expect(mic).toHaveAttribute("aria-pressed", "true");
 
     srv.send("muted", { by: otherAccountFixture.id });
-    expect(await screen.findByText("A host turned off your microphone. You can turn it on again.")).toBeInTheDocument();
+    // Shown on the dock, not only read out, until it is dismissed.
+    const muted = await screen.findByText("A host turned off your microphone. You can turn it on again.", {
+      selector: "[data-change-notice] p",
+    });
+    expect(muted).toBeVisible();
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Microphone" })).toHaveAttribute("aria-pressed", "false");
     });
     // The server turned it off for everyone: the app does not tell it again.
     expect(srv.sent(`/voice/rooms/${roomId}/mic`)).toEqual([{ session: "s1", on: true }]);
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(muted).not.toBeInTheDocument();
   });
 
   test("turns the microphone on right after speaking, before the next state", async () => {
@@ -392,6 +398,30 @@ describe("the call across pages", () => {
     expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(
       true,
     );
+  });
+});
+
+describe("the end of the call on another page", () => {
+  test("the room ending while the user is elsewhere leaves a card in the mini-player's place, which says how", async () => {
+    const { room, joined, live } = bobsRoom();
+    const srv = serve(room, joined);
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+    srv.send("state", live);
+    await user.click(screen.getByRole("link", { name: "Home" }));
+    await screen.findByRole("region", { name: "Voice chat call" });
+
+    srv.send("ended", { reason: "host" });
+
+    const card = await screen.findByRole("region", { name: "Voice chat call" });
+    expect(await within(card).findByText("The room ended: The host ended it")).toBeVisible();
+    expect(within(card).queryByRole("button", { name: "Leave" })).not.toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Friday night radio" })).toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: "Voice chat call" })).not.toBeInTheDocument();
+    });
   });
 });
 

@@ -2,7 +2,7 @@
 // The requests tab of the custom emoji screen (ADR-0070 §2, §9, manage_custom_emojis): the requests in one state,
 // the number of the pending ones for the tab, and approving or rejecting one. What a decision did is announced and
 // kept in a StatusMessage; a failure stays next to its cause.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useInfiniteQuery, useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -63,7 +63,7 @@ export function useCustomEmojiRequestActions(onDecided: (id: string) => void): C
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const approve = useMutation(approveCustomEmojiRequestMutation(api));
   const reject = useMutation(rejectCustomEmojiRequestMutation(api));
@@ -71,7 +71,7 @@ export function useCustomEmojiRequestActions(onDecided: (id: string) => void): C
     onDecided(request.id);
     await cacheDecidedCustomEmojiRequest(queryClient, request);
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const failed = [approve, reject].find((mutation) => mutation.isError);
   return {

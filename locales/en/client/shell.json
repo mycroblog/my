@@ -210,5 +210,21 @@
   "shell.update.available": {
     "defaultMessage": "A new version of the app is available.",
     "description": "Message shown when a new version of the web app has been downloaded and waits until the user applies it."
+  },
+  "shell.save.saving": {
+    "defaultMessage": "Saving…",
+    "description": "Shown next to a setting that saves as soon as it changes, while its change is being saved."
+  },
+  "shell.save.saved": {
+    "defaultMessage": "Saved",
+    "description": "Shown next to a setting that saves as soon as it changes, once its change is saved."
+  },
+  "shell.save.failed": {
+    "defaultMessage": "Not saved",
+    "description": "Shown next to a setting that saves as soon as it changes, when its change could not be saved; the setting shows why under it."
+  },
+  "shell.notice.dismiss": {
+    "defaultMessage": "Dismiss",
+    "description": "Name and tooltip of the button that closes a notice of a change made elsewhere, such as the host turning the microphone off in a voice chat call."
   }
 }

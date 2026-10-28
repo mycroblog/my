@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Hint, RoleBadge, Section, Stack, Switch } from "@my/ui";
+import { AutosaveControl, Hint, RoleBadge, Section, Stack, Switch } from "@my/ui";
 import { useT } from "../../../lib/i18n";
+import { useSaveLabels } from "../hooks/saveState";
 import { type BadgeSwitch, useBadgeChoices } from "../hooks/useBadgeChoices";
 
 /**
@@ -27,20 +28,23 @@ export function BadgeSettings() {
 
 function BadgeSwitches({ badges }: { badges: readonly BadgeSwitch[] }) {
   const t = useT();
+  const labels = useSaveLabels();
   return (
     <Stack as="ul" gap="3">
       {badges.map((badge) => (
         <li key={badge.roleId}>
-          <Switch
-            isSelected={badge.displayed}
-            onChange={badge.onChange}
-            {...(badge.error !== undefined && {
-              isInvalid: true,
-              errorMessage: t("client:settings.profile.badges.failed", { reason: badge.error }),
-            })}
-          >
-            <RoleBadge label={badge.label} color={badge.color} />
-          </Switch>
+          <AutosaveControl state={badge.saveState} labels={labels}>
+            <Switch
+              isSelected={badge.displayed}
+              onChange={badge.onChange}
+              {...(badge.error !== undefined && {
+                isInvalid: true,
+                errorMessage: t("client:settings.profile.badges.failed", { reason: badge.error }),
+              })}
+            >
+              <RoleBadge label={badge.label} color={badge.color} />
+            </Switch>
+          </AutosaveControl>
         </li>
       ))}
     </Stack>

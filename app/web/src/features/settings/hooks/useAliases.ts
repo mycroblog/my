@@ -2,7 +2,7 @@
 // The user's aliases (FR-009, ADR-0089): the list, adding an alias with a form, and removing one from its row. Both
 // changes answer the whole list, which replaces the cached one. Removing is undone as easily as it is done, so it
 // asks nothing; it is announced, and focus moves to the next row.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -41,7 +41,7 @@ export function useRemoveAlias(): RemoveAlias {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const remove = useMutation(removeAliasMutation(api));
   return {
     pendingUri: remove.isPending ? remove.variables : undefined,
@@ -50,10 +50,10 @@ export function useRemoveAlias(): RemoveAlias {
         onSuccess: (list) => {
           cacheAliases(api, queryClient, list);
           onDone();
-          announce(t("client:account_move.aliases.removed", { name: isolate(aliasName(alias)) }));
+          notice.inPlace(t("client:account_move.aliases.removed", { name: isolate(aliasName(alias)) }));
         },
         onError: (error) => {
-          announce(t("client:account_move.aliases.remove_failed", { reason: errorMessage(error) }), "assertive");
+          notice.inPlace(t("client:account_move.aliases.remove_failed", { reason: errorMessage(error) }), "assertive");
         },
       });
     },

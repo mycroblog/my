@@ -2,7 +2,7 @@
 // The relays of the admin screens (ADR-0061, manage_settings): the list, registering and joining one, leaving it,
 // joining it again and deleting its registration. What each change did is announced and kept in a StatusMessage;
 // a refusal is said in the client's words for its reason, next to the field or the list.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -140,12 +140,12 @@ export function useRelayActions(onDeleted: (id: string) => void): RelayActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const refusal = useRefusal();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const membership = useMutation(setRelayMembershipMutation(api));
   const remove = useMutation(deleteRelayMutation(api));

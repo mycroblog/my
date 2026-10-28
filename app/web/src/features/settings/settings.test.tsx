@@ -74,6 +74,16 @@ function preferencesServer(initial: Partial<Preferences> = {}) {
   };
 }
 
+/**
+ * The save mark comes right after the switch "Ask me for a description of every attachment", before the next control
+ * (the timeline languages), in the reading order.
+ */
+function expectBeside(control: HTMLElement, mark: HTMLElement) {
+  const next = screen.getByRole("group", { name: "Languages of your timelines" });
+  expect(control.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(mark.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+}
+
 describe("preferences", () => {
   test("switching the display language saves it and displays the app in it at once", async () => {
     const prefs = preferencesServer();
@@ -123,6 +133,51 @@ describe("preferences", () => {
     });
     expect(within(languages).getByRole("checkbox", { name: "German" })).toBeChecked();
     expect((await screen.findAllByText("Saved")).length).toBeGreaterThan(0);
+  });
+
+  test("a preference shows that it is saving right after the change, and then that it is saved, beside it", async () => {
+    const prefs = preferencesServer();
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    server.use(
+      http.patch(
+        `${apiBase}/preferences`,
+        async () => {
+          await answered;
+        },
+        { once: true },
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const control = await screen.findByRole("switch", { name: /Ask me for a description of every attachment/ });
+
+    await user.click(control);
+    const saving = screen.getByText("Saving…");
+    expect(saving).toBeVisible();
+    expectBeside(control, saving);
+    answer();
+
+    const saved = await screen.findByText("Saved", { selector: "[data-autosave] span" });
+    expectBeside(control, saved);
+    expect(prefs.changes).toEqual([{ require_media_description: true }]);
+  });
+
+  test("a preference that was not saved says so beside it", async () => {
+    preferencesServer();
+    server.use(
+      http.patch(`${apiBase}/preferences`, () => problem(422, "about:blank", "The preference could not be saved."), {
+        once: true,
+      }),
+    );
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const control = await screen.findByRole("switch", { name: /Ask me for a description of every attachment/ });
+
+    await user.click(control);
+
+    expectBeside(control, await screen.findByText("Not saved"));
+    expect(control).not.toBeChecked();
   });
 
   test("the default post language is saved and the post form starts in it", async () => {

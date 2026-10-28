@@ -2,7 +2,7 @@
 // The queue dashboard (ADR-0064): the state of the job queue, its jobs under a state filter, the records of a job's
 // runs that did not succeed, and running dead jobs again. A job that is enqueued again leaves the dead jobs on the
 // server, so it leaves the cached pages at once.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import {
   useInfiniteQuery,
   useMutation,
@@ -95,7 +95,7 @@ export function useRetryJob(onRetried: (id: string) => void): RetryJob {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const toast = useToast();
   const options = retryJobMutation(api);
   const mutation = useMutation({
@@ -103,7 +103,7 @@ export function useRetryJob(onRetried: (id: string) => void): RetryJob {
     onSuccess: (_, id) => {
       onRetried(id);
       const job = cacheRetriedJob(api, queryClient, id);
-      announce(t("client:admin.jobs.retried", { type: job?.type ?? id }));
+      notice.inPlace(t("client:admin.jobs.retried", { type: job?.type ?? id }));
     },
     // The job stays a dead job, and its row and focus stay (web-client/README.md E2).
     onError: (error) => {

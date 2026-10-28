@@ -14,7 +14,7 @@ import { Route as IndexRoute } from "../../../routes/index"; // expect: boundari
 import { client } from "../../../lib/api/client"; // expect: eslint(no-restricted-imports) S1
 import { createClient } from "@mycroblog/mykit"; // expect: eslint(no-restricted-imports) S1
 import type { components } from "@mycroblog/mykit";
-import { Button, Heading, MoreIcon, Stack } from "@my/ui";
+import { Button, Heading, MoreIcon, Stack, useAnnouncer } from "@my/ui";
 
 let renders = 0;
 const CountContext = createContext(0);
@@ -129,6 +129,14 @@ export function useStatus(id: components["schemas"]["Status"]["id"]) {
   void client;
   void createClient;
   return useQuery({ queryKey: ["status"], queryFn: () => id }); // expect: @tanstack/query(exhaustive-deps) @tanstack/query(prefer-query-options)
+}
+
+// G25
+export function useSaved() {
+  const announce = useAnnouncer(); // expect: restrict(feature)
+  return () => {
+    announce("Saved");
+  };
 }
 
 // S11

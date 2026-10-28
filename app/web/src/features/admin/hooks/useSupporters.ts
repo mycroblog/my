@@ -4,7 +4,7 @@
 // provider with reconciling with it now (ADR-0074 §4, at most once an hour). The server keeps every
 // rule (the plan's role, the order of the plans, the provider's minimum amount); a refusal is said in the server's
 // words next to the field it is about, and what a change did is announced and kept in a StatusMessage.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -51,7 +51,7 @@ export function useSupporterProgram() {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const program = useSuspenseQuery(supporterProgramQueryOptions(api)).data;
   const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
@@ -67,7 +67,7 @@ export function useSupporterProgram() {
           : "client:admin.supporters.program.disabled_done",
       );
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
     },
   });
   return {
@@ -101,7 +101,7 @@ export function useRunPaymentReconcile() {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [result, setResult] = useState<{ status: string } | { error: string } | undefined>(undefined);
   const mutation = useMutation({
     ...runPaymentReconcileMutation(api),
@@ -112,7 +112,7 @@ export function useRunPaymentReconcile() {
       await refreshPaymentStatus(queryClient);
       const message = t("client:admin.supporters.payment.reconcile.queued");
       setResult({ status: message });
-      announce(message);
+      notice.inPlace(message);
     },
     onError: (failure) => {
       const tooSoon = failure instanceof ApiError && failure.status === 429;
@@ -280,7 +280,7 @@ export function useNewPlanForm() {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [draft, setDraft] = useState<PlanDraft>(emptyDraft);
   const [invalid, setInvalid] = useState<PlanFieldError | undefined>(undefined);
   const [status, setStatus] = useState<string | undefined>(undefined);
@@ -294,7 +294,7 @@ export function useNewPlanForm() {
       setDraft((current) => ({ ...emptyDraft, currency: current.currency }));
       const message = t("client:admin.supporters.plan.created", { name: planName(plan) });
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
     },
   });
   return {
@@ -366,13 +366,13 @@ export function usePlanActions(): PlanActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const update = useMutation(updateSupporterPlanMutation(api));
   const retire = useMutation(retireSupporterPlanMutation(api));
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   return {
     update: async (plan, draft) => {
@@ -427,7 +427,7 @@ export function useSubscriptionActions(): SubscriptionActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const cancel = useMutation(cancelSupporterSubscriptionMutation(api));
   return {
@@ -444,7 +444,7 @@ export function useSubscriptionActions(): SubscriptionActions {
         plan: planName({ name: subscription.plan_name }),
       });
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
       return true;
     },
     error: cancel.isError ? errorMessage(cancel.error) : undefined,

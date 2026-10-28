@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The parts of a call that the room's page and the mini-player share (ADR-0100 §5, §6; ADR-0101 §7): the call's
 // state in a few words, who is talking, the mini-player's microphone toggle, what failed (why the browser refused the
-// microphone, leaving), the button that plays the sound the browser blocked, and leaving, which asks the host of a
-// room with others in it for the next host or the end of the room.
+// microphone, leaving), the button that plays the sound the browser blocked, leaving, which asks the host of a
+// room with others in it for the next host or the end of the room, and the notice of what others changed for the user.
 import {
   Button,
   CallDockButton,
+  ChangeNotice,
   ConfirmDialog,
   InlineError,
   LeaveIcon,
@@ -219,5 +220,24 @@ function HostLeaveDialog({
         <Radio value="end">{t("client:voice.call.host_leave.end")}</Radio>
       </RadioGroup>
     </ConfirmDialog>
+  );
+}
+
+/**
+ * The last change that others made to the user in the call ("The host turned your microphone off"), seen where the
+ * call's controls are, with a button that dismisses it (web-client/16-look-states-and-wording.md G25); null for none.
+ */
+export function CallNotice({ controls }: { controls: VoiceCallControls }) {
+  const t = useT();
+  if (controls.notice === undefined) return null;
+  return (
+    // A new notice enters again, also with the same words.
+    <ChangeNotice
+      key={controls.notice.id}
+      dismissLabel={t("client:shell.notice.dismiss")}
+      onDismiss={controls.dismissNotice}
+    >
+      {controls.notice.text}
+    </ChangeNotice>
   );
 }

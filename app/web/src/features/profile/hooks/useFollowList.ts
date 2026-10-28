@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -31,14 +31,14 @@ export type FollowListState = {
 export function useFollowList(id: string, list: FollowList): FollowListState {
   const api = useApi();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const query = useSuspenseInfiniteQuery(followListQueryOptions(api, id, list));
 
   const loadMore = () => {
     if (!query.hasNextPage || query.isFetchingNextPage) return;
     void query.fetchNextPage().then((result) => {
       if (result.isFetchNextPageError) {
-        announce(t("client:profile.list.load_more_failed", { reason: errorMessage(result.error) }), "assertive");
+        notice.inPlace(t("client:profile.list.load_more_failed", { reason: errorMessage(result.error) }), "assertive");
       }
     });
   };

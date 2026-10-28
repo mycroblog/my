@@ -5,15 +5,17 @@
 // link back to its page over who is talking (or the call's state while it is not connected), the microphone of a
 // speaker, the button that plays the sound the browser blocked, and leaving (with the host's choice), with what
 // failed under them. It is a region named "Voice chat call", after the page's content in the focus order.
-import { Link, MiniPlayer, type MiniPlayerAvatar, ShellDock } from "@my/ui";
+import { ChangeNotice, Link, MiniPlayer, type MiniPlayerAvatar, ShellDock, Stack } from "@my/ui";
+import { useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { voiceRoomPath } from "../api/voice";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
-import { useVoiceCallBar } from "../hooks/useVoiceCallControls";
-import { participantName } from "../hooks/voiceCall";
+import { useVoiceCallBar, useVoiceCallEndNotice } from "../hooks/useVoiceCallControls";
+import { participantName, type VoiceCall } from "../hooks/voiceCall";
 import {
   CallErrors,
+  CallNotice,
   callStatusText,
   hasCallErrors,
   LeaveCallButton,
@@ -42,7 +44,39 @@ function speakerAvatars(controls: VoiceCallControls): MiniPlayerAvatar[] {
 export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
   const t = useT();
   const controls = useVoiceCallBar();
-  if (controls === null) return null;
+  const ended = useVoiceCallEndNotice();
+  // The call whose end the user dismissed: its notice does not come back.
+  const [dismissed, setDismissed] = useState<VoiceCall | null>(null);
+  if (controls === null) {
+    if (ended === null || ended.call === dismissed) return null;
+    // The call ended without the user leaving it: a card stays in the mini-player's place to say how, with the room's
+    // name as the way back to it, until it is dismissed.
+    return (
+      <ShellDock clearsTabBar={clearsTabBar}>
+        <MiniPlayer
+          label={t("client:voice.bar.label")}
+          avatars={[]}
+          title={
+            <Link href={voiceRoomPath(ended.room.id)} variant="standalone">
+              <span dir="auto">{ended.room.name}</span>
+            </Link>
+          }
+          notice={
+            <ChangeNotice
+              tone="warning"
+              dismissLabel={t("client:shell.notice.dismiss")}
+              onDismiss={() => {
+                setDismissed(ended.call);
+              }}
+            >
+              {ended.text}
+            </ChangeNotice>
+          }
+        />
+      </ShellDock>
+    );
+  }
+  const errors = hasCallErrors(controls);
   return (
     <ShellDock clearsTabBar={clearsTabBar}>
       <MiniPlayer
@@ -54,7 +88,14 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
           </Link>
         }
         status={<span dir="auto">{callStatusText(t, controls)}</span>}
-        notice={hasCallErrors(controls) ? <CallErrors controls={controls} /> : undefined}
+        notice={
+          controls.notice !== undefined || errors ? (
+            <Stack gap="2">
+              <CallNotice controls={controls} />
+              {errors && <CallErrors controls={controls} />}
+            </Stack>
+          ) : undefined
+        }
       >
         <PlaybackButton controls={controls} size="sm" />
         <MicrophoneControl controls={controls} />

@@ -2,7 +2,7 @@
 // The custom emoji of the admin screen (ADR-0051, manage_custom_emojis): the list under a filter, registering a local
 // emoji with an image file, changing its settings, replacing its image, deleting it, and enabling, disabling or
 // copying a remote one. What each change did is announced and kept in a StatusMessage; a failure stays next to its cause.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -140,11 +140,11 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const update = useMutation(updateCustomEmojiMutation(api));
   const replace = useMutation(replaceCustomEmojiImageMutation(api));

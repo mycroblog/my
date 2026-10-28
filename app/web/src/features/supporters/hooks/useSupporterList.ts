@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The supporter list (ADR-0071 §4): the members who chose to be listed, by plan, a page at a time; the user's own
 // choice to be on it; and the plans and the list that the information page links to.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
@@ -117,7 +117,7 @@ export function useSupporterListing(): SupporterListing | undefined {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const published = instance.data !== undefined && instance.data.supporter_list_visibility !== "off";
   const listing = useQuery({
@@ -130,7 +130,7 @@ export function useSupporterListing(): SupporterListing | undefined {
     ...updateListingMutation(api),
     onSuccess: async (saved) => {
       await cacheListing(api, queryClient, saved);
-      announce(t(saved.listed ? "client:supporter.listing.listed" : "client:supporter.listing.unlisted"));
+      notice.inPlace(t(saved.listed ? "client:supporter.listing.listed" : "client:supporter.listing.unlisted"));
     },
   });
   if (!published || listing.data === undefined) return undefined;

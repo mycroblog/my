@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { type SaveState, useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
+import { saveStateOf } from "./saveState";
 import { cacheSavedPreferences, type Preferences, preferencesQueryOptions, updatePreferencesMutation } from "../api/me";
 
 /** The preferences that the settings page changes, by their API name. */
@@ -25,6 +26,8 @@ export type PreferenceControl<T> = {
   isPending: boolean;
   /** Why the last change was not saved, localized; undefined when it was. */
   error: string | undefined;
+  /** Where the last change is, for the mark next to the control (web-client/16-look-states-and-wording.md G24). */
+  saveState: SaveState;
 };
 
 export type PreferencesControls = {
@@ -64,14 +67,15 @@ function usePreferenceControl<K extends PreferenceKey>(
 ): PreferenceControl<Preferences[K]> {
   const api = useApi();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const t = useT();
   const mutation = useMutation({
     ...updatePreferencesMutation(api),
     onSuccess: async (preferences, change) => {
       // Saved once what the change shows elsewhere is in the cache (the control stays pending until then).
       await cacheSavedPreferences(api, queryClient, preferences, change);
-      announce(t("client:settings.saved"));
+      // The control's save mark shows it.
+      notice.inPlace(t("client:settings.saved"));
     },
   });
   const pending = mutation.isPending ? mutation.variables[key] : undefined;
@@ -82,5 +86,6 @@ function usePreferenceControl<K extends PreferenceKey>(
     },
     isPending: mutation.isPending,
     error: mutation.isError ? errorMessage(mutation.error) : undefined,
+    saveState: saveStateOf(mutation),
   };
 }

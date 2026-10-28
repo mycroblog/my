@@ -259,6 +259,40 @@ describe("the table", () => {
     expect((await screen.findAllByText("Saved")).length).toBeGreaterThan(0);
   });
 
+  test("a cell shows that it is saving right after the press, and then that it is saved, in its cell", async () => {
+    settingsServer();
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    server.use(
+      http.patch(
+        `${apiBase}/preferences/notifications`,
+        async () => {
+          await answered;
+        },
+        { once: true },
+      ),
+    );
+    const { user } = await openSettings();
+    const email = screen.getByRole("checkbox", { name: "Mentions: Email" });
+    const cellOf = (name: string) => {
+      const found = screen.getAllByRole("cell").find((c) => within(c).queryByRole("checkbox", { name }) !== null);
+      if (found === undefined) throw new Error(`no cell has the checkbox ${name}`);
+      return found;
+    };
+    const cell = cellOf("Mentions: Email");
+
+    await user.click(email);
+    expect(within(cell).getByText("Saving…")).toBeInTheDocument();
+    answer();
+
+    expect(await within(cell).findByText("Saved")).toBeInTheDocument();
+    expect(within(cell).queryByText("Saving…")).not.toBeInTheDocument();
+    // The other cells show nothing.
+    expect(cellOf("Boosts: Email")).not.toHaveTextContent("Saved");
+  });
+
   test("checking a row's email saves it", async () => {
     const api = settingsServer();
     const { user } = await openSettings();

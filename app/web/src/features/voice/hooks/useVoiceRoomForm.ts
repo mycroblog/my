@@ -5,7 +5,7 @@
 // follows the name until the host edits it (回答 39); the server adds the room's link at its end. The other
 // visibilities have no post visibility to match, so the post is not offered for them. Opening a room joins the host
 // (ADR-0100 §5), so the host's call starts from the submit, without a join button.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type SyntheticEvent, useState } from "react";
@@ -128,7 +128,7 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
   const t = useT();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [draft, setDraft] = useState<VoiceRoomDraft>(() => draftOf(room));
   const [fieldError, setFieldError] = useState<VoiceRoomFieldError | undefined>(undefined);
   const call = useVoiceCallState();
@@ -149,7 +149,7 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
     ...updateVoiceRoomMutation(api, room?.id ?? ""),
     onSuccess: async (saved: VoiceRoom) => {
       await cacheVoiceRoom(api, queryClient, saved);
-      announce(t("client:voice.form.saved"));
+      notice.inPlace(t("client:voice.form.saved"));
       onDone();
     },
   });

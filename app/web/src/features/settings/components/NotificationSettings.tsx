@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
+  AutosaveControl,
   Button,
   Callout,
   Checkbox,
+  Cluster,
   Hint,
   InlineError,
+  SaveIndicator,
   Section,
   Stack,
   Switch,
@@ -20,6 +23,7 @@ import {
 import { useId } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
+import { useSaveLabels } from "../hooks/saveState";
 import type { Preferences } from "../api/me";
 import {
   type NotificationChannel,
@@ -76,6 +80,7 @@ function NotificationTable({
   describedBy: string;
 }) {
   const t = useT();
+  const labels = useSaveLabels();
   const headingId = useId();
   return (
     <Section title={t(section.label)} headingId={headingId}>
@@ -95,15 +100,19 @@ function NotificationTable({
                 return (
                   <TableCell key={channel}>
                     {cell !== undefined && (
-                      <Checkbox
-                        aria-label={t("client:settings.notifications.cell", {
-                          type: t(row.label),
-                          channel: t(notificationChannelLabels[channel]),
-                        })}
-                        isSelected={cell.selected}
-                        isDisabled={cell.disabled}
-                        onChange={cell.onChange}
-                      />
+                      // The save mark of the cell, beside its checkbox: its icon, with the words for assistive technology.
+                      <Cluster gap="1" align="center" wrap={false}>
+                        <Checkbox
+                          aria-label={t("client:settings.notifications.cell", {
+                            type: t(row.label),
+                            channel: t(notificationChannelLabels[channel]),
+                          })}
+                          isSelected={cell.selected}
+                          isDisabled={cell.disabled}
+                          onChange={cell.onChange}
+                        />
+                        <SaveIndicator state={cell.saveState} labels={labels} display="icon" />
+                      </Cluster>
                     )}
                   </TableCell>
                 );
@@ -122,6 +131,7 @@ function NotificationTable({
  */
 function PushNotifications({ push }: { push: NotificationSettingsView["push"] }) {
   const t = useT();
+  const labels = useSaveLabels();
   if (push.status === "hidden") return null;
   return (
     <Section title={t("client:settings.push.title")}>
@@ -129,14 +139,16 @@ function PushNotifications({ push }: { push: NotificationSettingsView["push"] })
       {push.status === "denied" && <Hint>{t("client:settings.push.denied")}</Hint>}
       {push.status === "available" && (
         <>
-          <Switch
-            isSelected={push.enabled}
-            onChange={push.setEnabled}
-            isDisabled={push.isPending}
-            description={t("client:settings.push.enable.description")}
-          >
-            {t("client:settings.push.enable")}
-          </Switch>
+          <AutosaveControl state={push.saveState} labels={labels}>
+            <Switch
+              isSelected={push.enabled}
+              onChange={push.setEnabled}
+              isDisabled={push.isPending}
+              description={t("client:settings.push.enable.description")}
+            >
+              {t("client:settings.push.enable")}
+            </Switch>
+          </AutosaveControl>
           {push.error !== undefined && <InlineError alert>{push.error}</InlineError>}
         </>
       )}
