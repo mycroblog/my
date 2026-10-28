@@ -127,7 +127,9 @@ export { VisuallyHidden, type VisuallyHiddenProps } from "./VisuallyHidden";
 export { BreakdownBar, type BreakdownBarProps, type BreakdownItem } from "./BreakdownBar";
 export { ProgressMeter, type ProgressMeterProps } from "./ProgressMeter";
 export { Sparkline, type SparklineProps } from "./Sparkline";
-export { StatTile, type StatTileChange, type StatTileProps } from "./StatTile";
+export { AgeBadge, type AgeBadgeProps, type AgeLevel } from "./AgeBadge";
+export { TriageLayout, type TriageLayoutProps } from "./TriageLayout";
+export { StatTile, type StatTileChange, StatTileGrid, type StatTileGridProps, type StatTileProps } from "./StatTile";
 export {
   TrendChart,
   type TrendChartLabels,
@@ -227,6 +229,8 @@ export {
   ClosureIcon,
   CustomEmojiIcon,
 } from "./Icons";
+// The icons of the states of a queue's items (StatusBadge, AgeBadge).
+export { AssignedIcon, LegalIcon, SpamIcon, UnassignedIcon, WaitingIcon } from "./Icons";
 export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
 export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
 

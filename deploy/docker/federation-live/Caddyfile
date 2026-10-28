@@ -55,6 +55,11 @@ https://misskey.test {
 	reverse_proxy misskey:3000
 }
 
+https://akkoma.test {
+	import site
+	reverse_proxy akkoma:4000
+}
+
 https://relay.test {
 	import site
 	reverse_proxy relay-server:8080

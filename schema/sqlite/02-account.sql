@@ -170,16 +170,19 @@ CREATE TABLE account_aliases (
   PRIMARY KEY (account_id, alias_uri)
 ) STRICT;
 
--- Projection: the words that the prefix search of accounts matches (ADR-0092 §1, FR-119, FR-306),
--- from the handles, the profile heads, the lifecycle states, and the suspensions of the
--- moderation module. A username row is the normalized username, and for a remote account also
--- username@domain; a display_name row is the display name under NFKC and lowercase without its
--- :shortcode:s, whole and word by word. Accounts that are not active, suspended, without a
+-- Projection: the words that the search of accounts matches by their start (ADR-0092 §1,
+-- FR-119, FR-306, FR-307), from the handles, the profile heads, the lifecycle states, and the
+-- suspensions of the moderation module. A username row is the normalized username, and for a
+-- remote account also username@domain; a display_name row is the display name under NFKC and
+-- lowercase without its :shortcode:s, whole and word by word; an infix row is a suffix of a
+-- discoverable local account's username or whole display name that starts after its first
+-- character. A local account that is not discoverable has only an exact_username row, its
+-- username, which the search matches only whole. Accounts that are not active, suspended, without a
 -- handle, or Application actors have no rows. term compares byte by byte (the default BINARY),
 -- so that the range term >= q AND term < q || U+10FFFF reads the index in order.
 CREATE TABLE account_search_terms (
   account_id TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK (kind IN ('username', 'display_name')),
+  kind TEXT NOT NULL CHECK (kind IN ('username', 'display_name', 'infix', 'exact_username')),
   term TEXT NOT NULL,
   is_local INTEGER NOT NULL CHECK (is_local IN (0, 1)),
   PRIMARY KEY (account_id, kind, term)

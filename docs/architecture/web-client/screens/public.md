@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/routes/public.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**"]
+---
+
 ## 連合タイムライン（`/public`）
 
 このサーバーのアカウントと、このサーバーに届くほかのサーバーのアカウントの公開の投稿を新しい順に読む画面（FR-202）。

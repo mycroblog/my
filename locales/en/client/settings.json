@@ -1711,6 +1711,26 @@
     "defaultMessage": "Once your mailbox works, ask for the verification email again. Verifying the address lets the server send email to it again and removes this notice.",
     "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
   },
+  "settings.email_suppression.verification.send": {
+    "defaultMessage": "Send the verification email",
+    "description": "Button in the notice that emails do not reach the user's address after a hard bounce: sends a new verification email to the address."
+  },
+  "settings.email_suppression.verification.sent": {
+    "defaultMessage": "We sent a verification email. Open its link to verify your address.",
+    "description": "Shown next to that button, and read out, after the verification email was sent."
+  },
+  "settings.email_suppression.verification.failed": {
+    "defaultMessage": "The verification email could not be sent: {reason} Try again.",
+    "description": "Alert next to that button when the email could not be sent. {reason} is the server's explanation."
+  },
+  "settings.email_suppression.verification.rate_limited": {
+    "defaultMessage": "You asked for the verification email too many times. Try again later.",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour) and the server named no time."
+  },
+  "settings.email_suppression.verification.rate_limited_until": {
+    "defaultMessage": "You asked for the verification email too many times. You can ask again at {time}.",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour). {time} is a formatted time of day."
+  },
   "settings.linked_accounts.title": {
     "defaultMessage": "Linked accounts",
     "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."

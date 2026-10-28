@@ -242,7 +242,7 @@ func runAdminReport(args []string, stdout, stderr io.Writer) int {
 	var err error
 	switch sub {
 	case "list":
-		err = cmd.list(ctx, appmoderation.ReportQuery{State: moderation.ReportState(state), Before: before}, limit)
+		err = cmd.list(ctx, appmoderation.ReportQuery{State: moderation.ReportState(state), After: before}, limit)
 	case "show":
 		err = cmd.show(ctx, c.fs.Arg(0))
 	case "assign":

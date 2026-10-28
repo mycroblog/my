@@ -10,7 +10,7 @@ export const lostnessThreshold = 0.4;
 export type TaskResult = Task & {
   /** The path the browser starts at. */
   start: string;
-  /** `measured`; `unavailable` when the fixtures cannot set the task up; `dry-run`; `error` when the agent failed to run. */
+  /** `measured`; `unavailable` when the demo server cannot set the task up; `dry-run`; `error` when the agent failed to run. */
   status: "measured" | "unavailable" | "dry-run" | "error";
   /** Why the task is unavailable or failed. */
   reason?: string;
@@ -22,7 +22,10 @@ export type TaskResult = Task & {
   backtracks: number;
   lostness: number | null;
   costUSD: number | null;
+  /** The path, where one step of action `mail` stands for each run of steps in the mailbox. */
   path: Step[];
+  /** The steps in the mailbox (Mailpit's web UI) of a task that reads email, left out of the measures. */
+  mailPath: Step[];
 };
 
 /** The JSON file of one run. */

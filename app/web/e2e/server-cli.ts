@@ -5,12 +5,15 @@
 // operator does (docs/operations/registration.md). The voice chat server (`node e2e/server.ts voice`) has the same
 // configuration with `voice = p2p`, on a database and a port of its own. The demo server (`node e2e/server.ts demo`,
 // ADR-0117 §3) is the test build with the fake payment provider, in the `development` profile, with `voice = p2p`
-// and its email sent to the development Mailpit on 127.0.0.1 (scripts/task.sh docker:mailpit).
+// and its email sent to the development Mailpit on 127.0.0.1 (scripts/task.sh docker:mailpit), and Web Push on
+// with the fake push service of the test build (`my dev push-service`, ADR-0118) as the only push service it reaches.
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import {
   demoServerDir,
   demoServerPort,
+  pushServiceOrigin,
+  pushServicePort,
   serverDir,
   serverKEK,
   serverPort,
@@ -34,16 +37,33 @@ export function serverDirOf(server: E2EServer): string {
   return { main: serverDir, voice: voiceServerDir, demo: demoServerDir }[server];
 }
 
+/** The directory of the development CA and certificates of scripts/mailpit-cert.sh (MAILPIT_CERTS). */
+const mailpitCerts = process.env["MAILPIT_CERTS"] ?? join(root, ".tmp/mailpit");
+
 /** The ports of the development Mailpit (deploy/docker/mailpit), which MAILPIT_SMTP_PORT and MAILPIT_UI_PORT move. */
 export const mailpit = {
   smtpPort: Number(process.env["MAILPIT_SMTP_PORT"] ?? "1025"),
   uiPort: Number(process.env["MAILPIT_UI_PORT"] ?? "8025"),
   /** The development CA of scripts/mailpit-cert.sh, which `my serve` trusts for STARTTLS. */
-  ca: join(process.env["MAILPIT_CERTS"] ?? join(root, ".tmp/mailpit"), "ca.pem"),
+  ca: join(mailpitCerts, "ca.pem"),
 } as const;
 
 /** The file of the demo server's key-encryption key (MY_KEK_FILE), which e2e/server.ts writes. */
 export const demoKEKFile = join(demoServerDir, "kek");
+
+/** The file of the demo server's VAPID private key (MY_VAPID_PRIVATE_KEY_FILE), which e2e/server.ts generates. */
+export const demoVAPIDKeyFile = join(demoServerDir, "vapid");
+
+/**
+ * The fake Web Push service (`my dev push-service` of the test build) that e2e/server.ts starts beside the demo
+ * server, on 127.0.0.1, with the certificate that scripts/mailpit-cert.sh signs with the development CA.
+ */
+export const pushService = {
+  port: pushServicePort,
+  origin: pushServiceOrigin,
+  cert: join(mailpitCerts, "push-service.pem"),
+  key: join(mailpitCerts, "push-service.key"),
+} as const;
 
 /** The SQLite database of `server`. */
 export function serverDatabaseOf(server: E2EServer): string {
@@ -76,8 +96,12 @@ export function serverEnv(server: E2EServer = "main"): NodeJS.ProcessEnv {
       MY_SMTP_HOST: "localhost",
       MY_SMTP_PORT: String(mailpit.smtpPort),
       // mail = smtp verifies Mailpit's certificate: trust the development CA instead of the system roots, which also
-      // keeps the server off outside HTTPS servers.
+      // keeps the server off outside HTTPS servers. The fake push service's certificate is signed by the same CA.
       SSL_CERT_FILE: mailpit.ca,
+      // Web Push on: a VAPID key generated on every start, and the SSRF guard opened for the Web Push sends to the
+      // fake push service on localhost alone (push_allowed_destinations, development profile only).
+      MY_VAPID_PRIVATE_KEY_FILE: demoVAPIDKeyFile,
+      MY_PUSH_ALLOWED_DESTINATIONS: "localhost",
     }),
   };
 }

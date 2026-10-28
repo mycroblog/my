@@ -5,7 +5,8 @@
 // request. The parts and the permissions that the screens share with the moderation screens come from the
 // moderation feature.
 // Routes and other features use it through this file only (web-client/README.md A3).
-export { adminPages, AdminPages, useAdminEntry } from "./components/AdminMenu";
+export { adminPages, useAdminEntry } from "./components/AdminMenu";
+export { AdminOverview } from "./components/AdminOverview";
 // The queue dashboard: the jobs of the job queue by state, their attempts, and running failed ones again (ADR-0064), for manage_jobs.
 export { type JobFilter, jobFilters, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
 export { JobDashboard } from "./components/JobDashboard";

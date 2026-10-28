@@ -363,3 +363,18 @@ JOIN status_heads h ON h.status_id = ls.status_id
 WHERE ls.status_id >= sqlc.arg(from_id)::uuid AND s.visibility = 'public'
   AND s.published_at >= sqlc.arg(from_at)::timestamptz AND s.published_at < sqlc.arg(to_at)::timestamptz
 GROUP BY day ORDER BY day;
+
+-- ListRecentLocalPosters returns up to lim local accounts with a public or local status that is
+-- not deleted, published since since_at, the one that posted last first (the suggestions of
+-- accounts, FR-308). from_id (the floor of since_at) bounds the scan of local_statuses by its
+-- primary key.
+-- name: ListRecentLocalPosters :many
+SELECT ls.author_account_id AS account_id, MAX(s.published_at)::timestamptz AS last_at
+FROM local_statuses ls
+JOIN statuses s ON s.id = ls.status_id
+JOIN status_heads h ON h.status_id = ls.status_id
+WHERE ls.status_id >= sqlc.arg(from_id)::uuid AND s.visibility IN ('public', 'local')
+  AND s.published_at >= sqlc.arg(since_at)::timestamptz
+GROUP BY ls.author_account_id
+ORDER BY last_at DESC, ls.author_account_id
+LIMIT sqlc.arg(lim);

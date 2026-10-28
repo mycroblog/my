@@ -216,6 +216,7 @@ To check the SQL first, deploy the schema job with `--dry-run` in place of `--au
 ### Backing up
 
 Take the backup after the server stopped writing (in the maintenance mode, or stopped) and before any step of the upgrade.
+[Backup and restore](backup.md) covers each part in full; for an upgrade:
 
 - **SQLite**: copy the database file together with its `-wal` and `-shm` files, while no process has it open.
   With Compose, the `tar` of the volume above also covers the media in `/data/blobs`.
@@ -226,7 +227,7 @@ Take the backup after the server stopped writing (in the maintenance mode, or st
   ```
 
   A managed database's own backup (a Cloud SQL on-demand backup, an RDS snapshot) works too; take it at the same point.
-- **Media**: the filesystem blob store is a directory to copy with the database. An object storage bucket is not changed by an upgrade.
+- **Media**: the filesystem blob store is a directory to copy with the database.
 - **The KEK** is not in the database. Keep it where it already is; a restored database needs the same KEK.
 
 ### Rolling back

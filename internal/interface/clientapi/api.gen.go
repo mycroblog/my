@@ -70,6 +70,24 @@ func (e AccountMoveOutcome) Valid() bool {
 	}
 }
 
+// Defines values for AccountSuggestionSource.
+const (
+	AccountSuggestionSourceFeatured       AccountSuggestionSource = "featured"
+	AccountSuggestionSourceRecentlyActive AccountSuggestionSource = "recently_active"
+)
+
+// Valid indicates whether the value is a known member of the AccountSuggestionSource enum.
+func (e AccountSuggestionSource) Valid() bool {
+	switch e {
+	case AccountSuggestionSourceFeatured:
+		return true
+	case AccountSuggestionSourceRecentlyActive:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
@@ -2226,6 +2244,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
@@ -2284,6 +2303,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyFeaturedAccounts:
 		return true
 	case InstanceSettingKeyFederatedTimelineAccess:
 		return true
@@ -2364,20 +2385,23 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount InstanceSettingKind = "account"
-	InstanceSettingKindBool    InstanceSettingKind = "bool"
-	InstanceSettingKindEmail   InstanceSettingKind = "email"
-	InstanceSettingKindEnum    InstanceSettingKind = "enum"
-	InstanceSettingKindInt     InstanceSettingKind = "int"
-	InstanceSettingKindLocale  InstanceSettingKind = "locale"
-	InstanceSettingKindMedia   InstanceSettingKind = "media"
-	InstanceSettingKindUri     InstanceSettingKind = "uri"
+	InstanceSettingKindAccount  InstanceSettingKind = "account"
+	InstanceSettingKindAccounts InstanceSettingKind = "accounts"
+	InstanceSettingKindBool     InstanceSettingKind = "bool"
+	InstanceSettingKindEmail    InstanceSettingKind = "email"
+	InstanceSettingKindEnum     InstanceSettingKind = "enum"
+	InstanceSettingKindInt      InstanceSettingKind = "int"
+	InstanceSettingKindLocale   InstanceSettingKind = "locale"
+	InstanceSettingKindMedia    InstanceSettingKind = "media"
+	InstanceSettingKindUri      InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
 func (e InstanceSettingKind) Valid() bool {
 	switch e {
 	case InstanceSettingKindAccount:
+		return true
+	case InstanceSettingKindAccounts:
 		return true
 	case InstanceSettingKindBool:
 		return true
@@ -4069,6 +4093,24 @@ func (e ListAdminAccountsParamsOrigin) Valid() bool {
 	}
 }
 
+// Defines values for ListReportsParamsOrder.
+const (
+	ListReportsParamsOrderNewest ListReportsParamsOrder = "newest"
+	ListReportsParamsOrderOldest ListReportsParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListReportsParamsOrder enum.
+func (e ListReportsParamsOrder) Valid() bool {
+	switch e {
+	case ListReportsParamsOrderNewest:
+		return true
+	case ListReportsParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
 // AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
@@ -4262,6 +4304,20 @@ type AccountStatusPage struct {
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
 }
+
+// AccountSuggestion An account suggested to follow, with why it is suggested.
+type AccountSuggestion struct {
+	// Account An account, as clients show it (FR-006).
+	Account Account `json:"account"`
+
+	// Source Why the account is suggested: `featured` when the administrators feature it,
+	// `recently_active` when it posted recently.
+	Source AccountSuggestionSource `json:"source"`
+}
+
+// AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
+// `recently_active` when it posted recently.
+type AccountSuggestionSource string
 
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
@@ -4906,6 +4962,10 @@ type AdminBrands struct {
 
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
+	// OldestOpenReportFiledAt When the open report that has waited longest was filed; omitted when no report is open.
+	// Needs `manage_reports`.
+	OldestOpenReportFiledAt *time.Time `json:"oldest_open_report_filed_at,omitempty"`
+
 	// OpenReports The reports that are open. Needs `manage_reports`.
 	OpenReports *int64 `json:"open_reports,omitempty"`
 
@@ -6009,7 +6069,8 @@ type AdminSetting struct {
 	// `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 	// the username of a local account, or empty for none. `email`: an email address such as
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-	// none.
+	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+	// a leading `@` are accepted), in order, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -7550,7 +7611,9 @@ type CredentialAccount struct {
 	// CreatedAt When the account was created.
 	CreatedAt time.Time `json:"created_at"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in
+	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
 	// DisplayName The display name; empty when the account has none.
@@ -9032,7 +9095,8 @@ type InstanceSettingKey string
 // `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 // the username of a local account, or empty for none. `email`: an email address such as
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-// none.
+// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+// a leading `@` are accepted), in order, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -10518,8 +10582,8 @@ type Preferences struct {
 	DefaultVisibility Visibility `json:"default_visibility"`
 
 	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
-	// After a `hard_bounce`, the user asks for the verification email again to show that the
-	// address works.
+	// After a `hard_bounce`, the user asks for the verification email again
+	// (`POST /accounts/email/verification`) to show that the address works.
 	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag.
@@ -11353,6 +11417,11 @@ type Status struct {
 	// Mentions The accounts the text mentions.
 	Mentions []StatusMention `json:"mentions"`
 
+	// OmittedMediaCount The number of media attachments of a remote status that the server left out: it keeps
+	// the first four attachments of a remote post. Clients show that there are more and link
+	// to `url` (or `uri`). Omitted when none were left out.
+	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
+
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
@@ -11968,7 +12037,9 @@ type UpdateCredentialsRequest struct {
 	// Bot Whether the account is automated.
 	Bot *bool `json:"bot,omitempty"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
+	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
 	// DisplayName The display name, at most 30 characters; empty removes it.
@@ -12934,6 +13005,12 @@ type SearchAccountsParams struct {
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAccountSuggestionsParams defines parameters for ListAccountSuggestions.
+type ListAccountSuggestionsParams struct {
+	// Limit The maximum number of suggestions.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAccountFollowersParams defines parameters for ListAccountFollowers.
 type ListAccountFollowersParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -13256,12 +13333,27 @@ type ListReportsParams struct {
 	// State Keep only the reports in this state; omitted keeps both.
 	State *AdminReportState `form:"state,omitempty" json:"state,omitempty"`
 
+	// Category Keep only the reports of this category; omitted keeps every category.
+	Category *ReportCategory `form:"category,omitempty" json:"category,omitempty"`
+
+	// Assignee Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
+	// other value is a `400`.
+	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
+	// report that has waited longest first. The cursor continues the page in the same order.
+	Order *ListReportsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListReportsParamsOrder defines parameters for ListReports.
+type ListReportsParamsOrder string
 
 // ListInstanceRulesParams defines parameters for ListInstanceRules.
 type ListInstanceRulesParams struct {
@@ -13919,6 +14011,9 @@ type ServerInterface interface {
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
+	// ResendVerificationEmail Send the authenticated user a new verification email
+	// (POST /accounts/email/verification)
+	ResendVerificationEmail(w http.ResponseWriter, r *http.Request)
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams)
@@ -13940,9 +14035,12 @@ type ServerInterface interface {
 	// GetRelationships Get the viewer's relationships with accounts
 	// (GET /accounts/relationships)
 	GetRelationships(w http.ResponseWriter, r *http.Request, params GetRelationshipsParams)
-	// SearchAccounts Search accounts by prefix
+	// SearchAccounts Search accounts by name
 	// (GET /accounts/search)
 	SearchAccounts(w http.ResponseWriter, r *http.Request, params SearchAccountsParams)
+	// ListAccountSuggestions Suggest accounts to follow
+	// (GET /accounts/suggestions)
+	ListAccountSuggestions(w http.ResponseWriter, r *http.Request, params ListAccountSuggestionsParams)
 	// UpdateAccountCredentials Change the authenticated user's profile
 	// (PATCH /accounts/update_credentials)
 	UpdateAccountCredentials(w http.ResponseWriter, r *http.Request)
@@ -14961,6 +15059,20 @@ func (siw *ServerInterfaceWrapper) DeleteOwnAccount(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ResendVerificationEmail operation middleware
+func (siw *ServerInterfaceWrapper) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResendVerificationEmail(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LookupAccount operation middleware
 func (siw *ServerInterfaceWrapper) LookupAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -15147,6 +15259,39 @@ func (siw *ServerInterfaceWrapper) SearchAccounts(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SearchAccounts(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAccountSuggestions operation middleware
+func (siw *ServerInterfaceWrapper) ListAccountSuggestions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAccountSuggestionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAccountSuggestions(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18933,6 +19078,45 @@ func (siw *ServerInterfaceWrapper) ListReports(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "order", r.URL.Query(), &params.Order, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "order"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
 		}
 		return
 	}
@@ -24406,6 +24590,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/password", wrapper.GetPasswordStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password/remove", wrapper.RemovePassword)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/email/verification", wrapper.ResendVerificationEmail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports", wrapper.ListDataExports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exports", wrapper.RequestDataExport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/{id}/archive", wrapper.DownloadDataExport)
@@ -24439,6 +24624,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/lookup", wrapper.LookupAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/relationships", wrapper.GetRelationships)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/search", wrapper.SearchAccounts)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/suggestions", wrapper.ListAccountSuggestions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/block", wrapper.BlockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.FollowAccount)
@@ -25346,6 +25532,51 @@ func (response DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitD
 	return err
 }
 
+type ResendVerificationEmailRequestObject struct {
+}
+
+type ResendVerificationEmailResponseObject interface {
+	VisitResendVerificationEmailResponse(w http.ResponseWriter) error
+}
+
+type ResendVerificationEmail202Response struct {
+}
+
+func (response ResendVerificationEmail202Response) VisitResendVerificationEmailResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ResendVerificationEmaildefaultApplicationProblemPlusJSONResponse) VisitResendVerificationEmailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LookupAccountRequestObject struct {
 	Params LookupAccountParams
 }
@@ -25746,6 +25977,68 @@ type SearchAccountsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SearchAccountsdefaultApplicationProblemPlusJSONResponse) VisitSearchAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountSuggestionsRequestObject struct {
+	Params ListAccountSuggestionsParams
+}
+
+type ListAccountSuggestionsResponseObject interface {
+	VisitListAccountSuggestionsResponse(w http.ResponseWriter) error
+}
+
+type ListAccountSuggestions200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAccountSuggestions200JSONResponse struct {
+	Body    []AccountSuggestion
+	Headers ListAccountSuggestions200ResponseHeaders
+}
+
+func (response ListAccountSuggestions200JSONResponse) VisitListAccountSuggestionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountSuggestionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAccountSuggestionsdefaultApplicationProblemPlusJSONResponse) VisitListAccountSuggestionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -44681,6 +44974,9 @@ type StrictServerInterface interface {
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
+	// ResendVerificationEmail Send the authenticated user a new verification email
+	// (POST /accounts/email/verification)
+	ResendVerificationEmail(ctx context.Context, request ResendVerificationEmailRequestObject) (ResendVerificationEmailResponseObject, error)
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(ctx context.Context, request LookupAccountRequestObject) (LookupAccountResponseObject, error)
@@ -44702,9 +44998,12 @@ type StrictServerInterface interface {
 	// GetRelationships Get the viewer's relationships with accounts
 	// (GET /accounts/relationships)
 	GetRelationships(ctx context.Context, request GetRelationshipsRequestObject) (GetRelationshipsResponseObject, error)
-	// SearchAccounts Search accounts by prefix
+	// SearchAccounts Search accounts by name
 	// (GET /accounts/search)
 	SearchAccounts(ctx context.Context, request SearchAccountsRequestObject) (SearchAccountsResponseObject, error)
+	// ListAccountSuggestions Suggest accounts to follow
+	// (GET /accounts/suggestions)
+	ListAccountSuggestions(ctx context.Context, request ListAccountSuggestionsRequestObject) (ListAccountSuggestionsResponseObject, error)
 	// UpdateAccountCredentials Change the authenticated user's profile
 	// (PATCH /accounts/update_credentials)
 	UpdateAccountCredentials(ctx context.Context, request UpdateAccountCredentialsRequestObject) (UpdateAccountCredentialsResponseObject, error)
@@ -45814,6 +46113,30 @@ func (sh *strictHandler) DeleteOwnAccount(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// ResendVerificationEmail operation middleware
+func (sh *strictHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+	var request ResendVerificationEmailRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResendVerificationEmail(ctx, request.(ResendVerificationEmailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResendVerificationEmail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResendVerificationEmailResponseObject); ok {
+		if err := validResponse.VisitResendVerificationEmailResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // LookupAccount operation middleware
 func (sh *strictHandler) LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams) {
 	var request LookupAccountRequestObject
@@ -46026,6 +46349,32 @@ func (sh *strictHandler) SearchAccounts(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SearchAccountsResponseObject); ok {
 		if err := validResponse.VisitSearchAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAccountSuggestions operation middleware
+func (sh *strictHandler) ListAccountSuggestions(w http.ResponseWriter, r *http.Request, params ListAccountSuggestionsParams) {
+	var request ListAccountSuggestionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAccountSuggestions(ctx, request.(ListAccountSuggestionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAccountSuggestions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAccountSuggestionsResponseObject); ok {
+		if err := validResponse.VisitListAccountSuggestionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

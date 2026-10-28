@@ -1,16 +1,22 @@
 # 画面の要件（L1）
 
-画面（ルート）ごとに 1 ファイル `<slug>.md` を置く（[ADR-0082](../../../adr/0082-conflict-free-file-layout.md)）。
+画面（ルート）ごとに 1 ファイル `<slug>.md` を置く（[ADR-0082](../../../adr/0082-conflict-free-file-layout.md)）。このディレクトリが画面の一覧で、別の一覧は持たない。
 [ADR-0110 §4](../../../adr/0110-web-experience-principles.md) の L1 で、[体験の原則](../21-experience-principles.md)を画面に当てはめた短いテキストにする。
 書式は Shape Up の Breadboarding（場所・操作・つながり）と OOUX の ORCA（Objects・Relationships・CTAs・Attributes）を下敷きにする。
 
 - UI を変える issue は、その画面のこのファイルがなければ `agent:ready` にしない。画面を変える PR は、挙動が変わるならこのファイルも同じ PR で直す。
-- 書いたら、その画面の機能の entry の `docs`（`tools/agentkit/context-map.yaml`）にファイルを足す。`agentkit ctx` がその画面の issue に要件を入れる。
+- 画面を足すときに触るのは、その画面のファイル（と機能のコード）だけにする。L4 の課題テスト（[ADR-0114](../../../adr/0114-l4-task-tests-nightly.md)）が要るものは、ファイルの先頭のフロントマター（下）に書く。
 - 現在の状態だけを書く（[ADR-0021](../../../adr/0021-documents-describe-present-state.md)）。
 
 ## 雛形
 
 ```markdown
+---
+start: "/path"
+persona: "yuki"
+paths: ["app/web/src/features/<機能>/**"]
+---
+
 ## <画面の名前>（`/path`）
 
 ### 1. 使う人と頻度
@@ -36,17 +42,20 @@
 どこから来て、終えたらどこへ行くか。
 ```
 
-## 画面の一覧
+## フロントマター
 
-- [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
-- [サーバーの設定（`/admin/settings`）](admin-settings.md)
-- [ホームタイムライン（`/home`）](home.md)
-- [ランディングページ（`/`、サインインしていない人）](landing.md)
-- [ローカルタイムライン（`/local`）](local.md)
-- [連合タイムライン（`/public`）](public.md)
-- [設定のメニュー（`/settings` と各画面の横）](settings-menu.md)
-- [設定のトップ（`/settings`）](settings.md)
-- [表示・投稿・タイムライン（`/settings/preferences`）](settings-preferences.md)
-- [通知（`/settings/notifications`）](settings-notifications.md)
-- [プロフィール（`/settings/profile`）](settings-profile.md)
-- [古い投稿の自動削除（`/settings/auto-delete`）](settings-auto-delete.md)
+L4 の課題テスト（`scripts/task.sh web:l4`、`app/web/l4/screens.ts` が読む）がデモサーバー（`app/web/demo/scenario.ts` のシナリオ）で画面の作業を始めるための値。
+ファイルの 1 行目の `---` から次の `---` までに、1 行に 1 つ `<キー>: <JSON の値>` で書く（YAML としても読める）。
+知らないキーや形の違う値は L4 を失敗させ、`app/web/l4/screens.test.ts` がすべての画面のファイルを確かめる。
+
+| キー | 必須 | 値 |
+| --- | --- | --- |
+| `start` | はい | エージェントが始めるパス。「入口」に合わせる |
+| `persona` | はい | ログインしておくシナリオの人の username。ログインしない画面は `null` |
+| `paths` | はい | 画面のコードのパターン（`*` は 1 階層、`**` は何階層でも）。`SINCE` は、このファイルかこれらが変わった画面を測る |
+| `starts` | | `start` 以外から始める作業: `{"<作業>": "<パス>"}` |
+| `seed` | | 作業の前に 1 回だけシナリオを変える手順: `{"my": [<bin/my の引数>]}` か `{"api": "<username>", "method": "PUT", "path": "/preferences/...", "body": {...}}` の並び |
+| `mail` | | メールを読む作業と、Mailpit で受信箱を読む人: `{"<作業>": "<username>"}` |
+| `unavailable` | | デモサーバーで用意できない作業と、その理由（英語）: `{"<作業>": "<理由>"}`。測らずに記録する |
+
+`<作業>` は「2. 作業」の表の行の文字どおりに書く。

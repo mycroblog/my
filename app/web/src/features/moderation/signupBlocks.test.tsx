@@ -288,11 +288,11 @@ describe("permissions", () => {
   test("the screen is in the moderation menu of a user with manage_accounts", async () => {
     await renderApp({ path: "/moderation" });
 
-    const link = await within(await screen.findByRole("main")).findByRole("link", { name: "Sign-up blocks" });
-    expect(link).toHaveAttribute("href", "/moderation/signup-blocks");
-    expect(link).toHaveAccessibleDescription(
-      "Email domains, email addresses and IP ranges whose sign-ups are refused or need approval.",
+    const link = await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole(
+      "link",
+      { name: "Sign-up blocks" },
     );
+    expect(link).toHaveAttribute("href", "/moderation/signup-blocks");
   });
 
   test("a user without manage_accounts is told why, and nothing is asked of the server", async () => {

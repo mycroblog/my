@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -13,6 +14,9 @@ import (
 // ReportCounts counts the open reports. *appmoderation.Service implements it.
 type ReportCounts interface {
 	CountOpenReports(ctx context.Context) (int64, error)
+	// OldestOpenReportFiledAt returns when the open report that has waited longest was filed,
+	// and nil when no report is open.
+	OldestOpenReportFiledAt(ctx context.Context) (*time.Time, error)
 }
 
 // RegistrationCounts counts the registrations that await approval. *appidentity.Service
@@ -44,6 +48,11 @@ func (s *Server) GetAdminCounts(ctx context.Context, _ GetAdminCountsRequestObje
 			return nil, fmt.Errorf("clientapi: count the open reports: %w", err)
 		}
 		body.OpenReports = &n
+		if n > 0 {
+			if body.OldestOpenReportFiledAt, err = s.o.ReportCounts.OldestOpenReportFiledAt(ctx); err != nil {
+				return nil, fmt.Errorf("clientapi: the oldest open report: %w", err)
+			}
+		}
 	}
 	if slices.Contains(perms, identity.PermManageAccounts) && s.o.RegistrationCounts != nil {
 		n, err := s.o.RegistrationCounts.CountPendingRegistrations(ctx)

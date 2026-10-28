@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the moderators' report queue (FR-701, FR-710, NFR-MOD-4): the reports open or
-// resolved, newest first; one report with its notes and what the moderators had about its target; taking it,
+// resolved, of a category and an assignee, newest or oldest first; one report with its notes and what the moderators had about its target; taking it,
 // leaving it, writing a note, resolving and reopening it; and taking a moderation action on its target account
 // (FR-703) that resolves it. The lists follow the API's keyset pagination as infinite queries whose keys end
 // with "pages" (web-client/10-api-client-and-auth.md §10). Every operation on one report answers the report as it is after it, which
@@ -29,6 +29,24 @@ export const reportFilters = ["open", "resolved"] as const satisfies readonly Re
 
 export type ReportFilter = (typeof reportFilters)[number];
 
+/** Whose reports the queue lists besides everyone's: the viewer's, or those that nobody handles. */
+export const reportAssigneeFilters = ["me", "none"] as const;
+
+export type ReportAssigneeFilter = (typeof reportAssigneeFilters)[number];
+
+/** The orders of the queue: the newest report first (the default), or the one that has waited longest. */
+export const reportOrders = ["newest", "oldest"] as const;
+
+export type ReportOrder = (typeof reportOrders)[number];
+
+/** What the report queue lists: the reports in a state, of a category and an assignee when given, in an order. */
+export type ReportListQuery = {
+  state: ReportFilter;
+  category?: ReportCategory | undefined;
+  assignee?: ReportAssigneeFilter | undefined;
+  order?: ReportOrder | undefined;
+};
+
 /** The categories of a report and of the reason for an account action, in the order of the form. */
 export const reportCategories = ["spam", "legal", "violation", "other"] as const satisfies readonly ReportCategory[];
 
@@ -38,13 +56,20 @@ export const reportNoteLimit = 2000;
 /** The most characters of an account action's public reason and private note (CreateAccountActionRequest). */
 export const accountActionTextLimit = 5000;
 
-/** The reports in `state`, newest first (GET /admin/reports). */
-export function reportsQueryOptions(api: Api, state: ReportFilter) {
+/** The reports that `list` selects, newest first unless its order is `oldest` (GET /admin/reports). */
+export function reportsQueryOptions(api: Api, list: ReportListQuery) {
+  // The default order is left out, so that the key and the request are the same with it or without it.
+  const query: { state: ReportFilter; category?: ReportCategory; assignee?: ReportAssigneeFilter; order?: "oldest" } = {
+    state: list.state,
+    ...(list.category !== undefined && { category: list.category }),
+    ...(list.assignee !== undefined && { assignee: list.assignee }),
+    ...(list.order === "oldest" && { order: list.order }),
+  };
   return infiniteQueryOptions({
-    queryKey: ["get", "/admin/reports", { state }, "pages"] as const,
+    queryKey: ["get", "/admin/reports", query, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
       const { data, error } = await api.fetch.GET("/admin/reports", {
-        params: { query: { ...pageQuery(pageParam), state } },
+        params: { query: { ...pageQuery(pageParam), ...query } },
         signal,
       });
       // The middleware throws an ApiError for every error status; this narrows the type.

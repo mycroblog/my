@@ -318,11 +318,9 @@ describe("the emoji picker of the edit dialog", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Add emoji" }));
     const picker = await screen.findByRole("dialog", { name: "Emoji" });
-    await user.type(
-      await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 }),
-      "thumbs up",
-    );
-    await user.click(within(picker).getByRole("gridcell", { name: "thumbs up" }));
+    await user.type(await within(picker).findByRole("searchbox", { name: "Search emoji" }), "thumbs up");
+    // The Unicode emoji load inside the open dialog, so the result comes once they have.
+    await user.click(await within(picker).findByRole("gridcell", { name: "thumbs up" }, { timeout: 5000 }));
 
     await waitFor(() => {
       expect(text).toHaveValue("Ok👍");

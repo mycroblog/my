@@ -299,3 +299,53 @@ func TestDataExports(t *testing.T) {
 		t.Errorf("GET /exports without read:accounts = %d, want 403", res.StatusCode)
 	}
 }
+
+// fakeVerificationEmails answers the requests for verification emails with err, and records
+// the users of the ones it queues.
+type fakeVerificationEmails struct {
+	err  error
+	sent []string
+}
+
+func (f *fakeVerificationEmails) ResendVerificationEmail(_ context.Context, userID string) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.sent = append(f.sent, userID)
+	return nil
+}
+
+func TestResendVerificationEmail(t *testing.T) {
+	const path = "/accounts/email/verification"
+	emails := &fakeVerificationEmails{}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.VerificationEmails, o.SendsEmail = emails, true })
+
+	if res := e.send(t, http.MethodPost, path, "read", ""); res.StatusCode != http.StatusForbidden {
+		t.Errorf("without write:accounts = %d, want 403", res.StatusCode)
+	}
+	if res := e.send(t, http.MethodPost, path, "write", ""); res.StatusCode != http.StatusAccepted ||
+		len(emails.sent) != 1 || emails.sent[0] != userOf(aliceAccountID) {
+		t.Fatalf("send = %d, sent %v; want 202 and one email to alice", res.StatusCode, emails.sent)
+	}
+
+	emails.err = &kernel.RateLimitedError{RetryAfter: 90 * time.Second}
+	if res := e.send(t, http.MethodPost, path, "write", ""); res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") != "90" {
+		t.Errorf("rate-limited = %d Retry-After %q, want 429 after 90", res.StatusCode, res.Header.Get("Retry-After"))
+	}
+	emails.err = appidentity.ErrAlreadyVerified
+	res := e.send(t, http.MethodPost, path, "write", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeEmailAlreadyVerified {
+		t.Errorf("verified address = %d %+v, want 409 email-already-verified", res.StatusCode, p)
+	}
+	emails.err = appidentity.ErrNotFound
+	if res := e.send(t, http.MethodPost, path, "write", ""); res.StatusCode != http.StatusNotFound {
+		t.Errorf("no address = %d, want 404", res.StatusCode)
+	}
+
+	// An instance that sends no email answers 404.
+	emails.err = nil
+	e = newAuthEnv(t, func(o *clientapi.Options) { o.VerificationEmails = emails })
+	if res := e.send(t, http.MethodPost, path, "write", ""); res.StatusCode != http.StatusNotFound || len(emails.sent) != 1 {
+		t.Errorf("without email = %d, sent %v; want 404 and no email", res.StatusCode, emails.sent)
+	}
+}

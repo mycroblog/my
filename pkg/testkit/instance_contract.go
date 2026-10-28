@@ -360,6 +360,8 @@ func instanceProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 			return fmt.Sprintf("0199f0e0-0000-7000-8000-%012x", rng.IntN(3))
 		case instance.KindAccount:
 			return []string{"", "admin", "Moderator_1"}[rng.IntN(3)]
+		case instance.KindAccounts:
+			return []string{"", "admin", "Moderator_1, @admin"}[rng.IntN(3)]
 		case instance.KindEmail:
 			return []string{"", "admin@example.com"}[rng.IntN(2)]
 		case instance.KindURI:

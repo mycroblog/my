@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { setupServer } from "msw/node";
-import * as modules from "./handlers";
-
-/** The default handlers of every module listed in handlers.ts. */
-export const defaultHandlers = Object.values(modules).flatMap((source) => source.handlers);
+import { defaultHandlers } from "./defaultHandlers";
 
 /**
  * The MSW server for Vitest, started by src/test/setup.ts with the default handlers.
