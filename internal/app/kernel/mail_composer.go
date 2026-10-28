@@ -22,6 +22,16 @@ type MailSite struct {
 	// ContactEmail is the instance's contact_email setting, "" when unset. It is the Reply-To
 	// and appears in the signature.
 	ContactEmail string
+	// Logo is the instance's own logo for the header of the HTML version (ADR-0116), nil for
+	// none; LogoDark replaces it on dark backgrounds where the client follows the color scheme.
+	Logo, LogoDark *MailLogo
+}
+
+// MailLogo is a logo image of the HTML version: one https URL that is the same for every
+// recipient (no tracking), and its size in pixels, twice the size it shows at.
+type MailLogo struct {
+	URL           string
+	Width, Height int
 }
 
 // MailWords words the parts of the signature that the composer adds and names the locale of the
@@ -137,6 +147,14 @@ func httpsURL(u string) string {
 	return u
 }
 
+// shownLogo returns the logo at the size it shows at, or nil when it is none or not https.
+func shownLogo(l *MailLogo) *MailLogo {
+	if l == nil || httpsURL(l.URL) == "" || l.Width < 2 || l.Height < 2 {
+		return nil
+	}
+	return &MailLogo{URL: l.URL, Width: l.Width / 2, Height: l.Height / 2}
+}
+
 // htmlLine is a line of the signature whose sentence holds a URL: Before, the URL as a link, and
 // After. A URL that is not https is no link, and the whole sentence is Before.
 type htmlLine struct {
@@ -172,6 +190,7 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 		Action           *htmlAction
 		Site             MailSite
 		SiteURL          string
+		Logo, LogoDark   *MailLogo
 		Contact          string
 		Reason           string
 		Unsubscribe      *htmlLine
@@ -189,6 +208,11 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 	}
 	if d.UnsubscribeURL != "" {
 		data.Unsubscribe = c.unsubscribeLine(d.UnsubscribeURL)
+	}
+	// The logo shows at half its pixels, so that it is sharp on dense screens; without an https
+	// logo the header has none, and the dark logo applies only with a logo.
+	if data.Logo = shownLogo(c.Site.Logo); data.Logo != nil {
+		data.LogoDark = shownLogo(c.Site.LogoDark)
 	}
 	if a := d.Action; a != nil {
 		data.Action = &htmlAction{Label: a.Label, URL: httpsURL(a.URL)}

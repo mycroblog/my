@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A brand image: the SVG and every PNG rendition of its kind, each in the part named after the
+  rendition with `_` for `-` (`BrandRendition`). The icon takes `favicon_32`, `favicon_48`,
+  `apple_touch_180`, `pwa_192`, `pwa_512`, and `maskable_512`; the logo `logo_mail` and
+  `preview_1200x630`; the dark logo `logo_dark_mail`. Other parts are ignored.
+type: object
+required: [svg]
+properties:
+  svg:
+    description: The SVG file, at most 262,144 bytes.
+    type: string
+    format: binary
+  background:
+    description: |
+      The `#rrggbb` color behind the opaque renditions of the icon; the theme's light surface
+      color when it is left out. A logo takes none.
+    type: string
+  favicon_32:
+    type: string
+    format: binary
+  favicon_48:
+    type: string
+    format: binary
+  apple_touch_180:
+    type: string
+    format: binary
+  pwa_192:
+    type: string
+    format: binary
+  pwa_512:
+    type: string
+    format: binary
+  maskable_512:
+    type: string
+    format: binary
+  logo_mail:
+    type: string
+    format: binary
+  logo_dark_mail:
+    type: string
+    format: binary
+  preview_1200x630:
+    type: string
+    format: binary

@@ -51,7 +51,7 @@ The meta tags of the landing page introduce the instance itself.
 - `og:description` is the instance text `short_description` cut to 200 graphemes. It is left out when there is none.
 - The language (`og:locale`, `<html lang dir>`) is the instance's `default_locale`. The name and description are the same value
   in every language.
-- `og:image` is number 3 below (the instance preview image), or number 4 if there is none.
+- `og:image` is number 3 below (the instance preview image), or number 4 or 5 if there is none.
 - It does not belong to an account, so `fediverse:creator` and the ActivityPub `alternate` are not output.
 - The instance information page (`/about`) has the same meta tags. `og:title` and `<title>` are "About {instance name}"
   (`server:preview.about_title`), and `og:url` and `<link rel="canonical">` are `https://<host>/about`.
@@ -66,12 +66,14 @@ The meta tags of the landing page introduce the instance itself.
 2. The profile's header image, or else the avatar (`og:image:alt` is "Header image of {name}" or "Avatar of {name}").
 3. The instance preview image (the instance setting `preview_image`; `og:image:alt` is the text `preview_image_alt`, or "Image
    of {instance name}" if there is none).
-4. The bundled default image (`https://<host>/preview-image.png`, a 1200x630 PNG. It is a generic picture without the instance
+4. The link preview version of the instance's own logo ([logo and icon](instance-settings.md#logo-and-icon)), a 1200x630 PNG
+   at `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` is "Image of {instance name}").
+5. The bundled default image (`https://<host>/preview-image.png`, a 1200x630 PNG. It is a generic picture without the instance
    name, and `og:image:alt` describes the picture).
 
 So a page that shows a preview always has `og:image` and `og:image:alt`.
 The images of 1 to 3 are the `full` variant of the processed media, and the width and height are the values from processing.
-If `preview_image` is still processing, failed processing, or is not an image, number 4 is used.
+If `preview_image` is still processing, failed processing, or is not an image, number 4 (or 5 without a logo) is used.
 Instance settings are read on every request, so `my instance set preview_image ...` takes effect without a restart (for the
 procedure, see [instance settings](instance-settings.md)).
 

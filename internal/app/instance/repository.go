@@ -13,7 +13,7 @@ import (
 // ErrNotFound reports that no row matches a lookup.
 var ErrNotFound = errors.New("instance: not found")
 
-// Repository is the persistence port of the instance module's settings, texts, rules, theme,
+// Repository is the persistence port of the instance module's settings, texts, rules, theme, brand images,
 // announcements, and service closure (data-model §4.9). The database adapters implement it and
 // pass testkit.InstanceRepositoryContract.
 //
@@ -53,6 +53,7 @@ type Repository interface {
 
 	RuleRepository
 	ThemeRepository
+	BrandRepository
 	AnnouncementRepository
 	ClosureRepository
 }

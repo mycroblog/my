@@ -41,6 +41,8 @@ func runInstance(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return runInstanceRule(args[1:], stdout, stderr)
 	case "theme":
 		return runInstanceTheme(args[1:], stdin, stdout, stderr)
+	case "brand":
+		return runInstanceBrand(args[1:], stdout, stderr)
 	case "list":
 		nargs = 0
 	case "get", "history":
@@ -313,6 +315,7 @@ func instanceUsage(w io.Writer) {
   my instance history [-limit <n>] [-config <file>] <key>
   my instance rule <list|add|edit|move|retire> ...  (my instance rule -h)
   my instance theme <get|set> ...  (my instance theme -h)
+  my instance brand <show|clear> ...  (my instance brand -h)
 
 Reads and changes the instance settings and texts stored in the
 database (docs/operations/instance-settings.md). Every change is kept as a
