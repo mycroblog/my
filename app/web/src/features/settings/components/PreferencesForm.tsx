@@ -4,7 +4,6 @@ import {
   Callout,
   Checkbox,
   Grid,
-  Heading,
   Hint,
   InlineError,
   Radio,
@@ -16,15 +15,13 @@ import {
   Text,
 } from "@my/ui";
 import { useId, useRef } from "react";
-import { useIntl } from "react-intl";
 import { languageOptions, quotePolicies, quotePolicyDescription, quotePolicyLabel } from "../../compose";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useDisplaySettings } from "../../../lib/locale";
 import type { Visibility } from "../api/me";
 import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } from "../hooks/languages";
-import { usePushNotifications } from "../hooks/usePushNotifications";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
-import { type PreferenceControl, type PreferencesControls, usePreferences } from "../hooks/usePreferences";
+import { type PreferenceControl, usePreferences } from "../hooks/usePreferences";
 import { AutoplaySwitch } from "./AutoplaySwitch";
 import { NavigationSettings } from "./NavigationSettings";
 import { ThemeRadioGroup } from "./ThemeRadioGroup";
@@ -73,7 +70,6 @@ export function PreferencesForm() {
     requireMediaDescription,
     timelineLanguages,
     timelineAutoInsert,
-    emailSuppression,
   } = usePreferences();
   return (
     <Stack gap="8">
@@ -137,97 +133,6 @@ export function PreferencesForm() {
       >
         {t("client:settings.timeline_auto_insert.label")}
       </Switch>
-      <PushNotifications />
-      <EmailDelivery suppression={emailSuppression} />
-    </Stack>
-  );
-}
-
-/**
- * Web Push on this device (FR-206), when the server sends it: a switch that turns it on for this signed-in app (the
- * APG switch pattern), and the kinds of notifications to push as a group of checkboxes; or why it cannot be on.
- */
-function PushNotifications() {
-  const t = useT();
-  const headingId = useId();
-  const kindsId = useId();
-  const push = usePushNotifications();
-  if (push.status === "hidden") return null;
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.push.title")}
-      </Heading>
-      {push.status === "unsupported" && <Hint>{t("client:settings.push.unsupported")}</Hint>}
-      {push.status === "denied" && <Hint>{t("client:settings.push.denied")}</Hint>}
-      {push.status === "available" && (
-        <>
-          <Switch
-            isSelected={push.enabled}
-            onChange={push.setEnabled}
-            isDisabled={push.isPending}
-            description={t("client:settings.push.enable.description")}
-          >
-            {t("client:settings.push.enable")}
-          </Switch>
-          {push.enabled && (
-            <Stack as="fieldset" aria-describedby={kindsId} container shrink gap="2">
-              <Text as="legend" size="sm" weight="medium" tone="fg">
-                {t("client:settings.push.types.label")}
-              </Text>
-              <Hint id={kindsId}>{t("client:settings.push.types.description")}</Hint>
-              <Grid as="ul" gap="6" rowGap="1">
-                {push.groups.map((group) => (
-                  <li key={group.id}>
-                    <Checkbox
-                      isSelected={group.types.every((type) => push.alerts.includes(type))}
-                      isDisabled={push.isPending}
-                      onChange={(selected) => {
-                        push.setGroup(group, selected);
-                      }}
-                    >
-                      {t(group.label)}
-                    </Checkbox>
-                  </li>
-                ))}
-              </Grid>
-            </Stack>
-          )}
-          {push.error !== undefined && <InlineError alert>{push.error}</InlineError>}
-        </>
-      )}
-    </Stack>
-  );
-}
-
-/**
- * That emails no longer reach the user's address (a hard bounce or a complaint, ADR-0086 §5), and since when; after a
- * hard bounce, what to do. Nothing shows while they do reach it.
- */
-function EmailDelivery({ suppression }: { suppression: PreferencesControls["emailSuppression"] }) {
-  const t = useT();
-  const intl = useIntl();
-  const headingId = useId();
-  if (suppression === undefined) return null;
-  const since = intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" });
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.email_suppression.title")}
-      </Heading>
-      <Callout>
-        <Text as="p" size="sm" tone="fg">
-          {suppression.kind === "hard_bounce"
-            ? t("client:settings.email_suppression.hard_bounce")
-            : t("client:settings.email_suppression.complaint")}
-        </Text>
-        <Hint size="inherit">{t("client:settings.email_suppression.since", { since })}</Hint>
-        {suppression.kind === "hard_bounce" && (
-          <Text as="p" size="sm" tone="fg">
-            {t("client:settings.email_suppression.hard_bounce.action")}
-          </Text>
-        )}
-      </Callout>
     </Stack>
   );
 }

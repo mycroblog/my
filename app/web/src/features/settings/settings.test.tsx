@@ -438,7 +438,7 @@ describe("time zone of the device", () => {
 describe("email suppression", () => {
   test("says that emails do not reach the address after a hard bounce, and what to do", async () => {
     preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
-    await renderApp({ path: "/settings/preferences" });
+    await renderApp({ path: "/settings/notifications" });
 
     const section = await screen.findByRole("region", { name: "Email delivery" });
     expect(within(section).getByText(/Emails do not reach your address/)).toBeInTheDocument();
@@ -448,7 +448,7 @@ describe("email suppression", () => {
 
   test("says that notification emails stop after a complaint, without the hard bounce's advice", async () => {
     preferencesServer({ email_suppression: { kind: "complaint", since: "2026-10-10T09:30:00Z" } });
-    await renderApp({ path: "/settings/preferences" });
+    await renderApp({ path: "/settings/notifications" });
 
     const section = await screen.findByRole("region", { name: "Email delivery" });
     expect(within(section).getByText(/marked as spam/)).toBeInTheDocument();
@@ -457,9 +457,9 @@ describe("email suppression", () => {
 
   test("shows nothing while emails reach the address", async () => {
     preferencesServer();
-    await renderApp({ path: "/settings/preferences" });
+    await renderApp({ path: "/settings/notifications" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Preferences" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Notifications" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Email delivery" })).not.toBeInTheDocument();
   });
 });
@@ -841,6 +841,7 @@ describe("the settings page", () => {
     ).toEqual([
       "/settings/profile",
       "/settings/preferences",
+      "/settings/notifications",
       "/settings/password",
       "/settings/two-factor",
       "/settings/passkeys",

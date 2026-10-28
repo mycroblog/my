@@ -48,6 +48,93 @@ const passkeyConfirmationFixture = {
   expires_at: "2026-10-20T00:05:00Z",
 };
 
+type NotificationRow = Schemas["NotificationSettingRow"];
+
+/** A row of the notification settings that the user chooses in the app and by email. */
+function notificationRow(
+  group: Schemas["NotificationGroup"],
+  section: NotificationRow["section"],
+  types: Schemas["NotificationType"][],
+  { inApp = true, email = false, inAppFixed = false, emailFixed = false } = {},
+): NotificationRow {
+  return {
+    group,
+    section,
+    types,
+    in_app: { enabled: inApp, fixed: inAppFixed },
+    email: { enabled: email, fixed: emailFixed },
+  };
+}
+
+/** The ordinary rows at their defaults (in the app on, email off), in the server's order. */
+export const ordinaryNotificationRows: NotificationRow[] = [
+  notificationRow("mention", "ordinary", ["mention"]),
+  notificationRow("follow", "ordinary", ["follow"]),
+  notificationRow("follow_request", "ordinary", ["follow_request"]),
+  notificationRow("follow_accepted", "ordinary", ["follow_accepted"]),
+  notificationRow("boost", "ordinary", ["boost"]),
+  notificationRow("favourite", "ordinary", ["favourite"]),
+  notificationRow("reaction", "ordinary", ["reaction"]),
+  notificationRow("quote", "ordinary", ["quote"]),
+  notificationRow("poll_closed", "ordinary", ["poll_closed"]),
+  notificationRow("account_moved", "ordinary", ["account_moved"]),
+  notificationRow("voice", "ordinary", ["voice_room_started", "voice_room_invited"]),
+];
+
+/** The moderator rows of a holder of `manage_reports` and `manage_accounts`, at their defaults (both on). */
+export const moderatorNotificationRows: NotificationRow[] = [
+  notificationRow("admin_report", "moderator", ["admin_report"], { email: true }),
+  notificationRow("admin_sign_up", "moderator", ["admin_sign_up"], { email: true }),
+  notificationRow("admin_appeal", "moderator", ["admin_appeal"], { email: true }),
+  notificationRow("admin_account_moved", "moderator", ["admin_account_moved"], { email: true }),
+];
+
+/** The instance's notices: always in the app; `service_closure` and `supporter` always by email too. */
+export const instanceNotificationRows: NotificationRow[] = [
+  notificationRow(
+    "moderation",
+    "instance",
+    ["moderation_notice", "report_resolved", "appeal_decided", "relationships_severed", "custom_emoji_request_decided"],
+    { inAppFixed: true },
+  ),
+  notificationRow("service_closure", "instance", ["service_closure"], {
+    email: true,
+    inAppFixed: true,
+    emailFixed: true,
+  }),
+];
+
+/** The supporter row, while the supporter program is enabled. */
+export const supporterNotificationRow: NotificationRow = notificationRow(
+  "supporter",
+  "instance",
+  ["supporter_payment_failed", "supporter_subscription_ended", "supporter_plan_retired", "supporter_service_closure"],
+  { email: true, inAppFixed: true, emailFixed: true },
+);
+
+/** The notification settings of a user without moderator permissions, at the defaults. */
+export const notificationSettingsFixture: Schemas["NotificationSettings"] = {
+  rows: [...ordinaryNotificationRows, ...instanceNotificationRows],
+};
+
+/** `settings` with `changes`, as the server saves them. */
+export function applyNotificationSettingChanges(
+  settings: Schemas["NotificationSettings"],
+  changes: Schemas["NotificationSettingsUpdate"]["changes"],
+): Schemas["NotificationSettings"] {
+  return {
+    rows: settings.rows.map((row) =>
+      changes.reduce(
+        (changed, change) =>
+          change.group === row.group
+            ? { ...changed, [change.channel]: { ...changed[change.channel], enabled: change.enabled } }
+            : changed,
+        row,
+      ),
+    ),
+  };
+}
+
 export const handlers = [
   // operationIds listBadgeChoices, updateBadgeChoice: the viewer holds no role with a badge by default; the tests of
   // the badges play the server themselves.
@@ -101,6 +188,17 @@ export const handlers = [
   http.patch(`${apiBase}/preferences`, async ({ request }) => {
     const change = (await request.clone().json()) as Schemas["UpdatePreferencesRequest"];
     return withViewer(request, () => HttpResponse.json({ ...preferencesFixture, ...change }));
+  }),
+  // operationIds getNotificationSettings, updateNotificationSettings: a user without moderator permissions at the
+  // defaults; a change answers the defaults with it.
+  http.get(`${apiBase}/preferences/notifications`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(notificationSettingsFixture)),
+  ),
+  http.patch(`${apiBase}/preferences/notifications`, async ({ request }) => {
+    const { changes } = (await request.clone().json()) as Schemas["NotificationSettingsUpdate"];
+    return withViewer(request, () =>
+      HttpResponse.json(applyNotificationSettingChanges(notificationSettingsFixture, changes)),
+    );
   }),
   // operationIds getPushSubscription, putPushSubscription, deletePushSubscription: the grant has no subscription by default.
   http.get(`${apiBase}/push/subscription`, ({ request }) =>

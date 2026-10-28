@@ -21,6 +21,7 @@ const pages: readonly {
 }[] = [
   { href: "/settings/profile", label: "client:settings.profile.title" },
   { href: "/settings/preferences", label: "client:settings.preferences.title" },
+  { href: "/settings/notifications", label: "client:settings.notifications.title" },
   { href: "/settings/password", label: "client:settings.password.title" },
   { href: "/settings/two-factor", label: "client:settings.two_factor.title" },
   { href: "/settings/passkeys", label: "client:settings.passkeys.title" },

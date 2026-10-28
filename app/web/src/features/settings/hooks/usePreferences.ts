@@ -36,8 +36,6 @@ export type PreferencesControls = {
   requireMediaDescription: PreferenceControl<boolean>;
   timelineLanguages: PreferenceControl<string[]>;
   timelineAutoInsert: PreferenceControl<boolean>;
-  /** Why emails do not reach the primary address (read-only); undefined when they do. */
-  emailSuppression: Preferences["email_suppression"];
 };
 
 /**
@@ -57,7 +55,6 @@ export function usePreferences(): PreferencesControls {
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
     timelineAutoInsert: usePreferenceControl("timeline_auto_insert", data.timeline_auto_insert),
-    emailSuppression: data.email_suppression,
   };
 }
 

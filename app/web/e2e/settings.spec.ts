@@ -41,6 +41,9 @@ const bob = {
   display_name: "Bob",
 };
 
+/** A cell of the notification settings (NotificationSettingCell). */
+type Cell = { enabled: boolean; fixed: boolean };
+
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
     status,
@@ -168,6 +171,48 @@ async function signedInServer(
       { id: linkableProvider, kind: "oidc", display_name: "Lab ID", allow_link: true },
     ],
   };
+  // The notification settings (ADR-0109 §2): the ordinary rows, the moderator rows of the viewer's permissions, and
+  // the instance's notices, at their defaults.
+  const row = (group: string, section: string, types: string[], inApp: Cell, email: Cell) => ({
+    group,
+    section,
+    types,
+    in_app: inApp,
+    email,
+  });
+  const on: Cell = { enabled: true, fixed: false };
+  const off: Cell = { enabled: false, fixed: false };
+  const fixed: Cell = { enabled: true, fixed: true };
+  let notificationRows = [
+    ...["mention", "follow", "follow_request", "follow_accepted", "boost", "favourite", "reaction", "quote"].map(
+      (group) => row(group, "ordinary", [group], on, off),
+    ),
+    row("poll_closed", "ordinary", ["poll_closed"], on, off),
+    row("account_moved", "ordinary", ["account_moved"], on, off),
+    row("voice", "ordinary", ["voice_room_started", "voice_room_invited"], on, off),
+    ...(permissions.includes("manage_reports") ? [row("admin_report", "moderator", ["admin_report"], on, on)] : []),
+    ...(permissions.includes("manage_accounts")
+      ? [
+          row("admin_sign_up", "moderator", ["admin_sign_up"], on, on),
+          row("admin_appeal", "moderator", ["admin_appeal"], on, on),
+          row("admin_account_moved", "moderator", ["admin_account_moved"], on, on),
+        ]
+      : []),
+    row(
+      "moderation",
+      "instance",
+      [
+        "moderation_notice",
+        "report_resolved",
+        "appeal_decided",
+        "relationships_severed",
+        "custom_emoji_request_decided",
+      ],
+      fixed,
+      off,
+    ),
+    row("service_closure", "instance", ["service_closure"], fixed, fixed),
+  ];
   const changes: unknown[] = [];
   await page.route("**/oauth/token/refresh", (route) =>
     json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }),
@@ -216,6 +261,24 @@ async function signedInServer(
           time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
         };
         return json(route, preferences);
+      }
+      case "GET /preferences/notifications":
+        return json(route, { rows: notificationRows });
+      case "PATCH /preferences/notifications": {
+        const body = request.postDataJSON() as {
+          changes: { group: string; channel: "in_app" | "email"; enabled: boolean }[];
+        };
+        changes.push(body);
+        notificationRows = notificationRows.map((r) =>
+          body.changes.reduce(
+            (changed, c) =>
+              c.group === r.group
+                ? { ...changed, [c.channel]: { ...changed[c.channel], enabled: c.enabled } }
+                : changed,
+            r,
+          ),
+        );
+        return json(route, { rows: notificationRows });
       }
       case "GET /blocks":
         return json(route, { accounts: [bob] });
@@ -373,6 +436,7 @@ const pages = [
   "/settings",
   "/settings/profile",
   "/settings/preferences",
+  "/settings/notifications",
   "/settings/follow-requests",
   "/settings/blocks",
   "/settings/mutes",
@@ -873,7 +937,7 @@ test.describe("email suppression", () => {
     await signedInServer(page, projectLocale(), {
       emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
     });
-    await page.goto("/settings/preferences");
+    await page.goto("/settings/notifications");
     const section = page
       .getByRole("main")
       .getByRole("region", { name: message("settings.email_suppression.title"), exact: true });
@@ -886,11 +950,82 @@ test.describe("email suppression", () => {
 
   test("shows nothing while emails reach the address", async ({ page }) => {
     await signedInServer(page, projectLocale());
-    await page.goto("/settings/preferences");
+    await page.goto("/settings/notifications");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     await expect(
       page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true }),
     ).toHaveCount(0);
+  });
+});
+
+/** The checkbox of the notification settings in the row `group` and the column `channel`. */
+function notificationCell(page: Page, group: string, channel: "in_app" | "email" | "sound") {
+  const name = message("settings.notifications.cell")
+    .replace("{type}", message(`settings.notifications.group.${group}`))
+    .replace("{channel}", message(`settings.notifications.channel.${channel}`));
+  return page.getByRole("main").getByRole("checkbox", { name, exact: true });
+}
+
+test.describe("notification settings", () => {
+  test("a moderator's tables save the in-app and email cells from the keyboard", async ({ page, makeAxeBuilder }) => {
+    const changes = await signedInServer(page, projectLocale(), { permissions: ["manage_reports", "manage_accounts"] });
+    await page.goto("/settings/notifications");
+    const main = page.getByRole("main");
+    await expect(main.getByRole("table")).toHaveCount(3);
+    await expect(
+      main.getByRole("table", { name: message("settings.notifications.section.moderator"), exact: true }),
+    ).toBeVisible();
+    const fixedCell = notificationCell(page, "moderation", "in_app");
+    await expect(fixedCell).toBeChecked();
+    await expect(fixedCell).toBeDisabled();
+    await expect(notificationCell(page, "admin_report", "email")).toBeChecked();
+
+    const boosts = notificationCell(page, "boost", "in_app");
+    await boosts.focus();
+    await page.keyboard.press("Space");
+    await expect(boosts).not.toBeChecked();
+    await expect(notificationCell(page, "boost", "email")).toBeDisabled();
+    const mentions = notificationCell(page, "mention", "email");
+    await mentions.focus();
+    await page.keyboard.press("Space");
+    await expect(mentions).toBeChecked();
+    await expect
+      .poll(() => changes)
+      .toEqual([
+        { changes: [{ group: "boost", channel: "in_app", enabled: false }] },
+        { changes: [{ group: "mention", channel: "email", enabled: true }] },
+      ]);
+
+    await page.reload();
+    await expect(notificationCell(page, "boost", "in_app")).not.toBeChecked();
+    await expect(notificationCell(page, "mention", "email")).toBeChecked();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("a server without email has no email column, and the sound column comes with its switch", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    await signedInServer(page, projectLocale(), { sendsEmail: false });
+    await page.goto("/settings/notifications");
+    const main = page.getByRole("main");
+    const ordinary = main.getByRole("table", { name: message("settings.notifications.section.ordinary"), exact: true });
+    await expect(ordinary.getByRole("columnheader")).toHaveCount(2);
+    await expect(notificationCell(page, "mention", "email")).toHaveCount(0);
+
+    // By keyboard: the inputs of the switch and the checkbox are visually hidden under what they draw.
+    await main.getByRole("switch", { name: message("settings.notifications.sound.enable"), exact: true }).focus();
+    await page.keyboard.press("Space");
+    await expect(ordinary.getByRole("columnheader")).toHaveCount(3);
+    const sound = notificationCell(page, "mention", "sound");
+    await sound.focus();
+    await page.keyboard.press("Space");
+    await expect(sound).toBeChecked();
+    await page.reload();
+    await expect(notificationCell(page, "mention", "sound")).toBeChecked();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
   });
 });
 

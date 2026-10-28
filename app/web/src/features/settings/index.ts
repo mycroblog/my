@@ -17,6 +17,10 @@ export { DomainMutes } from "./components/DomainMutes";
 export { CsvExportsSection, ImportExport } from "./components/ImportExport";
 export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
+// The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0109).
+export { notificationSettingsQueryOptions } from "./api/notificationSettings";
+export { instanceQueryOptions } from "./api/me";
+export { NotificationSettings } from "./components/NotificationSettings";
 export { ProfileForm } from "./components/ProfileForm";
 export { SettingsMenu } from "./components/SettingsMenu";
 export { ThemeRadioGroup } from "./components/ThemeRadioGroup";

@@ -1,8 +1,4 @@
 {
-  "settings.push.type.supporter": {
-    "defaultMessage": "サポーターのプラン",
-    "description": "Checkbox of the push notification kinds: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
-  },
   "settings.account.delete.cancel": {
     "defaultMessage": "キャンセル",
     "description": "Button in the dialog that closes it without deleting the account."
@@ -621,51 +617,7 @@
   },
   "settings.push.title": {
     "defaultMessage": "プッシュ通知",
-    "description": "Heading of the section of the preferences about Web Push notifications on this device."
-  },
-  "settings.push.type.admin": {
-    "defaultMessage": "モデレーター向けの通知",
-    "description": "Checkbox of the push notification kinds, shown to moderators only: new reports, sign-ups awaiting approval and appeals."
-  },
-  "settings.push.type.boost": {
-    "defaultMessage": "ブースト",
-    "description": "Checkbox of the push notification kinds: someone boosted the user's post."
-  },
-  "settings.push.type.favourite": {
-    "defaultMessage": "お気に入り",
-    "description": "Checkbox of the push notification kinds: someone favourited the user's post."
-  },
-  "settings.push.type.follow": {
-    "defaultMessage": "新しいフォロワー",
-    "description": "Checkbox of the push notification kinds: someone followed the user."
-  },
-  "settings.push.type.follow_accepted": {
-    "defaultMessage": "承認されたフォローリクエスト",
-    "description": "Checkbox of the push notification kinds: someone accepted the user's follow request."
-  },
-  "settings.push.type.follow_request": {
-    "defaultMessage": "フォローリクエスト",
-    "description": "Checkbox of the push notification kinds: someone asked to follow the user."
-  },
-  "settings.push.type.mention": {
-    "defaultMessage": "メンション",
-    "description": "Checkbox of the push notification kinds: a post mentions the user."
-  },
-  "settings.push.type.moderation": {
-    "defaultMessage": "モデレーターからのお知らせ",
-    "description": "Checkbox of the push notification kinds: notices and decisions of the moderators about the user's account, appeals and reports, and follows ended by a suspension."
-  },
-  "settings.push.type.reaction": {
-    "defaultMessage": "絵文字リアクション",
-    "description": "Checkbox of the push notification kinds: someone reacted to the user's post with an emoji."
-  },
-  "settings.push.types.description": {
-    "defaultMessage": "この端末に通知する内容を選びます。",
-    "description": "Help text of the group of checkboxes of the push notification kinds."
-  },
-  "settings.push.types.label": {
-    "defaultMessage": "通知する内容",
-    "description": "Label of the group of checkboxes of the push notification kinds."
+    "description": "Heading of the section of the notification settings about Web Push notifications on this device."
   },
   "settings.push.unsupported": {
     "defaultMessage": "このブラウザはプッシュ通知を受け取れません。iPhone と iPad では、このサイトをホーム画面に追加して、そこから開いてください。",
@@ -1391,10 +1343,6 @@
     "defaultMessage": "投稿ごとにも選べます。",
     "description": "Description of the setting of who may quote the user's new posts."
   },
-  "settings.push.type.quote": {
-    "defaultMessage": "引用",
-    "description": "Checkbox of the push notification settings: notifications when someone quotes the user's post."
-  },
   "settings.apps.title": {
     "defaultMessage": "開発",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
@@ -1749,7 +1697,7 @@
   },
   "settings.email_suppression.title": {
     "defaultMessage": "メールの配信",
-    "description": "Heading of the section of the preferences that says emails do not reach the user's address; shown only while the address is suppressed."
+    "description": "Heading of the section of the notification settings that says emails do not reach the user's address; shown only while the address is suppressed."
   },
   "settings.email_suppression.hard_bounce": {
     "defaultMessage": "あなたのアドレスにメールが届いていません。メールが返送されたため、サーバーは通知もパスワード再設定のメールも送っていません。",
@@ -1766,14 +1714,6 @@
   "settings.email_suppression.hard_bounce.action": {
     "defaultMessage": "メールボックスが使えるようになったら、確認のメールをもう一度求めてください。アドレスを確認すると、サーバーがまたメールを送るようになり、この表示は消えます。",
     "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
-  },
-  "settings.push.type.account_moved": {
-    "defaultMessage": "フォロー中のアカウントの移転",
-    "description": "Checkbox of the push notification kinds: an account the user followed moved to another account."
-  },
-  "settings.push.type.service_closure": {
-    "defaultMessage": "このサーバーの終了",
-    "description": "Checkbox of the push notification kinds: the closure of the service was announced, rescheduled or withdrawn."
   },
   "settings.linked_accounts.title": {
     "defaultMessage": "連携したアカウント",
@@ -1958,5 +1898,157 @@
   "settings.account.delete.confirm.description_external": {
     "defaultMessage": "アカウントはすぐに削除され、ログアウトします。元に戻すことはできません。",
     "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
+  },
+  "settings.notifications.title": {
+    "defaultMessage": "通知",
+    "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
+  },
+  "settings.notifications.table.description": {
+    "defaultMessage": "通知の種類ごとに、受け取り方を選びます。アプリ内でオフにした種類の通知は作られないので、プッシュ・メール・音でも届きません（届いている通知は残ります）。チェックが入ったまま変えられない項目は、常にオンです。",
+    "description": "Help text above the tables of the notification settings: turning a kind off in the app stops it everywhere, and disabled checked boxes are always on."
+  },
+  "settings.notifications.section.ordinary": {
+    "defaultMessage": "ほかの人からの通知",
+    "description": "Heading of the table of the notifications about what other users did (mentions, follows, boosts...)."
+  },
+  "settings.notifications.section.moderator": {
+    "defaultMessage": "モデレーター向けの通知",
+    "description": "Heading of the table of the notifications for moderators (reports, sign-ups, appeals...); shown only to users with those permissions."
+  },
+  "settings.notifications.section.instance": {
+    "defaultMessage": "このサーバーからのお知らせ",
+    "description": "Heading of the table of the server's notices to the user (moderation decisions, the closure of the server, the supporter plan)."
+  },
+  "settings.notifications.column.type": {
+    "defaultMessage": "通知",
+    "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
+  },
+  "settings.notifications.channel.in_app": {
+    "defaultMessage": "アプリ内",
+    "description": "Column header of the notification settings tables: whether the notifications are created and shown in the app."
+  },
+  "settings.notifications.channel.push": {
+    "defaultMessage": "プッシュ",
+    "description": "Column header of the notification settings tables: whether the notifications are pushed to this device (Web Push)."
+  },
+  "settings.notifications.channel.email": {
+    "defaultMessage": "メール",
+    "description": "Column header of the notification settings tables: whether the notifications are sent by email."
+  },
+  "settings.notifications.channel.sound": {
+    "defaultMessage": "音",
+    "description": "Column header of the notification settings tables: whether this device plays a sound when the notifications arrive while the app is open."
+  },
+  "settings.notifications.cell": {
+    "defaultMessage": "{type}：{channel}",
+    "description": "Accessible name of a checkbox of the notification settings tables. {type} is the row (a kind of notification), {channel} the column (In the app, Push, Email, Sound)."
+  },
+  "settings.notifications.group.mention": {
+    "defaultMessage": "メンション",
+    "description": "Row of the notification settings table: a post mentions the user."
+  },
+  "settings.notifications.group.follow": {
+    "defaultMessage": "新しいフォロワー",
+    "description": "Row of the notification settings table: someone followed the user."
+  },
+  "settings.notifications.group.follow_request": {
+    "defaultMessage": "フォローリクエスト",
+    "description": "Row of the notification settings table: someone asked to follow the user."
+  },
+  "settings.notifications.group.follow_accepted": {
+    "defaultMessage": "承認されたフォローリクエスト",
+    "description": "Row of the notification settings table: someone accepted the user's follow request."
+  },
+  "settings.notifications.group.boost": {
+    "defaultMessage": "ブースト",
+    "description": "Row of the notification settings table: someone boosted the user's post."
+  },
+  "settings.notifications.group.favourite": {
+    "defaultMessage": "お気に入り",
+    "description": "Row of the notification settings table: someone favourited the user's post."
+  },
+  "settings.notifications.group.reaction": {
+    "defaultMessage": "絵文字リアクション",
+    "description": "Row of the notification settings table: someone reacted to the user's post with an emoji."
+  },
+  "settings.notifications.group.quote": {
+    "defaultMessage": "引用",
+    "description": "Row of the notification settings table: someone quoted the user's post."
+  },
+  "settings.notifications.group.poll_closed": {
+    "defaultMessage": "終了した投票",
+    "description": "Row of the notification settings table: a poll the user made or voted in ended."
+  },
+  "settings.notifications.group.account_moved": {
+    "defaultMessage": "フォロー中のアカウントの移転",
+    "description": "Row of the notification settings table: an account the user followed moved to another account."
+  },
+  "settings.notifications.group.voice": {
+    "defaultMessage": "ボイスチャット",
+    "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
+  },
+  "settings.notifications.group.admin_report": {
+    "defaultMessage": "通報",
+    "description": "Row of the notification settings table: (moderators) an account was reported."
+  },
+  "settings.notifications.group.admin_sign_up": {
+    "defaultMessage": "承認待ちの登録",
+    "description": "Row of the notification settings table: (moderators) a registration awaits approval."
+  },
+  "settings.notifications.group.admin_appeal": {
+    "defaultMessage": "異議申し立て",
+    "description": "Row of the notification settings table: (moderators) a user appealed a moderation action."
+  },
+  "settings.notifications.group.admin_webhook_disabled": {
+    "defaultMessage": "停止した Webhook",
+    "description": "Row of the notification settings table: (administrators) the server disabled a webhook that kept failing."
+  },
+  "settings.notifications.group.admin_custom_emoji_request": {
+    "defaultMessage": "カスタム絵文字の申請",
+    "description": "Row of the notification settings table: (administrators) a user requested a custom emoji."
+  },
+  "settings.notifications.group.admin_account_moved": {
+    "defaultMessage": "制限中のアカウントの移転",
+    "description": "Row of the notification settings table: (moderators) an account the moderators limit moved to another account."
+  },
+  "settings.notifications.group.admin_service_closure_due": {
+    "defaultMessage": "終了日の到来",
+    "description": "Row of the notification settings table: (administrators) the announced closing date of the server has passed."
+  },
+  "settings.notifications.group.admin_error_group": {
+    "defaultMessage": "サーバーのエラー",
+    "description": "Row of the notification settings table: (administrators) a new server error, or one that happened again."
+  },
+  "settings.notifications.group.moderation": {
+    "defaultMessage": "モデレーターからのお知らせ",
+    "description": "Row of the notification settings table: notices and decisions of the moderators about the user's account, appeals, reports and custom emoji requests, and follows ended by a suspension."
+  },
+  "settings.notifications.group.service_closure": {
+    "defaultMessage": "このサーバーの終了",
+    "description": "Row of the notification settings table: the closure of the service was announced, rescheduled or withdrawn."
+  },
+  "settings.notifications.group.supporter": {
+    "defaultMessage": "サポーターのプラン",
+    "description": "Row of the notification settings table: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
+  },
+  "settings.notifications.sound.title": {
+    "defaultMessage": "通知音",
+    "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."
+  },
+  "settings.notifications.sound.enable": {
+    "defaultMessage": "新しい通知で音を鳴らす",
+    "description": "Label of the switch that turns the notification sound on for this device."
+  },
+  "settings.notifications.sound.enable.description": {
+    "defaultMessage": "この端末で、アプリを開いている間に鳴らします。鳴らす種類は、下の表の「音」の列で選びます。",
+    "description": "Help text of the switch of the notification sound; the Sound column appears in the tables while it is on."
+  },
+  "settings.notifications.sound.play": {
+    "defaultMessage": "音を試す",
+    "description": "Button that plays the notification sound once, which also lets the browser play it later."
+  },
+  "settings.notifications.sound.blocked": {
+    "defaultMessage": "ブラウザが音を再生しませんでした。ブラウザのサイトの設定で音の再生を許可してから、もう一度試してください。",
+    "description": "Error shown when the browser refused to play the notification sound after the user pressed the button."
   }
 }

@@ -85,6 +85,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:display:locale` | localStorage | 最後に表示したロケール（§9） | いいえ |
 | `my:display:autoplay` | localStorage | アニメーションの自動再生（§13） | いいえ |
 | `my:display:navigation` | localStorage | ナビゲーションの項目の順番と隠した項目（§9） | いいえ |
+| `my:notifications:sound` | localStorage | 通知音を鳴らすか（全体のスイッチ。既定はオフ）と、鳴らす通知の種類（§9、ADR-0109 §5） | いいえ |
 | `my:instance:timelines` | localStorage | インスタンスが提供する公開タイムライン（§9） | いいえ |
 | `my:instance:status-page` | localStorage | 最後に読んだ `GET /instance` の `status_page_url`（§11、ADR-0085 §6） | いいえ |
 | `my:emoji:recent` | localStorage | よく使う絵文字（Unicode 絵文字の基の列とカスタム絵文字の `:shortcode:`）と、減衰させた回数・最後に使った時刻（§12、ADR-0091 §3） | いいえ |
