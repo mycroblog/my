@@ -25,6 +25,7 @@ import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useSaveLabels } from "../hooks/saveState";
 import type { Preferences } from "../api/me";
+import { useVerificationEmail } from "../hooks/useVerificationEmail";
 import {
   type NotificationChannel,
   notificationChannelLabels,
@@ -237,12 +238,31 @@ function EmailDelivery({ suppression }: { suppression: Preferences["email_suppre
             : t("client:settings.email_suppression.complaint")}
         </Text>
         <Hint size="inherit">{t("client:settings.email_suppression.since", { since })}</Hint>
-        {suppression.kind === "hard_bounce" && (
-          <Text as="p" size="sm" tone="fg">
-            {t("client:settings.email_suppression.hard_bounce.action")}
-          </Text>
-        )}
+        {suppression.kind === "hard_bounce" && <VerificationEmailAction />}
       </Callout>
     </Section>
+  );
+}
+
+/**
+ * After a hard bounce: what to do, and the button that asks for the verification email again, with its result next to
+ * it (web-client/16-look-states-and-wording.md G24, G16).
+ */
+function VerificationEmailAction() {
+  const t = useT();
+  const verification = useVerificationEmail();
+  return (
+    <Stack gap="2">
+      <Text as="p" size="sm" tone="fg">
+        {t("client:settings.email_suppression.hard_bounce.action")}
+      </Text>
+      <Cluster gap="3" align="center">
+        <Button size="sm" onPress={verification.send} isPending={verification.isPending}>
+          {t("client:settings.email_suppression.verification.send")}
+        </Button>
+        {verification.sent !== undefined && <Hint size="inherit">{verification.sent}</Hint>}
+      </Cluster>
+      {verification.error !== undefined && <InlineError alert>{verification.error}</InlineError>}
+    </Stack>
   );
 }
