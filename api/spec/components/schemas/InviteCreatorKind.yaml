@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+  applies and its creator is not checked. `member`: by a member through their own invites,
+  under the caps of the instance settings; it works only while its creator may create invites.
+type: string
+enum: [staff, member]

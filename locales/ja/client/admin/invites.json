@@ -68,8 +68,8 @@
     "description": "Help of the number of sign-ups of an invite."
   },
   "admin.invites.mode_notice": {
-    "defaultMessage": "いまサーバーは招待制ではないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定で変えます。",
-    "description": "Notice on the invites screen when the registration mode is not invite."
+    "defaultMessage": "いまサーバーは新しいアカウントを受け付けていないので、招待では誰も登録できません。登録できる人は、管理者がサーバーの設定で変えます。",
+    "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
   },
   "admin.invites.never": {
     "defaultMessage": "無期限",
@@ -114,6 +114,10 @@
   "admin.invites.state.usable": {
     "defaultMessage": "使える",
     "description": "State of an invite that people may sign up with."
+  },
+  "admin.invites.state.creator_ineligible": {
+    "defaultMessage": "作成者が招待できない",
+    "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
   },
   "admin.invites.summary": {
     "defaultMessage": "招待制のときに登録できるようにするコード。",

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: revokeOwnInvite
+  summary: Revoke an invite of the user's own
+  description: |
+    The invite stops working at once; the people who signed up with it keep their accounts.
+    Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+    with the user as the actor. A user revokes their own invites even when they may no longer
+    create invites. An unknown ID, or an invite that the user did not create as a member, is
+    a 404.
+  tags: [invites]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/InviteId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/OwnInvite.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

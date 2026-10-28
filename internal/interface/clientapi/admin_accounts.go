@@ -185,6 +185,16 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 		if app.InviteID != "" {
 			reg.InviteId = &app.InviteID
 		}
+		if inv := d.Invite; inv != nil {
+			presented, err := s.withInviteCreators(ctx, []appidentity.InviteStatus{{Invite: *inv}})
+			if err != nil {
+				return nil, err
+			}
+			reg.Invite = &AdminAccountInvite{
+				Id: inv.ID, CreatorKind: presented[0].CreatorKind, CreatedBy: presented[0].CreatedBy,
+				CreatedByDeleted: presented[0].CreatedByDeleted,
+			}
+		}
 		out.Registration = &reg
 	}
 	actions, err := s.o.AccountModeration.AccountActions(ctx, appmoderation.AccountActionFilter{AccountID: req.Id}, appidentity.AccountDetailHistory)

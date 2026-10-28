@@ -50,7 +50,7 @@ func TestCheckManageable(t *testing.T) {
 		{"member role below staff", byID[fanRoleID], 0, ""},
 		{"no permissions below staff", RoleFacts{Role: Role{ID: newRoleID, Key: "new", Position: 49}}, 0, ""},
 		{"every member permission below staff", RoleFacts{Role: Role{ID: newRoleID, Key: "new", Position: 49},
-			Permissions: []Permission{PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms}}, 0, ""},
+			Permissions: []Permission{PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites}}, 0, ""},
 		{"admin", byID[adminRoleID], 0, RuleBuiltin},
 		{"moderator", byID[modRoleID], 0, RuleBuiltin},
 		{"managed already", byID[planRoleID], 0, RuleManaged},

@@ -32,8 +32,9 @@ import (
 // redeemed concurrently), that a failed sign-up writes nothing, that sign-ups are rate-limited
 // per address, the invite listing and revocation, that a sign-up records its origin, which
 // the purge erases after the retention, the count of pending registrations, and the holders of
-// a permission with where their moderator notifications are emailed. It uses the same harness as
-// AccountRepositoryContract.
+// a permission with where their moderator notifications are emailed, and the invites that members
+// create (ADR-0108): who may, the caps, and the check of their creator at every sign-up in the
+// open, approval, and invite modes. It uses the same harness as AccountRepositoryContract.
 func RegistrationRepositoryContract(t *testing.T, newHarness AccountFactory) {
 	t.Helper()
 	cases := []struct {
@@ -54,6 +55,8 @@ func RegistrationRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"AdminsAreApprovedAndVerified", registrationAdmin},
 		{"RecordsAndPurgesRegistrationOrigins", registrationRecordsOrigins},
 		{"CountsPendingAndFindsModerators", registrationModerators},
+		{"MembersCreateInvitesUnderTheCaps", memberInvitesCreate},
+		{"InvitesWorkInEveryOpenModeWhileTheirCreatorMayInvite", memberInvitesSignUp},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newAccountEnv(t, newHarness)) })
@@ -128,7 +131,7 @@ func (r registration) lastToken(t *testing.T, address string) string {
 func registrationOpen(t *testing.T, e *accountEnv) {
 	r := e.registration(identity.RegistrationOpen, true)
 	in := signUpInput("alice")
-	in.Reason, in.InviteCode = "ignored outside approval mode", "IGNORED"
+	in.Reason = "ignored outside approval mode"
 	got := r.signUp(t, in)
 	if got.State != identity.RegistrationApproved {
 		t.Fatalf("SignUp = state %s, want approved", got.State)

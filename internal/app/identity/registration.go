@@ -53,6 +53,12 @@ type RegistrationRepository interface {
 	// ListInvites returns invites with their usage, newest first, at most limit of them; a
 	// before other than "" keeps the invites whose ID sorts before it.
 	ListInvites(ctx context.Context, before string, limit int) ([]InviteStatus, error)
+	// ListMemberInvites returns the invites that a user created as a member
+	// (identity.InviteByMember), as ListInvites does.
+	ListMemberInvites(ctx context.Context, creatorUserID, before string, limit int) ([]InviteStatus, error)
+	// CountUsableMemberInvites counts the invites that a user created as a member and that are
+	// neither revoked, expired at now, nor used up, as the transaction sees them.
+	CountUsableMemberInvites(ctx context.Context, tx uow.Tx, creatorUserID string, now time.Time) (int, error)
 
 	InsertUserToken(ctx context.Context, tx uow.Tx, t identity.UserToken) error
 	FindUserTokenByHash(ctx context.Context, hash []byte) (identity.UserToken, error)
@@ -101,8 +107,9 @@ var (
 	ErrSignUpRefused = errors.New("identity: the sign-up is refused")
 	// ErrInviteRequired reports a sign-up without an invite code in invite mode.
 	ErrInviteRequired = errors.New("identity: an invite is required")
-	// ErrInvalidInvite reports an invite code that is unknown, expired, revoked, or used up.
-	// It is one error for all four, so that the page does not tell them apart.
+	// ErrInvalidInvite reports an invite code that is unknown, expired, revoked, used up, or
+	// of a member who may no longer create invites (ADR-0108 §3). It is one error for all of
+	// them, so that the page does not tell them apart.
 	ErrInvalidInvite = errors.New("identity: invalid invite")
 	// ErrInviteCodeTaken reports an invite code that another invite already has.
 	ErrInviteCodeTaken = errors.New("identity: invite code is taken")
@@ -143,8 +150,9 @@ type SignUpInput struct {
 	Password string
 	// Locale is the new user's UI locale, a BCP 47 tag; empty means Deps.DefaultLocale.
 	Locale string
-	// InviteCode is the invite the applicant entered; it is required in invite mode and
-	// ignored in the other modes.
+	// InviteCode is the invite the applicant entered: required in invite mode and optional in
+	// open and approval mode, where a code that does not work fails the sign-up all the same
+	// (ADR-0108 §4).
 	InviteCode string
 	// Reason is why the applicant wants to join; it is kept in approval mode and ignored in
 	// the other modes.
@@ -172,7 +180,11 @@ type SignedUp struct {
 
 // SignUp registers a user from the registration page according to the registration mode
 // (FR-001): open mode approves at once, approval mode leaves the registration pending for a
-// moderator, invite mode needs a valid invite and approves at once, and closed mode refuses.
+// moderator unless the applicant brings a usable invite, invite mode needs a usable invite and
+// approves at once, and closed mode refuses. An invite works in open, approval, and invite
+// mode (ADR-0108 §4): it is usable when it is neither revoked, expired, nor used up, and when a
+// member created it, while that member may still create invites (§3); an invite code that is
+// not usable fails the sign-up in every mode, so that a mistyped code does not pass unnoticed.
 // When email verification is not required (no mailer delivers email, FR-002), open mode
 // waits for a moderator as approval mode does. The sign-up block list (FR-719) comes on top:
 // a block in effect that matches the email address or the client address refuses the sign-up
@@ -265,16 +277,10 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 		return SignedUp{}, ErrSignUpRefused
 	}
 	var invite *identity.Invite
-	if mode == identity.RegistrationInvite {
-		inv, err := s.d.Repository.FindInviteByCode(ctx, code)
-		if errors.Is(err, ErrNotFound) {
-			return SignedUp{}, ErrInvalidInvite
-		}
+	if code != "" {
+		inv, err := s.signUpInvite(ctx, code)
 		if err != nil {
 			return SignedUp{}, err
-		}
-		if inv.Expired(s.d.Clock.Now()) {
-			return SignedUp{}, ErrInvalidInvite
 		}
 		invite = &inv
 	}
@@ -293,7 +299,10 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 	}
 	state := identity.UserRegistrationState{UserID: p.user.ID, State: identity.RegistrationPending, Since: now}
 	var decision *identity.RegistrationDecision
-	approve := mode == identity.RegistrationInvite || (mode == identity.RegistrationOpen && s.d.RequireEmailVerification)
+	// A usable invite approves in approval mode too: its creator stands in for the moderator
+	// (ADR-0108 §4). In open mode it only records who invited the user.
+	approve := mode == identity.RegistrationInvite || (mode == identity.RegistrationOpen && s.d.RequireEmailVerification) ||
+		(mode == identity.RegistrationApproval && invite != nil)
 	if approve && severity != appmoderation.SignupRequireApproval {
 		decision = &identity.RegistrationDecision{
 			ID: s.d.IDs.NewID(), ApplicationID: app.ID, Decision: identity.DecisionApproved,
@@ -369,6 +378,36 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 		return SignedUp{}, err
 	}
 	return SignedUp{Registration: p.registration(), State: state.State, Session: session.signedIn()}, nil
+}
+
+// signUpInvite returns the invite with the code for a sign-up, failing with ErrInvalidInvite
+// when no invite has the code, it expired, or a member created it who may no longer create
+// invites (ADR-0108 §3). redeemInvite checks the revocation and the uses in the transaction.
+func (s *Service) signUpInvite(ctx context.Context, code string) (identity.Invite, error) {
+	inv, err := s.d.Repository.FindInviteByCode(ctx, code)
+	if errors.Is(err, ErrNotFound) {
+		return identity.Invite{}, ErrInvalidInvite
+	}
+	if err != nil {
+		return identity.Invite{}, err
+	}
+	if inv.Expired(s.d.Clock.Now()) {
+		return identity.Invite{}, ErrInvalidInvite
+	}
+	if inv.CreatorKind == identity.InviteByMember {
+		settings, err := s.memberInviteSettings(ctx)
+		if err != nil {
+			return identity.Invite{}, err
+		}
+		ok, err := s.creatorEligible(ctx, inv, settings)
+		if err != nil {
+			return identity.Invite{}, err
+		}
+		if !ok {
+			return identity.Invite{}, ErrInvalidInvite
+		}
+	}
+	return inv, nil
 }
 
 // redeemInvite records the next use of an invite, failing with ErrInvalidInvite when it is

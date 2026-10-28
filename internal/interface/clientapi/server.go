@@ -275,9 +275,11 @@ type Options struct {
 	// Settings reads and changes the instance settings (admin_settings.go).
 	Settings InstanceSettings
 	// Invites runs the invites (admin_invites.go); SignUpPath is the path, on Origin, of the
-	// registration page that AdminInvite.url opens with the code filled in.
+	// registration page that AdminInvite.url and OwnInvite.url open with the code filled in.
 	Invites    Invites
 	SignUpPath string
+	// OwnInvites runs the invites that members create (invites.go); nil answers 404.
+	OwnInvites OwnInvites
 	// OAuthClients runs the OAuth clients and the denied hosts of client metadata documents
 	// (admin_oauth_clients.go).
 	OAuthClients OAuthClients

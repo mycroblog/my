@@ -105,6 +105,13 @@ const (
 	SettingVoiceRoomStarters          SettingKey = "voice_room_starters"
 	SettingVoicePublicSummary         SettingKey = "voice_public_summary"
 	SettingRetentionVoiceParticipants SettingKey = "retention_voice_participants"
+	// SettingInviteCreators decides who may create invites of their own (ADR-0108 §1), and
+	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
+	// SettingMemberInviteMaxExpiresIn bound those invites (§2).
+	SettingInviteCreators           SettingKey = "invite_creators"
+	SettingMemberInviteMaxActive    SettingKey = "member_invite_max_active"
+	SettingMemberInviteMaxUses      SettingKey = "member_invite_max_uses"
+	SettingMemberInviteMaxExpiresIn SettingKey = "member_invite_max_expires_in"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -227,6 +234,35 @@ const (
 	VoiceRoomStartersEveryone  VoiceRoomStarters = "everyone"  // every signed-in local user
 	VoiceRoomStartersPermitted VoiceRoomStarters = "permitted" // the holders of start_voice_rooms
 )
+
+// InviteCreators is the value of SettingInviteCreators (ADR-0108 §1): who may create invites of
+// their own besides the holders of manage_invites.
+type InviteCreators string
+
+// Invite creators values.
+const (
+	InviteCreatorsEveryone  InviteCreators = "everyone"  // every signed-in local user
+	InviteCreatorsPermitted InviteCreators = "permitted" // the holders of create_invites
+)
+
+// The bounds and defaults of the caps of the invites members create (ADR-0108 §2).
+const (
+	DefaultMemberInviteMaxActive    = 5
+	MaxMemberInviteMaxActive        = 100
+	DefaultMemberInviteMaxUses      = 10
+	MaxMemberInviteMaxUses          = 1000
+	DefaultMemberInviteMaxExpiresIn = 30 * 24 * time.Hour
+	MinMemberInviteMaxExpiresIn     = time.Hour
+	MaxMemberInviteMaxExpiresIn     = 365 * 24 * time.Hour
+)
+
+// MemberInviteCaps are the values of SettingMemberInviteMaxActive, SettingMemberInviteMaxUses,
+// and SettingMemberInviteMaxExpiresIn.
+type MemberInviteCaps struct {
+	MaxActive    int
+	MaxUses      int
+	MaxExpiresIn time.Duration
+}
 
 // FinanceViewer is what the holders of view_finance read of the instance's finances beyond the
 // totals and their breakdown by provider and category, which they always read (ADR-0070 §5).
@@ -491,6 +527,24 @@ var definitions = []Definition{
 	{
 		Key: SettingRetentionVoiceParticipants, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionVoiceParticipants), Min: MinRetentionVoiceParticipants, Max: MaxRetention,
 		Doc: "How many days the records of who took part in a voice chat room, and as what, are kept after the room ended; the records of a reported room are kept as long as the report (ADR-0100 §13).",
+	},
+	{
+		Key: SettingInviteCreators, Kind: KindEnum, Default: string(InviteCreatorsPermitted),
+		Choices: []string{string(InviteCreatorsEveryone), string(InviteCreatorsPermitted)},
+		Doc:     "Who may create invites of their own besides the staff with manage_invites: everyone (every signed-in local user who is not suspended or limited) or permitted (only the holders of the create_invites permission) (ADR-0108 §1).",
+	},
+	{
+		Key: SettingMemberInviteMaxActive, Kind: KindInt, Default: strconv.Itoa(DefaultMemberInviteMaxActive), Min: 0, Max: MaxMemberInviteMaxActive,
+		Doc: "How many usable invites (not revoked, expired, or used up) one member may hold at once; 0 lets members create none. Invites of the staff do not count (ADR-0108 §2).",
+	},
+	{
+		Key: SettingMemberInviteMaxUses, Kind: KindInt, Default: strconv.Itoa(DefaultMemberInviteMaxUses), Min: 1, Max: MaxMemberInviteMaxUses,
+		Doc: "How many people may sign up with one invite that a member creates (ADR-0108 §2).",
+	},
+	{
+		Key: SettingMemberInviteMaxExpiresIn, Kind: KindInt, Default: strconv.Itoa(int(DefaultMemberInviteMaxExpiresIn / time.Second)),
+		Min: int(MinMemberInviteMaxExpiresIn / time.Second), Max: int(MaxMemberInviteMaxExpiresIn / time.Second),
+		Doc: "How long, in seconds, an invite that a member creates may work at most (ADR-0108 §2).",
 	},
 }
 
@@ -924,6 +978,23 @@ func (s Settings) VoiceRoomStarters() VoiceRoomStarters {
 		return VoiceRoomStartersEveryone
 	}
 	return VoiceRoomStartersPermitted
+}
+
+// InviteCreators returns the value of SettingInviteCreators; an unexpected value is permitted.
+func (s Settings) InviteCreators() InviteCreators {
+	if v, _ := s.Value(SettingInviteCreators); v == string(InviteCreatorsEveryone) {
+		return InviteCreatorsEveryone
+	}
+	return InviteCreatorsPermitted
+}
+
+// MemberInviteCaps returns the caps of the invites members create.
+func (s Settings) MemberInviteCaps() MemberInviteCaps {
+	return MemberInviteCaps{
+		MaxActive:    s.intValue(SettingMemberInviteMaxActive),
+		MaxUses:      s.intValue(SettingMemberInviteMaxUses),
+		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxExpiresIn)) * time.Second,
+	}
 }
 
 // VoicePublicSummary returns the value of SettingVoicePublicSummary.

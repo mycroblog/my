@@ -173,6 +173,8 @@ export function inviteFixture(overrides: Partial<Schemas["AdminInvite"]> = {}): 
     max_uses: 1,
     uses: 0,
     state: "usable",
+    creator_kind: "staff",
+    created_by_deleted: false,
     expires_at: "2026-10-23T00:00:00Z",
     created_at: "2026-10-16T00:00:00Z",
     ...overrides,

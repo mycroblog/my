@@ -42,6 +42,10 @@ func TestBuiltinRoles(t *testing.T) {
 	if got := identity.PermStartVoiceRooms.Category(); got != identity.CategoryMember {
 		t.Errorf("start_voice_rooms is %s, want member", got)
 	}
+	// Of the built-in roles, only admin may create invites as a member (ADR-0108 §1).
+	if !slices.Contains(roles[0].Permissions, identity.PermCreateInvites) || slices.Contains(roles[1].Permissions, identity.PermCreateInvites) {
+		t.Errorf("create_invites: admin %v, moderator %v; want admin only", roles[0].Permissions, roles[1].Permissions)
+	}
 }
 
 func TestValidateEmail(t *testing.T) {

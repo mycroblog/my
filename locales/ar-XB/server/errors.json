@@ -143,6 +143,18 @@
     "defaultMessage": "‮⊥ɥǝ ʌɐʅnǝ oɟ {name} ıs ıuʌɐʅıp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.invites.not_allowed": {
+    "defaultMessage": "‮⅄on ɔɐu'ʇ ɔɹǝɐʇǝ ıuʌıʇǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.invites.registration_closed": {
+    "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ ʇɐʞǝs uo uǝʍ ɐɔɔonuʇs uoʍ, so uo ıuʌıʇǝ ɔɐu qǝ ɔɹǝɐʇǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.invites.too_many": {
+    "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ nsɐqʅǝ ıuʌıʇǝs ɐs ɐʅʅoʍǝp. ᴚǝʌoʞǝ ouǝ, oɹ ʍɐıʇ nuʇıʅ ouǝ ǝxdıɹǝs oɹ ıs nsǝp nd.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.login_provider.linked": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐʅɹǝɐpʎ ʅıuʞǝp ɐu ɐɔɔonuʇ ɐʇ ʇɥɐʇ sıƃu-ıu sǝɹʌıɔǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

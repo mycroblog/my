@@ -810,15 +810,18 @@ func (e AdminInstanceState) Valid() bool {
 
 // Defines values for AdminInviteState.
 const (
-	AdminInviteStateExhausted AdminInviteState = "exhausted"
-	AdminInviteStateExpired   AdminInviteState = "expired"
-	AdminInviteStateRevoked   AdminInviteState = "revoked"
-	AdminInviteStateUsable    AdminInviteState = "usable"
+	AdminInviteStateCreatorIneligible AdminInviteState = "creator_ineligible"
+	AdminInviteStateExhausted         AdminInviteState = "exhausted"
+	AdminInviteStateExpired           AdminInviteState = "expired"
+	AdminInviteStateRevoked           AdminInviteState = "revoked"
+	AdminInviteStateUsable            AdminInviteState = "usable"
 )
 
 // Valid indicates whether the value is a known member of the AdminInviteState enum.
 func (e AdminInviteState) Valid() bool {
 	switch e {
+	case AdminInviteStateCreatorIneligible:
+		return true
 	case AdminInviteStateExhausted:
 		return true
 	case AdminInviteStateExpired:
@@ -2090,9 +2093,13 @@ const (
 	InstanceSettingKeyFinanceVisibility                InstanceSettingKey = "finance_visibility"
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
+	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
 	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
 	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
+	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
+	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
@@ -2151,11 +2158,19 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyIndexableDefault:
 		return true
+	case InstanceSettingKeyInviteCreators:
+		return true
 	case InstanceSettingKeyLinkCardsEnabled:
 		return true
 	case InstanceSettingKeyLocalTimelineAccess:
 		return true
 	case InstanceSettingKeyMaxStatusLength:
+		return true
+	case InstanceSettingKeyMemberInviteMaxActive:
+		return true
+	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+		return true
+	case InstanceSettingKeyMemberInviteMaxUses:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2266,6 +2281,24 @@ func (e InstanceTextKey) Valid() bool {
 	case InstanceTextKeyTerms:
 		return true
 	case InstanceTextKeyThumbnailAlt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InviteCreatorKind.
+const (
+	InviteCreatorKindMember InviteCreatorKind = "member"
+	InviteCreatorKindStaff  InviteCreatorKind = "staff"
+)
+
+// Valid indicates whether the value is a known member of the InviteCreatorKind enum.
+func (e InviteCreatorKind) Valid() bool {
+	switch e {
+	case InviteCreatorKindMember:
+		return true
+	case InviteCreatorKindStaff:
 		return true
 	default:
 		return false
@@ -2707,6 +2740,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 // Defines values for Permission.
 const (
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionCreateInvites        Permission = "create_invites"
 	PermissionManageAccounts       Permission = "manage_accounts"
 	PermissionManageAnnouncements  Permission = "manage_announcements"
 	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
@@ -2734,6 +2768,8 @@ const (
 func (e Permission) Valid() bool {
 	switch e {
 	case PermissionCreateCustomEmojis:
+		return true
+	case PermissionCreateInvites:
 		return true
 	case PermissionManageAccounts:
 		return true
@@ -4135,6 +4171,26 @@ type AdminAccountDetail struct {
 	TwoFactorEnabled *bool `json:"two_factor_enabled,omitempty"`
 }
 
+// AdminAccountInvite The invite that a local account signed up with, and who created it, which invited the user.
+type AdminAccountInvite struct {
+	// CreatedBy The account of the user who created the invite. Absent for an invite created with the
+	// CLI and one whose creator's account is deleted (`created_by_deleted`).
+	CreatedBy *Account `json:"created_by,omitempty"`
+
+	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
+	CreatedByDeleted bool `json:"created_by_deleted"`
+
+	// CreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+	// applies and its creator is not checked. `member`: by a member through their own invites,
+	// under the caps of the instance settings; it works only while its creator may create invites.
+	CreatorKind InviteCreatorKind `json:"creator_kind"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+}
+
 // AdminAccountPage A page of accounts, newest first.
 type AdminAccountPage struct {
 	Items []AdminAccount `json:"items"`
@@ -4169,6 +4225,9 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// Invite The invite that a local account signed up with, and who created it, which invited the user.
+	Invite *AdminAccountInvite `json:"invite,omitempty"`
+
 	// InviteId The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -4822,11 +4881,23 @@ type AdminInstanceTextList struct {
 	Items []AdminInstanceText `json:"items"`
 }
 
-// AdminInvite An invite that lets people sign up while the registration mode is `invite`.
+// AdminInvite An invite that lets people sign up while the registration mode is `open`, `approval`, or `invite`.
 type AdminInvite struct {
 	// Code The code people enter on the registration page, 16 characters.
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
+
+	// CreatedBy The account of the user who created the invite. Absent for an invite created with the
+	// CLI and one whose creator's account is deleted (`created_by_deleted`).
+	CreatedBy *Account `json:"created_by,omitempty"`
+
+	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
+	CreatedByDeleted bool `json:"created_by_deleted"`
+
+	// CreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+	// applies and its creator is not checked. `member`: by a member through their own invites,
+	// under the caps of the instance settings; it works only while its creator may create invites.
+	CreatorKind InviteCreatorKind `json:"creator_kind"`
 
 	// ExpiresAt When the invite stops working; omitted when it never does.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
@@ -4839,9 +4910,11 @@ type AdminInvite struct {
 	// MaxUses How many sign-ups the invite allows; omitted when there is no limit.
 	MaxUses *int `json:"max_uses,omitempty"`
 
-	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-	// member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-	// `max_uses` times.
+	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+	// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+	// `creator_ineligible`: a member created it who may no longer create invites (their
+	// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+	// suspended, limited, or deleted); it works again when the member may.
 	State AdminInviteState `json:"state"`
 
 	// Url The registration page with the code filled in, to send to people.
@@ -4859,9 +4932,11 @@ type AdminInvitePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminInviteState What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-// member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-// `max_uses` times.
+// AdminInviteState What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+// `creator_ineligible`: a member created it who may no longer create invites (their
+// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+// suspended, limited, or deleted); it works again when the member may.
 type AdminInviteState string
 
 // AdminJob A job of the job queue.
@@ -6857,6 +6932,15 @@ type CreateOAuthAppRequest struct {
 	Website *string `json:"website,omitempty"`
 }
 
+// CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
+type CreateOwnInviteRequest struct {
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	ExpiresIn *int `json:"expires_in,omitempty"`
+
+	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
+	MaxUses *int `json:"max_uses,omitempty"`
+}
+
 // CreatePasskeyRequest The browser's answer to a passkey registration.
 type CreatePasskeyRequest struct {
 	// Credential The `RegistrationResponseJSON` of WebAuthn Level 3 (§5.1): what
@@ -8469,6 +8553,11 @@ type InstanceTimelines struct {
 	Local TimelineAccess `json:"local"`
 }
 
+// InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+// applies and its creator is not checked. `member`: by a member through their own invites,
+// under the caps of the instance settings; it works only while its creator may create invites.
+type InviteCreatorKind string
+
 // IssueOAuthAppTokenRequest The scope of the tokens of an app for the authenticated user.
 type IssueOAuthAppTokenRequest struct {
 	// Scope Space-separated scopes within the app's; omitted or empty, the app's whole scope.
@@ -8864,6 +8953,25 @@ type MediaVariants struct {
 
 	// Small The still rendition for small views; WebP for an upload.
 	Small MediaVariant `json:"small"`
+}
+
+// MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+type MemberInviteLimits struct {
+	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
+	DefaultExpiresIn int `json:"default_expires_in"`
+
+	// DefaultMaxUses The sign-ups of an invite created without `max_uses`.
+	DefaultMaxUses int `json:"default_max_uses"`
+
+	// MaxActive How many usable invites one member may hold at once; 0 lets members create none.
+	MaxActive int `json:"max_active"`
+
+	// MaxExpiresIn The longest time, in seconds, that one invite may work.
+	MaxExpiresIn int `json:"max_expires_in"`
+
+	// MaxUses The most sign-ups one invite may allow.
+	MaxUses int `json:"max_uses"`
 }
 
 // ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
@@ -9419,6 +9527,58 @@ type OwnCustomEmojiPage struct {
 	Used int `json:"used"`
 }
 
+// OwnInvite An invite that the user created as a member, which always has a limit of uses and an expiry.
+type OwnInvite struct {
+	// Code The code people enter on the registration page, 16 characters.
+	Code      string    `json:"code"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt When the invite stops working.
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// MaxUses How many sign-ups the invite allows.
+	MaxUses int `json:"max_uses"`
+
+	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+	// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+	// `creator_ineligible`: a member created it who may no longer create invites (their
+	// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+	// suspended, limited, or deleted); it works again when the member may.
+	State AdminInviteState `json:"state"`
+
+	// Url The registration page with the code filled in, to send to people.
+	Url string `json:"url"`
+
+	// Uses How many people have signed up with the invite.
+	Uses int `json:"uses"`
+}
+
+// OwnInvitePage A page of the user's own invites, newest first, with what the user may do.
+type OwnInvitePage struct {
+	// CanCreate Whether the user may create invites now: the instance setting `invite_creators` is
+	// `everyone` or the user's roles have `create_invites`, the account is neither
+	// suspended nor limited, its registration is approved, and the registration mode is
+	// not `closed`. It does not count the cap of usable invites (`usable` against
+	// `limits.max_active`).
+	CanCreate bool        `json:"can_create"`
+	Items     []OwnInvite `json:"items"`
+
+	// Limits The caps and defaults of the invites that members create, from the instance settings
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	Limits MemberInviteLimits `json:"limits"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+
+	// Usable How many usable invites the user holds now, which `limits.max_active` bounds.
+	Usable int `json:"usable"`
+}
+
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
 	// IneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
@@ -9612,7 +9772,10 @@ type PaymentStatusWarnings string
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
 // the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
 // `manage_login_providers`: the external identity providers that users sign in with (only the
-// built-in admin role by default, ADR-0106). The others guard no client API operation yet.
+// built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+// invites of one's own on `/invites` while the instance setting `invite_creators` is
+// `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+// others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
@@ -9923,6 +10086,15 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
 //   - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
 //     the room.
+//   - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
+//     own now: the instance setting `invite_creators` and the user's roles do not let them, the
+//     account is suspended or limited, its registration is not approved, or the registration is
+//     `closed`.
+//   - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
+//     as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
+//     expire or be used up.
+//   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
+//     takes no invite.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
@@ -12615,6 +12787,15 @@ type ListInstanceSupportersParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListOwnInvitesParams defines parameters for ListOwnInvites.
+type ListOwnInvitesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListOwnModerationActionsParams defines parameters for ListOwnModerationActions.
 type ListOwnModerationActionsParams struct {
 	// Active Keep only the actions in effect now, neither lifted nor expired.
@@ -12951,6 +13132,9 @@ type StartDataImportJSONRequestBody = DataImportRequest
 
 // PreviewDataImportJSONRequestBody defines body for PreviewDataImport for application/json ContentType.
 type PreviewDataImportJSONRequestBody = DataImportRequest
+
+// CreateOwnInviteJSONRequestBody defines body for CreateOwnInvite for application/json ContentType.
+type CreateOwnInviteJSONRequestBody = CreateOwnInviteRequest
 
 // BeginLinkIdentityJSONRequestBody defines body for BeginLinkIdentity for application/json ContentType.
 type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
@@ -13695,6 +13879,15 @@ type ServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(w http.ResponseWriter, r *http.Request, params ListInstanceSupportersParams)
+	// ListOwnInvites List the user's own invites
+	// (GET /invites)
+	ListOwnInvites(w http.ResponseWriter, r *http.Request, params ListOwnInvitesParams)
+	// CreateOwnInvite Create an invite of the user's own
+	// (POST /invites)
+	CreateOwnInvite(w http.ResponseWriter, r *http.Request)
+	// RevokeOwnInvite Revoke an invite of the user's own
+	// (POST /invites/{id}/revoke)
+	RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId)
 	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
 	// (GET /linked_identities)
 	ListLinkedIdentities(w http.ResponseWriter, r *http.Request)
@@ -20309,6 +20502,92 @@ func (siw *ServerInterfaceWrapper) ListInstanceSupporters(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListOwnInvites operation middleware
+func (siw *ServerInterfaceWrapper) ListOwnInvites(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOwnInvitesParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOwnInvites(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateOwnInvite operation middleware
+func (siw *ServerInterfaceWrapper) CreateOwnInvite(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateOwnInvite(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeOwnInvite operation middleware
+func (siw *ServerInterfaceWrapper) RevokeOwnInvite(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id InviteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeOwnInvite(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListLinkedIdentities operation middleware
 func (siw *ServerInterfaceWrapper) ListLinkedIdentities(w http.ResponseWriter, r *http.Request) {
 
@@ -23554,6 +23833,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/import", wrapper.ImportDomainBlocks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/settings", wrapper.ListInstanceSettings)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/settings", wrapper.UpdateInstanceSettings)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/invites", wrapper.ListOwnInvites)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invites", wrapper.CreateOwnInvite)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invites/{id}/revoke", wrapper.RevokeOwnInvite)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/invites", wrapper.ListInvites)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites", wrapper.CreateInvite)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/invites/{id}/revoke", wrapper.RevokeInvite)
@@ -23943,6 +24225,15 @@ type OwnCustomEmojiJSONResponse struct {
 	Body OwnCustomEmoji
 
 	Headers OwnCustomEmojiResponseHeaders
+}
+
+type OwnInviteResponseHeaders struct {
+	CacheControl *string
+}
+type OwnInviteJSONResponse struct {
+	Body OwnInvite
+
+	Headers OwnInviteResponseHeaders
 }
 
 type ProblemResponseHeaders struct {
@@ -36613,6 +36904,178 @@ func (response ListInstanceSupportersdefaultApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListOwnInvitesRequestObject struct {
+	Params ListOwnInvitesParams
+}
+
+type ListOwnInvitesResponseObject interface {
+	VisitListOwnInvitesResponse(w http.ResponseWriter) error
+}
+
+type ListOwnInvites200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListOwnInvites200JSONResponse struct {
+	Body    OwnInvitePage
+	Headers ListOwnInvites200ResponseHeaders
+}
+
+func (response ListOwnInvites200JSONResponse) VisitListOwnInvitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOwnInvitesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListOwnInvitesdefaultApplicationProblemPlusJSONResponse) VisitListOwnInvitesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOwnInviteRequestObject struct {
+	Body *CreateOwnInviteJSONRequestBody
+}
+
+type CreateOwnInviteResponseObject interface {
+	VisitCreateOwnInviteResponse(w http.ResponseWriter) error
+}
+
+type CreateOwnInvite200JSONResponse struct{ OwnInviteJSONResponse }
+
+func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOwnInvitedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateOwnInvitedefaultApplicationProblemPlusJSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeOwnInviteRequestObject struct {
+	Id InviteId `json:"id"`
+}
+
+type RevokeOwnInviteResponseObject interface {
+	VisitRevokeOwnInviteResponse(w http.ResponseWriter) error
+}
+
+type RevokeOwnInvite200JSONResponse struct{ OwnInviteJSONResponse }
+
+func (response RevokeOwnInvite200JSONResponse) VisitRevokeOwnInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeOwnInvitedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeOwnInvitedefaultApplicationProblemPlusJSONResponse) VisitRevokeOwnInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListLinkedIdentitiesRequestObject struct {
 }
 
@@ -43558,6 +44021,15 @@ type StrictServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(ctx context.Context, request ListInstanceSupportersRequestObject) (ListInstanceSupportersResponseObject, error)
+	// ListOwnInvites List the user's own invites
+	// (GET /invites)
+	ListOwnInvites(ctx context.Context, request ListOwnInvitesRequestObject) (ListOwnInvitesResponseObject, error)
+	// CreateOwnInvite Create an invite of the user's own
+	// (POST /invites)
+	CreateOwnInvite(ctx context.Context, request CreateOwnInviteRequestObject) (CreateOwnInviteResponseObject, error)
+	// RevokeOwnInvite Revoke an invite of the user's own
+	// (POST /invites/{id}/revoke)
+	RevokeOwnInvite(ctx context.Context, request RevokeOwnInviteRequestObject) (RevokeOwnInviteResponseObject, error)
 	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
 	// (GET /linked_identities)
 	ListLinkedIdentities(ctx context.Context, request ListLinkedIdentitiesRequestObject) (ListLinkedIdentitiesResponseObject, error)
@@ -49734,6 +50206,89 @@ func (sh *strictHandler) ListInstanceSupporters(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceSupportersResponseObject); ok {
 		if err := validResponse.VisitListInstanceSupportersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOwnInvites operation middleware
+func (sh *strictHandler) ListOwnInvites(w http.ResponseWriter, r *http.Request, params ListOwnInvitesParams) {
+	var request ListOwnInvitesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOwnInvites(ctx, request.(ListOwnInvitesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOwnInvites")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOwnInvitesResponseObject); ok {
+		if err := validResponse.VisitListOwnInvitesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateOwnInvite operation middleware
+func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request) {
+	var request CreateOwnInviteRequestObject
+
+	var body CreateOwnInviteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateOwnInvite(ctx, request.(CreateOwnInviteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateOwnInvite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateOwnInviteResponseObject); ok {
+		if err := validResponse.VisitCreateOwnInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeOwnInvite operation middleware
+func (sh *strictHandler) RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId) {
+	var request RevokeOwnInviteRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeOwnInvite(ctx, request.(RevokeOwnInviteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeOwnInvite")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeOwnInviteResponseObject); ok {
+		if err := validResponse.VisitRevokeOwnInviteResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

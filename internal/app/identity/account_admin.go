@@ -138,6 +138,9 @@ type AdminAccountDetail struct {
 	AdminAccount
 	// Application is the user's registration application; nil without one.
 	Application *identity.RegistrationApplication
+	// Invite is the invite the user signed up with, whose creator invited them (ADR-0108 §5);
+	// nil without one.
+	Invite *identity.Invite
 	// HasEmail reports whether the user has a primary email address, and EmailVerified whether
 	// it is confirmed; the address itself is Reveal's.
 	HasEmail      bool
@@ -494,6 +497,15 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 		out.Application = &app
 	case !errors.Is(err, ErrNotFound):
 		return AdminAccountDetail{}, err
+	}
+	if out.Application != nil && out.Application.InviteID != "" {
+		inv, err := repo.FindInviteByID(ctx, out.Application.InviteID)
+		switch {
+		case err == nil:
+			out.Invite = &inv
+		case !errors.Is(err, ErrNotFound):
+			return AdminAccountDetail{}, err
+		}
 	}
 	email, verified, err := repo.FindPrimaryEmail(ctx, a.UserID)
 	switch {

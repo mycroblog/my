@@ -48,13 +48,13 @@ ORDER BY s.since, s.user_id
 LIMIT sqlc.arg(page_limit);
 
 -- name: InsertInvite :exec
-INSERT INTO invites (id, code, created_by_user_id, max_uses, expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6);
+INSERT INTO invites (id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: GetInviteByCode :one
-SELECT id, code, created_by_user_id, max_uses, expires_at, created_at FROM invites WHERE code = $1;
+SELECT id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at FROM invites WHERE code = $1;
 
 -- name: GetInviteByID :one
-SELECT id, code, created_by_user_id, max_uses, expires_at, created_at FROM invites WHERE id = $1;
+SELECT id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at FROM invites WHERE id = $1;
 
 -- name: GetInviteUsage :one
 SELECT
@@ -69,13 +69,34 @@ INSERT INTO invite_revocations (invite_id, revoked_by_user_id, revoked_at) VALUE
 ON CONFLICT (invite_id) DO NOTHING;
 
 -- name: ListInvites :many
-SELECT i.id, i.code, i.created_by_user_id, i.max_uses, i.expires_at, i.created_at,
+SELECT i.id, i.code, i.created_by_user_id, i.creator_kind, i.max_uses, i.expires_at, i.created_at,
   (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) AS uses,
   EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id) AS revoked
 FROM invites i
 WHERE sqlc.narg(before)::uuid IS NULL OR i.id < sqlc.narg(before)::uuid
 ORDER BY i.id DESC
 LIMIT sqlc.arg(page_limit);
+
+-- ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0108),
+-- newest first.
+-- name: ListMemberInvitesByCreator :many
+SELECT i.id, i.code, i.created_by_user_id, i.creator_kind, i.max_uses, i.expires_at, i.created_at,
+  (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) AS uses,
+  EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id) AS revoked
+FROM invites i
+WHERE i.created_by_user_id = sqlc.arg(creator) AND i.creator_kind = 'member'
+  AND (sqlc.narg(before)::uuid IS NULL OR i.id < sqlc.narg(before)::uuid)
+ORDER BY i.id DESC
+LIMIT sqlc.arg(page_limit);
+
+-- CountUsableMemberInvites counts the invites a member created as a member that are not
+-- revoked, expired, or used up at now (ADR-0108).
+-- name: CountUsableMemberInvites :one
+SELECT COUNT(*) FROM invites i
+WHERE i.created_by_user_id = sqlc.arg(creator) AND i.creator_kind = 'member'
+  AND (i.expires_at IS NULL OR i.expires_at > sqlc.arg(now))
+  AND NOT EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id)
+  AND (i.max_uses IS NULL OR (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) < i.max_uses);
 
 -- name: InsertUserToken :exec
 INSERT INTO user_tokens (id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at)

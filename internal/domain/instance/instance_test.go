@@ -293,6 +293,43 @@ func TestVoiceSettings(t *testing.T) {
 	}
 }
 
+// Only the holders of create_invites create invites of their own, up to 5 usable ones of 10
+// uses and 30 days, until the settings say otherwise; the caps keep to their bounds
+// (ADR-0108 §1, §2).
+func TestMemberInviteSettings(t *testing.T) {
+	var zero instance.Settings
+	want := instance.MemberInviteCaps{MaxActive: 5, MaxUses: 10, MaxExpiresIn: 30 * 24 * time.Hour}
+	if zero.InviteCreators() != instance.InviteCreatorsPermitted || zero.MemberInviteCaps() != want {
+		t.Errorf("zero Settings = %s, %+v; want permitted, %+v", zero.InviteCreators(), zero.MemberInviteCaps(), want)
+	}
+	s := instance.NewSettings([]instance.CurrentSetting{
+		{Key: instance.SettingInviteCreators, RevisionID: testID(1), Value: "everyone"},
+		{Key: instance.SettingMemberInviteMaxActive, RevisionID: testID(2), Value: "0"},
+		{Key: instance.SettingMemberInviteMaxUses, RevisionID: testID(3), Value: "1000"},
+		{Key: instance.SettingMemberInviteMaxExpiresIn, RevisionID: testID(4), Value: "3600"},
+	})
+	want = instance.MemberInviteCaps{MaxActive: 0, MaxUses: 1000, MaxExpiresIn: time.Hour}
+	if s.InviteCreators() != instance.InviteCreatorsEveryone || s.MemberInviteCaps() != want {
+		t.Errorf("Settings = %s, %+v; want everyone, %+v", s.InviteCreators(), s.MemberInviteCaps(), want)
+	}
+	for key, bad := range map[instance.SettingKey][]string{
+		instance.SettingInviteCreators:           {"nobody", ""},
+		instance.SettingMemberInviteMaxActive:    {"-1", "101"},
+		instance.SettingMemberInviteMaxUses:      {"0", "1001"},
+		instance.SettingMemberInviteMaxExpiresIn: {"3599", "31536001"},
+	} {
+		def, err := instance.Lookup(key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, v := range bad {
+			if _, err := def.Parse(v); !errors.Is(err, instance.ErrInvalidValue) {
+				t.Errorf("%s: Parse(%q) = %v, want ErrInvalidValue", key, v, err)
+			}
+		}
+	}
+}
+
 func TestSupersedes(t *testing.T) {
 	rev := instance.SettingRevision{ID: testID(2)}
 	for _, tc := range []struct {

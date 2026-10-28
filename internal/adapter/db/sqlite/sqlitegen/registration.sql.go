@@ -24,17 +24,50 @@ func (q *Queries) CountRegistrationsInState(ctx context.Context, state string) (
 	return count, err
 }
 
-const getInviteByCode = `-- name: GetInviteByCode :one
-SELECT id, code, created_by_user_id, max_uses, expires_at, created_at FROM invites WHERE code = ?
+const countUsableMemberInvites = `-- name: CountUsableMemberInvites :one
+SELECT COUNT(*) FROM invites i
+WHERE i.created_by_user_id = ?1 AND i.creator_kind = 'member'
+  AND (i.expires_at IS NULL OR i.expires_at > ?2)
+  AND NOT EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id)
+  AND (i.max_uses IS NULL OR (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) < i.max_uses)
 `
 
-func (q *Queries) GetInviteByCode(ctx context.Context, code string) (Invite, error) {
+type CountUsableMemberInvitesParams struct {
+	Creator sql.NullString
+	Now     sql.NullInt64
+}
+
+// CountUsableMemberInvites counts the invites a member created as a member that are not
+// revoked, expired, or used up at now (ADR-0108).
+func (q *Queries) CountUsableMemberInvites(ctx context.Context, arg CountUsableMemberInvitesParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsableMemberInvites, arg.Creator, arg.Now)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getInviteByCode = `-- name: GetInviteByCode :one
+SELECT id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at FROM invites WHERE code = ?
+`
+
+type GetInviteByCodeRow struct {
+	ID              string
+	Code            string
+	CreatedByUserID sql.NullString
+	CreatorKind     string
+	MaxUses         sql.NullInt64
+	ExpiresAt       sql.NullInt64
+	CreatedAt       int64
+}
+
+func (q *Queries) GetInviteByCode(ctx context.Context, code string) (GetInviteByCodeRow, error) {
 	row := q.db.QueryRowContext(ctx, getInviteByCode, code)
-	var i Invite
+	var i GetInviteByCodeRow
 	err := row.Scan(
 		&i.ID,
 		&i.Code,
 		&i.CreatedByUserID,
+		&i.CreatorKind,
 		&i.MaxUses,
 		&i.ExpiresAt,
 		&i.CreatedAt,
@@ -43,16 +76,27 @@ func (q *Queries) GetInviteByCode(ctx context.Context, code string) (Invite, err
 }
 
 const getInviteByID = `-- name: GetInviteByID :one
-SELECT id, code, created_by_user_id, max_uses, expires_at, created_at FROM invites WHERE id = ?
+SELECT id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at FROM invites WHERE id = ?
 `
 
-func (q *Queries) GetInviteByID(ctx context.Context, id string) (Invite, error) {
+type GetInviteByIDRow struct {
+	ID              string
+	Code            string
+	CreatedByUserID sql.NullString
+	CreatorKind     string
+	MaxUses         sql.NullInt64
+	ExpiresAt       sql.NullInt64
+	CreatedAt       int64
+}
+
+func (q *Queries) GetInviteByID(ctx context.Context, id string) (GetInviteByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getInviteByID, id)
-	var i Invite
+	var i GetInviteByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Code,
 		&i.CreatedByUserID,
+		&i.CreatorKind,
 		&i.MaxUses,
 		&i.ExpiresAt,
 		&i.CreatedAt,
@@ -175,13 +219,14 @@ func (q *Queries) InsertEmailVerificationIfAbsent(ctx context.Context, arg Inser
 }
 
 const insertInvite = `-- name: InsertInvite :exec
-INSERT INTO invites (id, code, created_by_user_id, max_uses, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO invites (id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertInviteParams struct {
 	ID              string
 	Code            string
 	CreatedByUserID sql.NullString
+	CreatorKind     string
 	MaxUses         sql.NullInt64
 	ExpiresAt       sql.NullInt64
 	CreatedAt       int64
@@ -192,6 +237,7 @@ func (q *Queries) InsertInvite(ctx context.Context, arg InsertInviteParams) erro
 		arg.ID,
 		arg.Code,
 		arg.CreatedByUserID,
+		arg.CreatorKind,
 		arg.MaxUses,
 		arg.ExpiresAt,
 		arg.CreatedAt,
@@ -332,7 +378,7 @@ func (q *Queries) InsertUserTokenRedemption(ctx context.Context, arg InsertUserT
 }
 
 const listInvites = `-- name: ListInvites :many
-SELECT i.id, i.code, i.created_by_user_id, i.max_uses, i.expires_at, i.created_at,
+SELECT i.id, i.code, i.created_by_user_id, i.creator_kind, i.max_uses, i.expires_at, i.created_at,
   (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) AS uses,
   EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id) AS revoked
 FROM invites i
@@ -350,6 +396,7 @@ type ListInvitesRow struct {
 	ID              string
 	Code            string
 	CreatedByUserID sql.NullString
+	CreatorKind     string
 	MaxUses         sql.NullInt64
 	ExpiresAt       sql.NullInt64
 	CreatedAt       int64
@@ -370,6 +417,71 @@ func (q *Queries) ListInvites(ctx context.Context, arg ListInvitesParams) ([]Lis
 			&i.ID,
 			&i.Code,
 			&i.CreatedByUserID,
+			&i.CreatorKind,
+			&i.MaxUses,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			&i.Uses,
+			&i.Revoked,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMemberInvitesByCreator = `-- name: ListMemberInvitesByCreator :many
+SELECT i.id, i.code, i.created_by_user_id, i.creator_kind, i.max_uses, i.expires_at, i.created_at,
+  (SELECT COUNT(*) FROM invite_redemptions r WHERE r.invite_id = i.id) AS uses,
+  EXISTS (SELECT 1 FROM invite_revocations v WHERE v.invite_id = i.id) AS revoked
+FROM invites i
+WHERE i.created_by_user_id = ?1 AND i.creator_kind = 'member'
+  AND (CAST(?2 AS TEXT) = '' OR i.id < ?2)
+ORDER BY i.id DESC
+LIMIT ?3
+`
+
+type ListMemberInvitesByCreatorParams struct {
+	Creator   sql.NullString
+	Before    string
+	PageLimit int64
+}
+
+type ListMemberInvitesByCreatorRow struct {
+	ID              string
+	Code            string
+	CreatedByUserID sql.NullString
+	CreatorKind     string
+	MaxUses         sql.NullInt64
+	ExpiresAt       sql.NullInt64
+	CreatedAt       int64
+	Uses            int64
+	Revoked         bool
+}
+
+// ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0108),
+// newest first.
+func (q *Queries) ListMemberInvitesByCreator(ctx context.Context, arg ListMemberInvitesByCreatorParams) ([]ListMemberInvitesByCreatorRow, error) {
+	rows, err := q.db.QueryContext(ctx, listMemberInvitesByCreator, arg.Creator, arg.Before, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMemberInvitesByCreatorRow{}
+	for rows.Next() {
+		var i ListMemberInvitesByCreatorRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.CreatedByUserID,
+			&i.CreatorKind,
 			&i.MaxUses,
 			&i.ExpiresAt,
 			&i.CreatedAt,

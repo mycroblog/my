@@ -18,10 +18,13 @@ my instance set registration_mode invite
 
 | Mode | Page | State right after registering |
 | --- | --- | --- |
-| `open` | Anyone can register | Approved, except with `mail = none`, where it waits for a moderator's approval (see below) |
-| `approval` (default) | Also asks "Why do you want to join?" (optional, up to 1,000 characters) | Waiting for approval |
+| `open` | Anyone can register; an invite code is optional | Approved, except with `mail = none`, where it waits for a moderator's approval (see below). An invite changes nothing but records who invited the user |
+| `approval` (default) | Also asks "Why do you want to join?" (optional, up to 1,000 characters); an invite code is optional | Waiting for approval; approved at once with a usable invite |
 | `invite` | An invite code is required | Approved |
 | `closed` | Only says that registration is not accepted | None |
+
+- In every mode but `closed`, the page has an invite code field, filled in from the link of an invite (`?invite=<code>`). A code that does not work (unknown, revoked, expired, used up, or of a member who can no longer invite) is refused in every mode, not ignored, so that a mistyped code does not go unnoticed.
+- A sign-up block that requires approval keeps a registration waiting for approval even with an invite ([sign-up blocks](#sign-up-blocks)).
 
 - Registrations from the same network (IP address; `/64` for IPv6) are limited to 5 per 30 minutes. Beyond that the server returns `429` with `Retry-After`.
 - If the username or the email address is taken, the page shows an error on that field and writes nothing (an invite is not consumed either).
@@ -80,6 +83,9 @@ The confirmation token is recorded nowhere except this log line (access logs do 
 
 ## Invite codes
 
+Invites work in the `open`, `approval` and `invite` modes. Staff invites are made with the CLI, the moderation screens and the admin API below; members can also make their own invites ([member invites](#member-invites)).
+In `closed` mode no invite can be created and none works.
+
 ```sh
 my invite create                          # single use, expires in 7 days
 my invite create -max-uses 10 -expires-in 72h
@@ -95,9 +101,43 @@ my invite revoke <code>
 - Besides the CLI, you can create, list and revoke invites in the web client's Moderation screens ("Invites", `/moderation/invites`) and through the client API
   (`GET` / `POST /api/v1/admin/invites` and `POST /api/v1/admin/invites/{id}/revoke`). Both need the role permission `manage_invites`
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
-  The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite. When the registration mode is not `invite`, the screen says that nobody can register with an invite.
+  The screen shows the code and the sign-up link of a new invite, and lets you copy the link of a usable invite.
+- The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.
+- The account page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
 - Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
   Revoking an already revoked invite changes nothing, so it is not recorded.
+
+## Member invites
+
+Members can create invites of their own, besides the staff.
+Who may is the instance setting `invite_creators` ([instance settings](instance-settings.md)):
+
+- `permitted` (default): only the users whose roles have the permission `create_invites`. Only the built-in `admin` role has it by default. You can add it to a role you grant by hand, or to the role of a [supporter plan](supporters.md), so that supporters can invite people.
+- `everyone`: every signed-in local user.
+
+Either way, a user whose account is suspended or limited, or whose registration is not approved, cannot create invites, and nobody can while the registration mode is `closed`.
+The holders of `manage_invites` keep making staff invites, which none of the limits below apply to.
+
+A member creates, lists, copies and revokes their own invites through the client API (`GET` / `POST /api/v1/invites` and `POST /api/v1/invites/{id}/revoke`).
+The list says, for each invite, whether it is usable, revoked, expired, used up, or unusable because its creator can no longer invite.
+
+Limits, also instance settings, apply to member invites only:
+
+| Setting | Meaning | Default | Range |
+| --- | --- | --- | --- |
+| `member_invite_max_active` | How many usable invites (not revoked, expired or used up) one member may hold at once | `5` | 0-100 (0: members cannot create invites) |
+| `member_invite_max_uses` | How many people may sign up with one invite | `10` | 1-1,000 |
+| `member_invite_max_expires_in` | How long one invite may work, in seconds | `2592000` (30 days) | 3,600 (1 hour) to 31,536,000 (365 days) |
+
+- A member chooses the uses and the lifetime within the limits; without a choice, an invite allows 1 sign-up and works for 7 days (or less, when a limit is lower). An invite without a limit on uses or time cannot be created.
+- Lowering a limit does not change existing invites; it applies to the next invite created.
+- Every sign-up with a member's invite checks that its creator can still create invites. When the creator lost `create_invites` (for example, their plan ended), `invite_creators` went back to `permitted`, or the account was suspended, limited or deleted, the invite does not work and the sign-up page says it is not valid.
+  The invite itself is not changed, so it works again, within its expiry, when the creator may invite again.
+- A member's create and revoke are recorded in the audit log as `invite_created` and `invite_revoked`, with the member as the actor.
+
+In `approval` mode, a usable invite approves the new user at once: the person who invited them stands in for the moderators' review.
+With `invite_creators = everyone`, every user can therefore let people in without review, which weakens the approval mode.
+If you rely on review, keep `permitted` and give `create_invites` only to people you trust, or keep `member_invite_max_active` and `member_invite_max_uses` low.
 
 ## Approving and rejecting
 

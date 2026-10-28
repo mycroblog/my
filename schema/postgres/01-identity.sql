@@ -117,7 +117,7 @@ CREATE TABLE role_permissions (
     'manage_login_recovery', 'manage_custom_emojis', 'manage_webhooks', 'manage_announcements',
     'manage_finance', 'view_finance', 'manage_supporters', 'create_custom_emojis',
     'manage_oauth_apps', 'manage_service_closure', 'start_voice_rooms', 'manage_errors',
-    'manage_login_providers'
+    'manage_login_providers', 'create_invites'
   )),
   PRIMARY KEY (role_id, permission)
 );
@@ -502,16 +502,20 @@ CREATE TABLE user_registration_states (
 CREATE INDEX user_registration_states_state_since ON user_registration_states (state, since);
 
 -- Resource: an invite code. created_by_user_id is NULL for an invite from the CLI; max_uses
--- and expires_at are NULL for no limit.
+-- and expires_at are NULL for no limit. creator_kind is staff for an invite of a holder of
+-- manage_invites or the CLI, and member for an invite a member created under the caps, whose
+-- creator every sign-up checks again (ADR-0108 §3).
 CREATE TABLE invites (
   id uuid NOT NULL PRIMARY KEY,
   code text COLLATE "C" NOT NULL,
   created_by_user_id uuid,
   max_uses integer,
   expires_at timestamptz,
-  created_at timestamptz NOT NULL
+  created_at timestamptz NOT NULL,
+  creator_kind text NOT NULL DEFAULT 'staff' CHECK (creator_kind IN ('staff', 'member'))
 );
 CREATE UNIQUE INDEX invites_code ON invites (code);
+CREATE INDEX invites_created_by_user_id ON invites (created_by_user_id, id);
 
 -- Event: one use of an invite. seq is 1 + the uses before it, so that the primary key keeps
 -- concurrent sign-ups from exceeding max_uses.

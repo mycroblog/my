@@ -81,7 +81,9 @@ func (f *fakeAccountAdmin) Detail(_ context.Context, id string) (appidentity.Adm
 	d := appidentity.AdminAccountDetail{AdminAccount: f.present(a), Roles: []identity.Role{}}
 	if a.Local != nil {
 		d.Registration = &identity.UserRegistrationState{UserID: a.Local.UserID, State: identity.RegistrationApproved, Since: adminNow}
-		d.Application = &identity.RegistrationApplication{UserID: a.Local.UserID, Reason: "hi", SubmittedAt: adminNow.Add(-time.Hour)}
+		d.Application = &identity.RegistrationApplication{UserID: a.Local.UserID, Reason: "hi", InviteID: adminInviteID, SubmittedAt: adminNow.Add(-time.Hour)}
+		// Bob invited the user (ADR-0108 §5).
+		d.Invite = &identity.Invite{ID: adminInviteID, Code: "ABCDEFGHIJKLMNOP", CreatedByUserID: userOf(bobAccountID), CreatorKind: identity.InviteByMember, CreatedAt: adminNow}
 		d.HasEmail, d.EmailVerified = true, true
 		d.Roles = []identity.Role{{Key: identity.RoleAdmin}}
 		d.TwoFactorEnabled = f.twoFactor[id]
@@ -169,6 +171,9 @@ func (f *fakeAccountAdmin) RecentReportsOf(_ context.Context, target string, lim
 }
 
 // newAccountAdminEnv is newAccountModerationEnv with the account management.
+// adminInviteID is the invite that the accounts of fakeAccountAdmin signed up with.
+const adminInviteID = "01890a5d-ac96-774b-bcce-b302099a8f01"
+
 func newAccountAdminEnv(t *testing.T) (*authEnv, *fakeAccountAdmin, *fakeAccountModeration) {
 	t.Helper()
 	admin := &fakeAccountAdmin{
@@ -186,6 +191,7 @@ func newAccountAdminEnv(t *testing.T) (*authEnv, *fakeAccountAdmin, *fakeAccount
 		admin.accounts, mod.accounts = accounts, accounts
 		admin.perms = o.Permissions.(fakePermissions)
 		o.AccountAdmin, o.AccountReports, o.AccountModeration, o.PasswordResetLinks = admin, admin, mod, admin
+		o.UserAccounts = fakeUserAccounts{}
 	})
 	admin.reports = reports.reports
 	return e, admin, mod
@@ -271,6 +277,11 @@ func TestGetAdminAccount(t *testing.T) {
 		d.TwoFactorEnabled == nil || !*d.TwoFactorEnabled ||
 		d.EmailSuppression == nil || d.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !d.EmailSuppression.Since.Equal(adminNow.Add(-time.Minute)) {
 		t.Errorf("alice = %d %+v", res.StatusCode, d)
+	}
+	// The invite the user signed up with, and who created it.
+	if inv := d.Registration.Invite; d.Registration.InviteId == nil || *d.Registration.InviteId != adminInviteID || inv == nil || inv.Id != adminInviteID ||
+		inv.CreatorKind != clientapi.InviteCreatorKindMember || inv.CreatedBy == nil || inv.CreatedBy.Id != bobAccountID || inv.CreatedByDeleted {
+		t.Errorf("the registration's invite = %+v", d.Registration)
 	}
 	// The reports of the account, newest first.
 	if len(d.Reports) != len(admin.reports) || d.Reports[0].Id != reportThree {

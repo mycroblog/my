@@ -184,8 +184,13 @@ func printInvites(w io.Writer, list []appidentity.InviteStatus, now time.Time) e
 			status = "expired"
 		case s.Exhausted(s.Uses):
 			status = "used up"
+		case s.State == appidentity.InviteCreatorIneligible:
+			status = "inviter cannot invite"
 		}
 		maxUses, expires, by := "-", "-", s.CreatedByUserID
+		if s.CreatorKind == identity.InviteByMember {
+			by += " (member)"
+		}
 		if s.MaxUses > 0 {
 			maxUses = fmt.Sprint(s.MaxUses)
 		}
@@ -206,8 +211,11 @@ func inviteUsage(w io.Writer) {
   my invite list [-limit <n>] [-config <file>]
   my invite revoke [-config <file>] <code>
 
-Manages the invite codes that let people sign up while the registration_mode
-instance setting is "invite" (docs/operations/registration.md). create prints
+Manages the staff's invite codes, which let people sign up while the
+registration_mode instance setting is "open", "approval" (approved at once), or
+"invite"; no invite is created or works while it is "closed"
+(docs/operations/registration.md). list also shows the invites that members
+created; one whose creator can no longer invite does not work. create prints
 the new code and a sign-up link that fills it in; by default an invite allows
 1 sign-up and expires after 7 days (-max-uses 0 and -expires-in 0 lift the
 limits). Concurrent sign-ups never use an invite more often than it allows.

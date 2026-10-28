@@ -57,6 +57,11 @@ tags:
     description: The OAuth apps that the authenticated user registered, and tokens of them for the user's own account.
   - name: moderation
     description: The moderation actions on the authenticated user's own account.
+  - name: invites
+    description: |
+      The invites that the authenticated user creates as a member (ADR-0108): creating them
+      within the caps of the instance settings, listing them, and revoking them. The operations
+      need a `read:accounts` or `write:accounts` scope.
   - name: notifications
     description: The authenticated user's notifications, their read marker, and dismissals.
   - name: push
@@ -550,6 +555,10 @@ paths:
     $ref: ./paths/admin_domain_actions_import.yaml
   /admin/settings:
     $ref: ./paths/admin_settings.yaml
+  /invites:
+    $ref: ./paths/invites.yaml
+  /invites/{id}/revoke:
+    $ref: ./paths/invites_{id}_revoke.yaml
   /admin/invites:
     $ref: ./paths/admin_invites.yaml
   /admin/invites/{id}/revoke:
@@ -796,6 +805,8 @@ components:
       $ref: ./components/responses/AdminInstanceHealth.yaml
     AdminInvite:
       $ref: ./components/responses/AdminInvite.yaml
+    OwnInvite:
+      $ref: ./components/responses/OwnInvite.yaml
     AdminOAuthClient:
       $ref: ./components/responses/AdminOAuthClient.yaml
     AdminRegistration:
@@ -901,6 +912,8 @@ components:
       $ref: ./components/schemas/AdminAccountPrivateData.yaml
     AdminAccountRegistration:
       $ref: ./components/schemas/AdminAccountRegistration.yaml
+    AdminAccountInvite:
+      $ref: ./components/schemas/AdminAccountInvite.yaml
     AdminLoginProvider:
       $ref: ./components/schemas/AdminLoginProvider.yaml
     AdminLoginProviderList:
@@ -1005,6 +1018,14 @@ components:
       $ref: ./components/schemas/OAuthClientRegistration.yaml
     AdminInviteState:
       $ref: ./components/schemas/AdminInviteState.yaml
+    InviteCreatorKind:
+      $ref: ./components/schemas/InviteCreatorKind.yaml
+    OwnInvite:
+      $ref: ./components/schemas/OwnInvite.yaml
+    OwnInvitePage:
+      $ref: ./components/schemas/OwnInvitePage.yaml
+    MemberInviteLimits:
+      $ref: ./components/schemas/MemberInviteLimits.yaml
     AdminJob:
       $ref: ./components/schemas/AdminJob.yaml
     AdminJobAttempt:
@@ -1215,6 +1236,8 @@ components:
       $ref: ./components/schemas/CreateDomainActionRequest.yaml
     CreateInviteRequest:
       $ref: ./components/schemas/CreateInviteRequest.yaml
+    CreateOwnInviteRequest:
+      $ref: ./components/schemas/CreateOwnInviteRequest.yaml
     CreateOAuthAppRequest:
       $ref: ./components/schemas/CreateOAuthAppRequest.yaml
     CreatePasskeyRequest:

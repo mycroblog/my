@@ -23,7 +23,8 @@ CREATE TABLE instance_setting_revisions (
     'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards_enabled',
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
-    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants'
+    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
+    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,

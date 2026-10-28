@@ -20,6 +20,7 @@ import (
 type fakeInvites struct {
 	list    []appidentity.InviteStatus
 	creates []appidentity.CreateInviteInput
+	err     error // fails the next creation
 }
 
 func (f *fakeInvites) ListInvites(_ context.Context, before string, limit int) ([]appidentity.InviteStatus, error) {
@@ -33,6 +34,9 @@ func (f *fakeInvites) ListInvites(_ context.Context, before string, limit int) (
 }
 
 func (f *fakeInvites) CreateInvite(_ context.Context, in appidentity.CreateInviteInput) (identity.Invite, error) {
+	if f.err != nil {
+		return identity.Invite{}, f.err
+	}
 	f.creates = append(f.creates, in)
 	inv := identity.Invite{
 		ID: fmt.Sprintf("01890a5d-ac96-774b-bcce-b302099a8%03d", len(f.creates)), Code: "ABCDEFGHIJKLMNOP",
@@ -125,5 +129,46 @@ func TestManageInvites(t *testing.T) {
 	res = e.send(t, http.MethodPost, "/admin/invites/01890a5d-ac96-774b-bcce-b302099a8999/revoke", "admin", "")
 	if res.StatusCode != http.StatusNotFound {
 		t.Errorf("revoke unknown = %d, want 404", res.StatusCode)
+	}
+}
+
+// The staff see who created each invite, and how (ADR-0108 §5); while the registration is
+// closed, no invite is created (§4).
+func TestAdminInvitesShowTheirCreators(t *testing.T) {
+	f := &fakeInvites{}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions()}
+		o.Invites, o.SignUpPath = f, "/auth/sign_up"
+		o.UserAccounts = fakeUserAccounts{}
+	})
+	e.auth.tokens["admin"] = bearer("admin", aliceAccountID)
+	f.list = []appidentity.InviteStatus{
+		{Invite: identity.Invite{ID: "01890a5d-ac96-774b-bcce-b302099a8003", Code: "CCCCCCCCCCCCCCCC", CreatedByUserID: userOf(aliceAccountID),
+			CreatorKind: identity.InviteByMember, MaxUses: 1, CreatedAt: adminNow}, State: appidentity.InviteCreatorIneligible},
+		{Invite: identity.Invite{ID: "01890a5d-ac96-774b-bcce-b302099a8002", Code: "BBBBBBBBBBBBBBBB", CreatedByUserID: userOf("01890a5d-ac96-774b-bcce-b302099a9999"),
+			CreatorKind: identity.InviteByStaff, CreatedAt: adminNow}, State: appidentity.InviteUsable},
+		{Invite: identity.Invite{ID: "01890a5d-ac96-774b-bcce-b302099a8001", Code: "AAAAAAAAAAAAAAAA", CreatorKind: identity.InviteByStaff,
+			CreatedAt: adminNow}, State: appidentity.InviteUsable},
+	}
+	page := decodeJSON[clientapi.AdminInvitePage](t, e.admin(t, http.MethodGet, "/admin/invites", "admin", nil))
+	if len(page.Items) != 3 {
+		t.Fatalf("page = %+v", page)
+	}
+	member, gone, cli := page.Items[0], page.Items[1], page.Items[2]
+	if member.CreatorKind != clientapi.InviteCreatorKindMember || member.CreatedBy == nil || member.CreatedBy.Id != aliceAccountID ||
+		member.CreatedByDeleted || member.State != clientapi.AdminInviteStateCreatorIneligible {
+		t.Errorf("a member's invite = %+v", member)
+	}
+	if gone.CreatorKind != clientapi.InviteCreatorKindStaff || gone.CreatedBy != nil || !gone.CreatedByDeleted {
+		t.Errorf("an invite of a deleted user = %+v", gone)
+	}
+	if cli.CreatedBy != nil || cli.CreatedByDeleted {
+		t.Errorf("an invite of the CLI = %+v", cli)
+	}
+
+	f.err = appidentity.ErrRegistrationClosed
+	res := e.sendJSON(t, http.MethodPost, "/admin/invites", "admin", `{}`)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeRegistrationClosed {
+		t.Errorf("create while closed = %d %+v, want 409 registration-closed", res.StatusCode, p)
 	}
 }

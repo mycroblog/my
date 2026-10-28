@@ -156,6 +156,15 @@ description: |
   - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
   - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
     the room.
+  - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
+    own now: the instance setting `invite_creators` and the user's roles do not let them, the
+    account is suspended or limited, its registration is not approved, or the registration is
+    `closed`.
+  - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
+    as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
+    expire or be used up.
+  - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
+    takes no invite.
   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
     (`POST /accounts/move/cancel`).

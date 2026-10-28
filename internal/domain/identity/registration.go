@@ -29,7 +29,7 @@ type RegistrationApplication struct {
 	UserID string
 	// Reason is why the applicant wants to join, asked in approval mode; "" when not given.
 	Reason string
-	// InviteID is the invite redeemed in invite mode; "" when none.
+	// InviteID is the invite redeemed at sign-up, in any mode that takes invites; "" when none.
 	InviteID    string
 	SubmittedAt time.Time
 }
@@ -87,7 +87,8 @@ type Decider string
 const (
 	// DecidedByModerator: a moderator, in the admin screens or with the CLI.
 	DecidedByModerator Decider = "moderator"
-	// DecidedBySystem: the server, which approves sign-ups at once in open and invite mode.
+	// DecidedBySystem: the server, which approves sign-ups at once in open and invite mode, and
+	// those with a usable invite in approval mode (ADR-0108 §4).
 	DecidedBySystem Decider = "system"
 	// DecidedByServiceClosure: the server, which rejects the pending applications when the
 	// closure of the service is announced (ADR-0088 §2).
@@ -136,12 +137,16 @@ type UserRegistrationState struct {
 	Since time.Time
 }
 
-// Invite is an invite code that lets people sign up in invite mode (data-model §4.1, invites).
+// Invite is an invite code that lets people sign up (data-model §4.1, invites): it is required
+// in invite mode and optional in open and approval mode (ADR-0108 §4).
 type Invite struct {
 	ID   string
 	Code string
 	// CreatedByUserID is the user who created the invite, or "" for the CLI.
 	CreatedByUserID string
+	// CreatorKind is how the invite was created: by the staff or the CLI, or by a member under
+	// the caps, whose eligibility every sign-up checks again (ADR-0108 §3).
+	CreatorKind InviteCreatorKind
 	// MaxUses is how many sign-ups the invite allows; 0 means no limit.
 	MaxUses int
 	// ExpiresAt is when the invite stops working; nil means never.

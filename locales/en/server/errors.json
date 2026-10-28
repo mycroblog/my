@@ -467,6 +467,18 @@
     "defaultMessage": "You have as many apps as allowed. Delete one first.",
     "description": "Title of the HTTP 409 API error when the user registers an OAuth app while having the most apps allowed (25)."
   },
+  "errors.invites.not_allowed": {
+    "defaultMessage": "You can't create invites.",
+    "description": "Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts."
+  },
+  "errors.invites.too_many": {
+    "defaultMessage": "You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.",
+    "description": "Title of the HTTP 409 API error when the user creates an invite while holding as many usable invites as the server allows."
+  },
+  "errors.invites.registration_closed": {
+    "defaultMessage": "This server takes no new accounts now, so no invite can be created.",
+    "description": "Title of the HTTP 409 API error when a staff member creates an invite while the registration mode is closed."
+  },
   "errors.oauth_app.registration_disabled": {
     "defaultMessage": "This server does not let users register apps.",
     "description": "Title of the HTTP 403 API error when the user registers an OAuth app while the server's administrators have turned off app registration by users."

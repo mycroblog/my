@@ -13,6 +13,8 @@ Only when an administrator enables it, local users can subscribe to a paid plan 
 3. In "Terms and policies" in the administration, write the commerce disclosure (for Japan, the notice required by the Act on Specified Commercial Transactions), the instance text `commerce_disclosure`, in Markdown. It is published at `/about/commerce`, and you can register that URL in the provider's dashboard.
    The program can be enabled with the text empty, but the administration shows a warning.
 4. In "Roles" in the administration, create the role to tie to the plan. It must have no holders, only member permissions (group `member`), and a `position` lower than that of every staff role, `moderator` included.
+   The member permissions are the benefits a plan can give: `create_custom_emojis` (requesting custom emoji), `view_finance` (reading the server's finances), `start_voice_rooms` (opening voice chat rooms while only permitted users may), and `create_invites` (inviting people while only permitted users may, within the limits of [member invites](registration.md#member-invites)).
+   When the subscription ends, the role goes, and so do the benefits: the invites the supporter made stop working until they subscribe again.
 5. In "Supporters" in the administration (`/admin/supporters`, permission `manage_supporters`), create the plan. Set the name, description, monthly price, discount for yearly payment, limit on custom emoji creation, order, and visibility, and choose the role.
    The server creates the monthly and yearly prices at the provider (do not create prices in the provider's dashboard). Until the prices exist, the plan is "preparing" and accepts no subscriptions.
 6. Enable the program in "Supporters".

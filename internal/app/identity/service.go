@@ -105,6 +105,15 @@ type Deps struct {
 	// SignupBlocks screens the sign-ups from the registration page against the sign-up block
 	// list (FR-719); nil screens nothing.
 	SignupBlocks SignupScreen
+	// MemberInvites returns the instance settings of the invites that members create
+	// (invite_creators and the caps, ADR-0108 §1, §2). It is read per operation, so a change
+	// applies to the next one. Nil means the defaults: only the holders of create_invites,
+	// under the default caps.
+	MemberInvites func(ctx context.Context) (MemberInviteSettings, error)
+	// InviterRestricted reports whether moderation suspends or limits a local account, which
+	// keeps its user from creating invites and its invites from working (ADR-0108 §1, §3); nil
+	// restricts nobody.
+	InviterRestricted func(ctx context.Context, accountID string) (bool, error)
 	// Mailer sends verification emails, password reset emails, and the notices of password
 	// changes from the jobs that RegisterMailJobs registers; nil sends none and issues no
 	// verification tokens.

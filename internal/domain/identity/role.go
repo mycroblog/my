@@ -71,6 +71,12 @@ const (
 	// who signs up with it, which weighs more than manage_settings. It is server administration
 	// (ADR-0058 §4): only the built-in admin role has it by default.
 	PermManageLoginProviders Permission = "manage_login_providers"
+	// PermCreateInvites: create invites of one's own within the caps of the instance settings,
+	// list them, and revoke them, while the instance setting invite_creators is permitted
+	// (ADR-0108 §1). It is a member permission (ADR-0070 §1): it touches only the holder's own
+	// invites, never those of others or the settings of the server, so a supporter plan may
+	// grant it (ADR-0072 §5).
+	PermCreateInvites Permission = "create_invites"
 )
 
 // AllPermissions lists every permission.
@@ -80,7 +86,7 @@ func AllPermissions() []Permission {
 		PermManageSettings, PermManageRoles, PermManageInvites, PermViewAudit, PermManageJobs,
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
-		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors, PermManageLoginProviders,
+		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors, PermManageLoginProviders, PermCreateInvites,
 	}
 }
 
@@ -104,7 +110,7 @@ func (p Permission) Category() PermissionCategory {
 	switch p {
 	case PermManageReports, PermManageAccounts, PermManageDomains, PermManageInvites, PermViewAudit:
 		return CategoryModeration
-	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms:
+	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites:
 		return CategoryMember
 	default:
 		return CategoryServer

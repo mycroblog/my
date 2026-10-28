@@ -30,13 +30,16 @@ const (
 // signUpForm is the registration form: what the applicant typed (never the password), the
 // fields the mode asks for, and the error of each field.
 type signUpForm struct {
-	Closed     bool
+	Closed bool
+	// AskInvite shows the invite code field, which every mode but closed takes (ADR-0108 §4);
+	// NeedInvite makes it required (invite mode).
+	AskInvite  bool
 	NeedInvite bool
 	AskReason  bool
 
 	Username, Email, InviteCode, Reason string
 
-	UsernameHint, PasswordHint, ReasonHint string
+	UsernameHint, PasswordHint, ReasonHint, InviteHint string
 	// Errors maps a field name to its error message.
 	Errors map[string]string
 
@@ -48,9 +51,18 @@ type signUpForm struct {
 }
 
 func newSignUpForm(l *i18n.Localizer, mode identity.RegistrationMode) *signUpForm {
+	inviteHint := l.ServerAuthSignUpInviteHintOptional()
+	switch mode {
+	case identity.RegistrationInvite:
+		inviteHint = l.ServerAuthSignUpInviteHint()
+	case identity.RegistrationApproval:
+		inviteHint = l.ServerAuthSignUpInviteHintApproval()
+	}
 	return &signUpForm{
 		Closed:       mode == identity.RegistrationClosed,
+		AskInvite:    mode != identity.RegistrationClosed,
 		NeedInvite:   mode == identity.RegistrationInvite,
+		InviteHint:   inviteHint,
 		AskReason:    mode == identity.RegistrationApproval,
 		UsernameHint: l.ServerAuthSignUpUsernameHint(account.MaxUsernameLength),
 		PasswordHint: l.ServerAuthSignUpPasswordHint(identity.MaxPasswordLength, identity.MinPasswordLength),

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: A new invite of the user's own, within the caps of the instance settings.
+type: object
+properties:
+  max_uses:
+    description: How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
+    type: integer
+    minimum: 1
+    maximum: 1000
+  expires_in:
+    description: How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+    type: integer
+    minimum: 1
+    maximum: 31536000
