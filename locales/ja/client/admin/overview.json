@@ -11,6 +11,30 @@
     "defaultMessage": "承認待ちの登録",
     "description": "Name of the tile of the moderation overview with how many registrations await approval; the tile links to the registrations."
   },
+  "admin.overview.awaiting.report_wait": {
+    "defaultMessage": "通報の最長の待ち時間",
+    "description": "Name of the tile of the moderation overview with how long the oldest open report has waited; the tile links to the report queue, oldest first."
+  },
+  "admin.overview.awaiting.report_wait.days": {
+    "defaultMessage": "{count, plural, other {# 日}}",
+    "description": "Value of the longest report wait tile: whole days."
+  },
+  "admin.overview.awaiting.report_wait.hours": {
+    "defaultMessage": "{count, plural, other {# 時間}}",
+    "description": "Value of the longest report wait tile: whole hours."
+  },
+  "admin.overview.awaiting.report_wait.minutes": {
+    "defaultMessage": "{count, plural, other {# 分}}",
+    "description": "Value of the longest report wait tile: whole minutes."
+  },
+  "admin.overview.awaiting.report_wait.none": {
+    "defaultMessage": "待ちなし",
+    "description": "Value of the longest report wait tile when no report is open."
+  },
+  "admin.overview.awaiting.report_wait.status": {
+    "defaultMessage": "長く待っている",
+    "description": "Word beside a warning icon on the longest report wait tile when the oldest open report has waited a day or more."
+  },
   "admin.overview.awaiting.status": {
     "defaultMessage": "対応待ち",
     "description": "Word beside a warning icon on a tile of the moderation overview whose queue has items waiting."
@@ -28,7 +52,7 @@
     "description": "Link under the reports to handle first on the moderation overview, to the whole report queue."
   },
   "admin.overview.first_reports.description": {
-    "defaultMessage": "新しい未解決の通報のうち、法的な通報を先に、次に長く待っている順に並べます。",
+    "defaultMessage": "法的な通報を先に、次に長く待っている順に並べます。",
     "description": "Note under the heading of the reports to handle first on the moderation overview: how they are ordered."
   },
   "admin.overview.first_reports.title": {

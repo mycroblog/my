@@ -76,7 +76,18 @@ function reportsServer(initial: Report[]) {
       const query = new URL(request.url).searchParams;
       lists.push(query.toString());
       const state = query.get("state");
-      return HttpResponse.json({ items: reports.filter((report) => state === null || report.state === state) });
+      const category = query.get("category");
+      const assignee = query.get("assignee");
+      const items = reports.filter(
+        (report) =>
+          (state === null || report.state === state) &&
+          (category === null || report.category === category) &&
+          (assignee === null ||
+            (assignee === "none"
+              ? report.assignee_account_id === undefined
+              : report.assignee_account_id === viewerFixture.id)),
+      );
+      return HttpResponse.json({ items: query.get("order") === "oldest" ? items.toReversed() : items });
     }),
     http.get(`${apiBase}/admin/reports/:id`, ({ params }) => {
       const found = reports.find((report) => report.id === params["id"]);
@@ -190,6 +201,65 @@ describe("the report queue", () => {
     expect(router.state.location.search).toEqual({ state: "resolved" });
     expect(rows()).toHaveLength(1);
     expect(api.lists).toEqual(["limit=40&state=open", "limit=40&state=resolved"]);
+  });
+
+  test("filters by category and assignee and orders oldest first, from the toolbar and from the URL", async () => {
+    const mine = reportFixture({
+      id: "0192f0c4-7a8e-7000-8000-000000000a09",
+      category: "legal",
+      assignee_account_id: viewerFixture.id,
+    });
+    const api = reportsServer([mine, spam, older]);
+    const { user, router } = await renderApp({ path: "/moderation/reports" });
+    await screen.findAllByRole("link", { name: `Report on ${isolated("@bob")}` });
+    expect(rows()).toHaveLength(3);
+
+    await user.click(screen.getByRole("button", { name: /Category/u }));
+    await user.click(await screen.findByRole("option", { name: "Illegal content" }));
+    await waitFor(() => {
+      expect(rows()).toHaveLength(1);
+    });
+    expect(router.state.location.search).toEqual({ category: "legal" });
+
+    await user.click(screen.getByRole("button", { name: /Category/u }));
+    await user.click(await screen.findByRole("option", { name: "All categories" }));
+    await user.click(screen.getByRole("button", { name: /Order/u }));
+    await user.click(await screen.findByRole("option", { name: "Oldest first" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ order: "oldest" });
+    });
+    await waitFor(() => {
+      expect(rows().map((row) => within(row).getByRole("link").textContent)).toEqual([
+        `Report on ${isolated("@carol@remote.example")}`,
+        `Report on ${isolated("@bob")}`,
+        `Report on ${isolated("@bob")}`,
+      ]);
+    });
+
+    await user.click(screen.getByRole("button", { name: /Assignee/u }));
+    await user.click(await screen.findByRole("option", { name: "Unassigned" }));
+    await waitFor(() => {
+      expect(rows()).toHaveLength(1);
+    });
+    expect(router.state.location.search).toEqual({ assignee: "none", order: "oldest" });
+    expect(api.lists).toEqual(
+      expect.arrayContaining([
+        "limit=40&state=open",
+        "limit=40&state=open&category=legal",
+        "limit=40&state=open&order=oldest",
+        "limit=40&state=open&assignee=none&order=oldest",
+      ]),
+    );
+  });
+
+  test("opens with the filters of the URL, and says when nothing matches them", async () => {
+    const api = reportsServer([spam]);
+    await renderApp({ path: "/moderation/reports?assignee=me&category=spam&order=oldest&state=open" });
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "No reports match these filters" }),
+    ).toBeInTheDocument();
+    expect(api.lists).toEqual(["limit=40&state=open&category=spam&assignee=me&order=oldest"]);
   });
 
   test("pages by cursor with previous and next, one page of the table at a time, by keyboard", async () => {
