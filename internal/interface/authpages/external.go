@@ -64,7 +64,7 @@ type ExternalLogins interface {
 // externalButton is a link to a provider's start.
 type externalButton struct {
 	// Label is the button's text: an OpenID Connect provider's display name as its
-	// administrator wrote it, never translated; the translated text for a github provider.
+	// administrator wrote it, never translated; the translated text for a github or discord provider.
 	Label string
 	URL   string
 }
@@ -86,8 +86,11 @@ func (h *Handler) externalButtons(r *http.Request, returnTo string, signUp bool)
 			continue
 		}
 		label := p.DisplayName
-		if p.Kind == identity.LoginProviderGitHub {
+		switch p.Kind {
+		case identity.LoginProviderGitHub:
 			label = h.o.Locales.RequestLocalizer(r).ServerAuthExternalGithubButton()
+		case identity.LoginProviderDiscord:
+			label = h.o.Locales.RequestLocalizer(r).ServerAuthExternalDiscordButton()
 		}
 		out = append(out, externalButton{
 			Label: label,

@@ -410,6 +410,13 @@ func (l *Localizer) ServerAuthExternalDenied() string {
 	return l.format("server:auth.external.denied", nil)
 }
 
+// ServerAuthExternalDiscordButton formats "server:auth.external.discord.button". Text of the button on the sign-in and registration pages that signs in with Discord (a login provider of kind discord that the server's administrators set up).
+//
+//	en: Sign in with Discord
+func (l *Localizer) ServerAuthExternalDiscordButton() string {
+	return l.format("server:auth.external.discord.button", nil)
+}
+
 // ServerAuthExternalExpired formats "server:auth.external.expired". Alert on the sign-in page when the sign-in with an external login provider (or the account creation after it) expired or was used already.
 //
 //	en: The sign-in took too long or was already used. Start it again.

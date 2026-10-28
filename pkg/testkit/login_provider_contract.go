@@ -29,7 +29,7 @@ type LoginProviderFactory func(t *testing.T) LoginProviderHarness
 
 // LoginProviderRepositoryContract verifies the login provider repository of a database adapter
 // (data-model §4.1, ADR-0106 §2): a provider of each kind keeps its settings with the claims,
-// Organizations, and scopes of its current revision, its newest secret, and its state; a deleted
+// Organizations, guilds, and scopes of its current revision, its newest secret, and its state; a deleted
 // provider is neither found nor listed; an external identity is stored once per provider and
 // subject; it is linked to one user at a time, and a user links one account per provider; an
 // unlink ends a link once and frees the identity; the projections rebuild to what the commands
@@ -150,6 +150,14 @@ func githubSettings() identity.LoginProviderSettings {
 	return s
 }
 
+func discordSettings() identity.LoginProviderSettings {
+	s := identity.NewLoginProviderSettings(identity.LoginProviderDiscord)
+	s.DisplayName = "Discord"
+	s.ClientID = "1234567890123456789"
+	s.Guilds = []string{"1000000000000000001", "2000000000000000002"}
+	return s
+}
+
 func mastodonSettings() identity.LoginProviderSettings {
 	s := identity.NewLoginProviderSettings(identity.LoginProviderMastodon)
 	s.DisplayName = "mastodon.social"
@@ -164,7 +172,7 @@ func mastodonSettings() identity.LoginProviderSettings {
 func loginProviderKinds(t *testing.T, e *loginProviderEnv) {
 	ctx := t.Context()
 	admin := e.ids.NewID()
-	settings := []identity.LoginProviderSettings{oidcSettings(), githubSettings(), mastodonSettings()}
+	settings := []identity.LoginProviderSettings{oidcSettings(), githubSettings(), mastodonSettings(), discordSettings()}
 	ids := make([]string, len(settings))
 	for i, s := range settings {
 		by := admin
@@ -202,7 +210,7 @@ func loginProviderKinds(t *testing.T, e *loginProviderEnv) {
 			t.Errorf("listed %+v, found %+v", p, e.find(t, p.ID))
 		}
 	}
-	if want := []string{ids[2], ids[1], ids[0]}; !reflect.DeepEqual(got, want) {
+	if want := []string{ids[3], ids[2], ids[1], ids[0]}; !reflect.DeepEqual(got, want) {
 		t.Errorf("ListLoginProviders = %v, want newest first %v", got, want)
 	}
 	unknown := e.ids.NewID()

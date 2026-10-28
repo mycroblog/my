@@ -2274,6 +2274,7 @@ func (e InstanceTextKey) Valid() bool {
 
 // Defines values for LoginProviderKind.
 const (
+	LoginProviderKindDiscord  LoginProviderKind = "discord"
 	LoginProviderKindGithub   LoginProviderKind = "github"
 	LoginProviderKindMastodon LoginProviderKind = "mastodon"
 	LoginProviderKindOidc     LoginProviderKind = "oidc"
@@ -2282,6 +2283,8 @@ const (
 // Valid indicates whether the value is a known member of the LoginProviderKind enum.
 func (e LoginProviderKind) Valid() bool {
 	switch e {
+	case LoginProviderKindDiscord:
+		return true
 	case LoginProviderKindGithub:
 		return true
 	case LoginProviderKindMastodon:
@@ -4978,17 +4981,21 @@ type AdminLoginProvider struct {
 	// an `oidc` provider as it is written.
 	DisplayName string `json:"display_name"`
 
+	// Guilds The IDs of the Discord servers (guilds), sorted, one of which a user of a `discord`
+	// provider must belong to; empty lets every Discord user in.
+	Guilds []string `json:"guilds"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
 	// Issuer The OpenID Connect issuer of an `oidc` provider, or the server's URL
-	// (`https://<host>`) of a `mastodon` one; omitted for `github`.
+	// (`https://<host>`) of a `mastodon` one; omitted for `github` and `discord`.
 	Issuer *string `json:"issuer,omitempty"`
 
 	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
 	Kind LoginProviderKind `json:"kind"`
 
 	// LinkedUsers The number of users whose accounts are linked to the provider; disabling or deleting it
@@ -6804,20 +6811,25 @@ type CreateLoginProviderRequest struct {
 	// provider, 1 to 100 characters without control characters.
 	DisplayName string `json:"display_name"`
 
+	// Guilds The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+	// only, at most 50; each is a decimal ID of up to 20 digits.
+	Guilds *[]string `json:"guilds,omitempty"`
+
 	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
 	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-	// `https://<host>`. None for `github`.
+	// `https://<host>`. None for `github` and `discord`.
 	Issuer *string `json:"issuer,omitempty"`
 
 	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
 	Kind LoginProviderKind `json:"kind"`
 
 	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
 	Organizations *[]string `json:"organizations,omitempty"`
 
 	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-	// Organizations of `github`); none for `mastodon`.
+	// Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+	// adds `guilds` itself.
 	Scopes *[]string `json:"scopes,omitempty"`
 }
 
@@ -8566,7 +8578,7 @@ type LinkableLoginProvider struct {
 	Id Id `json:"id"`
 
 	// Kind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
 	Kind LoginProviderKind `json:"kind"`
 }
 
@@ -8590,7 +8602,7 @@ type LinkedIdentity struct {
 	ProviderId Id `json:"provider_id"`
 
 	// ProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+	// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
 	ProviderKind LoginProviderKind `json:"provider_kind"`
 
 	// ProviderName The administrators' name for the provider, shown as written.
@@ -8617,7 +8629,7 @@ type LoginProviderClaimCondition struct {
 }
 
 // LoginProviderKind The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+// its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
 type LoginProviderKind string
 
 // LoginProviderProblem The problem of a login provider that breaks a rule (422,
@@ -8630,12 +8642,12 @@ type LoginProviderProblem struct {
 	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
 	// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-	// for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+	// for `mastodon`; none for `github` and `discord`), or a Mastodon server that cannot be reached or serves no
 	// authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
 	// longer than 512 bytes, or with control characters, or a Mastodon server that refused to
 	// register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
 	// characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
-	// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+	// claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
 	// ones that are not valid.
 	Reason *LoginProviderProblemReason `json:"reason,omitempty"`
 
@@ -8656,12 +8668,12 @@ type LoginProviderProblem struct {
 // LoginProviderProblemReason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 // than 100 characters, or with control characters. `issuer`: not what the kind takes (an
 // `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-// for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+// for `mastodon`; none for `github` and `discord`), or a Mastodon server that cannot be reached or serves no
 // authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
 // longer than 512 bytes, or with control characters, or a Mastodon server that refused to
 // register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
 // characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
-// claims for another kind than `oidc`, Organizations for another kind than `github`, or
+// claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
 // ones that are not valid.
 type LoginProviderProblemReason string
 
@@ -11192,16 +11204,21 @@ type UpdateLoginProviderRequest struct {
 	// provider, 1 to 100 characters without control characters.
 	DisplayName *string `json:"display_name,omitempty"`
 
+	// Guilds The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+	// only, at most 50; each is a decimal ID of up to 20 digits.
+	Guilds *[]string `json:"guilds,omitempty"`
+
 	// Issuer For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
 	// exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-	// `https://<host>`. None for `github`.
+	// `https://<host>`. None for `github` and `discord`.
 	Issuer *string `json:"issuer,omitempty"`
 
 	// Organizations The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
 	Organizations *[]string `json:"organizations,omitempty"`
 
 	// Scopes Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-	// Organizations of `github`); none for `mastodon`.
+	// Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+	// adds `guilds` itself.
 	Scopes *[]string `json:"scopes,omitempty"`
 }
 

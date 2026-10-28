@@ -95,7 +95,8 @@ func (s *Service) needExternalLoginDeps() error {
 
 // externalLoginKind reports whether users sign in with providers of kind k.
 func externalLoginKind(k identity.LoginProviderKind) bool {
-	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub || k == identity.LoginProviderMastodon
+	return k == identity.LoginProviderOIDC || k == identity.LoginProviderGitHub || k == identity.LoginProviderMastodon ||
+		k == identity.LoginProviderDiscord
 }
 
 // ExternalLoginProvider is a provider that the sign-in page offers.
@@ -226,6 +227,8 @@ func (s *Service) beginAuthorization(ctx context.Context, p identity.LoginProvid
 	switch p.Settings.Kind {
 	case identity.LoginProviderGitHub:
 		return s.beginGitHub(ctx, p, t)
+	case identity.LoginProviderDiscord:
+		return s.beginDiscord(ctx, p, t)
 	case identity.LoginProviderMastodon:
 		return s.beginMastodonLogin(ctx, p, t)
 	}
@@ -416,11 +419,13 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 }
 
 // externalIdentity redeems code at provider p and returns the account there as the claims of an
-// ID token: the verified ID token of an OpenID Connect provider, or the GitHub or Mastodon account.
+// ID token: the verified ID token of an OpenID Connect provider, or the GitHub, Discord, or Mastodon account.
 func (s *Service) externalIdentity(ctx context.Context, p identity.LoginProvider, code string, t externalLoginToken) (IDToken, error) {
 	switch p.Settings.Kind {
 	case identity.LoginProviderGitHub:
 		return s.gitHubIdentity(ctx, p, code, t)
+	case identity.LoginProviderDiscord:
+		return s.discordIdentity(ctx, p, code, t)
 	case identity.LoginProviderMastodon:
 		return s.mastodonAccount(ctx, p, code, t)
 	}

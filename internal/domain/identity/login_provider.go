@@ -30,11 +30,13 @@ const (
 	LoginProviderGitHub LoginProviderKind = "github"
 	// LoginProviderMastodon is one Mastodon server that the administrator names.
 	LoginProviderMastodon LoginProviderKind = "mastodon"
+	// LoginProviderDiscord is discord.com, whose endpoints the server knows.
+	LoginProviderDiscord LoginProviderKind = "discord"
 )
 
 // LoginProviderKinds lists every kind.
 func LoginProviderKinds() []LoginProviderKind {
-	return []LoginProviderKind{LoginProviderOIDC, LoginProviderGitHub, LoginProviderMastodon}
+	return []LoginProviderKind{LoginProviderOIDC, LoginProviderGitHub, LoginProviderMastodon, LoginProviderDiscord}
 }
 
 // Valid reports whether k is a known kind.
@@ -81,6 +83,11 @@ const (
 	MaxLoginProviderClaimValue = 256
 	// MaxLoginProviderOrganizations is the number of GitHub Organizations allowed.
 	MaxLoginProviderOrganizations = 50
+	// MaxLoginProviderGuilds is the number of Discord servers (guilds) allowed.
+	MaxLoginProviderGuilds = 50
+	// MaxDiscordSnowflake is the number of digits of a Discord ID (a snowflake is a 64-bit
+	// unsigned integer).
+	MaxDiscordSnowflake = 20
 	// MaxGitHubLogin is the number of characters of a GitHub login.
 	MaxGitHubLogin = 39
 	// MaxExternalSubject is the number of bytes of an identifier at a provider (the OIDC sub is
@@ -104,7 +111,7 @@ var (
 	// too many scopes, or extra scopes for a kind that takes none.
 	ErrInvalidLoginProviderScopes = errors.New("identity: invalid login provider scopes")
 	// ErrInvalidLoginProviderConditions reports conditions that the kind does not take, or a
-	// claim, a value, or an Organization that is not valid.
+	// claim, a value, an Organization, or a guild ID that is not valid.
 	ErrInvalidLoginProviderConditions = errors.New("identity: invalid login provider conditions")
 	// ErrLoginProviderKindChanged reports a revision that changes the kind of a provider: the
 	// identifiers of the linked accounts mean something else at another kind.
@@ -130,7 +137,7 @@ type LoginProviderSettings struct {
 	// as the administrator wrote it, and that the administration screens show for every kind.
 	DisplayName string
 	// Issuer is the OIDC issuer for oidc, the server's URL (https://<host>) for mastodon, and
-	// "" for github.
+	// "" for github and discord.
 	Issuer   string
 	ClientID string
 	// Scopes are the scopes asked for besides the ones the kind needs, sorted.
@@ -146,6 +153,10 @@ type LoginProviderSettings struct {
 	// which a user of a github provider must belong to. None lets every GitHub user in, and the
 	// other kinds have none.
 	Organizations []string
+	// Guilds are the IDs of the Discord servers (guilds), sorted, one of which a user of a
+	// discord provider must belong to. None lets every Discord user in, and the other kinds
+	// have none.
+	Guilds []string
 }
 
 // NewLoginProviderSettings returns the settings of a new provider of kind k with the default
@@ -156,7 +167,7 @@ func NewLoginProviderSettings(k LoginProviderKind) LoginProviderSettings {
 
 // Normalize trims the strings of s; turns the server of a mastodon provider, given as a domain
 // or a URL, into https://<host>; and sorts the scopes, the claims and their values, and the
-// Organizations in lower case, without duplicates. It leaves an OIDC issuer as it is, since the
+// Organizations in lower case and the guild IDs, without duplicates. It leaves an OIDC issuer as it is, since the
 // iss of the ID tokens must equal it.
 func (s LoginProviderSettings) Normalize() LoginProviderSettings {
 	s.DisplayName = strings.TrimSpace(s.DisplayName)
@@ -176,6 +187,7 @@ func (s LoginProviderSettings) Normalize() LoginProviderSettings {
 		s.Claims = append(s.Claims, ClaimCondition{Claim: name, Values: sortedUnique(byClaim[name], strings.TrimSpace)})
 	}
 	s.Organizations = sortedUnique(s.Organizations, func(o string) string { return strings.ToLower(strings.TrimSpace(o)) })
+	s.Guilds = sortedUnique(s.Guilds, strings.TrimSpace)
 	return s
 }
 
@@ -218,6 +230,8 @@ func normalizeServerURL(raw string) string {
 //   - oidc: the issuer is an https URL with a host and without user info, a query, or a
 //     fragment (OpenID Connect Discovery 1.0 §2); conditions only on claims;
 //   - github: no issuer (its endpoints are fixed); conditions only on Organizations;
+//   - discord: no issuer (its endpoints are fixed); conditions only on guild IDs (decimal
+//     snowflakes);
 //   - mastodon: the server is https://<host> with nothing after the host; no extra scopes, since
 //     the server asks for profile and nothing wider; no conditions;
 //   - each extra scope is an RFC 6749 scope token (§3.3), at most MaxLoginProviderScopes of them.
@@ -244,9 +258,9 @@ func (s LoginProviderSettings) Validate() error {
 
 func (s LoginProviderSettings) validateIssuer() error {
 	switch s.Kind {
-	case LoginProviderGitHub:
+	case LoginProviderGitHub, LoginProviderDiscord:
 		if s.Issuer != "" {
-			return fmt.Errorf("%w: github takes no issuer", ErrInvalidLoginProviderURL)
+			return fmt.Errorf("%w: %s takes no issuer", ErrInvalidLoginProviderURL, s.Kind)
 		}
 		return nil
 	case LoginProviderOIDC:
@@ -327,6 +341,9 @@ func (s LoginProviderSettings) validateConditions() error {
 	if len(s.Organizations) > 0 && s.Kind != LoginProviderGitHub {
 		return fmt.Errorf("%w: only github takes Organizations", ErrInvalidLoginProviderConditions)
 	}
+	if len(s.Guilds) > 0 && s.Kind != LoginProviderDiscord {
+		return fmt.Errorf("%w: only discord takes guilds", ErrInvalidLoginProviderConditions)
+	}
 	if len(s.Claims) > MaxLoginProviderClaims {
 		return fmt.Errorf("%w: too many claims", ErrInvalidLoginProviderConditions)
 	}
@@ -351,7 +368,29 @@ func (s LoginProviderSettings) validateConditions() error {
 			return fmt.Errorf("%w: Organization %q", ErrInvalidLoginProviderConditions, o)
 		}
 	}
+	if len(s.Guilds) > MaxLoginProviderGuilds {
+		return fmt.Errorf("%w: too many guilds", ErrInvalidLoginProviderConditions)
+	}
+	for _, g := range s.Guilds {
+		if !IsDiscordSnowflake(g) {
+			return fmt.Errorf("%w: guild %q", ErrInvalidLoginProviderConditions, g)
+		}
+	}
 	return nil
+}
+
+// IsDiscordSnowflake reports whether s is a Discord ID: 1 to MaxDiscordSnowflake decimal
+// digits, without a leading zero.
+func IsDiscordSnowflake(s string) bool {
+	if s == "" || len(s) > MaxDiscordSnowflake || s[0] == '0' {
+		return false
+	}
+	for i := range len(s) {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // IsGitHubLogin reports whether s is a GitHub login in lower case: 1 to MaxGitHubLogin letters,
@@ -435,7 +474,8 @@ type LoginProvider struct {
 }
 
 // ExternalIdentity is an account at a provider (external_identities): Subject is its
-// identifier there, the OIDC sub, the GitHub user's numeric id, or the Mastodon account's id.
+// identifier there, the OIDC sub, the GitHub user's numeric id, the Mastodon account's id, or
+// the Discord user's snowflake id.
 // The pair of ProviderID and Subject is unique.
 type ExternalIdentity struct {
 	ID         string

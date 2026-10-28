@@ -27,13 +27,13 @@ const maxClientSecretInput = 4 * identity.MaxLoginProviderClientSecret
 // loginProviderFlags are the settings flags of `my login-provider add` and `set`.
 type loginProviderFlags struct {
 	kind, name, issuer, clientID string
-	scopes, claims, orgs         stringList
+	scopes, claims, orgs, guilds stringList
 	allowSignup, allowLink       bool
 }
 
 func (f *loginProviderFlags) define(fs *flag.FlagSet, add bool) {
 	if add {
-		fs.StringVar(&f.kind, "kind", "", "oidc, github, or mastodon (required)")
+		fs.StringVar(&f.kind, "kind", "", "oidc, github, mastodon, or discord (required)")
 	}
 	fs.StringVar(&f.name, "name", "", "the display name")
 	fs.StringVar(&f.issuer, "issuer", "", "the OIDC issuer URL, or the Mastodon server's domain")
@@ -41,6 +41,7 @@ func (f *loginProviderFlags) define(fs *flag.FlagSet, add bool) {
 	fs.Var(&f.scopes, "scope", "a scope to ask for besides the ones the kind needs (repeatable)")
 	fs.Var(&f.claims, "claim", "an OIDC condition <claim>=<value> (repeatable)")
 	fs.Var(&f.orgs, "org", "a GitHub Organization that users must belong to (repeatable)")
+	fs.Var(&f.guilds, "guild", "a Discord server (guild) ID that users must belong to (repeatable)")
 	fs.BoolVar(&f.allowSignup, "allow-signup", false, "let new users sign up with the provider")
 	fs.BoolVar(&f.allowLink, "allow-link", true, "let users link their account to the provider")
 }
@@ -61,6 +62,9 @@ func (f *loginProviderFlags) apply(s *identity.LoginProviderSettings, set map[st
 	}
 	if set["org"] {
 		s.Organizations = f.orgs
+	}
+	if set["guild"] {
+		s.Guilds = f.guilds
 	}
 	if set["allow-signup"] {
 		s.AllowSignup = f.allowSignup
@@ -253,11 +257,12 @@ func printLoginProviders(w io.Writer, app *platform.App, vs []appidentity.LoginP
 func loginProviderUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my login-provider list [-config <file>]
-  my login-provider add -kind oidc|github|mastodon -name <name> [-client-id <id>]
+  my login-provider add -kind oidc|github|mastodon|discord -name <name> [-client-id <id>]
                         [-issuer <url or domain>] [-scope <scope>]... [-claim <claim>=<value>]...
-                        [-org <organization>]... [-allow-signup] [-allow-link=false] [-config <file>]
+                        [-org <organization>]... [-guild <id>]... [-allow-signup] [-allow-link=false] [-config <file>]
   my login-provider set [-name <name>] [-issuer <url or domain>] [-client-id <id>] [-scope <scope>]...
-                        [-claim <claim>=<value>]... [-org <organization>]... [-allow-signup=true|false]
+                        [-claim <claim>=<value>]... [-org <organization>]... [-guild <id>]...
+                        [-allow-signup=true|false]
                         [-allow-link=true|false] [-config <file>] <provider id>
   my login-provider rotate-secret [-config <file>] <provider id>
   my login-provider enable|disable|delete [-config <file>] <provider id>
@@ -268,6 +273,7 @@ with. The same settings are on the administration screens.
   oidc      an OpenID Connect provider; -issuer is its issuer URL (https),
             exactly as its ID tokens name it
   github    github.com; no -issuer
+  discord   discord.com; no -issuer
   mastodon  one Mastodon server (4.3 or later); -issuer is its domain or
             https://<domain>. Without -client-id, add registers a client at
             the server itself; give -client-id and the secret of a client
@@ -285,10 +291,13 @@ registration mode allows. Users may link their account to it unless
 -allow-link=false. -claim (oidc only) lets in only the users whose ID token has
 the claim with one of the values given for it, such as -claim hd=example.com
 for a Google Workspace domain. -org (github only) lets in only the members of
-one of the Organizations, which needs -scope read:org.
+one of the Organizations, which needs -scope read:org. -guild (discord only)
+lets in only the members of one of the Discord servers, given by their IDs
+(Server Settings > Widget, or Developer Mode > Copy Server ID); the provider then
+also asks for the guilds scope.
 
-set changes only the settings it names; -scope, -claim, and -org replace the
-whole list, and -scope '' (or -claim '', -org '') removes it. The kind does not
+set changes only the settings it names; -scope, -claim, -org, and -guild
+replace the whole list, and -scope '' (or -claim '', -org '', -guild '') removes it. The kind does not
 change.
 
 disable keeps the provider and its links but lets nobody sign in, sign up, or

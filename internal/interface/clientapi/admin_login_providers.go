@@ -53,7 +53,8 @@ func (s *Server) newAdminLoginProvider(v appidentity.LoginProviderView) AdminLog
 		Id: p.ID, Kind: LoginProviderKind(set.Kind), DisplayName: set.DisplayName, ClientId: set.ClientID,
 		Scopes: nonNil(set.Scopes), AllowSignup: set.AllowSignup, AllowLink: set.AllowLink,
 		Claims: make([]LoginProviderClaimCondition, 0, len(set.Claims)), Organizations: nonNil(set.Organizations),
-		State: AdminLoginProviderState(p.State), StateChangedAt: p.StateChangedAt.UTC(),
+		Guilds: nonNil(set.Guilds),
+		State:  AdminLoginProviderState(p.State), StateChangedAt: p.StateChangedAt.UTC(),
 		CallbackUrl: s.origin() + identity.LoginProviderCallbackPath(p.ID), LinkedUsers: v.LinkedUsers,
 		CreatedAt: p.CreatedAt.UTC(), UpdatedAt: p.RevisedAt.UTC(),
 	}
@@ -183,6 +184,9 @@ func (s *Server) CreateLoginProvider(ctx context.Context, req CreateLoginProvide
 	if b.Organizations != nil {
 		settings.Organizations = *b.Organizations
 	}
+	if b.Guilds != nil {
+		settings.Guilds = *b.Guilds
+	}
 	created, err := s.o.LoginProviders.CreateLoginProvider(ctx, settings, clientSecret, v.UserID)
 	if lp, ok := s.loginProviderProblem(ctx, err); ok {
 		return CreateLoginProvider422ApplicationProblemPlusJSONResponse{lp}, nil
@@ -255,6 +259,9 @@ func (s *Server) UpdateLoginProvider(ctx context.Context, req UpdateLoginProvide
 	}
 	if b.Organizations != nil {
 		settings.Organizations = *b.Organizations
+	}
+	if b.Guilds != nil {
+		settings.Guilds = *b.Guilds
 	}
 	got, err := s.o.LoginProviders.UpdateLoginProvider(ctx, req.Id, settings, v.UserID)
 	if lp, ok := s.loginProviderProblem(ctx, err); ok {

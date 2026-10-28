@@ -8388,7 +8388,7 @@ paths:
       summary: Change a login provider
       description: |
         Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
-        `organizations` remove them. A refused change is a 422
+        `organizations`, or `guilds` remove them. A refused change is a 422
         `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
         unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
       tags:
@@ -10552,6 +10552,7 @@ components:
         - allow_link
         - claims
         - organizations
+        - guilds
         - state
         - state_changed_at
         - callback_url
@@ -10571,7 +10572,7 @@ components:
         issuer:
           description: |
             The OpenID Connect issuer of an `oidc` provider, or the server's URL
-            (`https://<host>`) of a `mastodon` one; omitted for `github`.
+            (`https://<host>`) of a `mastodon` one; omitted for `github` and `discord`.
           type: string
         client_id:
           type: string
@@ -10595,6 +10596,13 @@ components:
           description: |
             The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
             provider must belong to; empty lets every GitHub user in.
+          type: array
+          items:
+            type: string
+        guilds:
+          description: |
+            The IDs of the Discord servers (guilds), sorted, one of which a user of a `discord`
+            provider must belong to; empty lets every Discord user in.
           type: array
           items:
             type: string
@@ -10661,7 +10669,7 @@ components:
           description: |
             For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
             exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-            `https://<host>`. None for `github`.
+            `https://<host>`. None for `github` and `discord`.
           type: string
           maxLength: 2048
         client_id:
@@ -10671,7 +10679,8 @@ components:
         scopes:
           description: |
             Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-            Organizations of `github`); none for `mastodon`.
+            Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+            adds `guilds` itself.
           type: array
           maxItems: 20
           items:
@@ -10690,6 +10699,14 @@ components:
             $ref: '#/components/schemas/LoginProviderClaimCondition'
         organizations:
           description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+          type: array
+          maxItems: 50
+          items:
+            type: string
+        guilds:
+          description: |
+            The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+            only, at most 50; each is a decimal ID of up to 20 digits.
           type: array
           maxItems: 50
           items:
@@ -11760,12 +11777,13 @@ components:
     LoginProviderKind:
       description: |
         The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-        its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+        its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
       type: string
       enum:
         - oidc
         - github
         - mastodon
+        - discord
     LoginProviderProblem:
       description: |
         The problem of a login provider that breaks a rule (422,
@@ -11782,12 +11800,12 @@ components:
         Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
         than 100 characters, or with control characters. `issuer`: not what the kind takes (an
         `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-        for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+        for `mastodon`; none for `github` and `discord`), or a Mastodon server that cannot be reached or serves no
         authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
         longer than 512 bytes, or with control characters, or a Mastodon server that refused to
         register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
         characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
-        claims for another kind than `oidc`, Organizations for another kind than `github`, or
+        claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
         ones that are not valid.
       type: string
       enum:
@@ -19536,7 +19554,7 @@ components:
           description: |
             For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
             exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-            `https://<host>`. None for `github`.
+            `https://<host>`. None for `github` and `discord`.
           type: string
           maxLength: 2048
         client_id:
@@ -19546,7 +19564,8 @@ components:
         scopes:
           description: |
             Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-            Organizations of `github`); none for `mastodon`.
+            Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+            adds `guilds` itself.
           type: array
           maxItems: 20
           items:
@@ -19565,6 +19584,14 @@ components:
             $ref: '#/components/schemas/LoginProviderClaimCondition'
         organizations:
           description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+          type: array
+          maxItems: 50
+          items:
+            type: string
+        guilds:
+          description: |
+            The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+            only, at most 50; each is a decimal ID of up to 20 digits.
           type: array
           maxItems: 50
           items:

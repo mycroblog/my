@@ -72,9 +72,10 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `login_providers` | リソース | `id`, `created_by_user_id`（NULL 可 = CLI）, `created_at` | |
-| `login_provider_revisions` | イベント（版） | `id`, `provider_id`, `kind`（`enum(oidc, github, mastodon)`）, `display_name`（`string(100)`）, `issuer`（NULL 可。`oidc` の issuer、`mastodon` のサーバーの URL。`github` だけ NULL）, `client_id`, `scopes`（NULL 可 = 追加の scope なし。空白区切り・ソート済み）, `allow_signup`（`bool`）, `allow_link`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(provider_id, id DESC)`。CHECK `(kind = 'github') = (issuer IS NULL)`。いちばん新しい行がいまの設定 |
+| `login_provider_revisions` | イベント（版） | `id`, `provider_id`, `kind`（`enum(oidc, github, mastodon, discord)`）, `display_name`（`string(100)`）, `issuer`（NULL 可。`oidc` の issuer、`mastodon` のサーバーの URL。`github` と `discord` は NULL）, `client_id`, `scopes`（NULL 可 = 追加の scope なし。空白区切り・ソート済み）, `allow_signup`（`bool`）, `allow_link`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(provider_id, id DESC)`。CHECK `(kind IN ('github', 'discord')) = (issuer IS NULL)`。いちばん新しい行がいまの設定 |
 | `login_provider_revision_claims` | イベント（版の子） | `revision_id`, `claim`, `value` | PK `(revision_id, claim, value)`。`oidc` の条件。claim ごとに許す値の一覧 |
 | `login_provider_revision_organizations` | イベント（版の子） | `revision_id`, `organization`（小文字の login） | PK `(revision_id, organization)`。`github` の条件 |
+| `login_provider_revision_guilds` | イベント（版の子） | `revision_id`, `guild_id`（Discord のサーバーの ID。10 進の snowflake） | PK `(revision_id, guild_id)`。`discord` の条件 |
 | `login_provider_secrets` | イベント | `id`, `provider_id`, `sealed_secret`（`bytes`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | インデックス `(provider_id, id DESC)`。回転は新しい行。いちばん新しい行だけを使う |
 | `login_provider_state_changes` | イベント | `id`, `provider_id`, `state`（`enum(enabled, disabled, deleted)`）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | インデックス `(provider_id, id DESC)` |
 | `login_provider_heads` | 投影 | `provider_id`（PK）, `revision_id`, `state`, `secret_id` | インデックス `(state)` |
@@ -91,11 +92,11 @@
 - 版の値の検証は `identity.LoginProviderSettings.Validate` です。
   - `oidc` の `issuer` は、ユーザー情報・クエリ・フラグメントのない `https` の URL で、ID トークンの `iss` と比べるので入力のまま保存します。
   - `mastodon` は、ドメインか URL で入力されたサーバーを `https://<ホスト>`（ホストは小文字、パスなし）に正規化して `issuer` に保存します。追加の scope と条件は持ちません。
-  - `github` は `issuer` を持たず、条件は Organization の一覧（`read:org`）だけです。`oidc` の条件は claim と値の組だけです。
+  - `github` は `issuer` を持たず、条件は Organization の一覧（`read:org`）だけです。`discord` も `issuer` を持たず、条件はサーバー（guild）の ID の一覧（`guilds` scope）だけです。`oidc` の条件は claim と値の組だけです。
   - 条件は、版の子の行がないとき「絞らない」です。claim の条件は、どの claim もその値のどれかと一致するときに満たします。
 - `client_secret`（`sealed_secret`）は `kernel.Sealer` で封をし（ADR-0019 §6）、作成と回転のときに入力を受けるだけで、API でも画面でも返しません。
 - 削除した IdP は一覧にも取得にも出ませんが、行とひも付けは残します。
-- `external_identities` は IdP の利用者（`subject` は OIDC の `sub`、GitHub の数値の `id`、Mastodon のアカウントの `id`）で、IdP と識別子の組ごとに 1 行です。
+- `external_identities` は IdP の利用者（`subject` は OIDC の `sub`、GitHub の数値の `id`、Mastodon のアカウントの `id`、Discord の利用者の snowflake `id`）で、IdP と識別子の組ごとに 1 行です。
   ひも付けは `external_identity_links` に 1 行足し、同じトランザクションで `user_external_identities` に加えます。
   その主キーで 1 つの外部の利用者は同時に 1 人にしかひも付かず、一意 `(user_id, provider_id)` で 1 人の利用者は IdP ごとに 1 つしかひも付けません（`identity.ErrExternalIdentityLinked`・`identity.ErrLoginProviderLinked`）。
   解除は `external_identity_unlinks` に 1 行足して投影から除きます。解除した外部の利用者は、また同じ人にも別の人にもひも付けられます。

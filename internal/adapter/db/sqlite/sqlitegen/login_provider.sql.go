@@ -303,6 +303,20 @@ func (q *Queries) InsertLoginProviderRevisionClaim(ctx context.Context, arg Inse
 	return err
 }
 
+const insertLoginProviderRevisionGuild = `-- name: InsertLoginProviderRevisionGuild :exec
+INSERT INTO login_provider_revision_guilds (revision_id, guild_id) VALUES (?, ?)
+`
+
+type InsertLoginProviderRevisionGuildParams struct {
+	RevisionID string
+	GuildID    string
+}
+
+func (q *Queries) InsertLoginProviderRevisionGuild(ctx context.Context, arg InsertLoginProviderRevisionGuildParams) error {
+	_, err := q.db.ExecContext(ctx, insertLoginProviderRevisionGuild, arg.RevisionID, arg.GuildID)
+	return err
+}
+
 const insertLoginProviderRevisionOrganization = `-- name: InsertLoginProviderRevisionOrganization :exec
 INSERT INTO login_provider_revision_organizations (revision_id, organization) VALUES (?, ?)
 `
@@ -447,7 +461,7 @@ WHERE revision_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 ORDER BY revision_id, claim, value
 `
 
-// ListLoginProviderRevisionClaims and ListLoginProviderRevisionOrganizations take the revisions
+// ListLoginProviderRevisionClaims, ...Organizations, and ...Guilds take the revisions
 // ids as a JSON array of strings.
 func (q *Queries) ListLoginProviderRevisionClaims(ctx context.Context, ids string) ([]LoginProviderRevisionClaim, error) {
 	rows, err := q.db.QueryContext(ctx, listLoginProviderRevisionClaims, ids)
@@ -459,6 +473,35 @@ func (q *Queries) ListLoginProviderRevisionClaims(ctx context.Context, ids strin
 	for rows.Next() {
 		var i LoginProviderRevisionClaim
 		if err := rows.Scan(&i.RevisionID, &i.Claim, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLoginProviderRevisionGuilds = `-- name: ListLoginProviderRevisionGuilds :many
+SELECT revision_id, guild_id FROM login_provider_revision_guilds
+WHERE revision_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY revision_id, guild_id
+`
+
+func (q *Queries) ListLoginProviderRevisionGuilds(ctx context.Context, ids string) ([]LoginProviderRevisionGuild, error) {
+	rows, err := q.db.QueryContext(ctx, listLoginProviderRevisionGuilds, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LoginProviderRevisionGuild{}
+	for rows.Next() {
+		var i LoginProviderRevisionGuild
+		if err := rows.Scan(&i.RevisionID, &i.GuildID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

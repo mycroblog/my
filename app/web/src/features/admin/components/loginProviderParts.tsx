@@ -11,6 +11,7 @@ export const loginProviderKindLabels: Readonly<Record<LoginProviderKind, ClientM
   oidc: "client:admin.login_providers.kind.oidc",
   github: "client:admin.login_providers.kind.github",
   mastodon: "client:admin.login_providers.kind.mastodon",
+  discord: "client:admin.login_providers.kind.discord",
 };
 
 type LoginProviderFieldsProps = {

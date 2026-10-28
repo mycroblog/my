@@ -18,7 +18,7 @@ patch:
   summary: Change a login provider
   description: |
     Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
-    `organizations` remove them. A refused change is a 422
+    `organizations`, or `guilds` remove them. A refused change is a 422
     `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
     unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
   tags: [admin-server]

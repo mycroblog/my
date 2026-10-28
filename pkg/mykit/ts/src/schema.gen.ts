@@ -6145,7 +6145,7 @@ export interface paths {
         /**
          * Change a login provider
          * @description Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
-         *     `organizations` remove them. A refused change is a 422
+         *     `organizations`, or `guilds` remove them. A refused change is a 422
          *     `/api/v1/problems/invalid-login-provider`. A change is recorded in the audit log. An
          *     unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
          */
@@ -7158,7 +7158,7 @@ export interface components {
             display_name: string;
             /**
              * @description The OpenID Connect issuer of an `oidc` provider, or the server's URL
-             *     (`https://<host>`) of a `mastodon` one; omitted for `github`.
+             *     (`https://<host>`) of a `mastodon` one; omitted for `github` and `discord`.
              */
             issuer?: string;
             client_id: string;
@@ -7175,6 +7175,11 @@ export interface components {
              *     provider must belong to; empty lets every GitHub user in.
              */
             organizations: string[];
+            /**
+             * @description The IDs of the Discord servers (guilds), sorted, one of which a user of a `discord`
+             *     provider must belong to; empty lets every Discord user in.
+             */
+            guilds: string[];
             state: components["schemas"]["AdminLoginProviderState"];
             /** Format: date-time */
             state_changed_at: string;
@@ -7221,14 +7226,15 @@ export interface components {
             /**
              * @description For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
              *     exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-             *     `https://<host>`. None for `github`.
+             *     `https://<host>`. None for `github` and `discord`.
              */
             issuer?: string;
             /** @description The client ID that the provider gave, up to 512 bytes. */
             client_id?: string;
             /**
              * @description Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-             *     Organizations of `github`); none for `mastodon`.
+             *     Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+             *     adds `guilds` itself.
              */
             scopes?: string[];
             /** @description Whether new users may sign up with the provider. */
@@ -7239,6 +7245,11 @@ export interface components {
             claims?: components["schemas"]["LoginProviderClaimCondition"][];
             /** @description The GitHub Organizations a user must belong to one of, for `github` only, at most 50. */
             organizations?: string[];
+            /**
+             * @description The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+             *     only, at most 50; each is a decimal ID of up to 20 digits.
+             */
+            guilds?: string[];
             /** @description The client secret that the provider gave, up to 1024 bytes. It is never shown again. */
             client_secret?: string;
         };
@@ -7831,10 +7842,10 @@ export interface components {
         };
         /**
          * @description The kind of an external login provider. `oidc`: an OpenID Connect provider found by
-         *     its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server.
+         *     its issuer's discovery document. `github`: github.com. `mastodon`: one Mastodon server. `discord`: discord.com.
          * @enum {string}
          */
-        LoginProviderKind: "oidc" | "github" | "mastodon";
+        LoginProviderKind: "oidc" | "github" | "mastodon" | "discord";
         /**
          * @description The problem of a login provider that breaks a rule (422,
          *     `/api/v1/problems/invalid-login-provider`); `reason` says which. Another 422 (a malformed
@@ -7847,12 +7858,12 @@ export interface components {
          * @description Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
          *     than 100 characters, or with control characters. `issuer`: not what the kind takes (an
          *     `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
-         *     for `mastodon`; none for `github`), or a Mastodon server that cannot be reached or serves no
+         *     for `mastodon`; none for `github` and `discord`), or a Mastodon server that cannot be reached or serves no
          *     authorization server metadata (Mastodon 4.3 or later is required). `client_id`: empty,
          *     longer than 512 bytes, or with control characters, or a Mastodon server that refused to
          *     register a client: register one there and give its `client_id` and `client_secret`. `client_secret`: empty, longer than 1024 bytes, or with control
          *     characters. `scopes`: not scope tokens, too many, or any for `mastodon`. `conditions`:
-         *     claims for another kind than `oidc`, Organizations for another kind than `github`, or
+         *     claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
          *     ones that are not valid.
          * @enum {string}
          */
@@ -12559,14 +12570,15 @@ export interface components {
             /**
              * @description For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
              *     exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-             *     `https://<host>`. None for `github`.
+             *     `https://<host>`. None for `github` and `discord`.
              */
             issuer?: string;
             /** @description The client ID that the provider gave, up to 512 bytes. */
             client_id?: string;
             /**
              * @description Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-             *     Organizations of `github`); none for `mastodon`.
+             *     Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+             *     adds `guilds` itself.
              */
             scopes?: string[];
             /** @description Whether new users may sign up with the provider. */
@@ -12577,6 +12589,11 @@ export interface components {
             claims?: components["schemas"]["LoginProviderClaimCondition"][];
             /** @description The GitHub Organizations a user must belong to one of, for `github` only, at most 50. */
             organizations?: string[];
+            /**
+             * @description The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+             *     only, at most 50; each is a decimal ID of up to 20 digits.
+             */
+            guilds?: string[];
         };
         /** @description The changes to an OAuth app, checked as for a new one; what is omitted stays. */
         UpdateOAuthAppRequest: {

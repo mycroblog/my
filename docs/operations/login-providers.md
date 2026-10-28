@@ -3,7 +3,7 @@
 This guide is for operators and administrators.
 
 An external login provider lets users sign in with an account they have elsewhere: an OpenID Connect provider
-(Google Workspace, Microsoft Entra ID, Keycloak, and the like), GitHub, or one Mastodon server.
+(Google Workspace, Microsoft Entra ID, Keycloak, and the like), GitHub, Discord, or one Mastodon server.
 You set providers up with the `my login-provider` command on a host that has the server's configuration, or through the
 admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` permission, which only the built-in
 `admin` role has. The command works before any administrator can sign in, so you can use it for the first setup.
@@ -28,6 +28,7 @@ sign-up is allowed, and how many users are linked, with buttons to edit, enable,
 | --- | --- | --- |
 | `oidc` | The issuer URL (`https`), exactly as the provider's ID tokens name it, such as `https://accounts.google.com` | `-claim <claim>=<value>`: only users whose ID token has the claim with one of the values given for it |
 | `github` | None: the server knows github.com's endpoints | `-org <organization>`: only members of one of the Organizations (add `-scope read:org`) |
+| `discord` | None: the server knows discord.com's endpoints | `-guild <server ID>`: only members of one of the Discord servers (guilds); none lets every Discord user in |
 | `mastodon` | The server's web domain, such as `mastodon.example` (Mastodon 4.3 or later) | None |
 
 For Google Workspace, limit the users to your organization with `-claim hd=<your domain>`. Do not rely on the domain of the
@@ -53,6 +54,26 @@ The issuer is the realm URL, such as `https://sso.example.com/realms/main`, exac
 Create a confidential client with the standard flow, and the `openid`, `email`, and `profile` scopes. If the provider
 is on a private network, list it in `login_provider_allowed_destinations` ([below](#providers-on-an-internal-network)).
 Use `-claim` to require a claim, such as a group claim, with one of the values given.
+
+### Discord
+
+Create an application in the [Discord Developer Portal](https://discord.com/developers/applications), open "OAuth2", and
+give the server the client ID and the client secret. The server asks for the `identify` and `email` scopes, and also
+`guilds` when you list servers with `-guild`. A user is known by their numeric Discord ID; the username and display name
+only suggest the username on the sign-up form. The email address counts as verified only when Discord says it is
+verified; otherwise the user confirms it by mail like any other address.
+
+With `-guild`, the server checks on every sign-in, sign-up, and link that the user belongs to one of the listed servers
+and refuses the user otherwise. Without it, every Discord user may sign in. A guild ID is a number of up to 20 digits: in
+Discord, turn on "Developer Mode" (User Settings, Advanced), then right-click the server's icon and choose "Copy Server
+ID".
+
+```sh
+printf '%s\n' "$DISCORD_SECRET" | my login-provider add -kind discord -name Discord \
+  -client-id 123456789012345678 -guild 987654321098765432
+```
+
+Add the callback URL under "OAuth2", "Redirects" in the application, after `add` prints it.
 
 ### GitHub
 
@@ -146,8 +167,8 @@ it through the admin API.
 Operations that ask for the password or a passkey (setting a password, adding a passkey, deleting or moving the account,
 linking another account) ask a user who has neither to sign in again at a linked provider ([registration](registration.md)).
 An OpenID Connect provider is asked to authenticate the user again (`max_age=0` and `prompt=login`) and the server
-refuses an earlier authentication; a Mastodon server is asked with `force_login=true`. GitHub has no way to ask for a
-fresh sign-in, so a user who is still signed in at GitHub is confirmed without entering anything. The server still checks
+refuses an earlier authentication; a Mastodon server is asked with `force_login=true`. GitHub and Discord have no way to
+ask for a fresh sign-in, so a user who is still signed in there is confirmed without entering anything. The server still checks
 that the account is the linked one, but this is weaker proof that the person is at the keyboard. Prefer an OpenID
 Connect provider, or have users keep a password or a passkey, when this matters.
 

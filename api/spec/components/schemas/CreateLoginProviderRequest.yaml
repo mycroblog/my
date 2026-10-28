@@ -18,7 +18,7 @@ properties:
     description: |
       For `oidc`, the issuer: an `https` URL without user info, a query, or a fragment,
       exactly as the ID tokens name it. For `mastodon`, the server, as a domain or as
-      `https://<host>`. None for `github`.
+      `https://<host>`. None for `github` and `discord`.
     type: string
     maxLength: 2048
   client_id:
@@ -28,7 +28,8 @@ properties:
   scopes:
     description: |
       Scopes to ask for besides the ones the kind needs, at most 20 (`read:org` for the
-      Organizations of `github`); none for `mastodon`.
+      Organizations of `github`); none for `mastodon`. The guild condition of `discord`
+      adds `guilds` itself.
     type: array
     maxItems: 20
     items:
@@ -47,6 +48,14 @@ properties:
       $ref: ./LoginProviderClaimCondition.yaml
   organizations:
     description: The GitHub Organizations a user must belong to one of, for `github` only, at most 50.
+    type: array
+    maxItems: 50
+    items:
+      type: string
+  guilds:
+    description: |
+      The IDs of the Discord servers (guilds) a user must belong to one of, for `discord`
+      only, at most 50; each is a decimal ID of up to 20 digits.
     type: array
     maxItems: 50
     items:

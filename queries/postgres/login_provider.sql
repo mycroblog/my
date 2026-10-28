@@ -19,6 +19,9 @@ INSERT INTO login_provider_revision_claims (revision_id, claim, value) VALUES ($
 -- name: InsertLoginProviderRevisionOrganization :exec
 INSERT INTO login_provider_revision_organizations (revision_id, organization) VALUES ($1, $2);
 
+-- name: InsertLoginProviderRevisionGuild :exec
+INSERT INTO login_provider_revision_guilds (revision_id, guild_id) VALUES ($1, $2);
+
 -- name: InsertLoginProviderSecret :exec
 INSERT INTO login_provider_secrets (id, provider_id, sealed_secret, created_by_user_id, created_at)
 VALUES ($1, $2, $3, $4, $5);
@@ -61,6 +64,11 @@ ORDER BY revision_id, claim, value;
 SELECT revision_id, organization FROM login_provider_revision_organizations
 WHERE revision_id = ANY(sqlc.arg(ids)::uuid[])
 ORDER BY revision_id, organization;
+
+-- name: ListLoginProviderRevisionGuilds :many
+SELECT revision_id, guild_id FROM login_provider_revision_guilds
+WHERE revision_id = ANY(sqlc.arg(ids)::uuid[])
+ORDER BY revision_id, guild_id;
 
 -- GetCurrentLoginProviderSecret returns the current secret of a provider that is not deleted.
 -- name: GetCurrentLoginProviderSecret :one

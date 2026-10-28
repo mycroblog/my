@@ -3,7 +3,7 @@ description: |
   An external login provider that users sign in, sign up, and link their accounts with.
   Its client secret is never shown.
 type: object
-required: [id, kind, display_name, client_id, scopes, allow_signup, allow_link, claims, organizations,
+required: [id, kind, display_name, client_id, scopes, allow_signup, allow_link, claims, organizations, guilds,
   state, state_changed_at, callback_url, linked_users, created_at, updated_at]
 properties:
   id:
@@ -18,7 +18,7 @@ properties:
   issuer:
     description: |
       The OpenID Connect issuer of an `oidc` provider, or the server's URL
-      (`https://<host>`) of a `mastodon` one; omitted for `github`.
+      (`https://<host>`) of a `mastodon` one; omitted for `github` and `discord`.
     type: string
   client_id:
     type: string
@@ -42,6 +42,13 @@ properties:
     description: |
       The GitHub Organizations, in lower case and sorted, one of which a user of a `github`
       provider must belong to; empty lets every GitHub user in.
+    type: array
+    items:
+      type: string
+  guilds:
+    description: |
+      The IDs of the Discord servers (guilds), sorted, one of which a user of a `discord`
+      provider must belong to; empty lets every Discord user in.
     type: array
     items:
       type: string
