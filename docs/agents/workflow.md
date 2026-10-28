@@ -70,10 +70,9 @@ broken PR out of the queue. To run the full check on the PR itself (to look into
 an outside contributor's PR early), add the label `ci:full`.
 If a check is wrong or flaky, fix it in a separate commit and explain in the PR.
 
-An issue that changes the UI also gets the L4 task test ([ADR-0110 §7](../adr/0110-web-experience-principles.md)) before the PR:
-do each task of the screen's L1 using only Playwright ARIA snapshots, and count the steps, the backtracks, and the lostness
-(Smith, 1996: √((N/S − 1)² + (R/N − 1)²), with S the places visited in total, N the distinct places, R the shortest number of steps).
-Report the per-task numbers in the PR. A task above 0.4 needs a reason in the PR, or a fix of the L1 or the screen.
+An issue that changes the UI writes, for each task of the changed screen's L1, the shortest number of steps in the PR.
+The L4 task test itself (steps, backtracks, and lostness of an agent working from ARIA snapshots only) runs nightly on `main`
+([ADR-0114](../adr/0114-l4-task-tests-nightly.md)), not before the PR; a task above 0.4 becomes an issue for its screen.
 Check the change against the four viewpoints (signifier, feedback, UX writing, information architecture) of the
 [experience principles](../architecture/web-client/21-experience-principles.md).
 
