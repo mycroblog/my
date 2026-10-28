@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./theme.css": "./src/theme.css",
-    "./emoji.css": "./src/emoji.css"
+    "./emoji.css": "./src/emoji.css",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.app.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.app.tsbuildinfo && tsc -p tsconfig.node.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.node.tsbuildinfo && tsc -p scripts/tsconfig.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/scripts.tsbuildinfo",

@@ -840,6 +840,7 @@ describe("the settings page", () => {
         .map((link) => link.getAttribute("href")),
     ).toEqual([
       "/settings/profile",
+      "/settings/badges",
       "/settings/preferences",
       "/settings/notifications",
       "/settings/password",

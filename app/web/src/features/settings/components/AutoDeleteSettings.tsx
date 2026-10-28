@@ -12,7 +12,6 @@ import {
   SelectItem,
   Stack,
   StatusMessage,
-  Switch,
   Text,
 } from "@my/ui";
 import { useId } from "react";
@@ -52,13 +51,13 @@ export function AutoDeleteSettings() {
     <>
       <Stack as="form" onSubmit={form.submit} gap="6">
         <Hint size="inherit">{t("client:settings.auto_delete.description")}</Hint>
-        <Switch
+        <Checkbox
           isSelected={form.policy.enabled}
           onChange={form.setEnabled}
           description={t("client:settings.auto_delete.enabled.description")}
         >
           {t("client:settings.auto_delete.enabled")}
-        </Switch>
+        </Checkbox>
         <Select
           label={t("client:settings.auto_delete.age")}
           description={t("client:settings.auto_delete.age.description")}

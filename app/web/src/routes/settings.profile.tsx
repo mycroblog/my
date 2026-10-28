@@ -1,37 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Stack } from "@my/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { BadgeSettings, ProfileForm, badgeChoicesQueryOptions, credentialsQueryOptions } from "../features/settings";
-import { SupporterListingSettings, supporterListingQueryOptions } from "../features/supporters";
+import { ProfileForm, credentialsQueryOptions } from "../features/settings";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
 /**
- * Editing the signed-in user's profile (FR-006), choosing the badges it shows (ADR-0071), and, for a member of a
- * supporter plan, whether to be on the supporter list (ADR-0071 §4).
+ * Editing the signed-in user's profile (FR-006), saved together by the form's button. The badges and the supporter
+ * list, saved as soon as they change, have their own page (`/settings/badges`; ADR-0110 P1).
  */
 export const Route = createFileRoute("/settings/profile")({
   staticData: { title: "client:settings.profile.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.query({
-        ...credentialsQueryOptions(context.api),
-        staleTime: Infinity,
-      }),
-      context.queryClient.query({
-        ...badgeChoicesQueryOptions(context.api),
-        staleTime: Infinity,
-      }),
-      // A user who is not a member of a plan gets a 404, which only leaves the section out.
-      context.queryClient
-        .query({
-          ...supporterListingQueryOptions(context.api),
-          staleTime: Infinity,
-        })
-        .catch(() => undefined),
-    ]),
+    context.queryClient.query({
+      ...credentialsQueryOptions(context.api),
+      staleTime: Infinity,
+    }),
   component: ProfilePage,
 });
 
@@ -40,11 +25,7 @@ function ProfilePage() {
   return (
     <>
       <SettingsHeading>{t("client:settings.profile.title")}</SettingsHeading>
-      <Stack gap="8">
-        <ProfileForm />
-        <BadgeSettings />
-        <SupporterListingSettings />
-      </Stack>
+      <ProfileForm />
     </>
   );
 }

@@ -246,7 +246,7 @@ test.describe("the voice chat pages", () => {
     await page.getByRole("button", { name: message("voice.start") }).click();
     const dialog = page.getByRole("dialog", { name: message("voice.form.new_title") });
     await expect(dialog.getByRole("textbox", { name: message("voice.form.name") })).toBeFocused();
-    await expect(dialog.getByRole("switch", { name: message("voice.form.post") })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: message("voice.form.post") })).toBeChecked();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

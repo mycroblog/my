@@ -2,6 +2,7 @@
 // Runs before every Vitest file (vitest.config.ts): jest-dom matchers, DOM cleanup and the MSW server.
 // The network is mocked only through MSW (web-client/README.md T3); a request that no handler matches fails the test.
 import "@testing-library/jest-dom/vitest";
+import { watchSwitchesInSubmitForms } from "@my/ui/testing";
 import { cleanup, configure } from "@testing-library/react";
 import { destroyAnnouncer } from "react-aria/private/live-announcer/LiveAnnouncer";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
@@ -45,7 +46,12 @@ beforeAll(() => {
   );
 });
 
+// No screen puts a switch, which takes effect at once, inside a form saved by a submit button (web-client §21,
+// ADR-0110 §6): every test watches what it renders, dialogs included, and fails when one did.
+let switches: { stop: () => void } | undefined;
+
 beforeEach(() => {
+  switches = watchSwitchesInSubmitForms();
   // jsdom has no layout, so it does not implement scrolling; the router restores the scroll position
   // on every navigation. restoreMocks (vitest.config.ts) removes the stub after each test.
   vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -68,6 +74,10 @@ afterEach(() => {
   resetNotificationSound();
   // The tests share one document; a theme chosen in one (lib/theme) must not color the next.
   delete document.documentElement.dataset["theme"];
+  // Last, so that the rest of the cleanup runs when it fails; it remembers what the test rendered before cleanup.
+  const watched = switches;
+  switches = undefined;
+  watched?.stop();
 });
 
 afterAll(() => {

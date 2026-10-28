@@ -4,13 +4,13 @@
 // Y11). The fields mount with the dialog's content, so every opening starts from the room as it is.
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   InlineError,
   Radio,
   RadioGroup,
   Stack,
-  Switch,
   TextArea,
   TextField,
 } from "@my/ui";
@@ -144,7 +144,7 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
       </RadioGroup>
       {form.offersPost && (
         <>
-          <Switch
+          <Checkbox
             isSelected={draft.post}
             onChange={(post) => {
               change({ post });
@@ -154,7 +154,7 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
             )}
           >
             {t("client:voice.form.post")}
-          </Switch>
+          </Checkbox>
           {draft.post && (
             <TextArea
               label={t("client:voice.form.post.text")}

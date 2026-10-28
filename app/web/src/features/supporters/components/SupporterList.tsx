@@ -189,7 +189,7 @@ export function AboutSupportersSection() {
 }
 
 /**
- * The user's choice to be on the supporter list (ADR-0071 §4), on the profile settings: one switch, saved as soon as
+ * The user's choice to be on the supporter list (ADR-0071 §4), on the badges settings page: one switch, saved as soon as
  * it changes. Shown only to a member of a plan while the instance publishes the list; it stays in the Tauri app.
  */
 export function SupporterListingSettings() {
