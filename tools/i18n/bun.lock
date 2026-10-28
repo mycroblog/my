@@ -5,9 +5,9 @@
     "": {
       "name": "@my/i18n-tools",
       "dependencies": {
-        "@formatjs/cli-lib": "10.0.10",
-        "@formatjs/icu-messageformat-parser": "3.5.21",
-        "intl-messageformat": "12.1.3",
+        "@formatjs/cli-lib": "10.0.11",
+        "@formatjs/icu-messageformat-parser": "3.5.22",
+        "intl-messageformat": "12.1.4",
       },
       "devDependencies": {
         "@types/bun": "1.4.4",
@@ -22,23 +22,23 @@
 
     "@babel/types": ["@babel/types@8.0.6", "", { "dependencies": { "@babel/helper-string-parser": "^8.0.6", "@babel/helper-validator-identifier": "^8.0.6" } }, "sha512-c+xgSWboV2pdwXP67BUWDVRHi2BO5Q3KwxyFVs7taVTY+fsK47/L51ZXQoV9rozHJDNHvJ4v4WEsI/IlxV2l2A=="],
 
-    "@formatjs/cli-lib": ["@formatjs/cli-lib@10.0.10", "", { "dependencies": { "@babel/types": "8", "@formatjs/icu-messageformat-parser": "3.5.21", "@types/fs-extra": "11", "@types/node": "22 || 24", "commander": "15", "fast-glob": "3", "fs-extra": "11", "json-stable-stringify": "1", "loud-rejection": "2" }, "optionalDependencies": { "@formatjs/cli-native-darwin-arm64": "1.1.28", "@formatjs/cli-native-linux-arm64": "1.2.28", "@formatjs/cli-native-linux-arm64-musl": "1.0.26", "@formatjs/cli-native-linux-x64": "1.1.28", "@formatjs/cli-native-linux-x64-musl": "1.0.26", "@formatjs/cli-native-win32-x64": "1.1.29" }, "peerDependencies": { "@glimmer/env": "*", "@glimmer/reference": "*", "@glimmer/syntax": "^0.84.3 || ^0.95.0", "@glimmer/validator": "*", "@vue/compiler-core": "3", "content-tag": "4", "svelte": "5", "vue": "3" }, "optionalPeers": ["@glimmer/env", "@glimmer/reference", "@glimmer/syntax", "@glimmer/validator", "@vue/compiler-core", "content-tag", "svelte", "vue"] }, "sha512-lvtgoXeXeGN0q3f9khz7HquVWoiJhTHBYDpqUqakWAKkStV94l6RYfJuzDlTT+TXhnrunkFqzohrbHuqGauFDw=="],
+    "@formatjs/cli-lib": ["@formatjs/cli-lib@10.0.11", "", { "dependencies": { "@babel/types": "8", "@formatjs/icu-messageformat-parser": "3.5.22", "@types/fs-extra": "11", "@types/node": "22 || 24", "commander": "15", "fast-glob": "3", "fs-extra": "11", "json-stable-stringify": "1", "loud-rejection": "2" }, "optionalDependencies": { "@formatjs/cli-native-darwin-arm64": "1.1.29", "@formatjs/cli-native-linux-arm64": "1.2.29", "@formatjs/cli-native-linux-arm64-musl": "1.0.27", "@formatjs/cli-native-linux-x64": "1.1.29", "@formatjs/cli-native-linux-x64-musl": "1.0.27", "@formatjs/cli-native-win32-x64": "1.1.30" }, "peerDependencies": { "@glimmer/env": "*", "@glimmer/reference": "*", "@glimmer/syntax": "^0.84.3 || ^0.95.0", "@glimmer/validator": "*", "@vue/compiler-core": "3", "content-tag": "4", "svelte": "5", "vue": "3" }, "optionalPeers": ["@glimmer/env", "@glimmer/reference", "@glimmer/syntax", "@glimmer/validator", "@vue/compiler-core", "content-tag", "svelte", "vue"] }, "sha512-bHTMOpbGR1G1E9s12AgkZBQRDR2ZB//wNVqeEeYHJoh5xm/+QLqSNmLLrYrI1n1dGzUZwNyywvU9g0prftt3lw=="],
 
-    "@formatjs/cli-native-darwin-arm64": ["@formatjs/cli-native-darwin-arm64@1.1.28", "", { "os": "darwin", "cpu": "arm64" }, "sha512-kFkM6peuJgZrzcuWZiCbnh3o9SHYWBYq3OW8vwL7Cd3IRnzaH1InnzverZpqhLfRKDs+JGa64ll/IuieW/u+4A=="],
+    "@formatjs/cli-native-darwin-arm64": ["@formatjs/cli-native-darwin-arm64@1.1.29", "", { "os": "darwin", "cpu": "arm64" }, "sha512-kh+l/SZGTpDEH/aLjwbH9CqHaSW7htGiwljZ4vOobhtQbJXriQRRHzA/LAgJ+798QMflP6HjR74hK0BJPucqAw=="],
 
-    "@formatjs/cli-native-linux-arm64": ["@formatjs/cli-native-linux-arm64@1.2.28", "", { "os": "linux", "cpu": "arm64" }, "sha512-yW8nfFoFJfWvDCbysEH9aU+zDbBPvoNcq1pYs8qoxwXSrvZS8irBdyfuX//Cqz6hQ2/fyGfbL/fxizotX0O4dQ=="],
+    "@formatjs/cli-native-linux-arm64": ["@formatjs/cli-native-linux-arm64@1.2.29", "", { "os": "linux", "cpu": "arm64" }, "sha512-vSTXe5IXETlf1cMCRqUHuOREM5zpF1dCk542zOHv388F71LWIWz/Hdu6pEdI4oFxdkqEM3tcKFMWB306JOOAaQ=="],
 
-    "@formatjs/cli-native-linux-arm64-musl": ["@formatjs/cli-native-linux-arm64-musl@1.0.26", "", { "os": "linux", "cpu": "arm64" }, "sha512-nJu7scro7jqNJyrsUUD0ui+onpjog54Z8yf5h58Tqbr8kUJeUtmsz/cP4a42yU5WiJW5cXCFsT5nq2a8wM63Xw=="],
+    "@formatjs/cli-native-linux-arm64-musl": ["@formatjs/cli-native-linux-arm64-musl@1.0.27", "", { "os": "linux", "cpu": "arm64" }, "sha512-HZtqjqJrTHJt5lvhFoz0Ak5TpsYYxgIdkyh5IJYlyCpcGzCC89bb8Bq4N8K+tqsJ+p/eN0ewsLuQA9T0gT+y/w=="],
 
-    "@formatjs/cli-native-linux-x64": ["@formatjs/cli-native-linux-x64@1.1.28", "", { "os": "linux", "cpu": "x64" }, "sha512-3alv3g1/5C91xM6gTqdWMoApMM3O1Xu3ezGbb3gAWiHwhWKl/MrzPsEB8wpmRhy+RB3i9MQvWpQOYBEy4zczHA=="],
+    "@formatjs/cli-native-linux-x64": ["@formatjs/cli-native-linux-x64@1.1.29", "", { "os": "linux", "cpu": "x64" }, "sha512-GuF20VE1eqz6u5ndmYNbiIO7g/WJaKSFNAWlhLBMCWS/8ggyw5bqvFfZMgR1VUTa/oMVWfJp+5q+oi0DMc89Sw=="],
 
-    "@formatjs/cli-native-linux-x64-musl": ["@formatjs/cli-native-linux-x64-musl@1.0.26", "", { "os": "linux", "cpu": "x64" }, "sha512-XhOmfSVhvgYtquSRpuz4EWBIzR08RUpvBktfBuQDj/UMtpvTpedLFIsetBDVie1jzMtEVo/TKvhqYe0LkNJiFg=="],
+    "@formatjs/cli-native-linux-x64-musl": ["@formatjs/cli-native-linux-x64-musl@1.0.27", "", { "os": "linux", "cpu": "x64" }, "sha512-bv8thdLdTeYG0jcAMBAXb27tc4BiLvwa/v8US3kHLhkq7arDM5Dmvsf1+XSMNzXLuqdCU5p+OI/2m/qOb44Jqg=="],
 
-    "@formatjs/cli-native-win32-x64": ["@formatjs/cli-native-win32-x64@1.1.29", "", { "os": "win32", "cpu": "x64" }, "sha512-YnZRcgrBT+IYtFnQUUCdukCPCYeJPsRUMzYtSFokGZY9lu3l6olJ1oPv4xzMNIocCUYyuCwG46aWqaTv1nz/gA=="],
+    "@formatjs/cli-native-win32-x64": ["@formatjs/cli-native-win32-x64@1.1.30", "", { "os": "win32", "cpu": "x64" }, "sha512-iP5Qd7mTRu5Rn69bWnP1AgzdQ640TQQlkhiZGCGoUYSLEZ/bGTgDgzYvI4LRFIQYoS9niKDXAOETjwWAEPGoCw=="],
 
     "@formatjs/fast-memoize": ["@formatjs/fast-memoize@3.1.7", "", {}, "sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA=="],
 
-    "@formatjs/icu-messageformat-parser": ["@formatjs/icu-messageformat-parser@3.5.21", "", { "dependencies": { "@formatjs/icu-skeleton-parser": "2.1.12" } }, "sha512-Vnl7IOSyMRaP4Pjv48etkT2nlcIwzh4QWIa3hewzGlZZPBbft+TbMir4MijpDViOLN/1hvkGC10oYMuilsG+fw=="],
+    "@formatjs/icu-messageformat-parser": ["@formatjs/icu-messageformat-parser@3.5.22", "", { "dependencies": { "@formatjs/icu-skeleton-parser": "2.1.12" } }, "sha512-YuwN+dDKgssfuYwtOyGQD0CSn7K46g9cv1Fp0VgKpjZDDFvv8b8crzP990IcJhRPWHhKzCGsbUSJVIguyyFA5A=="],
 
     "@formatjs/icu-skeleton-parser": ["@formatjs/icu-skeleton-parser@2.1.12", "", {}, "sha512-ca7tZMLpfHX3sUD7hP6gE/qr6Iq89EDd3ZLeRhbsB7r0UD55DGJq+tmFLzrGrnx5StahUevQmQQVtbDRHsfDHA=="],
 
@@ -148,7 +148,7 @@
 
     "hasown": ["hasown@2.0.4", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A=="],
 
-    "intl-messageformat": ["intl-messageformat@12.1.3", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.7", "@formatjs/icu-messageformat-parser": "3.5.21" } }, "sha512-JXi5wk8R/oSECKyxSIZ00VS8KG6MZkHM0qU4NS7RrvIWWXkiv3wVqGlCvEvyXiDvKlt2yqwZMiZGIv+I8rrnZQ=="],
+    "intl-messageformat": ["intl-messageformat@12.1.4", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.7", "@formatjs/icu-messageformat-parser": "3.5.22" } }, "sha512-JUkmv3cAEyijN3oiRiV3ctel7yVMuUCgfh7Pu8pj1/z6L1DSEPRyhuMaLjVw3pGmGJ5RDH54WVFxfMHZWTwyHw=="],
 
     "is-extglob": ["is-extglob@2.1.1", "", {}, "sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ=="],
 
