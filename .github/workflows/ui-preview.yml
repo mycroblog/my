@@ -1,0 +1,61 @@
+name: UI preview
+
+# Builds the UI preview (ADR-0112 §3): the static app/web Storybook of the screens with the @my/ui Storybook under ui/
+# (`scripts/task.sh web:storybook-build`), uploaded as the artifact `ui-preview`. ui-preview-deploy.yml publishes it
+# when this workflow completes: a pull request's build on its Preview, main's on the Worker itself. This workflow holds
+# no secret and no write permission, so it runs the same for pull requests from forks; it is not part of the required
+# `check` and never blocks a merge.
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "locales/**"
+      - "tasks/ui.yml"
+      - "tasks/web.yml"
+      - "scripts/ui-preview.sh"
+      - "scripts/ui-preview/**"
+      - ".github/workflows/ui-preview.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "locales/**"
+      - "tasks/ui.yml"
+      - "tasks/web.yml"
+      - "scripts/ui-preview.sh"
+      - "scripts/ui-preview/**"
+      - ".github/workflows/ui-preview.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: web:storybook-build
+        run: scripts/task.sh web:storybook-build
+      # Fails the build that ui-preview-deploy.yml would refuse anyway, where the author sees it.
+      - name: Check the build
+        run: scripts/ui-preview.sh stage app/web/storybook-static "$RUNNER_TEMP/ui-preview"
+      - name: Upload the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-preview
+          path: app/web/storybook-static/
+          if-no-files-found: error
+          retention-days: 7

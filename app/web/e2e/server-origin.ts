@@ -23,16 +23,21 @@ function freePorts(count: number): number[] {
 }
 
 /**
- * The ports of `vite preview`, of e2e/server.ts, of its voice chat server (`node e2e/server.ts voice`), and of its demo
- * server (`node e2e/server.ts demo`): E2E_PREVIEW_PORT, E2E_SERVER_PORT, E2E_VOICE_SERVER_PORT, and
- * E2E_DEMO_SERVER_PORT when set, otherwise free ports picked when the Playwright config first loads. The picked ports are written back to
+ * The ports of `vite preview`, of e2e/server.ts, of its voice chat server (`node e2e/server.ts voice`), of its demo
+ * server (`node e2e/server.ts demo`), and of the demo server's fake Web Push service (`my dev push-service`):
+ * E2E_PREVIEW_PORT, E2E_SERVER_PORT, E2E_VOICE_SERVER_PORT, E2E_DEMO_SERVER_PORT, and E2E_PUSH_SERVICE_PORT when set,
+ * otherwise free ports picked when the Playwright config first loads. The picked ports are written back to
  * the environment, which the webServer commands and the worker processes inherit, so every process of one
  * run uses the same ports and runs in other worktrees on the same machine use others.
  */
-function ports(): { preview: number; server: number; voice: number; demo: number } {
-  const missing = ["E2E_PREVIEW_PORT", "E2E_SERVER_PORT", "E2E_VOICE_SERVER_PORT", "E2E_DEMO_SERVER_PORT"].filter(
-    (name) => process.env[name] === undefined,
-  );
+function ports(): { preview: number; server: number; voice: number; demo: number; push: number } {
+  const missing = [
+    "E2E_PREVIEW_PORT",
+    "E2E_SERVER_PORT",
+    "E2E_VOICE_SERVER_PORT",
+    "E2E_DEMO_SERVER_PORT",
+    "E2E_PUSH_SERVICE_PORT",
+  ].filter((name) => process.env[name] === undefined);
   const picked = freePorts(missing.length);
   for (const [i, name] of missing.entries()) {
     process.env[name] = String(picked[i]);
@@ -42,10 +47,11 @@ function ports(): { preview: number; server: number; voice: number; demo: number
     server: Number(process.env["E2E_SERVER_PORT"]),
     voice: Number(process.env["E2E_VOICE_SERVER_PORT"]),
     demo: Number(process.env["E2E_DEMO_SERVER_PORT"]),
+    push: Number(process.env["E2E_PUSH_SERVICE_PORT"]),
   };
 }
 
-const { preview, server, voice, demo } = ports();
+const { preview, server, voice, demo, push } = ports();
 
 /** The port of `vite preview`, which serves the built client unless E2E_BASE_URL points elsewhere. */
 export const previewPort = preview;
@@ -82,6 +88,15 @@ export const demoServerPort = demo;
  * run with E2E_DEMO=1) and for `scripts/task.sh web:demo`.
  */
 export const demoServerURL = `http://localhost:${demoServerPort}`;
+
+/** The port of the fake Web Push service (`my dev push-service`) that `node e2e/server.ts demo` starts. */
+export const pushServicePort = push;
+
+/**
+ * The origin of the demo server's fake Web Push service: the origin of the endpoints it issues and the audience of
+ * the VAPID tokens it accepts, on localhost over HTTPS with the certificate of scripts/mailpit-cert.sh.
+ */
+export const pushServiceOrigin = `https://localhost:${pushServicePort}`;
 
 /**
  * The temporary directory of the database and the blobs of e2e/server.ts, and its key-encryption key:

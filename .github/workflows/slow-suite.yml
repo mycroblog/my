@@ -1,7 +1,7 @@
 name: Slow suite
 
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
-# live interoperability test with Mastodon, GoToSocial, and Misskey, the PostgreSQL tests on a real postgres container
+# live interoperability test with Mastodon, GoToSocial, Misskey, and Akkoma, the PostgreSQL tests on a real postgres container
 # (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the
 # LiveKit transport contract on livekit-server --dev (ADR-0102), the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0087 §4), the restore drill, golangci-lint over everything with the build tag sets,

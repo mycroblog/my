@@ -3,7 +3,7 @@
 // timeline with the scenario's posts; a second run of the seed adds nothing; and a password reset arrives in Mailpit
 // with a link that sets the password. It runs in the demo-chromium project of playwright.config.ts, which exists
 // only with E2E_DEMO=1, as the demo server needs the test build (`GO_TAGS=e2e_fakes scripts/task.sh go:bin`) and
-// Mailpit (`scripts/task.sh docker:mailpit`).
+// Mailpit (`scripts/task.sh docker:mailpit`). The `demo-e2e` job of the Nightly workflow runs it every night.
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";

@@ -513,11 +513,11 @@ entries:
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
     docs: ["docs/architecture/web-client/README.md#テストの置き場所と道具"]
   - name: web-l4
-    paths: ["app/web/l4/**", ".github/workflows/nightly.yml"]
-    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/architecture/web-client/screens/README.md"]
+    paths: ["app/web/l4/**", ".github/workflows/nightly.yml", ".github/actions/start-mailpit/**"]
+    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/adr/0117-demo-environment.md", "docs/architecture/web-client/screens/README.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
-      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md; app/web/l4/screens.ts gives each screen its start and the data its tasks need, so a new L1 whose tasks need data adds an entry there (check with DRY_RUN=1)."
+      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); app/web/l4/screens.ts gives each screen its start, the person of the scenario it signs in as (or none), the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new L1 adds an entry there (check with DRY_RUN=1; l4/screens.test.ts checks the task names)."
       - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
   - name: web-demo
     paths: ["app/web/demo/**"]
