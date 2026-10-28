@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The public supporter list (/about/supporters; web-client/screens/supporters.md) in the states of ADR-0112 §1.
+// The public supporter list (/about/supporters) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http } from "msw";
 import { apiBase, problem } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { listing, members, programOn } from "./test/storyFixtures";
 
 const listed = [programOn("public"), listing(members)];

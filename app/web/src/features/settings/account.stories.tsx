@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The account page (/settings/account; web-client/screens/account.md): the archives of the user's data and deleting the
+// The account page (/settings/account): the archives of the user's data and deleting the
 // account, in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { dataExports } from "./test/storyFixtures";
 
 /** GET /exports answering `items`. */

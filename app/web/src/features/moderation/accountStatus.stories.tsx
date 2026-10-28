@@ -6,16 +6,24 @@ import { http, HttpResponse } from "msw";
 import { expect, within } from "storybook/test";
 import { type Schemas, viewerStatusFixture } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { ownActionFixture } from "./test/handlers";
 
 type Action = Schemas["ModerationAction"];
 
 /** `ownActionFixture` with `overrides`, without the fields named in `omit`. */
 function action(overrides: Partial<Action>, omit: (keyof Action)[] = []): Action {
-  const result = ownActionFixture(overrides);
-  for (const key of omit) delete result[key];
-  return result;
+  const entries = Object.entries(ownActionFixture(overrides)).filter(([key]) => !omit.includes(key as keyof Action));
+  return Object.fromEntries(entries) as Action;
 }
 
 /** A suspension in effect that may be appealed, a limit under appeal, and past actions of each outcome. */

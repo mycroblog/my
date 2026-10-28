@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's own invites (/settings/invites; web-client/screens/own-invites.md) in the states of ADR-0112 §1.
+// The user's own invites (/settings/invites) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { ownInvitePageFixture } from "./test/handlers";
 import { ownInvites } from "./test/storyFixtures";
 

@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The public costs and income of the server (/about/costs; web-client/screens/costs.md) in the states of ADR-0112 §1.
+// The public costs and income of the server (/about/costs; web-client/screens/about-costs.md) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { instanceFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { incomeOverSixMonths, publicCostsOverSixMonths } from "./test/storyFixtures";
 
 /** GET /instance answering a server that publishes its finances as `visibility` says. */

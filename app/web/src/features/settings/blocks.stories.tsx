@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The blocked accounts (/settings/blocks; web-client/screens/blocks.md) in the states of ADR-0112 §1.
+// The blocked accounts (/settings/blocks) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { listedAccounts } from "./test/storyFixtures";
 
 /** GET /blocks answering `accounts`, with a next page when `more`. */

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements as a user sees them, above the home timeline (/home; web-client/screens/announcements.md),
+// The server's announcements as a user sees them, above the home timeline (/home),
 // in the states of ADR-0112 §1. The home timeline itself is in its own stories.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

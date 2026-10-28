@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The follow requests of a locked account (/settings/follow-requests; web-client/screens/follow-requests.md) in the
+// The follow requests of a locked account (/settings/follow-requests) in the
 // states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

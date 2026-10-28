@@ -18,7 +18,10 @@ export const describedInstance: Schemas["Instance"] = {
   ai_usage: "deny",
   rules: [
     { id: "0192f0c4-7a8e-7000-8000-0000000000e1", text: "Be kind.", hint: "Disagree with ideas, not with people." },
-    { id: "0192f0c4-7a8e-7000-8000-0000000000e2", text: "No spam, advertising, or automated posting without a bot flag." },
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000e2",
+      text: "No spam, advertising, or automated posting without a bot flag.",
+    },
     {
       id: "0192f0c4-7a8e-7000-8000-0000000000e3",
       text: "Put a content warning on pictures of food that went badly wrong, burns, and anything else people may not want to see while eating.",

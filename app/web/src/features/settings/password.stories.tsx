@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The password page (/settings/password; web-client/screens/password.md) in the states of ADR-0112 §1.
+// The password page (/settings/password) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 
 /** GET /accounts/password answering whether the user has a password. */
 function password(has_password: boolean) {

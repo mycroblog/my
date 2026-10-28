@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of the supporter plans (/settings/supporter; web-client/screens/supporter.md) in the states of
+// The user's page of the supporter plans (/settings/supporter) in the states of
 // ADR-0112 §1: no subscription yet, an active one, one that is cancelling, one whose payment failed.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse, type RequestHandler } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { ownSubscriptionFixture } from "./test/handlers";
 import { coffeeId, loafId, offeringPlans, programOn } from "./test/storyFixtures";
 

@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The documents the server publishes (/about/terms, /about/privacy, /about/commerce; web-client/screens/documents.md) in
+// The documents the server publishes (/about/terms, /about/privacy, /about/commerce) in
 // the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 
 /** A document of several sections with a list, a table, a quote and a link, as the server renders the Markdown. */
 const termsHtml = `<h2 id="accounts">Accounts</h2>

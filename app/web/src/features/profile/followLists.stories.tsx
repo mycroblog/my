@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The follow lists of a profile (/@{acct}/followers and /@{acct}/following; web-client/screens/profile.md) in the states
+// The follow lists of a profile (/@{acct}/followers and /@{acct}/following; web-client/screens/profile-follows.md) in the states
 // of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase } from "../../test/msw/http";
-import { answering, failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import {
+  answering,
+  failingOn,
+  inLocale,
+  loadingOn,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { lookingUp, manyAccounts, relatedAs, richBob } from "./test/storyFixtures";
 
 /** Both lists of every account hold `accounts`, with a next page when `more`. */
