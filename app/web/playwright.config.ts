@@ -31,6 +31,16 @@ const emojiFontSpec = /emoji-font\.spec\.ts$/;
 /** The spec of a voice chat call between two browsers, which runs once in Chromium instead of in the matrix. */
 const voiceP2PSpec = /voice-p2p\.spec\.ts$/;
 
+/** The specs of the demo server (e2e/demo-*.spec.ts), which run once in Chromium with E2E_DEMO=1. */
+const demoSpec = /demo-[^/]*\.spec\.ts$/;
+
+/**
+ * Whether the run starts the demo server (`node e2e/server.ts demo`, ADR-0117) and its specs: it needs the test build
+ * (`GO_TAGS=e2e_fakes scripts/task.sh go:bin`) and Mailpit (`scripts/task.sh docker:mailpit`), so only E2E_DEMO=1 asks
+ * for it.
+ */
+const demo = process.env["E2E_DEMO"] === "1" && !externalServer;
+
 const matrix: Project[] = widths
   .filter((width) => fullMatrix || prWidths.has(width))
   .flatMap((width) =>
@@ -39,7 +49,7 @@ const matrix: Project[] = widths
       const phone = width < 768;
       return {
         name: `${locale}-${width}`,
-        testIgnore: [emojiFontSpec, voiceP2PSpec],
+        testIgnore: [emojiFontSpec, voiceP2PSpec, demoSpec],
         use: {
           ...devices["Desktop Chrome"],
           viewport: { width, height: phone ? 800 : 900 },
@@ -82,7 +92,19 @@ const voiceP2PProject: Project = {
   },
 };
 
-const projects: Project[] = [...matrix, ...emojiFontProjects, ...(externalServer ? [] : [voiceP2PProject])];
+// The demo server needs the test build and Mailpit, so its project runs only with E2E_DEMO=1.
+const demoProject: Project = {
+  name: "demo-chromium",
+  testMatch: demoSpec,
+  use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, locale: "en" },
+};
+
+const projects: Project[] = [
+  ...matrix,
+  ...emojiFontProjects,
+  ...(externalServer ? [] : [voiceP2PProject]),
+  ...(demo ? [demoProject] : []),
+];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -129,5 +151,18 @@ export default defineConfig({
             gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
           } as const,
         ]),
+    ...(demo
+      ? [
+          {
+            // The demo server with the demo scenario, ready once the seed has applied it: Playwright takes the first
+            // of `url` and `wait`, so the server is waited for by its line alone.
+            command: "node e2e/server.ts demo",
+            wait: { stdout: /demo: ready/ },
+            timeout: 180_000,
+            reuseExistingServer: false,
+            gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
+          } as const,
+        ]
+      : []),
   ],
 });

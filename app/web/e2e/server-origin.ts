@@ -23,14 +23,14 @@ function freePorts(count: number): number[] {
 }
 
 /**
- * The ports of `vite preview`, of e2e/server.ts and of its voice chat server (`node e2e/server.ts voice`):
- * E2E_PREVIEW_PORT, E2E_SERVER_PORT and E2E_VOICE_SERVER_PORT when set, otherwise free ports picked when the
- * Playwright config first loads. The picked ports are written back to
+ * The ports of `vite preview`, of e2e/server.ts, of its voice chat server (`node e2e/server.ts voice`), and of its demo
+ * server (`node e2e/server.ts demo`): E2E_PREVIEW_PORT, E2E_SERVER_PORT, E2E_VOICE_SERVER_PORT, and
+ * E2E_DEMO_SERVER_PORT when set, otherwise free ports picked when the Playwright config first loads. The picked ports are written back to
  * the environment, which the webServer commands and the worker processes inherit, so every process of one
  * run uses the same ports and runs in other worktrees on the same machine use others.
  */
-function ports(): { preview: number; server: number; voice: number } {
-  const missing = ["E2E_PREVIEW_PORT", "E2E_SERVER_PORT", "E2E_VOICE_SERVER_PORT"].filter(
+function ports(): { preview: number; server: number; voice: number; demo: number } {
+  const missing = ["E2E_PREVIEW_PORT", "E2E_SERVER_PORT", "E2E_VOICE_SERVER_PORT", "E2E_DEMO_SERVER_PORT"].filter(
     (name) => process.env[name] === undefined,
   );
   const picked = freePorts(missing.length);
@@ -41,10 +41,11 @@ function ports(): { preview: number; server: number; voice: number } {
     preview: Number(process.env["E2E_PREVIEW_PORT"]),
     server: Number(process.env["E2E_SERVER_PORT"]),
     voice: Number(process.env["E2E_VOICE_SERVER_PORT"]),
+    demo: Number(process.env["E2E_DEMO_SERVER_PORT"]),
   };
 }
 
-const { preview, server, voice } = ports();
+const { preview, server, voice, demo } = ports();
 
 /** The port of `vite preview`, which serves the built client unless E2E_BASE_URL points elsewhere. */
 export const previewPort = preview;
@@ -72,6 +73,16 @@ export const voiceServerPort = voice;
  */
 export const voiceServerURL = `http://localhost:${voiceServerPort}`;
 
+/** The port of the demo server of e2e/server.ts. */
+export const demoServerPort = demo;
+
+/**
+ * The origin of the `my serve` of the test build that `node e2e/server.ts demo` starts with the demo scenario
+ * (demo/scenario.ts, ADR-0117), on a database of its own, for the specs that need real data (e2e/demo-*.spec.ts,
+ * run with E2E_DEMO=1) and for `scripts/task.sh web:demo`.
+ */
+export const demoServerURL = `http://localhost:${demoServerPort}`;
+
 /**
  * The temporary directory of the database and the blobs of e2e/server.ts, and its key-encryption key:
  * E2E_SERVER_DIR and E2E_SERVER_KEK when set, otherwise picked when the Playwright config first loads and
@@ -79,15 +90,17 @@ export const voiceServerURL = `http://localhost:${voiceServerPort}`;
  * database (e2e/server-cli.ts) share them that way. Nothing is picked for a server started elsewhere
  * (E2E_SERVER_URL). e2e/server.ts removes the directory when it stops.
  */
-function serverState(): { dir: string; voiceDir: string; kek: string } {
+function serverState(): { dir: string; voiceDir: string; demoDir: string; kek: string } {
   if (process.env["E2E_SERVER_URL"] === undefined) {
     process.env["E2E_SERVER_DIR"] ??= mkdtempSync(join(tmpdir(), "my-e2e-"));
     process.env["E2E_VOICE_SERVER_DIR"] ??= mkdtempSync(join(tmpdir(), "my-e2e-voice-"));
+    process.env["E2E_DEMO_SERVER_DIR"] ??= mkdtempSync(join(tmpdir(), "my-e2e-demo-"));
     process.env["E2E_SERVER_KEK"] ??= randomBytes(32).toString("base64");
   }
   return {
     dir: process.env["E2E_SERVER_DIR"] ?? "",
     voiceDir: process.env["E2E_VOICE_SERVER_DIR"] ?? "",
+    demoDir: process.env["E2E_DEMO_SERVER_DIR"] ?? "",
     kek: process.env["E2E_SERVER_KEK"] ?? "",
   };
 }
@@ -99,6 +112,9 @@ export const serverDir = state.dir;
 
 /** The directory of the database and the blobs of the voice chat server (E2E_VOICE_SERVER_DIR). */
 export const voiceServerDir = state.voiceDir;
+
+/** The directory of the database and the blobs of the demo server (E2E_DEMO_SERVER_DIR). */
+export const demoServerDir = state.demoDir;
 
 /** The key-encryption key (`kek`) of e2e/server.ts. */
 export const serverKEK = state.kek;

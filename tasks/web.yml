@@ -207,6 +207,23 @@ tasks:
     cmds:
       - bun run e2e
 
+  # The demo server (ADR-0117 §4): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
+  # the fake payment provider), and runs `node e2e/server.ts demo` on a fresh database under .tmp/demo on every start,
+  # which applies the demo scenario (app/web/demo) and prints the URL, Mailpit's web UI, and the people's sign-ins.
+  # DEMO_PORT moves it from 8787. It runs until Ctrl-C, and needs Docker. bin/my stays the test build afterwards: never
+  # release it (go:bin without GO_TAGS builds the normal one again).
+  demo:
+    desc: Start a demo server with the demo scenario and the fake payment provider, its email in Mailpit (needs Docker)
+    deps: [install]
+    cmds:
+      - task: :docker:mailpit
+      - task: :go:bin
+        vars: { GO_TAGS: e2e_fakes }
+      - cmd: >-
+          cd app/web && E2E_DEMO_SERVER_PORT={{.DEMO_PORT | default "8787"}} E2E_DEMO_SERVER_DIR="{{.ROOT_DIR}}/.tmp/demo"
+          node e2e/server.ts demo
+        ignore_error: true
+
   # The L4 task tests (ADR-0110 §7, ADR-0114; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
   # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against `my serve` with the E2E
   # fixtures, and the steps, backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>]

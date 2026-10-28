@@ -505,6 +505,12 @@ entries:
     notes:
       - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md; app/web/l4/screens.ts gives each screen its start and the data its tasks need, so a new L1 whose tasks need data adds an entry there (check with DRY_RUN=1)."
       - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
+  - name: web-demo
+    paths: ["app/web/demo/**"]
+    docs: ["docs/adr/0117-demo-environment.md"]
+    userdocs: ["docs/reference/commands.md"]
+    notes:
+      - "The demo scenario (scenario.ts, data only) is applied by seed.ts through `bin/my` and @mycroblog/mykit only, never SQL; a new item finds itself again on a second run (`node e2e/server.ts demo`, E2E_DEMO=1 runs e2e/demo-smoke.spec.ts, which checks that a second run adds nothing). URLs use only `.test` / `.invalid` hosts, and images are drawn by assets/draw.ts (ADR-0117 §1)."
   - name: web-shell
     paths: ["app/web/src/*", "app/web/src/routes/**", "app/web/sw/**", "app/web/public/**", "app/web/vite-plugins/**", "app/web/scripts/**", "app/web/*"]
     docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/11-pwa.md#11-pwa"]
