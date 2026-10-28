@@ -189,9 +189,10 @@ const stop = () => {
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
 // The fake push service stopping on its own leaves the server without its push service: stop the server too.
-pushServiceProcess?.on("exit", () => {
+// A Ctrl-C or a signal to the process group stops both, the fake with status 0.
+pushServiceProcess?.on("exit", (code) => {
   if (server.exitCode === null && server.signalCode === null) {
-    console.error("e2e/server.ts demo: my dev push-service stopped; stopping the demo server");
+    if (code !== 0) console.error("e2e/server.ts demo: my dev push-service failed; stopping the demo server");
     stop();
   }
 });
