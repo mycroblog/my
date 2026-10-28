@@ -64,7 +64,7 @@ This is an IETF working-group draft
 
 ### 2. Registration by a user
 
-Use this for a bot, an integration, or a script that you run yourself. A signed-in user registers the app in **Settings → Development**
+Use this for a bot, an integration, or a script that you run yourself. A signed-in user registers the app in **Settings → Your apps**
 (or with `POST /api/v1/oauth_apps`, scope `write:accounts`): a name, the site URL, redirect URIs, the most scope the app may ask for, and the type.
 
 - A **public** app has no secret. A **confidential** app gets a `client_secret`, shown **once**, when the app is registered or its secret reissued (`POST /api/v1/oauth_apps/{id}/secret`);

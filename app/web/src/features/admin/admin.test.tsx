@@ -28,6 +28,23 @@ function recordAdminRequests() {
   return requests;
 }
 
+/**
+ * Expects the groups of `menu`, in their order, by their names (headings), each with the addresses of its links.
+ */
+function expectMenuGroups(menu: HTMLElement, expected: Record<string, string[]>) {
+  const groups = within(menu);
+  expect(groups.getAllByRole("group")).toEqual(
+    Object.keys(expected).map((name) => groups.getByRole("group", { name })),
+  );
+  for (const [name, hrefs] of Object.entries(expected)) {
+    expect(
+      within(groups.getByRole("group", { name }))
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(hrefs);
+  }
+}
+
 describe("the staff's entry on the settings page and the mode's menu", () => {
   test("are not there for a user without staff permissions", async () => {
     await renderApp({ path: "/settings" });
@@ -42,36 +59,26 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     server.use(operatorHandler(["manage_jobs"]));
     await renderApp({ path: "/admin" });
 
-    const menu = await screen.findByRole("region", { name: "Administration" });
-    expect(
-      within(menu)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual(["/admin", "/admin/jobs"]);
+    await screen.findByRole("group", { name: "Administration" });
+    expectMenuGroups(screen.getByRole("navigation", { name: "Admin and moderation" }), {
+      Administration: ["/admin"],
+      Operations: ["/admin/jobs"],
+    });
     expect(await within(screen.getByRole("main")).findByRole("link", { name: "Jobs" })).toHaveAccessibleDescription(
       "Background jobs waiting, running, retrying and failed, why they failed, and running failed ones again.",
     );
-    expect(screen.queryByRole("region", { name: "Moderation" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Moderation" })).not.toBeInTheDocument();
   });
 
   test("a moderator has Moderation alone, with the screens of their permissions", async () => {
     server.use(operatorHandler(["manage_reports", "manage_accounts", "view_audit"]));
     await renderApp({ path: "/moderation" });
 
-    const menu = await screen.findByRole("region", { name: "Moderation" });
-    expect(
-      within(menu)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual([
-      "/moderation",
-      "/moderation/reports",
-      "/moderation/appeals",
-      "/moderation/accounts",
-      "/moderation/registrations",
-      "/moderation/signup-blocks",
-      "/moderation/audit-log",
-    ]);
+    await screen.findByRole("group", { name: "Moderation" });
+    expectMenuGroups(screen.getByRole("navigation", { name: "Admin and moderation" }), {
+      Moderation: ["/moderation", "/moderation/reports", "/moderation/appeals", "/moderation/audit-log"],
+      "Accounts and sign-ups": ["/moderation/accounts", "/moderation/registrations", "/moderation/signup-blocks"],
+    });
     const main = within(screen.getByRole("main"));
     expect(await main.findByRole("link", { name: "Audit log" })).toHaveAccessibleDescription(
       "Who did what in the administration, and when.",
@@ -82,7 +89,7 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     expect(main.getByRole("link", { name: "Appeals" })).toHaveAccessibleDescription(
       "Review appeals of moderation actions and uphold or overturn them.",
     );
-    expect(screen.queryByRole("region", { name: "Administration" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Administration" })).not.toBeInTheDocument();
   });
 
   test("an administrator has both, Moderation first", async () => {
@@ -101,39 +108,22 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     );
     await renderApp({ path: "/moderation" });
 
-    const moderation = await screen.findByRole("region", { name: "Moderation" });
-    const admin = screen.getByRole("region", { name: "Administration" });
+    const moderation = await screen.findByRole("group", { name: "Moderation" });
+    const admin = screen.getByRole("group", { name: "Administration" });
     expect(moderation.compareDocumentPosition(admin) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      within(moderation)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual([
-      "/moderation",
-      "/moderation/reports",
-      "/moderation/appeals",
-      "/moderation/accounts",
-      "/moderation/registrations",
-      "/moderation/signup-blocks",
-      "/moderation/invites",
-      "/moderation/domain-actions",
-      "/moderation/instances",
-      "/moderation/audit-log",
-    ]);
-    expect(
-      within(admin)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual([
-      "/admin",
-      "/admin/settings",
-      "/admin/rules",
-      "/admin/theme",
-      "/admin/documents",
-      "/admin/relays",
-      "/admin/roles",
-      "/admin/jobs",
-    ]);
+    expectMenuGroups(screen.getByRole("navigation", { name: "Admin and moderation" }), {
+      Moderation: ["/moderation", "/moderation/reports", "/moderation/appeals", "/moderation/audit-log"],
+      "Accounts and sign-ups": [
+        "/moderation/accounts",
+        "/moderation/registrations",
+        "/moderation/signup-blocks",
+        "/moderation/invites",
+      ],
+      Federation: ["/moderation/domain-actions", "/moderation/instances"],
+      Administration: ["/admin", "/admin/settings", "/admin/rules", "/admin/theme", "/admin/documents"],
+      Connections: ["/admin/relays"],
+      Operations: ["/admin/roles", "/admin/jobs"],
+    });
   });
 });
 

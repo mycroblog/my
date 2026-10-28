@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // One item of the app's navigation (brand kit `RailItem`): an icon, a label and an optional count. It is a link in the
 // bottom tab bar (`form="tab"`: icon over a small label), in the side rail (`row`: icon, label and the count at the
-// end) and in the signed-out top bar (`top`: text only). The current item is `aria-current="page"`. It knows no
+// end), in the grouped menus of the settings and the admin mode (`section`) and in the signed-out top bar (`top`:
+// text only). The current item is `aria-current="page"`. It knows no
 // viewport: AppNavigation chooses between the forms by width (web-client/README.md D2), through `className`.
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
@@ -39,13 +40,12 @@ const railItem = tv({
         badge: "order-last ms-auto",
         label: "text-start",
       },
-      // A text row of the settings' section menu: the full width of the card, no icon.
+      // A row of a grouped menu (NavMenu): the full width of the menu, the icon, the label and the count at the end.
       section: {
         item: [
-          "min-h-11 w-full gap-2 rounded-lg bg-transparent px-3 text-sm font-bold text-fg data-hovered:bg-surface-sunken",
+          "min-h-11 w-full gap-3 rounded-lg bg-transparent px-3 text-sm font-bold text-fg data-hovered:bg-surface-sunken",
           "data-current:rounded-lg data-current:bg-soft data-current:text-accent data-current:data-hovered:bg-soft",
         ],
-        // There is no icon, so the pill holds the count alone, at the end of the row.
         pill: "contents",
         badge: "order-last ms-auto",
         label: "text-start",
@@ -94,7 +94,7 @@ export type RailItemProps = {
   current?: boolean;
   /** The count on the icon's corner (at the end of the row from lg), or nothing for an item without a count now. */
   badge?: RailItemBadge;
-  /** `tab` (default): icon over a small label; `row`: a row of the rail; `top`: a text link of the signed-out top bar; `section`: a text row of the settings' menu. */
+  /** `tab` (default): icon over a small label; `row`: a row of the rail; `top`: a text link of the signed-out top bar; `section`: a row of a grouped menu (`NavMenu`). */
   form?: "tab" | "row" | "top" | "section";
   /** Adjusts the parts to the item's place (the navigation's responsive forms); overrides the form's classes. */
   classNames?: { item?: string; pill?: string; badge?: string; label?: string };

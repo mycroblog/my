@@ -5,17 +5,21 @@
 // whose words are in the link's name, so the count is read with the screen and shown by its digits, not by
 // color alone.
 import { Badge, EmptyState, Hint, Link, Stack } from "@my/ui";
-import { useId } from "react";
+import { type ComponentType, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { Permission } from "../api/staff";
 import { useViewerPermissions } from "../hooks/usePermissions";
 
-/** A staff screen: its address, the permission it needs, and the words of its link. */
+/** A staff screen: its address, the permission it needs, the words and the icon of its link, and its group in the menu. */
 export type StaffPage = {
   href: string;
   permission: Permission;
   label: ClientMessageKey;
   description: ClientMessageKey;
+  /** The icon of its link in the mode's menu (one of the kit's icons). */
+  icon: ComponentType;
+  /** The heading of its group in the mode's menu; none for the area's own group, which starts with the overview. */
+  group?: ClientMessageKey;
 };
 
 /** The badge of a screen's link: the count and its words, or none. */

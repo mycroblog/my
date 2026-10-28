@@ -228,7 +228,7 @@ describe("the report queue", () => {
   test("is in the moderation menu of a moderator", async () => {
     await renderApp({ path: "/moderation" });
 
-    const menu = await screen.findByRole("region", { name: "Moderation" });
+    const menu = await screen.findByRole("group", { name: "Moderation" });
     expect(within(menu).getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/moderation/reports");
   });
 });

@@ -105,14 +105,14 @@ function appServer(initial: Schemas["OAuthApp"][]) {
 describe("development settings", () => {
   test("are in the settings menu", async () => {
     await renderApp({ path: "/settings" });
-    expect(await screen.findByRole("link", { name: "Development" })).toHaveAttribute("href", "/settings/apps");
+    expect(await screen.findByRole("link", { name: "Your apps" })).toHaveAttribute("href", "/settings/apps");
   });
 
   test("registers a confidential app and shows its secret once, with a copy button", async () => {
     const api = appServer([]);
     const { user } = await renderApp({ path: "/settings/apps" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Development" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Your apps" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { level: 3, name: "No apps yet" })).toBeInTheDocument();
 
     const form = screen.getByRole("region", { name: "Register an app" });

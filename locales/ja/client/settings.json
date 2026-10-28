@@ -100,7 +100,7 @@
     "description": "Heading of the section of the account page about archives of the user's data."
   },
   "settings.account.title": {
-    "defaultMessage": "アカウント",
+    "defaultMessage": "アーカイブと削除",
     "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
   },
   "settings.autoplay.description": {
@@ -1352,7 +1352,7 @@
     "description": "Description of the setting of who may quote the user's new posts."
   },
   "settings.apps.title": {
-    "defaultMessage": "開発",
+    "defaultMessage": "あなたのアプリ",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
   },
   "settings.apps.description": {
@@ -2214,5 +2214,29 @@
   "settings.notifications.sound.blocked": {
     "defaultMessage": "ブラウザが音を再生しませんでした。ブラウザのサイトの設定で音の再生を許可してから、もう一度試してください。",
     "description": "Error shown when the browser refused to play the notification sound after the user pressed the button."
+  },
+  "settings.menu.group.profile": {
+    "defaultMessage": "プロフィールとコミュニティ",
+    "description": "Heading of a group of the settings menu: the profile, the badges, the user's custom emoji, invites and supporter plans."
+  },
+  "settings.menu.group.display": {
+    "defaultMessage": "表示と通知",
+    "description": "Heading of a group of the settings menu: how the app shows things and posts, the notifications, and the voice chat history."
+  },
+  "settings.menu.group.relationships": {
+    "defaultMessage": "つながり",
+    "description": "Heading of a group of the settings menu: follow requests, blocked and muted accounts, and muted domains."
+  },
+  "settings.menu.group.security": {
+    "defaultMessage": "セキュリティ",
+    "description": "Heading of a group of the settings menu: the password, two-factor authentication, passkeys and linked accounts."
+  },
+  "settings.menu.group.apps": {
+    "defaultMessage": "アプリ",
+    "description": "Heading of a group of the settings menu: the apps the user authorized and the apps they registered."
+  },
+  "settings.menu.group.account": {
+    "defaultMessage": "アカウントとデータ",
+    "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
   }
 }

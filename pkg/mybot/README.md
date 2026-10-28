@@ -106,7 +106,7 @@ seen used (see [State](#state)).
 
 A bot always acts as a user: run it on an account of its own. The steps:
 
-1. Sign in to the server as the bot's account and open **Settings → Development** (`/settings/apps`).
+1. Sign in to the server as the bot's account and open **Settings → Your apps** (`/settings/apps`).
 2. Register an app with the type **Confidential**. The form needs a redirect URI even when no redirect is used:
    `http://127.0.0.1/callback` serves both this and [`examples/login`](examples/login). Give it at least the scopes
    below.
