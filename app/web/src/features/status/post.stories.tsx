@@ -27,7 +27,7 @@ import {
   warnedPost,
 } from "../../test/postStories";
 import {
-  answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -181,7 +181,7 @@ export const RemotePost: Story = alone(
 );
 
 /** The post does not exist, or the viewer may not see it. */
-export const NotFound: Story = answering(
+export const NotFound: Story = answeringWithErrorPage(
   http.get(`${apiBase}/statuses/:id`, () => problem(404, "about:blank", "Not Found")),
 );
 

@@ -7,6 +7,7 @@ import { remoteAccountFixture, rtlNameAccountFixture, statusPage, viewerFixture 
 import { apiBase, problem } from "../../test/msw/http";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -78,7 +79,7 @@ export const OwnMoved: Story = at(
 );
 
 /** No account has the handle: an unknown one, or one suspended or deleted. */
-export const NotFound: Story = answering(
+export const NotFound: Story = answeringWithErrorPage(
   http.get(`${apiBase}/accounts/lookup`, () => problem(404, "about:blank", "Not Found")),
 );
 

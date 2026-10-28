@@ -7,6 +7,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -62,7 +63,7 @@ export const Privacy: Story = { parameters: { screen: { path: "/about/privacy", 
 export const Commerce: Story = { parameters: { screen: { path: "/about/commerce" } } };
 
 /** A document the server has not published. */
-export const NotPublished: Story = answering(
+export const NotPublished: Story = answeringWithErrorPage(
   http.get(`${apiBase}/instance/documents/:kind`, () => problem(404, "about:blank", "Not found")),
 );
 

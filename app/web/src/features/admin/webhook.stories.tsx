@@ -7,7 +7,14 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
 import { inLocale, narrow } from "../../test/stories";
 import { webhookDeliveryFixture, webhookFixture } from "./test/handlers";
-import { adminAnswering, adminFailingOn, adminLoadingOn, adminScreen, withoutPermission } from "./test/stories";
+import {
+  adminAnswering,
+  adminAnsweringWithErrorPage,
+  adminFailingOn,
+  adminLoadingOn,
+  adminScreen,
+  withoutPermission,
+} from "./test/stories";
 
 const webhookId = "0199f0e0-0000-7000-8000-0000000000b1";
 
@@ -93,7 +100,7 @@ export const DisabledForFailing: Story = adminAnswering(
 export const Empty: Story = adminAnswering(...answering(webhook, []));
 
 /** A webhook that no longer exists. */
-export const NotFound: Story = adminAnswering(
+export const NotFound: Story = adminAnsweringWithErrorPage(
   http.get(`${apiBase}/admin/webhooks/:id`, () => problem(404, "about:blank", "Not Found")),
 );
 
