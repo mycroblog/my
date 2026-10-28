@@ -1087,7 +1087,8 @@ test.describe("handling a report with the keyboard alone", () => {
     await expectPageReached(page, makeAxeBuilder);
 
     // An action, chosen with the arrow keys in its radio group, resolves the report (FR-710).
-    const handling = main.getByRole("region").last();
+    // The decision of the report's page: its last region is the handling.
+    const handling = main.locator("[data-triage-decision]").getByRole("region").last();
     const limit = handling.locator('input[type="radio"][value="limit"]');
     await tabTo(page, handling.getByRole("radiogroup"));
     for (let presses = 0; presses < 20 && !(await limit.isChecked()); presses++) await page.keyboard.press("ArrowDown");

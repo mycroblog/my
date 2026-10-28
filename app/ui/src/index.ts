@@ -127,6 +127,7 @@ export { BreakdownBar, type BreakdownBarProps, type BreakdownItem } from "./Brea
 export { ProgressMeter, type ProgressMeterProps } from "./ProgressMeter";
 export { Sparkline, type SparklineProps } from "./Sparkline";
 export { AgeBadge, type AgeBadgeProps, type AgeLevel } from "./AgeBadge";
+export { TriageLayout, type TriageLayoutProps } from "./TriageLayout";
 export { StatTile, type StatTileChange, StatTileGrid, type StatTileGridProps, type StatTileProps } from "./StatTile";
 export {
   TrendChart,

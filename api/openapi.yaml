@@ -2258,10 +2258,11 @@ paths:
   /accounts/search:
     get:
       operationId: searchAccounts
-      summary: Search accounts by prefix
+      summary: Search accounts by name
       description: |
         The accounts whose username, `username@domain`, or a word of the display name starts
-        with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+        with `q`, and the accounts of this server whose username or display name contains `q`,
+        for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
         ADR-0092). The search covers the local accounts and the remote accounts that the
         instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
         (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -2271,11 +2272,14 @@ paths:
         word, split at white space and without its `:shortcode:`s, so a display name in a script
         without spaces (Chinese, Japanese) matches from its start.
 
+        An account of this server that is not `discoverable` is found only by its whole username,
+        unless the viewer follows it; a remote account's `discoverable` does not matter.
         Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
         deleted, or suspended, and accounts of a suspended domain are left out. An account's
         `indexable` does not matter. The results come in this order: an exact match of the
-        username or `username@domain`, then the accounts that the viewer follows, then the local
-        accounts, then those with more followers. There is no paging.
+        username or `username@domain`, then the matches from the start of a name, then the
+        accounts that the viewer follows, then the local accounts, then those with more
+        followers. There is no paging.
       tags:
         - accounts
       security:
@@ -2307,6 +2311,50 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Account'
+        default:
+          $ref: '#/components/responses/Problem'
+  /accounts/suggestions:
+    get:
+      operationId: listAccountSuggestions
+      summary: Suggest accounts to follow
+      description: |
+        Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+        administrators feature (the instance setting `featured_accounts`), in the order they gave,
+        then the accounts that published a public or local post in the last 30 days, the one that
+        posted last first. Each account comes once.
+
+        Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+        it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+        deactivated, deleted, or suspended are left out. There is no paging.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - read:accounts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: The maximum number of suggestions.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 40
+            default: 10
+      responses:
+        '200':
+          description: The suggestions, featured accounts first.
+          headers:
+            Cache-Control:
+              description: '`no-store`: the suggestions depend on the viewer and change as it follows.'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountSuggestion'
         default:
           $ref: '#/components/responses/Problem'
   /accounts/{id}:
@@ -10675,6 +10723,23 @@ components:
                 first page again a few seconds later to see what it stored. Absent otherwise,
                 including when a fetch started in the last day.
               type: boolean
+    AccountSuggestion:
+      description: An account suggested to follow, with why it is suggested.
+      type: object
+      required:
+        - source
+        - account
+      properties:
+        source:
+          description: |
+            Why the account is suggested: `featured` when the administrators feature it,
+            `recently_active` when it posted recently.
+          type: string
+          enum:
+            - featured
+            - recently_active
+        account:
+          $ref: '#/components/schemas/Account'
     AddAccountAliasRequest:
       description: The account to add as an alias.
       type: object
@@ -15266,7 +15331,10 @@ components:
             - follow_requests_count
           properties:
             discoverable:
-              description: Whether the account may be suggested to others and listed in directories.
+              description: |
+                Whether the account is suggested to others and found by the middle of its names in
+                the account search (FR-307, FR-308); when `false`, the search finds it only by its
+                whole username. New accounts are discoverable.
               type: boolean
             indexable:
               description: |
@@ -17013,6 +17081,7 @@ components:
         - member_invite_max_expires_in
         - public_counts
         - public_operators
+        - featured_accounts
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -17020,7 +17089,8 @@ components:
         `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
         the username of a local account, or empty for none. `email`: an email address such as
         `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-        none.
+        none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+        a leading `@` are accepted), in order, or empty for none.
       type: string
       enum:
         - bool
@@ -17031,6 +17101,7 @@ components:
         - account
         - email
         - uri
+        - accounts
     InstanceTextKey:
       description: |
         The key of an instance text: the name (one line), the short and full descriptions,
@@ -20556,7 +20627,10 @@ components:
           description: Whether the account is automated.
           type: boolean
         discoverable:
-          description: Whether the account may be suggested to others and listed in directories.
+          description: |
+            Whether the account is suggested to others and found by the middle of its names in the
+            account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+            username. New accounts are discoverable.
           type: boolean
         indexable:
           description: Whether the account's profile and public posts may be indexed for search (FR-412).
