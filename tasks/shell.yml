@@ -14,9 +14,10 @@ tasks:
       - shellcheck scripts/*.sh
 
   test:
-    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/previous-minor-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh)
+    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/previous-minor-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh, scripts/ui-preview-test.sh)
     cmds:
       - scripts/release-libraries-test.sh
       - scripts/previous-minor-test.sh
       - scripts/check-release-build-test.sh
       - scripts/go-build-tags-test.sh
+      - scripts/ui-preview-test.sh

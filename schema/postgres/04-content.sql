@@ -369,11 +369,13 @@ CREATE TABLE status_auto_delete_kept_visibilities (
 -- ---------------------------------------------------------------------------------------------
 
 -- Event (subtype of status_revisions): the activity that carried a remote revision (NULL for a
--- revision made from a fetch) and the version of the HTML policy that sanitized its bodies.
+-- revision made from a fetch), the version of the HTML policy that sanitized its bodies, and the
+-- number of media attachments of the received post that were left out after the first four.
 CREATE TABLE remote_status_revisions (
   revision_id uuid NOT NULL PRIMARY KEY,
   activity_uri text,
-  html_policy_version integer NOT NULL
+  html_policy_version integer NOT NULL,
+  omitted_attachment_count integer NOT NULL DEFAULT 0 CHECK (omitted_attachment_count >= 0)
 );
 
 -- Resource (subtype of media_files): a remote file as the received document declared it, and

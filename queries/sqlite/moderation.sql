@@ -162,15 +162,33 @@ VALUES (?, ?, ?, ?, ?);
 -- name: GetReportStateForUpdate :one
 SELECT report_id, state, outcome, assignee_user_id, since FROM report_states WHERE report_id = ?;
 
--- ListReports returns the reports in a state (empty for any) with their state, newest first,
--- those before the report before (empty for the first page).
+-- ListReports returns the reports with their state, newest first: those in a state (empty for
+-- any), of a category (empty for any), assigned to a user (empty for anyone) or to nobody when
+-- unassigned is 1, and those before the report before (empty for the first page).
 -- name: ListReports :many
 SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
   r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
 FROM reports r JOIN report_states s ON s.report_id = r.id
 WHERE (CAST(sqlc.arg(state) AS TEXT) = '' OR s.state = sqlc.arg(state))
+  AND (CAST(sqlc.arg(category) AS TEXT) = '' OR r.category = sqlc.arg(category))
+  AND (CAST(sqlc.arg(assignee) AS TEXT) = '' OR s.assignee_user_id = sqlc.arg(assignee))
+  AND (CAST(sqlc.arg(unassigned) AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR r.id < sqlc.arg(before))
 ORDER BY r.id DESC
+LIMIT sqlc.arg(lim);
+
+-- ListReportsOldestFirst returns the reports that ListReports selects, oldest first, those after
+-- the report after (empty for the first page).
+-- name: ListReportsOldestFirst :many
+SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
+  r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
+FROM reports r JOIN report_states s ON s.report_id = r.id
+WHERE (CAST(sqlc.arg(state) AS TEXT) = '' OR s.state = sqlc.arg(state))
+  AND (CAST(sqlc.arg(category) AS TEXT) = '' OR r.category = sqlc.arg(category))
+  AND (CAST(sqlc.arg(assignee) AS TEXT) = '' OR s.assignee_user_id = sqlc.arg(assignee))
+  AND (CAST(sqlc.arg(unassigned) AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
+  AND (CAST(sqlc.arg(after) AS TEXT) = '' OR r.id > sqlc.arg(after))
+ORDER BY r.id
 LIMIT sqlc.arg(lim);
 
 -- ListDomainModerationActions returns the domain actions with their lifts, newest first: those
@@ -227,6 +245,13 @@ WHERE a.id = ?;
 -- CountReportsInState counts the reports in a state.
 -- name: CountReportsInState :one
 SELECT COUNT(*) FROM report_states WHERE state = ?;
+
+-- OldestReportFiledAt returns when the oldest report in a state was filed; no row when none is.
+-- name: OldestReportFiledAt :one
+SELECT r.filed_at FROM report_states s JOIN reports r ON r.id = s.report_id
+WHERE s.state = ?
+ORDER BY s.report_id
+LIMIT 1;
 
 -- HasOtherOpenReportOf reports whether a report of the target other than the one given is open.
 -- name: HasOtherOpenReportOf :one

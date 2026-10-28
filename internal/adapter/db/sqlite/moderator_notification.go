@@ -4,8 +4,10 @@ package sqlite
 
 import (
 	"context"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -28,6 +30,15 @@ func (r *ModerationRepository) HasOtherOpenReportOf(ctx context.Context, tx uow.
 func (r *ModerationRepository) CountReports(ctx context.Context, state moderation.ReportState) (int64, error) {
 	n, err := r.db.reader().CountReportsInState(ctx, string(state))
 	return n, wrap(err, "count reports")
+}
+
+// OldestReportFiledAt implements moderation.Repository.
+func (r *ModerationRepository) OldestReportFiledAt(ctx context.Context, state moderation.ReportState) (time.Time, error) {
+	t, err := r.db.reader().OldestReportFiledAt(ctx, string(state))
+	if err != nil {
+		return time.Time{}, notFound(err, appmoderation.ErrNotFound, "the oldest report")
+	}
+	return fromMillis(t), nil
 }
 
 // ListUserIDsWithPermission implements identity.Repository.

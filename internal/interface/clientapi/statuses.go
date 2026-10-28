@@ -298,6 +298,10 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		}
 		out.Url = &u
 	}
+	if r := rev.Remote; r != nil && r.OmittedAttachments > 0 {
+		n := r.OmittedAttachments
+		out.OmittedMediaCount = &n
+	}
 	if len(rev.Bodies) > 0 {
 		out.Content = rev.Bodies[0].ContentHTML
 	}

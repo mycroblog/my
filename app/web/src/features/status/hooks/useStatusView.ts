@@ -69,6 +69,11 @@ export type StatusView = {
   contentWarning: string | null;
   /** The pictures, videos, and audio files that are ready to show. */
   media: MediaItem[];
+  /**
+   * For a remote post that had more attachments than the four the server keeps, the mark that says how many were
+   * left out and links to the original post (MediaGrid's `more`); null for a post that lost none.
+   */
+  moreMedia: { text: string; label: string; href: string } | null;
   /** Whether the author marked the media sensitive; it covers the image of the link card too. */
   sensitive: boolean;
   /** The card of the first link in the post (ADR-0062), or null when it has none. */
@@ -220,6 +225,14 @@ export function useStatusView(status: Status): StatusView {
     lang,
     contentWarning: post.spoiler_text === "" ? null : post.spoiler_text,
     media: mediaItems(post.media_attachments, lang),
+    moreMedia:
+      post.omitted_media_count === undefined || post.omitted_media_count < 1
+        ? null
+        : {
+            text: t("client:timeline.media.more", { count: post.omitted_media_count }),
+            label: t("client:timeline.media.more.label", { count: post.omitted_media_count }),
+            href: statusShareUrl(post),
+          },
     sensitive: post.sensitive,
     card,
     counts: { boosts: post.boosts_count, favourites: post.favourites_count },

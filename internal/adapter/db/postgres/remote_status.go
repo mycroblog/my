@@ -39,8 +39,12 @@ func insertRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev 
 		if err != nil {
 			return err
 		}
+		omitted, err := toInt32(r.OmittedAttachments, "omitted attachment count")
+		if err != nil {
+			return err
+		}
 		err = q.InsertRemoteStatusRevision(ctx, postgresgen.InsertRemoteStatusRevisionParams{
-			RevisionID: rev.ID, ActivityUri: toNullString(r.ActivityURI), HtmlPolicyVersion: version,
+			RevisionID: rev.ID, ActivityUri: toNullString(r.ActivityURI), HtmlPolicyVersion: version, OmittedAttachmentCount: omitted,
 		})
 		if err != nil {
 			return wrap(err, "insert remote status revision")
@@ -73,7 +77,9 @@ func findRemoteRevisionParts(ctx context.Context, q *postgresgen.Queries, rev *c
 	case err != nil:
 		return wrap(err, "get remote status revision")
 	default:
-		rev.Remote = &content.RemoteRevisionSource{ActivityURI: fromNullString(remote.ActivityUri), HTMLPolicyVersion: int(remote.HtmlPolicyVersion)}
+		rev.Remote = &content.RemoteRevisionSource{ActivityURI: fromNullString(remote.ActivityUri), HTMLPolicyVersion: int(remote.HtmlPolicyVersion),
+			OmittedAttachments: int(remote.OmittedAttachmentCount),
+		}
 	}
 	return nil
 }

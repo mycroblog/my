@@ -946,9 +946,10 @@ type RemoteMedium struct {
 }
 
 type RemoteStatusRevision struct {
-	RevisionID        string
-	ActivityUri       sql.NullString
-	HtmlPolicyVersion int64
+	RevisionID             string
+	ActivityUri            sql.NullString
+	HtmlPolicyVersion      int64
+	OmittedAttachmentCount int64
 }
 
 type Report struct {

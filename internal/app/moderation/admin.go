@@ -116,11 +116,18 @@ func (s *Service) AccountActions(ctx context.Context, f AccountActionFilter, lim
 	return out, nil
 }
 
-// Reports lists up to limit reports with their states, newest first. It fails with
-// ErrInvalidQuery for an unknown state.
+// Reports lists up to limit reports with their states, newest first unless q.OldestFirst. It
+// fails with ErrInvalidQuery for an unknown state or category, and for a query of both an
+// assignee and the unassigned reports.
 func (s *Service) Reports(ctx context.Context, q ReportQuery, limit int) ([]moderation.ReportRecord, error) {
 	if q.State != "" && q.State != moderation.ReportOpen && q.State != moderation.ReportResolved {
 		return nil, fmt.Errorf("%w: report state %q", ErrInvalidQuery, q.State)
+	}
+	if q.Category != "" && !q.Category.Valid() {
+		return nil, fmt.Errorf("%w: report category %q", ErrInvalidQuery, q.Category)
+	}
+	if q.AssigneeUserID != "" && q.Unassigned {
+		return nil, fmt.Errorf("%w: an assignee and no assignee", ErrInvalidQuery)
 	}
 	return s.d.Repository.ListReports(ctx, q, limit)
 }

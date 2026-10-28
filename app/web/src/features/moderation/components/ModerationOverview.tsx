@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The moderation overview (`/moderation`, ADR-0058, ADR-0110 P1 and P3; screens/moderation.md): what waits for the
 // moderators and what to handle first, not a copy of the mode's menu. "Waiting for you" is a tile for each queue that
-// the viewer's roles count (FR-712), each a link to its queue; "Reports to handle first" lists the open reports of the
-// queue's first page, legal ones first and then the longest waiting, each with its category, its wait and who handles
-// it. A viewer whose roles allow no moderation screen is told why.
+// the viewer's roles count (FR-712), each a link to its queue, and beside the open reports how long the oldest of them
+// has waited; "Reports to handle first" lists the open reports of the whole queue, the oldest legal ones first and then
+// the longest waiting, each with its category, its wait and who handles it. A viewer whose roles allow no moderation
+// screen is told why.
 import { Cluster, EmptyState, Link, Section, Stack, StatTile, StatTileGrid, Text } from "@my/ui";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Fragment } from "react";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
+import { useNow } from "../../../lib/clock";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { AdminCount } from "../api/counts";
 import { type Report, reportsQueryOptions } from "../api/reports";
 import { useModerationCounts } from "../hooks/useModerationCounts";
 import { useHasPermission } from "../hooks/usePermissions";
 import { handleOf, isolate } from "../hooks/useReports";
+import { reportWaitThresholds, waitLevel, waitUnits } from "../hooks/useWait";
 import { moderationPages } from "./moderationPages";
 import { ReportAssigneeBadge, ReportCategoryBadge, ReportWaitBadge } from "./reportParts";
 import { useShownStaffPages } from "./StaffPages";
@@ -31,6 +35,15 @@ const queues: readonly { count: AdminCount; label: ClientMessageKey; href: strin
 
 /** How many reports "Reports to handle first" lists at most. */
 const firstReportsShown = 5;
+
+const reportWaitValues = {
+  minutes: "client:admin.overview.awaiting.report_wait.minutes",
+  hours: "client:admin.overview.awaiting.report_wait.hours",
+  days: "client:admin.overview.awaiting.report_wait.days",
+} as const;
+
+/** The queue from the report that has waited longest, which the wait tile opens. */
+const oldestReportsHref = "/moderation/reports?order=oldest";
 
 export function ModerationOverview() {
   const t = useT();
@@ -67,14 +80,16 @@ function Waiting() {
           {counted.map((queue) => {
             const count = counts[queue.count] ?? 0;
             return (
-              <StatTile
-                as="li"
-                key={queue.count}
-                label={t(queue.label)}
-                value={intl.formatNumber(count)}
-                href={queue.href}
-                {...(count > 0 && { status: "warning", statusLabel: t("client:admin.overview.awaiting.status") })}
-              />
+              <Fragment key={queue.count}>
+                <StatTile
+                  as="li"
+                  label={t(queue.label)}
+                  value={intl.formatNumber(count)}
+                  href={queue.href}
+                  {...(count > 0 && { status: "warning", statusLabel: t("client:admin.overview.awaiting.status") })}
+                />
+                {queue.count === "open_reports" && <ReportWaitTile oldest={counts.oldest_open_report_filed_at} />}
+              </Fragment>
             );
           })}
         </StatTileGrid>
@@ -83,28 +98,56 @@ function Waiting() {
   );
 }
 
-/** Legal reports first (the law may set a deadline), then the longest waiting. */
-function byUrgency(a: Report, b: Report): number {
-  const legal = Number(b.category === "legal") - Number(a.category === "legal");
-  return legal !== 0 ? legal : Date.parse(a.filed_at) - Date.parse(b.filed_at);
+/** How long the open report that has waited longest has waited (W2: a length, not a date), from the counts. */
+function ReportWaitTile({ oldest }: { oldest: string | undefined }) {
+  const t = useT();
+  const now = useNow();
+  const label = t("client:admin.overview.awaiting.report_wait");
+  if (oldest === undefined) {
+    return (
+      <StatTile
+        as="li"
+        label={label}
+        value={t("client:admin.overview.awaiting.report_wait.none")}
+        href={oldestReportsHref}
+      />
+    );
+  }
+  const waited = now - Date.parse(oldest);
+  const { unit, count } = waitUnits(waited);
+  const level = waitLevel(waited, reportWaitThresholds);
+  const status =
+    level === "fresh"
+      ? {}
+      : ({
+          status: level === "overdue" ? "danger" : "warning",
+          statusLabel: t("client:admin.overview.awaiting.report_wait.status"),
+        } as const);
+  return (
+    <StatTile as="li" label={label} value={t(reportWaitValues[unit], { count })} href={oldestReportsHref} {...status} />
+  );
 }
 
-/** The open reports of the queue's first page, the most urgent first. */
+/** The oldest open legal reports first (the law may set a deadline), then the longest waiting of the whole queue. */
 function FirstReports() {
   const t = useT();
   const api = useApi();
-  const query = useInfiniteQuery(reportsQueryOptions(api, "open"));
-  const loaded = query.data?.pages[0]?.items ?? [];
-  const first = loaded.toSorted(byUrgency).slice(0, firstReportsShown);
+  const legal = useInfiniteQuery(reportsQueryOptions(api, { state: "open", category: "legal", order: "oldest" }));
+  const oldest = useInfiniteQuery(reportsQueryOptions(api, { state: "open", order: "oldest" }));
+  const pending = legal.isPending || oldest.isPending;
+  const loaded = [...(legal.data?.pages[0]?.items ?? []), ...(oldest.data?.pages[0]?.items ?? [])];
+  const first = loaded
+    .filter((report, index) => loaded.findIndex((other) => other.id === report.id) === index)
+    .slice(0, firstReportsShown);
   return (
     <Section
       title={t("client:admin.overview.first_reports.title")}
       description={t("client:admin.overview.first_reports.description")}
-      busy={query.isPending}
+      busy={pending}
     >
-      {query.isError ? (
+      {legal.isError || oldest.isError ? (
         <Text tone="muted">{t("client:admin.overview.first_reports.unavailable")}</Text>
-      ) : query.isPending ? null : first.length === 0 ? (
+      ) : pending ? null : first.length === 0 ? (
         <EmptyState headingLevel={3} heading={t("client:admin.reports.empty.open")} />
       ) : (
         <Stack as="ul" divided border="lg">

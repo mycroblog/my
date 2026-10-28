@@ -1,3 +1,9 @@
+---
+start: "/moderation/accounts"
+persona: "marco"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+---
+
 ## アカウントの管理（`/moderation/accounts/{id}`）
 
 `manage_accounts` を持つモデレーターが、1 つのアカウントの状態と履歴を見て、処分を出す・解除する画面（FR-714、FR-703、FR-713、[§14](../14-admin.md)）。
