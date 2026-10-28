@@ -1,7 +1,8 @@
 ---
-start: "/home"
+start: "/welcome"
 persona: "yuki"
-paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
+paths: ["app/web/src/routes/welcome.tsx", "app/web/src/features/settings/components/WelcomeForm.tsx", "app/web/src/features/settings/hooks/useWelcomeForm.ts", "internal/interface/authpages/**"]
+unavailable: {"アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none", "ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
 ---
 
 ## ようこそ（`/welcome`、アカウントを作った直後）

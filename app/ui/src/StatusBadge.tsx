@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import { celebrationClasses } from "./celebration";
 import { type PostVisibility, VisibilityIcon } from "./Icons";
 
 const statusBadge = tv({
@@ -13,6 +14,9 @@ const statusBadge = tv({
       warning: "bg-warning-bg text-warning",
       danger: "bg-danger-bg text-danger",
     },
+    // The badge of a state reached by a celebrated moment (web-client/21-experience-principles.md §21.5): its icon bounces
+    // a little while the badge is celebrating.
+    celebrating: { true: celebrationClasses },
   },
   defaultVariants: { tone: "neutral" },
 });
@@ -26,15 +30,24 @@ export type StatusBadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
     icon: ReactNode;
     /** The state in words ("Suspended", "Connected"), always shown next to the icon (G12). */
     label: string;
+    /**
+     * Whether the badge shows the moment a state was just reached, one of the moments of §21.5 (a step of the first run
+     * done): `useCelebration`'s `isCelebrating`. Never true for a state shown on load.
+     */
+    celebrating?: boolean;
   };
 
 /**
  * The state of something in one glance (ADR-0110 P3): an icon, the state's name and a tone. The tone only adds
  * to the icon and the label, which say the state on their own.
  */
-export function StatusBadge({ icon, label, tone, className, ...props }: StatusBadgeProps) {
+export function StatusBadge({ icon, label, tone, celebrating = false, className, ...props }: StatusBadgeProps) {
   return (
-    <span {...props} className={statusBadge({ tone, className })}>
+    <span
+      {...props}
+      {...(celebrating && { "data-celebrating": true })}
+      className={statusBadge({ tone, celebrating, className })}
+    >
       {icon}
       {label}
     </span>

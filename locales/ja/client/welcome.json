@@ -1,0 +1,46 @@
+{
+  "welcome.title": {
+    "defaultMessage": "ようこそ",
+    "description": "Title of the welcome page shown after sign-up, in the browser tab."
+  },
+  "welcome.heading": {
+    "defaultMessage": "{server} へようこそ",
+    "description": "Heading of the welcome page after sign-up. {server} is the name of the server."
+  },
+  "welcome.lead": {
+    "defaultMessage": "プロフィールの基本を書くと、ホームでフォローする人を選べます。",
+    "description": "The line under the welcome heading that says what comes next."
+  },
+  "welcome.basics": {
+    "defaultMessage": "プロフィールの基本",
+    "description": "Heading of the section with the avatar and the display name on the welcome page."
+  },
+  "welcome.basics.description": {
+    "defaultMessage": "あとからプロフィールの設定で変えたり、自己紹介を足したりできます。",
+    "description": "Note under the heading of the profile basics on the welcome page."
+  },
+  "welcome.avatar.choose": {
+    "defaultMessage": "アイコンを選ぶ",
+    "description": "Button that opens the file picker for the avatar on the welcome page."
+  },
+  "welcome.avatar.remove": {
+    "defaultMessage": "アイコンを外す",
+    "description": "Button that removes the chosen avatar on the welcome page."
+  },
+  "welcome.display_name": {
+    "defaultMessage": "表示名",
+    "description": "Label of the display name field on the welcome page."
+  },
+  "welcome.display_name.description": {
+    "defaultMessage": "ほかの人に見える名前です。空のままなら、ユーザー名の {username} が出ます。",
+    "description": "Help text of the display name field on the welcome page. {username} is the user's username."
+  },
+  "welcome.continue": {
+    "defaultMessage": "続ける",
+    "description": "Primary button of the welcome page: saves the profile basics and opens the home timeline."
+  },
+  "welcome.later": {
+    "defaultMessage": "あとで",
+    "description": "Link on the welcome page that opens the home timeline without saving."
+  }
+}

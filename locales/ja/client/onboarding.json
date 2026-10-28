@@ -1,0 +1,78 @@
+{
+  "onboarding.checklist": {
+    "defaultMessage": "始め方",
+    "description": "Heading of the checklist of first steps on the home timeline of a new user."
+  },
+  "onboarding.progress": {
+    "defaultMessage": "済んだ手順",
+    "description": "Label of the progress bar of the first steps."
+  },
+  "onboarding.progress.value": {
+    "defaultMessage": "{total} つのうち {done} つ済み",
+    "description": "How many of the first steps are done, next to the progress bar."
+  },
+  "onboarding.step.profile": {
+    "defaultMessage": "プロフィールを整える",
+    "description": "First step of the checklist: set an avatar or a display name."
+  },
+  "onboarding.step.follow": {
+    "defaultMessage": "誰かをフォローする",
+    "description": "Second step of the checklist: follow an account."
+  },
+  "onboarding.step.post": {
+    "defaultMessage": "最初の投稿をする",
+    "description": "Third step of the checklist: write a post."
+  },
+  "onboarding.done": {
+    "defaultMessage": "済み",
+    "description": "Badge of a step of the checklist that is done."
+  },
+  "onboarding.todo": {
+    "defaultMessage": "まだ",
+    "description": "Badge of a step of the checklist that is not done yet."
+  },
+  "onboarding.action.profile": {
+    "defaultMessage": "プロフィールを編集",
+    "description": "Link of the profile step to the profile settings."
+  },
+  "onboarding.action.follow": {
+    "defaultMessage": "おすすめを見る",
+    "description": "Link of the follow step to the suggested accounts below."
+  },
+  "onboarding.action.search": {
+    "defaultMessage": "人を探す",
+    "description": "Link of the follow step to the account search, when there are no suggestions."
+  },
+  "onboarding.action.post": {
+    "defaultMessage": "投稿する",
+    "description": "Button of the post step that opens the post form."
+  },
+  "onboarding.dismiss": {
+    "defaultMessage": "この手順を閉じる",
+    "description": "Button that closes the checklist of first steps on this browser."
+  },
+  "onboarding.suggestions": {
+    "defaultMessage": "おすすめのアカウント",
+    "description": "Heading of the accounts suggested to follow on the home timeline."
+  },
+  "onboarding.suggestions.more": {
+    "defaultMessage": "ほかの人を探す",
+    "description": "Link under the suggested accounts to the account search."
+  },
+  "onboarding.suggestions.failed": {
+    "defaultMessage": "おすすめを読み込めませんでした：{reason}",
+    "description": "Shown when the suggested accounts fail to load. {reason} is the error."
+  },
+  "onboarding.suggestions.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the suggested accounts again."
+  },
+  "onboarding.reason.featured": {
+    "defaultMessage": "サーバーのおすすめ",
+    "description": "Badge of a suggested account that the administrators feature."
+  },
+  "onboarding.reason.recently_active": {
+    "defaultMessage": "最近投稿した人",
+    "description": "Badge of a suggested account that posted recently."
+  }
+}

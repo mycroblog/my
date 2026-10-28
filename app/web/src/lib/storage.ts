@@ -416,3 +416,15 @@ export const navigationKey = declareKey<StoredNavigation | null>("my:display:nav
   parse: schemaParser(z.object({ order: z.array(z.string()).max(64), hidden: z.array(z.string()).max(64) })),
   userData: false,
 });
+
+/**
+ * Whether the account (by its ID) closed the checklist of first steps on its home timeline (features/onboarding,
+ * web-client/screens/home-first-run.md). How this browser shows the home to that account, so it stays after the session.
+ */
+export const firstRunDismissedKey = declareKeyFamily<boolean>("my:user:first-run-dismissed:", {
+  area: "local",
+  version: 1,
+  defaultValue: false,
+  parse: schemaParser(z.boolean()),
+  userData: false,
+});

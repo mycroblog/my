@@ -5,6 +5,7 @@
 // only (web-client/README.md A3).
 export { type Account, accountQueryOptions, followListQueryOptions, refreshRelationship } from "./api/accounts";
 export { updateCachedAccount } from "./api/cache";
+export { AccountFollowItem } from "./components/AccountFollowItem";
 export { FollowListSkeleton } from "./components/FollowListSkeleton";
 export { FollowListView } from "./components/FollowListView";
 export { ProfileView } from "./components/ProfileView";

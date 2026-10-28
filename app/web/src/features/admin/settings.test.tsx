@@ -384,6 +384,22 @@ describe("the server's policies", () => {
     expect(settings.patches).toEqual([{ values: { public_operators: "false" } }]);
   });
 
+  test("features accounts in the suggestions, in their own section", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const featured = await screen.findByRole("region", { name: "Suggested accounts" });
+    const field = within(featured).getByRole("textbox", { name: "Accounts to suggest first" });
+    expect(field).toHaveValue("");
+
+    await user.type(field, "bob carol");
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { featured_accounts: "bob carol" } }]);
+  });
+
   test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

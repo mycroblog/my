@@ -764,6 +764,21 @@ function PoliciesForm() {
           description={t("client:admin.settings.landing.operators.description")}
         />
       </Section>
+      {/* The accounts that the suggestions to follow show first, in this order (FR-308). */}
+      <Section surface="card" title={t("client:admin.settings.featured.title")}>
+        <Hint size="inherit">{t("client:admin.settings.featured.description")}</Hint>
+        <TextField
+          label={t("client:admin.settings.featured.accounts")}
+          description={t("client:admin.settings.featured.accounts.description")}
+          value={form.value("featured_accounts")}
+          onChange={(value) => {
+            form.change("featured_accounts", value);
+          }}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
+        />
+      </Section>
       <Section surface="card" title={t("client:admin.settings.crawlers.title")}>
         <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
         <PolicyRadios form={form} setting="search_indexing" label={t("client:admin.settings.crawlers.search")} />

@@ -142,6 +142,12 @@ export function ProfileForm() {
             {t("client:settings.profile.bot")}
           </Checkbox>
         </Section>
+        {/* Whether the account is suggested to others and found by part of its name (FR-307, FR-308). */}
+        <Section title={t("client:settings.profile.discovery")}>
+          <Checkbox {...form.discoverable} description={t("client:settings.profile.discoverable.description")}>
+            {t("client:settings.profile.discoverable")}
+          </Checkbox>
+        </Section>
         <CrawlerSettings indexable={form.indexable} aiOptOut={form.aiOptOut} serverPolicy={form.serverPolicy} />
         <FormActionBar sticky result={form.result}>
           <Button type="submit" variant="primary" isPending={form.isSaving} isDisabled={form.isBusy && !form.isSaving}>
