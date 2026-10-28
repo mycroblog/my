@@ -96,6 +96,7 @@ export { Tooltip, TooltipTrigger, type TooltipProps, type TooltipTriggerProps } 
 export { Avatar, type AvatarProps } from "./Avatar";
 export { Badge, type BadgeProps } from "./Badge";
 export { RailItem, type RailItemBadge, type RailItemProps } from "./RailItem";
+export { TabBarPreview, type TabBarPreviewItem, type TabBarPreviewProps } from "./TabBarPreview";
 export { NavMenu, navMenuGroupLimit, type NavMenuGroup, type NavMenuItem, type NavMenuProps } from "./NavMenu";
 export { RoleBadge, RoleBadgeList, type RoleBadgeListProps, type RoleBadgeProps } from "./RoleBadge";
 export {

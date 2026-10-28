@@ -427,6 +427,10 @@
     "defaultMessage": "{name} moved to position {position, number} of {count, number}",
     "description": "Announced to screen readers after an item of the navigation moved. {name} is the item's label, {position} its new place counted from 1, {count} the number of items."
   },
+  "settings.navigation.preview": {
+    "defaultMessage": "Tab bar on phones",
+    "description": "Caption under the preview of the bottom tab bar of phones in the navigation section: the icons and labels of the items it holds, then Menu (shell.nav.menu)."
+  },
   "settings.navigation.reset": {
     "defaultMessage": "Restore the default",
     "description": "Button of the navigation section that puts back the default items and order."

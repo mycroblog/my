@@ -10,7 +10,8 @@ import { tv } from "tailwind-variants";
 import { Badge } from "./Badge";
 import { Link } from "./Link";
 
-const railItem = tv({
+/** The look of each form, shared with the tab bar's preview (`TabBarPreview`). */
+export const railItem = tv({
   slots: {
     // The label is never cut: where the labels together are wider than the bar (a long translation), they wrap,
     // inside a word if they must, so that every label is read whole (ADR-0039). The icon is size-6 (G11).
