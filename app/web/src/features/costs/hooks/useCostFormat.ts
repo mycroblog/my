@@ -24,6 +24,20 @@ export function useFormatTotals(): (totals: readonly Money[]) => string {
   };
 }
 
+/** The short name of a period under a chart's axis: the short month and year, the year, or the first day of a week. */
+export function usePeriodShortName(): (
+  granularity: CostGranularity,
+  period: Pick<CostPeriodTotal, "starts_on">,
+) => string {
+  const intl = useIntl();
+  return (granularity, period) => {
+    const start = utcDate(period.starts_on);
+    if (granularity === "year") return intl.formatDate(start, { year: "numeric", timeZone: "UTC" });
+    if (granularity === "month") return intl.formatDate(start, { year: "numeric", month: "short", timeZone: "UTC" });
+    return intl.formatDate(start, { month: "short", day: "numeric", timeZone: "UTC" });
+  };
+}
+
 /** The name of a period in the viewer's locale: the month and year, the year, or the dates of an ISO week with its number. */
 export function usePeriodName(): (
   granularity: CostGranularity,

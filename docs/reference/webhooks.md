@@ -69,7 +69,8 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 - `error_group.*` never follows a web client report sent without a session: a group that only such reports have seen is sent
   as `error_group.created` when the first report from a signed-in user arrives, unless it is muted by then, and a recurrence
   reported without a session is not sent. Its `data` is presented when the group is recorded, before the occurrence is counted,
-  so `count_24h` and `count_7d` may be `0`. A recurrence on the same version of the server is only counted.
+  so `count_24h` and `count_7d` may be `0`, and it has no `daily_counts`, which only the list of the admin API carries. A
+  recurrence on the same version of the server is only counted.
 - The `data` of the admin types embeds what the admin API embeds: the reporter's and the target's `Account` in `AdminReport`,
   the account's `Account` in `AdminAccount`, the action in `AdminAppeal`, the image URLs in `AdminCustomEmoji`. A registration
   carries the applicant's email address, and a report the reporter's comment: the messages are kept 14 days (below).

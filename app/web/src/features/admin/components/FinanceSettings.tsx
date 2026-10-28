@@ -51,9 +51,12 @@ import {
   type CostBasis,
   costCategories,
   type CostGranularity,
+  chartsTotals,
   CostTotalsPanel,
   CostTotalsView,
   financeCostTotalsQueryOptions,
+  financeCurrency,
+  FinanceOverview,
   IncomeTotalsView,
   useFormatMoney,
   useFormatTotals,
@@ -241,15 +244,20 @@ function TotalsSection({ granularity, basis, today, onTotalsChange }: FinanceSet
   );
 }
 
-/** The costs of the selected periods, then their income with the gross, the fees and the balance under the same basis. */
+/**
+ * The overview of the selected periods (FinanceOverview), their costs, then their income with the gross, the fees and
+ * the balance under the same basis: the table of the income stays for its gross and fees.
+ */
 function Totals({ granularity, basis, today }: { granularity: CostGranularity; basis: CostBasis; today: string }) {
   const t = useT();
   const totals = useCostTotals(granularity, basis, today);
   const income = useAdminIncomeTotals(granularity, basis, today);
   const incomeId = useId();
+  const charted = chartsTotals(financeCurrency(totals.periods, income.periods));
   return (
     <Stack gap="8">
-      <CostTotalsView totals={totals} breakdown />
+      <FinanceOverview granularity={granularity} costs={totals.periods} income={income.periods} />
+      <CostTotalsView totals={totals} breakdown table={!charted} />
       <Stack as="section" gap="3" aria-labelledby={incomeId}>
         <Heading level={3} id={incomeId}>
           {t("client:income.title")}

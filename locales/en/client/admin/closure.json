@@ -195,6 +195,14 @@
     "defaultMessage": "Deletes being expanded to inboxes",
     "description": "Label of the number of recorded Deletes whose inboxes are still being computed."
   },
+  "admin.closure.progress.meter": {
+    "defaultMessage": "Deliveries ended",
+    "description": "Label of the progress bar of the deliveries of the Deletes after the server closed: the deliveries that ended (delivered, refused, skipped or out of attempts)."
+  },
+  "admin.closure.progress.meter.value": {
+    "defaultMessage": "{done, number} of {total, plural, one {# delivery} other {# deliveries}}",
+    "description": "Value of the progress bar of the deliveries after the server closed: how many of the recorded deliveries ended."
+  },
   "admin.closure.progress.none": {
     "defaultMessage": "The deliveries have not started yet.",
     "description": "Note when the progress of the deliveries is not known yet."

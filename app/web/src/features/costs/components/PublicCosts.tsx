@@ -9,6 +9,7 @@ import { Section } from "../../moderation";
 import { usePublicIncome } from "../hooks/useIncome";
 import { usePublicCosts } from "../hooks/usePublicCosts";
 import { CostTotalsPanel, type CostTotalsPanelProps, CostTotalsView } from "./CostTotals";
+import { chartsTotals, financeCurrency, FinanceOverview } from "./FinanceOverview";
 import { IncomeState } from "./IncomeTotals";
 
 export type PublicCostsProps = Omit<CostTotalsPanelProps, "children"> & {
@@ -31,6 +32,13 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
   const breakdown = instance?.finance_visibility === "breakdown";
   const costs = usePublicCosts(panel.granularity, panel.basis, today, breakdown);
   const income = usePublicIncome(panel.granularity, panel.basis, today);
+  // The overview waits for every part the instance publishes, so that its numbers do not change under the reader.
+  const costPeriods = costs.status === "ready" ? costs.totals.periods : undefined;
+  const incomePeriods = income.status === "ready" ? income.totals.periods : undefined;
+  const ready =
+    (costs.status === "ready" || costs.status === "hidden") &&
+    (income.status === "ready" || income.status === "hidden");
+  const charted = ready && chartsTotals(financeCurrency(costPeriods, incomePeriods));
   if (costs.status === "hidden" && income.status === "hidden") {
     return (
       <EmptyState
@@ -49,6 +57,7 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
       <p>{t("client:costs.public.description")}</p>
       <CostTotalsPanel {...panel}>
         <Stack gap="8">
+          {ready && <FinanceOverview granularity={panel.granularity} costs={costPeriods} income={incomePeriods} />}
           {costs.status !== "hidden" && (
             <Section surface="card" title={t("client:costs.public.costs")}>
               {instance?.finance_visibility === "totals" && (
@@ -68,14 +77,16 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
                   isRetrying={costs.isRetrying}
                 />
               )}
-              {costs.status === "ready" && <CostTotalsView totals={costs.totals} breakdown={costs.breakdown} />}
+              {costs.status === "ready" && (
+                <CostTotalsView totals={costs.totals} breakdown={costs.breakdown} table={!charted} />
+              )}
             </Section>
           )}
           {income.status !== "hidden" && (
             <Section surface="card" title={t("client:income.title")}>
               {/* The balance would tell the costs that the instance keeps to itself (ADR-0073 §7). */}
               {costs.status === "hidden" && <Hint size="inherit">{t("client:income.public.no_balance")}</Hint>}
-              <IncomeState income={income} />
+              <IncomeState income={income} table={!charted} />
             </Section>
           )}
         </Stack>

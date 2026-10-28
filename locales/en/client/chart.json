@@ -1,0 +1,18 @@
+{
+  "chart.missing": {
+    "defaultMessage": "No data",
+    "description": "A cell of a chart's table for a period that has no value."
+  },
+  "chart.view": {
+    "defaultMessage": "Show as",
+    "description": "Accessible name of the switch beside a chart between the chart and the same data as a table."
+  },
+  "chart.view.chart": {
+    "defaultMessage": "Chart",
+    "description": "Option of the switch beside a chart: show the data as a chart."
+  },
+  "chart.view.table": {
+    "defaultMessage": "Table",
+    "description": "Option of the switch beside a chart: show the same data as a table."
+  }
+}

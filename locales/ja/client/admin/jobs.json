@@ -19,6 +19,10 @@
     "defaultMessage": "失敗した日時",
     "description": "Term in a failed job's details: when the job failed for good."
   },
+  "admin.jobs.filter.count": {
+    "defaultMessage": "、{count, number} 件",
+    "description": "Accessible text of the count beside a tab of the job list, read right after the tab's name (so it starts with a comma): how many jobs the tab lists."
+  },
   "admin.jobs.filter.label": {
     "defaultMessage": "ジョブの状態",
     "description": "Accessible name of the tabs that filter the jobs by state."
@@ -111,6 +115,10 @@
     "defaultMessage": "キュー",
     "description": "Term in the queue's details: the kind of job queue the server runs, such as db or sqs."
   },
+  "admin.jobs.queue.by_state": {
+    "defaultMessage": "状態ごとのジョブ",
+    "description": "Accessible name of the tiles of the jobs screen: the longest wait and the count of the jobs of each state."
+  },
   "admin.jobs.queue.by_type": {
     "defaultMessage": "型ごとのジョブ",
     "description": "Accessible name of the list of the counts of the jobs of each job type."
@@ -122,14 +130,6 @@
   "admin.jobs.queue.no_listing": {
     "defaultMessage": "このキューでは、待っている・実行中・リトライを待つジョブを一覧できません。滞留はプラットフォームの指標で確かめてください。失敗したジョブと試行の履歴は一覧できます。",
     "description": "Note of the queue region when the queue (Cloud Tasks or SQS) cannot list its pending jobs."
-  },
-  "admin.jobs.queue.none_waiting": {
-    "defaultMessage": "待っているジョブはありません",
-    "description": "Value of the oldest waiting job when no due job waits."
-  },
-  "admin.jobs.queue.oldest_ready": {
-    "defaultMessage": "最も古い待ちのジョブの予定",
-    "description": "Term in the queue's details: since when the oldest due job that no worker runs has been waiting."
   },
   "admin.jobs.retried": {
     "defaultMessage": "ジョブ {type} をもう一度実行するようにキューに入れました。",

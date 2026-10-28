@@ -234,15 +234,28 @@ describe("the queue dashboard", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Jobs" })).toBeInTheDocument();
     const summary = screen.getByRole("region", { name: "Queue" });
     expect(within(summary).getByText("db")).toBeInTheDocument();
+    // The wait and the jobs of each state as tiles, the failed ones marked, each state a link to its tab.
+    const tiles = within(summary).getByRole("list", { name: "Jobs by state" });
+    const [wait, ...states] = within(tiles).getAllByRole("listitem");
+    expect(wait).toHaveTextContent(/^Longest job wait/);
+    expect(states.map((tile) => tile.textContent)).toEqual([
+      "Waiting0",
+      "Running1",
+      "Retrying1",
+      "FailedNeeds a retry2",
+    ]);
+    expect(within(tiles).getByRole("link", { name: "Failed" })).toHaveAttribute("href", "/admin/jobs?state=dead");
     const types = within(summary).getByRole("list", { name: "Jobs by type" });
     expect(
       within(types)
         .getAllByRole("heading", { level: 3 })
         .map((heading) => heading.textContent),
     ).toEqual(["media.process", "federation.deliver", "kv.cleanup"]);
-    expect(screen.getByRole("tab", { name: "Pending", selected: true })).toBeInTheDocument();
+    // Each tab says how many jobs it lists.
+    expect(screen.getByRole("tab", { name: "Pending, 2 jobs", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Failed, 2 jobs" })).toBeInTheDocument();
 
-    const jobs = screen.getByRole("tabpanel", { name: "Pending" });
+    const jobs = screen.getByRole("tabpanel", { name: "Pending, 2 jobs" });
     expect(within(jobs).getByRole("heading", { level: 3, name: "media.process" })).toBeInTheDocument();
     expect(within(jobs).getByText("worker-7f3a")).toBeInTheDocument();
     expect(within(jobs).getByText("503 Service Unavailable")).toBeInTheDocument();
@@ -280,8 +293,8 @@ describe("the queue dashboard", () => {
     );
     const { user } = await renderApp({ path: "/admin/jobs?state=dead" });
 
-    expect(await screen.findByRole("tab", { name: "Failed", selected: true })).toBeInTheDocument();
-    const jobs = screen.getByRole("tabpanel", { name: "Failed" });
+    expect(await screen.findByRole("tab", { name: /^Failed/, selected: true })).toBeInTheDocument();
+    const jobs = screen.getByRole("tabpanel", { name: /^Failed/ });
     expect(within(jobs).getByRole("heading", { level: 3, name: "federation.deliver" })).toBeInTheDocument();
     expect(within(jobs).getByText("502 Bad Gateway")).toBeInTheDocument();
     expect(within(jobs).getByText("deliver:x")).toBeInTheDocument();
@@ -322,9 +335,9 @@ describe("the queue dashboard", () => {
     server.use(operatorHandler(["manage_jobs"]));
     const { user, router } = await renderApp({ path: "/admin/jobs" });
 
-    await user.click(await screen.findByRole("tab", { name: "Retrying" }));
-    expect(await screen.findByRole("tabpanel", { name: "Retrying" })).toBeInTheDocument();
-    expectSelectedTabControlsPanel("Retrying");
+    await user.click(await screen.findByRole("tab", { name: /^Retrying/ }));
+    expect(await screen.findByRole("tabpanel", { name: /^Retrying/ })).toBeInTheDocument();
+    expectSelectedTabControlsPanel(/^Retrying/);
     expect(router.state.location.search).toEqual({ state: "retrying" });
     expect(requests).toContain("GET /admin/jobs?limit=40&state=retrying");
   });
@@ -343,9 +356,11 @@ describe("the queue dashboard", () => {
       await screen.findByRole("heading", { level: 3, name: "This queue cannot list these jobs" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/This queue cannot list its waiting, running and retrying jobs/)).toBeInTheDocument();
+    // Only the failed jobs are counted: the queue cannot count the others.
+    expect(screen.getByRole("tab", { name: "Pending", selected: true })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Failed" }));
-    const jobs = await screen.findByRole("tabpanel", { name: "Failed" });
+    await user.click(screen.getByRole("tab", { name: "Failed, 0 jobs" }));
+    const jobs = await screen.findByRole("tabpanel", { name: "Failed, 0 jobs" });
     expect(await within(jobs).findByRole("heading", { level: 3, name: "federation.deliver" })).toBeInTheDocument();
   });
 });

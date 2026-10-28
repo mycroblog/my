@@ -20,6 +20,7 @@ export {
 } from "./api/costs";
 export { financeIncomeTotalsQueryOptions, publicIncomeTotalsQueryOptions } from "./api/income";
 export { categoryLabels, CostTotalsPanel, CostTotalsView } from "./components/CostTotals";
+export { chartsTotals, financeCurrency, FinanceOverview } from "./components/FinanceOverview";
 export { IncomeTotalsView } from "./components/IncomeTotals";
 export { FinanceCosts } from "./components/FinanceCosts";
 export { PublicCosts } from "./components/PublicCosts";

@@ -8179,6 +8179,11 @@ type ErrorGroup struct {
 	// Count7d The occurrences in the last 7 days, by the hour, the current hour included.
 	Count7d int64 `json:"count_7d"`
 
+	// DailyCounts The occurrences of each of the last 7 days, oldest first, each day 24 hours and the last
+	// one ending with the current hour: the last is `count_24h` and their sum `count_7d`. Only
+	// the list of the error groups has it.
+	DailyCounts *[]int64 `json:"daily_counts,omitempty"`
+
 	// Fingerprint The fingerprint of the errors, 32 hexadecimal digits; the same in the logs and the exporters.
 	Fingerprint string    `json:"fingerprint"`
 	FirstSeenAt time.Time `json:"first_seen_at"`
@@ -8230,6 +8235,11 @@ type ErrorGroupDetail struct {
 
 	// Count7d The occurrences in the last 7 days, by the hour, the current hour included.
 	Count7d int64 `json:"count_7d"`
+
+	// DailyCounts The occurrences of each of the last 7 days, oldest first, each day 24 hours and the last
+	// one ending with the current hour: the last is `count_24h` and their sum `count_7d`. Only
+	// the list of the error groups has it.
+	DailyCounts *[]int64 `json:"daily_counts,omitempty"`
 
 	// Events The changes of the state of the group, oldest first.
 	Events []ErrorGroupEvent `json:"events"`

@@ -192,20 +192,26 @@ describe("the costs screen", () => {
       to: deviceToday(),
     });
 
+    // In one currency, the overview's tiles and chart show the totals, and no other table repeats them.
     await user.click(within(region).getByRole("tab", { name: "Weeks" }));
-    expect(await within(region).findByRole("row", { name: /2026-W43/u })).toHaveTextContent("¥1,000");
+    const week = await within(region).findByRole("list", { name: /^Oct 19.+ at a glance$/u });
+    expect(within(week).getAllByRole("listitem")[0]).toHaveTextContent("Costs this week¥1,000");
+    expect(within(region).getByRole("img", { name: "Costs and income by week" })).toHaveAccessibleDescription(
+      /^Oct 19.+25, 2026 \(2026-W43\): costs ¥1,000, income ¥0\./u,
+    );
+    expect(within(region).queryByRole("table", { name: /^Totals by/u })).not.toBeInTheDocument();
     expect(router.state.location.search).toEqual({ granularity: "week" });
 
     await user.click(within(region).getByRole("radio", { name: /On the payment date/u }));
-    expect(await within(region).findByRole("row", { name: /2026-W43/u })).toHaveTextContent("¥1,650");
+    expect(await within(region).findByText("¥1,650")).toBeInTheDocument();
     expect(within(region).getByRole("region", { name: "How the periods are counted" })).toHaveTextContent(
       "Every payment counts on its payment date.",
     );
     expect(router.state.location.search).toEqual({ granularity: "week", basis: "cash" });
 
     await user.click(within(region).getByRole("tab", { name: "Years" }));
-    const years = await within(region).findByRole("table", { name: "Totals by Years, On the payment date" });
-    expect(within(years).getByRole("row", { name: /^2026/u })).toHaveTextContent("¥1,650");
+    const year = await within(region).findByRole("list", { name: "2026 at a glance" });
+    expect(within(year).getAllByRole("listitem")[0]).toHaveTextContent("Costs this year¥1,650");
     expect(totals.queries.at(-1)).toMatchObject({
       granularity: "year",
       basis: "cash",

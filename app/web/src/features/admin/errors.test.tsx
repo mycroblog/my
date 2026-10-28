@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
+import { chartViewKey } from "../../lib/storage";
 import { renderApp } from "../../test/render";
 import { errorGroupDetailFixture, errorGroupFixture } from "./test/handlers";
 
@@ -156,6 +157,42 @@ describe("the page of an error group", () => {
       .map((cell) => cell.textContent);
     expect(changes).toEqual(["Muted", "Resolved (version ⁦0.3.0⁩)"]);
     expect(within(history).getByText("The command line")).toBeInTheDocument();
+  });
+
+  test("charts the occurrences of the last 48 hours, and shows them as a table on this browser when asked", async () => {
+    const hour = 3_600_000;
+    const current = new Date(Math.floor(Date.now() / hour) * hour);
+    const earlier = new Date(current.getTime() - 5 * hour);
+    server.use(
+      http.get(`${apiBase}/admin/error_groups/:id`, () =>
+        HttpResponse.json(
+          errorGroupDetailFixture(groupId, {
+            hourly_counts: [
+              // Older than the chart: only the table of every hour has it.
+              { hour: "2026-01-01T00:00:00Z", count: 50, last_version: "0.2.0" },
+              { hour: earlier.toISOString(), count: 4, last_version: "0.3.0" },
+              { hour: current.toISOString(), count: 2, last_version: "0.3.1" },
+            ],
+          }),
+        ),
+      ),
+    );
+    const { user } = await renderApp({ path: `/admin/errors/${groupId}` });
+
+    const chart = await screen.findByRole("img", { name: "Occurrences per hour, last 48 hours" });
+    expect(chart).toHaveAccessibleDescription(
+      /^6 occurrences in the last 48 hours, at most 4 in an hour \(.+\); 2 in the current hour\.$/u,
+    );
+    await user.click(screen.getByRole("radio", { name: "Table" }));
+    const table = screen.getByRole("table", { name: "Occurrences per hour, last 48 hours" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    // Every hour of the chart, the oldest first, the hours without any as zero.
+    expect(rows).toHaveLength(48);
+    expect(rows.map((row) => within(row).getByRole("cell").textContent).filter((count) => count !== "0")).toEqual([
+      "4",
+      "2",
+    ]);
+    expect(chartViewKey.read()).toBe("table");
   });
 
   test("resolves an open group, says so, and moves focus to the state's heading", async () => {

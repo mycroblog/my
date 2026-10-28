@@ -437,6 +437,45 @@ func (q *Queries) ListErrorGroupCounts(ctx context.Context, groupID string) ([]L
 	return items, nil
 }
 
+const listErrorGroupCountsSince = `-- name: ListErrorGroupCountsSince :many
+SELECT group_id, hour_start, occurrences FROM error_group_counts
+WHERE group_id = ANY($1::uuid[]) AND hour_start >= $2
+ORDER BY group_id, hour_start
+`
+
+type ListErrorGroupCountsSinceParams struct {
+	GroupIds []string
+	Since    time.Time
+}
+
+type ListErrorGroupCountsSinceRow struct {
+	GroupID     string
+	HourStart   time.Time
+	Occurrences int64
+}
+
+// ListErrorGroupCountsSince lists the hourly counts of the groups of group_ids from the hour of
+// since on: the recent counts of a page of the admin list.
+func (q *Queries) ListErrorGroupCountsSince(ctx context.Context, arg ListErrorGroupCountsSinceParams) ([]ListErrorGroupCountsSinceRow, error) {
+	rows, err := q.db.Query(ctx, listErrorGroupCountsSince, arg.GroupIds, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListErrorGroupCountsSinceRow{}
+	for rows.Next() {
+		var i ListErrorGroupCountsSinceRow
+		if err := rows.Scan(&i.GroupID, &i.HourStart, &i.Occurrences); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listErrorGroupEvents = `-- name: ListErrorGroupEvents :many
 SELECT id, group_id, kind, actor_kind, actor_user_id, version, occurred_at FROM error_group_events
 WHERE group_id = $1 ORDER BY id

@@ -99,6 +99,13 @@ type HourCount struct {
 	LastVersion string
 }
 
+// GroupHourCount is the occurrences of one hour of the group GroupID.
+type GroupHourCount struct {
+	GroupID     string
+	Hour        time.Time
+	Occurrences int64
+}
+
 // Sample is the latest occurrence of the group of Fingerprint (error_group_samples), scrubbed.
 // RequestID and TraceID are "" for none.
 type Sample struct {
@@ -122,6 +129,10 @@ type Summary struct {
 	LastVersion string
 	CountDay    int64
 	CountWeek   int64
+	// DayCounts is the occurrences of each of the 7 days of the week of the window, oldest
+	// first, each day 24 of its hours: the last is CountDay and their sum CountWeek. Summaries
+	// fills it; Summary and SummaryTx leave it nil.
+	DayCounts []int64
 }
 
 // Window is the hours whose occurrences a Summary counts: CountDay those of the hours that start
@@ -182,6 +193,9 @@ type Repository interface {
 	FindSample(ctx context.Context, groupID string) (Sample, error)
 	// HourCounts returns the hourly counts of a group, oldest first.
 	HourCounts(ctx context.Context, groupID string) ([]HourCount, error)
+	// CountsSince returns the hourly counts of the groups of groupIDs of the hours that start at
+	// or after since, in no particular order.
+	CountsSince(ctx context.Context, groupIDs []string, since time.Time) ([]GroupHourCount, error)
 	// Events returns the events of a group, oldest first.
 	Events(ctx context.Context, groupID string) ([]Event, error)
 

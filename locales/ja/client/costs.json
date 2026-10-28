@@ -182,5 +182,57 @@
   "costs.category.other": {
     "defaultMessage": "その他",
     "description": "Category of a cost: anything else, and taxes."
+  },
+  "costs.overview.label": {
+    "defaultMessage": "{period}の概要",
+    "description": "Accessible name of the tiles of the current period's costs, income and balance. period is the name of the period, such as October 2026."
+  },
+  "costs.overview.costs": {
+    "defaultMessage": "{granularity, select, week {今週の費用} year {今年の費用} other {今月の費用}}",
+    "description": "Name of the tile of the costs of the current period."
+  },
+  "costs.overview.income": {
+    "defaultMessage": "{granularity, select, week {今週の収入} year {今年の収入} other {今月の収入}}",
+    "description": "Name of the tile of the income after fees of the current period."
+  },
+  "costs.overview.balance": {
+    "defaultMessage": "{granularity, select, week {今週の収支} year {今年の収支} other {今月の収支}}",
+    "description": "Name of the tile of the income less the costs of the current period."
+  },
+  "costs.overview.balance.short": {
+    "defaultMessage": "まかなえていない",
+    "description": "Word beside a warning icon on the balance tile when the income does not cover the costs of the period."
+  },
+  "costs.overview.since": {
+    "defaultMessage": "{granularity, select, week {先週から} year {昨年から} other {先月から}}",
+    "description": "After the change of a tile of the costs: the period it is measured against."
+  },
+  "costs.chart.title": {
+    "defaultMessage": "{granularity, select, week {週} year {年} other {月}}ごとの{shown, select, costs {費用} income {収入} other {費用と収入}}",
+    "description": "Title of the bar chart of the costs and the income of each period. shown is costs, income, or both."
+  },
+  "costs.chart.summary.both": {
+    "defaultMessage": "{period}は費用 {costs}、収入 {income}。費用が最も多かったのは {peakPeriod}（{peak}）。",
+    "description": "Summary under the chart of the costs and the income: the current period's costs and income, and the period with the highest costs. Amounts are formatted."
+  },
+  "costs.chart.summary.costs": {
+    "defaultMessage": "{period}は費用 {costs}。費用が最も多かったのは {peakPeriod}（{peak}）。",
+    "description": "Summary under the chart of the costs alone: the current period's costs and the period with the highest costs."
+  },
+  "costs.chart.summary.income": {
+    "defaultMessage": "{period}は収入 {income}。",
+    "description": "Summary under the chart of the income alone: the current period's income after fees."
+  },
+  "costs.chart.estimated_period": {
+    "defaultMessage": "{period}（見込み）",
+    "description": "A period under the axis and in the table of the costs chart whose costs include estimates."
+  },
+  "costs.chart.empty": {
+    "defaultMessage": "出す期間がありません。",
+    "description": "Shown instead of the costs chart when it has no period."
+  },
+  "costs.breakdown.other": {
+    "defaultMessage": "その他",
+    "description": "The part of the breakdown of a period's costs that adds up the providers after the three largest."
   }
 }
