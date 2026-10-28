@@ -2,7 +2,11 @@
 start: "/welcome"
 persona: "yuki"
 paths: ["app/web/src/routes/welcome.tsx", "app/web/src/features/settings/components/WelcomeForm.tsx", "app/web/src/features/settings/hooks/useWelcomeForm.ts", "internal/interface/authpages/**"]
-unavailable: {"アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none", "ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
+starts: {"ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "/"}
+personas: {"ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": null}
+seed: [{"my": ["instance", "set", "registration_mode", "open"]}]
+mail: {"ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "mio"}
+unavailable: {"アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none"}
 ---
 
 ## ようこそ（`/welcome`、アカウントを作った直後）
@@ -23,10 +27,11 @@ unavailable: {"アイコンの画像を選び、ホームへ進む（ファイ�
 | 表示名を入れて、ホームへ進む | 2 |
 | アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える） | 2 |
 | 何も書かずにホームへ進む | 1 |
-| ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4） | 7 |
+| ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4） | 10 |
 
-最初の実行の全体は、ランディングページの「参加する」1・③ の「アカウントを作る」1・登録のフォームの送信 1（入力はフォームの 1 つと数える）・この画面の表示名 1・「続ける」1・
-ホームのおすすめの「フォロー」1・ホームのチェックリストが「誰かをフォローする」を済みにするのを確かめる 1。
+最初の実行の全体は、誰でも登録できてメールアドレスを確かめるサーバー（デモサーバーもそう）で数える。ランディングページの「参加する」1・③ の「アカウントを作る」1・
+登録のフォームの送信 1（入力はフォームの 1 つと数える）・確認のメールを開いてリンクへ進む 1・確認の画面の「確認する」1・確認できた画面の「続ける」1・この画面の表示名 1・「続ける」1・
+ホームのおすすめの「フォロー」1・ホームのチェックリストが「誰かをフォローする」を済みにするのを確かめる 1。メールアドレスを確かめないサーバーでは、メールと確認の 3 つがなく 7。
 
 ### 3. 情報の優先順位とまとまり
 

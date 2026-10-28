@@ -22,6 +22,12 @@ export type Persona = {
   locked?: boolean;
   /** The color of the person's avatar, a disc on a gradient. */
   color: RGB;
+  /**
+   * A person who has just joined and done nothing yet: the seed leaves their profile empty (no display name, profile
+   * text, or avatar; `displayName` is only what the L4 agent is told), and they follow no one and post nothing, so that
+   * the home page shows them the first-run checklist and the suggested accounts.
+   */
+  newcomer?: boolean;
 };
 
 /** An image attached to a post, drawn by demo/assets/draw.ts, with its alt text, which also finds it again. */
@@ -177,7 +183,27 @@ export const personas: readonly Persona[] = [
     locale: "en",
     color: [200, 200, 70],
   }),
+  persona({
+    username: "kai",
+    displayName: "kai",
+    note: "",
+    locale: "ja",
+    color: [150, 150, 150],
+    newcomer: true,
+  }),
 ];
+
+/**
+ * The person who signs up from the landing page in the L4 task of the whole first run: not created by the seed, so
+ * the agent creates the account with this email address and reads the confirmation email in Mailpit.
+ */
+export const applicant: Persona = persona({
+  username: "mio",
+  displayName: "Mio",
+  note: "",
+  locale: "ja",
+  color: [240, 130, 90],
+});
 
 /** The persona the seed signs in as for the server's settings and the admin API. */
 export const admin = "hana";
