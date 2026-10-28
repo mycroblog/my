@@ -1711,6 +1711,26 @@
     "defaultMessage": "メールボックスが使えるようになったら、確認のメールをもう一度求めてください。アドレスを確認すると、サーバーがまたメールを送るようになり、この表示は消えます。",
     "description": "What to do after a hard bounce: fix the mailbox, then ask for the verification email again."
   },
+  "settings.email_suppression.verification.send": {
+    "defaultMessage": "確認のメールを送る",
+    "description": "Button in the notice that emails do not reach the user's address after a hard bounce: sends a new verification email to the address."
+  },
+  "settings.email_suppression.verification.sent": {
+    "defaultMessage": "確認のメールを送りました。メールのリンクを開いて、アドレスを確認してください。",
+    "description": "Shown next to that button, and read out, after the verification email was sent."
+  },
+  "settings.email_suppression.verification.failed": {
+    "defaultMessage": "確認のメールを送れませんでした：{reason} もう一度試してください。",
+    "description": "Alert next to that button when the email could not be sent. {reason} is the server's explanation."
+  },
+  "settings.email_suppression.verification.rate_limited": {
+    "defaultMessage": "確認のメールを求めた回数が多すぎます。しばらくしてからもう一度試してください。",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour) and the server named no time."
+  },
+  "settings.email_suppression.verification.rate_limited_until": {
+    "defaultMessage": "確認のメールを求めた回数が多すぎます。{time}からもう一度求められます。",
+    "description": "Alert next to that button when the user asked for the email too often (at most 3 an hour). {time} is a formatted time of day."
+  },
   "settings.linked_accounts.title": {
     "defaultMessage": "連携したアカウント",
     "description": "Title of the settings page of linked accounts (accounts at sign-in services, such as an OpenID Connect provider, that the server's administrators set up), and its entry in the settings menu."

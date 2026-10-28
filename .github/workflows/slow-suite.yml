@@ -1,10 +1,10 @@
 name: Slow suite
 
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
-# live interoperability test with Mastodon, GoToSocial, and Misskey, the PostgreSQL tests on a real postgres container
+# live interoperability test with Mastodon, GoToSocial, Misskey, and Akkoma, the PostgreSQL tests on a real postgres container
 # (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the
 # LiveKit transport contract on livekit-server --dev (ADR-0102), the Docker Compose smoke test (linux/amd64)
-# with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0087 §4), golangci-lint over everything with the build tag sets,
+# with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0087 §4), the restore drill, golangci-lint over everything with the build tag sets,
 # and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
 # and it runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`. Every job checks out the commit
 # of the run (github.sha), so a caller tests the commit it was started on.
@@ -127,6 +127,22 @@ jobs:
           PREVIOUS: ${{ steps.previous.outputs.tag }}
         run: scripts/task.sh docker:upgrade-test PREVIOUS="$PREVIOUS"
 
+  restore-drill:
+    # An instance filled through this commit's images, backed up while it runs (my db backup or pg_dump, then the
+    # media), lost with every container and volume, and restored into new ones, on SQLite and PostgreSQL: the data, the
+    # Actors' keys, a signed delivery, and the failures without the KEK (scripts/restore-drill.sh).
+    runs-on: ubuntu-latest
+    steps:
+      # The images take their version from `git describe`.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:restore-drill
+        run: scripts/task.sh docker:restore-drill
+
   go-static:
     # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
     # report the lines they change, and the builds of the build tag sets that leave adapters out.
@@ -175,7 +191,7 @@ jobs:
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
   result:
     if: always()
-    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, docker, upgrade, go-static, codeql]
+    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, docker, upgrade, restore-drill, go-static, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

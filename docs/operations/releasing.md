@@ -29,7 +29,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, and publi
    gh run list -R mycroblog/my --workflow release.yml --limit 1
    ```
 
-3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), CodeQL)
+3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](backup.md#recovery-drill), CodeQL)
    takes a while even with its jobs in parallel.
    The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
    On a failure, fix the cause on `main` and run the workflow again with the same version.

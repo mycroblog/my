@@ -321,7 +321,7 @@ entries:
   - name: data-upgrade
     paths: ["internal/app/dbupgrade/**", "internal/platform/setup_dbupgrade.go", "cmd/my/db.go", "cmd/my/db_test.go", "internal/adapter/db/*/data_upgrade*.go"]
     docs: ["docs/adr/0087-schema-changes-after-launch.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有"]
-    userdocs: ["docs/operations/database.md#upgrading", "docs/operations/releasing.md"]
+    userdocs: ["docs/operations/database.md#upgrading", "docs/operations/releasing.md", "docs/operations/backup.md#sqlite"]
     notes:
       - "A data upgrade step keeps its key once released, is idempotent, and works in small transactions without external I/O; after its contract it stays registered with Run nil."
   - name: projections
@@ -513,11 +513,11 @@ entries:
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
     docs: ["docs/architecture/web-client/README.md#テストの置き場所と道具"]
   - name: web-l4
-    paths: ["app/web/l4/**", ".github/workflows/nightly.yml"]
-    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/architecture/web-client/screens/README.md"]
+    paths: ["app/web/l4/**", ".github/workflows/nightly.yml", ".github/actions/start-mailpit/**"]
+    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/adr/0117-demo-environment.md", "docs/architecture/web-client/screens/README.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
-      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md; app/web/l4/screens.ts gives each screen its start and the data its tasks need, so a new L1 whose tasks need data adds an entry there (check with DRY_RUN=1)."
+      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); app/web/l4/screens.ts gives each screen its start, the person of the scenario it signs in as (or none), the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new L1 adds an entry there (check with DRY_RUN=1; l4/screens.test.ts checks the task names)."
       - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
   - name: web-demo
     paths: ["app/web/demo/**"]
@@ -592,6 +592,14 @@ entries:
     checks: [docker, shell]
     notes:
       - "The release gate's upgrade test (slow-suite.yml job upgrade): scripts/upgrade-test.sh fills a database through the previous release's images and upgrades it with this tree's, on both dialects; run `scripts/task.sh docker:upgrade-test PREVIOUS=<tag>`. scripts/previous-minor.sh picks the tag (`scripts/task.sh shell:test`). The data it seeds and reads goes through the client API and the CLI only, so it works against any earlier release."
+
+  - name: backup-restore
+    paths: ["internal/adapter/db/sqlite/backup.go", "internal/adapter/db/sqlite/backup_test.go", "scripts/restore-drill.sh", "scripts/remote-test-server.sh"]
+    docs: ["docs/operations/backup.md", "docs/operations/key-management.md#back-it-up"]
+    userdocs: ["docs/operations/backup.md"]
+    checks: [docker, shell, go]
+    notes:
+      - "`my db backup` copies a SQLite database with VACUUM INTO while the server runs. scripts/restore-drill.sh (`scripts/task.sh docker:restore-drill`, slow-suite.yml job restore-drill) backs up an instance on the upgrade test's stack, restores it into new volumes, and checks the data, the Actors' keys, signed delivery, and the failures without the KEK; scripts/remote-test-server.sh writes remote.test's files for it and for scripts/upgrade-test.sh."
 
   # --- Tools ----------------------------------------------------------------------------------------------
   - name: agentkit

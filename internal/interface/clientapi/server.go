@@ -174,6 +174,9 @@ type Options struct {
 	AppealModeration AppealModeration
 	// OwnAccount deletes the viewer's own account (own_account.go); nil refuses it with 404.
 	OwnAccount OwnAccount
+	// VerificationEmails sends the viewer a new verification email (own_account.go); nil, or
+	// SendsEmail false, answers 404.
+	VerificationEmails VerificationEmails
 	// Exports runs the viewer's data exports (own_account.go); nil refuses them with 404.
 	Exports Exports
 	// Imports writes the viewer's CSV exports and runs the CSV imports (data_import.go); nil
