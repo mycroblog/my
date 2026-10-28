@@ -53,6 +53,9 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 			})
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},
+				// The actions that fillModeration issues end, and the expiry job judges them, by
+				// this clock, after waits on the monotonic clock.
+				Clock: newSteadyClock(),
 			})
 			if err != nil {
 				t.Fatalf("NewApp: %v", err)
@@ -320,7 +323,9 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 	waitPast(limitEnds)
 }
 
-// waitPast blocks until the wall clock is past t, however long the machine took to get here.
+// waitPast blocks until the monotonic clock is past t, a reading of time.Now, however long the
+// machine took to get here. The App must tell the time with a steadyClock, which follows the
+// monotonic clock, for its clock to be past t too.
 func waitPast(t time.Time) {
 	for d := time.Until(t); d > 0; d = time.Until(t) {
 		time.Sleep(d)
