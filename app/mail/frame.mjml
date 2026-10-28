@@ -39,8 +39,8 @@
         <mj-text css-class="mail-text">{{.}}</mj-text>
         <mj-raw>{{end}}</mj-raw>
         <mj-raw>{{with .Action}}{{if .URL}}</mj-raw>
-        <mj-button href="{{.URL}}" css-class="mail-button">{{.Label}}</mj-button>
-        <mj-text mj-class="muted" css-class="mail-muted"><a href="{{.URL}}" class="mail-link" style="color: %color-accent:light%; word-break: break-all;">{{.URL}}</a></mj-text>
+        <mj-button href="{{.URL}}" css-class="mail-button" padding="8px 0 8px 0">{{.Label}}</mj-button>
+        <mj-text mj-class="muted" css-class="mail-muted" align="center" padding="0 0 24px 0"><a href="{{.URL}}" class="mail-link" style="color: %color-accent:light%; word-break: break-all;">{{.URL}}</a></mj-text>
         <mj-raw>{{else}}</mj-raw>
         <mj-text css-class="mail-text">{{.Label}}</mj-text>
         <mj-text mj-class="muted" css-class="mail-muted">{{.Text}}</mj-text>
