@@ -268,7 +268,7 @@ function JobRow({ job, retry }: { job: Job; retry: RetryJob }) {
                 retry.retry(job);
               }}
             >
-              {t("client:admin.jobs.retry")}
+              {t("client:admin.jobs.run_again")}
             </Button>
           )
         }

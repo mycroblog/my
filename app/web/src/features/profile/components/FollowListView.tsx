@@ -3,7 +3,7 @@
 // account is (its name, a line of its profile text, whether it follows the viewer) and can be followed from there
 // (ADR-0110 P1, web-client/screens/profile-follows.md), with a button that loads the next page. A button rather than loading at the end of the scroll keeps the end of
 // the list reachable for keyboard users and the following content in reach (WCAG 2.1.1).
-import { AccountItem, BackIcon, Box, Button, Cluster, EmptyState, Link, Stack, Tag, Text } from "@my/ui";
+import { AccountItem, BackIcon, Box, Button, Cluster, EmptyState, Link, RegionError, Stack, Tag, Text } from "@my/ui";
 import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
@@ -59,15 +59,21 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
         </Stack>
       )}
       {loadMoreError !== null && (
-        <Text as="p" align="center">
-          {t("client:profile.list.load_more_failed", { reason: loadMoreError })}
-        </Text>
+        // Announced by useFollowList when it fails; shown here, under the accounts already loaded, in the one form of a
+        // region's failure (web-client/16-look-states-and-wording.md G16).
+        <RegionError
+          heading={t("client:profile.list.load_more.failed.heading")}
+          reason={loadMoreError}
+          retryLabel={t("client:profile.list.retry")}
+          onRetry={loadMore}
+          isRetrying={isLoadingMore}
+        />
       )}
-      {hasMore && (
+      {hasMore && loadMoreError === null && (
         <Cluster justify="center">
           {/* A pending button keeps its focus while the page loads (React Aria Button, isPending). */}
           <Button isPending={isLoadingMore} onPress={loadMore}>
-            {loadMoreError === null ? t("client:profile.list.load_more") : t("client:profile.list.retry")}
+            {t("client:profile.list.load_more")}
           </Button>
         </Cluster>
       )}

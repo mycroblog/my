@@ -96,8 +96,16 @@
     "description": "Note in the dialog that edits the user's post: an edit cannot change these."
   },
   "status.edit.load_failed": {
-    "defaultMessage": "Could not load the post to edit: {reason}",
-    "description": "Shown in the dialog that edits the user's post when its text failed to load. {reason} is the error message, a full sentence."
+    "defaultMessage": "Could not load the post to edit",
+    "description": "Heading of the error in the dialog that edits the user's post when its text failed to load, above the reason and the button to try again."
+  },
+  "status.edit.blocked.empty": {
+    "defaultMessage": "Write something to save.",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is empty."
+  },
+  "status.edit.blocked.too_long": {
+    "defaultMessage": "The text is too long. Shorten it to save.",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is longer than the limit."
   },
   "status.edit.loading": {
     "defaultMessage": "Loading the post",

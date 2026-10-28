@@ -40,7 +40,7 @@ export function Outbox({ items, onRetry, onEdit, canEdit, onDiscard }: OutboxPro
               onRetry(item.idempotencyKey);
             }}
           >
-            {t("client:compose.outbox.retry")}
+            {t("client:compose.outbox.resend")}
           </Button>
           {canEdit && (
             <Button

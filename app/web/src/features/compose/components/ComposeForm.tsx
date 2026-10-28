@@ -47,7 +47,7 @@ export function ComposeForm({ controller, labelledBy, autoFocus = false }: Compo
         <Stack align="start" gap="2">
           <p>{form.message}</p>
           <Button size="sm" onPress={form.retry}>
-            {t("client:shell.error.retry")}
+            {t("client:shell.error.reload")}
           </Button>
         </Stack>
       );

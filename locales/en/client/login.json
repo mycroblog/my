@@ -11,7 +11,7 @@
     "defaultMessage": "The server did not accept the sign-in. Start again.",
     "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
   },
-  "login.failed.retry": {
+  "login.failed.try_again": {
     "defaultMessage": "Sign in again",
     "description": "Link from the failed sign-in page back to the sign-in page."
   },

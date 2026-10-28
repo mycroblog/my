@@ -163,6 +163,10 @@
     "defaultMessage": "続きのアカウントを読み込めませんでした：{reason}",
     "description": "Shown and announced when the next page of a follow list failed to load. {reason} is the error message."
   },
+  "profile.list.load_more.failed.heading": {
+    "defaultMessage": "続きのアカウントを読み込めませんでした",
+    "description": "Heading of the error shown at the end of a follow list when the next accounts failed to load, above the reason and the button to try again."
+  },
   "profile.list.loading": {
     "defaultMessage": "アカウントを読み込んでいます",
     "description": "Visually hidden text that names the busy follow list while its first page loads."

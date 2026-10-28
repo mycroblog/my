@@ -11,7 +11,7 @@
     "defaultMessage": "サーバーがログインを受け付けませんでした。もう一度始めてください。",
     "description": "Why signing in failed: the server refused to finish it (for example, it took too long)."
   },
-  "login.failed.retry": {
+  "login.failed.try_again": {
     "defaultMessage": "もう一度ログインする",
     "description": "Link from the failed sign-in page back to the sign-in page."
   },

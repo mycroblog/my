@@ -96,8 +96,16 @@
     "description": "Note in the dialog that edits the user's post: an edit cannot change these."
   },
   "status.edit.load_failed": {
-    "defaultMessage": "編集する投稿を読み込めませんでした：{reason}",
-    "description": "Shown in the dialog that edits the user's post when its text failed to load. {reason} is the error message, a full sentence."
+    "defaultMessage": "編集する投稿を読み込めませんでした",
+    "description": "Heading of the error in the dialog that edits the user's post when its text failed to load, above the reason and the button to try again."
+  },
+  "status.edit.blocked.empty": {
+    "defaultMessage": "保存する内容を入力してください。",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is empty."
+  },
+  "status.edit.blocked.too_long": {
+    "defaultMessage": "本文が長すぎます。短くしてから保存してください。",
+    "description": "Shown beside the save button of the dialog that edits a post when it is pressed while the text is longer than the limit."
   },
   "status.edit.loading": {
     "defaultMessage": "投稿を読み込んでいます",

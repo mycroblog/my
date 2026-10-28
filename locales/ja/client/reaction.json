@@ -36,8 +36,8 @@
     "description": "Shown in the dialog of the accounts that reacted to a post while the first page loads."
   },
   "reaction.list.failed": {
-    "defaultMessage": "リアクションを読み込めませんでした：{reason}",
-    "description": "Shown in the dialog of the accounts that reacted to a post when the first page failed to load. {reason} is the error message."
+    "defaultMessage": "リアクションを読み込めませんでした",
+    "description": "Heading of the error in the dialog of the accounts that reacted to a post when the first page failed to load, above the reason and the button to try again."
   },
   "reaction.list.retry": {
     "defaultMessage": "もう一度試す",

@@ -79,13 +79,23 @@ export type EditStatusForm = EditDraft & {
   /** The characters the text may have: the instance's limit less the content warning. */
   textLimit: number;
   languages: LanguageOption[];
-  canSave: boolean;
+  /**
+   * Why the edit cannot be saved, once the person pressed save while it could not (G23: the button is never disabled
+   * by the input): shown beside the button until the reason is gone. Null otherwise.
+   */
+  blocked: EditBlocker | null;
   isSaving: boolean;
   /** Why the last save failed (localized), or null. */
   error: string | null;
-  /** Saves the edit; `onSaved` runs once the post is edited and the cache holds it. */
-  save: (onSaved: () => void) => void;
+  /**
+   * Saves the edit; `onSaved` runs once the post is edited and the cache holds it. While the text cannot be saved it
+   * shows why (`blocked`) and moves the focus to `textId`, the text.
+   */
+  save: (onSaved: () => void, textId: string) => void;
 };
+
+/** Why an edit cannot be saved: the text is empty, or longer than the limit. */
+export type EditBlocker = "empty" | "too_long";
 
 /** The draft an edit starts from: the source the author typed, and the post's media and sensitivity. */
 function initialDraft(post: Status, source: StatusSource): EditDraft {
@@ -146,7 +156,9 @@ export function useEditStatusForm(post: Status, source: StatusSource, maxCharact
     src: media.preview_url ?? null,
     status: "ready",
   }));
-  const canSave = draft.text.trim() !== "" && countCharacters(draft.text) <= textLimit && !save.isPending;
+  const blocker: EditBlocker | null =
+    draft.text.trim() === "" ? "empty" : countCharacters(draft.text) > textLimit ? "too_long" : null;
+  const [triedBlocked, setTriedBlocked] = useState(false);
 
   return {
     hasQuote: post.quote !== undefined,
@@ -160,11 +172,17 @@ export function useEditStatusForm(post: Status, source: StatusSource, maxCharact
     },
     textLimit,
     languages: languageOptions(locale, [source.language, draft.language], t("client:compose.language.und")),
-    canSave,
+    blocked: triedBlocked ? blocker : null,
     isSaving: save.isPending,
     error: save.error === null ? null : t("client:status.edit.failed", { reason: errorMessage(save.error) }),
-    save: (onSaved) => {
-      if (!canSave) return;
+    save: (onSaved, textId) => {
+      if (blocker !== null) {
+        setTriedBlocked(true);
+        document.getElementById(textId)?.focus();
+        return;
+      }
+      setTriedBlocked(false);
+      if (save.isPending) return;
       save.mutate(requestBody(post, draft), { onSuccess: onSaved });
       rememberTags(draft.text);
     },

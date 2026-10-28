@@ -5,7 +5,7 @@
 // written in app/.oxlintrc.json per path; restrictions.test.js proves that each one rejects a violation
 // and accepts the intended alternative.
 //
-// The nine rules share one implementation and differ only in where .oxlintrc.json enables them, so that
+// The eleven rules share one implementation and differ only in where .oxlintrc.json enables them, so that
 // a path can drop one set of selectors (an override replaces a rule's options) without repeating the others:
 // - syntax: every client source file.
 // - svg: every client source file but the few that may draw SVG (G10).
@@ -16,6 +16,8 @@
 // - storage: every client source file but lib/storage and the tests (S11).
 // - html: every client source file but PostContent and the tests: the Trusted Types sinks (A8).
 // - classes: every file of web/src, tests included: no className and no class-composing helper (A4).
+// - states: a feature's hooks and components: a region's retry and emptiness are worded only in its state components (G14, G16).
+// - submit: a feature's components, as a warning: a submit button is not disabled by its input (G23).
 
 /** @typedef {{ selector: string, message: string }} Restriction */
 
@@ -61,5 +63,7 @@ export default {
     storage: rule,
     html: rule,
     classes: rule,
+    states: rule,
+    submit: rule,
   },
 };
