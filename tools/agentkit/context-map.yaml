@@ -549,7 +549,7 @@ entries:
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
-    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
+    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/screens/welcome.md", "docs/architecture/web-client/screens/home-first-run.md"]
   - name: web-feature-emoji
     paths: ["app/web/src/features/emoji/**", "app/web/src/features/custom-emojis/**"]
     docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0052-emoji-reactions.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]
@@ -558,7 +558,7 @@ entries:
       - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0095), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
-    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
+    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー", "docs/architecture/web-client/screens/search.md"]
   - name: web-feature-report
     paths: ["app/web/src/features/report/**"]
     docs: ["docs/architecture/web-client/17-reports.md#17-通報", "docs/architecture/web-client/18-account-status-and-appeals.md#18-アカウントの状態と異議申し立て"]

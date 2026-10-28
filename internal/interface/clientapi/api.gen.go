@@ -70,6 +70,24 @@ func (e AccountMoveOutcome) Valid() bool {
 	}
 }
 
+// Defines values for AccountSuggestionSource.
+const (
+	AccountSuggestionSourceFeatured       AccountSuggestionSource = "featured"
+	AccountSuggestionSourceRecentlyActive AccountSuggestionSource = "recently_active"
+)
+
+// Valid indicates whether the value is a known member of the AccountSuggestionSource enum.
+func (e AccountSuggestionSource) Valid() bool {
+	switch e {
+	case AccountSuggestionSourceFeatured:
+		return true
+	case AccountSuggestionSourceRecentlyActive:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
@@ -2226,6 +2244,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
@@ -2284,6 +2303,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyFeaturedAccounts:
 		return true
 	case InstanceSettingKeyFederatedTimelineAccess:
 		return true
@@ -2364,20 +2385,23 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount InstanceSettingKind = "account"
-	InstanceSettingKindBool    InstanceSettingKind = "bool"
-	InstanceSettingKindEmail   InstanceSettingKind = "email"
-	InstanceSettingKindEnum    InstanceSettingKind = "enum"
-	InstanceSettingKindInt     InstanceSettingKind = "int"
-	InstanceSettingKindLocale  InstanceSettingKind = "locale"
-	InstanceSettingKindMedia   InstanceSettingKind = "media"
-	InstanceSettingKindUri     InstanceSettingKind = "uri"
+	InstanceSettingKindAccount  InstanceSettingKind = "account"
+	InstanceSettingKindAccounts InstanceSettingKind = "accounts"
+	InstanceSettingKindBool     InstanceSettingKind = "bool"
+	InstanceSettingKindEmail    InstanceSettingKind = "email"
+	InstanceSettingKindEnum     InstanceSettingKind = "enum"
+	InstanceSettingKindInt      InstanceSettingKind = "int"
+	InstanceSettingKindLocale   InstanceSettingKind = "locale"
+	InstanceSettingKindMedia    InstanceSettingKind = "media"
+	InstanceSettingKindUri      InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
 func (e InstanceSettingKind) Valid() bool {
 	switch e {
 	case InstanceSettingKindAccount:
+		return true
+	case InstanceSettingKindAccounts:
 		return true
 	case InstanceSettingKindBool:
 		return true
@@ -4263,6 +4287,20 @@ type AccountStatusPage struct {
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
 }
 
+// AccountSuggestion An account suggested to follow, with why it is suggested.
+type AccountSuggestion struct {
+	// Account An account, as clients show it (FR-006).
+	Account Account `json:"account"`
+
+	// Source Why the account is suggested: `featured` when the administrators feature it,
+	// `recently_active` when it posted recently.
+	Source AccountSuggestionSource `json:"source"`
+}
+
+// AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
+// `recently_active` when it posted recently.
+type AccountSuggestionSource string
+
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
 	// Acct The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
@@ -6009,7 +6047,8 @@ type AdminSetting struct {
 	// `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 	// the username of a local account, or empty for none. `email`: an email address such as
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-	// none.
+	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+	// a leading `@` are accepted), in order, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -7550,7 +7589,9 @@ type CredentialAccount struct {
 	// CreatedAt When the account was created.
 	CreatedAt time.Time `json:"created_at"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in
+	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
 	// DisplayName The display name; empty when the account has none.
@@ -9032,7 +9073,8 @@ type InstanceSettingKey string
 // `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 // the username of a local account, or empty for none. `email`: an email address such as
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-// none.
+// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+// a leading `@` are accepted), in order, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -11968,7 +12010,9 @@ type UpdateCredentialsRequest struct {
 	// Bot Whether the account is automated.
 	Bot *bool `json:"bot,omitempty"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
+	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
 	// DisplayName The display name, at most 30 characters; empty removes it.
@@ -12932,6 +12976,12 @@ type SearchAccountsParams struct {
 
 	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListAccountSuggestionsParams defines parameters for ListAccountSuggestions.
+type ListAccountSuggestionsParams struct {
+	// Limit The maximum number of suggestions.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListAccountFollowersParams defines parameters for ListAccountFollowers.
@@ -13943,9 +13993,12 @@ type ServerInterface interface {
 	// GetRelationships Get the viewer's relationships with accounts
 	// (GET /accounts/relationships)
 	GetRelationships(w http.ResponseWriter, r *http.Request, params GetRelationshipsParams)
-	// SearchAccounts Search accounts by prefix
+	// SearchAccounts Search accounts by name
 	// (GET /accounts/search)
 	SearchAccounts(w http.ResponseWriter, r *http.Request, params SearchAccountsParams)
+	// ListAccountSuggestions Suggest accounts to follow
+	// (GET /accounts/suggestions)
+	ListAccountSuggestions(w http.ResponseWriter, r *http.Request, params ListAccountSuggestionsParams)
 	// UpdateAccountCredentials Change the authenticated user's profile
 	// (PATCH /accounts/update_credentials)
 	UpdateAccountCredentials(w http.ResponseWriter, r *http.Request)
@@ -15164,6 +15217,39 @@ func (siw *ServerInterfaceWrapper) SearchAccounts(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SearchAccounts(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAccountSuggestions operation middleware
+func (siw *ServerInterfaceWrapper) ListAccountSuggestions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAccountSuggestionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAccountSuggestions(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24457,6 +24543,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/lookup", wrapper.LookupAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/relationships", wrapper.GetRelationships)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/search", wrapper.SearchAccounts)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/suggestions", wrapper.ListAccountSuggestions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/block", wrapper.BlockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.FollowAccount)
@@ -25809,6 +25896,68 @@ type SearchAccountsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SearchAccountsdefaultApplicationProblemPlusJSONResponse) VisitSearchAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountSuggestionsRequestObject struct {
+	Params ListAccountSuggestionsParams
+}
+
+type ListAccountSuggestionsResponseObject interface {
+	VisitListAccountSuggestionsResponse(w http.ResponseWriter) error
+}
+
+type ListAccountSuggestions200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAccountSuggestions200JSONResponse struct {
+	Body    []AccountSuggestion
+	Headers ListAccountSuggestions200ResponseHeaders
+}
+
+func (response ListAccountSuggestions200JSONResponse) VisitListAccountSuggestionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountSuggestionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAccountSuggestionsdefaultApplicationProblemPlusJSONResponse) VisitListAccountSuggestionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -44768,9 +44917,12 @@ type StrictServerInterface interface {
 	// GetRelationships Get the viewer's relationships with accounts
 	// (GET /accounts/relationships)
 	GetRelationships(ctx context.Context, request GetRelationshipsRequestObject) (GetRelationshipsResponseObject, error)
-	// SearchAccounts Search accounts by prefix
+	// SearchAccounts Search accounts by name
 	// (GET /accounts/search)
 	SearchAccounts(ctx context.Context, request SearchAccountsRequestObject) (SearchAccountsResponseObject, error)
+	// ListAccountSuggestions Suggest accounts to follow
+	// (GET /accounts/suggestions)
+	ListAccountSuggestions(ctx context.Context, request ListAccountSuggestionsRequestObject) (ListAccountSuggestionsResponseObject, error)
 	// UpdateAccountCredentials Change the authenticated user's profile
 	// (PATCH /accounts/update_credentials)
 	UpdateAccountCredentials(ctx context.Context, request UpdateAccountCredentialsRequestObject) (UpdateAccountCredentialsResponseObject, error)
@@ -46116,6 +46268,32 @@ func (sh *strictHandler) SearchAccounts(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SearchAccountsResponseObject); ok {
 		if err := validResponse.VisitSearchAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAccountSuggestions operation middleware
+func (sh *strictHandler) ListAccountSuggestions(w http.ResponseWriter, r *http.Request, params ListAccountSuggestionsParams) {
+	var request ListAccountSuggestionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAccountSuggestions(ctx, request.(ListAccountSuggestionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAccountSuggestions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAccountSuggestionsResponseObject); ok {
+		if err := validResponse.VisitListAccountSuggestionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

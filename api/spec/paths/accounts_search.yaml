@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: searchAccounts
-  summary: Search accounts by prefix
+  summary: Search accounts by name
   description: |
     The accounts whose username, `username@domain`, or a word of the display name starts
-    with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+    with `q`, and the accounts of this server whose username or display name contains `q`,
+    for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
     ADR-0092). The search covers the local accounts and the remote accounts that the
     instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
     (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -14,11 +15,14 @@ get:
     word, split at white space and without its `:shortcode:`s, so a display name in a script
     without spaces (Chinese, Japanese) matches from its start.
 
+    An account of this server that is not `discoverable` is found only by its whole username,
+    unless the viewer follows it; a remote account's `discoverable` does not matter.
     Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
     deleted, or suspended, and accounts of a suspended domain are left out. An account's
     `indexable` does not matter. The results come in this order: an exact match of the
-    username or `username@domain`, then the accounts that the viewer follows, then the local
-    accounts, then those with more followers. There is no paging.
+    username or `username@domain`, then the matches from the start of a name, then the
+    accounts that the viewer follows, then the local accounts, then those with more
+    followers. There is no paging.
   tags: [accounts]
   security:
     - oauth2: ["read:accounts"]

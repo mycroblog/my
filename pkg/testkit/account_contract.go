@@ -580,7 +580,7 @@ func accountUpdatesLocalProfiles(t *testing.T, e *accountEnv) {
 	}
 	want := account.ProfileRevision{
 		ID: got.Profile.ID, AccountID: reg.AccountID, Seq: 2, DisplayName: "Fern", NoteHTML: "<p>rendered hello\nworld</p>",
-		Locked: true, AvatarMediaID: contractProfileImage, RevisedAt: e.clock.Now(),
+		Locked: true, Discoverable: true, AvatarMediaID: contractProfileImage, RevisedAt: e.clock.Now(),
 		Fields: []account.ProfileField{
 			{Position: 0, Name: "web", ValueHTML: "<p>rendered https://fern.example</p>"},
 			{Position: 1, Name: "pronouns", ValueHTML: "<p>rendered she/her</p>"},

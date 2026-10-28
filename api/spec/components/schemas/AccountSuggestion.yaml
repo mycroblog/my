@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: An account suggested to follow, with why it is suggested.
+type: object
+required: [source, account]
+properties:
+  source:
+    description: |
+      Why the account is suggested: `featured` when the administrators feature it,
+      `recently_active` when it posted recently.
+    type: string
+    enum: [featured, recently_active]
+  account:
+    $ref: ./Account.yaml
