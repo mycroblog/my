@@ -66,7 +66,7 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     });
     // The overview says how the server runs, each number a link to its screen; it is not a copy of the menu.
     const health = within(await screen.findByRole("region", { name: "Server health" }));
-    expect(health.getByRole("link", { name: "Failed jobs" })).toHaveAttribute("href", "/admin/jobs?state=dead");
+    expect(await health.findByRole("link", { name: "Failed jobs" })).toHaveAttribute("href", "/admin/jobs?state=dead");
     expect(health.getByRole("link", { name: "Longest job wait" })).toHaveAttribute("href", "/admin/jobs");
     expect(within(screen.getByRole("main")).queryByRole("link", { name: "Jobs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Moderation" })).not.toBeInTheDocument();
