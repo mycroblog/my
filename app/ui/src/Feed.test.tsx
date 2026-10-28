@@ -34,6 +34,7 @@ function Timeline(props: Partial<FeedProps<Post>>) {
           <PostCard
             author={<strong>{post.author}</strong>}
             time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+            visibility={null}
             content={<PostContent html={serverSanitizedHtml(`<p>${post.body}</p>`)} />}
             actions={<Button size="sm">Reply</Button>}
           />
@@ -147,7 +148,12 @@ describe("Feed", () => {
     render(
       <Timeline
         renderItem={(post) => (
-          <PostCard author={post.author} time="2h" content={<input aria-label={`Reply to ${post.author}`} />} />
+          <PostCard
+            author={post.author}
+            time="2h"
+            visibility={null}
+            content={<input aria-label={`Reply to ${post.author}`} />}
+          />
         )}
       />,
     );

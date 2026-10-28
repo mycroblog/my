@@ -79,6 +79,7 @@ function Row({
         </>
       }
       time={time}
+      visibility={null}
       content={quote ?? null}
     />
   );
@@ -189,6 +190,7 @@ export const WithActions: Story = {
         </NotificationSentence>
       }
       time={time}
+      visibility={null}
       content={null}
       actions={
         <NotificationLinks>

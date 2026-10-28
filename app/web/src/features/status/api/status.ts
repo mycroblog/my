@@ -19,6 +19,9 @@ import {
 /** A status (post or boost), as the client API returns it. */
 export type Status = components["schemas"]["Status"];
 
+/** Who can see a post (ADR-0017). */
+export type Visibility = components["schemas"]["Visibility"];
+
 /** The post that a status quotes (FR-114, ADR-0069). */
 export type StatusQuote = components["schemas"]["StatusQuote"];
 

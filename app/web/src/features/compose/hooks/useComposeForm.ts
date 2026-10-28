@@ -25,12 +25,12 @@ import {
 import { type Draft, isEmptyDraft } from "./draftStore";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
-import { countCharacters, defaultVisibility, domainMentions, postedVisibility, visibilities } from "./policy";
+import { countCharacters, defaultVisibility, domainMentions, postedVisibility } from "./policy";
 import { rememberTags } from "./recentTags";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
 import { useUnreachedMentions } from "./useUnreachedMentions";
-import { visibilityLabel } from "./visibilityMessages";
+import { visibilities, visibilityLabel } from "./visibilityMessages";
 
 /** The key of every post mutation, so that the outbox can read their state (useMutationState). */
 const createStatusMutationKey = ["compose", "createStatus"] as const;

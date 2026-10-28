@@ -122,6 +122,8 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
           {view.time.relative}
         </time>
       }
+      // A notification is not a post; the post it is about is quoted in the content.
+      visibility={null}
       content={
         view.post !== null ? (
           <PostQuote post={view.post} />
