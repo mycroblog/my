@@ -80,6 +80,19 @@ export function unicodeEmojiSections(unicode: UnicodeEmojiSet, t: Translate): Em
   }));
 }
 
+/**
+ * One section without emoji per group of the Unicode emoji, while they load: the picker shows their buttons (disabled)
+ * at once, so that its toolbar does not change shape when the emoji arrive.
+ */
+export function loadingUnicodeEmojiSections(t: Translate): EmojiPickerSection[] {
+  return (Object.keys(groupHeadings) as UnicodeGroupId[]).map((id) => ({
+    id: `unicode:${id}`,
+    heading: t(groupHeadings[id]),
+    icon: id,
+    emojis: [],
+  }));
+}
+
 /** The words of the picker, with the accessible name of its grid. */
 export function pickerLabels(grid: string, t: Translate): EmojiPickerLabels {
   return {
@@ -89,6 +102,7 @@ export function pickerLabels(grid: string, t: Translate): EmojiPickerLabels {
     results: t("client:emoji.picker.results"),
     resultCount: (count) => t("client:emoji.picker.result_count", { count }),
     empty: t("client:emoji.picker.empty"),
+    loading: t("client:emoji.picker.loading"),
   };
 }
 

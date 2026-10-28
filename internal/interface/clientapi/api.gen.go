@@ -4093,6 +4093,24 @@ func (e ListAdminAccountsParamsOrigin) Valid() bool {
 	}
 }
 
+// Defines values for ListReportsParamsOrder.
+const (
+	ListReportsParamsOrderNewest ListReportsParamsOrder = "newest"
+	ListReportsParamsOrderOldest ListReportsParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListReportsParamsOrder enum.
+func (e ListReportsParamsOrder) Valid() bool {
+	switch e {
+	case ListReportsParamsOrderNewest:
+		return true
+	case ListReportsParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
 // AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
@@ -4944,6 +4962,10 @@ type AdminBrands struct {
 
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
+	// OldestOpenReportFiledAt When the open report that has waited longest was filed; omitted when no report is open.
+	// Needs `manage_reports`.
+	OldestOpenReportFiledAt *time.Time `json:"oldest_open_report_filed_at,omitempty"`
+
 	// OpenReports The reports that are open. Needs `manage_reports`.
 	OpenReports *int64 `json:"open_reports,omitempty"`
 
@@ -11395,6 +11417,11 @@ type Status struct {
 	// Mentions The accounts the text mentions.
 	Mentions []StatusMention `json:"mentions"`
 
+	// OmittedMediaCount The number of media attachments of a remote status that the server left out: it keeps
+	// the first four attachments of a remote post. Clients show that there are more and link
+	// to `url` (or `uri`). Omitted when none were left out.
+	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
+
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
@@ -13306,12 +13333,27 @@ type ListReportsParams struct {
 	// State Keep only the reports in this state; omitted keeps both.
 	State *AdminReportState `form:"state,omitempty" json:"state,omitempty"`
 
+	// Category Keep only the reports of this category; omitted keeps every category.
+	Category *ReportCategory `form:"category,omitempty" json:"category,omitempty"`
+
+	// Assignee Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
+	// other value is a `400`.
+	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
+	// report that has waited longest first. The cursor continues the page in the same order.
+	Order *ListReportsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListReportsParamsOrder defines parameters for ListReports.
+type ListReportsParamsOrder string
 
 // ListInstanceRulesParams defines parameters for ListInstanceRules.
 type ListInstanceRulesParams struct {
@@ -19036,6 +19078,45 @@ func (siw *ServerInterfaceWrapper) ListReports(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "order", r.URL.Query(), &params.Order, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "order"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
 		}
 		return
 	}

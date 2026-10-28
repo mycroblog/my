@@ -1136,15 +1136,21 @@ SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.co
   r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
 FROM reports r JOIN report_states s ON s.report_id = r.id
 WHERE ($1::text = '' OR s.state = $1::text)
-  AND ($2::uuid IS NULL OR r.id < $2::uuid)
+  AND ($2::text = '' OR r.category = $2::text)
+  AND ($3::uuid IS NULL OR s.assignee_user_id = $3::uuid)
+  AND (NOT $4::boolean OR s.assignee_user_id IS NULL)
+  AND ($5::uuid IS NULL OR r.id < $5::uuid)
 ORDER BY r.id DESC
-LIMIT $3
+LIMIT $6
 `
 
 type ListReportsParams struct {
-	State  string
-	Before *string
-	Lim    int32
+	State      string
+	Category   string
+	Assignee   *string
+	Unassigned bool
+	Before     *string
+	Lim        int32
 }
 
 type ListReportsRow struct {
@@ -1162,10 +1168,18 @@ type ListReportsRow struct {
 	Since             time.Time
 }
 
-// ListReports returns the reports in a state (empty for any) with their state, newest first,
-// those before the report before (empty for the first page).
+// ListReports returns the reports with their state, newest first: those in a state (empty for
+// any), of a category (empty for any), assigned to a user (NULL for anyone) or to nobody when
+// unassigned, and those before the report before (NULL for the first page).
 func (q *Queries) ListReports(ctx context.Context, arg ListReportsParams) ([]ListReportsRow, error) {
-	rows, err := q.db.Query(ctx, listReports, arg.State, arg.Before, arg.Lim)
+	rows, err := q.db.Query(ctx, listReports,
+		arg.State,
+		arg.Category,
+		arg.Assignee,
+		arg.Unassigned,
+		arg.Before,
+		arg.Lim,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1298,6 +1312,85 @@ func (q *Queries) ListReportsOfTarget(ctx context.Context, targetAccountID strin
 	return items, nil
 }
 
+const listReportsOldestFirst = `-- name: ListReportsOldestFirst :many
+SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
+  r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
+FROM reports r JOIN report_states s ON s.report_id = r.id
+WHERE ($1::text = '' OR s.state = $1::text)
+  AND ($2::text = '' OR r.category = $2::text)
+  AND ($3::uuid IS NULL OR s.assignee_user_id = $3::uuid)
+  AND (NOT $4::boolean OR s.assignee_user_id IS NULL)
+  AND ($5::uuid IS NULL OR r.id > $5::uuid)
+ORDER BY r.id
+LIMIT $6
+`
+
+type ListReportsOldestFirstParams struct {
+	State      string
+	Category   string
+	Assignee   *string
+	Unassigned bool
+	After      *string
+	Lim        int32
+}
+
+type ListReportsOldestFirstRow struct {
+	ID                string
+	Uri               *string
+	ReporterAccountID string
+	TargetAccountID   string
+	Category          string
+	Comment           string
+	Forwarded         bool
+	FiledAt           time.Time
+	State             string
+	Outcome           *string
+	AssigneeUserID    *string
+	Since             time.Time
+}
+
+// ListReportsOldestFirst returns the reports that ListReports selects, oldest first, those after
+// the report after (NULL for the first page).
+func (q *Queries) ListReportsOldestFirst(ctx context.Context, arg ListReportsOldestFirstParams) ([]ListReportsOldestFirstRow, error) {
+	rows, err := q.db.Query(ctx, listReportsOldestFirst,
+		arg.State,
+		arg.Category,
+		arg.Assignee,
+		arg.Unassigned,
+		arg.After,
+		arg.Lim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReportsOldestFirstRow{}
+	for rows.Next() {
+		var i ListReportsOldestFirstRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.ReporterAccountID,
+			&i.TargetAccountID,
+			&i.Category,
+			&i.Comment,
+			&i.Forwarded,
+			&i.FiledAt,
+			&i.State,
+			&i.Outcome,
+			&i.AssigneeUserID,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockModerationTarget = `-- name: LockModerationTarget :exec
 
 SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
@@ -1309,6 +1402,21 @@ SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
 func (q *Queries) LockModerationTarget(ctx context.Context, lockKey string) error {
 	_, err := q.db.Exec(ctx, lockModerationTarget, lockKey)
 	return err
+}
+
+const oldestReportFiledAt = `-- name: OldestReportFiledAt :one
+SELECT r.filed_at FROM report_states s JOIN reports r ON r.id = s.report_id
+WHERE s.state = $1
+ORDER BY s.report_id
+LIMIT 1
+`
+
+// OldestReportFiledAt returns when the oldest report in a state was filed; no row when none is.
+func (q *Queries) OldestReportFiledAt(ctx context.Context, state string) (time.Time, error) {
+	row := q.db.QueryRow(ctx, oldestReportFiledAt, state)
+	var filed_at time.Time
+	err := row.Scan(&filed_at)
+	return filed_at, err
 }
 
 const upsertReportState = `-- name: UpsertReportState :exec

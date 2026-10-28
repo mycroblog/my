@@ -13,6 +13,7 @@ import {
   customEmojiSections,
   emojisOfKeys,
   frequentSection,
+  loadingUnicodeEmojiSections,
   pickerLabels,
   skinToneLabels,
   unicodeEmojiSections,
@@ -48,15 +49,20 @@ export function useEmojiPickerContent(grid: string): EmojiPickerContent {
   const custom = data?.items ?? [];
   const unicodeSet = unicode.status === "ready" ? unicode.emoji : undefined;
   const frequent = emojisOfKeys(frequentKeys.length > 0 ? frequentKeys : defaultFrequentEmojis, custom, unicodeSet);
+  const status = unicode.status === "ready" || unicode.status === "error" ? unicode.status : "loading";
   return {
-    status: unicode.status === "ready" || unicode.status === "error" ? unicode.status : "loading",
+    status,
     preload: () => {
       preloadUnicodeEmoji(locale);
     },
     sections: [
       frequentSection(frequent, t),
       ...customEmojiSections(custom, t),
-      ...(unicodeSet === undefined ? [] : unicodeEmojiSections(unicodeSet, t)),
+      ...(unicodeSet === undefined
+        ? status === "loading"
+          ? loadingUnicodeEmojiSections(t)
+          : []
+        : unicodeEmojiSections(unicodeSet, t)),
     ],
     labels: { ...pickerLabels(grid, t), ...skinToneLabels(t) },
     skinTone,

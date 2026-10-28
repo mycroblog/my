@@ -1,3 +1,10 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**", "app/web/src/features/supporters/**"]
+seed: [{"my": ["admin", "role", "grant", "yuki", "translator"]}, {"api": "yuki", "method": "PUT", "path": "/preferences/supporter_listing", "body": {"listed": false}}]
+---
+
 ## バッジとサポーターの一覧（`/settings/badges`）
 
 ロールのバッジ（ADR-0071）とサポーターの一覧への掲載（ADR-0071 §4）を選ぶ設定の画面。どちらも、変えるとすぐ保存する。

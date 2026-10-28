@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "hana"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+---
+
 ## 管理のトップ（`/admin`）
 
 管理者が、サーバーがうまく動いているかを開いてすぐ知る画面（ADR-0058、[§14](../14-admin.md)）。

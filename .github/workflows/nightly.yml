@@ -77,7 +77,8 @@ jobs:
       security-events: write
 
   # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0117 §4): the demo
-  # scenario signs in, a second run of the seed adds nothing, and a password reset arrives in Mailpit. The specs need
+  # scenario signs in, a second run of the seed adds nothing, a password reset arrives in Mailpit, and a reply reaches
+  # the Service Worker as a Web Push notification through the fake push service (ADR-0118 §4). The specs need
   # the test build of `bin/my` (`GO_TAGS=e2e_fakes`) and Mailpit, so they run here every night rather than in the
   # merge queue. The demo server has Web Push on: `node e2e/server.ts demo` starts the test build's fake push service
   # (`my dev push-service`) with the certificate that start-mailpit's scripts/mailpit-cert.sh writes, here and in the
@@ -129,9 +130,9 @@ jobs:
   # The L4 task tests (ADR-0110 §7, ADR-0114; `scripts/task.sh web:l4`, app/web/l4/run.ts): Claude Code, run
   # non-interactively, does each task of the screens' L1 files through the Playwright MCP server, which gives it ARIA
   # snapshots and no screenshots, against the demo server (ADR-0117 §4: the test build of `bin/my` with the demo
-  # scenario), signed in as the person of the scenario that app/web/l4/screens.ts names for the screen. Mailpit runs in
+  # scenario), signed in as the person of the scenario that the front matter of the screen's L1 file names. Mailpit runs in
   # the job (.github/actions/start-mailpit), and a task that reads email reads it in Mailpit's web UI, whose steps are
-  # recorded apart from the lostness. A scheduled run measures the screens whose L1 file or context-map paths changed
+  # recorded apart from the lostness. A scheduled run measures the screens whose L1 file or the paths of its front matter changed
   # since the last successful run; a run by hand measures the `screens` input, or every screen.
   #
   # Per-night cap: at most 10 tasks a night (CAP below), taking the selected screens in turn, each a Claude Code session

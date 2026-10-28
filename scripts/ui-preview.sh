@@ -14,19 +14,20 @@
 #   scripts/ui-preview.sh deploy-pr <build dir> <pr> [<changed files>]
 #                                                               publish the Preview pr-<pr>; writes <work>/comment.md
 #   scripts/ui-preview.sh deploy-main <build dir>               publish the build as the Worker itself (main)
-#   scripts/ui-preview.sh delete-pr <pr>                        delete the Preview pr-<pr>; writes <work>/comment.md
-#   scripts/ui-preview.sh comment <pr> <body file> [update]     create (unless `update`) or update the preview comment
+#   scripts/ui-preview.sh cleanup                               delete the Previews pr-<number> of closed pull requests
+#   scripts/ui-preview.sh comment <pr> <body file>              create or update the preview comment
 #   scripts/ui-preview.sh install                               fetch the pinned wrangler into the npm cache
 #
-# Environment: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (wrangler); GH_TOKEN and GITHUB_REPOSITORY (comment);
-# UI_PREVIEW_WORK, the work dir of deploy-* and delete-pr (default .tmp/ui-preview); UI_PREVIEW_METHOD, `previews`
+# Environment: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (wrangler, and the Cloudflare API of `cleanup`);
+# GH_TOKEN and GITHUB_REPOSITORY (comment, cleanup); UI_PREVIEW_WORK, the work dir of deploy-* and cleanup (default .tmp/ui-preview); UI_PREVIEW_METHOD, `previews`
 # (default: Workers Previews) or `versions` (a version with the preview alias pr-<pr>, for when Previews do not take
 # an assets-only Worker); HEAD_SHA, the commit the comment names.
 #
 # DRY_RUN=1 runs everything that needs no account: stage, stories, `wrangler deploy --dry-run` on the staged site
 # (which checks the config and the assets), and the comment body, with https://pr-<pr>-my-ui-preview.example.workers.dev
 # as the Preview URL; main's index.json comes from MAIN_INDEX_DIR (a build dir) if set, else main counts as empty.
-# It prints the wrangler and gh commands it would run instead of running them:
+# It prints the wrangler and gh commands it would run instead of running them. `cleanup` lists the Previews and checks
+# the pull requests (both read-only) and prints each `wrangler preview delete` instead of running it:
 #
 #   scripts/task.sh web:storybook-build
 #   DRY_RUN=1 scripts/ui-preview.sh deploy-pr app/web/storybook-static 123 && cat .tmp/ui-preview/comment.md
@@ -57,7 +58,7 @@ die() {
 }
 
 usage() {
-  sed -n '11,19p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '11,20p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -230,37 +231,50 @@ deploy_main() {
   wrangler deploy --message "main"
 }
 
-delete_pr() {
-  local pr="$1"
-  check_pr "$pr"
+# cleanup deletes the Preview pr-<number> of each closed or merged pull request. The Previews come from the Cloudflare
+# API (wrangler has no list command) and the state of each pull request from the GitHub API, so a Preview whose pull
+# request is open, or is not one, stays. The versions method has nothing to delete: a preview alias cannot be deleted.
+cleanup() {
+  local repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}" worker page=1 body page_names names="" name pr state deleted=0
+  [[ "$method" == previews ]] || {
+    echo "the versions method keeps the preview aliases: nothing to clean up" >&2
+    return 0
+  }
+  worker="$(grep -v '^[[:space:]]*//' "$config" | jq -r .name)"
+  # 100 Previews a page; the cap bounds a loop on an API that ignores the page.
+  while ((page <= 50)); do
+    body="$(curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is not set}" \
+      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is not set}/workers/workers/$worker/previews?per_page=100&page=$page")"
+    page_names="$(jq -r '.result[]?.name // empty' <<<"$body")"
+    [[ -n "$page_names" ]] || break
+    names+="$page_names"$'\n'
+    [[ "$(wc -l <<<"$page_names")" -ge 100 ]] || break
+    page=$((page + 1))
+  done
   rm -rf "$work"
-  # The config names ./site; an empty one keeps wrangler from looking for the build.
   mkdir -p "$work/site"
   cp "$config" "$work/wrangler.jsonc"
-  local note="The preview of this pull request was deleted when it closed."
-  case "$method" in
-    # A Preview that does not exist (the build never deployed) is not an error.
-    previews) wrangler preview delete --name "pr-$pr" --skip-confirmation || echo "no Preview pr-$pr to delete" >&2 ;;
-    # A preview alias cannot be deleted; the next upload with the same alias replaces it.
-    versions)
-      echo "the versions method keeps the preview alias pr-$pr" >&2
-      note="This pull request closed: its preview is no longer updated."
-      ;;
-    *) die "UI_PREVIEW_METHOD must be previews or versions, not $method" ;;
-  esac
-  {
-    echo "$marker"
-    echo "### UI preview"
-    echo
-    echo "$note"
-  } >"$work/comment.md"
-  echo "wrote $work/comment.md" >&2
+  while IFS= read -r name; do
+    [[ "$name" =~ ^pr-([1-9][0-9]{0,8})$ ]] || continue
+    pr="${BASH_REMATCH[1]}"
+    if ! state="$(gh api "repos/$repo/pulls/$pr" --jq .state)"; then
+      echo "ui-preview: cannot read pull request $pr; keeping $name" >&2
+      continue
+    fi
+    if [[ "$state" == closed ]]; then
+      echo "deleting $name: pull request $pr is closed" >&2
+      wrangler preview delete --name "$name" --skip-confirmation || echo "ui-preview: could not delete $name" >&2
+      deleted=$((deleted + 1))
+    else
+      echo "keeping $name: pull request $pr is $state" >&2
+    fi
+  done < <(sort -u <<<"$names")
+  echo "closed pull requests with a Preview: $deleted" >&2
 }
 
-# comment PR BODY [update] creates the preview comment of the pull request, or updates the one this workflow wrote
-# before; with `update`, only updates it.
+# comment PR BODY creates the preview comment of the pull request, or updates the one this workflow wrote before.
 comment() {
-  local pr="$1" body="$2" only_update="${3:-}" repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}" id
+  local pr="$1" body="$2" repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}" id
   check_pr "$pr"
   [[ -f "$body" ]] || die "no comment body: $body"
   if [[ -n "$dry_run" ]]; then
@@ -271,7 +285,7 @@ comment() {
     --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)"
   if [[ -n "$id" ]]; then
     gh api --method PATCH "repos/$repo/issues/comments/$id" -F "body=@$body" --silent
-  elif [[ "$only_update" != update ]]; then
+  else
     gh api --method POST "repos/$repo/issues/$pr/comments" -F "body=@$body" --silent
   fi
 }
@@ -283,8 +297,8 @@ case "$cmd" in
   stories) [[ $# -ge 3 && $# -le 4 ]] || usage; stories "$@" ;;
   deploy-pr) [[ $# -ge 2 && $# -le 3 ]] || usage; deploy_pr "$@" ;;
   deploy-main) [[ $# -eq 1 ]] || usage; deploy_main "$@" ;;
-  delete-pr) [[ $# -eq 1 ]] || usage; delete_pr "$@" ;;
-  comment) [[ $# -ge 2 && $# -le 3 ]] || usage; comment "$@" ;;
+  cleanup) [[ $# -eq 0 ]] || usage; cleanup ;;
+  comment) [[ $# -eq 2 ]] || usage; comment "$@" ;;
   # Run before the steps that hold the token, so that the package's install scripts never see it.
   install) [[ $# -eq 0 ]] || usage; npx --yes "wrangler@$wrangler_version" --version ;;
   *) usage ;;

@@ -1,3 +1,9 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+---
+
 ## 表示・投稿・タイムライン（`/settings/preferences`）
 
 アプリの表示、ナビゲーションの並び、新しい投稿の既定値、タイムラインの出し方を選ぶ設定の画面。どの操作も、変えるとすぐ保存する。

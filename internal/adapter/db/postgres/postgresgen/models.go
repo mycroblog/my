@@ -948,9 +948,10 @@ type RemoteMedium struct {
 }
 
 type RemoteStatusRevision struct {
-	RevisionID        string
-	ActivityUri       *string
-	HtmlPolicyVersion int32
+	RevisionID             string
+	ActivityUri            *string
+	HtmlPolicyVersion      int32
+	OmittedAttachmentCount int32
 }
 
 type Report struct {

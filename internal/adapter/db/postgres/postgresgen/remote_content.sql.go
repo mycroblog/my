@@ -297,14 +297,19 @@ func (q *Queries) GetRemoteMediaCache(ctx context.Context, url string) (RemoteMe
 }
 
 const getRemoteStatusRevision = `-- name: GetRemoteStatusRevision :one
-SELECT revision_id, activity_uri, html_policy_version FROM remote_status_revisions
+SELECT revision_id, activity_uri, html_policy_version, omitted_attachment_count FROM remote_status_revisions
 WHERE revision_id = $1::uuid
 `
 
 func (q *Queries) GetRemoteStatusRevision(ctx context.Context, revisionID string) (RemoteStatusRevision, error) {
 	row := q.db.QueryRow(ctx, getRemoteStatusRevision, revisionID)
 	var i RemoteStatusRevision
-	err := row.Scan(&i.RevisionID, &i.ActivityUri, &i.HtmlPolicyVersion)
+	err := row.Scan(
+		&i.RevisionID,
+		&i.ActivityUri,
+		&i.HtmlPolicyVersion,
+		&i.OmittedAttachmentCount,
+	)
 	return i, err
 }
 
@@ -567,21 +572,27 @@ func (q *Queries) InsertRemoteMediaCache(ctx context.Context, arg InsertRemoteMe
 
 const insertRemoteStatusRevision = `-- name: InsertRemoteStatusRevision :exec
 
-INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version)
-VALUES ($1, $2, $3)
+INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version, omitted_attachment_count)
+VALUES ($1, $2, $3, $4)
 `
 
 type InsertRemoteStatusRevisionParams struct {
-	RevisionID        string
-	ActivityUri       *string
-	HtmlPolicyVersion int32
+	RevisionID             string
+	ActivityUri            *string
+	HtmlPolicyVersion      int32
+	OmittedAttachmentCount int32
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
 //
 // Queries of remote statuses and media (data-model section 4.4), owned by internal/app/content.
 func (q *Queries) InsertRemoteStatusRevision(ctx context.Context, arg InsertRemoteStatusRevisionParams) error {
-	_, err := q.db.Exec(ctx, insertRemoteStatusRevision, arg.RevisionID, arg.ActivityUri, arg.HtmlPolicyVersion)
+	_, err := q.db.Exec(ctx, insertRemoteStatusRevision,
+		arg.RevisionID,
+		arg.ActivityUri,
+		arg.HtmlPolicyVersion,
+		arg.OmittedAttachmentCount,
+	)
 	return err
 }
 

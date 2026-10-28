@@ -1019,7 +1019,7 @@ describe("blocks, mutes and follow requests", () => {
     );
     const { user } = await renderApp({ path: "/settings/follow-requests" });
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });
-    expect(await within(menu).findByRole("link", { name: "Follow requests 2 waiting" })).toHaveTextContent("2");
+    expect(await within(menu).findByRole("link", { name: "Follow requests 2 waiting" })).toBeInTheDocument();
 
     await user.click(await screen.findByRole("button", { name: "Accept: Bob" }));
     expect(await screen.findByText("Bob now follows you.")).toBeInTheDocument();

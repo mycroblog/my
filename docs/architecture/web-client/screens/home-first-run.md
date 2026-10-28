@@ -1,3 +1,10 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/home.tsx"]
+unavailable: {"おすすめのアカウントを 1 人フォローする": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "おすすめのアカウントのプロフィールを開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、プロフィールの設定を開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、最初の投稿を書き始める": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "もっと多くの人を探す（アカウントの検索を開く）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストを閉じる": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
+---
+
 ## 始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）
 
 ホームのタイムライン（FR-201）のうち、始めたばかりの利用者に出す部分。タイムラインの空の状態はそのままにし、その上に「始め方」のチェックリストと、
