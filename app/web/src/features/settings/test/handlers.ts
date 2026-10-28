@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the settings feature (web-client/README.md §7): the user's own profile, its badges, and
-// preferences, the automatic deletion of old posts, passkeys, the user's own OAuth apps, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
+// preferences, the automatic deletion of old posts and its estimate, passkeys, the user's own OAuth apps, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
 // data, the CSV exports and imports, deleting the account, and the user's own invites. Unblocking and unmuting are the account
 // actions of the profile feature's handlers.
 import { http, HttpResponse } from "msw";
-import { preferencesFixture, relationshipFixture, type Schemas, viewerFixture } from "../../../test/fixtures";
+import {
+  preferencesFixture,
+  relationshipFixture,
+  type Schemas,
+  viewerFixture,
+  viewerStatusFixture,
+} from "../../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../../test/msw/http";
 
 /** The VAPID public key of an instance that sends Web Push (Instance.push_server_key): the example key of RFC 8291. */
@@ -40,6 +46,72 @@ export const autoDeletePolicyFixture: Schemas["AutoDeletePolicy"] = {
   keep_min_boosts: 0,
   keep_min_favourites: 0,
 };
+
+/** One of the viewer's posts that the fake estimate of the automatic deletion counts. */
+type AutoDeleteCandidate = {
+  id: string;
+  ageDays: number;
+  visibility: Schemas["Visibility"];
+  pinned?: boolean;
+  bookmarked?: boolean;
+  favourited?: boolean;
+  media?: boolean;
+  poll?: boolean;
+  boosts?: number;
+  favourites?: number;
+};
+
+/** The viewer's posts of the fake estimate, oldest first: one for each condition of a policy, and a fresh one. */
+const autoDeleteCandidates: readonly AutoDeleteCandidate[] = [
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad01", ageDays: 400, visibility: "public" },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad02", ageDays: 300, visibility: "public", pinned: true },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad03", ageDays: 200, visibility: "unlisted", bookmarked: true },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad04", ageDays: 120, visibility: "public", favourited: true },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad05", ageDays: 100, visibility: "public", media: true },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad06", ageDays: 80, visibility: "local", poll: true },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad07", ageDays: 60, visibility: "private" },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad08", ageDays: 45, visibility: "direct" },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad09", ageDays: 40, visibility: "public", boosts: 5 },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad0a", ageDays: 35, visibility: "public", favourites: 10 },
+  { id: "0192f0c4-7a8e-7000-8000-00000000ad0b", ageDays: 1, visibility: "public" },
+];
+
+/** The time the fake estimate counts the ages of posts from. */
+const autoDeleteNow = Date.parse("2026-10-20T00:00:00Z");
+
+/**
+ * What POST /preferences/auto_delete/preview answers for `policy` over the fake posts, as the server counts it: the
+ * posts older than the age that no exception keeps, the oldest three of them as examples.
+ */
+export function autoDeletePreviewOf(policy: Schemas["AutoDeletePolicy"]): Schemas["AutoDeletePreview"] {
+  const thresholdKeeps = (threshold: number, count = 0) => threshold > 0 && count >= threshold;
+  const deleted = autoDeleteCandidates.filter(
+    (post) =>
+      post.ageDays > policy.min_age_days &&
+      !(policy.keep_pinned && post.pinned === true) &&
+      !(policy.keep_bookmarked && post.bookmarked === true) &&
+      !(policy.keep_favourited && post.favourited === true) &&
+      !(policy.keep_media && post.media === true) &&
+      !(policy.keep_polls && post.poll === true) &&
+      !policy.keep_visibilities.includes(post.visibility) &&
+      !thresholdKeeps(policy.keep_min_boosts, post.boosts) &&
+      !thresholdKeeps(policy.keep_min_favourites, post.favourites),
+  );
+  return {
+    count: deleted.length,
+    more: false,
+    examples: deleted.slice(0, 3).map((post) =>
+      viewerStatusFixture({
+        id: post.id,
+        uri: `https://my.example/ap/statuses/${post.id}`,
+        url: `https://my.example/@alice/status/${post.id}`,
+        content: `<p>A post from ${String(post.ageDays)} days ago</p>`,
+        created_at: new Date(autoDeleteNow - post.ageDays * 86_400_000).toISOString(),
+        visibility: post.visibility,
+      }),
+    ),
+  };
+}
 
 /** The options of a confirmation with a passkey, which test/webauthn's browser answers. */
 const passkeyConfirmationFixture = {
@@ -154,6 +226,11 @@ export const handlers = [
   http.put(`${apiBase}/preferences/auto_delete`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
     return withViewer(request, () => HttpResponse.json(body));
+  }),
+  // operationId previewAutoDeletePolicy: the estimate over the fake posts of autoDeletePreviewOf.
+  http.post(`${apiBase}/preferences/auto_delete/preview`, async ({ request }) => {
+    const body = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
+    return withViewer(request, () => HttpResponse.json(autoDeletePreviewOf(body)));
   }),
   // operationId listPasskeys: no passkeys; the tests that add or remove one play the server themselves.
   http.get(`${apiBase}/passkeys`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),

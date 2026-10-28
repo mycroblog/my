@@ -13,6 +13,14 @@ export function autoDeletePolicyQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/preferences/auto_delete");
 }
 
+/**
+ * What a draft policy, saved or not, would delete now (POST /preferences/auto_delete/preview): the count, capped by
+ * the server (`more`), and the oldest posts. The key holds the whole policy, so each combination is counted once.
+ */
+export function autoDeletePreviewQueryOptions(api: Api, policy: AutoDeletePolicy) {
+  return api.query.queryOptions("post", "/preferences/auto_delete/preview", { body: policy });
+}
+
 /** Replaces the policy (PUT /preferences/auto_delete), as the options of useMutation. */
 export function updateAutoDeletePolicyMutation(api: Api) {
   return {

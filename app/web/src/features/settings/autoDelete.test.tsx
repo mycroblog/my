@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automatic deletion of old posts through the whole app (web-client/README.md T4): the policy the server has, editing
-// it and saving it as a whole, a failed save, and leaving with unsaved changes, with MSW playing the server.
-import { screen, waitFor } from "@testing-library/react";
+// it and saving it as a whole, the count of what the edited policy deletes, a failed save, and leaving with unsaved changes, with MSW playing the server.
+import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
 import type { Schemas } from "../../test/fixtures";
@@ -9,7 +9,7 @@ import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { sectionHeadings } from "../../test/sections";
-import { autoDeletePolicyFixture } from "./test/handlers";
+import { autoDeletePolicyFixture, autoDeletePreviewOf } from "./test/handlers";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -50,6 +50,7 @@ describe("automatic deletion of old posts", () => {
       "Keep these posts",
       "Keep posts with these visibilities",
       "Posts with many reactions",
+      "Posts these conditions delete",
     ]);
     expect(screen.getByRole("group", { name: "Keep these posts" })).toHaveAccessibleDescription(
       "Posts that match any checked item are never deleted automatically.",
@@ -94,6 +95,61 @@ describe("automatic deletion of old posts", () => {
         keep_min_boosts: 5,
       },
     ]);
+  });
+
+  test("counts what the edited conditions delete before they are saved", async () => {
+    const api = autoDeleteServer(autoDeletePolicyFixture);
+    const previews: Schemas["AutoDeletePolicy"][] = [];
+    server.use(
+      http.post(`${apiBase}/preferences/auto_delete/preview`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["AutoDeletePolicy"];
+        previews.push(body);
+        return HttpResponse.json(autoDeletePreviewOf(body));
+      }),
+    );
+    const { user } = await renderApp({ path: "/settings/auto-delete" });
+    const section = await screen.findByRole("region", { name: "Posts these conditions delete" });
+    const count = () => within(section).getByRole("status");
+    // The default policy deletes the six old posts that pins, bookmarks, favourites and direct posts do not keep.
+    await waitFor(() => {
+      expect(count()).toHaveTextContent(/Posts to delete now\s*6$/);
+    });
+    expect(within(section).getAllByRole("group", { name: "Post to delete" })).toHaveLength(3);
+    expect(within(section).getByRole("list", { name: "The oldest of them" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "With images or other media" }));
+    await waitFor(() => {
+      expect(count()).toHaveTextContent(/Posts to delete now\s*5$/);
+    });
+    await user.click(screen.getByRole("button", { name: /Keep posts boosted at least/ }));
+    await user.click(await screen.findByRole("option", { name: "5 times" }));
+    await waitFor(() => {
+      expect(count()).toHaveTextContent(/Posts to delete now\s*4$/);
+    });
+    // Every condition of the draft goes to the server, turned on whether or not the form is, and nothing is saved.
+    expect(previews.at(-1)).toEqual({
+      ...autoDeletePolicyFixture,
+      enabled: true,
+      keep_media: true,
+      keep_min_boosts: 5,
+    });
+    expect(api.saves).toEqual([]);
+
+    // Turning the policy on asks for no new count.
+    const asked = previews.length;
+    await user.click(screen.getByRole("checkbox", { name: /Delete old posts automatically/ }));
+    expect(previews).toHaveLength(asked);
+  });
+
+  test("says when the posts could not be counted", async () => {
+    autoDeleteServer(autoDeletePolicyFixture);
+    server.use(
+      http.post(`${apiBase}/preferences/auto_delete/preview`, () =>
+        problem(500, "about:blank", "Internal Server Error"),
+      ),
+    );
+    await renderApp({ path: "/settings/auto-delete" });
+    expect(await screen.findByText(/^The posts could not be counted: /)).toBeVisible();
   });
 
   test("offers a saved age that is not among the choices", async () => {

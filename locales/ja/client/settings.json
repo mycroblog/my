@@ -2291,6 +2291,38 @@
     "defaultMessage": "反応の多い投稿",
     "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
   },
+  "settings.auto_delete.preview": {
+    "defaultMessage": "この条件で削除される投稿",
+    "description": "Heading of the section of the auto-delete settings with how many posts the conditions above would delete now, before saving."
+  },
+  "settings.auto_delete.preview.description": {
+    "defaultMessage": "上の条件で、今の時点で数えています。保存する前でも、自動削除がオフでも数えます。",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.count": {
+    "defaultMessage": "今削除される投稿",
+    "description": "Label of the number of posts that the conditions of the automatic deletion would delete now."
+  },
+  "settings.auto_delete.preview.value": {
+    "defaultMessage": "{more, select, true {{count, number}+} other {{count, number}}}",
+    "description": "The number of posts that the automatic deletion would delete now; with more, the count stopped at its limit and there are more."
+  },
+  "settings.auto_delete.preview.counting": {
+    "defaultMessage": "数えています…",
+    "description": "Value of the estimate of the automatic deletion while the server counts the posts."
+  },
+  "settings.auto_delete.preview.examples": {
+    "defaultMessage": "そのうち古いもの",
+    "description": "Heading of the list of example posts that the automatic deletion would delete, oldest first."
+  },
+  "settings.auto_delete.preview.example": {
+    "defaultMessage": "削除される投稿",
+    "description": "Accessible name of the box of an example post that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.failed": {
+    "defaultMessage": "投稿を数えられませんでした：{reason}",
+    "description": "Error in place of the estimate of the automatic deletion. {reason} is the localized reason."
+  },
   "settings.security.title": {
     "defaultMessage": "セキュリティ",
     "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."
