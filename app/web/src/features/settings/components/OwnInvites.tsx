@@ -27,7 +27,7 @@ import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterLift } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, DetailSection, RecordList } from "../../moderation";
+import { DateTime, Section, RecordList } from "../../moderation";
 import type { OwnInvite, OwnInviteLimits, OwnInviteState } from "../api/invites";
 import {
   type RevokeOwnInvite,
@@ -50,12 +50,12 @@ export function OwnInvites() {
   return (
     <Stack gap="8">
       <Hint size="inherit">{t("client:settings.invites.description")}</Hint>
-      <DetailSection title={t("client:settings.invites.new.title")}>
+      <Section surface="card" title={t("client:settings.invites.new.title")}>
         <NewInvite />
-      </DetailSection>
-      <DetailSection title={t("client:settings.invites.list.title")}>
+      </Section>
+      <Section surface="card" title={t("client:settings.invites.list.title")}>
         <InviteList />
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }

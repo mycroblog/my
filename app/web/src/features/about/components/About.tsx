@@ -6,15 +6,14 @@ import {
   Cluster,
   EmptyState,
   ExternalLink,
-  Heading,
   Hint,
   Link,
   RegionError,
+  Section,
   Spinner,
   Stack,
   Text,
 } from "@my/ui";
-import { type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
@@ -67,19 +66,6 @@ export function About() {
       {statusPageUrl !== undefined && <StatusPage url={statusPageUrl} />}
       {about.sourceUrl !== undefined && <SourceCode url={about.sourceUrl} />}
       <Licenses />
-    </Stack>
-  );
-}
-
-/** A section of the page: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
     </Stack>
   );
 }

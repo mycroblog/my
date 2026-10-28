@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Hint, RegionError, Spinner, Stack } from "@my/ui";
 import { useT } from "../../../lib/i18n";
-import { DetailSection, MissingPermission } from "../../moderation";
+import { Section, MissingPermission } from "../../moderation";
 import type { FinanceViewerSettings } from "../api/costs";
 import { useFinanceAccess, useFinanceCosts } from "../hooks/useFinanceCosts";
 import { useFinanceIncome } from "../hooks/useIncome";
@@ -44,7 +44,7 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
       )}
       <CostTotalsPanel {...panel}>
         <Stack gap="8">
-          <DetailSection title={t("client:finance.costs.title")}>
+          <Section surface="card" title={t("client:finance.costs.title")}>
             {costs.status === "loading" && (
               <div aria-busy="true">
                 <Spinner label={t("client:finance.loading")} />
@@ -60,10 +60,10 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
               />
             )}
             {costs.status === "ready" && <CostTotalsView totals={costs.totals} breakdown items={costs.items} />}
-          </DetailSection>
-          <DetailSection title={t("client:income.title")}>
+          </Section>
+          <Section surface="card" title={t("client:income.title")}>
             <IncomeState income={income} />
-          </DetailSection>
+          </Section>
         </Stack>
       </CostTotalsPanel>
     </Stack>

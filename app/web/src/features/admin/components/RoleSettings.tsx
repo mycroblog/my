@@ -34,7 +34,7 @@ import {
 import { type SubmitEvent, useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DetailSection, type Permission, RecordList, RequirePermission } from "../../moderation";
+import { Section, type Permission, RecordList, RequirePermission } from "../../moderation";
 import {
   adminRoleKey,
   type AdminRole,
@@ -126,12 +126,12 @@ function RoleScreen() {
   const { rows, rights } = useRoleSettings();
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.roles.new.title")}>
+      <Section surface="card" title={t("client:admin.roles.new.title")}>
         <NewRoleForm rights={rights} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.roles.list.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.roles.list.title")}>
         <RoleList rows={rows} rights={rights} />
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }

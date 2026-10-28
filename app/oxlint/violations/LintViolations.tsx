@@ -14,6 +14,7 @@ import { Route as IndexRoute } from "../../../routes/index"; // expect: boundari
 import { client } from "../../../lib/api/client"; // expect: eslint(no-restricted-imports) S1
 import { createClient } from "@mycroblog/mykit"; // expect: eslint(no-restricted-imports) S1
 import type { components } from "@mycroblog/mykit";
+import { Heading, Stack } from "@my/ui";
 
 let renders = 0;
 const CountContext = createContext(0);
@@ -175,5 +176,14 @@ export function Styled({ size }: { size: string }) {
       <svg /> {/* expect: restrict(svg) */}
       <a href="https://remote.example/" target="_blank" rel="noreferrer">{size}</a> {/* expect: restrict(syntax) restrict(syntax) */}
     </div>
+  );
+}
+
+// G5
+export function Region({ title }: { title: string }) {
+  return (
+    <Stack as="section" aria-labelledby="region">
+      <Heading level={2} id="region" size="label">{title}</Heading> {/* expect: restrict(pattern) restrict(pattern) */}
+    </Stack>
   );
 }

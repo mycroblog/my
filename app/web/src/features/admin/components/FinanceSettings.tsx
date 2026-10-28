@@ -59,14 +59,7 @@ import {
   useFormatTotals,
   utcDate,
 } from "../../costs";
-import {
-  DateTime,
-  DetailSection,
-  RecordList,
-  RecordTable,
-  RequirePermission,
-  useHasPermission,
-} from "../../moderation";
+import { DateTime, Section, RecordList, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
 import { instanceQueryOptions } from "../api/documents";
 import {
   type BillingImport,
@@ -158,29 +151,29 @@ export function FinanceSettings(props: FinanceSettingsProps) {
           <Publication />
           <ViewerSettings granularity={props.granularity} basis={props.basis} today={props.today} />
         </Stack>
-        <DetailSection title={t("client:admin.finance.totals.title")}>
+        <Section surface="card" title={t("client:admin.finance.totals.title")}>
           <Card>
             <TotalsSection {...props} />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.finance.new.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.finance.new.title")}>
           <Card>
             <NewCostItemForm />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.finance.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.finance.list.title")}>
           <Card>
             <CostItemList today={props.today} />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.finance.imports.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.finance.imports.title")}>
           <Card>
             <BillingImports />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.finance.movements.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.finance.movements.title")}>
           <IncomeMovements filter={props.movements} onFilterChange={props.onMovementsChange} />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

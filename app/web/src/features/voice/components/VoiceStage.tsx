@@ -292,7 +292,7 @@ function StageGroup({ heading, size, entries, onOperate, onListen }: StageGroupP
   };
   return (
     <Stack gap="3">
-      <Heading level={2} id={headingId} size="label" tone="muted">
+      <Heading level={2} id={headingId}>
         {heading}
       </Heading>
       <StageGrid aria-labelledby={headingId} size={size}>

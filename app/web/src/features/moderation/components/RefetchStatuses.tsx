@@ -2,7 +2,7 @@
 // The region of a remote account's or server's page that refetches its stored posts from their servers (FR-407,
 // federation.md §6.4), for a viewer with manage_domains: what the refetch does, its button, and what the request
 // did (a StatusMessage). The button stays, so focus stays on it.
-import { Button, DetailSection, Hint, Stack, StatusMessage } from "@my/ui";
+import { Button, Section, Hint, Stack, StatusMessage } from "@my/ui";
 import { useId } from "react";
 import { useT } from "../../../lib/i18n";
 import { type RefetchTarget, useRefetch } from "../hooks/useRefetch";
@@ -14,7 +14,7 @@ export function RefetchStatusesSection({ target }: RefetchStatusesSectionProps) 
   const descriptionId = useId();
   const refetch = useRefetch();
   return (
-    <DetailSection title={t("client:admin.refetch.title")}>
+    <Section surface="card" title={t("client:admin.refetch.title")}>
       <StatusMessage tone="success">{refetch.status}</StatusMessage>
       <Stack align="start" gap="1">
         <Button
@@ -34,6 +34,6 @@ export function RefetchStatusesSection({ target }: RefetchStatusesSectionProps) 
           )}
         </Hint>
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }

@@ -4,11 +4,10 @@ import {
   Button,
   Checkbox,
   Cluster,
-  Heading,
-  Hint,
   IconLabel,
   MoveDownIcon,
   MoveUpIcon,
+  Section,
   Stack,
   Tooltip,
   TooltipTrigger,
@@ -38,8 +37,6 @@ const timelineOf: Partial<Record<NavigationEntryId, "local" | "federated">> = { 
  */
 export function NavigationSettings() {
   const t = useT();
-  const headingId = useId();
-  const descriptionId = useId();
   const baseId = useId();
   const timelines = useTimelineAvailability();
   const { entries, move, setShown, reset } = useNavigationSettings();
@@ -73,11 +70,10 @@ export function NavigationSettings() {
       : t("client:settings.navigation.in_menu");
   };
   return (
-    <Stack as="section" aria-labelledby={headingId} aria-describedby={descriptionId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.navigation.title")}
-      </Heading>
-      <Hint id={descriptionId}>{t("client:settings.navigation.description", { count: tabBarLimit })}</Hint>
+    <Section
+      title={t("client:settings.navigation.title")}
+      description={t("client:settings.navigation.description", { count: tabBarLimit })}
+    >
       <Stack as="ol" divided border="lg">
         {entries.map((entry, index) => {
           const name = t(navigationEntryLabels[entry.id]);
@@ -137,6 +133,6 @@ export function NavigationSettings() {
           {t("client:settings.navigation.reset")}
         </Button>
       </div>
-    </Stack>
+    </Section>
   );
 }

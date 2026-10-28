@@ -3,19 +3,7 @@
 // same shape: the permission gate and its message, the paged list of records (rows with dividers, the empty
 // state and "show more"), the titled section of a detail page, a server's state in words, a domain in both
 // of its forms, and dates in the viewer's locale and time zone. The facts of a record are @my/ui's DescriptionList.
-import {
-  Box,
-  Button,
-  Card,
-  DetailSection,
-  EmptyState,
-  Pagination,
-  Stack,
-  Table,
-  TableBody,
-  TableHead,
-  Text,
-} from "@my/ui";
+import { Box, Button, Card, Section, EmptyState, Pagination, Stack, Table, TableBody, TableHead, Text } from "@my/ui";
 import { Fragment, type ReactNode, type Ref, type RefObject, useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -24,7 +12,7 @@ import type { InstanceState, Permission } from "../api/staff";
 import { type PagedList, type PagedPages, useListPages } from "../hooks/pagedList";
 import { useHasPermission } from "../hooks/usePermissions";
 
-export { DetailSection };
+export { Section };
 
 const stateLabels: Readonly<Record<InstanceState, ClientMessageKey>> = {
   available: "client:admin.instance.state.available",

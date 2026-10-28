@@ -11,7 +11,7 @@ import {
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
-  DetailSection,
+  Section,
   EmptyState,
   Heading,
   Hint,
@@ -85,7 +85,7 @@ export function AccountStatus() {
   return (
     <Stack gap="8">
       <StatusMessage tone="success">{form.status}</StatusMessage>
-      <DetailSection title={t("client:account_status.active.title")}>
+      <Section surface="card" title={t("client:account_status.active.title")}>
         <ActionListView
           list={active}
           form={form}
@@ -97,14 +97,14 @@ export function AccountStatus() {
             />
           }
         />
-      </DetailSection>
-      <DetailSection title={t("client:account_status.past.title")}>
+      </Section>
+      <Section surface="card" title={t("client:account_status.past.title")}>
         <ActionListView
           list={past}
           form={form}
           empty={<EmptyState headingLevel={3} heading={t("client:account_status.past.empty")} />}
         />
-      </DetailSection>
+      </Section>
       <AppealDialog form={form} />
     </Stack>
   );

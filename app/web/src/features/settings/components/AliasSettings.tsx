@@ -8,16 +8,16 @@ import {
   Button,
   Cluster,
   EmptyState,
-  Heading,
   Hint,
   InlineError,
   Link,
+  Section,
   Stack,
   StatusMessage,
   Text,
   TextField,
 } from "@my/ui";
-import { useId, useRef } from "react";
+import { useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { accountMovePath } from "../../../lib/paths";
@@ -28,23 +28,15 @@ import { isolate } from "../../profile";
 
 export function AliasSettings() {
   const t = useT();
-  const listHeadingId = useId();
-  const formHeadingId = useId();
   return (
     <Stack gap="8">
       <p>{t("client:account_move.aliases.description")}</p>
-      <Stack as="section" aria-labelledby={listHeadingId} gap="3">
-        <Heading level={2} id={listHeadingId}>
-          {t("client:account_move.aliases.list.title")}
-        </Heading>
+      <Section title={t("client:account_move.aliases.list.title")}>
         <AliasList />
-      </Stack>
-      <Stack as="section" aria-labelledby={formHeadingId} gap="3">
-        <Heading level={2} id={formHeadingId}>
-          {t("client:account_move.aliases.add.title")}
-        </Heading>
+      </Section>
+      <Section title={t("client:account_move.aliases.add.title")}>
         <AddAliasForm />
-      </Stack>
+      </Section>
       <p>
         <Link href={accountMovePath} variant="standalone">
           {t("client:account_move.aliases.move_link")}

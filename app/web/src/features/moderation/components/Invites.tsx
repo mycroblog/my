@@ -39,7 +39,7 @@ import {
   useRevokeInvite,
 } from "../hooks/useInvites";
 import { InviteCreator, inviteCreatorKindLabels } from "./inviteParts";
-import { DateTime, DetailSection, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, RecordTable, RequirePermission } from "./parts";
 
 const stateLabels: Readonly<Record<InviteState, ClientMessageKey>> = {
   usable: "client:admin.invites.state.usable",
@@ -58,9 +58,9 @@ export function Invites() {
     <RequirePermission permission="manage_invites">
       <Stack gap="8">
         <ModeNotice />
-        <DetailSection title={t("client:admin.invites.new.title")}>
+        <Section surface="card" title={t("client:admin.invites.new.title")}>
           <NewInviteForm />
-        </DetailSection>
+        </Section>
         <InviteList />
       </Stack>
     </RequirePermission>

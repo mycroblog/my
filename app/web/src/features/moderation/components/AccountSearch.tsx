@@ -9,7 +9,7 @@ import {
   Box,
   Button,
   Card,
-  DetailSection,
+  Section,
   EmptyState,
   Grid,
   RegionError,
@@ -76,14 +76,14 @@ function AccountSearchView({ search, onSearch }: AccountSearchProps) {
   return (
     <Stack gap="6">
       <Card>
-        <DetailSection title={t("client:admin.accounts.search.title")}>
+        <Section surface="card" title={t("client:admin.accounts.search.title")}>
           {/* Another search in the address (back, forward, a link) starts the form from it (web-client/README.md R10). */}
           <SearchForm key={JSON.stringify(search)} search={search} onSearch={onSearch} />
-        </DetailSection>
+        </Section>
       </Card>
-      <DetailSection title={t("client:admin.accounts.results.title")}>
+      <Section surface="card" title={t("client:admin.accounts.results.title")}>
         <Results search={search} />
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }

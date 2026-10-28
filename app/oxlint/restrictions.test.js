@@ -91,6 +91,11 @@ describe("where the restrictions apply", () => {
     for (const file of [files.component, files.shell, files.story])
       assert.equal(ruleValue("restrict/classes", file), undefined);
   });
+  it("keeps a feature's components to the pattern components of @my/ui, and leaves the kit, routes and tests alone (G5)", () => {
+    assert.ok(ruleOptions("restrict/pattern", files.featureComponent).length > 0);
+    for (const file of [files.component, files.story, files.route, files.featureHook, files.featureComponentTest])
+      assert.equal(ruleValue("restrict/pattern", file), undefined);
+  });
   it("allows the API client and fetch in features/<x>/api and lib/ (S1)", () => {
     for (const file of [files.featureApi, files.lib]) {
       assert.equal(ruleValue("no-restricted-globals", file), "off");
@@ -203,6 +208,40 @@ ruleTester.run("restrict/feature (a feature's hooks and components)", restrict.r
     { ...fails("void queryClient.invalidateQueries({ queryKey });"), options: feature },
     { ...fails("client.setQueriesData({ predicate }, update);"), options: feature },
     { ...fails("queryClient.removeQueries({ queryKey, exact: true });"), options: feature },
+  ],
+});
+
+const pattern = ruleOptions("restrict/pattern", files.featureComponent);
+ruleTester.run("restrict/pattern (G5)", restrict.rules.pattern, {
+  valid: [
+    { code: "<Section title={t('client:settings.password.title')}>{children}</Section>", options: pattern },
+    {
+      code: "<Section surface='card' title={title} description={note}><Heading level={3}>{name}</Heading></Section>",
+      options: pattern,
+    },
+    { code: "<Heading level={2} id={id} wrap='anywhere'>{name}</Heading>", options: pattern },
+    { code: "<Heading level={3} size='label'>{name}</Heading>", options: pattern },
+    { code: "<Stack as='section' aria-label={label}><Heading level={3}>{name}</Heading></Stack>", options: pattern },
+    {
+      code: "<Card as='section' aria-labelledby={id}><Heading level={3} id={id}>{name}</Heading></Card>",
+      options: pattern,
+    },
+  ],
+  invalid: [
+    // A region's heading has one look.
+    { ...fails("<Heading level={2} size='label' tone='fg'>{title}</Heading>"), options: pattern },
+    { ...fails("<Heading size='subsection' level={2}>{title}</Heading>"), options: pattern },
+    // A titled region is the kit's Section, never the feature's own.
+    {
+      ...fails(
+        "function Section({ title, children }) { return <Stack as='section' gap='3'><Heading level={2}>{title}</Heading>{children}</Stack>; }",
+      ),
+      options: pattern,
+    },
+    { ...fails("<Card as='section'><Box><Heading level={2} id={id}>{title}</Heading></Box></Card>"), options: pattern },
+    { ...fails("<section aria-labelledby={id}><h2 id={id}>{title}</h2></section>"), options: pattern },
+    // Both at once: two reports.
+    { ...fails("<section><Heading level={2} size='label'>{title}</Heading></section>", 2), options: pattern },
   ],
 });
 

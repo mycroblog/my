@@ -25,7 +25,7 @@ import {
 import { useRef, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval, useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
-import { DetailSection, RequirePermission } from "../../moderation";
+import { Section, RequirePermission } from "../../moderation";
 import { type Rule, ruleHintLimit, ruleTextLimit } from "../api/rules";
 import {
   type RuleActions,
@@ -42,12 +42,12 @@ export function RuleSettings() {
     <RequirePermission permission="manage_rules">
       <Stack gap="8">
         <Hint size="inherit">{t("client:admin.rules.description")}</Hint>
-        <DetailSection title={t("client:admin.rules.new.title")}>
+        <Section surface="card" title={t("client:admin.rules.new.title")}>
           <NewRuleForm />
-        </DetailSection>
-        <DetailSection title={t("client:admin.rules.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.rules.list.title")}>
           <RuleList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

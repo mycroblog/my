@@ -20,7 +20,7 @@ import { DocumentLink } from "../../documents";
 import { useUnsavedChangesGuard } from "../../settings";
 import { documentTextLimit } from "../api/documents";
 import { type DocumentEditor, useDocumentSettings } from "../hooks/useDocumentSettings";
-import { DateTime, DetailSection, RequirePermission } from "../../moderation";
+import { DateTime, Section, RequirePermission } from "../../moderation";
 
 export function DocumentSettings() {
   return (
@@ -35,28 +35,28 @@ function DocumentSettingsForms() {
   const settings = useDocumentSettings();
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.documents.terms")}>
+      <Section surface="card" title={t("client:admin.documents.terms")}>
         <DocumentForm
           editor={settings.terms}
           viewLabel={t("client:admin.documents.view_terms")}
           confirmTitle={t("client:admin.documents.confirm_remove.terms")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.documents.privacy_policy")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.documents.privacy_policy")}>
         <DocumentForm
           editor={settings.privacyPolicy}
           viewLabel={t("client:admin.documents.view_privacy_policy")}
           confirmTitle={t("client:admin.documents.confirm_remove.privacy_policy")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.documents.commerce_disclosure")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.documents.commerce_disclosure")}>
         <Hint size="inherit">{t("client:admin.documents.commerce_disclosure.description")}</Hint>
         <DocumentForm
           editor={settings.commerceDisclosure}
           viewLabel={t("client:admin.documents.view_commerce_disclosure")}
           confirmTitle={t("client:admin.documents.confirm_remove.commerce_disclosure")}
         />
-      </DetailSection>
+      </Section>
       <UnsavedChangesDialog hasChanges={settings.hasChanges} />
     </Stack>
   );

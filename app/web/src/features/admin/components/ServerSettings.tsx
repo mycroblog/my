@@ -30,7 +30,7 @@ import {
 } from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { DetailSection, RequirePermission } from "../../moderation";
+import { Section, RequirePermission } from "../../moderation";
 import { acceptedImageTypes } from "../../settings";
 import { useVoiceAvailable } from "../../voice";
 import { thumbnailAltLimit } from "../api/settings";
@@ -61,7 +61,7 @@ function NameForm() {
   const t = useT();
   const form = useServerSettings();
   return (
-    <DetailSection title={t("client:admin.settings.name.title")}>
+    <Section surface="card" title={t("client:admin.settings.name.title")}>
       <Hint size="inherit">{t("client:admin.settings.name.description", { domain: form.domain })}</Hint>
       <Stack as="form" gap="4" onSubmit={form.submit}>
         <TextField
@@ -83,7 +83,7 @@ function NameForm() {
         </div>
         <StatusMessage>{form.status}</StatusMessage>
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -111,7 +111,7 @@ function DescriptionsForm() {
   const t = useT();
   const form = useServerDescriptions();
   return (
-    <DetailSection title={t("client:admin.settings.descriptions.title")}>
+    <Section surface="card" title={t("client:admin.settings.descriptions.title")}>
       <Hint size="inherit">{t("client:admin.settings.descriptions.description")}</Hint>
       <Stack as="form" gap="6" onSubmit={form.submit}>
         <DescriptionInput field={form.short} label={t("client:admin.settings.descriptions.short")} />
@@ -128,7 +128,7 @@ function DescriptionsForm() {
         </div>
         <StatusMessage>{form.status}</StatusMessage>
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -138,7 +138,7 @@ function ContactForm() {
   const thumbnailHeadingId = useId();
   const uploadErrorId = useId();
   return (
-    <DetailSection title={t("client:admin.settings.contact.title")}>
+    <Section surface="card" title={t("client:admin.settings.contact.title")}>
       <Hint size="inherit">{t("client:admin.settings.contact.description")}</Hint>
       <Stack as="form" gap="6" onSubmit={form.submit}>
         <TextField
@@ -227,7 +227,7 @@ function ContactForm() {
         </div>
         <StatusMessage>{form.status}</StatusMessage>
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -561,15 +561,15 @@ function PoliciesForm() {
   const voiceAvailable = useVoiceAvailable();
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
-      <DetailSection title={t("client:admin.settings.registration.title")}>
+      <Section surface="card" title={t("client:admin.settings.registration.title")}>
         <PolicyRadios
           form={form}
           setting="registration_mode"
           label={t("client:admin.settings.registration.mode")}
           description={t("client:admin.settings.registration.description")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.invites.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.invites.title")}>
         <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
         <PolicyRadios form={form} setting="invite_creators" label={t("client:admin.settings.invites.creators")} />
         <NumberPolicyField
@@ -599,8 +599,8 @@ function PoliciesForm() {
             </SelectItem>
           )}
         </Select>
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.oauth_apps.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.oauth_apps.title")}>
         <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
         <PolicyCheckbox
           form={form}
@@ -620,8 +620,8 @@ function PoliciesForm() {
           label={t("client:admin.settings.oauth_apps.dynamic")}
           description={t("client:admin.settings.oauth_apps.dynamic.description")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.language.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.language.title")}>
         <Select
           label={t("client:admin.settings.language.default")}
           description={t("client:admin.settings.language.description")}
@@ -637,8 +637,8 @@ function PoliciesForm() {
             </SelectItem>
           )}
         </Select>
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.timelines.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.timelines.title")}>
         <PolicyRadios
           form={form}
           setting="local_timeline_access"
@@ -651,16 +651,16 @@ function PoliciesForm() {
           label={t("client:admin.settings.timelines.federated")}
           description={t("client:admin.settings.timelines.federated.description")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.posts.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.posts.title")}>
         <PolicyCheckbox
           form={form}
           setting="require_media_description"
           label={t("client:admin.settings.posts.require_media_description")}
           description={t("client:admin.settings.posts.require_media_description.description")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.federation.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.federation.title")}>
         <PolicyRadios
           form={form}
           setting="federation_mode"
@@ -699,8 +699,8 @@ function PoliciesForm() {
           label={t("client:admin.settings.federation.link_cards")}
           description={t("client:admin.settings.federation.link_cards.description")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.domain_actions.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.domain_actions.title")}>
         <Hint size="inherit">{t("client:admin.settings.domain_actions.description")}</Hint>
         <PolicyRadios
           form={form}
@@ -712,8 +712,8 @@ function PoliciesForm() {
           setting="domain_actions_rationale_visibility"
           label={t("client:admin.settings.domain_actions.comments")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.finance.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.finance.title")}>
         <Hint size="inherit">{t("client:admin.settings.finance.description")}</Hint>
         <PolicyRadios form={form} setting="finance_visibility" label={t("client:admin.settings.finance.visibility")} />
         <Hint size="inherit">{t("client:admin.settings.finance.viewer.description")}</Hint>
@@ -734,20 +734,20 @@ function PoliciesForm() {
           setting="finance_viewer_income"
           label={t("client:admin.settings.finance.viewer.income")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.income.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.income.title")}>
         <Hint size="inherit">{t("client:admin.settings.income.description")}</Hint>
         <PolicyRadios form={form} setting="income_visibility" label={t("client:admin.settings.income.visibility")} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.supporter_list.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.supporter_list.title")}>
         <Hint size="inherit">{t("client:admin.settings.supporter_list.description")}</Hint>
         <PolicyRadios
           form={form}
           setting="supporter_list_visibility"
           label={t("client:admin.settings.supporter_list.visibility")}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.settings.crawlers.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.crawlers.title")}>
         <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
         <PolicyRadios form={form} setting="search_indexing" label={t("client:admin.settings.crawlers.search")} />
         <PolicyCheckbox
@@ -765,9 +765,9 @@ function PoliciesForm() {
             form.change("security_contact", value);
           }}
         />
-      </DetailSection>
+      </Section>
       {voiceAvailable && (
-        <DetailSection title={t("client:admin.settings.voice.title")}>
+        <Section surface="card" title={t("client:admin.settings.voice.title")}>
           <PolicyRadios form={form} setting="voice_room_starters" label={t("client:admin.settings.voice.starters")} />
           <PolicyCheckbox
             form={form}
@@ -781,7 +781,7 @@ function PoliciesForm() {
             label={t("client:admin.settings.voice.retention")}
             description={(range) => t("client:admin.settings.voice.retention.description", range)}
           />
-        </DetailSection>
+        </Section>
       )}
       {form.saveError !== undefined && (
         <InlineError size="inherit" alert>

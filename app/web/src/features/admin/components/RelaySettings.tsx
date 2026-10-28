@@ -29,7 +29,7 @@ import {
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, DetailSection, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { DateTime, Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type Relay, type RelayProtocol, relayProtocols, type RelayState, relayUrlLimit } from "../api/relays";
 import {
   type RelayActions,
@@ -63,14 +63,14 @@ export function RelaySettings() {
   return (
     <RequirePermission permission="manage_settings">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.relays.new.title")}>
+        <Section surface="card" title={t("client:admin.relays.new.title")}>
           <Card>
             <NewRelayForm />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.relays.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.relays.list.title")}>
           <RelayList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

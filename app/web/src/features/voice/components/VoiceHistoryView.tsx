@@ -75,7 +75,7 @@ function HistoryRow({ row }: { row: VoiceHistoryRow }) {
   return (
     <Card as="li" padding="4">
       <Stack gap="3">
-        <Heading level={2} size="subsection" wrap="anywhere">
+        <Heading level={2} wrap="anywhere">
           <span dir="auto">{row.name}</span>
         </Heading>
         <DescriptionList columns={3}>
