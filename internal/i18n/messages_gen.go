@@ -39,6 +39,13 @@ func (l *Localizer) ServerAuthAuthorizeDeny() string {
 	return l.format("server:auth.authorize.deny", nil)
 }
 
+// ServerAuthAuthorizeGroup formats "server:auth.authorize.group". Heading on the consent page over the requested permissions of one weight: {risk} is caution (permissions that read direct messages, act as the user, or administer the server), write (permissions that change something), or read (permissions that only read).
+//
+//	en: {risk, select, caution {Permissions that need your attention} write {Permissions that change things} other {Permissions that only read}}
+func (l *Localizer) ServerAuthAuthorizeGroup(risk string) string {
+	return l.format("server:auth.authorize.group", map[string]any{"risk": risk})
+}
+
 // ServerAuthAuthorizeImpersonation formats "server:auth.authorize.impersonation". Warning on the consent page when the application is sent back to a loopback address or a custom URL scheme, which any app on the device can claim. {target} is that host or scheme.
 //
 //	en: After you allow, the answer goes to {target}, which other apps on your device can also claim. It may be a different app from the one named above. Allow only if you started this from that app.

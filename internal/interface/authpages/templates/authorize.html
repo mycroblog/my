@@ -1,13 +1,17 @@
 {{define "content"}}
 <h1>{{.Title}}</h1>
-<p class="notice">{{.Consent.Unverified}}</p>
+<p class="caution-note">{{.Consent.Unverified}}</p>
 <p dir="auto">{{.Consent.Origin}}</p>
 {{with .Consent.Website}}<p dir="auto">{{.}}</p>
 {{end}}{{with .Consent.Impersonation}}<p class="alert">{{.}}</p>
 {{end}}<p>{{.L.ServerAuthAuthorizeLead .Consent.ClientName}}</p>
+{{range .Consent.ScopeGroups}}<section class="scope-group scope-group-{{.Risk}}" aria-labelledby="scopes-{{.Risk}}">
+<h2 id="scopes-{{.Risk}}">{{.Title}}</h2>
 <ul class="scopes">
-{{range .Consent.Scopes}}<li>{{.Text}}{{range .Cautions}}<br><strong class="caution">{{.}}</strong>{{end}}</li>
+{{range .Scopes}}<li>{{.Text}}{{range .Cautions}}<span class="caution">{{.}}</span>{{end}}</li>
 {{end}}</ul>
+</section>
+{{end}}
 <p class="hint">{{.L.ServerAuthAuthorizeRedirectNotice .Consent.RedirectHost}}</p>
 <form class="form" method="post" action="/oauth/authorize">
 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">

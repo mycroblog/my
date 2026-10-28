@@ -68,7 +68,7 @@ type statusAction struct {
 type statusAppeal struct {
 	// State says where the appeal stands; StateLabel names it in a word or two, for its badge.
 	State, StateLabel string
-	Text  string
+	Text              string
 	// Answer is the moderators' explanation of their decision; empty for none.
 	Answer string
 }
