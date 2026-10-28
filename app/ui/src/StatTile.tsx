@@ -1,16 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // StatTile (ADR-0113 §1): one number of a summary (the open reports, the failed jobs, this month's costs) with its name
 // and its change from the period before. The change shows by an arrow and its text ("+12%"), never by color alone, and a
-// state that needs attention by a pill with an icon and a word in the status colors of Badge.
+// state that needs attention by a pill with an icon and a word in the status colors of Badge. With `href` the whole tile
+// is one link named by its label (the link's hit area covers the tile, as LinkCard's does), for a summary whose numbers
+// lead to their screens. StatTileGrid lays tiles out as a list in as many columns as fit.
 import type { ReactNode } from "react";
+import { Link as RACLink } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { DecreaseIcon, IncreaseIcon, WarningIcon } from "./Icons";
 
 const statTile = tv({
   slots: {
-    root: "flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-surface-raised p-4",
+    root: "relative flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-surface-raised p-4",
     top: "flex min-w-0 flex-wrap items-center justify-between gap-2",
     label: "min-w-0 text-sm font-bold text-fg-muted wrap-anywhere",
+    // The link's ::after covers the tile, so that the whole tile is one link; the tile's outline shows the focus.
+    link: [
+      "text-fg-muted no-underline outline-none after:absolute after:inset-0 after:rounded-lg",
+      "data-hovered:text-fg data-hovered:underline data-focus-visible:underline data-focus-visible:after:focus-ring",
+    ],
     status:
       "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-extrabold forced-colors:border forced-colors:border-[CanvasText] [&_svg]:size-4",
     value: "text-2xl font-extrabold tabular-nums wrap-anywhere",
@@ -59,15 +67,36 @@ export type StatTileProps = {
   statusLabel?: string;
   /** Something to show under the change, such as a `Sparkline` of the same number. */
   children?: ReactNode;
+  /** The screen the number leads to (the queue it counts): the whole tile becomes one link named by `label`. */
+  href?: string;
+  /** `li` for a tile of a `StatTileGrid`; `div` by default. */
+  as?: "div" | "li";
 };
 
 /** One number of a summary: its name, its value, its change from the period before, and a state that needs attention. */
-export function StatTile({ label, value, change, status, statusLabel, children }: StatTileProps) {
+export function StatTile({
+  label,
+  value,
+  change,
+  status,
+  statusLabel,
+  children,
+  href,
+  as: Root = "div",
+}: StatTileProps) {
   const styles = statTile({ status, tone: change?.tone ?? "neutral" });
   return (
-    <div className={styles.root()}>
+    <Root className={styles.root()}>
       <div className={styles.top()}>
-        <p className={styles.label()}>{label}</p>
+        <p className={styles.label()}>
+          {href === undefined ? (
+            label
+          ) : (
+            <RACLink href={href} className={styles.link()}>
+              {label}
+            </RACLink>
+          )}
+        </p>
         {status !== undefined && statusLabel !== undefined && (
           <span className={styles.status()}>
             <WarningIcon />
@@ -89,6 +118,24 @@ export function StatTile({ label, value, change, status, statusLabel, children }
         </p>
       )}
       {children !== undefined && <div className={styles.extra()}>{children}</div>}
-    </div>
+    </Root>
+  );
+}
+
+const statTileGrid = tv({ base: "grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3" });
+
+export type StatTileGridProps = {
+  /** The tiles, each a `StatTile` with `as="li"`. */
+  children: ReactNode;
+  /** The name of the list, when no heading names its region. */
+  "aria-label"?: string;
+};
+
+/** The tiles of a summary as a list, in as many columns of at least 12 rem as fit. */
+export function StatTileGrid({ children, ...props }: StatTileGridProps) {
+  return (
+    <ul {...props} className={statTileGrid()}>
+      {children}
+    </ul>
   );
 }

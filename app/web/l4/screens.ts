@@ -62,6 +62,9 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
     },
   },
   "settings-menu": { start: "/settings" },
+  // The staff overviews start from the app, whose navigation has the entries into the mode.
+  moderation: { start: "/home" },
+  admin: { start: "/home" },
 };
 
 /** The setup of `screen`: its entry, or a start at `/` with nothing more. */

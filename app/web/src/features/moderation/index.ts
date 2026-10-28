@@ -19,7 +19,8 @@ export { ownActionsQueryOptions } from "./api/actions";
 export { AccountStatus } from "./components/AccountStatus";
 // The menus and the navigation's entry.
 export { refreshAdminCounts } from "./api/counts";
-export { ModerationPages, useModerationBadges } from "./components/ModerationMenu";
+export { useModerationBadges } from "./components/ModerationMenu";
+export { ModerationOverview } from "./components/ModerationOverview";
 export { moderationPages } from "./components/moderationPages";
 export { useModerationEntry } from "./hooks/useModerationCounts";
 // What the server administration screens share.
@@ -34,7 +35,8 @@ export {
   RequirePermission,
   useFocusAfterChange,
 } from "./components/parts";
-export { type StaffPage, type StaffPageBadge, StaffPages, useShownStaffPages } from "./components/StaffPages";
+export { type StaffPage, type StaffPageBadge, useShownStaffPages } from "./components/StaffPages";
+export { type WaitThresholds, waitLevel, waitUnits } from "./hooks/useWait";
 export { type PagedList, type PagedPages, toPagedList, wholeList } from "./hooks/pagedList";
 export { useHasPermission, useViewerPermissions } from "./hooks/usePermissions";
 // The roles of the instance and of an account, which the roles screen (manage_roles) shares.
