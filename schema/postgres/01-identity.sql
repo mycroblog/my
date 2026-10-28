@@ -664,7 +664,7 @@ CREATE TABLE login_providers (
 );
 
 -- Event (revision): the settings of a provider; the newest row is current (login_provider_heads).
--- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github and discord (the domain checks it). scopes are the extra
+-- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github and discord. scopes are the extra
 -- scopes, space-separated and sorted, NULL for none. revised_by_user_id is NULL for the CLI.
 CREATE TABLE login_provider_revisions (
   id uuid NOT NULL PRIMARY KEY,
@@ -677,7 +677,8 @@ CREATE TABLE login_provider_revisions (
   allow_signup boolean NOT NULL,
   allow_link boolean NOT NULL,
   revised_by_user_id uuid,
-  revised_at timestamptz NOT NULL
+  revised_at timestamptz NOT NULL,
+  CHECK ((kind IN ('github', 'discord')) = (issuer IS NULL))
 );
 CREATE INDEX login_provider_revisions_provider_id_id ON login_provider_revisions (provider_id, id DESC);
 
