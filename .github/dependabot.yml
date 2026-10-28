@@ -4,6 +4,11 @@
 # The 3-day cooldown matches the rule that no dependency version younger than three days is installed
 # (app/bunfig.toml, tools/i18n/bunfig.toml). Cooldown applies to version updates only, so security updates
 # still open immediately.
+#
+# Each ecosystem groups its updates so that one pull request per directory changes go.mod / bun.lock at a time
+# instead of many pull requests conflicting on the same lockfile. Minor and patch updates share one group; a major
+# update opens its own pull request, since it often needs code changes and would hold the rest back. Security
+# updates are grouped separately and are not delayed by the version updates.
 version: 2
 updates:
   - package-ecosystem: gomod
@@ -14,6 +19,14 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
+    groups:
+      go:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      go-security:
+        applies-to: security-updates
+        patterns: ["*"]
   # Bun workspaces with a text bun.lock.
   - package-ecosystem: bun
     directories:
@@ -23,6 +36,14 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
+    groups:
+      bun:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      bun-security:
+        applies-to: security-updates
+        patterns: ["*"]
     ignore:
       # @types/node follows the Node.js major in .tool-versions: its major is raised together with Node.js,
       # so the types never offer APIs that the runtime lacks.
@@ -37,6 +58,14 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
+    groups:
+      actions:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      actions-security:
+        applies-to: security-updates
+        patterns: ["*"]
   # The Go, Node.js, and Bun image tags in the Dockerfile must match .tool-versions (scripts/task.sh docker:dockerfile-check).
   - package-ecosystem: docker
     directory: /
@@ -44,3 +73,11 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3
+    groups:
+      docker:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      docker-security:
+        applies-to: security-updates
+        patterns: ["*"]
