@@ -16,6 +16,7 @@ const segmented = tv({
     item: [
       "inline-flex cursor-default items-center justify-center rounded-full px-3 py-2 text-xs font-bold text-fg-muted select-none",
       "data-hovered:text-fg data-selected:bg-pressed data-selected:text-pressed-fg data-selected:data-hovered:text-pressed-fg",
+      "forced-colors:data-selected:bg-[Highlight] forced-colors:data-selected:text-[HighlightText] forced-colors:data-selected:data-hovered:text-[HighlightText]",
       "data-disabled:opacity-50 data-focus-visible:focus-ring motion-safe:transition-colors pointer-coarse:min-h-11",
     ],
   },
