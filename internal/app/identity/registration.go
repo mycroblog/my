@@ -455,6 +455,9 @@ type mailContext struct {
 	composer   kernel.MailComposer
 }
 
+// wording returns what words an email of m.
+func (m mailContext) wording() MailWording { return MailWording{L: m.l, Name: m.name, Host: m.host} }
+
 // mailContext returns the mailContext of an email to a user whose locale is locale.
 func (s *Service) mailContext(ctx context.Context, locale string) (mailContext, error) {
 	bundle := s.d.Messages

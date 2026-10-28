@@ -1,0 +1,12 @@
+The server or the web client of Example Social reported a new error, or an error that was marked resolved happened again. See the errors in the administration screens.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
+Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

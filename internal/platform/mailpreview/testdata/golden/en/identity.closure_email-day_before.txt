@@ -1,0 +1,17 @@
+2027-03-31 15:00 (UTC) closes within a day, on Example Social. This is the last reminder before the closing date.
+
+You can sign in and export your data until 2027-04-30 15:00 (UTC). After that, the administrators delete the server's data.
+
+Before the closing date, you can also move your account to another server in the account settings, so that your followers follow you there.
+
+Message from the administrators: Thank you for being here. Please take your posts with you.
+
+Export your data
+https://social.example/settings/import-export
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because this address belongs to your account on Example Social, whose closure affects your data. These emails cannot be turned off.

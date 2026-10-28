@@ -283,6 +283,11 @@ only the text version is written to the log.
 
 With `mail = none` (the default), nothing is sent and the email goes to the log, so you can take the confirmation link from the
 log.
+To look at every email the server sends without running it, `scripts/task.sh mail:preview` renders each one from sample values
+in English, Japanese, and the pseudo-locales `en-XA` and `ar-XB` (right to left), writes them to `.tmp/mail/preview/`, and prints
+the path of its `index.html`. Open that file in a browser: it shows each email's subject, headers, HTML version (at phone or
+desktop width, light or dark), and text version. `scripts/task.sh mail:preview-watch` renders them again whenever the layout, the
+messages, or the code change.
 To see the email that would really be sent (headers, the HTML version, links), send it with `mail = smtp` to the development SMTP
 server [Mailpit](https://mailpit.axllent.org/) (MIT). Mailpit keeps the email it receives without delivering it to anyone and
 shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.

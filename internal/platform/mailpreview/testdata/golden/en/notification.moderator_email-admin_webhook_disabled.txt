@@ -1,0 +1,14 @@
+The server Example Social turned off one of its webhooks: its endpoint kept failing, or answered that it is gone.
+
+Open your notifications to see which one, and turn it on again once the endpoint works.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
+Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

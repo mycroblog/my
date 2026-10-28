@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -303,31 +302,8 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return box.Locale }}
 	l := users.Localizer(ctx, "")
 	site := mailSite(ctx, d.Host, d.MailSite)
-	name := site.Name
-	draft := kernel.MailDraft{
-		Category: kernel.MailNotification, To: box.Address,
-		Action: &kernel.MailAction{Label: l.ServerMailActionOpenNotifications(), URL: strings.TrimSuffix(d.WebOrigin, "/") + "/notifications"},
-		Reason: l.ServerMailReasonModeratorNotifications(),
-	}
-	switch job.Type {
-	case notification.TypeAdminReport:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminReportSubject(name), []string{l.ServerMailAdminReportBody(name)}
-	case notification.TypeAdminSignUp:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminSignUpSubject(name), []string{l.ServerMailAdminSignUpBody(name)}
-	case notification.TypeAdminAppeal:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminAppealSubject(name), []string{l.ServerMailAdminAppealBody(name)}
-	case notification.TypeAdminWebhookDisabled:
-		draft.Subject = l.ServerMailAdminWebhookDisabledSubject(name)
-		draft.Paragraphs = []string{l.ServerMailAdminWebhookDisabledBody(name), l.ServerMailAdminWebhookDisabledDetail()}
-	case notification.TypeAdminCustomEmojiRequest:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminCustomEmojiRequestSubject(name), []string{l.ServerMailAdminCustomEmojiRequestBody(name)}
-	case notification.TypeAdminAccountMoved:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminAccountMovedSubject(name), []string{l.ServerMailAdminAccountMovedBody(name)}
-	case notification.TypeAdminServiceClosureDue:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminServiceClosureDueSubject(name), []string{l.ServerMailAdminServiceClosureDueBody(name)}
-	case notification.TypeAdminErrorGroup:
-		draft.Subject, draft.Paragraphs = l.ServerMailAdminErrorGroupSubject(name), []string{l.ServerMailAdminErrorGroupBody(name)}
-	default:
+	draft, ok := ModeratorEmailDraft(l, site.Name, box.Address, job.Type, d.WebOrigin, "")
+	if !ok {
 		return nil
 	}
 	// Each email carries its own unsubscribe link, issued only now that it is sent, so that the

@@ -1,0 +1,12 @@
+A new report awaits the moderators of Example Social.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
+Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

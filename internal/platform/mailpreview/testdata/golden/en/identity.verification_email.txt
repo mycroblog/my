@@ -1,0 +1,13 @@
+Welcome to Example Social.
+
+The link works for 24 hours.
+
+Confirm your email address
+https://social.example/auth/verify_email?token=sample-token
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because this address was used to sign up at social.example. If you did not sign up, ignore this email.

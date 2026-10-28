@@ -6,8 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -40,14 +38,9 @@ const JobSupporterEmail = "notification.supporter_email"
 
 // supporterEmail is the payload of JobSupporterEmail: what the email says, as of the transition.
 type supporterEmail struct {
-	NotificationID string            `json:"notification_id"`
-	AccountID      string            `json:"account_id"`
-	Type           notification.Type `json:"type"`
-	PlanName       string            `json:"plan_name"`
-	// GraceEndsAt is the end of the grace period of a supporter_payment_failed.
-	GraceEndsAt time.Time `json:"grace_ends_at,omitzero"`
-	// EndReason is why a supporter_subscription_ended ended (supporters.EndReason).
-	EndReason string `json:"end_reason,omitempty"`
+	NotificationID string `json:"notification_id"`
+	AccountID      string `json:"account_id"`
+	SupporterMail
 }
 
 // SupporterDeps are the ports of the supporter notifications.
@@ -81,7 +74,7 @@ func RegisterSupporterProjectors(r *uow.Projectors, d SupporterDeps) {
 	p := &supporterProjector{d: d}
 	r.Register(appsupporters.EventSubscriptionTransitioned, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appsupporters.SubscriptionTransitioned)
-		mail := supporterEmail{AccountID: ev.AccountID, PlanName: ev.PlanName}
+		mail := supporterEmail{AccountID: ev.AccountID, SupporterMail: SupporterMail{PlanName: ev.PlanName}}
 		switch {
 		case ev.PaymentFailed():
 			mail.Type, mail.GraceEndsAt = notification.TypeSupporterPaymentFailed, ev.GraceEndsAt()
@@ -101,7 +94,7 @@ func RegisterSupporterProjectors(r *uow.Projectors, d SupporterDeps) {
 			err := p.notify(ctx, tx, notification.Notification{
 				RecipientAccountID: sub.AccountID, Type: notification.TypeSupporterPlanRetired, SupporterSubscriptionID: sub.SubscriptionID,
 				DedupeKey: notification.SupporterPlanRetiredKey(ev.PlanID, sub.SubscriptionID), CreatedAt: ev.At,
-			}, supporterEmail{AccountID: sub.AccountID, Type: notification.TypeSupporterPlanRetired, PlanName: ev.PlanName})
+			}, supporterEmail{AccountID: sub.AccountID, SupporterMail: SupporterMail{Type: notification.TypeSupporterPlanRetired, PlanName: ev.PlanName}})
 			if err != nil {
 				return err
 			}
@@ -115,7 +108,7 @@ func RegisterSupporterProjectors(r *uow.Projectors, d SupporterDeps) {
 				RecipientAccountID: sub.AccountID, Type: notification.TypeSupporterServiceClosure, SupporterSubscriptionID: sub.SubscriptionID,
 				ServiceClosureEventID: ev.ClosureEventID,
 				DedupeKey:             notification.SupporterServiceClosureKey(ev.ClosureEventID, sub.SubscriptionID), CreatedAt: ev.At,
-			}, supporterEmail{AccountID: sub.AccountID, Type: notification.TypeSupporterServiceClosure, PlanName: sub.PlanName})
+			}, supporterEmail{AccountID: sub.AccountID, SupporterMail: SupporterMail{Type: notification.TypeSupporterServiceClosure, PlanName: sub.PlanName}})
 			if err != nil {
 				return err
 			}
@@ -188,9 +181,6 @@ func RegisterSupporterJobs(reg *queue.JobHandlerRegistry, d SupporterMailDeps) {
 	})
 }
 
-// graceLayout is how an email writes the end of a grace period: in UTC, which the text says.
-const graceLayout = "2006-01-02 15:04"
-
 func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, run queue.Job, job supporterEmail) error {
 	box, ok, err := d.Mailboxes.SupporterMailbox(ctx, job.AccountID)
 	if err != nil || !ok {
@@ -204,34 +194,9 @@ func sendSupporterEmail(ctx context.Context, d SupporterMailDeps, run queue.Job,
 	}
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return box.Locale }}
 	l := users.Localizer(ctx, "")
-	origin := strings.TrimSuffix(d.WebOrigin, "/")
 	site := mailSite(ctx, d.Host, d.MailSite)
-	name := site.Name
-	// The emails are about the user's paid subscription, so they are transactional: no
-	// preference turns them off (ADR-0086 §3).
-	draft := kernel.MailDraft{
-		Category: kernel.MailTransactional, To: box.Address,
-		Action: &kernel.MailAction{Label: l.ServerMailActionOpenNotifications(), URL: origin + "/notifications"},
-		Reason: l.ServerMailReasonSupporter(name),
-	}
-	switch job.Type {
-	case notification.TypeSupporterPaymentFailed:
-		draft.Subject = l.ServerMailSupporterPaymentFailedSubject(name)
-		draft.Paragraphs = []string{
-			l.ServerMailSupporterPaymentFailedBody(name, job.PlanName),
-			l.ServerMailSupporterPaymentFailedDetail(job.GraceEndsAt.UTC().Format(graceLayout)),
-		}
-		draft.Action = &kernel.MailAction{Label: l.ServerMailSupporterPaymentFailedAction(), URL: origin + "/settings/supporter"}
-	case notification.TypeSupporterSubscriptionEnded:
-		draft.Subject = l.ServerMailSupporterSubscriptionEndedSubject(name)
-		draft.Paragraphs = []string{l.ServerMailSupporterSubscriptionEndedBody(name, job.PlanName, job.EndReason)}
-	case notification.TypeSupporterPlanRetired:
-		draft.Subject = l.ServerMailSupporterPlanRetiredSubject(name)
-		draft.Paragraphs = []string{l.ServerMailSupporterPlanRetiredBody(name, job.PlanName), l.ServerMailSupporterPlanRetiredDetail()}
-	case notification.TypeSupporterServiceClosure:
-		draft.Subject = l.ServerMailSupporterServiceClosureSubject(name)
-		draft.Paragraphs = []string{l.ServerMailSupporterServiceClosureBody(name, job.PlanName), l.ServerMailSupporterServiceClosureDetail()}
-	default:
+	draft, ok := SupporterEmailDraft(l, site.Name, box.Address, job.SupporterMail, d.WebOrigin)
+	if !ok {
 		return nil
 	}
 	m, err := kernel.MailComposer{Site: site, Words: l}.Compose(draft)

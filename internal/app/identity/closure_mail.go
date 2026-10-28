@@ -247,60 +247,11 @@ func (s *Service) sendClosureEmail(ctx context.Context, run queue.Job, job closu
 	if err != nil {
 		return err
 	}
-	d, ok := s.closureDraft(m, job.Email, view, prefs.TimeZone)
+	d, ok := ClosureEmailDraft(m.wording(), email.Address, job.Email, view, prefs.TimeZone, s.webLink(pathExportData))
 	if !ok {
 		return nil
 	}
-	d.To = email.Address
 	return s.send(ctx, run, JobClosureEmail, job.UserID, email.ID, m.composer, d)
-}
-
-// closureDraft words the email e about the closure view for a user in the time zone zone.
-func (s *Service) closureDraft(m mailContext, e identity.ClosureEmail, view identity.ServiceClosureView, zone string) (kernel.MailDraft, bool) {
-	loc, err := time.LoadLocation(zone)
-	if zone == "" || err != nil {
-		loc, zone = time.UTC, identity.DefaultTimeZone
-	}
-	at := func(t time.Time) string { return t.In(loc).Format(closureMailLayout) + " (" + zone + ")" }
-	closesAt, exportUntil := at(view.ClosesAt), at(view.ExportUntil)
-	l := m.l
-	exportAction := &kernel.MailAction{Label: l.ServerMailServiceClosureActionExport(), URL: s.webLink(pathExportData)}
-	d := kernel.MailDraft{Category: kernel.MailTransactional, Reason: l.ServerMailServiceClosureReason(m.name), Action: exportAction}
-	// What the announcement says, in every email of the notice period but the withdrawal.
-	notice := func(first string) []string {
-		p := []string{first, l.ServerMailServiceClosureExport(exportUntil), l.ServerMailServiceClosureMove()}
-		if msg := strings.TrimSpace(view.Message); msg != "" {
-			p = append(p, l.ServerMailServiceClosureMessage(msg))
-		}
-		return p
-	}
-	switch e {
-	case identity.ClosureEmailAnnounced:
-		d.Subject = l.ServerMailServiceClosureAnnouncedSubject(m.name, closesAt)
-		d.Paragraphs = notice(l.ServerMailServiceClosureAnnouncedBody(m.name, closesAt))
-	case identity.ClosureEmailRescheduled:
-		d.Subject = l.ServerMailServiceClosureRescheduledSubject(m.name, closesAt)
-		d.Paragraphs = notice(l.ServerMailServiceClosureRescheduledBody(m.name, closesAt))
-	case identity.ClosureEmailWeekBefore:
-		d.Subject = l.ServerMailServiceClosureWeekBeforeSubject(m.name, closesAt)
-		d.Paragraphs = notice(l.ServerMailServiceClosureWeekBeforeBody(m.name, closesAt))
-	case identity.ClosureEmailDayBefore:
-		d.Subject = l.ServerMailServiceClosureDayBeforeSubject(m.name, closesAt)
-		d.Paragraphs = notice(l.ServerMailServiceClosureDayBeforeBody(m.name, closesAt))
-	case identity.ClosureEmailWithdrawn:
-		d.Subject = l.ServerMailServiceClosureWithdrawnSubject(m.name)
-		d.Paragraphs = []string{l.ServerMailServiceClosureWithdrawnBody(m.name)}
-		d.Action = nil
-	case identity.ClosureEmailClosed:
-		d.Subject = l.ServerMailServiceClosureClosedSubject(m.name)
-		d.Paragraphs = []string{l.ServerMailServiceClosureClosedBody(m.name, exportUntil), l.ServerMailServiceClosureClosedDetail()}
-	case identity.ClosureEmailExportWeekBefore:
-		d.Subject = l.ServerMailServiceClosureExportWeekBeforeSubject(m.name)
-		d.Paragraphs = []string{l.ServerMailServiceClosureExportWeekBeforeBody(m.name, exportUntil), l.ServerMailServiceClosureClosedDetail()}
-	default:
-		return kernel.MailDraft{}, false
-	}
-	return d, true
 }
 
 // webLink returns the URL of path in the web client: on WebOrigin, or BaseURL without one.

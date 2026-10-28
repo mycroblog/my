@@ -1,0 +1,13 @@
+2027-05-01 00:00 (Asia/Tokyo) は終了しました。Example Social までは、サインインしてデータをエクスポートできます。ほかの操作はできません。
+
+その後、運営者がサーバーのデータを消し、元には戻せません。
+
+エクスポートする
+https://social.example/settings/import-export
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+Example Social のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。

@@ -257,6 +257,20 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
   with `TEST_MAILPIT_IMAGE`), and run only with `TEST_MAIL=container` (`scripts/task.sh go:test-mail`). CI runs them
   nightly.
 
+## Emails
+
+Every email the server sends is a draft from a pure function next to its job handler (`internal/app/<module>/mail_drafts.go`),
+which `kernel.MailComposer` completes with the common frame: the HTML layout compiled from `app/mail/frame.mjml`
+(`scripts/task.sh mail:gen`) and the text version with the signature. The catalog in
+`internal/platform/mailpreview/catalog.go` renders each of them from sample inputs:
+
+- `scripts/task.sh mail:preview` writes every email in `en`, `ja`, `en-XA`, and `ar-XB` to `.tmp/mail/preview/` and
+  prints the path of its `index.html`; open it in a browser. `scripts/task.sh mail:preview-watch` renders them again
+  on every change of the layout, the messages, or the Go code.
+- A new email needs a draft function, a job type named `Job...Email`, and its entries in the catalog: a test fails
+  until the catalog has them. `scripts/task.sh mail:golden` then writes its golden files
+  (`internal/platform/mailpreview/testdata/golden`), so that a change to any email shows in the pull request's diff.
+
 ## Design decisions
 
 A change to the architecture needs an ADR: `scripts/task.sh docs:adr-new TITLE="..." SLUG=...`. Only maintainers

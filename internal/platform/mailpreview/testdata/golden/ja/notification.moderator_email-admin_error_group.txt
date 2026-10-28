@@ -1,0 +1,12 @@
+Example Social のサーバーか Web クライアントが新しいエラーを報告したか、解決にしたエラーが再び起きました。管理画面のエラーを確認してください。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+モデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。
+このメールを止める：https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

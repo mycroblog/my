@@ -1,0 +1,11 @@
+Example Social のサポーターのプラン「Supporter」の加入が終わり、特典もなくなりました。加入が解約されました。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+Example Social のサポーターのプランに加入している、または加入していたため、このメールが届いています。

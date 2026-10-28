@@ -1,0 +1,17 @@
+2027-04-01 00:00 (Asia/Tokyo) は 1 週間後の Example Social に終了します。データを失う前にエクスポートしてください。
+
+2027-05-01 00:00 (Asia/Tokyo) まで、サインインしてデータをエクスポートできます。その後、運営者がサーバーのデータを消します。
+
+閉鎖日までなら、アカウントの設定から別のサーバーへアカウントを移転し、フォロワーに移転先をフォローしてもらうこともできます。
+
+運営者からのメッセージ：Thank you for being here. Please take your posts with you.
+
+エクスポートする
+https://social.example/settings/import-export
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+Example Social のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。

@@ -1,0 +1,11 @@
+Your supporter plan “Supporter” on Example Social ended, and its benefits with it. No payment succeeded within 7 days after a payment failed, or the subscription was paused.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you subscribe, or subscribed, to a supporter plan on Example Social.

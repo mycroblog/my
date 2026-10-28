@@ -253,7 +253,7 @@ func (s *Service) ResetPassword(ctx context.Context, secret, password string) (u
 		if err := s.writePassword(ctx, tx, cred, ""); err != nil {
 			return err
 		}
-		return s.enqueuePasswordNotice(ctx, tx, t.UserID, passwordChanged, cred.ID)
+		return s.enqueuePasswordNotice(ctx, tx, t.UserID, PasswordChanged, cred.ID)
 	})
 	if err != nil {
 		return "", err
@@ -299,7 +299,7 @@ func (s *Service) ChangePassword(ctx context.Context, in ChangePasswordInput) er
 		if err := s.writePassword(ctx, tx, cred, in.KeepFamilyID); err != nil {
 			return err
 		}
-		return s.enqueuePasswordNotice(ctx, tx, in.UserID, passwordChanged, cred.ID)
+		return s.enqueuePasswordNotice(ctx, tx, in.UserID, PasswordChanged, cred.ID)
 	})
 }
 

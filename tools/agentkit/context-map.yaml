@@ -162,6 +162,14 @@ entries:
     notes:
       - "Edit app/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
       - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
+  - name: mail-preview
+    paths: ["internal/platform/mailpreview/**", "scripts/mail-preview/**", "internal/app/identity/mail_drafts.go", "internal/app/notification/mail_drafts.go"]
+    docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]
+    userdocs: ["docs/reference/commands.md"]
+    checks: [go]
+    notes:
+      - "Every email is a pure draft function (internal/app/<module>/mail_drafts.go) and entries in internal/platform/mailpreview/catalog.go; TestCatalogHasEveryEmail fails without them."
+      - "A change to an email or the frame rewrites the golden files: `scripts/task.sh mail:golden`, then review the diff. `scripts/task.sh mail:preview` writes .tmp/mail/preview/index.html."
   - name: platform
     paths: ["internal/platform/**", "cmd/my/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0010-configuration-and-packaging.md", "docs/operations/production-checklist.md"]

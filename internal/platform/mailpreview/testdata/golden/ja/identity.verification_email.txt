@@ -1,0 +1,13 @@
+Example Social へようこそ。
+
+リンクの有効期限は 24 時間です。
+
+メールアドレスを確認する
+https://social.example/auth/verify_email?token=sample-token
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+social.example の登録にこのメールアドレスが使われたため、このメールを送りました。登録した覚えがない場合は、このメールを無視してください。

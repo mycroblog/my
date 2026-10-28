@@ -61,18 +61,10 @@ type passwordResetEmail struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
-// passwordNotice is what happened to a user's password, for the email that tells them.
-type passwordNotice string
-
-const (
-	passwordChanged passwordNotice = "changed"
-	passwordRemoved passwordNotice = "removed"
-)
-
 // passwordNoticeEmail is the payload of JobPasswordNoticeEmail.
 type passwordNoticeEmail struct {
 	UserID string         `json:"user_id"`
-	Notice passwordNotice `json:"notice"`
+	Notice PasswordNotice `json:"notice"`
 	// CredentialID is the password credential that was set or removed; it keys the job's
 	// idempotency.
 	CredentialID string `json:"credential_id"`
@@ -126,7 +118,7 @@ func (s *Service) enqueueVerification(ctx context.Context, tx uow.Tx, job verifi
 
 // enqueuePasswordNotice enqueues in tx the email that tells a user that the password credential
 // credentialID was set or removed; it enqueues nothing without email delivery.
-func (s *Service) enqueuePasswordNotice(ctx context.Context, tx uow.Tx, userID string, notice passwordNotice, credentialID string) error {
+func (s *Service) enqueuePasswordNotice(ctx context.Context, tx uow.Tx, userID string, notice PasswordNotice, credentialID string) error {
 	if !s.PasswordResetByEmail() {
 		return nil
 	}
@@ -173,16 +165,8 @@ func (s *Service) sendVerificationEmail(ctx context.Context, run queue.Job, job 
 	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertUserToken(ctx, tx, t) }); err != nil {
 		return err
 	}
-	return s.send(ctx, run, JobVerificationEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
-		Category: kernel.MailTransactional, To: email.Address,
-		Subject: m.l.ServerMailVerifyEmailSubject(m.name),
-		Paragraphs: []string{
-			m.l.ServerMailVerifyEmailBody(m.name),
-			m.l.ServerMailVerifyEmailDetail(int(EmailVerificationTTL / time.Hour)),
-		},
-		Action: &kernel.MailAction{Label: m.l.ServerMailVerifyEmailAction(), URL: s.link(PathVerifyEmail, secret)},
-		Reason: m.l.ServerMailVerifyEmailReason(m.host),
-	})
+	return s.send(ctx, run, JobVerificationEmail, job.UserID, email.ID, m.composer,
+		VerificationEmailDraft(m.wording(), email.Address, s.link(PathVerifyEmail, secret)))
 }
 
 // sendPasswordResetEmail runs JobPasswordResetEmail: while users can ask for a reset link by
@@ -222,16 +206,8 @@ func (s *Service) sendPasswordResetEmail(ctx context.Context, run queue.Job, job
 	if err != nil {
 		return err
 	}
-	return s.send(ctx, run, JobPasswordResetEmail, job.UserID, email.ID, m.composer, kernel.MailDraft{
-		Category: kernel.MailTransactional, To: email.Address,
-		Subject: m.l.ServerMailPasswordResetSubject(m.name),
-		Paragraphs: []string{
-			m.l.ServerMailPasswordResetBody(m.name),
-			m.l.ServerMailPasswordResetDetail(int(PasswordResetTTL / time.Minute)),
-		},
-		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathResetPassword, secret)},
-		Reason: m.l.ServerMailPasswordResetReason(m.host),
-	})
+	return s.send(ctx, run, JobPasswordResetEmail, job.UserID, email.ID, m.composer,
+		PasswordResetEmailDraft(m.wording(), email.Address, s.link(PathResetPassword, secret)))
 }
 
 // sendPasswordNoticeEmail runs JobPasswordNoticeEmail: it tells the user that their password
@@ -260,19 +236,8 @@ func (s *Service) sendPasswordNoticeEmail(ctx context.Context, run queue.Job, jo
 	if err != nil {
 		return err
 	}
-	d := kernel.MailDraft{
-		Category: kernel.MailTransactional, To: email.Address,
-		Action: &kernel.MailAction{Label: m.l.ServerMailActionSetNewPassword(), URL: s.link(PathForgotPassword, "")},
-		Reason: m.l.ServerMailReasonAccount(m.name),
-	}
-	switch job.Notice {
-	case passwordChanged:
-		d.Subject = m.l.ServerMailPasswordChangedSubject(m.name)
-		d.Paragraphs = []string{m.l.ServerMailPasswordChangedBody(m.name), m.l.ServerMailPasswordChangedDetail()}
-	case passwordRemoved:
-		d.Subject = m.l.ServerMailPasswordRemovedSubject(m.name)
-		d.Paragraphs = []string{m.l.ServerMailPasswordRemovedBody(m.name), m.l.ServerMailPasswordRemovedDetail()}
-	default:
+	d, ok := PasswordNoticeEmailDraft(m.wording(), email.Address, job.Notice, s.link(PathForgotPassword, ""))
+	if !ok {
 		return nil
 	}
 	return s.send(ctx, run, JobPasswordNoticeEmail, job.UserID, email.ID, m.composer, d)

@@ -1,0 +1,8 @@
+The administrators of Example Social withdrew the announced closure. The server goes on as before, and you do not need to do anything.
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because this address belongs to your account on Example Social, whose closure affects your data. These emails cannot be turned off.

@@ -1,0 +1,12 @@
+Example Social に新しい利用者が登録し、承認を待っています。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+モデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。
+このメールを止める：https://social.example/mail/unsubscribe?token=sample-unsubscribe-token
