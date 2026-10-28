@@ -63,6 +63,14 @@ func (r *IdentityRepository) InsertLoginProviderRevision(ctx context.Context, tx
 			return wrap(err, "insert login provider revision organization")
 		}
 	}
+	for _, g := range s.Guilds {
+		err := q.InsertLoginProviderRevisionGuild(ctx, postgresgen.InsertLoginProviderRevisionGuildParams{
+			RevisionID: rev.ID, GuildID: g,
+		})
+		if err != nil {
+			return wrap(err, "insert login provider revision guild")
+		}
+	}
 	return nil
 }
 
@@ -184,6 +192,14 @@ func (r *IdentityRepository) loginProviders(ctx context.Context, id *string) ([]
 	for _, o := range orgs {
 		s := &out[byRevision[o.RevisionID]].Settings
 		s.Organizations = append(s.Organizations, o.Organization)
+	}
+	guilds, err := q.ListLoginProviderRevisionGuilds(ctx, revisions)
+	if err != nil {
+		return nil, wrap(err, "list login provider guilds")
+	}
+	for _, g := range guilds {
+		s := &out[byRevision[g.RevisionID]].Settings
+		s.Guilds = append(s.Guilds, g.GuildID)
 	}
 	return out, nil
 }

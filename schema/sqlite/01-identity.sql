@@ -664,12 +664,12 @@ CREATE TABLE login_providers (
 ) STRICT;
 
 -- Event (revision): the settings of a provider; the newest row is current (login_provider_heads).
--- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github. scopes are the extra
+-- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github and discord. scopes are the extra
 -- scopes, space-separated and sorted, NULL for none. revised_by_user_id is NULL for the CLI.
 CREATE TABLE login_provider_revisions (
   id TEXT NOT NULL PRIMARY KEY,
   provider_id TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK (kind IN ('oidc', 'github', 'mastodon')),
+  kind TEXT NOT NULL CHECK (kind IN ('oidc', 'github', 'mastodon', 'discord')),
   display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 100),
   issuer TEXT CHECK (issuer IS NULL OR length(issuer) BETWEEN 1 AND 2048),
   client_id TEXT NOT NULL CHECK (length(client_id) BETWEEN 1 AND 512),
@@ -678,7 +678,7 @@ CREATE TABLE login_provider_revisions (
   allow_link INTEGER NOT NULL CHECK (allow_link IN (0, 1)),
   revised_by_user_id TEXT,
   revised_at INTEGER NOT NULL,
-  CHECK ((kind = 'github') = (issuer IS NULL))
+  CHECK ((kind IN ('github', 'discord')) = (issuer IS NULL))
 ) STRICT;
 CREATE INDEX login_provider_revisions_provider_id_id ON login_provider_revisions (provider_id, id DESC);
 
@@ -698,6 +698,14 @@ CREATE TABLE login_provider_revision_organizations (
   organization TEXT NOT NULL CHECK (length(organization) BETWEEN 1 AND 39),
   PRIMARY KEY (revision_id, organization)
 ) STRICT;
+
+-- Event (child of a revision): a Discord server (guild) whose members may sign in, by its ID (a
+-- decimal snowflake). Without a row, every Discord user may.
+CREATE TABLE login_provider_revision_guilds (
+  revision_id TEXT NOT NULL,
+  guild_id TEXT NOT NULL CHECK (length(guild_id) BETWEEN 1 AND 20),
+  PRIMARY KEY (revision_id, guild_id)
+);
 
 -- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds
 -- a row; the newest one is current. created_by_user_id is NULL for the CLI.

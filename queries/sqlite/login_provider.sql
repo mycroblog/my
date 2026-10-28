@@ -19,6 +19,9 @@ INSERT INTO login_provider_revision_claims (revision_id, claim, value) VALUES (?
 -- name: InsertLoginProviderRevisionOrganization :exec
 INSERT INTO login_provider_revision_organizations (revision_id, organization) VALUES (?, ?);
 
+-- name: InsertLoginProviderRevisionGuild :exec
+INSERT INTO login_provider_revision_guilds (revision_id, guild_id) VALUES (?, ?);
+
 -- name: InsertLoginProviderSecret :exec
 INSERT INTO login_provider_secrets (id, provider_id, sealed_secret, created_by_user_id, created_at)
 VALUES (?, ?, ?, ?, ?);
@@ -51,7 +54,7 @@ JOIN login_provider_state_changes c ON c.id = (
 WHERE h.state <> 'deleted' AND (CAST(sqlc.arg(id) AS TEXT) = '' OR h.provider_id = sqlc.arg(id))
 ORDER BY p.id DESC;
 
--- ListLoginProviderRevisionClaims and ListLoginProviderRevisionOrganizations take the revisions
+-- ListLoginProviderRevisionClaims, ...Organizations, and ...Guilds take the revisions
 -- ids as a JSON array of strings.
 -- name: ListLoginProviderRevisionClaims :many
 SELECT revision_id, claim, value FROM login_provider_revision_claims
@@ -62,6 +65,11 @@ ORDER BY revision_id, claim, value;
 SELECT revision_id, organization FROM login_provider_revision_organizations
 WHERE revision_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)))
 ORDER BY revision_id, organization;
+
+-- name: ListLoginProviderRevisionGuilds :many
+SELECT revision_id, guild_id FROM login_provider_revision_guilds
+WHERE revision_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)))
+ORDER BY revision_id, guild_id;
 
 -- GetCurrentLoginProviderSecret returns the current secret of a provider that is not deleted.
 -- name: GetCurrentLoginProviderSecret :one

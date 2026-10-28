@@ -28,7 +28,7 @@ import (
 // so that another user's intent cannot link the browser's account at the provider to them, and
 // goes on as a sign-in does with the intent in the sealed cookie. A confirmation asks the provider
 // to authenticate the user again (max_age=0 and prompt=login for OpenID Connect, whose auth_time
-// must be later than the request; force_login=true for Mastodon; nothing for GitHub, which has no
+// must be later than the request; force_login=true for Mastodon; nothing for GitHub and Discord, which have no
 // way to ask). FinishExternalLogin ends either: a link checks the provider's allow_link and
 // conditions and refuses an account linked to another user; a confirmation checks that the
 // account is the one the user links and returns a token that the operation takes once
@@ -406,7 +406,7 @@ func (s *Service) BeginExternalIntent(ctx context.Context, providerID, intent, s
 
 // reauthenticationParams adds to the authorization request of an OpenID Connect provider what
 // asks the user to sign in again (ADR-0106 §3.7). A Mastodon provider gets force_login=true
-// (mastodonAuthorizationURL), and GitHub has no way to ask.
+// (mastodonAuthorizationURL), and GitHub and Discord have no way to ask.
 func reauthenticationParams(k identity.LoginProviderKind, q url.Values) {
 	if k == identity.LoginProviderOIDC {
 		q.Set("max_age", "0")

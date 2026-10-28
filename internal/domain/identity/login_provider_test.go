@@ -5,6 +5,7 @@ package identity
 import (
 	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -15,7 +16,7 @@ func TestLoginProviderKinds(t *testing.T) {
 			t.Errorf("%q.Valid() = false", k)
 		}
 	}
-	for _, k := range []LoginProviderKind{"", "oauth2", "OIDC", "discord"} {
+	for _, k := range []LoginProviderKind{"", "oauth2", "OIDC", "gitlab"} {
 		if k.Valid() {
 			t.Errorf("%q.Valid() = true", k)
 		}
@@ -70,6 +71,11 @@ func TestLoginProviderSettingsNormalize(t *testing.T) {
 		t.Errorf("Organizations = %v, want %v", gh.Organizations, want)
 	}
 
+	dc := LoginProviderSettings{Kind: LoginProviderDiscord, Guilds: []string{" 20 ", "10", "20", ""}}.Normalize()
+	if want := []string{"10", "20"}; !reflect.DeepEqual(dc.Guilds, want) {
+		t.Errorf("Guilds = %v, want %v", dc.Guilds, want)
+	}
+
 	for in, want := range map[string]string{
 		"Mastodon.Social":             "https://mastodon.social",
 		"https://Mastodon.Social/":    "https://mastodon.social",
@@ -114,12 +120,16 @@ func TestLoginProviderSettingsValidate(t *testing.T) {
 		"oidc with claims": ok(LoginProviderOIDC, func(s *LoginProviderSettings) {
 			s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"example.com"}}}
 		}),
-		"oidc with scopes":       ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Scopes = []string{"groups", "https://example.com/scope"} }),
-		"github with orgs":       ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Organizations = []string{"mycroblog", "a-b-c"} }),
-		"github with read:org":   ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Scopes = []string{"read:org"} }),
-		"mastodon as a domain":   ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Issuer = "Example.Social" }),
-		"signup without linking": ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.AllowSignup, s.AllowLink = true, false }),
-		"a long name":            ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.DisplayName = strings.Repeat("名", MaxLoginProviderDisplayName) }),
+		"oidc with scopes":     ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Scopes = []string{"groups", "https://example.com/scope"} }),
+		"github with orgs":     ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Organizations = []string{"mycroblog", "a-b-c"} }),
+		"github with read:org": ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Scopes = []string{"read:org"} }),
+		"discord with guilds": ok(LoginProviderDiscord, func(s *LoginProviderSettings) {
+			s.Guilds = []string{"80351110224678912", "18446744073709551615"}
+		}),
+		"discord with the guilds scope": ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Scopes = []string{"guilds"} }),
+		"mastodon as a domain":          ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Issuer = "Example.Social" }),
+		"signup without linking":        ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.AllowSignup, s.AllowLink = true, false }),
+		"a long name":                   ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.DisplayName = strings.Repeat("名", MaxLoginProviderDisplayName) }),
 	} {
 		if err := s.Validate(); err != nil {
 			t.Errorf("Validate(%s) = %v, want nil", name, err)
@@ -130,7 +140,7 @@ func TestLoginProviderSettingsValidate(t *testing.T) {
 		s    LoginProviderSettings
 		want error
 	}{
-		"unknown kind":             {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Kind = "discord" }), ErrInvalidLoginProviderKind},
+		"unknown kind":             {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Kind = "gitlab" }), ErrInvalidLoginProviderKind},
 		"no name":                  {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.DisplayName = "  " }), ErrInvalidLoginProviderName},
 		"long name":                {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.DisplayName = strings.Repeat("a", MaxLoginProviderDisplayName+1) }), ErrInvalidLoginProviderName},
 		"name with a newline":      {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.DisplayName = "a\nb" }), ErrInvalidLoginProviderName},
@@ -148,6 +158,7 @@ func TestLoginProviderSettingsValidate(t *testing.T) {
 		"oidc too long": {ok(LoginProviderOIDC, func(s *LoginProviderSettings) {
 			s.Issuer = "https://id.example.com/" + strings.Repeat("p", MaxLoginProviderURL)
 		}), ErrInvalidLoginProviderURL},
+		"discord with an issuer":    {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Issuer = "https://discord.com" }), ErrInvalidLoginProviderURL},
 		"github with an issuer":     {ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Issuer = "https://github.example.com" }), ErrInvalidLoginProviderURL},
 		"mastodon without a server": {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Issuer = "" }), ErrInvalidLoginProviderURL},
 		"mastodon over http":        {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Issuer = "http://example.social" }), ErrInvalidLoginProviderURL},
@@ -163,10 +174,23 @@ func TestLoginProviderSettingsValidate(t *testing.T) {
 				s.Scopes = append(s.Scopes, "s"+strings.Repeat("x", i))
 			}
 		}), ErrInvalidLoginProviderScopes},
-		"claims on github":   {ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"x"}}} }), ErrInvalidLoginProviderConditions},
-		"claims on mastodon": {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"x"}}} }), ErrInvalidLoginProviderConditions},
-		"orgs on oidc":       {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Organizations = []string{"acme"} }), ErrInvalidLoginProviderConditions},
-		"orgs on mastodon":   {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Organizations = []string{"acme"} }), ErrInvalidLoginProviderConditions},
+		"claims on github":        {ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"x"}}} }), ErrInvalidLoginProviderConditions},
+		"claims on mastodon":      {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"x"}}} }), ErrInvalidLoginProviderConditions},
+		"guilds on github":        {ok(LoginProviderGitHub, func(s *LoginProviderSettings) { s.Guilds = []string{"1"} }), ErrInvalidLoginProviderConditions},
+		"guilds on oidc":          {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Guilds = []string{"1"} }), ErrInvalidLoginProviderConditions},
+		"orgs on discord":         {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Organizations = []string{"acme"} }), ErrInvalidLoginProviderConditions},
+		"claims on discord":       {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{"x"}}} }), ErrInvalidLoginProviderConditions},
+		"guild with a letter":     {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Guilds = []string{"12a"} }), ErrInvalidLoginProviderConditions},
+		"guild with leading zero": {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Guilds = []string{"012"} }), ErrInvalidLoginProviderConditions},
+		"guild too long":          {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Guilds = []string{strings.Repeat("1", MaxDiscordSnowflake+1)} }), ErrInvalidLoginProviderConditions},
+		"guild as a name":         {ok(LoginProviderDiscord, func(s *LoginProviderSettings) { s.Guilds = []string{"My Server"} }), ErrInvalidLoginProviderConditions},
+		"too many guilds": {ok(LoginProviderDiscord, func(s *LoginProviderSettings) {
+			for i := range MaxLoginProviderGuilds + 1 {
+				s.Guilds = append(s.Guilds, strconv.Itoa(i+1))
+			}
+		}), ErrInvalidLoginProviderConditions},
+		"orgs on oidc":     {ok(LoginProviderOIDC, func(s *LoginProviderSettings) { s.Organizations = []string{"acme"} }), ErrInvalidLoginProviderConditions},
+		"orgs on mastodon": {ok(LoginProviderMastodon, func(s *LoginProviderSettings) { s.Organizations = []string{"acme"} }), ErrInvalidLoginProviderConditions},
 		"claim without values": {ok(LoginProviderOIDC, func(s *LoginProviderSettings) {
 			s.Claims = []ClaimCondition{{Claim: "hd", Values: []string{" "}}}
 		}), ErrInvalidLoginProviderConditions},

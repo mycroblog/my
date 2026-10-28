@@ -544,6 +544,11 @@ type LoginProviderRevisionClaim struct {
 	Value      string
 }
 
+type LoginProviderRevisionGuild struct {
+	RevisionID string
+	GuildID    string
+}
+
 type LoginProviderRevisionOrganization struct {
 	RevisionID   string
 	Organization string

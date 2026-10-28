@@ -203,6 +203,10 @@
     "defaultMessage": "Kind",
     "description": "Label of the kind of a login provider, and the column of the list."
   },
+  "admin.login_providers.kind.discord": {
+    "defaultMessage": "Discord",
+    "description": "Kind of login provider: discord.com."
+  },
   "admin.login_providers.kind.github": {
     "defaultMessage": "GitHub",
     "description": "Kind of login provider: github.com."

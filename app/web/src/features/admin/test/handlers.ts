@@ -132,6 +132,7 @@ export function loginProviderFixture(id: string, overrides: Partial<Schemas["Adm
     allow_link: true,
     claims: [],
     organizations: [],
+    guilds: [],
     state: "enabled",
     state_changed_at: "2026-10-20T00:00:00Z",
     callback_url: `https://my.example/auth/external/${id}/callback`,

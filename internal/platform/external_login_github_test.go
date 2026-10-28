@@ -139,14 +139,20 @@ func newGitHubEnv(t *testing.T) (*externalEnv, *fakeGitHub) {
 // githubProvider sets up an enabled github provider that only members of orgs may use.
 func (e *externalEnv) githubProvider(allowSignup bool, orgs ...string) string {
 	e.t.Helper()
+	settings := domain.NewLoginProviderSettings(domain.LoginProviderGitHub)
+	settings.DisplayName, settings.ClientID, settings.AllowSignup, settings.Organizations = "GitHub", ghClientID, allowSignup, orgs
+	return e.insertProvider(settings, ghClientSecret)
+}
+
+// insertProvider stores an enabled provider with settings and the client secret.
+func (e *externalEnv) insertProvider(settings domain.LoginProviderSettings, clientSecret string) string {
+	e.t.Helper()
 	ctx := e.t.Context()
 	id, revID, secretID, changeID := e.id(), e.id(), e.id(), e.id()
-	sealed, err := e.s.app.Sealer.Seal(ctx, []byte(ghClientSecret), kernel.AAD(secretID, domain.LoginProviderSecretColumn))
+	sealed, err := e.s.app.Sealer.Seal(ctx, []byte(clientSecret), kernel.AAD(secretID, domain.LoginProviderSecretColumn))
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	settings := domain.NewLoginProviderSettings(domain.LoginProviderGitHub)
-	settings.DisplayName, settings.ClientID, settings.AllowSignup, settings.Organizations = "GitHub", ghClientID, allowSignup, orgs
 	now := time.Now()
 	r := e.db.IdentityRepository()
 	err = e.db.Tx(ctx, func(tx uow.Tx) error {

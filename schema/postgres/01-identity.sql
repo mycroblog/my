@@ -664,12 +664,12 @@ CREATE TABLE login_providers (
 );
 
 -- Event (revision): the settings of a provider; the newest row is current (login_provider_heads).
--- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github. scopes are the extra
+-- issuer is the OIDC issuer or the Mastodon server's URL, NULL for github and discord. scopes are the extra
 -- scopes, space-separated and sorted, NULL for none. revised_by_user_id is NULL for the CLI.
 CREATE TABLE login_provider_revisions (
   id uuid NOT NULL PRIMARY KEY,
   provider_id uuid NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('oidc', 'github', 'mastodon')),
+  kind text NOT NULL CHECK (kind IN ('oidc', 'github', 'mastodon', 'discord')),
   display_name text NOT NULL CHECK (length(display_name) BETWEEN 1 AND 100),
   issuer text CHECK (issuer IS NULL OR length(issuer) BETWEEN 1 AND 2048),
   client_id text COLLATE "C" NOT NULL CHECK (length(client_id) BETWEEN 1 AND 512),
@@ -678,7 +678,7 @@ CREATE TABLE login_provider_revisions (
   allow_link boolean NOT NULL,
   revised_by_user_id uuid,
   revised_at timestamptz NOT NULL,
-  CHECK ((kind = 'github') = (issuer IS NULL))
+  CHECK ((kind IN ('github', 'discord')) = (issuer IS NULL))
 );
 CREATE INDEX login_provider_revisions_provider_id_id ON login_provider_revisions (provider_id, id DESC);
 
@@ -697,6 +697,14 @@ CREATE TABLE login_provider_revision_organizations (
   revision_id uuid NOT NULL,
   organization text COLLATE "C" NOT NULL CHECK (length(organization) BETWEEN 1 AND 39),
   PRIMARY KEY (revision_id, organization)
+);
+
+-- Event (child of a revision): a Discord server (guild) whose members may sign in, by its ID (a
+-- decimal snowflake). Without a row, every Discord user may.
+CREATE TABLE login_provider_revision_guilds (
+  revision_id uuid NOT NULL,
+  guild_id text COLLATE "C" NOT NULL CHECK (length(guild_id) BETWEEN 1 AND 20),
+  PRIMARY KEY (revision_id, guild_id)
 );
 
 -- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds

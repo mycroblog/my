@@ -96,6 +96,7 @@ async function administratorServer(page: Page) {
         allow_link: body.allow_link ?? true,
         claims: body.claims ?? [],
         organizations: body.organizations ?? [],
+        guilds: body.guilds ?? [],
         state: "enabled",
         state_changed_at: "2026-10-20T00:00:00Z",
         callback_url: callbackUrl,
