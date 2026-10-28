@@ -17,6 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of moderation: the actions on domains (FR-702, manage_domains) and the
@@ -167,7 +168,7 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	var textErr *moderation.TextError
 	switch {
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:

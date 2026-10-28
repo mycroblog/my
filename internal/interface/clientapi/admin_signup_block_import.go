@@ -12,6 +12,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The bulk import of the sign-up block list (manage_accounts): a moderator sends a list, such as
@@ -57,9 +58,9 @@ func (s *Server) ImportSignupBlocks(ctx context.Context, req ImportSignupBlocksR
 	var textErr *moderation.TextError
 	switch {
 	case errors.Is(err, appmoderation.ErrTooManySignupBlocks):
-		return unprocessable(l.ServerErrorsTooMany(moderation.MaxSignupBlockImport, "text"))
+		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxSignupBlockImport, Name: "text"}))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:

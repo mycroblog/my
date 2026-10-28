@@ -14,6 +14,7 @@ import (
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the registration review (FR-721, manage_accounts): the sign-ups that
@@ -151,7 +152,7 @@ func (s *Server) decideRegistration(ctx context.Context, userID string, d identi
 		l := s.Localizer(ctx)
 		detail := l.ServerErrorsInvalidValue("note")
 		if utf8.RuneCountInString(in.Note) > identity.MaxDecisionNoteLength {
-			detail = l.ServerErrorsTooLong(identity.MaxDecisionNoteLength, "note")
+			detail = l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: identity.MaxDecisionNoteLength, Name: "note"})
 		}
 		p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
 		return AdminRegistrationJSONResponse{}, &p, nil

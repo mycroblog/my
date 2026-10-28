@@ -11,6 +11,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The instance rules (FR-705): the admin operations that manage them (manage_rules), and the
@@ -82,9 +83,9 @@ func (s *Server) ruleProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, instance.ErrRuleRetired):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true
 	case errors.Is(err, instance.ErrTooManyRules):
-		return unprocessable(l.ServerErrorsTooMany(instance.MaxRules, "rules"))
+		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: instance.MaxRules, Name: "rules"}))
 	case errors.As(err, &te) && te.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(te.Max, te.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: te.Max, Name: te.Field}))
 	case errors.As(err, &te):
 		return unprocessable(l.ServerErrorsInvalidValue(te.Field))
 	case errors.Is(err, instance.ErrInvalidValue):

@@ -142,7 +142,7 @@ func describeAppeal(a *statusAction, l *i18n.Localizer, v appmoderation.TargetAc
 		a.Appeal = &statusAppeal{State: l.ServerAuthStatusAppealState(string(v.Appeal.State)), Text: v.Appeal.Text, Answer: v.Appeal.DecisionReason}
 	case v.Appealable && v.AppealDeadline != nil:
 		a.CanAppeal, a.AppealMax = true, moderation.MaxAppealText
-		a.AppealHint = l.ServerAuthStatusAppealHint(daysUntil(now, *v.AppealDeadline), float64(moderation.MaxAppealText))
+		a.AppealHint = l.ServerAuthStatusAppealHint(i18n.ServerAuthStatusAppealHintArgs{Days: daysUntil(now, *v.AppealDeadline), Max: float64(moderation.MaxAppealText)})
 	case v.AppealDeadline != nil && now.After(*v.AppealDeadline):
 		a.NoAppeal = l.ServerErrorsAppealWindowClosed()
 	default:

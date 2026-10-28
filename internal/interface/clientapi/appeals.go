@@ -11,6 +11,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The viewer's appeals of the actions on their own account (FR-707, ADR-0038). The moderation
@@ -64,7 +65,7 @@ func (s *Server) AppealModerationAction(ctx context.Context, req AppealModeratio
 	case errors.Is(err, appmoderation.ErrNotAppealable):
 		return refuse(ProblemTypeNotAppealable, l.ServerErrorsAppealNotAppealable(), "")
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return refuse(ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return refuse(ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return refuse(ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:

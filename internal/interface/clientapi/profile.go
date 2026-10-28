@@ -12,6 +12,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // Profiles changes the viewer's profile. *appaccount.Service implements it.
@@ -153,9 +154,9 @@ func (s *Server) profileProblemDetail(ctx context.Context, e *account.ProfileErr
 	name := profileProperties[e.Property]
 	switch {
 	case e.Problem == account.ProblemTooLong:
-		return l.ServerErrorsTooLong(e.Max, name)
+		return l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: e.Max, Name: name})
 	case e.Problem == account.ProblemTooMany:
-		return l.ServerErrorsTooMany(e.Max, name)
+		return l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: e.Max, Name: name})
 	case e.Property == account.PropertyAvatar || e.Property == account.PropertyHeader:
 		return l.ServerErrorsUnusableImage(name)
 	}

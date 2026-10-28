@@ -96,7 +96,7 @@ func (h *Handler) forgotPassword(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case err == nil:
 		minutes := int(appidentity.PasswordResetTTL / time.Minute)
-		p.Notice = p.L.ServerAuthForgotPasswordSent(p.Email, minutes)
+		p.Notice = p.L.ServerAuthForgotPasswordSent(i18n.ServerAuthForgotPasswordSentArgs{Email: p.Email, Minutes: minutes})
 		p.ForgotPassword = &forgotPasswordView{Sent: true}
 		h.renderForgotPassword(w, r, http.StatusOK, p)
 		return
@@ -147,7 +147,7 @@ func (h *Handler) renderResetPassword(w http.ResponseWriter, r *http.Request, st
 	if p.NewPassword == nil {
 		p.NewPassword = &newPasswordView{}
 	}
-	p.NewPassword.Hint = p.L.ServerAuthSignUpPasswordHint(identity.MaxPasswordLength, identity.MinPasswordLength)
+	p.NewPassword.Hint = p.L.ServerAuthSignUpPasswordHint(i18n.ServerAuthSignUpPasswordHintArgs{Max: identity.MaxPasswordLength, Min: identity.MinPasswordLength})
 	p.NewPassword.Min, p.NewPassword.Max = identity.MinPasswordLength, identity.MaxPasswordLength
 	h.render(w, r, status, pageResetPassword, p)
 }
@@ -177,7 +177,7 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	case errors.Is(err, identity.ErrInvalidPassword):
 		p.NewPassword = &newPasswordView{
-			Error: p.L.ServerAuthSignUpPasswordInvalid(float64(identity.MaxPasswordLength), float64(identity.MinPasswordLength)),
+			Error: p.L.ServerAuthSignUpPasswordInvalid(i18n.ServerAuthSignUpPasswordInvalidArgs{Max: float64(identity.MaxPasswordLength), Min: float64(identity.MinPasswordLength)}),
 		}
 		h.renderResetPassword(w, r, http.StatusUnprocessableEntity, p)
 		return

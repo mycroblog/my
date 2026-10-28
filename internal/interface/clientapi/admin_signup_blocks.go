@@ -12,6 +12,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the sign-up block list (FR-719, manage_accounts). The moderation module
@@ -132,7 +133,7 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 	var textErr *moderation.TextError
 	switch {
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case errors.Is(err, appmoderation.ErrInvalidSignupBlock):

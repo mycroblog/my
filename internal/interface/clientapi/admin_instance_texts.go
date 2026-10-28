@@ -13,6 +13,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The instance texts (FR-705): the admin operations that read and write them (manage_settings),
@@ -99,7 +100,7 @@ func (s *Server) SetInstanceText(ctx context.Context, req SetInstanceTextRequest
 		return SetInstanceTextdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	if utf8.RuneCountInString(req.Body.Body) > def.MaxLength {
-		return unprocessable(l.ServerErrorsTooLong(def.MaxLength, "body")), nil
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: def.MaxLength, Name: "body"})), nil
 	}
 	rev, err := s.o.InstanceTexts.SetText(ctx, appinstance.SetTextInput{
 		Key: def.Key, Body: req.Body.Body, RevisedByUserID: v.UserID,

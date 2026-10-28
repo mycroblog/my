@@ -65,7 +65,7 @@ func newSignUpForm(l *i18n.Localizer, mode identity.RegistrationMode) *signUpFor
 		InviteHint:   inviteHint,
 		AskReason:    mode == identity.RegistrationApproval,
 		UsernameHint: l.ServerAuthSignUpUsernameHint(account.MaxUsernameLength),
-		PasswordHint: l.ServerAuthSignUpPasswordHint(identity.MaxPasswordLength, identity.MinPasswordLength),
+		PasswordHint: l.ServerAuthSignUpPasswordHint(i18n.ServerAuthSignUpPasswordHintArgs{Max: identity.MaxPasswordLength, Min: identity.MinPasswordLength}),
 		ReasonHint:   l.ServerAuthSignUpReasonHint(identity.MaxRegistrationReasonLength),
 		Errors:       map[string]string{},
 		UsernameMax:  account.MaxUsernameLength,
@@ -169,7 +169,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 func (f *signUpForm) check(l *i18n.Localizer, password string) {
 	f.checkFields(l)
 	if identity.ValidatePassword(password) != nil {
-		f.Errors[fieldPassword] = l.ServerAuthSignUpPasswordInvalid(float64(f.PasswordMax), float64(f.PasswordMin))
+		f.Errors[fieldPassword] = l.ServerAuthSignUpPasswordInvalid(i18n.ServerAuthSignUpPasswordInvalidArgs{Max: float64(f.PasswordMax), Min: float64(f.PasswordMin)})
 	}
 }
 
@@ -214,7 +214,7 @@ func (h *Handler) signUpFailedWith(w http.ResponseWriter, r *http.Request, p pag
 	case errors.Is(err, identity.ErrInvalidEmail):
 		f.Errors[fieldEmail] = l.ServerAuthSignUpEmailInvalid()
 	case errors.Is(err, identity.ErrInvalidPassword):
-		f.Errors[fieldPassword] = l.ServerAuthSignUpPasswordInvalid(float64(f.PasswordMax), float64(f.PasswordMin))
+		f.Errors[fieldPassword] = l.ServerAuthSignUpPasswordInvalid(i18n.ServerAuthSignUpPasswordInvalidArgs{Max: float64(f.PasswordMax), Min: float64(f.PasswordMin)})
 	case errors.Is(err, identity.ErrInvalidReason):
 		f.Errors[fieldReason] = l.ServerAuthSignUpReasonInvalid(float64(f.ReasonMax))
 	default:

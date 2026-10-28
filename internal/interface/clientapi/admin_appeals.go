@@ -12,6 +12,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the appeals (FR-707, manage_accounts). Overturning an appeal lifts its
@@ -204,7 +205,7 @@ func (s *Server) decideAppeal(ctx context.Context, id string, decision moderatio
 	case errors.Is(err, appmoderation.ErrAppealDecided):
 		return refuse(http.StatusConflict, ProblemTypeAppealDecided, l.ServerErrorsAppealDecided(), "")
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return refuse(http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return refuse(http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return refuse(http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:

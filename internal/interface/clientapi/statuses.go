@@ -16,6 +16,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // Statuses runs the posting use cases of local statuses. *appcontent.Service implements it.
@@ -184,7 +185,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, content.ErrInvalidPollChoices):
 		return unprocessable(l.ServerErrorsStatusPollInvalidChoices())
 	case errors.Is(err, content.ErrInvalidPoll):
-		return unprocessable(l.ServerErrorsStatusPollInvalid(strconv.Itoa(content.MaxPollOptionLength), strconv.Itoa(content.MaxLocalPollOptions), strconv.Itoa(content.MinPollOptions)))
+		return unprocessable(l.ServerErrorsStatusPollInvalid(i18n.ServerErrorsStatusPollInvalidArgs{Length: strconv.Itoa(content.MaxPollOptionLength), Max: strconv.Itoa(content.MaxLocalPollOptions), Min: strconv.Itoa(content.MinPollOptions)}))
 	case errors.Is(err, appcontent.ErrPollWithMedia):
 		return unprocessable(l.ServerErrorsStatusPollWithMedia())
 	case errors.Is(err, appcontent.ErrPollNotEditable):
