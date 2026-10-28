@@ -211,6 +211,10 @@
     "defaultMessage": "投稿しました。",
     "description": "Notice after a post was published."
   },
+  "compose.posted.first": {
+    "defaultMessage": "最初の投稿をしました。ようこそ。",
+    "description": "Notice after the account's first post was published: the post is done, and the account has started posting."
+  },
   "compose.remaining": {
     "defaultMessage": "残り {count, plural, other {# 文字}}",
     "description": "Counter under a text field: how many more characters fit. {count} is a number."

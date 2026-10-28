@@ -232,8 +232,8 @@ for example `motion-safe:transition-colors`; `scripts/task.sh web:tokens` fails 
 - Easing: `ease-standard` (the default), `ease-enter` (things appearing), `ease-exit` (things leaving). None of them overshoots.
 - Celebrated moments: only the moments listed in
   [web-client/21-experience-principles.md §21.5](../../docs/architecture/web-client/21-experience-principles.md#215-祝う場面)
-  (a favourite) bounce a little, all with the same micro-interaction of `src/celebration.ts`: `ToggleButton`'s
-  `celebrate`, or `useCelebration()` with `celebrationClasses` on another control. While the control carries
+  (a favourite, the first post) bounce a little, all with the same micro-interaction of `src/celebration.ts`: `ToggleButton`'s
+  `celebrate`, a toast's `celebrate` (the toast of the first post), or `useCelebration()` with `celebrationClasses` on another control. While the control carries
   `data-celebrating` (600ms after the person's own action), its icon grows in with `animate-celebrate` (`duration-slow`,
   `ease-celebrate`, the one easing with a small overshoot); with reduced motion nothing moves and the control takes the
   `soft` fill instead. Never use `ease-celebrate` or `animate-celebrate` elsewhere.

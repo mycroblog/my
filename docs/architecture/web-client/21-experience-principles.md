@@ -60,7 +60,7 @@ L3 のうち、今ある検査は次のとおり。
 | 場面 | 合図 | 部品 | 状態 |
 | --- | --- | --- | --- |
 | お気に入りを付けた | 投稿の操作の帯のお気に入りを、本人が押してオンにした直後 | `ToggleButton` の `celebrate`（`StatusActions` のお気に入り） | 実装済み |
-| 最初の投稿 | アカウントの最初の投稿が送れた直後 | `useCelebration` | 未実装。クライアント API がアカウントの投稿の数を返していないため、返すようになってから付ける（#1701） |
+| 最初の投稿 | アカウントの最初の投稿が送れた直後。本人のアカウント（`verifyAccountCredentials` の `statuses_count`、本人にだけ返す消していない投稿の数）をキャッシュで 1 増やし、1 になったら最初の投稿とする | `Toast` の `celebrate`（投稿の結果のトースト。文言も「最初の投稿」を言う） | 実装済み |
 | 設定の手順の完了 | 最初の設定（オンボーディング）の手順を終えた直後 | `useCelebration` | 未実装。オンボーディングの画面（#1654・#1687）が付ける |
 
 - 動きは 1 つだけ: `@my/ui` の `celebration.ts`（`useCelebration` と `celebrationClasses`）で、要素が `data-celebrating` の間（600 ms）、そのアイコン（子の `svg`）が `animate-celebrate`（`duration-slow`、少し行き過ぎる `--ease-celebrate`）で小さい大きさから入る。
