@@ -1067,7 +1067,7 @@ test.describe("badges on the badges page", () => {
 });
 
 test.describe("time zone", () => {
-  test("names the zones in the display language with their offset, and describes them by their IANA name", async ({
+  test("names the zones in the display language with their offset and their IANA name", async ({
     page,
     makeAxeBuilder,
   }) => {
@@ -1079,9 +1079,8 @@ test.describe("time zone", () => {
 
     await select.click();
     const tokyo = page.getByRole("option").filter({ hasText: "Asia/Tokyo" });
-    await expect(tokyo).toHaveAccessibleName(/\+09:00/);
-    await expect(tokyo).not.toHaveAccessibleName(/Asia\/Tokyo/);
-    await expect(tokyo).toHaveAccessibleDescription("Asia/Tokyo");
+    // The name is all of the option's visible text (WCAG 2.5.3): the CLDR name with the offset, then the IANA name.
+    await expect(tokyo).toHaveAccessibleName(/\+09:00.*Asia\/Tokyo$/);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

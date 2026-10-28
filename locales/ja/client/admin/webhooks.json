@@ -88,8 +88,8 @@
     "description": "Error of sending a delivery again. {reason} is the server's reason."
   },
   "admin.webhooks.deliveries.redeliver_of": {
-    "defaultMessage": "{event} {id} をもう一度送る",
-    "description": "Accessible name of the button that sends a delivery again. {event} is the event's name and {id} the message ID."
+    "defaultMessage": "{action}：{event} {id}",
+    "description": "Accessible name of the button that sends a delivery again: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Send again'), {event} the event's name and {id} the message ID."
   },
   "admin.webhooks.deliveries.redelivered": {
     "defaultMessage": "もう一度送信待ちにしました。",

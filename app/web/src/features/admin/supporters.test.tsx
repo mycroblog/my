@@ -123,7 +123,7 @@ describe("the supporters screen", () => {
     if (active === undefined || ended === undefined) throw new Error("two subscriptions expected");
     expect(within(active).getByRole("rowheader", { name: "@bob" })).toBeInTheDocument();
     expect(within(active).getByText("¥500 a month")).toBeInTheDocument();
-    expect(within(active).getByRole("button", { name: "End the subscription of ⁦@bob⁩ now" })).toBeInTheDocument();
+    expect(within(active).getByRole("button", { name: "End now: ⁦@bob⁩" })).toBeInTheDocument();
     expect(within(ended).getByRole("rowheader", { name: "Deleted account" })).toBeInTheDocument();
     expect(within(ended).queryByRole("button")).not.toBeInTheDocument();
   });
@@ -373,7 +373,7 @@ describe("the supporters screen", () => {
     const { user, router } = await renderApp({ path: "/admin/supporters" });
     const list = await screen.findByRole("region", { name: "Subscriptions" });
 
-    await user.click(within(list).getByRole("button", { name: "End the subscription of ⁦@bob⁩ now" }));
+    await user.click(within(list).getByRole("button", { name: "End now: ⁦@bob⁩" }));
     const dialog = await screen.findByRole("alertdialog", { name: "End the subscription of ⁦@bob⁩ now?" });
     expect(dialog).toHaveTextContent("Nothing is refunded");
     await user.click(within(dialog).getByRole("button", { name: "End now" }));

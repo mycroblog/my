@@ -90,7 +90,7 @@ describe("Select", () => {
     expect(screen.getByRole("button", { name: /Language/ })).toHaveAccessibleDescription("Choose a language.");
   });
 
-  it("names an option by its label and describes it by its description", async () => {
+  it("names an option by its label and its description, all of its visible text", async () => {
     const user = userEvent.setup();
     render(
       <Select label="Time zone">
@@ -103,9 +103,8 @@ describe("Select", () => {
       </Select>,
     );
     await user.click(screen.getByRole("button", { name: /Time zone/ }));
-    const options = await screen.findAllByRole("option", { name: "Eastern Time" });
-    expect(options[0]).toHaveAccessibleDescription("America/New_York");
-    expect(options[1]).toHaveAccessibleDescription("America/Detroit");
+    expect(await screen.findByRole("option", { name: "Eastern Time America/New_York" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Eastern Time America/Detroit" })).toBeInTheDocument();
   });
 
   it("in a toolbar, shows the chosen option after its icon and names the button by the option and the aria-label", () => {

@@ -128,7 +128,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | # | 規約 | 強制 |
 | --- | --- | --- |
 | Y1 | すべてのストーリーと E2E の画面で、axe の違反（`wcag2a` / `wcag2aa` / `wcag21a` / `wcag21aa` / `wcag22aa`）がない | Storybook（`a11y.test: 'error'`）、Playwright |
-| Y2 | 操作できる要素はすべてロールとアクセシブルネームを持つ。テストは `getByRole` / `getByLabelText` で探し、テスト ID は最後の手段にする | `eslint-plugin-testing-library` の `flat/react`、`testing-library/no-test-id-queries`（使うときは理由付きの無効化コメント） |
+| Y2 | 操作できる要素はすべてロールとアクセシブルネームを持つ。見える文言を持つ要素の名前を `aria-label` で変えるときは、見える文言をそのまま先頭に置く（「リンクをコピー：{招待のコード}」の形。WCAG 2.5.3）。テストは `getByRole` / `getByLabelText` で探し、テスト ID は最後の手段にする | E2E の axe（`label-content-name-mismatch`）、`eslint-plugin-testing-library` の `flat/react`、`testing-library/no-test-id-queries`（使うときは理由付きの無効化コメント） |
 | Y3 | コントラストは AA（文字 4.5:1、UI 3:1）をライト / ダークの両方で満たす | `scripts/task.sh web:tokens`（トークンの組）、実ブラウザの axe |
 | Y4 | フォーカスできる要素はすべて `focus-visible` のリングを持つ。固定ヘッダでフォーカスを隠さない（`scroll-padding`） | 見た目のスナップショット、レビュー |
 | Y5 | ルートが変わったら、新しい画面の `h1`（`tabindex="-1"`）にフォーカスを移し、`document.title` を更新する。外枠が 1 か所で行う（§9） | Playwright、統合テスト |

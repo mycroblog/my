@@ -207,7 +207,7 @@ describe("the page of a webhook", () => {
     expect(within(deliveries).getByText("Failing")).toBeInTheDocument();
     expect(within(deliveries).getByText("HTTP 503")).toBeInTheDocument();
     await user.click(
-      within(deliveries).getByRole("button", { name: `Send A report is filed ${failing.message_id} again` }),
+      within(deliveries).getByRole("button", { name: `Send again: A report is filed ${failing.message_id}` }),
     );
 
     expect(await within(deliveries).findByRole("status")).toHaveTextContent("The delivery is on its way again.");

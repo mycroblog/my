@@ -156,7 +156,11 @@ function DeliveryRow({
         <Button
           size="sm"
           isPending={isPending}
-          aria-label={t("client:admin.webhooks.deliveries.redeliver_of", { event, id: delivery.message_id })}
+          aria-label={t("client:admin.webhooks.deliveries.redeliver_of", {
+            action: t("client:admin.webhooks.deliveries.redeliver"),
+            event,
+            id: delivery.message_id,
+          })}
           onPress={onRedeliver}
         >
           {t("client:admin.webhooks.deliveries.redeliver")}

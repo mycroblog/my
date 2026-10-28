@@ -284,7 +284,10 @@ test.describe("supporters", () => {
     });
     await subscriptionsRegion
       .getByRole("button", {
-        name: message("admin.supporters.subscription.cancel_of", { name: "⁦@bob⁩" }),
+        name: message("admin.supporters.subscription.cancel_of", {
+          action: message("admin.supporters.subscription.cancel"),
+          name: "⁦@bob⁩",
+        }),
         exact: true,
       })
       .click();

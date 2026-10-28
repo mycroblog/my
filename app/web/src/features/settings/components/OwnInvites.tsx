@@ -182,7 +182,10 @@ function InviteRow({ invite, revoke }: { invite: OwnInvite; revoke: RevokeOwnInv
             <Cluster gap="2">
               <Button
                 size="sm"
-                aria-label={t("client:settings.invites.copy_invite", { code: invite.code })}
+                aria-label={t("client:settings.invites.copy_invite", {
+                  action: t("client:settings.invites.copy"),
+                  code: invite.code,
+                })}
                 onPress={() => {
                   copy(invite);
                 }}

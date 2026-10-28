@@ -264,8 +264,8 @@
     "description": "Button of a role that opens the dialog to change its badge."
   },
   "admin.roles.badge.edit_role": {
-    "defaultMessage": "Change the badge of {role}",
-    "description": "Accessible name of the button that opens the badge dialog. {role} is the role's key."
+    "defaultMessage": "{action}: {role}",
+    "description": "Accessible name of the button that opens the badge dialog: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Badge') and {role} the role's key."
   },
   "admin.roles.badge.edit.title": {
     "defaultMessage": "Badge of {role}",
