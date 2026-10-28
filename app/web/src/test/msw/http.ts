@@ -72,6 +72,9 @@ export function oauthError(error: string, status = 400) {
 /** Makes the session resume: the refresh endpoint answers with the access token the default handlers accept. */
 export const signedInHandler = http.post(oauthPaths.refresh, () => tokenResponse(validAccessToken));
 
+/** Makes a sign-in complete: the token endpoint exchanges any code for the access token the default handlers accept. */
+export const codeExchangeHandler = http.post(oauthPaths.token, () => tokenResponse(validAccessToken));
+
 /**
  * A refresh token cookie that resumes a session with the access token the default handlers accept: pass it
  * to `server.use()` before `renderApp` to start signed in.

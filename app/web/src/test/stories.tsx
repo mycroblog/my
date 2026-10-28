@@ -14,6 +14,7 @@ import type { RuntimeConfig } from "../lib/config";
 import { ApiError, NetworkError } from "../lib/errors";
 import { applyDocumentLocale, type I18n, loadI18n } from "../lib/i18n";
 import { createAppServices } from "../lib/services";
+import { signInKey, type StoredSignIn } from "../lib/storage";
 import { createAppRouter } from "../router";
 import { preferencesFixture, type Schemas, viewerFixture } from "./fixtures";
 import { worker } from "./msw/browser";
@@ -35,6 +36,8 @@ export type ScreenParameters = {
    * not-found); `true` allows any, a fault of the app's own code included.
    */
   errorPage?: boolean | "request";
+  /** A sign-in this tab started, waiting for the callback (lib/auth/signIn); none by default. */
+  pendingSignIn?: StoredSignIn;
 };
 
 /** The stories' runtime config: the API is MSW's worker on the page's own origin. */
@@ -93,7 +96,7 @@ function storyLocale(context: StoryContext): string {
  * story (lib/storage, the live announcer), and the catalog of the story's locale is loaded.
  */
 export const screenLoader: Loader = async (context) => {
-  const { signedIn = false, handlers = [], preferences: initial = {} } = screenParameters(context);
+  const { signedIn = false, handlers = [], preferences: initial = {}, pendingSignIn } = screenParameters(context);
   const locale = storyLocale(context);
   await startWorker();
   worker.resetHandlers();
@@ -118,6 +121,7 @@ export const screenLoader: Loader = async (context) => {
   worker.use(...handlers);
   localStorage.clear();
   sessionStorage.clear();
+  if (pendingSignIn !== undefined) signInKey.write(pendingSignIn);
   // React Aria's live announcer outlives the story that announced (a saved form): its messages name elements that
   // are gone with that story. The next story starts with a fresh one, as each test does (src/test/setup.ts).
   destroyAnnouncer();
@@ -150,7 +154,7 @@ type DefaultErrorPages = { defaultErrorComponent?: unknown; defaultNotFoundCompo
 
 /** Makes every error and not-found page of `router` record what it shows in `shown`. */
 function watchErrorPages(router: ReturnType<typeof createAppRouter>): void {
-  for (const route of Object.values(router.routesById)) {
+  for (const route of Object.values(router.routesById) as { id: string; options: unknown }[]) {
     const options = route.options as ErrorPages;
     if (typeof options.errorComponent === "function")
       options.errorComponent = watching(options.errorComponent as ComponentType<object>, `${route.id} error page`);
@@ -272,8 +276,17 @@ export function loadingOn(method: Method, path: string) {
 
 /** A story whose request `method path` fails with a 500, as a server that broke. */
 export function failingOn(method: Method, path: string) {
-  const handler = http[method](`${apiBase}${path}`, () => problem(500, "about:blank", "Internal Server Error"));
-  return { parameters: { screen: { handlers: [handler], errorPage: "request" as const } } };
+  return answeringWithErrorPage(
+    http[method](`${apiBase}${path}`, () => problem(500, "about:blank", "Internal Server Error")),
+  );
+}
+
+/**
+ * `answering`, for a story whose screen shows its error or not-found page on purpose: a request of `handlers` fails
+ * (a 404, a 401, a 500) or the server turned the page off.
+ */
+export function answeringWithErrorPage(...handlers: RequestHandler[]) {
+  return { parameters: { screen: { handlers, errorPage: "request" as const } } };
 }
 
 /** A story displayed in `locale`: Japanese, or the pseudo-locales en-XA (long words) and ar-XB (right to left). */
