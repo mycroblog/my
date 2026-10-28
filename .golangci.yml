@@ -337,6 +337,18 @@ linters:
             - github.com/mycroblog/my/internal/app/dbupgrade
             - github.com/mycroblog/my/internal/app/kernel
             - github.com/mycroblog/my/internal/app/uow
+        # app/rewrap re-wraps the stored sealed values under the current KEK (`my kek`, ADR-0019 §6)
+        # through a Store port and the sealed columns that the composition root takes from the
+        # modules; it owns no tables and depends only on kernel (Sealer) and uow.
+        app-rewrap:
+          list-mode: strict
+          files:
+            - "**/internal/app/rewrap/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app/rewrap
+            - github.com/mycroblog/my/internal/app/kernel
+            - github.com/mycroblog/my/internal/app/uow
         # app/stream holds the ports of the real-time updates (Publisher / Subscriber, Bus,
         # Sweeper), the in-process broker, and the cross-process Relay shared by the modules that
         # publish, the streaming endpoint, and the Bus adapters; it depends only on kernel (the

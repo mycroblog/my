@@ -40,6 +40,9 @@ func NewSealer(km KeyManager) *Sealer {
 	return &Sealer{km: km}
 }
 
+// CurrentKeyID returns the ID of the KEK that Seal and Rewrap wrap DEKs with.
+func (s *Sealer) CurrentKeyID() string { return s.km.CurrentKeyID() }
+
 // AAD encodes parts, such as an actor ID and a column name, as additional authenticated data.
 // Each part is length-prefixed, so different lists of parts never encode to the same bytes.
 func AAD(parts ...string) []byte {
