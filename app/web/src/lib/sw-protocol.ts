@@ -10,6 +10,8 @@ export const cachePrefix = "my";
 export const mediaCacheName = `${cachePrefix}-media`;
 /** The runtime cache of the instance theme's stylesheets (ADR-0059). */
 export const themeCacheName = `${cachePrefix}-theme`;
+/** The runtime cache of the instance's own icon and logos (/brand/, ADR-0116). */
+export const brandCacheName = `${cachePrefix}-brand`;
 /** The runtime cache of the Noto Color Emoji splits (ADR-0095 §3), which the precache leaves out. */
 export const emojiFontCacheName = `${cachePrefix}-emoji-font`;
 

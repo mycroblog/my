@@ -1,0 +1,214 @@
+{
+  "admin.brand.background": {
+    "defaultMessage": "Background color",
+    "description": "Label of the field of the color behind the icon on home screens and app icons."
+  },
+  "admin.brand.background.description": {
+    "defaultMessage": "The color behind the icon on home screens and app icons, such as #ffffff.",
+    "description": "Help under the background color field of the icon."
+  },
+  "admin.brand.background.invalid": {
+    "defaultMessage": "Enter a color as # and six digits, such as #ffffff.",
+    "description": "Error under the background color field when it is not #rrggbb."
+  },
+  "admin.brand.built_in": {
+    "defaultMessage": "The built-in one of my is in use.",
+    "description": "Text in place of the preview while a brand image is not set."
+  },
+  "admin.brand.check_failed": {
+    "defaultMessage": "Could not check the file: {reason}",
+    "description": "Error when checking the chosen SVG failed for a reason other than the file. {reason} is the server's localized reason."
+  },
+  "admin.brand.checked": {
+    "defaultMessage": "Checked the file. The previews show how it will look.",
+    "description": "Announcement after the chosen SVG was checked and its images drawn."
+  },
+  "admin.brand.checked_dropped": {
+    "defaultMessage": "Checked the file and removed {count, plural, one {# part} other {# parts}} from it. The previews show how it will look.",
+    "description": "Announcement after the chosen SVG was checked and the server removed some parts. {count} is how many."
+  },
+  "admin.brand.choose": {
+    "defaultMessage": "Choose an SVG file",
+    "description": "Button that opens the file picker to choose the SVG of a brand image."
+  },
+  "admin.brand.clear_failed": {
+    "defaultMessage": "Could not go back to the built-in one: {reason}",
+    "description": "Error beside the button that clears a brand image. {reason} is the server's localized reason."
+  },
+  "admin.brand.description": {
+    "defaultMessage": "Your server's own pictures in place of the built-in ones of my. Choose an SVG file: the server checks it and removes anything that could run or load other files, and this browser draws the PNG images that apps and emails need from it.",
+    "description": "Explanation above the forms of the server's icon and logos."
+  },
+  "admin.brand.dropped": {
+    "defaultMessage": "Removed from the file ({count, number}):",
+    "description": "Heading of the list of the elements and attributes the server removed from the chosen SVG. {count} is how many."
+  },
+  "admin.brand.error.aspect_ratio.icon": {
+    "defaultMessage": "The icon must be square. Make the picture's width and height equal.",
+    "description": "Error when the icon is not square."
+  },
+  "admin.brand.error.aspect_ratio.logo": {
+    "defaultMessage": "A logo must be 1 to 8 times as wide as it is high. Crop the picture to fit.",
+    "description": "Error when a logo's proportions are outside 1:1 to 8:1."
+  },
+  "admin.brand.error.doctype": {
+    "defaultMessage": "Remove the DOCTYPE and entity declarations from the file, then choose it again.",
+    "description": "Error when the SVG has a DOCTYPE or entity declarations."
+  },
+  "admin.brand.error.draw": {
+    "defaultMessage": "This browser could not draw the picture. Try another browser, or export the SVG again.",
+    "description": "Error when the browser could not draw the SVG on a canvas."
+  },
+  "admin.brand.error.invalid_color": {
+    "defaultMessage": "Enter a color as # and six digits, such as #ffffff.",
+    "description": "Error when the server refused the background color."
+  },
+  "admin.brand.error.malformed": {
+    "defaultMessage": "This file is not a readable SVG. Export it again as an SVG file in UTF-8.",
+    "description": "Error when the chosen file is not well-formed XML."
+  },
+  "admin.brand.error.no_file": {
+    "defaultMessage": "Choose an SVG file to save.",
+    "description": "Error under the file button when the save button is pressed without a chosen file."
+  },
+  "admin.brand.error.no_viewbox": {
+    "defaultMessage": "The SVG has no viewBox. Export it again with a viewBox (most editors add one).",
+    "description": "Error when the SVG has no valid viewBox."
+  },
+  "admin.brand.error.not_svg": {
+    "defaultMessage": "This file is not an SVG. Choose an SVG file.",
+    "description": "Error when the chosen file's root element is not svg."
+  },
+  "admin.brand.error.rendition": {
+    "defaultMessage": "The server did not accept the images drawn in this browser. Choose the file again; if it happens again, try another browser.",
+    "description": "Error when a PNG rendition was refused."
+  },
+  "admin.brand.error.text": {
+    "defaultMessage": "The picture contains text. Convert the text to outlines (paths) in your editor, then choose it again.",
+    "description": "Error when the SVG has text elements."
+  },
+  "admin.brand.error.too_complex": {
+    "defaultMessage": "The picture is too complex. Simplify its shapes and groups, then choose it again.",
+    "description": "Error when the SVG has too many elements, nesting, or references."
+  },
+  "admin.brand.error.too_large": {
+    "defaultMessage": "The file is too large: an SVG may be up to 256 KB. Simplify the shapes or optimize the file.",
+    "description": "Error when the SVG (or a drawn image) is over the size limit."
+  },
+  "admin.brand.error.unsafe_css": {
+    "defaultMessage": "The file's CSS loads other files or uses features that are not allowed. Remove @import, @font-face, and url() other than url(#id).",
+    "description": "Error when the SVG's CSS is not allowed."
+  },
+  "admin.brand.icon.clear": {
+    "defaultMessage": "Use the built-in icon",
+    "description": "Button that removes the server's own icon, bringing back the built-in one."
+  },
+  "admin.brand.icon.cleared": {
+    "defaultMessage": "The built-in icon is in use again. The audit log records the change.",
+    "description": "Result after the server's icon was cleared."
+  },
+  "admin.brand.icon.description": {
+    "defaultMessage": "A square picture: the browser tab, the home screen and the app icon, and the landing page. Draw it to stand out on a small square.",
+    "description": "Help about the server's icon: its shape and where it shows."
+  },
+  "admin.brand.icon.save": {
+    "defaultMessage": "Save the icon",
+    "description": "Button that saves the server's icon."
+  },
+  "admin.brand.icon.saved": {
+    "defaultMessage": "Saved the icon. The audit log records the change.",
+    "description": "Result after the server's icon was saved."
+  },
+  "admin.brand.icon.title": {
+    "defaultMessage": "Icon",
+    "description": "Heading of the form of the server's icon."
+  },
+  "admin.brand.logo.clear": {
+    "defaultMessage": "Use the built-in logo",
+    "description": "Button that removes the server's own logo, bringing back the built-in wordmark and the name."
+  },
+  "admin.brand.logo.cleared": {
+    "defaultMessage": "The built-in logo is in use again. The audit log records the change.",
+    "description": "Result after the server's logo was cleared."
+  },
+  "admin.brand.logo.description": {
+    "defaultMessage": "A wide picture that includes the server's name: the top of the app, the sign-in pages, emails, and link previews. It is shown instead of the name.",
+    "description": "Help about the server's logo: its shape and where it shows."
+  },
+  "admin.brand.logo.save": {
+    "defaultMessage": "Save the logo",
+    "description": "Button that saves the server's logo."
+  },
+  "admin.brand.logo.saved": {
+    "defaultMessage": "Saved the logo. The audit log records the change.",
+    "description": "Result after the server's logo was saved."
+  },
+  "admin.brand.logo.title": {
+    "defaultMessage": "Logo",
+    "description": "Heading of the form of the server's logo."
+  },
+  "admin.brand.logo_dark.clear": {
+    "defaultMessage": "Remove the logo for dark backgrounds",
+    "description": "Button that removes the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.cleared": {
+    "defaultMessage": "Removed the logo for dark backgrounds. The audit log records the change.",
+    "description": "Result after the server's logo for dark backgrounds was cleared."
+  },
+  "admin.brand.logo_dark.description": {
+    "defaultMessage": "Optional: the logo in colors that read on a dark background, for the dark theme. Without it, the logo above is used there too.",
+    "description": "Help about the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.save": {
+    "defaultMessage": "Save the logo for dark backgrounds",
+    "description": "Button that saves the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.saved": {
+    "defaultMessage": "Saved the logo for dark backgrounds. The audit log records the change.",
+    "description": "Result after the server's logo for dark backgrounds was saved."
+  },
+  "admin.brand.logo_dark.title": {
+    "defaultMessage": "Logo for dark backgrounds",
+    "description": "Heading of the form of the server's logo for dark backgrounds."
+  },
+  "admin.brand.preview.app_icon": {
+    "defaultMessage": "App icon",
+    "description": "Caption of the preview of the icon as an installed app's icon, in a circle."
+  },
+  "admin.brand.preview.current": {
+    "defaultMessage": "Now in use",
+    "description": "Caption of the preview of the brand image in use."
+  },
+  "admin.brand.preview.home_screen": {
+    "defaultMessage": "Home screen",
+    "description": "Caption of the preview of the icon on a phone's home screen."
+  },
+  "admin.brand.preview.link": {
+    "defaultMessage": "Link preview",
+    "description": "Caption of the preview of the logo as the image of a link preview."
+  },
+  "admin.brand.preview.mail": {
+    "defaultMessage": "Email",
+    "description": "Caption of the preview of the logo at the top of an email."
+  },
+  "admin.brand.preview.mail_dark": {
+    "defaultMessage": "Email, dark background",
+    "description": "Caption of the preview of the logo at the top of an email on a dark background."
+  },
+  "admin.brand.preview.new": {
+    "defaultMessage": "New file",
+    "description": "Caption of the preview of the chosen SVG before it is saved."
+  },
+  "admin.brand.preview.tab": {
+    "defaultMessage": "Browser tab",
+    "description": "Caption of the preview of the icon in a browser tab."
+  },
+  "admin.brand.save_failed": {
+    "defaultMessage": "Could not save: {reason}",
+    "description": "Error beside the save button of a brand image. {reason} is the server's localized reason."
+  },
+  "admin.brand.title": {
+    "defaultMessage": "Icon and logo",
+    "description": "Heading of the section of the server's own icon and logos on the server settings screen."
+  }
+}

@@ -25,6 +25,7 @@ func (a *App) setUpAuthPages(cfg *config.Config) {
 		},
 		HumanCheck:      a.HumanCheckWidget,
 		ThemeStylesheet: a.themeStylesheet,
+		Logos:           a.brandLogos,
 		// A passkey signs in instead of the password where the browser has one (FR-004).
 		Passkeys: a.Identity, PasskeyScript: a.webPasskeyScript,
 		// A forgotten password is reset with a link, by email or from an administrator (FR-002).
