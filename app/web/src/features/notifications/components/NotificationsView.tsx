@@ -6,6 +6,7 @@
 import { EmptyState, Feed, Hint, Link, RegionError, Stack, Tab, TabList, TabPanel, Tabs } from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { signInPath } from "../../../lib/paths";
 import { type NotificationFilter, notificationFilters } from "../api/notifications";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationItem } from "./NotificationItem";
@@ -91,7 +92,7 @@ function NotificationList({ filter, headingId }: { filter: NotificationFilter; h
       return (
         <Stack gap="2" align="start">
           <Hint size="inherit">{t("client:notifications.signed_out")}</Hint>
-          <Link href="/login?return_to=/notifications">{t("client:notifications.sign_in")}</Link>
+          <Link href={signInPath("/notifications")}>{t("client:notifications.sign_in")}</Link>
         </Stack>
       );
     case "loading":

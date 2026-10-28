@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useApi, useSessionStatus, useSessionUnreachable } from "../../../lib/auth/SessionProvider";
 import { useT } from "../../../lib/i18n";
+import { signInPath } from "../../../lib/paths";
 import { useIsOffline } from "../../../lib/network";
 import { keepHomeTimelineSaved } from "../api/savedHome";
 import { timelineQueryOptions } from "../api/timelines";
@@ -43,7 +44,7 @@ export function HomeTimeline({ "aria-labelledby": labelledBy, saved = false }: H
       heading={t("client:timeline.signed_out.heading")}
       description={t("client:timeline.signed_out.description")}
       action={
-        <Link href={`/login?${new URLSearchParams({ return_to: "/home" }).toString()}`} variant="standalone">
+        <Link href={signInPath("/home")} variant="standalone">
           {t("client:timeline.signed_out.action")}
         </Link>
       }

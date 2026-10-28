@@ -9,12 +9,24 @@
 // name that starts with the visible label (WCAG 2.5.3). The tab bar's last item can be a menu (`AppNavMenu`), a
 // button that opens a sheet with the items that only the rail shows.
 // A line (`separated` on the first of them) sets the staff's areas apart from the user's items, in the rail and in the sheet.
-import { createContext, type ReactNode, use, useId } from "react";
+// Signed out, the navigation is a bar along the top (`placement="top"`): the brand, then the items in a row from lg;
+// below lg the items are behind a menu button (a disclosure), and only the call to action stays in the bar.
+import {
+  createContext,
+  type FocusEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  use,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
 import { Sheet, DialogTrigger } from "./Dialog";
-import { MenuIcon } from "./Icons";
+import { CloseIcon, MenuIcon } from "./Icons";
 import { Link } from "./Link";
 import { PostCardAuthor } from "./PostCard";
 import { Wordmark } from "./Wordmark";
@@ -38,15 +50,47 @@ const appNav = tv({
         ],
         list: "md:flex-col md:gap-1 md:p-2",
       },
+      // One row at every width: the brand takes the room left and its name wraps (never the items). Below lg the
+      // items are in the menu (`topMenu`), from lg they follow the brand in a row.
       top: {
-        base: "sticky top-under-bar flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-2",
-        header: "mx-0 block p-0",
-        list: "flex-wrap items-center gap-1",
+        base: "sticky top-under-bar flex items-center gap-2 border-b border-border px-4 py-2 lg:gap-4",
+        // The server's name is cut to one line (G7) rather than broken inside a word: its link keeps the whole name.
+        header:
+          "mx-0 block min-w-0 flex-1 p-0 [&_a]:block [&_a]:truncate [&_a]:leading-6 pointer-coarse:[&_a]:leading-11 [&_p]:min-w-0",
+        list: "items-center gap-1",
+      },
+    },
+    // The top bar's items behind a menu button below lg (a disclosure, WAI-ARIA APG): a panel under the bar while
+    // it is open, one item per row across the screen; from lg the row of the bar, the button gone.
+    topMenu: {
+      true: {
+        list: [
+          "absolute inset-x-0 top-full hidden flex-col items-stretch border-b border-border bg-surface-raised p-2 shadow-md data-open:flex",
+          "px-[max(0.5rem,env(safe-area-inset-left),env(safe-area-inset-right))]",
+          "lg:static lg:flex lg:flex-row lg:items-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
+        ],
       },
     },
   },
   defaultVariants: { placement: "side" },
 });
+
+const appNavTop = tv({
+  slots: {
+    // The bar's call to action and its menu button: phones only.
+    action: "flex-none lg:hidden",
+    menuButton: "min-h-11 min-w-11 flex-none lg:hidden [&_svg]:size-6",
+  },
+});
+
+/** The menu button of the top bar below lg, which shows and hides its items (`AppNav` `topMenu`). */
+export type AppNavTopMenu = {
+  /** The button's name ("Menu"). */
+  label: string;
+  isOpen: boolean;
+  /** Called to open or close the items: the button, Escape, a link of the items, and focus or a press leaving the bar close them. */
+  onOpenChange: (isOpen: boolean) => void;
+};
 
 export type AppNavProps = {
   /** The landmark's name ("Main"). */
@@ -61,6 +105,16 @@ export type AppNavProps = {
   footer?: ReactNode;
   /** `side` (default): tab bar, rail and sidebar. `top`: a light bar along the top for signed-out pages (`AppShell` `navigationPlacement="top"`). */
   placement?: "side" | "top";
+  /**
+   * The top bar only: below lg, the items go behind this menu button (a disclosure, WAI-ARIA APG) and the bar keeps
+   * the header, `topAction` and the button. Without it every item stays in the bar's row.
+   */
+  topMenu?: AppNavTopMenu;
+  /**
+   * The top bar only, below lg: the call to action that stays in the bar beside the menu button (`AppNavTopAction`).
+   * Its item in the list shows from lg only (`shows="rail"`), so that it is not in the menu twice.
+   */
+  topAction?: ReactNode;
 };
 
 const PlacementContext = createContext<"side" | "top">("side");
@@ -68,19 +122,109 @@ const PlacementContext = createContext<"side" | "top">("side");
 /**
  * The `nav` landmark and its list. The header and the footer are outside the list, so the list's links stay the same
  * and in the same order at every width.
+ *
+ * With `topMenu`, the top bar's list is the content of a disclosure below lg: the button (`aria-expanded`,
+ * `aria-controls`) comes right before the list, so that Tab goes from the button into the items. Nothing is trapped:
+ * the items close on Escape (focus back to the button), on following one of their links, and when focus or a press
+ * leaves the bar.
  */
-export function AppNav({ label, header, children, action, footer, placement = "side" }: AppNavProps) {
-  const slots = appNav({ placement });
+export function AppNav({
+  label,
+  header,
+  children,
+  action,
+  footer,
+  placement = "side",
+  topMenu,
+  topAction,
+}: AppNavProps) {
+  const top = placement === "top";
+  const menu = top ? topMenu : undefined;
+  const slots = appNav({ placement, topMenu: menu !== undefined });
+  const topSlots = appNavTop();
+  const listId = useId();
+  const navRef = useRef<HTMLElement>(null);
+  const isOpen = menu?.isOpen ?? false;
+  const close = menu?.onOpenChange;
+  // A press outside the bar closes the items, as focus leaving it does; the page under the panel stays usable.
+  useEffect(() => {
+    if (!isOpen || close === undefined) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node) || navRef.current?.contains(event.target) !== true) close(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [isOpen, close]);
   return (
     <PlacementContext value={placement}>
-      <nav aria-label={label} className={slots.base()}>
+      <nav
+        ref={navRef}
+        aria-label={label}
+        className={slots.base()}
+        {...(menu !== undefined && {
+          onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+            if (event.key !== "Escape" || !menu.isOpen) return;
+            event.stopPropagation();
+            menu.onOpenChange(false);
+            navRef.current?.querySelector<HTMLElement>(`[aria-controls="${listId}"]`)?.focus();
+          },
+          onBlur: (event: FocusEvent<HTMLElement>) => {
+            if (
+              menu.isOpen &&
+              !(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))
+            )
+              menu.onOpenChange(false);
+          },
+        })}
+      >
         {header !== undefined && <div className={slots.header()}>{header}</div>}
-        <ul className={slots.list({ className: placement === "top" ? "ms-auto" : undefined })}>{children}</ul>
+        {top && topAction !== undefined && <div className={topSlots.action()}>{topAction}</div>}
+        {menu !== undefined && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={menu.label}
+            aria-expanded={menu.isOpen}
+            aria-controls={listId}
+            onPress={() => {
+              menu.onOpenChange(!menu.isOpen);
+            }}
+            className={topSlots.menuButton()}
+          >
+            {menu.isOpen ? <CloseIcon /> : <MenuIcon />}
+          </Button>
+        )}
+        <ul
+          id={listId}
+          data-open={isOpen ? "" : undefined}
+          className={slots.list()}
+          {...(menu !== undefined && {
+            // Following a link of the items closes them (the page it opens takes focus).
+            onClick: (event: MouseEvent<HTMLElement>) => {
+              if (event.target instanceof Element && event.target.closest("a") !== null) menu.onOpenChange(false);
+            },
+          })}
+        >
+          {children}
+        </ul>
         {action !== undefined && <div className={slots.action()}>{action}</div>}
         {footer}
       </nav>
     </PlacementContext>
   );
+}
+
+export type AppNavTopActionProps = {
+  href: string;
+  /** The visible label, the link's name ("Sign up"). */
+  label: string;
+};
+
+/** The top bar's call to action below lg (`AppNav` `topAction`): the coral pill of the list's prominent item. */
+export function AppNavTopAction({ href, label }: AppNavTopActionProps) {
+  return <RailItem href={href} icon={null} label={label} form="top" prominent />;
 }
 
 export type AppNavBrandProps = {
@@ -125,6 +269,9 @@ const appNavItem = tv({
     railPill: "lg:contents",
     railBadge: "md:ring-surface lg:static lg:order-last lg:ms-auto lg:ring-0",
     railLabel: "lg:text-start",
+    // The top bar's item: a full row with its icon in the menu below lg, a text link in the bar's row from lg.
+    topItem: "w-full lg:w-auto",
+    topPill: "contents lg:hidden",
     pill: "relative",
     badge: "absolute -top-1.5 -inset-e-1 ring-2 ring-surface-raised",
     label: "max-w-full text-center leading-tight text-balance wrap-anywhere",
@@ -135,12 +282,14 @@ const appNavItem = tv({
       "tab-bar": { base: "flex-auto md:hidden" },
       rail: { base: "hidden md:block" },
     },
-    // In the top bar every item shows, at every width.
+    // In the top bar the items keep their width in the row (from lg) and fill the menu's rows (below lg).
     placement: { side: {}, top: { base: "flex-none" } },
     // The first item of the staff's areas, set apart from the user's items by a line in the rail and the sidebar.
     separated: { true: { base: "md:mt-2 md:border-t md:border-border md:pt-3" } },
   },
-  compoundVariants: [{ placement: "top", shows: "rail", class: { base: "block" } }],
+  // In the top bar, an item for the rail and the sidebar (`shows="rail"`) is the call to action, which the bar shows
+  // outside the list below lg (`AppNav` `topAction`): it joins the row from lg.
+  compoundVariants: [{ placement: "top", shows: "rail", class: { base: "hidden lg:block" } }],
 });
 
 /** A count on an item: the number, what it means, and the name of the item while it shows it. */
@@ -156,7 +305,7 @@ export type AppNavItemProps = {
   current?: boolean;
   /** The count on the icon's corner, or nothing for an item without a count now. */
   badge?: AppNavBadge;
-  /** Where the item shows: everywhere, only in the tab bar (below md), or only in the rail and the sidebar (from md). In the top bar every item shows. */
+  /** Where the item shows: everywhere, only in the tab bar (below md), or only in the rail and the sidebar (from md). In the top bar, `rail` is the call to action, outside the list below lg. */
   shows?: "always" | "tab-bar" | "rail";
   /** In the top bar, the call to action (a coral pill). */
   prominent?: boolean;
@@ -186,14 +335,16 @@ export function AppNavItem({
         label={label}
         current={current}
         form={side ? "tab" : "top"}
-        {...(side && {
-          classNames: {
-            item: slots.railItem(),
-            pill: slots.railPill(),
-            badge: slots.railBadge(),
-            label: slots.railLabel(),
-          },
-        })}
+        {...(side
+          ? {
+              classNames: {
+                item: slots.railItem(),
+                pill: slots.railPill(),
+                badge: slots.railBadge(),
+                label: slots.railLabel(),
+              },
+            }
+          : { classNames: { item: slots.topItem(), pill: slots.topPill() } })}
         {...(badge !== undefined && { badge })}
         {...(prominent !== undefined && { prominent })}
       />

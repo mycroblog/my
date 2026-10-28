@@ -54,7 +54,7 @@ export function useRevokeApp(): RevokeApp {
         // The server ended the session of every browser; this forgets it in every tab. The token is already revoked,
         // so the server's answer to signing out does not matter.
         await session.signOut().catch(() => undefined);
-        await navigate({ to: "/login" });
+        await navigate({ to: "/" });
         return;
       }
       await refreshAuthorizedApps(api, queryClient);

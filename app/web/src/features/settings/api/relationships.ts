@@ -164,7 +164,10 @@ export async function cacheListChange(
         ? data.map((item) => (item.id === relationship.id ? relationship : item))
         : data,
   );
+  // The viewer's own account counts the follow requests (the settings menu's badge): accepting one refreshes it with
+  // the follow counts, rejecting one only fetches it again.
   if (change !== "reject") await refreshRelationship(queryClient, change, relationship.id, viewerId);
+  else await queryClient.invalidateQueries({ queryKey: ["get", "/accounts/verify_credentials"] });
 }
 
 function pageQuery(cursor: string | undefined): { limit: number; cursor?: string } {

@@ -49,13 +49,13 @@ async function addAuthenticator(page: Page): Promise<{ cdp: CDPSession; authenti
  * (PATCH /api/v1/preferences with the app's access token), as the main flow does.
  */
 async function signInToApp(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto("/login");
   const authorized = page.waitForRequest(
     (request) =>
       new URL(request.url()).pathname.startsWith("/api/") &&
       request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
-  await page.getByRole("main").getByRole("button").click();
+  // /login is not a page: it opens the server's sign-in screen at once.
+  await page.goto("/login");
   await page.locator('input[type="email"][autocomplete="username"]').fill(user.email);
   await page.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);
   await page.locator('main button[type="submit"]').first().click();

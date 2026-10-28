@@ -100,6 +100,11 @@ SELECT account_id, followers_count, following_count FROM follow_counters ORDER B
 -- name: GetFollowCounters :one
 SELECT account_id, followers_count, following_count FROM follow_counters WHERE account_id = $1;
 
+-- CountFollowersInState counts the edges into an account in one state.
+-- name: CountFollowersInState :one
+SELECT count(*) FROM follow_edges
+WHERE followee_account_id = sqlc.arg(account_id) AND state = sqlc.arg(state);
+
 -- ListFollowersPage pages the edges into an account in one state, newest follow first; an empty
 -- before starts at the newest.
 -- name: ListFollowersPage :many
