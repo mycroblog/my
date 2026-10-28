@@ -826,5 +826,29 @@
   "admin.settings.invites.max_expires_in.description": {
     "defaultMessage": "Members choose how long each invite works, up to this.",
     "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "Landing page",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "What the page at this server's address shows people who are not signed in, besides the name, description and rules.",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "Show the numbers of the server",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "How many members the server has, how many public posts they made on each of the last 7 days, and since when the server runs. Only public posts count, and the numbers are refreshed every few minutes.",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.landing.operators": {
+    "defaultMessage": "Show who runs the server",
+    "description": "Checkbox of whether the landing page lists the people who run the server."
+  },
+  "admin.settings.landing.operators.description": {
+    "defaultMessage": "The accounts of this server that show the badge of a staff role (administrator, moderator, or a role with moderation or server permissions) on their profile, with their badges. A staff member who does not show their badge is never listed.",
+    "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
   }
 }

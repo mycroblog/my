@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps, redirect } from "@tanstack/react-router";
 import { instanceQueryOptions, Landing } from "../features/landing";
-import { useT } from "../lib/i18n";
 import { useInstanceName } from "../lib/instanceName";
 import { PageHeading } from "./-layout/PageHeading";
 import { RouteError } from "./-layout/RouteStates";
@@ -33,15 +32,17 @@ function LandingPage() {
   return <Landing heading={<LandingHeading />} />;
 }
 
-/** The page's heading, which welcomes the reader to the instance by its name. */
+/** The page's heading: the instance's name, in its calling card (and so the document's title). */
 function LandingHeading() {
-  const t = useT();
   const instance = useInstanceName();
-  return <PageHeading spark="✳">{t("client:landing.title", { instance })}</PageHeading>;
+  return (
+    <PageHeading>
+      <span dir="auto">{instance}</span>
+    </PageHeading>
+  );
 }
 
 function LandingError(props: ErrorComponentProps) {
-  const t = useT();
   const instance = useInstanceName();
-  return <RouteError {...props} heading={t("client:landing.title", { instance })} />;
+  return <RouteError {...props} heading={instance} />;
 }
