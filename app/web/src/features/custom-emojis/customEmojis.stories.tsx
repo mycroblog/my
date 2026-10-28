@@ -8,6 +8,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, withViewer } from "../../test/msw/http";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -108,7 +109,7 @@ export const Loading: Story = {
 };
 
 /** The server failed to answer the emoji. */
-export const ServerError: Story = answering(
+export const ServerError: Story = answeringWithErrorPage(
   ...failingOn("get", "/custom_emojis/mine").parameters.screen.handlers,
   ...loaded,
 );
