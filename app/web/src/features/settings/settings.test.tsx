@@ -398,7 +398,10 @@ describe("navigation", () => {
       within(preview)
         .getAllByRole("listitem")
         .map((item) => item.textContent);
-    expect(previewItems()).toEqual(["Home", "Local", "Federated", "Notifications", "Search", "Menu"]);
+    // The federated timeline joins the preview once the server says it serves it.
+    await waitFor(() => {
+      expect(previewItems()).toEqual(["Home", "Local", "Federated", "Notifications", "Search", "Menu"]);
+    });
 
     // Enter on Move up moves the item; the focus stays on the moved item's button and the move is announced.
     within(section).getByRole("button", { name: "Move Profile up" }).focus();
