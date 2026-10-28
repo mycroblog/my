@@ -7,6 +7,7 @@ import {
   IconLabel,
   MoveDownIcon,
   MoveUpIcon,
+  SaveIndicator,
   Section,
   Stack,
   Tooltip,
@@ -14,6 +15,7 @@ import {
 } from "@my/ui";
 import { useEffect, useId, useRef } from "react";
 import { useT } from "../../../lib/i18n";
+import { useSaveLabels } from "../hooks/saveState";
 import { useTimelineAvailability } from "../../timeline";
 import {
   alwaysShownEntry,
@@ -39,7 +41,8 @@ export function NavigationSettings() {
   const t = useT();
   const baseId = useId();
   const timelines = useTimelineAvailability();
-  const { entries, move, setShown, reset } = useNavigationSettings();
+  const { entries, move, setShown, reset, changed } = useNavigationSettings();
+  const labels = useSaveLabels();
   /** The button to focus once the list has rendered a move. */
   const focusAfterMoveRef = useRef<string | null>(null);
   // Runs after every render: focus is moved in the DOM, outside React, once the moved row is in its new place
@@ -93,6 +96,8 @@ export function NavigationSettings() {
                   <IconLabel icon={navigationEntryIcons[entry.id]}>{name}</IconLabel>
                 </Checkbox>
               </Box>
+              {/* The saved mark of the item changed last: its icon, with the words for assistive technology. */}
+              <SaveIndicator state={changed === entry.id ? "saved" : "idle"} labels={labels} display="icon" />
               {/* Icon-only buttons are named by aria-label and show the same words as a tooltip (web-client/16-look-states-and-wording.md G12). */}
               <TooltipTrigger>
                 <Button
@@ -128,11 +133,12 @@ export function NavigationSettings() {
           );
         })}
       </Stack>
-      <div>
+      <Cluster gap="3" align="center">
         <Button variant="secondary" size="sm" onPress={reset}>
           {t("client:settings.navigation.reset")}
         </Button>
-      </div>
+        <SaveIndicator state={changed === "all" ? "saved" : "idle"} labels={labels} />
+      </Cluster>
     </Section>
   );
 }

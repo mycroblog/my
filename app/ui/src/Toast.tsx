@@ -33,7 +33,8 @@ export type ToastApi = {
   dismiss: (id: number) => void;
 };
 
-const ToastContext = createContext<ToastApi | null>(null);
+/** The toasts of the nearest ToastProvider; `useNotice` reads it too. */
+export const ToastContext = createContext<ToastApi | null>(null);
 
 type QueuedToast = ToastOptions & { id: number };
 

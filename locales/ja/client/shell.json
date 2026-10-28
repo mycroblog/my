@@ -210,5 +210,21 @@
   "shell.update.available": {
     "defaultMessage": "アプリの新しい版があります。",
     "description": "Message shown when a new version of the web app has been downloaded and waits until the user applies it."
+  },
+  "shell.save.saving": {
+    "defaultMessage": "保存中…",
+    "description": "Shown next to a setting that saves as soon as it changes, while its change is being saved."
+  },
+  "shell.save.saved": {
+    "defaultMessage": "保存しました",
+    "description": "Shown next to a setting that saves as soon as it changes, once its change is saved."
+  },
+  "shell.save.failed": {
+    "defaultMessage": "保存できませんでした",
+    "description": "Shown next to a setting that saves as soon as it changes, when its change could not be saved; the setting shows why under it."
+  },
+  "shell.notice.dismiss": {
+    "defaultMessage": "閉じる",
+    "description": "Name and tooltip of the button that closes a notice of a change made elsewhere, such as the host turning the microphone off in a voice chat call."
   }
 }

@@ -3,7 +3,7 @@
 // after the password, a passkey, or (for a user with neither) a linked provider confirms it. Linking leaves the app
 // for the provider, which sends the browser back to this page with the outcome; the page tells it in its
 // StatusMessage or an alert (web-client/README.md E2).
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { useState } from "react";
@@ -82,7 +82,7 @@ export function useUnlinkAccount(): UnlinkAccount {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const unlink = useMutation({
     ...unlinkIdentityMutation(api),
     onSuccess: async () => {
@@ -103,7 +103,7 @@ export function useUnlinkAccount(): UnlinkAccount {
       unlink.mutate(link.id, {
         onSuccess: () => {
           onDone();
-          announce(t("client:settings.linked_accounts.unlinked", { provider: link.provider_name }));
+          notice.inPlace(t("client:settings.linked_accounts.unlinked", { provider: link.provider_name }));
         },
       });
     },

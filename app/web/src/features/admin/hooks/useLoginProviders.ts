@@ -4,7 +4,7 @@
 // text (scopes, Organizations and Discord servers as lists in one field, the claims of the conditions one per row) and sends only
 // what the kind takes. What each change did is announced and kept in a StatusMessage; a refused setting stays next
 // to its field.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -273,11 +273,11 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const update = useMutation(updateLoginProviderMutation(api));
   const rotate = useMutation(rotateLoginProviderSecretMutation(api));

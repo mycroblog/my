@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -181,7 +181,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const state = useComposeState(store);
   const { draft } = state;
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
@@ -227,7 +227,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     onError: (error, { idempotencyKey }) => {
       const message = t("client:compose.failed", { reason: errorMessage(error) });
       store.restore(idempotencyKey, message);
-      announce(message, "assertive");
+      notice.inPlace(message, "assertive");
     },
   });
   const attempts = useMutationState({

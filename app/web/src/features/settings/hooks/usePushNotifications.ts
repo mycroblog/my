@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { type SaveState, useNotice } from "@my/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
+import { saveStateOf } from "./saveState";
 import { shellQueryReader } from "../../../lib/query";
 import { instanceQueryOptions } from "../api/me";
 import {
@@ -33,6 +34,10 @@ export type PushNotifications =
       /** Pushes `types` (one row of the notification settings) or stops pushing them. */
       setTypes: (types: readonly NotificationType[], selected: boolean) => void;
       isPending: boolean;
+      /** Where the last change of the switch is, for its save mark (web-client/16-look-states-and-wording.md G24). */
+      saveState: SaveState;
+      /** Where the last change of the row of `types` is, for the save mark of its cell. */
+      typesSaveState: (types: readonly NotificationType[]) => SaveState;
       /** Why the last change was not saved, localized; undefined when it was. */
       error: string | undefined;
     };
@@ -86,7 +91,10 @@ function subscriptionRequest(subscription: PushSubscription, alerts: readonly No
 }
 
 /** A change of Web Push: turning it on with the types, changing the types, or turning it off. */
-type PushChange = { enabled: true; alerts: readonly NotificationType[]; ask: boolean } | { enabled: false };
+/** A change of the subscription; `row` is the first type of the row whose cell changed it, none for the switch. */
+type PushChange =
+  | { enabled: true; alerts: readonly NotificationType[]; ask: boolean; row?: NotificationType | undefined }
+  | { enabled: false };
 
 /**
  * Returns whether and how the notification settings offer Web Push on this device (FR-206, ADR-0109 §1). Turning it on
@@ -97,7 +105,7 @@ type PushChange = { enabled: true; alerts: readonly NotificationType[]; ask: boo
 export function usePushNotifications(offered: readonly NotificationType[]): PushNotifications {
   const api = useApi();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const t = useT();
   const browser = pushBrowser();
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
@@ -122,7 +130,7 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
     },
     onSuccess: (saved) => {
       cachePushSubscription(api, queryClient, saved);
-      announce(t("client:settings.saved"));
+      notice.inPlace(t("client:settings.saved"));
     },
   });
 
@@ -134,6 +142,8 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
 
   const saved = subscription.data ?? null;
   const pending = mutation.isPending ? mutation.variables : undefined;
+  const last = mutation.variables;
+  const changedRow = last?.enabled === true ? last.row : undefined;
   const enabled = pending?.enabled ?? saved !== null;
   const alerts = pending?.enabled === true ? pending.alerts : (saved?.alerts ?? offered);
   let error: string | undefined;
@@ -153,9 +163,12 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
     },
     setTypes: (types, selected) => {
       const next = selected ? [...new Set([...alerts, ...types])] : alerts.filter((type) => !types.includes(type));
-      mutation.mutate({ enabled: true, alerts: next, ask: false });
+      mutation.mutate({ enabled: true, alerts: next, ask: false, row: types[0] });
     },
     isPending: mutation.isPending,
+    saveState: changedRow === undefined ? saveStateOf(mutation) : "idle",
+    typesSaveState: (types) =>
+      changedRow !== undefined && types.includes(changedRow) ? saveStateOf(mutation) : "idle",
     error,
   };
 }

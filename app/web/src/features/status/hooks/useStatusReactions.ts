@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The emoji reactions to a post (FR-116, ADR-0052 §5): the counts per emoji under the post, which the viewer joins
 // or leaves by pressing one, and the accounts that reacted.
-import { type ImageSources, useAnnouncer } from "@my/ui";
+import { type ImageSources, useNotice } from "@my/ui";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -96,7 +96,7 @@ export type ReactorsState =
 export function useReactors(id: string, enabled: boolean): ReactorsState {
   const api = useApi();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const query = useInfiniteQuery({ ...reactorsQueryOptions(api, id), enabled, retry: false });
   // A failed next page leaves the query in error with the pages already loaded, which stay shown.
   if (query.data === undefined) {
@@ -130,7 +130,10 @@ export function useReactors(id: string, enabled: boolean): ReactorsState {
       if (!query.hasNextPage || query.isFetchingNextPage) return;
       void query.fetchNextPage().then((result) => {
         if (result.isFetchNextPageError)
-          announce(t("client:reaction.list.load_more_failed", { reason: errorMessage(result.error) }), "assertive");
+          notice.inPlace(
+            t("client:reaction.list.load_more_failed", { reason: errorMessage(result.error) }),
+            "assertive",
+          );
       });
     },
     loadMoreError: query.isFetchNextPageError ? errorMessage(query.error) : null,

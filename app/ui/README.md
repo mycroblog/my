@@ -277,7 +277,7 @@ avatar slots; the three spark strokes (`mango`, `logo-spark-coral`, `logo-spark-
 ## States of a region
 
 The kit gives every region of data the same four states
-([web-client/16-look-states-and-wording.md §16.4](../../docs/architecture/web-client/16-look-states-and-wording.md#164-空読み込み中エラーオフライン)):
+([web-client/16-look-states-and-wording.md §16.4](../../docs/architecture/web-client/16-look-states-and-wording.md#164-空読み込み中エラーオフライン保存知らせ)):
 
 | State | Component | Notes |
 | --- | --- | --- |
@@ -430,6 +430,10 @@ The overlay components wrap React Aria Components, which handle focus, Esc and t
 | `AnnouncerProvider`, `useAnnouncer` | Live regions | One polite `role="status"` and one assertive `role="alert"` region for the app. |
 | `ToastProvider`, `useToast` | Toasts | Announced through the Announcer; the visible list is a labelled region. |
 | `StatusMessage` | Status | The result of an action that stays on the page: a `role="status"` region, empty until it has a message. |
+| `useNotice` | Live regions | What features call instead of `useAnnouncer`: `inPlace(message, politeness)` reads out a result that the screen shows where it happened; `toast(options)` shows a toast, which reads it out. |
+| `SaveIndicator`, `AutosaveControl` | Status | The save state of a control that saves itself (`idle`, `saving`, `saved`, `failed`): a ring, a check or a warning with its words, beside the control. `AutosaveControl` takes the state as a required prop and puts the mark at the control's inline end; `display="icon"` keeps the words for assistive technology only, in a table's cell. Not a live region. |
+| `FormActionBar` | Status | The submit button of a form with the result of its last submit beside it: a success in a `role="status"` region, a failure in a `role="alert"` region, both empty from the first render. |
+| `ChangeNotice` | Status | A change that someone else made to the user (the host turned the microphone off), with an icon, its words, an optional action and a dismiss button. Not a live region. |
 
 Mount `AnnouncerProvider` once at the app root and `ToastProvider` inside it. `announce(message, politeness)` and
 `toast.show(...)` are called from event handlers and mutation callbacks, and never move focus. Each announcement is a new node in its
@@ -449,6 +453,10 @@ while the pointer is over the toasts or focus is in them; a toast with an action
 - the body is a form: the confirm button submits it, the fields' constraints (`isRequired`) are checked first, and only then
   `onConfirm(close)` runs. The dialog stays open until `close` is called, `isPending` makes the confirm button wait, and `errorMessage`
   shows a failure in the dialog (`role="alert"`) so that the action can be tried again.
+
+A feature reads out through `useNotice`, never `useAnnouncer` itself (Oxlint `restrict/feature`): each call says where the result
+shows. `SaveIndicator`, `FormActionBar`'s result and `ChangeNotice` enter with a fade (and a small grow or rise) of `duration-normal` and
+`ease-enter` under `motion-safe:`, without overshoot; with reduced motion their icon and words tell the same.
 
 `StatusMessage` is rendered before the action, empty, and gets the result as children once the action has succeeded: a live region
 announces only changes made after it is in the page. A failure is not a status; it goes to `ConfirmDialog`'s `errorMessage` or a toast.

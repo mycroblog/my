@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { type SaveState, useNotice } from "@my/ui";
 import { useMutation, useMutationState, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -12,6 +12,7 @@ import {
   useNotificationSound,
 } from "../../../lib/notificationSound";
 import { isTauriApp } from "../../../lib/platform";
+import { saveStateOf } from "./saveState";
 import { shellQueryReader } from "../../../lib/query";
 import { instanceQueryOptions, type Preferences, preferencesQueryOptions } from "../api/me";
 import {
@@ -73,6 +74,11 @@ type NotificationCell = {
   selected: boolean;
   disabled: boolean;
   onChange: (selected: boolean) => void;
+  /**
+   * Where the last change of this cell is, for the save mark in the cell (web-client/16-look-states-and-wording.md
+   * G24); `idle` for the sound, which this device keeps at once.
+   */
+  saveState: SaveState;
 };
 
 type NotificationTableRow = {
@@ -113,7 +119,7 @@ export type NotificationSettingsView = {
 export function useNotificationSettings(): NotificationSettingsView {
   const api = useApi();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const t = useT();
   const settings = useSuspenseQuery(notificationSettingsQueryOptions(api)).data;
   const preferences = useSuspenseQuery(preferencesQueryOptions(api)).data;
@@ -124,7 +130,8 @@ export function useNotificationSettings(): NotificationSettingsView {
     ...options,
     onSuccess: (saved) => {
       cacheNotificationSettings(api, queryClient, saved);
-      announce(t("client:settings.saved"));
+      // The save mark of the cell shows it.
+      notice.inPlace(t("client:settings.saved"));
     },
   });
   // Every change being saved, so that clicking several cells in a row shows them all.
@@ -132,6 +139,20 @@ export function useNotificationSettings(): NotificationSettingsView {
     filters: { mutationKey: options.mutationKey, status: "pending" },
     select: (m) => m.state.variables as NotificationSettingChange,
   });
+  // Every change since the page opened, the last one last, for the save mark of each cell.
+  const changes = useMutationState({
+    filters: { mutationKey: options.mutationKey },
+    select: (m) => ({ change: m.state.variables as NotificationSettingChange, status: m.state.status }),
+  });
+  const cellSaveState = (row: NotificationSettingRow, channel: "in_app" | "email"): SaveState => {
+    const last = changes.findLast(({ change }) => change.group === row.group && change.channel === channel);
+    if (last === undefined) return "idle";
+    return saveStateOf({
+      isPending: last.status === "pending",
+      isSuccess: last.status === "success",
+      isError: last.status === "error",
+    });
+  };
 
   const rows = settings.rows.filter((row) => row.group !== "supporter" || !isTauriApp());
   const push = usePushNotifications(rows.flatMap((row) => row.types));
@@ -156,6 +177,7 @@ export function useNotificationSettings(): NotificationSettingsView {
       onChange: (enabled) => {
         mutation.mutate({ group: row.group, channel, enabled });
       },
+      saveState: cellSaveState(row, channel),
     };
   };
 
@@ -169,6 +191,7 @@ export function useNotificationSettings(): NotificationSettingsView {
         onChange: (selected) => {
           push.setTypes(row.types, selected);
         },
+        saveState: push.typesSaveState(row.types),
       };
     }
     if (sendsEmail) cells.email = serverCell(row, "email", inApp);
@@ -179,6 +202,7 @@ export function useNotificationSettings(): NotificationSettingsView {
         onChange: (selected) => {
           setNotificationSoundTypes(row.types, selected);
         },
+        saveState: "idle",
       };
     }
     return { group: row.group, label: notificationGroupLabels[row.group], cells };

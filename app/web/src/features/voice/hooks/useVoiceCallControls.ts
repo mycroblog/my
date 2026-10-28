@@ -8,11 +8,12 @@ import { useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useT } from "../../../lib/i18n";
 import { useViewer } from "../../session";
 import type { VoiceLeaveChoice } from "../api/call";
 import { type VoiceRoom, type VoiceRoomParticipant, voiceRoomPath, voiceRoomQueryOptions } from "../api/voice";
-import { useVoiceCallState } from "./useVoiceCallProvider";
-import type { VoiceCallSnapshot, VoiceMicError } from "./voiceCall";
+import { callEndText, useVoiceCallState, type VoiceCallNoticeView } from "./useVoiceCallProvider";
+import type { VoiceCall, VoiceCallSnapshot, VoiceMicError } from "./voiceCall";
 
 export type VoiceCallControls = {
   /** The call's room as the call knows it. */
@@ -40,6 +41,9 @@ export type VoiceCallControls = {
   isLeaving: boolean;
   leaveError: string | undefined;
   resetLeave: () => void;
+  /** The last change that others made to the user in the call, for the notice of the dock or the mini-player. */
+  notice: VoiceCallNoticeView | undefined;
+  dismissNotice: () => void;
 };
 
 export function useVoiceCallControls(): VoiceCallControls | null {
@@ -87,6 +91,8 @@ export function useVoiceCallControls(): VoiceCallControls | null {
     isLeaving: state.isLeaving,
     leaveError: state.leaveError,
     resetLeave: state.resetLeave,
+    notice: state.callNotice,
+    dismissNotice: state.dismissCallNotice,
   };
 }
 
@@ -109,4 +115,27 @@ export function useVoiceCallBar(): VoiceCallControls | null {
   if (controls === null) return null;
   if (pathname === voiceRoomPath(roomId) && pageRoom.data !== undefined) return null;
   return controls;
+}
+
+/** How the user's call ended without them leaving it, for the notice in the mini-player's place. */
+export type VoiceCallEndNotice = {
+  /** The call that ended: the notice shows until it is dismissed for it. */
+  call: VoiceCall;
+  room: VoiceRoom;
+  /** The sentence of how it ended ("The room ended: the host ended it"). */
+  text: string;
+};
+
+/**
+ * The end of the user's call (the room ended, they were removed, the connection was lost, they joined from another
+ * device), or null while a call goes on, after they left it themselves, or on the room's page, whose join dock says how
+ * it ended. On any other page the mini-player went away with the call, so this notice takes its place.
+ */
+export function useVoiceCallEndNotice(): VoiceCallEndNotice | null {
+  const t = useT();
+  const { call, snapshot } = useVoiceCallState();
+  const pathname = useLocation({ select: (location) => normalizedPath(location.pathname) });
+  if (call === null || snapshot?.phase !== "ended" || snapshot.end === undefined) return null;
+  if (pathname === voiceRoomPath(call.roomId)) return null;
+  return { call, room: snapshot.room, text: callEndText(t, snapshot.end) };
 }

@@ -4,7 +4,7 @@
 // them being a co-host and hand the room over; and invite a local user as a listener or a speaker. The host and the
 // co-hosts do not operate on each other beyond that, and nobody on the host; the menu offers only what the server
 // allows. Each result is announced.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -47,7 +47,7 @@ export type VoiceModeration = {
 export function useVoiceModeration(room: VoiceRoom): VoiceModeration {
   const api = useApi();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const t = useT();
   const mutation = useMutation({
     mutationKey: ["voice", "moderate", room.id] as const,
@@ -61,7 +61,7 @@ export function useVoiceModeration(room: VoiceRoom): VoiceModeration {
     onSuccess: async (updated, { participant, operation }) => {
       if (updated !== undefined) await cacheVoiceRoom(api, queryClient, updated);
       const name = participantName(participant);
-      announce(
+      notice.inPlace(
         operation === "grant"
           ? t("client:voice.moderate.done.grant", { name })
           : operation === "dismiss"
@@ -107,7 +107,7 @@ export type VoiceInvite = {
 /** The form that invites a local user to the room. */
 export function useVoiceInvite(room: VoiceRoom): VoiceInvite {
   const api = useApi();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const t = useT();
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<VoiceRole>("listener");
@@ -116,7 +116,9 @@ export function useVoiceInvite(room: VoiceRoom): VoiceInvite {
     mutationFn: ({ name, as }: { name: string; as: VoiceRole; close: () => void }) =>
       inviteToVoiceRoom(api, room.id, name, as),
     onSuccess: (invitation, { close }) => {
-      announce(t("client:voice.invite.sent", { name: invitation.account.display_name || invitation.account.username }));
+      notice.inPlace(
+        t("client:voice.invite.sent", { name: invitation.account.display_name || invitation.account.username }),
+      );
       close();
     },
   });

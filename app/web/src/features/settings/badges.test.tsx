@@ -77,6 +77,12 @@ describe("the badges of the profile", () => {
     });
     expect(supporter).toBeChecked();
     expect(await screen.findByText("⁨サポーター⁩ is shown on your profile.")).toBeInTheDocument();
+    // The switch that changed shows that it is saved, beside it; the other shows nothing.
+    const item = within(section)
+      .getAllByRole("listitem")
+      .find((li) => within(li).queryByRole("switch", { name: "サポーター" }) !== null);
+    expect(item).toHaveTextContent("Saved");
+    expect(within(section).getAllByText("Saved")).toHaveLength(1);
 
     await user.click(staff);
     await waitFor(() => {
@@ -99,5 +105,8 @@ describe("the badges of the profile", () => {
 
     expect(await screen.findByText(/^Could not change the badge:/)).toBeInTheDocument();
     expect(supporter).not.toBeChecked();
+    expect(
+      within(within(screen.getByRole("region", { name: "Badges" })).getByRole("listitem")).getByText("Not saved"),
+    ).toBeVisible();
   });
 });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The account search form's logic (web-client/README.md A4): the typed text, sending it, and why the last search
 // found nothing. The hook returns no JSX.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type SubmitEvent, useState } from "react";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
@@ -61,7 +61,7 @@ export function useAccountSearch({ initialQuery, onFound }: AccountSearchOptions
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const session = useSessionStatus();
   const [value, setValue] = useState(initialQuery);
   // Resolving needs a token; while the session is still resuming, the request waits for it (lib/api/client.ts).
@@ -79,7 +79,7 @@ export function useAccountSearch({ initialQuery, onFound }: AccountSearchOptions
     },
     onError: (error, variables) => {
       // The message is linked to the field, which keeps the focus; a screen reader hears it at once.
-      announce(failureOf(t, error, variables.scope), "assertive");
+      notice.inPlace(failureOf(t, error, variables.scope), "assertive");
     },
   });
 

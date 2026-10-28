@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -28,7 +28,7 @@ export type TimelineState = {
 export function useTimeline(timeline: Timeline): TimelineState {
   const api = useApi();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const query = useSuspenseInfiniteQuery(timelineQueryOptions(api, timeline));
   const loadMoreError = query.isFetchNextPageError ? errorMessage(query.error) : null;
 
@@ -36,7 +36,7 @@ export function useTimeline(timeline: Timeline): TimelineState {
     if (!query.hasNextPage || query.isFetchingNextPage) return;
     void query.fetchNextPage().then((result) => {
       if (result.isFetchNextPageError) {
-        announce(t("client:timeline.load_more.failed", { reason: errorMessage(result.error) }), "assertive");
+        notice.inPlace(t("client:timeline.load_more.failed", { reason: errorMessage(result.error) }), "assertive");
       }
     });
   };

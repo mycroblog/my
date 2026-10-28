@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useQuery, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -26,7 +26,7 @@ export function useNewHomeStatuses(): NewHomeStatuses {
   const api = useApi();
   const queryClient = useQueryClient();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const waiting = useQuery(newHomeStatusesQueryOptions()).data;
   const home = useSuspenseInfiniteQuery(timelineQueryOptions(api, { kind: "home" }));
   const count = unseenStatuses(
@@ -36,7 +36,7 @@ export function useNewHomeStatuses(): NewHomeStatuses {
 
   const show = () => {
     showNewHomeStatuses(queryClient, api).catch((error: unknown) => {
-      announce(t("client:timeline.new_posts.failed", { reason: errorMessage(error) }), "assertive");
+      notice.inPlace(t("client:timeline.new_posts.failed", { reason: errorMessage(error) }), "assertive");
     });
   };
 

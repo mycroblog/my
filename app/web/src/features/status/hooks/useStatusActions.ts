@@ -5,7 +5,7 @@
 // waits for it, then marks the post and reads the viewer's pinned posts again. Each result is
 // announced (Y7) and a failure is also shown as a toast, because the restored button alone tells a
 // sighted user nothing (E2).
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -131,7 +131,7 @@ function useRelation(post: Status, relation: Relation, viewerId: string): Relati
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const toast = useToast();
   const mutationKey = ["status", post.id, relation] as const;
   const { mutate } = useMutation({
@@ -144,7 +144,7 @@ function useRelation(post: Status, relation: Relation, viewerId: string): Relati
       // The last press is the only one still running.
       const last = queryClient.isMutating({ mutationKey, exact: true }) <= 1;
       cacheRelationAnswer(queryClient, post.id, relation, answer, last, viewerId);
-      announce(relationMessage(t, relation, on));
+      notice.inPlace(relationMessage(t, relation, on));
     },
     onError: (error, { on }) => {
       restoreRelation(queryClient, post.id, relation, on);

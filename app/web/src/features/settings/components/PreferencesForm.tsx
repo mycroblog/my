@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
+  AutosaveControl,
   Button,
   Callout,
   Checkbox,
@@ -13,11 +14,13 @@ import {
   Stack,
   Switch,
   Text,
+  type SaveState,
 } from "@my/ui";
-import { useId, useRef } from "react";
+import { type ReactNode, useId, useRef } from "react";
 import { languageOptions, quotePolicies, quotePolicyDescription, quotePolicyLabel } from "../../compose";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useDisplaySettings } from "../../../lib/locale";
+import { useSaveLabels } from "../hooks/saveState";
 import type { Visibility } from "../api/me";
 import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } from "../hooks/languages";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
@@ -79,60 +82,68 @@ export function PreferencesForm() {
       <ThemeRadioGroup />
       <AutoplaySwitch />
       <NavigationSettings />
-      <RadioGroup
-        label={t("client:settings.default_visibility.label")}
-        description={t("client:settings.default_visibility.description")}
-        value={defaultVisibility.value}
-        onChange={(value) => {
-          const visibility = visibilities.find((v) => v.id === value);
-          if (visibility !== undefined) defaultVisibility.onChange(visibility.id);
-        }}
-        isInvalid={defaultVisibility.error !== undefined}
-        errorMessage={defaultVisibility.error}
-      >
-        {visibilities.map((visibility) => (
-          <Radio key={visibility.id} value={visibility.id} description={t(visibility.description)}>
-            {t(visibility.label)}
-          </Radio>
-        ))}
-      </RadioGroup>
-      <RadioGroup
-        label={t("client:settings.default_quote_policy.label")}
-        description={t("client:settings.default_quote_policy.description")}
-        value={defaultQuotePolicy.value}
-        onChange={(value) => {
-          const policy = quotePolicies.find((p) => p === value);
-          if (policy !== undefined) defaultQuotePolicy.onChange(policy);
-        }}
-        isInvalid={defaultQuotePolicy.error !== undefined}
-        errorMessage={defaultQuotePolicy.error}
-      >
-        {quotePolicies.map((policy) => (
-          <Radio key={policy} value={policy} description={t(quotePolicyDescription[policy])}>
-            {t(quotePolicyLabel[policy])}
-          </Radio>
-        ))}
-      </RadioGroup>
+      <Autosaved state={defaultVisibility.saveState}>
+        <RadioGroup
+          label={t("client:settings.default_visibility.label")}
+          description={t("client:settings.default_visibility.description")}
+          value={defaultVisibility.value}
+          onChange={(value) => {
+            const visibility = visibilities.find((v) => v.id === value);
+            if (visibility !== undefined) defaultVisibility.onChange(visibility.id);
+          }}
+          isInvalid={defaultVisibility.error !== undefined}
+          errorMessage={defaultVisibility.error}
+        >
+          {visibilities.map((visibility) => (
+            <Radio key={visibility.id} value={visibility.id} description={t(visibility.description)}>
+              {t(visibility.label)}
+            </Radio>
+          ))}
+        </RadioGroup>
+      </Autosaved>
+      <Autosaved state={defaultQuotePolicy.saveState}>
+        <RadioGroup
+          label={t("client:settings.default_quote_policy.label")}
+          description={t("client:settings.default_quote_policy.description")}
+          value={defaultQuotePolicy.value}
+          onChange={(value) => {
+            const policy = quotePolicies.find((p) => p === value);
+            if (policy !== undefined) defaultQuotePolicy.onChange(policy);
+          }}
+          isInvalid={defaultQuotePolicy.error !== undefined}
+          errorMessage={defaultQuotePolicy.error}
+        >
+          {quotePolicies.map((policy) => (
+            <Radio key={policy} value={policy} description={t(quotePolicyDescription[policy])}>
+              {t(quotePolicyLabel[policy])}
+            </Radio>
+          ))}
+        </RadioGroup>
+      </Autosaved>
       <DefaultPostLanguageSelect control={defaultPostLanguage} />
-      <Switch
-        isSelected={requireMediaDescription.value}
-        onChange={requireMediaDescription.onChange}
-        description={t("client:settings.require_media_description.description")}
-        isInvalid={requireMediaDescription.error !== undefined}
-        errorMessage={requireMediaDescription.error}
-      >
-        {t("client:settings.require_media_description.label")}
-      </Switch>
+      <Autosaved state={requireMediaDescription.saveState}>
+        <Switch
+          isSelected={requireMediaDescription.value}
+          onChange={requireMediaDescription.onChange}
+          description={t("client:settings.require_media_description.description")}
+          isInvalid={requireMediaDescription.error !== undefined}
+          errorMessage={requireMediaDescription.error}
+        >
+          {t("client:settings.require_media_description.label")}
+        </Switch>
+      </Autosaved>
       <TimelineLanguages control={timelineLanguages} />
-      <Switch
-        isSelected={timelineAutoInsert.value}
-        onChange={timelineAutoInsert.onChange}
-        description={t("client:settings.timeline_auto_insert.description")}
-        isInvalid={timelineAutoInsert.error !== undefined}
-        errorMessage={timelineAutoInsert.error}
-      >
-        {t("client:settings.timeline_auto_insert.label")}
-      </Switch>
+      <Autosaved state={timelineAutoInsert.saveState}>
+        <Switch
+          isSelected={timelineAutoInsert.value}
+          onChange={timelineAutoInsert.onChange}
+          description={t("client:settings.timeline_auto_insert.description")}
+          isInvalid={timelineAutoInsert.error !== undefined}
+          errorMessage={timelineAutoInsert.error}
+        >
+          {t("client:settings.timeline_auto_insert.label")}
+        </Switch>
+      </Autosaved>
     </Stack>
   );
 }
@@ -142,24 +153,26 @@ function DisplayLanguageSelect({ control }: { control: PreferenceControl<string>
   const { i18n } = useDisplaySettings();
   const value = displayLanguageOf(control.value);
   return (
-    <Select
-      label={t("client:settings.locale.label")}
-      description={t("client:settings.locale.description")}
-      value={value}
-      onChange={(key) => {
-        if (typeof key === "string" && key !== value) control.onChange(key);
-      }}
-      isInvalid={control.error !== undefined}
-      errorMessage={control.error}
-      items={displayLanguageOptions(i18n.locale)}
-    >
-      {(item) => (
-        // The name is in its own language, so a screen reader reads it in that language.
-        <SelectItem id={item.id} textValue={item.name}>
-          <span lang={item.id}>{item.name}</span>
-        </SelectItem>
-      )}
-    </Select>
+    <Autosaved state={control.saveState}>
+      <Select
+        label={t("client:settings.locale.label")}
+        description={t("client:settings.locale.description")}
+        value={value}
+        onChange={(key) => {
+          if (typeof key === "string" && key !== value) control.onChange(key);
+        }}
+        isInvalid={control.error !== undefined}
+        errorMessage={control.error}
+        items={displayLanguageOptions(i18n.locale)}
+      >
+        {(item) => (
+          // The name is in its own language, so a screen reader reads it in that language.
+          <SelectItem id={item.id} textValue={item.name}>
+            <span lang={item.id}>{item.name}</span>
+          </SelectItem>
+        )}
+      </Select>
+    </Autosaved>
   );
 }
 
@@ -171,23 +184,25 @@ function DefaultPostLanguageSelect({ control }: { control: PreferenceControl<str
   const t = useT();
   const { i18n } = useDisplaySettings();
   return (
-    <Select
-      label={t("client:settings.default_post_language.label")}
-      description={t("client:settings.default_post_language.description")}
-      value={control.value}
-      onChange={(key) => {
-        if (typeof key === "string" && key !== control.value) control.onChange(key);
-      }}
-      isInvalid={control.error !== undefined}
-      errorMessage={control.error}
-      items={languageOptions(i18n.locale, [control.value], t("client:compose.language.und"))}
-    >
-      {(item) => (
-        <SelectItem id={item.id} textValue={item.name}>
-          {item.name}
-        </SelectItem>
-      )}
-    </Select>
+    <Autosaved state={control.saveState}>
+      <Select
+        label={t("client:settings.default_post_language.label")}
+        description={t("client:settings.default_post_language.description")}
+        value={control.value}
+        onChange={(key) => {
+          if (typeof key === "string" && key !== control.value) control.onChange(key);
+        }}
+        isInvalid={control.error !== undefined}
+        errorMessage={control.error}
+        items={languageOptions(i18n.locale, [control.value], t("client:compose.language.und"))}
+      >
+        {(item) => (
+          <SelectItem id={item.id} textValue={item.name}>
+            {item.name}
+          </SelectItem>
+        )}
+      </Select>
+    </Autosaved>
   );
 }
 
@@ -241,23 +256,25 @@ function TimeZoneField({
 }) {
   const t = useT();
   return (
-    <Select
-      label={t("client:settings.time_zone.label")}
-      description={t("client:settings.time_zone.description")}
-      value={control.value}
-      onChange={(key) => {
-        if (typeof key === "string") control.onChange(key);
-      }}
-      isInvalid={control.error !== undefined}
-      errorMessage={control.error}
-      items={options}
-    >
-      {(item) => (
-        <SelectItem id={item.id} textValue={item.typeahead} description={item.id}>
-          {item.label}
-        </SelectItem>
-      )}
-    </Select>
+    <Autosaved state={control.saveState}>
+      <Select
+        label={t("client:settings.time_zone.label")}
+        description={t("client:settings.time_zone.description")}
+        value={control.value}
+        onChange={(key) => {
+          if (typeof key === "string") control.onChange(key);
+        }}
+        isInvalid={control.error !== undefined}
+        errorMessage={control.error}
+        items={options}
+      >
+        {(item) => (
+          <SelectItem id={item.id} textValue={item.typeahead} description={item.id}>
+            {item.label}
+          </SelectItem>
+        )}
+      </Select>
+    </Autosaved>
   );
 }
 
@@ -273,36 +290,51 @@ function TimelineLanguages({ control }: { control: PreferenceControl<string[]> }
     control.onChange(next.toSorted());
   };
   return (
-    <Stack
-      as="fieldset"
-      aria-describedby={control.error === undefined ? descriptionId : `${descriptionId} ${errorId}`}
-      container
-      shrink
-      gap="2"
-    >
-      <Text as="legend" size="sm" weight="medium" tone="fg">
-        {t("client:settings.timeline_languages.label")}
-      </Text>
-      <Hint id={descriptionId}>{t("client:settings.timeline_languages.description")}</Hint>
-      <Grid as="ul" gap="6" rowGap="1">
-        {timelineLanguageOptions(control.value, i18n.locale).map((option) => (
-          <li key={option.id}>
-            <Checkbox
-              isSelected={chosen.has(option.id)}
-              onChange={(selected) => {
-                toggle(option.id, selected);
-              }}
-            >
-              {option.name}
-            </Checkbox>
-          </li>
-        ))}
-      </Grid>
-      {control.error !== undefined && (
-        <InlineError id={errorId} alert>
-          {control.error}
-        </InlineError>
-      )}
-    </Stack>
+    <Autosaved state={control.saveState}>
+      <Stack
+        as="fieldset"
+        aria-describedby={control.error === undefined ? descriptionId : `${descriptionId} ${errorId}`}
+        container
+        shrink
+        gap="2"
+      >
+        <Text as="legend" size="sm" weight="medium" tone="fg">
+          {t("client:settings.timeline_languages.label")}
+        </Text>
+        <Hint id={descriptionId}>{t("client:settings.timeline_languages.description")}</Hint>
+        <Grid as="ul" gap="6" rowGap="1">
+          {timelineLanguageOptions(control.value, i18n.locale).map((option) => (
+            <li key={option.id}>
+              <Checkbox
+                isSelected={chosen.has(option.id)}
+                onChange={(selected) => {
+                  toggle(option.id, selected);
+                }}
+              >
+                {option.name}
+              </Checkbox>
+            </li>
+          ))}
+        </Grid>
+        {control.error !== undefined && (
+          <InlineError id={errorId} alert>
+            {control.error}
+          </InlineError>
+        )}
+      </Stack>
+    </Autosaved>
+  );
+}
+
+/**
+ * A preference's control with its save mark beside it (web-client/16-look-states-and-wording.md G24): saving, saved,
+ * or not saved, where the person changed it.
+ */
+function Autosaved({ state, children }: { state: SaveState; children: ReactNode }) {
+  const labels = useSaveLabels();
+  return (
+    <AutosaveControl state={state} labels={labels}>
+      {children}
+    </AutosaveControl>
   );
 }
