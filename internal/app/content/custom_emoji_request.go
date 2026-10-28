@@ -79,9 +79,9 @@ type CustomEmojiRequestRepository interface {
 	ListCustomEmojiRequests(ctx context.Context, q CustomEmojiRequestQuery, limit int) ([]content.CustomEmojiRequestRecord, error)
 	// ListCustomEmojiRequestsByID returns, in ID order, the requests among ids that exist.
 	ListCustomEmojiRequestsByID(ctx context.Context, ids []string) ([]content.CustomEmojiRequestRecord, error)
-	// CountCustomEmojiUsage counts the local emoji that a user made and their pending requests
-	// to create one (ADR-0070 §4).
-	CountCustomEmojiUsage(ctx context.Context, userID string) (int, error)
+	// CountCustomEmojiUsage counts the local emoji that a user made and, apart, their pending
+	// requests to create one (ADR-0070 §4).
+	CountCustomEmojiUsage(ctx context.Context, userID string) (made, pending int, err error)
 	// IsMediaOfPendingCustomEmojiRequest reports whether a pending request uses a media file.
 	IsMediaOfPendingCustomEmojiRequest(ctx context.Context, mediaID string) (bool, error)
 }
@@ -249,11 +249,11 @@ func (s *CustomEmojiService) checkNewShortcode(ctx context.Context, in SubmitCus
 		return fmt.Errorf("content: the custom emoji limit of %s: %w", in.RequesterUserID, err)
 	}
 	if limited {
-		used, err := s.d.Repository.CountCustomEmojiUsage(ctx, in.RequesterUserID)
+		made, pending, err := s.d.Repository.CountCustomEmojiUsage(ctx, in.RequesterUserID)
 		if err != nil {
 			return err
 		}
-		if used >= limit {
+		if made+pending >= limit {
 			return &content.CustomEmojiError{Reason: content.EmojiLimitReached, Value: in.RequesterUserID}
 		}
 	}
@@ -600,9 +600,11 @@ func (s *CustomEmojiService) presentRequests(ctx context.Context, recs []content
 }
 
 // CustomEmojiUsage is what a creator has used of their limit (ADR-0070 §4): the local emoji they
-// made and their pending requests to create one, and the limit, when Limited.
+// made and their pending requests to create one, and the limit, when Limited. Pending is the part
+// of Used that the pending requests take.
 type CustomEmojiUsage struct {
 	Used    int
+	Pending int
 	Limit   int
 	Limited bool
 }
@@ -613,11 +615,11 @@ func (s *CustomEmojiService) Usage(ctx context.Context, userID string) (CustomEm
 	if err != nil {
 		return CustomEmojiUsage{}, fmt.Errorf("content: the custom emoji limit of %s: %w", userID, err)
 	}
-	used, err := s.d.Repository.CountCustomEmojiUsage(ctx, userID)
+	made, pending, err := s.d.Repository.CountCustomEmojiUsage(ctx, userID)
 	if err != nil {
 		return CustomEmojiUsage{}, err
 	}
-	return CustomEmojiUsage{Used: used, Limit: limit, Limited: limited}, nil
+	return CustomEmojiUsage{Used: made + pending, Pending: pending, Limit: limit, Limited: limited}, nil
 }
 
 // ListOwn returns up to limit local emoji that userID made, newest first, with their images.

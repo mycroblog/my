@@ -134,6 +134,11 @@ func TestCustomEmojiRequests(t *testing.T) {
 		req.State != clientapi.CustomEmojiRequestStatePending || req.Shortcode != "blobcat" || req.Url == nil {
 		t.Fatalf("POST /custom_emoji_requests = %d %+v", code, req)
 	}
+	// The pending request counts toward the limit, apart from the emoji that exist.
+	var usage clientapi.OwnCustomEmojiPage
+	if code := api(carolToken, http.MethodGet, "/custom_emojis/mine", nil, &usage); code != http.StatusOK || len(usage.Items) != 0 || usage.Used != 1 || usage.Pending != 1 {
+		t.Errorf("GET /custom_emojis/mine = %d %+v", code, usage)
+	}
 	// Nothing shows the requested emoji.
 	var picker clientapi.PickerCustomEmojiList
 	if code := api(carolToken, http.MethodGet, "/custom_emojis", nil, &picker); code != http.StatusOK || len(picker.Items) != 0 {
@@ -206,7 +211,7 @@ func TestCustomEmojiRequests(t *testing.T) {
 
 	// The creator changes their own emoji, and no other.
 	var own clientapi.OwnCustomEmojiPage
-	if code := api(carolToken, http.MethodGet, "/custom_emojis/mine", nil, &own); code != http.StatusOK || len(own.Items) != 1 || own.Used != 1 || own.Limit != nil {
+	if code := api(carolToken, http.MethodGet, "/custom_emojis/mine", nil, &own); code != http.StatusOK || len(own.Items) != 1 || own.Used != 1 || own.Pending != 0 || own.Limit != nil {
 		t.Fatalf("GET /custom_emojis/mine = %d %+v", code, own)
 	}
 	var changed clientapi.OwnCustomEmoji

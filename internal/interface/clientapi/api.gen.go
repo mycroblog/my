@@ -10211,7 +10211,8 @@ type OwnCustomEmoji struct {
 
 // OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their limit
 // (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-// one, and `limit` is how many they may have, absent for no limit.
+// one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
+// they may have, absent for no limit.
 type OwnCustomEmojiPage struct {
 	Items []OwnCustomEmoji `json:"items"`
 
@@ -10220,6 +10221,9 @@ type OwnCustomEmojiPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+
+	// Pending The part of `used` that the user's pending requests to create an emoji take.
+	Pending int `json:"pending"`
 
 	// Used The user's local emoji and pending requests to create one.
 	Used int `json:"used"`

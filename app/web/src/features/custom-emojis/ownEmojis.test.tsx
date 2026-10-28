@@ -36,12 +36,13 @@ function fileInput(region: HTMLElement): HTMLInputElement {
   return input;
 }
 
-/** GET /custom_emojis/mine answering `items`, `used`, and `limit` (absent for none). */
-function mineHandler(items: Schemas["OwnCustomEmoji"][], used: number, limit?: number) {
+/** GET /custom_emojis/mine answering `items`, `used`, `pending`, and `limit` (absent for none). */
+function mineHandler(items: Schemas["OwnCustomEmoji"][], used: number, limit?: number, pending = 0) {
   return http.get(`${apiBase}/custom_emojis/mine`, () =>
     HttpResponse.json({
       items,
       used,
+      pending,
       ...(limit === undefined ? {} : { limit }),
     } satisfies Schemas["OwnCustomEmojiPage"]),
   );
@@ -76,17 +77,18 @@ describe("the user's custom emoji page", () => {
   });
 
   test("says what the user used of their limit, or that there is none", async () => {
-    server.use(operatorHandler(["create_custom_emojis"]), mineHandler([ownCustomEmojiFixture("e1", "blobcat")], 2, 5));
+    server.use(
+      operatorHandler(["create_custom_emojis"]),
+      mineHandler([ownCustomEmojiFixture("e1", "blobcat")], 2, 5, 1),
+    );
     const { unmount } = await renderApp({ path: "/settings/custom-emojis" });
     const meter = await screen.findByRole("meter", { name: "Custom emoji used" });
-    expect(meter).toHaveAttribute("aria-valuetext", "2 of 5, counting pending requests");
+    expect(meter).toHaveAttribute("aria-valuetext", "2 of 5, 1 of them pending");
     unmount();
 
     server.use(mineHandler([], 0));
     await renderApp({ path: "/settings/custom-emojis" });
-    expect(
-      await screen.findByText("You have 0 custom emoji, counting your pending requests. Your roles set no limit."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("You have 0 custom emoji. Your roles set no limit.")).toBeInTheDocument();
   });
 
   test("requests an emoji with an uploaded image", async () => {
@@ -222,6 +224,7 @@ describe("the user's custom emoji page", () => {
               ? [ownCustomEmojiFixture("e1", "blobcat"), ownCustomEmojiFixture("e2", "blobfox")]
               : [ownCustomEmojiFixture("e2", "blobfox")],
           used: deleted === "" ? 2 : 1,
+          pending: 0,
         }),
       ),
       http.delete(`${apiBase}/custom_emojis/mine/:id`, ({ params }) => {
@@ -239,9 +242,7 @@ describe("the user's custom emoji page", () => {
     });
     expect(deleted).toBe("e1");
     expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
-    expect(
-      await screen.findByText("You have 1 custom emoji, counting your pending requests. Your roles set no limit."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("You have 1 custom emoji. Your roles set no limit.")).toBeInTheDocument();
   });
 
   test("requests a new image of an emoji the user made", async () => {

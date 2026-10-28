@@ -131,8 +131,10 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][]) {
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /custom_emojis") return json(route, { items: [] });
-    if (key === "GET /custom_emojis/mine")
-      return json(route, { items: [], used: requests.filter((r) => r.state === "pending").length, limit: 5 });
+    if (key === "GET /custom_emojis/mine") {
+      const pending = requests.filter((r) => r.state === "pending").length;
+      return json(route, { items: [], used: pending, pending, limit: 5 });
+    }
     if (key === "GET /custom_emoji_requests") return json(route, { items: requests });
     // The image is processed at once.
     if (key === "POST /media") return json(route, uploaded, 202);

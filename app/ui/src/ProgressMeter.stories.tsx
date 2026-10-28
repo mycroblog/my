@@ -50,8 +50,32 @@ export const Meters: Story = {
   },
 };
 
+/** A meter whose value has a pending part, drawn lighter at the end of the fill; the words say it too. */
+export const Pending: Story = {
+  args: {
+    kind: "meter",
+    label: "Custom emoji used",
+    value: 4,
+    maxValue: 10,
+    pending: 2,
+    valueText: "4 of 10, 2 of them pending",
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("meter", { name: "Custom emoji used" })).toHaveAttribute(
+      "aria-valuetext",
+      "4 of 10, 2 of them pending",
+    );
+  },
+};
+
 /** Forced colors draw the fill in Highlight inside a CanvasText border; captured so. */
 export const ForcedColors: Story = {
+  tags: ["forced-colors"],
+};
+
+/** Forced colors draw the pending part in GrayText after the Highlight fill; captured so. */
+export const PendingForcedColors: Story = {
+  ...Pending,
   tags: ["forced-colors"],
 };
 

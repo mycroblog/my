@@ -442,12 +442,12 @@ func requestAppliesTheLimit(t *testing.T, e *emojiEnv) {
 	for _, code := range []string{"blob_a", "blob_b", "blob_c"} {
 		r.mustSubmit(t, requesterA, requesterAUser, code)
 	}
-	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 3}) {
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 3, Pending: 3}) {
 		t.Errorf("Usage without a limit = %+v, %v", u, err)
 	}
 	r.approved(t, "blob_d")
 	r.quota.limit, r.quota.limited = 5, true
-	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 4, Limit: 5, Limited: true}) {
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 4, Pending: 3, Limit: 5, Limited: true}) {
 		t.Errorf("Usage = %+v, %v", u, err)
 	}
 	last := r.mustSubmit(t, requesterA, requesterAUser, "blob_e")
