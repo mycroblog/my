@@ -72,12 +72,22 @@ describe("the screens' setups", () => {
       for (const named of [
         ...Object.keys(setup.starts ?? {}),
         ...Object.keys(setup.mail ?? {}),
+        ...Object.keys(setup.push ?? {}),
+        ...Object.keys(setup.notes ?? {}),
         ...Object.keys(setup.unavailable ?? {}),
       ]) {
         expect(tasks, `a task of ${name}`).toContain(named);
       }
+      if (Object.keys(setup.push ?? {}).length > 0) {
+        expect(setup.persona, `${name}: a task that turns Web Push on needs a persona`).not.toBeNull();
+      }
       const seedUsers = (setup.seed ?? []).flatMap((step) => ("api" in step ? [step.api] : []));
-      for (const username of [setup.persona, ...Object.values(setup.mail ?? {}), ...seedUsers]) {
+      for (const username of [
+        setup.persona,
+        ...Object.values(setup.mail ?? {}),
+        ...Object.values(setup.push ?? {}),
+        ...seedUsers,
+      ]) {
         if (username !== null) {
           expect(usernames, "a person of demo/scenario.ts").toContain(username);
         }

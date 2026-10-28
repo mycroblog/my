@@ -19,6 +19,14 @@ export const Default: Story = {
   },
 };
 
+/** While the user's call reconnects, the pill is a dashed outline. */
+export const Interrupted: Story = {
+  args: { interrupted: true },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Live")).toHaveAttribute("data-interrupted");
+  },
+};
+
 /** The pill is as wide as its word. */
 export const LongLabel: Story = {
   args: { label: "En direct" },

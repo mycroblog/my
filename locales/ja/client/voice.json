@@ -259,6 +259,18 @@
     "defaultMessage": "このルームに参加しています。",
     "description": "Shown on the page of a voice chat room that the user is in."
   },
+  "voice.room.joined_badge": {
+    "defaultMessage": "参加中",
+    "description": "Badge on the card of the voice chat room whose call the user is in, in the lists of rooms."
+  },
+  "voice.room.move_notice": {
+    "defaultMessage": "いまは「{room}」に参加しています。このルームに参加すると、そちらから退出します。",
+    "description": "Shown before joining a voice chat room while the user is in the call of another room. {room} is the other room's name."
+  },
+  "voice.room.move": {
+    "defaultMessage": "こちらに移る",
+    "description": "Button that leaves the voice chat room the user is in and joins this one."
+  },
   "voice.room.details": {
     "defaultMessage": "ルームについて",
     "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
@@ -295,6 +307,10 @@
     "defaultMessage": "このルームは終了しました",
     "description": "Heading of the page of a voice chat room that ended."
   },
+  "voice.room.ended.next": {
+    "defaultMessage": "いま開いているルームを見るか、自分でルームを開けます。",
+    "description": "Under the heading of the page of a voice chat room that ended: what the user can do next."
+  },
   "voice.room.hidden": {
     "defaultMessage": "このルームは見られません。",
     "description": "Shown on the page of an open voice chat room that the user may not see."
@@ -310,14 +326,6 @@
   "voice.room.loading": {
     "defaultMessage": "ルームを読み込んでいます",
     "description": "Accessible name of the spinner while a voice chat room loads."
-  },
-  "voice.profile.host": {
-    "defaultMessage": "{name} さんが通話のルームを開いています：{room}",
-    "description": "Note on a profile while the account hosts an open voice chat room. {name} is the account's name, {room} the room's name as a link."
-  },
-  "voice.profile.speaker": {
-    "defaultMessage": "{name} さんが通話のルームで話しています：{room}",
-    "description": "Note on a profile while the account speaks in an open voice chat room. {name} is the account's name, {room} the room's name as a link."
   },
   "voice.history.title": {
     "defaultMessage": "通話の履歴",
@@ -411,9 +419,13 @@
     "defaultMessage": "音を出す",
     "description": "Button that starts the audio of the call after the browser blocked it."
   },
-  "voice.call.microphone": {
-    "defaultMessage": "マイク",
-    "description": "Label of the switch that turns the user's microphone on or off in a voice chat call."
+  "voice.call.microphone.turn_on": {
+    "defaultMessage": "マイクをオンにする",
+    "description": "Button in a voice chat call while the user's microphone is off: it turns the microphone on. Its icon is a slashed microphone."
+  },
+  "voice.call.microphone.turn_off": {
+    "defaultMessage": "マイクをオフにする",
+    "description": "Button in a voice chat call while the user's microphone is on: it turns the microphone off. Its icon is a filled microphone."
   },
   "voice.call.microphone_failed": {
     "defaultMessage": "マイクを使えませんでした。もう一度試してください。",
@@ -438,6 +450,14 @@
   "voice.call.stay": {
     "defaultMessage": "残る",
     "description": "Button of the dialogs about leaving a voice chat room that keeps the user in it."
+  },
+  "voice.call.leave_confirm.title": {
+    "defaultMessage": "「{room}」から退出しますか？",
+    "description": "Title of the dialog that asks before leaving a voice chat call from the mini-player. {room} is the room's name."
+  },
+  "voice.call.leave_confirm.description": {
+    "defaultMessage": "通話が終わります。ルームが開いている間は、もう一度参加できます。",
+    "description": "Explanation in the dialog that asks before leaving a voice chat call from the mini-player."
   },
   "voice.call.cancel": {
     "defaultMessage": "キャンセル",

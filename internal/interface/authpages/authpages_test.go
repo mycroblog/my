@@ -38,9 +38,12 @@ type fakeIdentity struct {
 	access    map[string]appidentity.Access
 	signUps   []appidentity.SignUpInput
 	signUpErr error
-	verified  map[string]bool // tokens redeemed by VerifyEmail
-	resent    int
-	resendErr error
+	// signUpReady makes a new user able to use the account at once (an open registration
+	// without email confirmation).
+	signUpReady bool
+	verified    map[string]bool // tokens redeemed by VerifyEmail
+	resent      int
+	resendErr   error
 }
 
 func newFakeIdentity() *fakeIdentity {
@@ -103,6 +106,9 @@ func (f *fakeIdentity) SignUp(_ context.Context, in appidentity.SignUpInput) (ap
 	token := f.newToken(userID)
 	f.access[userID] = appidentity.Access{
 		Registration: identity.RegistrationPending, Email: in.Email, EmailVerificationRequired: true,
+	}
+	if f.signUpReady {
+		f.access[userID] = appidentity.Access{Registration: identity.RegistrationApproved, Email: in.Email, EmailVerified: true}
 	}
 	return appidentity.SignedUp{
 		Registration: appidentity.Registration{User: identity.User{ID: userID}},

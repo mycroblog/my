@@ -635,6 +635,7 @@ describe("profile", () => {
       "Name and bio",
       "Fields",
       "Followers and bots",
+      "Discovery",
       "Search engines and AI",
     ]);
     // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
@@ -740,11 +741,29 @@ describe("profile", () => {
         fields: [{ name: "Site", value: "https://alice.example" }],
         locked: true,
         bot: false,
+        discoverable: true,
         indexable: true,
         ai_opt_out: false,
         avatar_media_id: "0192f0c4-7a8e-7000-8000-00000000bbbb",
       },
     ]);
+  });
+
+  test("saves whether the account is suggested and found by part of its name", async () => {
+    const changes = profileServer();
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const discovery = await screen.findByRole("region", { name: "Discovery" });
+    const discoverable = within(discovery).getByRole("checkbox", {
+      name: "Suggest my account and find it by part of its name",
+    });
+    expect(discoverable).toBeChecked();
+
+    await user.click(discoverable);
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+    await waitFor(() => {
+      expect(changes.at(-1)?.discoverable).toBe(false);
+    });
   });
 
   test("saves whether search and AI may use the profile, and says what the server already denies", async () => {

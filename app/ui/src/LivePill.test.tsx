@@ -8,4 +8,10 @@ describe("LivePill", () => {
     render(<LivePill label="Live" />);
     expect(screen.getByText("Live")).toHaveClass("bg-accent-fill", "text-accent-fill-fg");
   });
+
+  it("turns into a dashed outline while the user's call is interrupted", () => {
+    render(<LivePill label="Live" interrupted />);
+    expect(screen.getByText("Live")).toHaveClass("border-dashed", "text-accent");
+    expect(screen.getByText("Live")).not.toHaveClass("bg-accent-fill");
+  });
 });

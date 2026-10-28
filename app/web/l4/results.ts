@@ -14,6 +14,10 @@ export type TaskResult = Task & {
   status: "measured" | "unavailable" | "dry-run" | "error";
   /** Why the task is unavailable or failed. */
   reason?: string;
+  /** The notes of the task in the screen's front matter, such as what L4 cannot measure of it. */
+  notes?: string;
+  /** The harness's verdict on a task it judges (push.ts), which decides `completed`. */
+  judgement?: { passed: boolean; detail: string };
   completed: boolean;
   ending: string;
   summary: string;

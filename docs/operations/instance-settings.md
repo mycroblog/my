@@ -243,6 +243,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
   | Supporter list | `supporter_list_visibility` |
   | Landing page | `public_counts`, `public_operators` |
+  | Suggested accounts | `featured_accounts` |
   | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
   | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
 

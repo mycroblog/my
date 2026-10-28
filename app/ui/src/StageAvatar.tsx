@@ -6,12 +6,13 @@
 // rests on the color or the shape alone (WCAG 1.4.1). The ring fades in and out, and holds still with reduced motion.
 //
 // The host and co-hosts operate on a participant from the avatar: with `menu`, the avatar and its name are the
-// button of a menu (React Aria's MenuTrigger; WAI-ARIA APG, menu button).
+// button of a menu (React Aria's MenuTrigger; WAI-ARIA APG, menu button), with a surface under the pointer and the
+// caret of a menu after the name, so that it looks operable.
 import type { ReactNode } from "react";
 import { Button as RACButton, MenuTrigger } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { Avatar } from "./Avatar";
-import { MicrophoneOffIcon, RaiseHandIcon } from "./Icons";
+import { MenuIndicatorIcon, MicrophoneOffIcon, RaiseHandIcon } from "./Icons";
 import type { ImageSources } from "./Picture";
 import { VisuallyHidden } from "./VisuallyHidden";
 
@@ -50,9 +51,14 @@ export function StageGrid({ size, children, ...props }: StageGridProps) {
 const stageAvatar = tv({
   slots: {
     item: "flex min-w-0 flex-col items-center",
-    // The press target of `menu`: the avatar and the name, as one button.
-    button:
+    // The press target of `menu`: the avatar and the name, as one button. It looks operable: a cream surface under the
+    // pointer and while pressed, and the caret of a menu after the name (ADR-0110 P1).
+    button: [
       "flex w-full min-w-0 cursor-default flex-col items-center gap-2 rounded-lg p-2 data-focus-visible:focus-ring",
+      "data-hovered:bg-soft data-pressed:bg-surface-sunken motion-safe:transition-colors",
+    ],
+    nameRow: "flex w-full min-w-0 items-center justify-center gap-0.5",
+    caret: "shrink-0 text-fg-muted [&>svg]:size-3",
     plain: "flex w-full min-w-0 flex-col items-center gap-2 p-2",
     figure: "relative",
     // The ring is an outline, so the gap between it and the avatar is the ground the avatar is on, whatever that is.
@@ -148,6 +154,7 @@ export function StageAvatar({
   menu,
 }: StageAvatarProps) {
   const slots = stageAvatar({ size, speaking, withReaction: reaction !== undefined });
+  const hasMenu = menu !== undefined && menu !== null;
   const content = (
     <>
       <span className={slots.figure()}>
@@ -177,8 +184,15 @@ export function StageAvatar({
         )}
       </span>
       <span className={slots.text()}>
-        <span dir="auto" className={slots.name()}>
-          {name}
+        <span className={slots.nameRow()}>
+          <span dir="auto" className={slots.name()}>
+            {name}
+          </span>
+          {hasMenu && (
+            <span className={slots.caret()}>
+              <MenuIndicatorIcon />
+            </span>
+          )}
         </span>
         {caption !== undefined && caption !== null && <span className={slots.caption()}>{caption}</span>}
         {/* The states in words, in the order they are drawn: the ring, then the badges. */}
@@ -191,7 +205,7 @@ export function StageAvatar({
   );
   return (
     <li className={slots.item()}>
-      {menu === undefined || menu === null ? (
+      {!hasMenu ? (
         <span className={slots.plain()}>{content}</span>
       ) : (
         <MenuTrigger>

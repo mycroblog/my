@@ -129,7 +129,7 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
         </Box>
       )}
       {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
-      <ProfileVoiceRoom accountId={account.id} name={isolate(profile.name)} />
+      <ProfileVoiceRoom accountId={account.id} name={profile.name} />
       <ProfileTabs
         accountId={account.id}
         name={profile.name}

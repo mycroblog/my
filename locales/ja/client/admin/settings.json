@@ -850,5 +850,21 @@
   "admin.settings.landing.operators.description": {
     "defaultMessage": "スタッフのロール（管理者・モデレーター、またはモデレーションかサーバーの権限を持つロール）のバッジをプロフィールに出している、このサーバーのアカウントと、そのバッジ。バッジを出していないスタッフは載せません。",
     "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "おすすめのアカウント",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "利用者には、フォローする人のおすすめが出ます。下のアカウントをこの順に先に、その次にこのサーバーで最近投稿した人を出します。おすすめに出ないようにした人は出しません。",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "先に出すアカウント",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "このサーバーのアカウントのユーザー名を、空白で区切って 20 個まで。",
+    "description": "Help text of the field of the accounts that the suggestions show first."
   }
 }

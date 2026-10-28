@@ -2,9 +2,12 @@
 // The Playwright MCP server the agent drives (ADR-0114): its command line, which gives the agent ARIA snapshots and
 // no images, and a minimal MCP client over its standard input and output that the dry run uses to check, without
 // the agent, that the server opens the start page signed in (or signed out) and the mailbox of a task that reads email.
+// For a task that turns Web Push on (push.ts), the init page also grants notifications and replaces the browser's
+// PushManager with the shim of e2e/web-push.ts, whose subscriptions come from the demo server's fake push service.
 import { type ChildProcess, spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pushManagerShim } from "../e2e/web-push.ts";
 
 /** The Playwright MCP server, pinned. Its browser is the Chromium of @playwright/test (`executablePath`). */
 const playwrightMCP = "@playwright/mcp@0.0.83";
@@ -29,6 +32,8 @@ export function mcpCommand(options: {
    * it (`L4_NO_SANDBOX=1`); the browser loads only the app of `my serve` and Mailpit on localhost.
    */
   sandbox: boolean;
+  /** For a task that turns Web Push on: the browser's push subscriptions come from the fake push service. */
+  push?: PushShimOptions;
 }): string[] {
   // The init page runs on every new page of the browser, before the first tool call returns. On the first page it
   // opens the mailbox in a second tab when the task reads email, then the start, so the agent never types an
@@ -42,6 +47,7 @@ export function mcpCommand(options: {
       "exports.default = async ({ page }) => {",
       "  const context = page.context();",
       "  if (context.pages()[0] !== page) return;",
+      ...(options.push === undefined ? [] : pushInitLines(options.push)),
       ...(options.mailURL === undefined
         ? []
         : [
@@ -71,6 +77,8 @@ export function mcpCommand(options: {
     initPage,
     "--allowed-origins",
     origins.join(";"),
+    // The permission prompt is not part of a push task (ADR-0118 §4): notifications are granted beforehand.
+    ...(options.push === undefined ? [] : ["--grant-permissions", "notifications"]),
     // ARIA snapshots only: no image ever reaches the agent.
     "--image-responses",
     "omit",
@@ -79,6 +87,53 @@ export function mcpCommand(options: {
     "--output-dir",
     join(options.dir, "mcp-output"),
     ...(options.sandbox ? [] : ["--no-sandbox"]),
+  ];
+}
+
+/** Where the push shim of the init page gets its subscriptions, and where it keeps the browser's one. */
+export type PushShimOptions = {
+  /** The origin of the fake push service (`my dev push-service`). */
+  origin: string;
+  /** The CA that signs the fake's certificate. */
+  ca: string;
+  /**
+   * The JSON file of the browser's subscription and the application server key it was made with, written when the
+   * app subscribes and removed when it unsubscribes: the harness reads it after the task, and a later session on the
+   * same file (the harness's postcondition) gets the same subscription back.
+   */
+  state: string;
+};
+
+/**
+ * The lines of the init page that install the push shim in the browser context before the first page loads: the
+ * bindings that pushManagerShim (e2e/web-push.ts) calls, backed by the fake push service and the state file, and the
+ * shim itself, inlined from its source.
+ */
+function pushInitLines(push: PushShimOptions): string[] {
+  return [
+    '  const { existsSync, readFileSync, rmSync, writeFileSync } = require("node:fs");',
+    '  const { request } = require("node:https");',
+    `  const state = ${JSON.stringify(push.state)};`,
+    "  const subscribe = (applicationServerKey) => new Promise((resolve, reject) => {",
+    `    const ca = readFileSync(${JSON.stringify(push.ca)});`,
+    '    const options = { method: "POST", ca, headers: { "Content-Type": "application/json" } };',
+    `    const req = request(new URL("/subscriptions", ${JSON.stringify(push.origin)}), options, (res) => {`,
+    '      let text = "";',
+    '      res.setEncoding("utf8");',
+    '      res.on("data", (chunk) => { text += chunk; });',
+    '      res.on("end", () => res.statusCode === 201 ? resolve(JSON.parse(text)) : reject(new Error("the fake push service answered " + res.statusCode + ": " + text)));',
+    "    });",
+    '    req.on("error", reject);',
+    "    req.end(JSON.stringify({ applicationServerKey }));",
+    "  });",
+    '  await context.exposeBinding("__e2ePushSubscribe", async (_source, applicationServerKey) => {',
+    "    const current = { subscription: await subscribe(applicationServerKey), applicationServerKey };",
+    "    writeFileSync(state, JSON.stringify(current));",
+    "    return current;",
+    "  });",
+    '  await context.exposeBinding("__e2ePushGetSubscription", () => existsSync(state) ? JSON.parse(readFileSync(state, "utf8")) : null);',
+    '  await context.exposeBinding("__e2ePushUnsubscribe", () => { rmSync(state, { force: true }); return true; });',
+    `  await context.addInitScript(${pushManagerShim.toString()});`,
   ];
 }
 

@@ -2,7 +2,8 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
-unavailable: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "the demo server has no Web Push: it sets no VAPID keys and reaches no push service"}
+push: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "layla"}
+notes: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "Judged by the harness: the server holds the browser's subscription, and the fake push service receives and decrypts the notification of a reply by layla after the task. Not measured: the agent sees neither OS notifications nor the browser's permission prompt (notifications are granted beforehand), and opening a notification (notificationclick) is not exercised."}
 ---
 
 ## 通知（`/settings/notifications`）
