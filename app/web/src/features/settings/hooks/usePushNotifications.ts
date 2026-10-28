@@ -31,7 +31,7 @@ export type PushNotifications =
       /** The types pushed: the value being saved while `isPending`. */
       alerts: readonly NotificationType[];
       setEnabled: (enabled: boolean) => void;
-      /** Pushes `types` (one row of the notification settings) or stops pushing them. */
+      /** Pushes `types` (one row of the notification settings, or the rows of a column) or stops pushing them. */
       setTypes: (types: readonly NotificationType[], selected: boolean) => void;
       isPending: boolean;
       /** Where the last change of the switch is, for its save mark (web-client/16-look-states-and-wording.md G24). */
@@ -91,9 +91,9 @@ function subscriptionRequest(subscription: PushSubscription, alerts: readonly No
 }
 
 /** A change of Web Push: turning it on with the types, changing the types, or turning it off. */
-/** A change of the subscription; `row` is the first type of the row whose cell changed it, none for the switch. */
+/** A change of the subscription; `rows` are the types of the cells that changed it, none for the switch. */
 type PushChange =
-  | { enabled: true; alerts: readonly NotificationType[]; ask: boolean; row?: NotificationType | undefined }
+  | { enabled: true; alerts: readonly NotificationType[]; ask: boolean; rows?: readonly NotificationType[] | undefined }
   | { enabled: false };
 
 /**
@@ -143,7 +143,7 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
   const saved = subscription.data ?? null;
   const pending = mutation.isPending ? mutation.variables : undefined;
   const last = mutation.variables;
-  const changedRow = last?.enabled === true ? last.row : undefined;
+  const changedTypes = last?.enabled === true ? last.rows : undefined;
   const enabled = pending?.enabled ?? saved !== null;
   const alerts = pending?.enabled === true ? pending.alerts : (saved?.alerts ?? offered);
   let error: string | undefined;
@@ -163,12 +163,12 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
     },
     setTypes: (types, selected) => {
       const next = selected ? [...new Set([...alerts, ...types])] : alerts.filter((type) => !types.includes(type));
-      mutation.mutate({ enabled: true, alerts: next, ask: false, row: types[0] });
+      mutation.mutate({ enabled: true, alerts: next, ask: false, rows: types });
     },
     isPending: mutation.isPending,
-    saveState: changedRow === undefined ? saveStateOf(mutation) : "idle",
+    saveState: changedTypes === undefined ? saveStateOf(mutation) : "idle",
     typesSaveState: (types) =>
-      changedRow !== undefined && types.includes(changedRow) ? saveStateOf(mutation) : "idle",
+      changedTypes !== undefined && types.some((type) => changedTypes.includes(type)) ? saveStateOf(mutation) : "idle",
     error,
   };
 }

@@ -69,3 +69,36 @@ func TestHTTPClientGuard(t *testing.T) {
 		})
 	}
 }
+
+// TestHTTPClientPushDestinations checks push_allowed_destinations in the development profile:
+// the App warns at start, a Web Push send to the listed host passes the guard (and fails only
+// at TLS here, as the test server's certificate is not trusted), and a link preview or a
+// federation fetch to the same host is still refused.
+func TestHTTPClientPushDestinations(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	}))
+	t.Cleanup(srv.Close)
+	u := "https://localhost:" + srv.URL[strings.LastIndex(srv.URL, ":")+1:] + "/push/1"
+	logs := &syncBuffer{}
+	app, err := platform.NewApp(t.Context(), loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, false), "MY_PROFILE": "development", "MY_PUSH_ALLOWED_DESTINATIONS": "localhost",
+	}), platform.AppOptions{Logger: platform.NewLogger(logs, slog.LevelDebug), Version: "1.2.3"})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	if !strings.Contains(logs.String(), "push_allowed_destinations is set") {
+		t.Errorf("logs do not warn about push_allowed_destinations: %s", logs.String())
+	}
+	_, err = app.HTTPClient.Do(t.Context(), &kernel.HTTPRequest{Method: http.MethodPost, URL: u, Purpose: kernel.HTTPPurposeWebPush})
+	if err == nil || errors.Is(err, kernel.ErrForbiddenDestination) {
+		t.Errorf("Do(web push) = %v, want a TLS error past the guard", err)
+	}
+	for _, p := range []kernel.HTTPPurpose{kernel.HTTPPurposeJSON, kernel.HTTPPurposeHTML, kernel.HTTPPurposeImage} {
+		if _, err := app.HTTPClient.Do(t.Context(), &kernel.HTTPRequest{URL: u, Purpose: p}); !errors.Is(err, kernel.ErrForbiddenDestination) {
+			t.Errorf("Do(purpose %d) = %v, want ErrForbiddenDestination", p, err)
+		}
+	}
+}

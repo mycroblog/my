@@ -22,6 +22,7 @@ import { nodeUploadFile } from "../../test/multipart";
 import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 
 /**
  * Makes `zone` the time zone of this device: the zone of every Intl.DateTimeFormat that names none, as in a
@@ -85,16 +86,41 @@ function expectBeside(control: HTMLElement, mark: HTMLElement) {
 }
 
 describe("preferences", () => {
+  test("the sections follow the screen's requirements, each saying where it is saved", async () => {
+    preferencesServer();
+    await renderApp({ path: "/settings/preferences" });
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-preferences.md §3
+    expect(sectionHeadings()).toEqual(["Display", "Navigation", "New posts", "Timelines"]);
+    expect(screen.getByRole("region", { name: "Display" })).toHaveAccessibleDescription(
+      "The language and the time zone are saved to your account; the theme and animations are kept on this browser.",
+    );
+    expect(
+      within(screen.getByRole("region", { name: "New posts" })).getByRole("radiogroup", {
+        name: "Who sees your posts by default",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Timelines" })).getByRole("group", {
+        name: "Languages of your timelines",
+      }),
+    ).toBeInTheDocument();
+  });
+
   test("switching the display language saves it and displays the app in it at once", async () => {
     const prefs = preferencesServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
-    expect(await screen.findByRole("heading", { level: 1, name: "Display and posting" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("lang", "en");
 
     await user.click(screen.getByRole("button", { name: /Display language/ }));
     await user.click(await screen.findByRole("option", { name: "日本語" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "表示と投稿" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "表示・投稿・タイムライン" })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("lang", "ja");
     expect(document.documentElement).toHaveAttribute("dir", "ltr");
     expect(prefs.changes).toEqual([{ locale: "ja" }]);

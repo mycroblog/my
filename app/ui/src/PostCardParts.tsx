@@ -13,8 +13,9 @@ const parts = tv({
   slots: {
     // In the color of the text, underlined on hover: a name is no running text.
     name: "text-fg no-underline data-hovered:text-fg data-hovered:underline",
-    // A block, so that the name and the handle inside are cut to the room of the header's row.
-    author: "block min-w-0",
+    // A block as wide as its text (the link is no stripe across the row), so that the name and the handle inside
+    // are cut to the room of the header's row.
+    author: "block w-fit max-w-full min-w-0",
     // Muted like the other details of the header (G6) and underlined only on hover and focus, so that a feed is
     // no column of underlines.
     time: "text-fg-muted no-underline data-hovered:text-fg-muted data-hovered:underline data-focus-visible:underline",
