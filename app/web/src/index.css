@@ -69,4 +69,29 @@
       scroll-padding-block-end: calc(var(--call-bar-block-size, 4rem) + 2rem + env(safe-area-inset-bottom));
     }
   }
+  /* What the shell fixes at the bottom of the screen, which a sticky submit bar of a long form (@my/ui FormActionBar
+     `sticky`, data-sticky) stays above: the tab bar below md, and the call bar with its 1rem gap while a call shows.
+     While such a bar shows, focused fields also clear it (its height is about 4rem: a button and the padding). */
+  :root {
+    --shell-inset-block-end: calc(4rem + env(safe-area-inset-bottom));
+  }
+  :root:has([data-call-bar]) {
+    --shell-inset-block-end: calc(5rem + env(safe-area-inset-bottom) + var(--call-bar-block-size, 4rem));
+  }
+  :root:has([data-form-action-bar][data-sticky]) {
+    scroll-padding-block-end: calc(var(--shell-inset-block-end) + 5rem);
+  }
+  @variant md {
+    :root {
+      --shell-inset-block-end: 0px;
+    }
+    :root:has([data-call-bar]) {
+      --shell-inset-block-end: calc(1rem + var(--call-bar-block-size, 4rem));
+    }
+  }
+  @variant short {
+    :root:has([data-form-action-bar][data-sticky]) {
+      scroll-padding-block-end: calc(3rem + env(safe-area-inset-bottom));
+    }
+  }
 }
