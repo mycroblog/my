@@ -2,7 +2,7 @@
 // Where a flow of a few steps stands (a report, a move of the account): one segment per step, those done and the
 // current one in the accent, and the position in words ("Step 2 of 3") beside them. The shape shows how much is left
 // before the words are read (ADR-0110 P3); the words carry it for assistive technology, and the segments are drawn only.
-// The fill moves with a quiet color transition (web-client/21-experience-principles.md §21.2).
+// The fill changes with a quiet color fade, only under motion-safe (web-client/21-experience-principles.md §21.2).
 import { tv } from "tailwind-variants";
 
 const stepper = tv({

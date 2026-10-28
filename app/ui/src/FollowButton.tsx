@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The follow button of a profile and of a row of accounts (ADR-0110 P1–P3): where the viewer's follow stands, in its
 // look. Not followed, it is the one main action, filled in the accent; once followed or requested it turns quiet, an
-// outline with the state's icon, as pressing it again undoes the follow. The change of fill is a color transition of
+// outline with the state's icon, as pressing it again undoes the follow. The fill changes with a quiet color fade of
 // `duration-fast` (quiet, web-client/21-experience-principles.md §21.2); the icon and the label say the state without
 // it. While the relationship loads, a placeholder of the button's size keeps its place, so nothing moves when it
 // arrives.

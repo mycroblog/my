@@ -15,8 +15,11 @@ const accountItem = tv({
     name: "font-extrabold align-match-parent",
     handle: "text-start text-sm font-normal text-fg-muted",
     details: "flex flex-col text-sm text-fg-muted",
-    // Under a linked account, outside the link: lined up with the name, past the avatar (size-10) and the gap.
-    linkDetails: "flex min-w-0 flex-col gap-1 ps-13 text-sm text-fg-muted",
+    // Under a linked account, outside the link: lined up with the name, past a spacer as wide as the avatar (size-10)
+    // and the same gap.
+    linkDetails: "flex min-w-0 gap-3 text-sm text-fg-muted",
+    linkDetailsSpacer: "w-10 shrink-0",
+    linkDetailsBody: "flex min-w-0 flex-1 flex-col gap-1",
     trailing: "flex shrink-0 flex-wrap items-center gap-2",
   },
   variants: {
@@ -26,7 +29,7 @@ const accountItem = tv({
       /** A row of a list that is a whole target: padded, with a hover background. */
       padded: {
         body: "w-full rounded-md px-4 py-3 text-fg data-hovered:bg-surface-sunken data-hovered:text-fg",
-        linkDetails: "-mt-2 ps-17 pe-4 pb-3",
+        linkDetails: "-mt-2 px-4 pb-3",
       },
       /** Only as wide as its text, for an account named in running content. */
       inline: { body: "inline-grid max-w-full" },
@@ -133,7 +136,10 @@ export function AccountItem({
     ) : (
       <div className="flex min-w-0 flex-col">
         {link}
-        <div className={slots.linkDetails()}>{details}</div>
+        <div className={slots.linkDetails()}>
+          <span aria-hidden="true" className={slots.linkDetailsSpacer()} />
+          <div className={slots.linkDetailsBody()}>{details}</div>
+        </div>
       </div>
     )
   ) : paragraph ? (

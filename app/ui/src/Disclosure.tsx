@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // More detail on a summary, folded until the reader asks for it (ADR-0110 P1: the summary first, the details after):
 // the native `details` and `summary` (WAI-ARIA APG, disclosure pattern), which the browser opens with Enter and Space,
-// and which find-in-page opens too. The marker turns with a quiet transition (web-client/21-experience-principles.md §21.2).
+// and which find-in-page opens too. The marker turns quietly, only under motion-safe (web-client/21-experience-principles.md §21.2).
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { SubmenuIcon } from "./Icons";
