@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from "vitest";
-import { measure, parseTranscript, snapshotRefs, type Step } from "./transcript.ts";
+import { failureOf, measure, parseTranscript, snapshotRefs, type Step } from "./transcript.ts";
 
 /** A stream-json transcript of Claude Code: each call is a tool use and its result. */
 function transcript(
@@ -116,11 +116,76 @@ describe("parseTranscript", () => {
     expect(parseTranscript(transcript([], { subtype: "success", is_error: false })).apiError).toBeNull();
   });
 
+  it("reports a browser that never gave the agent a page", () => {
+    const failed = [
+      "### Error",
+      "Error: async initializeServer: Target page, context or browser has been closed",
+      "Browser logs:",
+      "Chromium sandboxing failed!",
+    ].join("\n");
+    const parsed = parseTranscript(
+      transcript(
+        [
+          { name: "browser_snapshot", text: failed, error: true },
+          { name: "browser_snapshot", text: failed },
+        ],
+        { subtype: "success", structured_output: { completed: false, summary: "The browser did not start." } },
+      ),
+    );
+    expect(parsed.browserError).toBe(
+      "### Error Error: async initializeServer: Target page, context or browser has been closed Browser logs:",
+    );
+    expect(parsed.path).toEqual([]);
+  });
+
+  it("reports a session without a browser tool call as one that never got a page", () => {
+    const parsed = parseTranscript(transcript([], { subtype: "success", structured_output: { completed: false } }));
+    expect(parsed.browserError).toBe("the agent called no browser tool");
+  });
+
+  it("has no browser error once a call returned a page, whatever failed before or after", () => {
+    const parsed = parseTranscript(
+      transcript(
+        [
+          { name: "browser_click", input: { ref: "e9" }, text: "### Error\nRef e9 not found", error: true },
+          { name: "browser_snapshot", text: settings },
+          { name: "browser_click", input: { ref: "e7" }, text: "### Error\nTimeout", error: true },
+        ],
+        { subtype: "success", structured_output: { completed: false, summary: "" } },
+      ),
+    );
+    expect(parsed.browserError).toBeNull();
+  });
+
   it("reads a verdict at the end of the result text", () => {
     const parsed = parseTranscript(
       transcript([], { subtype: "success", result: 'Done.\n{"completed": true, "summary": "ok"}' }),
     );
     expect(parsed).toMatchObject({ completed: true, summary: "ok" });
+  });
+});
+
+describe("failureOf", () => {
+  it("fails a session whose browser never gave the agent a page, or that ended with an API error", () => {
+    const noPage = parseTranscript(
+      transcript([{ name: "browser_snapshot", text: "### Error\nChromium sandboxing failed!", error: true }], {
+        subtype: "success",
+        structured_output: { completed: false, summary: "" },
+      }),
+    );
+    expect(failureOf(noPage)).toBe("the agent never got a page: ### Error Chromium sandboxing failed!");
+    const api = parseTranscript(transcript([], { subtype: "success", is_error: true, result: "API Error: 401" }));
+    expect(failureOf(api)).toBe("agent run failed: API Error: 401");
+  });
+
+  it("measures a session that got a page, done or not", () => {
+    const parsed = parseTranscript(
+      transcript([{ name: "browser_snapshot", text: settings }], {
+        subtype: "error_max_turns",
+        structured_output: { completed: false, summary: "" },
+      }),
+    );
+    expect(failureOf(parsed)).toBeNull();
   });
 });
 
