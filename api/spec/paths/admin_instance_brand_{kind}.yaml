@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/BrandKind.yaml
+put:
+  operationId: setAdminBrand
+  summary: Set a brand image
+  description: |
+    Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+    `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+    previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+    again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+    most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+    without their metadata. A problem with any file saves nothing: a 422
+    `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+    the PNGs show the same picture as the SVG.
+
+    The revision and the change are kept (`instance_brand_revisions`, the audit log's
+    `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+    revision stay at their URLs. Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          $ref: ../components/schemas/SetBrandRequest.yaml
+  responses:
+    "200":
+      description: The saved image, with what was removed from the SVG.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminBrandImage.yaml
+    "422":
+      $ref: ../components/responses/BrandProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: clearAdminBrand
+  summary: Clear a brand image
+  description: |
+    Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+    kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  responses:
+    "204":
+      description: The built-in images are in use.
+    default:
+      $ref: ../components/responses/Problem.yaml

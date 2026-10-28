@@ -7,14 +7,22 @@ import { Button } from "./Button";
 import { AnnouncerProvider } from "./Announcer";
 import { ToastProvider, useToast } from "./Toast";
 
-function Demo({ onUndo, timeout }: { onUndo: () => void; timeout?: number | null | undefined }) {
+function Demo({
+  onUndo,
+  timeout,
+  celebrate = false,
+}: {
+  onUndo: () => void;
+  timeout?: number | null | undefined;
+  celebrate?: boolean;
+}) {
   const toast = useToast();
   const timing = timeout === undefined ? {} : { timeout };
   return (
     <div className="flex flex-wrap gap-2">
       <Button
         onPress={() => {
-          toast.show({ message: "Draft saved", tone: "success", ...timing });
+          toast.show({ message: "Draft saved", tone: "success", celebrate, ...timing });
         }}
       >
         Save draft
@@ -37,7 +45,12 @@ function Demo({ onUndo, timeout }: { onUndo: () => void; timeout?: number | null
   );
 }
 
-type DemoArgs = { onUndo: () => void; timeout?: number | null | undefined; defaultTimeout?: number };
+type DemoArgs = {
+  onUndo: () => void;
+  timeout?: number | null | undefined;
+  defaultTimeout?: number;
+  celebrate?: boolean;
+};
 
 const meta = {
   title: "Feedback/Toast",
@@ -134,5 +147,40 @@ export const AutoDismissPausesOnHover: Story = {
     await expect(toast).toBeInTheDocument();
     await userEvent.unhover(toast);
     await waitFor(() => expect(canvas.queryByRole("listitem")).not.toBeInTheDocument());
+  },
+};
+
+/**
+ * A toast of a celebrated moment (web-client §21.5, such as the first post): its icon grows in with the overshoot of
+ * `ease-celebrate` as it appears (the `soft` fill instead with reduced motion), for a moment only. The other toasts stay
+ * quiet.
+ */
+export const Celebrate: Story = {
+  tags: ["no-screenshot"],
+  args: { celebrate: true },
+  play: async ({ canvas, userEvent, step }) => {
+    await step("the toast celebrates as it appears", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "Save draft" }));
+      const toast = await canvas.findByRole("listitem");
+      const icon = toast.querySelector("[data-celebrating]");
+      await expect(icon).not.toBeNull();
+      const animations = icon?.querySelector("svg")?.getAnimations() ?? [];
+      // Under reduced motion nothing moves; the moment shows by the fill alone.
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        await expect(animations.map((a) => (a instanceof CSSAnimation ? a.animationName : ""))).toContain("celebrate");
+      } else {
+        await expect(animations).toHaveLength(0);
+      }
+    });
+    await step("the moment ends by itself, and the toast stays", async () => {
+      const toast = canvas.getByRole("listitem");
+      await waitFor(() => expect(toast.querySelector("[data-celebrating]")).toBeNull(), { timeout: 2000 });
+      await expect(toast).toHaveTextContent("Draft saved");
+    });
+    await step("another toast does not celebrate", async () => {
+      await userEvent.click(canvas.getByRole("button", { name: "Send" }));
+      await waitFor(() => expect(canvas.getAllByRole("listitem")).toHaveLength(2));
+      await expect(canvas.getAllByRole("listitem")[1]?.querySelector("[data-celebrating]")).toBeNull();
+    });
   },
 };

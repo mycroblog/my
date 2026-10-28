@@ -80,6 +80,9 @@ type Options struct {
 	// Posting reads what the viewer's restrictions let them post, for CredentialAccount; nil
 	// presents every account as unrestricted.
 	Posting PostingPolicy
+	// PostCounts reads the count of the viewer's own posts, for CredentialAccount; nil
+	// presents it as 0.
+	PostCounts PostCounts
 	// Preferences reads and changes the viewer's preferences.
 	Preferences UserPreferences
 	// Badges reads the role badges that users show on their profiles and changes the viewer's
@@ -241,6 +244,10 @@ type Options struct {
 	// Themes reads and replaces the instance theme for the admin operations and Instance.theme
 	// (admin_theme.go); nil answers no theme and 404 to the admin operations.
 	Themes Themes
+	// BrandImages checks, sets, and clears the instance's icon and logos for the admin operations
+	// and Instance.icon / logo / logo_dark (admin_brand.go); nil answers none and 404 to the admin
+	// operations.
+	BrandImages BrandImages
 	// Closures reads, announces, and withdraws the service closure for the admin operations and
 	// Instance.closure (admin_closure.go); nil answers no closure and 404 to the admin operations.
 	Closures ServiceClosures

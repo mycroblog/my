@@ -421,6 +421,20 @@ type InstanceAvailabilityEvent struct {
 	OccurredAt int64
 }
 
+type InstanceBrand struct {
+	Kind       string
+	RevisionID string
+}
+
+type InstanceBrandRevision struct {
+	ID              string
+	Kind            string
+	Action          string
+	BackgroundColor sql.NullString
+	RevisedByUserID sql.NullString
+	RevisedAt       int64
+}
+
 type InstanceHealth struct {
 	Domain         string
 	State          string

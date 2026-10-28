@@ -59,8 +59,41 @@ func TestMailComposerHTML(t *testing.T) {
 	}
 }
 
-// TestMailComposerHTMLLoadsNothing checks that the HTML refers to nothing outside itself: no
-// web font, no image, no style sheet, and no link but those of the email.
+func TestMailComposerHTMLLogo(t *testing.T) {
+	html := composeHTML(t, htmlSite, words{}, htmlDraft())
+	if strings.Contains(html, "<img") {
+		t.Errorf("the HTML without a logo has an image:\n%s", html)
+	}
+
+	site := htmlSite
+	site.Name = `Example "&" Co`
+	site.Logo = &kernel.MailLogo{URL: "https://social.example/brand/r1/logo-mail.png", Width: 384, Height: 96}
+	html = composeHTML(t, site, words{}, htmlDraft())
+	want := `<img src="https://social.example/brand/r1/logo-mail.png" width="192" height="48" alt="Example &#34;&amp;&#34; Co" class=""`
+	if !strings.Contains(html, want) || strings.Contains(html, `class="mail-logo-dark"`) {
+		t.Errorf("the HTML lacks %s:\n%s", want, html)
+	}
+
+	site.LogoDark = &kernel.MailLogo{URL: "https://social.example/brand/r2/logo-dark-mail.png", Width: 384, Height: 96}
+	html = composeHTML(t, site, words{}, htmlDraft())
+	for _, want := range []string{
+		`class="mail-logo-light"`,
+		`<img src="https://social.example/brand/r2/logo-dark-mail.png" width="192" height="48" alt="Example &#34;&amp;&#34; Co" class="mail-logo-dark" style="display: none;`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("the HTML lacks %s:\n%s", want, html)
+		}
+	}
+
+	// A logo that is not https is left out, and the dark logo with it.
+	site.Logo.URL = "http://social.example/brand/r1/logo-mail.png"
+	if html := composeHTML(t, site, words{}, htmlDraft()); strings.Contains(html, "<img") {
+		t.Errorf("the HTML has a logo that is not https:\n%s", html)
+	}
+}
+
+// TestMailComposerHTMLLoadsNothing checks that the HTML of a server without a logo refers to
+// nothing outside itself: no web font, no image, no style sheet, and no link but those of the email.
 func TestMailComposerHTMLLoadsNothing(t *testing.T) {
 	html := composeHTML(t, htmlSite, words{}, htmlDraft())
 	for _, banned := range []string{"googleapis", "<link", "@import", "<img", "src=", "url(", "<script"} {

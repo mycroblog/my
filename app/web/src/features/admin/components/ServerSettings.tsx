@@ -747,6 +747,21 @@ function PoliciesForm() {
           label={t("client:admin.settings.supporter_list.visibility")}
         />
       </Section>
+      <Section surface="card" title={t("client:admin.settings.landing.title")}>
+        <Hint size="inherit">{t("client:admin.settings.landing.description")}</Hint>
+        <PolicyCheckbox
+          form={form}
+          setting="public_counts"
+          label={t("client:admin.settings.landing.counts")}
+          description={t("client:admin.settings.landing.counts.description")}
+        />
+        <PolicyCheckbox
+          form={form}
+          setting="public_operators"
+          label={t("client:admin.settings.landing.operators")}
+          description={t("client:admin.settings.landing.operators.description")}
+        />
+      </Section>
       <Section surface="card" title={t("client:admin.settings.crawlers.title")}>
         <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
         <PolicyRadios form={form} setting="search_indexing" label={t("client:admin.settings.crawlers.search")} />

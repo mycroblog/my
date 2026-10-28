@@ -164,6 +164,7 @@ export class Server {
       source: { note: "", fields: [] },
       posting: { visibilities: ["public", "local", "unlisted", "private", "direct"], visibility_ceiling: "public" },
       permissions: [],
+      statuses_count: 0,
     };
   }
 

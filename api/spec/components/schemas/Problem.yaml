@@ -93,6 +93,8 @@ description: |
     deleted; `reason` says why.
   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
     reason in `theme_errors` (`PUT /admin/theme`).
+  - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
+    why (`/admin/instance/brand/...`).
   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
     allow the operation: withdrawing an announcement when none is in effect, announcing the
     closure of a server that is closed already (`/admin/closure/announcement`), or closing a

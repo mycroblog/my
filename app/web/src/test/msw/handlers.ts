@@ -13,6 +13,7 @@ export * as costs from "../../features/costs/test/handlers";
 export * as core from "./http";
 export * as customEmojis from "../../features/custom-emojis/test/handlers";
 export * as emoji from "../../features/emoji/test/handlers";
+export * as landing from "../../features/landing/test/handlers";
 export * as moderation from "../../features/moderation/test/handlers";
 export * as notifications from "../../features/notifications/test/handlers";
 export * as profile from "../../features/profile/test/handlers";

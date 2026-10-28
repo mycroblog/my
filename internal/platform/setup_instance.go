@@ -5,8 +5,10 @@ package platform
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/mycroblog/my/internal/adapter/markdown"
+	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/instance"
 )
 
@@ -26,6 +28,8 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		ClosureCounts: closureCounts{a},
 		// The progress of the closure's Deletes is the federation module's, set up later.
 		ClosureDeliveries: closureDeliveries{a},
+		// The files of the brand images live in the blob store, which setMedia sets up later.
+		Blobs: instanceBlobs{a},
 	})
 }
 
@@ -37,6 +41,46 @@ func (m instanceMedia) CheckImage(ctx context.Context, mediaID string) error {
 		return errors.New("media files are not set up")
 	}
 	return m.a.Media.CheckImage(ctx, mediaID)
+}
+
+// instanceBlobs reaches the blob store, which is set up after the instance module.
+type instanceBlobs struct{ a *App }
+
+var errNoBlobs = errors.New("the blob store is not set up")
+
+func (b instanceBlobs) Put(ctx context.Context, key string, r io.Reader, opts blob.PutOptions) (blob.Info, error) {
+	if b.a.Blobs == nil {
+		return blob.Info{}, errNoBlobs
+	}
+	return b.a.Blobs.Put(ctx, key, r, opts)
+}
+
+func (b instanceBlobs) Get(ctx context.Context, key string) (io.ReadCloser, blob.Info, error) {
+	if b.a.Blobs == nil {
+		return nil, blob.Info{}, errNoBlobs
+	}
+	return b.a.Blobs.Get(ctx, key)
+}
+
+func (b instanceBlobs) Head(ctx context.Context, key string) (blob.Info, error) {
+	if b.a.Blobs == nil {
+		return blob.Info{}, errNoBlobs
+	}
+	return b.a.Blobs.Head(ctx, key)
+}
+
+func (b instanceBlobs) Delete(ctx context.Context, key string) error {
+	if b.a.Blobs == nil {
+		return errNoBlobs
+	}
+	return b.a.Blobs.Delete(ctx, key)
+}
+
+func (b instanceBlobs) PublicURL(key string) string {
+	if b.a.Blobs == nil {
+		return ""
+	}
+	return b.a.Blobs.PublicURL(key)
 }
 
 // closureCounts counts what the closure of the service ends (ADR-0088 §1) with the account,

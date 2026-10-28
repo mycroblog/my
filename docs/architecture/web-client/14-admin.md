@@ -206,8 +206,9 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     運営の費用の公開範囲（`finance_visibility`、`RadioGroup`、公開しない・合計だけ・合計と内訳。内訳の選択肢の説明に、どの事業者で動いているかが知られることを書く。FR-903）と、同じ区画に、会計を閲覧できる人に見せる範囲
     （項目の名前・メモを見せるか（`finance_viewer_item_names`・`finance_viewer_item_memos`、`Checkbox`、既定は見せない。メモの説明に運営者だけに向けた書き込みがあるかもしれないことを書く）、収入の見せ方（`finance_viewer_income`、`RadioGroup`、合計だけ・合計とプランごとの人数）。ADR-0070 §5）、
     その隣の「収入」の区画に収入の公開範囲（`income_visibility`、`RadioGroup`、公開しない・合計だけ・合計とプランごとの加入者の数。区画の説明に、誰がいくら払ったか・プランごとの金額・手数料は公開しないことと、費用もどちらも公開するときは収支を公開することを、プランごとの数の選択肢の説明に、加入者の少ないプランでは誰が加入しているかが推測されうることを書く。FR-917、ADR-0073 §7）、
-    サポーターの一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。区画の説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0071 §4）を出す。
-    1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・監査ログを取り直してから
+    サポーターの一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。区画の説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0071 §4）、
+    「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）と運営している人を出すか（`public_operators`、`Checkbox`、既定は出す。説明に、スタッフのロールのバッジをプロフィールに出している人だけが載ることを書く）を出す。
+    1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
     結果をボタンの下の `StatusMessage` に出す。変えた設定がなければ何も送らずにその旨を出し、失敗はボタンの上（`role="alert"`）に出して選択を残す（E2）。
 - **ルール**（`/admin/rules`、`manage_rules`、FR-705）: 「ルールを追加する」と「有効なルール」の区画（`h2` の `section`）。
   - **追加**: ルール（`TextField`、1 行、300 文字、必須）と補足（`TextArea`、1,000 文字、任意）を 1 つずつ置く。どちらもどのロケールでも同じ値を出す。文が空なら文の欄のエラーにして送らない。

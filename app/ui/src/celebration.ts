@@ -31,9 +31,11 @@ export type Celebration = {
 /**
  * The state of a celebrated moment: `celebrate()` marks the element for `celebrationMs`. Only the moments listed in
  * §21.5 use it; every other reaction stays quiet (`duration-fast` / `duration-normal`, no overshoot).
+ * `startsCelebrating` marks it from its first render, for an element that only appears as the result of the person's
+ * own action (a toast's `celebrate`); never for something shown on load.
  */
-export function useCelebration(): Celebration {
-  const [isCelebrating, setIsCelebrating] = useState(false);
+export function useCelebration(startsCelebrating = false): Celebration {
+  const [isCelebrating, setIsCelebrating] = useState(startsCelebrating);
   // Each call restarts the timer, so pressing again within the moment keeps it until the last press is done.
   const [round, setRound] = useState(0);
   useEffect(() => {

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A brand image as the administrators see it: the image of `Instance` with the background color
+  of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+  removed from the upload.
+allOf:
+  - $ref: ./InstanceBrandImage.yaml
+  - type: object
+    required: [revised_at]
+    properties:
+      background:
+        description: The `#rrggbb` color behind the opaque renditions of the icon; omitted for a logo.
+        type: string
+        pattern: "^#[0-9a-f]{6}$"
+      revised_at:
+        type: string
+        format: date-time
+      dropped:
+        type: array
+        items:
+          $ref: ./BrandDropped.yaml

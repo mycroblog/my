@@ -548,7 +548,7 @@ entries:
     docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md", "docs/architecture/web-client/screens/badges.md"]
   - name: web-feature-public
     paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
-    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md"]
+    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md", "docs/architecture/web-client/screens/landing.md"]
 
   # --- Deployment -----------------------------------------------------------------------------------------
   - name: deploy

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+name: kind
+in: path
+required: true
+description: Which brand image.
+schema:
+  $ref: ../schemas/BrandKind.yaml

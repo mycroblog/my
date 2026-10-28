@@ -4898,6 +4898,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/instance/brand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the brand images
+         * @description The instance's own icon, logo, and dark logo, each with the background color of the icon.
+         *     A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+         */
+        get: operations["getAdminBrands"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instance/brand/sanitize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check an SVG for a brand image
+         * @description Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+         *     sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+         *     SVG and sends them with it to `setAdminBrand`.
+         *
+         *     The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+         *     groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+         *     `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+         *     `class`, `style`) only. Other elements are removed with their content (scripts,
+         *     `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+         *     (event handlers among them), references other than to an element of the same document
+         *     (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+         *     a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+         *     `manage_settings` permission.
+         */
+        post: operations["sanitizeAdminBrand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instance/brand/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Which brand image. */
+                kind: components["parameters"]["BrandKind"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a brand image
+         * @description Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+         *     `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+         *     previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+         *     again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+         *     most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+         *     without their metadata. A problem with any file saves nothing: a 422
+         *     `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+         *     the PNGs show the same picture as the SVG.
+         *
+         *     The revision and the change are kept (`instance_brand_revisions`, the audit log's
+         *     `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+         *     revision stay at their URLs. Needs the `manage_settings` permission.
+         */
+        put: operations["setAdminBrand"];
+        post?: never;
+        /**
+         * Clear a brand image
+         * @description Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+         *     kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+         */
+        delete: operations["clearAdminBrand"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/custom_emojis": {
         parameters: {
             query?: never;
@@ -6929,6 +7021,24 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * @description A brand image as the administrators see it: the image of `Instance` with the background color
+         *     of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+         *     removed from the upload.
+         */
+        AdminBrandImage: components["schemas"]["InstanceBrandImage"] & {
+            /** @description The `#rrggbb` color behind the opaque renditions of the icon; omitted for a logo. */
+            background?: string;
+            /** Format: date-time */
+            revised_at: string;
+            dropped?: components["schemas"]["BrandDropped"][];
+        };
+        /** @description The brand images of the instance; a kind that uses the built-in images is omitted. */
+        AdminBrands: {
+            icon?: components["schemas"]["AdminBrandImage"];
+            logo?: components["schemas"]["AdminBrandImage"];
+            logo_dark?: components["schemas"]["AdminBrandImage"];
+        };
+        /**
          * @description What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
          *     `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
          *     and no use by AI search, assistants, and agents. An account can opt out of what the
@@ -7344,6 +7454,89 @@ export interface components {
          * @enum {string}
          */
         AdminLoginProviderState: "enabled" | "disabled";
+        /**
+         * @description Something the server removed from an uploaded SVG: an `element` with everything in it, or an
+         *     `attribute`, by its local name.
+         */
+        BrandDropped: {
+            /** @enum {string} */
+            kind: "element" | "attribute";
+            name: string;
+        };
+        /**
+         * @description Why a brand image cannot be saved. `code` is `malformed` (not well-formed XML in UTF-8),
+         *     `doctype` (a DOCTYPE or an entity declaration), `not_svg` (the root is not `svg`),
+         *     `no_viewbox` (no `viewBox` of four numbers with a positive size), `too_large` (the SVG is
+         *     over 262,144 bytes, or 131,072 once sanitized, or a PNG is over 1,048,576), `too_many_elements`
+         *     (over 5,000), `too_deep` (elements nested over 32 deep), `too_many_uses` (over 200 `use`
+         *     elements, references that expand to too many elements, or a reference cycle),
+         *     `aspect_ratio` (an icon that is not square within 1%, a logo not 1 to 8 times as wide as
+         *     it is high), `text` (`text` or `tspan`: convert the text to outlines), `unsafe_css` (CSS with
+         *     `@import`, `@font-face`, `@namespace`, a `url()` other than `url(#id)`, `expression(`, an
+         *     escape, or `<`), `missing_rendition`, `unexpected_rendition` (a rendition of another
+         *     kind), `invalid_png`, `dimensions` (a PNG of the wrong size), `not_opaque` (a rendition that
+         *     must be opaque has transparent pixels), or `invalid_color` (the background is not `#rrggbb`,
+         *     or a logo has one). `rendition` names the file, `svg` for the SVG.
+         */
+        BrandError: {
+            /** @enum {string} */
+            code: "malformed" | "doctype" | "not_svg" | "no_viewbox" | "too_large" | "too_many_elements" | "too_deep" | "too_many_uses" | "aspect_ratio" | "text" | "unsafe_css" | "missing_rendition" | "unexpected_rendition" | "invalid_png" | "dimensions" | "not_opaque" | "invalid_color";
+            rendition?: string;
+            /** @description More about the problem, in English. */
+            detail?: string;
+        };
+        /** @description A PNG rendition of a brand image, served at a URL whose content never changes. */
+        BrandFile: {
+            rendition: components["schemas"]["BrandRendition"];
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
+        };
+        /**
+         * @description A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+         *     instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+         *     `logo_dark` for dark backgrounds (the `logo` is used there without it).
+         * @enum {string}
+         */
+        BrandKind: "icon" | "logo" | "logo_dark";
+        /**
+         * @description A 422 of the brand image operations. For the type `/api/v1/problems/invalid-brand`,
+         *     `brand_error` says why the image cannot be saved; another 422 (a malformed request) has none.
+         */
+        BrandProblem: components["schemas"]["Problem"] & {
+            brand_error?: components["schemas"]["BrandError"];
+        };
+        /**
+         * @description A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+         *     `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+         *     iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+         *     opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+         *     `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+         *     to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+         *     `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+         *     instance has no `preview_image`.
+         * @enum {string}
+         */
+        BrandRendition: "favicon-32" | "favicon-48" | "apple-touch-180" | "pwa-192" | "pwa-512" | "maskable-512" | "logo-mail" | "logo-dark-mail" | "preview-1200x630";
+        /** @description A rendition that a brand image needs, and its size in pixels. */
+        BrandRenditionSize: {
+            rendition: components["schemas"]["BrandRendition"];
+            width: number;
+            height: number;
+        };
+        /**
+         * @description An SVG as the server would save it: the sanitized document, the size of its viewBox, the
+         *     renditions to draw from it with their sizes, and what was removed.
+         */
+        BrandSanitized: {
+            /** @description The sanitized SVG document. */
+            svg: string;
+            view_box_width: number;
+            view_box_height: number;
+            renditions: components["schemas"]["BrandRenditionSize"][];
+            dropped: components["schemas"]["BrandDropped"][];
+        };
         /**
          * @description A new login provider. `allow_signup` is false and `allow_link` true unless given.
          *     `client_id` and `client_secret` are required, except for `mastodon`: without both, the
@@ -7970,6 +8163,25 @@ export interface components {
         DenyOAuthClientHostRequest: {
             /** @description The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased. */
             host: string;
+        };
+        /**
+         * @description A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+         *     under `/brand/` on the server that name the revision, so their content never changes and
+         *     they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+         *     never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+         *     name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+         *     (`logo` is used there without it); each is omitted while the instance uses the built-in
+         *     image.
+         */
+        InstanceBrandImage: {
+            revision: string;
+            /** Format: uri */
+            svg_url: string;
+            /** @description The width of the SVG's viewBox, rounded. */
+            width: number;
+            /** @description The height of the SVG's viewBox, rounded. */
+            height: number;
+            renditions: components["schemas"]["BrandFile"][];
         };
         /**
          * @description A condition of an `oidc` provider: a user signs in only when the claim of the ID token
@@ -8877,6 +9089,15 @@ export interface components {
             /** @description The client secret that the provider gave, up to 1024 bytes. It is never shown again. */
             client_secret: string;
         };
+        /** @description An SVG to check before setting it as a brand image. */
+        SanitizeBrandRequest: {
+            kind: components["schemas"]["BrandKind"];
+            /**
+             * Format: binary
+             * @description The SVG file, at most 262,144 bytes.
+             */
+            svg: string;
+        };
         /**
          * @description Where the server is in its closure (ADR-0088 §1):
          *
@@ -9623,6 +9844,13 @@ export interface components {
             ai_opt_out: boolean;
             source: components["schemas"]["AccountSource"];
             posting: components["schemas"]["PostingLimits"];
+            /**
+             * Format: int64
+             * @description The number of the account's own posts that are not deleted, of every visibility.
+             *     Only the owner sees it; other accounts do not carry it. A client that creates a post
+             *     adds one to it, so a count of 1 after the create is the account's first post.
+             */
+            statuses_count: number;
             /**
              * @description The permissions that the user's roles grant, which the admin operations need; empty
              *     for a user without roles. Clients show the admin screens by them; the server checks
@@ -10457,6 +10685,9 @@ export interface components {
              */
             voice_room_starters: "everyone" | "permitted";
             theme?: components["schemas"]["InstanceTheme"];
+            icon?: components["schemas"]["InstanceBrandImage"];
+            logo?: components["schemas"]["InstanceBrandImage"];
+            logo_dark?: components["schemas"]["InstanceBrandImage"];
             contact?: components["schemas"]["InstanceContact"];
             thumbnail?: components["schemas"]["InstanceThumbnail"];
             search_indexing: components["schemas"]["SearchIndexing"];
@@ -11885,6 +12116,8 @@ export interface components {
          *       deleted; `reason` says why.
          *     - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
          *       reason in `theme_errors` (`PUT /admin/theme`).
+         *     - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
+         *       why (`/admin/instance/brand/...`).
          *     - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
          *       allow the operation: withdrawing an announcement when none is in effect, announcing the
          *       closure of a server that is closed already (`/admin/closure/announcement`), or closing a
@@ -12309,6 +12542,42 @@ export interface components {
              * @description When this process last checked the database; absent during the maintenance mode.
              */
             checked_at?: string;
+        };
+        /**
+         * @description A brand image: the SVG and every PNG rendition of its kind, each in the part named after the
+         *     rendition with `_` for `-` (`BrandRendition`). The icon takes `favicon_32`, `favicon_48`,
+         *     `apple_touch_180`, `pwa_192`, `pwa_512`, and `maskable_512`; the logo `logo_mail` and
+         *     `preview_1200x630`; the dark logo `logo_dark_mail`. Other parts are ignored.
+         */
+        SetBrandRequest: {
+            /**
+             * Format: binary
+             * @description The SVG file, at most 262,144 bytes.
+             */
+            svg: string;
+            /**
+             * @description The `#rrggbb` color behind the opaque renditions of the icon; the theme's light surface
+             *     color when it is left out. A logo takes none.
+             */
+            background?: string;
+            /** Format: binary */
+            favicon_32?: string;
+            /** Format: binary */
+            favicon_48?: string;
+            /** Format: binary */
+            apple_touch_180?: string;
+            /** Format: binary */
+            pwa_192?: string;
+            /** Format: binary */
+            pwa_512?: string;
+            /** Format: binary */
+            maskable_512?: string;
+            /** Format: binary */
+            logo_mail?: string;
+            /** Format: binary */
+            logo_dark_mail?: string;
+            /** Format: binary */
+            preview_1200x630?: string;
         };
         /** @description A new revision of an instance text. */
         SetInstanceTextRequest: {
@@ -13516,6 +13785,18 @@ export interface components {
                 "application/json": components["schemas"]["AdminLoginProvider"];
             };
         };
+        /** @description The image breaks a rule; nothing was saved. */
+        BrandProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["BrandProblem"];
+            };
+        };
         /** @description The error group. */
         ErrorGroup: {
             headers: {
@@ -13917,6 +14198,8 @@ export interface components {
         AppealId: components["schemas"]["Id"];
         /** @description The ID of the role whose badge it is. */
         BadgeRoleId: components["schemas"]["Id"];
+        /** @description Which brand image. */
+        BrandKind: components["schemas"]["BrandKind"];
         /** @description The ID of the cost item. */
         CostItemId: components["schemas"]["Id"];
         /** @description The `next_cursor` of the previous page; omitted for the first page. */
@@ -19322,6 +19605,107 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ThemeProblem"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminBrands: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The brand images. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBrands"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    sanitizeAdminBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["SanitizeBrandRequest"];
+            };
+        };
+        responses: {
+            /** @description The sanitized SVG; nothing was saved. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandSanitized"];
+                };
+            };
+            422: components["responses"]["BrandProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    setAdminBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Which brand image. */
+                kind: components["parameters"]["BrandKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["SetBrandRequest"];
+            };
+        };
+        responses: {
+            /** @description The saved image, with what was removed from the SVG. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBrandImage"];
+                };
+            };
+            422: components["responses"]["BrandProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    clearAdminBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Which brand image. */
+                kind: components["parameters"]["BrandKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The built-in images are in use. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: The image breaks a rule; nothing was saved.
+headers:
+  Content-Language:
+    description: The locale of `title` and `detail`.
+    schema:
+      type: string
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/problem+json:
+    schema:
+      $ref: ../schemas/BrandProblem.yaml

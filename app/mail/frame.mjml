@@ -3,8 +3,9 @@
   The one layout of every HTML email (ADR-0086 §2). src/frame.ts compiles it into the Go html/template
   internal/app/kernel/mail_frame.gen.html, which kernel.MailComposer executes; the {{...}} actions are Go's and
   name the fields of the composer's data. %color-NAME:SCHEME% is the default of the design token
-  (internal/domain/instance/theme_tokens.gen.go). No external font or image is loaded: the system fonts
-  are listed, and frame.ts compiles with `fonts: {}`.
+  (internal/domain/instance/theme_tokens.gen.go). No external font is loaded: the system fonts are listed, and
+  frame.ts compiles with `fonts: {}`. The one external image is the instance's own logo when it has one (ADR-0116):
+  the same URL for every recipient, with the instance's name as its alt text for clients that load no images.
 -->
 <mjml lang="{{.Lang}}" dir="{{.Dir}}">
   <mj-head>
@@ -29,12 +30,17 @@
         .mail-muted div { color: %color-fg-muted:dark% !important; }
         .mail-button td, .mail-button a { background-color: %color-accent:dark% !important; color: %color-accent-fg:dark% !important; }
         .mail-link { color: %color-accent:dark% !important; }
+        .mail-logo-light { display: none !important; }
+        .mail-logo-dark { display: block !important; }
       }
     </mj-style>
   </mj-head>
   <mj-body background-color="%color-surface:light%" css-class="mail-body">
     <mj-section padding="24px 16px">
       <mj-column background-color="%color-surface-raised:light%" padding="24px" border-radius="12px" css-class="mail-card">
+        <mj-raw>{{with .Logo}}</mj-raw>
+        <mj-text css-class="mail-text" padding="0 0 24px 0"><img src="{{.URL}}" width="{{.Width}}" height="{{.Height}}" alt="{{$.Site.Name}}" class="{{if $.LogoDark}}mail-logo-light{{end}}" style="display: block; border: 0; max-width: 100%; height: auto;">{{with $.LogoDark}}<img src="{{.URL}}" width="{{.Width}}" height="{{.Height}}" alt="{{$.Site.Name}}" class="mail-logo-dark" style="display: none; border: 0; max-width: 100%; height: auto;">{{end}}</mj-text>
+        <mj-raw>{{end}}</mj-raw>
         <mj-raw>{{range .Paragraphs}}</mj-raw>
         <mj-text css-class="mail-text">{{.}}</mj-text>
         <mj-raw>{{end}}</mj-raw>
