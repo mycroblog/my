@@ -78,9 +78,8 @@ describe("the user's custom emoji page", () => {
   test("says what the user used of their limit, or that there is none", async () => {
     server.use(operatorHandler(["create_custom_emojis"]), mineHandler([ownCustomEmojiFixture("e1", "blobcat")], 2, 5));
     const { unmount } = await renderApp({ path: "/settings/custom-emojis" });
-    expect(
-      await screen.findByText("You have 2 of 5 custom emoji, counting your pending requests."),
-    ).toBeInTheDocument();
+    const meter = await screen.findByRole("meter", { name: "Custom emoji used" });
+    expect(meter).toHaveAttribute("aria-valuetext", "2 of 5, counting pending requests");
     unmount();
 
     server.use(mineHandler([], 0));
