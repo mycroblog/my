@@ -7,6 +7,7 @@ import { apiBase, problem, withViewer } from "../../test/msw/http";
 import { abdulrahman, bob, carol, haruka, maximiliana, pictureHandlers, post, viewer } from "../../test/postStories";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -67,7 +68,7 @@ export const Normal: Story = {};
 export const Empty: Story = answering(quoting([]));
 
 /** Another account's post, which only its author may list the quotes of. */
-export const NotFound: Story = answering(
+export const NotFound: Story = answeringWithErrorPage(
   http.get(`${apiBase}/statuses/:id/quotes`, () => problem(404, "about:blank", "Not Found")),
 );
 

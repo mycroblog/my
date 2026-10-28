@@ -7,6 +7,7 @@ import { apiBase, problem } from "../../test/msw/http";
 import { pictureHandlers, variedTimeline } from "../../test/postStories";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -46,6 +47,7 @@ export const SignInRequired: Story = {
   parameters: {
     screen: {
       signedIn: false,
+      errorPage: "request",
       handlers: [
         http.get(`${apiBase}/timelines/public`, () =>
           problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
@@ -56,7 +58,7 @@ export const SignInRequired: Story = {
 };
 
 /** The instance turned the timeline off. */
-export const TurnedOff: Story = answering(
+export const TurnedOff: Story = answeringWithErrorPage(
   http.get(`${apiBase}/timelines/public`, () => problem(404, "about:blank", "Not Found")),
 );
 

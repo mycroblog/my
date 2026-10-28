@@ -6,7 +6,14 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
 import { inLocale, narrow } from "../../test/stories";
 import { errorGroupDetailFixture } from "./test/handlers";
-import { adminAnswering, adminFailingOn, adminLoadingOn, adminScreen, withoutPermission } from "./test/stories";
+import {
+  adminAnswering,
+  adminAnsweringWithErrorPage,
+  adminFailingOn,
+  adminLoadingOn,
+  adminScreen,
+  withoutPermission,
+} from "./test/stories";
 
 const groupId = "0199f0e0-0000-7000-8000-0000000000e1";
 
@@ -86,7 +93,7 @@ export const Fresh: Story = adminAnswering(
 export const Muted: Story = adminAnswering(answeringGroup({ ...regressed, state: "muted" }));
 
 /** A group that no longer exists. */
-export const NotFound: Story = adminAnswering(
+export const NotFound: Story = adminAnsweringWithErrorPage(
   http.get(`${apiBase}/admin/error_groups/:id`, () => problem(404, "about:blank", "Not Found")),
 );
 

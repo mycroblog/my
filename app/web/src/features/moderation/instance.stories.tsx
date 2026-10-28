@@ -43,7 +43,9 @@ export const LongDomain: Story = {
 };
 
 /** A server this one does not know. */
-export const NotFound: Story = { parameters: { screen: { path: "/moderation/instances/unknown.example" } } };
+export const NotFound: Story = {
+  parameters: { screen: { path: "/moderation/instances/unknown.example", errorPage: "request" } },
+};
 
 /** The server's health has not arrived yet. */
 export const Loading: Story = loadingOn("get", "/admin/instances/:domain");

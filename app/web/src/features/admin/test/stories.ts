@@ -6,6 +6,7 @@ import type { RequestHandler } from "msw";
 import type { Schemas } from "../../../test/fixtures";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   loadingOn,
   renderScreen,
@@ -71,9 +72,14 @@ export function adminLoadingOn(method: Method, path: string, ...handlers: Reques
   return { ...story, ...adminAnswering(...story.parameters.screen.handlers, ...handlers) };
 }
 
+/** answeringWithErrorPage for the administrator: the screen shows its error or not-found page on purpose. */
+export function adminAnsweringWithErrorPage(...handlers: RequestHandler[]) {
+  return answeringWithErrorPage(administrator, ...handlers);
+}
+
 /** failingOn for the administrator: the request `method path` fails with a 500, the others as by default. */
 export function adminFailingOn(method: Method, path: string, ...handlers: RequestHandler[]) {
-  return adminAnswering(...failingOn(method, path).parameters.screen.handlers, ...handlers);
+  return adminAnsweringWithErrorPage(...failingOn(method, path).parameters.screen.handlers, ...handlers);
 }
 
 /**

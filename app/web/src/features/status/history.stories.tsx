@@ -7,6 +7,7 @@ import { apiBase, problem } from "../../test/msw/http";
 import { bob, picture, pictureHandlers, post } from "../../test/postStories";
 import {
   answering,
+  answeringWithErrorPage,
   failingOn,
   inLocale,
   loadingOn,
@@ -85,7 +86,7 @@ export const Normal: Story = {};
 export const NeverEdited: Story = answering(history(revisions.slice(-1)));
 
 /** The post does not exist, or the viewer may not see it. */
-export const NotFound: Story = answering(
+export const NotFound: Story = answeringWithErrorPage(
   http.get(`${apiBase}/statuses/:id/history`, () => problem(404, "about:blank", "Not Found")),
 );
 
