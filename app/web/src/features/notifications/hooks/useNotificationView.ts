@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What a notification's row shows, as plain values for the slots of @my/ui's PostCard (web-client/README.md A4):
 // the hook decides what to show and formats it; the component only places it. It returns no JSX.
-import { type CustomEmojiImage, type ImageSources, sanitizedHtmlText, serverSanitizedHtml } from "@my/ui";
+import {
+  type CustomEmojiImage,
+  type ImageSources,
+  type NotificationKind,
+  sanitizedHtmlText,
+  serverSanitizedHtml,
+} from "@my/ui";
 import { useIntl } from "react-intl";
 import type { ClientMessageKey } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
@@ -89,6 +95,10 @@ type MoveNoticeView = {
 };
 
 export type NotificationView = {
+  /** The kind the row's mark shows on the avatar's corner (P3): the type at a glance, before the sentence is read. */
+  kind: NotificationKind;
+  /** The post to reply to from the row: the post of a mention, while the user may see it; null otherwise. */
+  replyTo: NotificationStatus | null;
   /**
    * The sentence that says what happened; `{name}` in it is the actor's name, for the types that have an
    * actor, and `{count}` the number of the other actors of a group.
@@ -144,6 +154,40 @@ export type NotificationView = {
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
   links: readonly NotificationLink[];
+};
+
+/** The mark of each type: the people's actions by what they did, the server's notices by who sends them. */
+const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
+  follow: "follow",
+  follow_request: "follow",
+  follow_accepted: "follow",
+  mention: "mention",
+  boost: "boost",
+  favourite: "favourite",
+  reaction: "reaction",
+  quote: "quote",
+  poll_closed: "poll",
+  moderation_notice: "staff",
+  report_resolved: "staff",
+  admin_report: "staff",
+  admin_sign_up: "staff",
+  relationships_severed: "staff",
+  appeal_decided: "staff",
+  admin_appeal: "staff",
+  admin_webhook_disabled: "staff",
+  admin_custom_emoji_request: "staff",
+  custom_emoji_request_decided: "staff",
+  supporter_payment_failed: "notice",
+  supporter_subscription_ended: "notice",
+  supporter_plan_retired: "notice",
+  account_moved: "notice",
+  admin_account_moved: "staff",
+  service_closure: "notice",
+  admin_service_closure_due: "staff",
+  supporter_service_closure: "notice",
+  voice_room_started: "voice",
+  voice_room_invited: "voice",
+  admin_error_group: "staff",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -466,6 +510,8 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       : undefined;
   const formatDate = (value: string) => intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" });
   return {
+    kind: kinds[notification.type],
+    replyTo: notification.type === "mention" && status !== undefined ? status : null,
     sentence:
       severed?.sentence ??
       requested.sentence ??

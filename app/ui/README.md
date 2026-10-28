@@ -568,6 +568,10 @@ arbitrary value. A look that no prop gives is a new prop or component in the kit
 
 ### Notification rows and quotes
 
+`NotificationKindMark` is the avatar slot of a notification's row: the actor's avatar with a small round mark of the kind
+(favourite, boost, follow, mention, reaction, quote, poll, voice, staff, notice) on its corner, or the mark alone, as large as an
+avatar, for a row without an actor. Each kind has its own icon; its color only repeats it, and the sentence says the kind in
+words, so the mark is decorative.
 `NotificationSentence` is the sentence of a notification in the author slot of a `PostCard` (`isUnread` adds the dot, the heavier
 weight and the hidden `unreadLabel`), `NotificationOthers` the row of the other people of a group above it (`PostCardAvatarLink`s
 around `xs` avatars), and `NotificationLinks` the links that lead on, in the actions slot. `QuoteBlock` is lines with a rule at the

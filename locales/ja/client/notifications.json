@@ -374,5 +374,9 @@
   "notifications.signed_out.heading": {
     "defaultMessage": "ログインしていません",
     "description": "Heading of the sign-in state that the notifications page shows, instead of the notifications, when nobody is signed in."
+  },
+  "notifications.mention.reply": {
+    "defaultMessage": "返信する",
+    "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
   }
 }
