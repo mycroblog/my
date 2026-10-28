@@ -1,15 +1,13 @@
 name: UI preview deploy
 
 # Publishes the builds of ui-preview.yml on the Cloudflare Worker of scripts/ui-preview/wrangler.jsonc (ADR-0112 §2-§4)
-# and deletes the Preview of a closed pull request. It always runs main's workflow, script, and Worker config, in the
+# (ui-preview-cleanup.yml deletes the Previews of closed pull requests). It always runs main's workflow, script, and Worker config, in the
 # environment `ui-preview` (deployment branches: main only), which holds the secret CLOUDFLARE_API_TOKEN and the
 # variable CLOUDFLARE_ACCOUNT_ID:
 #
 # - deploy-pr: a pull request's build (forks included) on the Preview pr-<number>, and the one comment of the pull
 #   request with its URL and the stories it adds or changes.
 # - deploy-main: main's build on the Worker itself, the full catalogue of screens and components.
-# - delete-pr: the Preview of a pull request when it closes (pull_request_target: main's workflow, which never checks
-#   out the pull request).
 #
 # A pull request's build is untrusted data: it is downloaded as an artifact and only ever read as files by
 # scripts/ui-preview.sh, never executed, sourced, or used as a config. The variable UI_PREVIEW_METHOD=versions switches
@@ -19,22 +17,12 @@ on:
   workflow_run:
     workflows: [UI preview]
     types: [completed]
-  pull_request_target:
-    types: [closed]
-    paths:
-      - "app/**"
-      - "locales/**"
-      - "tasks/ui.yml"
-      - "tasks/web.yml"
-      - "scripts/ui-preview.sh"
-      - "scripts/ui-preview/**"
-      - ".github/workflows/ui-preview.yml"
 
 permissions: {}
 
-# One run at a time for each branch, in order: a close waits for the deploy before it.
+# One run at a time for each branch, in order.
 concurrency:
-  group: ui-preview-deploy-${{ github.event.workflow_run.head_repository.full_name || github.event.pull_request.head.repo.full_name }}-${{ github.event.workflow_run.head_branch || github.event.pull_request.head.ref }}
+  group: ui-preview-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 jobs:
@@ -156,37 +144,3 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
         run: scripts/ui-preview.sh deploy-main "$RUNNER_TEMP/build"
-
-  delete-pr:
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: ui-preview
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      # The base branch (main), never the pull request's head.
-      - name: Check out main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .tool-versions
-      - name: Install wrangler
-        run: scripts/ui-preview.sh install
-      - name: Delete the Preview
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          UI_PREVIEW_METHOD: ${{ vars.UI_PREVIEW_METHOD }}
-          UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
-          PR: ${{ github.event.pull_request.number }}
-        run: scripts/ui-preview.sh delete-pr "$PR"
-      - name: Update the comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-        run: scripts/ui-preview.sh comment "$PR" "$RUNNER_TEMP/ui-preview/comment.md" update
