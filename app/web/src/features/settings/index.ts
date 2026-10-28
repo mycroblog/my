@@ -41,6 +41,8 @@ export { TwoFactorSettings } from "./components/TwoFactorSettings";
 // Changing the password (FR-002), and removing it or setting it again for a user with passkeys (FR-004).
 export { passwordStatusQueryOptions } from "./api/password";
 export { PasswordSettings } from "./components/PasswordSettings";
+// The security of the account in one glance on the settings page: the password, two-factor, passkeys, linked accounts.
+export { SecuritySummary } from "./components/SecuritySummary";
 // Passkeys, which sign in instead of the password (FR-004).
 export { passkeysQueryOptions } from "./api/passkeys";
 export { PasskeySettings } from "./components/PasskeySettings";

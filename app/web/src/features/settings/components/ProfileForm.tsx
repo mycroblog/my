@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
   Avatar,
+  Box,
   Button,
   Checkbox,
   Cluster,
   ConfirmDialog,
+  EmojiText,
   FileTrigger,
+  FormActionBar,
   Hint,
   InlineError,
+  ProfileField,
+  ProfileFields as ProfileFieldList,
+  ProfileHeader,
   ProfileHeaderImage,
   Section,
   Stack,
@@ -15,10 +21,12 @@ import {
   TextField,
 } from "@my/ui";
 import { type ReactNode, useId } from "react";
+import { useIntl } from "react-intl";
+import { handleOf } from "../../../lib/handle";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { CompletionTextArea, CompletionTextField } from "../../compose";
-import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
+import { EmojiPickerButton, useCustomEmojiImages, useCustomEmojiShortcodes } from "../../emoji";
 import { acceptedImageTypes } from "../api/media";
 import {
   characterCount,
@@ -31,11 +39,13 @@ import {
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 /**
- * The profile editor (FR-006). React Aria's native validation shows each error under its field, links it with
- * aria-describedby and marks the field invalid; the browser then refuses to submit, and focus moves to the
- * first invalid field, so a screen reader reads the error with the field. A text over its limit is invalid as
- * soon as it is typed, like the count of the bio: an error that appeared only when the field lost focus would
- * push the save button away under the pointer that is pressing it.
+ * The profile editor (FR-006) in the sections of its screen requirements (web-client/screens/settings-profile.md): a
+ * preview of the profile as it is being edited, then the fields, and the save button with its result in a bar that
+ * stays at the bottom edge of the screen (`FormActionBar` `sticky`). React Aria's native validation shows each error
+ * under its field, links it with aria-describedby and marks the field invalid; the browser then refuses to submit,
+ * and focus moves to the first invalid field, so a screen reader reads the error with the field. A text over its
+ * limit is invalid as soon as it is typed, like the count of the bio: an error that appeared only when the field lost
+ * focus would push the save button away under the pointer that is pressing it.
  */
 export function ProfileForm() {
   const t = useT();
@@ -50,7 +60,8 @@ export function ProfileForm() {
       : {};
   return (
     <>
-      <Stack as="form" onSubmit={form.submit} gap="6">
+      <Stack as="form" onSubmit={form.submit} gap="8">
+        <ProfilePreview form={form} />
         <ImageSection
           titleKey="client:settings.profile.avatar"
           control={form.avatar}
@@ -73,79 +84,133 @@ export function ProfileForm() {
             )
           }
         />
-        <Stack gap="1">
-          <CompletionTextField
-            completes="emoji"
-            id={displayNameId}
-            label={t("client:settings.profile.display_name")}
-            description={t("client:settings.profile.display_name.description", {
-              max: String(profileLimits.displayName),
-            })}
-            value={form.displayName.value}
-            onChange={form.displayName.onChange}
-            {...lengthCheck(form.displayName.value, profileLimits.displayName)}
-            highlights={textHighlights(form.displayName.value, { tokens: "shortcodes", shortcodes })}
-            autoComplete="nickname"
-            endAction={
-              <EmojiPickerButton
-                fieldId={displayNameId}
-                value={form.displayName.value}
-                onChange={form.displayName.onChange}
-                label={t("client:settings.profile.display_name.emoji")}
-              />
-            }
-          />
-        </Stack>
-        <Stack gap="1">
-          <CompletionTextArea
-            completes="all"
-            id={noteId}
-            label={t("client:settings.profile.note")}
-            value={form.note.value}
-            onChange={form.note.onChange}
-            characterLimit={profileLimits.note}
-            highlights={textHighlights(form.note.value, { tokens: "all", shortcodes, limit: profileLimits.note })}
-            formatRemaining={(remaining) =>
-              remaining < 0
-                ? t("client:settings.profile.characters_over", { count: -remaining })
-                : t("client:settings.profile.characters_left", { count: remaining })
-            }
-            errorMessage={t("client:settings.profile.too_long", { max: String(profileLimits.note) })}
-            rows={4}
-            endAction={
-              <EmojiPickerButton
-                fieldId={noteId}
-                value={form.note.value}
-                onChange={form.note.onChange}
-                label={t("client:settings.profile.note.emoji")}
-              />
-            }
-          />
-        </Stack>
+        <Section title={t("client:settings.profile.identity")}>
+          <Stack gap="6">
+            <CompletionTextField
+              completes="emoji"
+              id={displayNameId}
+              label={t("client:settings.profile.display_name")}
+              description={t("client:settings.profile.display_name.description", {
+                max: String(profileLimits.displayName),
+              })}
+              value={form.displayName.value}
+              onChange={form.displayName.onChange}
+              {...lengthCheck(form.displayName.value, profileLimits.displayName)}
+              highlights={textHighlights(form.displayName.value, { tokens: "shortcodes", shortcodes })}
+              autoComplete="nickname"
+              endAction={
+                <EmojiPickerButton
+                  fieldId={displayNameId}
+                  value={form.displayName.value}
+                  onChange={form.displayName.onChange}
+                  label={t("client:settings.profile.display_name.emoji")}
+                />
+              }
+            />
+            <CompletionTextArea
+              completes="all"
+              id={noteId}
+              label={t("client:settings.profile.note")}
+              value={form.note.value}
+              onChange={form.note.onChange}
+              characterLimit={profileLimits.note}
+              highlights={textHighlights(form.note.value, { tokens: "all", shortcodes, limit: profileLimits.note })}
+              formatRemaining={(remaining) =>
+                remaining < 0
+                  ? t("client:settings.profile.characters_over", { count: -remaining })
+                  : t("client:settings.profile.characters_left", { count: remaining })
+              }
+              errorMessage={t("client:settings.profile.too_long", { max: String(profileLimits.note) })}
+              rows={4}
+              endAction={
+                <EmojiPickerButton
+                  fieldId={noteId}
+                  value={form.note.value}
+                  onChange={form.note.onChange}
+                  label={t("client:settings.profile.note.emoji")}
+                />
+              }
+            />
+          </Stack>
+        </Section>
         <ProfileFields fields={form.fields} lengthCheck={lengthCheck} />
-        <Stack gap="2">
+        <Section title={t("client:settings.profile.account_kind")}>
           <Checkbox {...form.locked} description={t("client:settings.profile.locked.description")}>
             {t("client:settings.profile.locked")}
           </Checkbox>
           <Checkbox {...form.bot} description={t("client:settings.profile.bot.description")}>
             {t("client:settings.profile.bot")}
           </Checkbox>
-        </Stack>
+        </Section>
         <CrawlerSettings indexable={form.indexable} aiOptOut={form.aiOptOut} serverPolicy={form.serverPolicy} />
-        {form.saveError !== undefined && (
-          <InlineError alert size="inherit">
-            {form.saveError}
-          </InlineError>
-        )}
-        <div>
+        <FormActionBar sticky result={form.result}>
           <Button type="submit" variant="primary" isPending={form.isSaving} isDisabled={form.isBusy && !form.isSaving}>
             {t("client:settings.profile.save")}
           </Button>
-        </div>
+        </FormActionBar>
       </Stack>
       {/* Outside the form: React bubbles the dialog's own submit event through its portal to an enclosing form. */}
       <UnsavedChangesDialog hasChanges={form.hasChanges} />
     </>
+  );
+}
+
+/**
+ * The profile as it shows with the values being edited (ADR-0110 §5, P3): the header image, the picture, the name, the
+ * handle, the text and the fields, in the profile's own header. The text and the fields show as typed, with the
+ * local custom emoji; links and mentions are made when the profile is saved.
+ */
+function ProfilePreview({ form }: { form: ReturnType<typeof useProfileForm> }) {
+  const t = useT();
+  const intl = useIntl();
+  const emojis = [...useCustomEmojiImages().values()];
+  const name = form.displayName.value === "" ? form.account.username : form.displayName.value;
+  const fields = form.fields.rows.filter((field) => field.name !== "" || field.value !== "");
+  return (
+    <Section
+      title={t("client:settings.profile.preview")}
+      description={t("client:settings.profile.preview.description")}
+    >
+      <Box border="lg" padding="3">
+        <ProfileHeader
+          image={form.header.url === undefined ? undefined : { still: [{ url: form.header.url }] }}
+          avatar={form.avatar.url === undefined ? undefined : { still: [{ url: form.avatar.url }] }}
+          avatarSeed={form.account.id}
+          name={name}
+          heading={
+            <Text as="p" size="lg" weight="semibold" tone="fg" wrap="anywhere">
+              <span dir="auto">
+                <EmojiText text={name} emojis={emojis} />
+              </span>
+            </Text>
+          }
+          handle={handleOf(form.account.acct)}
+          note={
+            form.note.value !== "" && (
+              <Text as="p" tone="fg" whitespace="preWrap" wrap="anywhere" dir="auto">
+                <EmojiText text={form.note.value} emojis={emojis} />
+              </Text>
+            )
+          }
+          fields={
+            fields.length > 0 && (
+              <ProfileFieldList>
+                {fields.map((field) => (
+                  <ProfileField key={field.key} term={<EmojiText text={field.name} emojis={emojis} />}>
+                    <span dir="auto">
+                      <EmojiText text={field.value} emojis={emojis} />
+                    </span>
+                  </ProfileField>
+                ))}
+              </ProfileFieldList>
+            )
+          }
+          joined={t("client:profile.joined", {
+            date: intl.formatDate(form.account.created_at, { dateStyle: "long" }),
+          })}
+        />
+      </Box>
+    </Section>
   );
 }
 

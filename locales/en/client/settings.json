@@ -2238,5 +2238,61 @@
   "settings.menu.group.account": {
     "defaultMessage": "Account and data",
     "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
+  },
+  "settings.profile.preview": {
+    "defaultMessage": "Preview",
+    "description": "Heading of the section of the profile settings that shows the profile as it is being edited."
+  },
+  "settings.profile.preview.description": {
+    "defaultMessage": "Your profile as others will see it once you save. Links and mentions are made when you save.",
+    "description": "Description under the preview of the profile settings."
+  },
+  "settings.profile.identity": {
+    "defaultMessage": "Name and bio",
+    "description": "Heading of the section of the profile settings with the display name and the bio (settings.profile.display_name, settings.profile.note)."
+  },
+  "settings.profile.account_kind": {
+    "defaultMessage": "Followers and bots",
+    "description": "Heading of the section of the profile settings with whether follow requests need approval and whether the account is a bot."
+  },
+  "settings.profile.save_failed": {
+    "defaultMessage": "The profile could not be saved: {reason}",
+    "description": "Error beside the save button of the profile settings when the server refused the save. {reason} is the server's reason."
+  },
+  "settings.auto_delete.policy": {
+    "defaultMessage": "Automatic deletion",
+    "description": "Heading of the section of the auto-delete settings with turning it on and the age of the posts it deletes."
+  },
+  "settings.auto_delete.reactions": {
+    "defaultMessage": "Posts with many reactions",
+    "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
+  },
+  "settings.security.title": {
+    "defaultMessage": "Security",
+    "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."
+  },
+  "settings.security.description": {
+    "defaultMessage": "How you sign in, and what protects your account. Open one to change it.",
+    "description": "Description under the security section of the settings page."
+  },
+  "settings.security.count": {
+    "defaultMessage": "{count, plural, one {# added} other {# added}}",
+    "description": "Badge of a row of the security section of the settings page: how many passkeys or linked accounts the user has (at least one)."
+  },
+  "settings.security.none": {
+    "defaultMessage": "None",
+    "description": "Badge of a row of the security section of the settings page: the user has no password, passkey or linked account."
+  },
+  "settings.security.password.set": {
+    "defaultMessage": "Set",
+    "description": "Badge of the password row of the security section of the settings page: the user has a password."
+  },
+  "settings.security.on": {
+    "defaultMessage": "On",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is on."
+  },
+  "settings.security.off": {
+    "defaultMessage": "Off",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
   }
 }
