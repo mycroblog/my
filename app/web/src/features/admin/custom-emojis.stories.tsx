@@ -3,9 +3,10 @@
 // this server's emoji, those of other servers, and the requests for new ones.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+import { expect } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { inLocale, narrow } from "../../test/stories";
+import { inLocale, narrow, settled } from "../../test/stories";
 import { adminCustomEmojiFixture, adminCustomEmojiRequestFixture } from "./test/handlers";
 import {
   adminAnswering,
@@ -107,11 +108,41 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** This server's emoji, in categories, with aliases, a hidden one and a disabled one; three requests pending. */
-export const Normal: Story = {};
+/**
+ * This server's emoji, in categories, with aliases, a hidden one and a disabled one, with their count and the one button
+ * that registers another; three requests pending.
+ */
+export const Normal: Story = {
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.getByText("12 custom emoji")).toBeInTheDocument();
+    await expect(context.canvas.getAllByRole("button", { name: "Register a custom emoji" })).toHaveLength(1);
+  },
+};
 
-/** The emoji of other servers. */
-export const OtherServers: Story = { parameters: { screen: { path: "/admin/custom-emojis?origin=remote" } } };
+/**
+ * The form that registers an emoji, open in place of the button with focus on choosing its image. (The unit tests
+ * submit it: the submit button leaves with the panel, and React Aria's announcement of its pending state would name a
+ * gone element.)
+ */
+export const Adding: Story = {
+  play: async (context) => {
+    const { canvas, userEvent } = context;
+    await settled(context);
+    await userEvent.click(canvas.getByRole("button", { name: "Register a custom emoji" }));
+    await expect(canvas.getByRole("button", { name: "Choose an image" })).toHaveFocus();
+    await userEvent.type(canvas.getByRole("textbox", { name: "Shortcode" }), "blobcat_wave");
+  },
+};
+
+/** The emoji of other servers: copying one stands where the button that registers would. */
+export const OtherServers: Story = {
+  parameters: { screen: { path: "/admin/custom-emojis?origin=remote" } },
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.queryByRole("button", { name: "Register a custom emoji" })).not.toBeInTheDocument();
+  },
+};
 
 /** The pending requests for new emoji and new images. */
 export const Requests: Story = { parameters: { screen: { path: "/admin/custom-emojis?tab=requests" } } };

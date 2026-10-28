@@ -375,13 +375,17 @@
     "defaultMessage": "Plans",
     "description": "Heading of the list of the plans that are not retired."
   },
+  "admin.supporters.plans.count": {
+    "defaultMessage": "{count, plural, one {# plan} other {# plans}}",
+    "description": "Read for the count beside the heading of the list of plans that are not retired. {count} is the number of plans."
+  },
   "admin.supporters.plans.empty": {
     "defaultMessage": "No plans yet",
     "description": "Empty state of the list of plans."
   },
   "admin.supporters.plans.empty.description": {
-    "defaultMessage": "Create a plan above.",
-    "description": "Description of the empty list of plans."
+    "defaultMessage": "Create one to take subscriptions.",
+    "description": "Description of the empty list of plans, above the button that creates one."
   },
   "admin.supporters.retired.title": {
     "defaultMessage": "Retired plans",
@@ -445,7 +449,7 @@
   },
   "admin.supporters.cancel": {
     "defaultMessage": "Cancel",
-    "description": "Button that closes a dialog of the supporters screen without doing anything."
+    "description": "Button that closes a dialog or the add panel of the supporters screen without doing anything."
   },
   "admin.supporters.close": {
     "defaultMessage": "Close",

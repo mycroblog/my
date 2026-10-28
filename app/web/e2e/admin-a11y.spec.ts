@@ -977,7 +977,7 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },
   "admin.rules": { path: "/admin/rules", ready: rule.hint ?? "" },
   "admin.roles": { path: "/admin/roles", ready: roles[2]?.key ?? "" },
-  "admin.finance": { path: "/admin/finance", ready: costItem.provider },
+  "admin.finance": { path: "/admin/finance?tab=records", ready: costItem.provider },
   "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
 };

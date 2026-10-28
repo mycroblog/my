@@ -2,9 +2,10 @@
 // The supporter program (/admin/supporters; web-client/screens/admin-supporters.md) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+import { expect } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { inLocale, narrow } from "../../test/stories";
+import { inLocale, narrow, settled } from "../../test/stories";
 import {
   paymentStatusFixture,
   supporterPlanFixture,
@@ -125,8 +126,31 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** An enabled program in live mode: plans by rank with a retired one apart, and subscriptions of several states. */
-export const Normal: Story = {};
+/**
+ * An enabled program in live mode: the plans by rank with their count and the one button that creates another, a
+ * retired one apart, and subscriptions of several states.
+ */
+export const Normal: Story = {
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.getAllByRole("button", { name: "Create a plan" })).toHaveLength(1);
+  },
+};
+
+/**
+ * The form that creates a plan, open in place of the button with focus in its first field. (The unit tests submit it:
+ * the submit button leaves with the panel, and React Aria's announcement of its pending state would name a gone element.)
+ */
+export const Adding: Story = {
+  play: async (context) => {
+    const { canvas, userEvent } = context;
+    await settled(context);
+    await userEvent.click(canvas.getByRole("button", { name: "Create a plan" }));
+    const role = canvas.getByRole("textbox", { name: "Role" });
+    await expect(role).toHaveFocus();
+    await userEvent.type(role, "patron");
+  },
+};
 
 /** Warnings: no commerce disclosure, no webhook delivery, and a reconciliation that the provider refused. */
 export const Warnings: Story = adminAnswering(

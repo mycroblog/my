@@ -1,14 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The instance's costs and income (/admin/finance; web-client/screens/admin-finance.md) in the states of ADR-0112 §1:
-// the cost items, the totals of the costs and the income by week, month or year as charts, the billing imports, the
-// money movements, and what the instance publishes of them.
+// the overview (the totals of the costs and the income by week, month or year as charts, what the instance publishes
+// of them, and the money movements) and the records (the cost items with recording one, and the billing imports).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+import { expect } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { inLocale, narrow } from "../../test/stories";
+import { inLocale, narrow, settled } from "../../test/stories";
 import { costItemFixture } from "./test/handlers";
-import { adminAnswering, adminFailingOn, adminLoadingOn, adminScreen, withoutPermission } from "./test/stories";
+import {
+  adminAnswering,
+  adminFailingOn,
+  adminLoadingOn,
+  administrator,
+  adminScreen,
+  withoutPermission,
+} from "./test/stories";
 
 type Granularity = Schemas["CostGranularity"];
 type Money = Schemas["Money"];
@@ -300,8 +308,44 @@ const meta = { title: "Screens/Admin/Finance", ...adminScreen("/admin/finance", 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A year of costs and income by month, amortized, with the items, the billing import and the money movements. */
+/** The overview: a year of costs and income by month, amortized, what is published, and the money movements. */
 export const Normal: Story = {};
+
+/** The records: the recorded items with their count and the one button that records another, and the billing import. */
+export const Records: Story = {
+  parameters: { screen: { path: "/admin/finance?tab=records" } },
+  play: async (context) => {
+    await settled(context);
+    const list = context.canvas.getByRole("region", { name: "Recorded costs" });
+    await expect(context.canvas.getAllByRole("button", { name: "Record a cost" })).toHaveLength(1);
+    await expect(list).toBeInTheDocument();
+  },
+};
+
+/**
+ * The form that records a cost, open in place of the button with focus in its first field. (The unit tests submit it:
+ * the submit button leaves with the panel, and React Aria's announcement of its pending state would name a gone element.)
+ */
+export const Adding: Story = {
+  parameters: { screen: { path: "/admin/finance?tab=records" } },
+  play: async (context) => {
+    const { canvas, userEvent } = context;
+    await settled(context);
+    await userEvent.click(canvas.getByRole("button", { name: "Record a cost" }));
+    const name = canvas.getByRole("textbox", { name: "Name" });
+    await expect(name).toHaveFocus();
+    await userEvent.type(name, "Object storage");
+  },
+};
+
+/** The records of a server that recorded nothing yet: the empty state leads to recording a cost. */
+export const RecordsEmpty: Story = {
+  parameters: { screen: { path: "/admin/finance?tab=records", handlers: [administrator] } },
+  play: async (context) => {
+    await settled(context);
+    await expect(context.canvas.getByRole("button", { name: "Record a cost" })).toBeInTheDocument();
+  },
+};
 
 /** The totals by week. */
 export const Weekly: Story = { parameters: { screen: { path: "/admin/finance?granularity=week" } } };
@@ -321,8 +365,8 @@ export const MissingPermission: Story = withoutPermission;
 /** The totals of the costs have not arrived yet. */
 export const Loading: Story = adminLoadingOn("get", "/admin/cost_totals");
 
-/** The server failed to answer the cost items. */
-export const ServerError: Story = adminFailingOn("get", "/admin/cost_items");
+/** The server failed to answer the totals of the costs. */
+export const ServerError: Story = adminFailingOn("get", "/admin/cost_totals");
 
 /** In Japanese. */
 export const Japanese: Story = inLocale("ja");

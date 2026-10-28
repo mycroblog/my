@@ -71,7 +71,7 @@ export {
   incomeKinds,
   incomeMovementsQueryOptions,
 } from "./api/finance";
-export { FinanceSettings } from "./components/FinanceSettings";
+export { FinanceSettings, type FinanceTab } from "./components/FinanceSettings";
 // The supporter program: enabling it, its plans and their subscriptions (ADR-0072), for manage_supporters.
 export {
   type SupporterSubscriptionFilter,

@@ -127,9 +127,21 @@
     "defaultMessage": "登録されたカスタム絵文字",
     "description": "Heading of the list of custom emoji."
   },
+  "admin.custom_emojis.count": {
+    "defaultMessage": "{count, plural, other {カスタム絵文字 # 個}}",
+    "description": "Read for the count beside the heading of the custom emoji list. {count} is the number of emoji."
+  },
+  "admin.custom_emojis.count_at_least": {
+    "defaultMessage": "{count, plural, other {カスタム絵文字 # 個以上}}",
+    "description": "Read for the count beside the heading of the custom emoji list while more of them can be loaded. {count} is the number loaded."
+  },
+  "admin.custom_emojis.remote_add": {
+    "defaultMessage": "ほかのサーバーの絵文字は、投稿と一緒に届きます。このサーバーで使うには、コピーしてください。",
+    "description": "Shown in place of the button that registers an emoji, while the list shows the emoji of other servers."
+  },
   "admin.custom_emojis.filter.label": {
     "defaultMessage": "サーバー",
-    "description": "Accessible name of the tabs that choose the custom emoji of this server or of other servers."
+    "description": "Accessible name of the select in the toolbar of the custom emoji list that chooses the emoji of this server or of other servers."
   },
   "admin.custom_emojis.filter.local": {
     "defaultMessage": "このサーバー",

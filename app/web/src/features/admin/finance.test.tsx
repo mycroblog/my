@@ -12,6 +12,7 @@ import { instanceFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 import { deviceToday } from "../costs";
 import { costItemFixture, instanceSettingsFixture } from "./test/handlers";
 
@@ -169,6 +170,9 @@ describe("the costs screen", () => {
     const { user, router } = await renderApp({ path: "/admin/finance" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Costs" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/admin-finance.md §3: reading first, recording in the other tab.
+    expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
+    expect(sectionHeadings()).toEqual(["Totals", "Publication", "Payments and refunds"]);
     const region = screen.getByRole("region", { name: "Totals" });
     expect(within(region).getByRole("radio", { name: /Spread over the period paid for/u })).toBeChecked();
     expect(within(region).getByRole("tab", { name: "Months", selected: true })).toBeInTheDocument();
@@ -219,11 +223,33 @@ describe("the costs screen", () => {
     });
   });
 
+  test("records the costs in the other tab, kept in the URL with the overview's search", async () => {
+    totalsServer();
+    itemsServer([]);
+    const { user, router } = await renderApp({ path: "/admin/finance?granularity=week" });
+    await user.click(await screen.findByRole("tab", { name: "Records" }));
+
+    const list = await screen.findByRole("region", { name: "Recorded costs" });
+    expect(router.state.location.search).toEqual({ tab: "records", granularity: "week" });
+    expect(sectionHeadings()).toEqual(["Recorded costs", "Billing imports"]);
+    // An empty list leads to recording with the one button.
+    expect(within(list).getByRole("heading", { level: 3, name: "No costs yet" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Record a cost" })).toHaveLength(1);
+
+    await user.click(screen.getByRole("tab", { name: "Overview" }));
+    expect(await screen.findByRole("region", { name: "Totals" })).toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ granularity: "week" });
+  });
+
   test("records a cost paid every three months after checking the form", async () => {
     totalsServer();
     const items = itemsServer([domain]);
-    const { user } = await renderApp({ path: "/admin/finance" });
-    const form = await screen.findByRole("region", { name: "Record a cost" });
+    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
+    const list = await screen.findByRole("region", { name: "Recorded costs" });
+    expect(within(list).getByText("1 recorded cost")).toBeInTheDocument();
+    await user.click(within(list).getByRole("button", { name: "Record a cost" }));
+    const form = within(list).getByRole("region", { name: "Record a cost" });
+    expect(within(form).getByRole("textbox", { name: "Name" })).toHaveFocus();
 
     await user.click(within(form).getByRole("button", { name: "Record the cost" }));
     expect(within(form).getAllByText("Fill this in.").length).toBeGreaterThanOrEqual(3);
@@ -245,7 +271,12 @@ describe("the costs screen", () => {
     await user.type(currency, "usd");
     await user.click(within(form).getByRole("button", { name: "Record the cost" }));
 
-    expect(await within(form).findByText("Recorded Main VM. The audit log records the change.")).toBeInTheDocument();
+    // The panel closes; the result shows above the items and focus is back on the button.
+    expect(await within(list).findByRole("status")).toHaveTextContent(
+      "Recorded Main VM. The audit log records the change.",
+    );
+    expect(within(list).queryByRole("region", { name: "Record a cost" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "Record a cost" })).toHaveFocus();
     expect(items.writes[0]?.body).toEqual({
       schedule: "months",
       interval: 3,
@@ -256,15 +287,14 @@ describe("the costs screen", () => {
       memo: "",
       price: { amount: "12.34", currency: "USD" },
     });
-    const list = screen.getByRole("region", { name: "Recorded costs" });
-    expect(within(list).getByRole("heading", { level: 3, name: "Main VM" })).toBeInTheDocument();
+    expect(await within(list).findByRole("heading", { level: 3, name: "Main VM" })).toBeInTheDocument();
     expect(within(list).getByText("Every 3 months")).toBeInTheDocument();
   });
 
   test("edits an item, changes its price, ends it, and deletes one after confirming", async () => {
     totalsServer();
     const items = itemsServer([vm, domain]);
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
     const list = await screen.findByRole("region", { name: "Recorded costs" });
     expect(within(list).getByText("the main server")).toHaveAttribute("dir", "auto");
 
@@ -323,7 +353,7 @@ describe("the costs screen", () => {
         problem(422, "about:blank", "invalid value: price"),
       ),
     );
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
     const list = await screen.findByRole("region", { name: "Recorded costs" });
 
     await user.click(within(list).getByRole("button", { name: "Change the price: Main VM" }));
@@ -373,7 +403,7 @@ describe("the costs screen", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const { user } = await renderApp({ path: "/admin/finance" });
+    const { user } = await renderApp({ path: "/admin/finance?tab=records" });
     const region = await screen.findByRole("region", { name: "Billing imports" });
 
     expect(within(region).getByRole("heading", { level: 3, name: "AWS" })).toBeInTheDocument();
@@ -418,7 +448,7 @@ describe("the costs screen", () => {
           } satisfies Schemas["BillingImportList"]),
         ),
       );
-      await renderApp({ path: "/admin/finance" });
+      await renderApp({ path: "/admin/finance?tab=records" });
       const region = await screen.findByRole("region", { name: "Billing imports" });
 
       expect(within(region).getByRole("heading", { level: 3, name: "Google Cloud" })).toBeInTheDocument();
@@ -826,7 +856,7 @@ describe("the income on the costs screen", () => {
 describe("the costs screen without the permission", () => {
   test("says why it shows nothing", async () => {
     server.use(signedInHandler, operatorHandler(["manage_settings"]));
-    await renderApp({ path: "/admin/finance" });
+    await renderApp({ path: "/admin/finance?tab=records" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Costs" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Totals" })).not.toBeInTheDocument();

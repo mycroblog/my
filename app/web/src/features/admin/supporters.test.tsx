@@ -12,6 +12,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 import {
   instanceSettingsFixture,
   paymentStatusFixture,
@@ -95,7 +96,18 @@ describe("the supporters screen", () => {
       "/admin/documents",
     );
 
+    // docs/architecture/web-client/screens/admin-supporters.md §3
+    expect(sectionHeadings()).toEqual([
+      "Supporter program",
+      "Payment provider",
+      "Plans",
+      "Retired plans",
+      "Subscriptions",
+      "Supporter list",
+    ]);
     const plans = screen.getByRole("region", { name: "Plans" });
+    expect(within(plans).getByText("2 plans")).toBeInTheDocument();
+    expect(within(plans).getAllByRole("button", { name: "Create a plan" })).toHaveLength(1);
     const [supporter, gold] = within(plans).getAllByRole("listitem");
     if (supporter === undefined || gold === undefined) throw new Error("two plans expected");
     expect(within(supporter).getByRole("heading", { level: 3, name: "Supporter" })).toBeInTheDocument();
@@ -282,7 +294,10 @@ describe("the supporters screen", () => {
       }),
     );
     const { user } = await renderApp({ path: "/admin/supporters" });
-    const form = await screen.findByRole("region", { name: "Create a plan" });
+    const plans = await screen.findByRole("region", { name: "Plans" });
+    await user.click(within(plans).getByRole("button", { name: "Create a plan" }));
+    const form = within(plans).getByRole("region", { name: "Create a plan" });
+    expect(within(form).getByRole("textbox", { name: "Role" })).toHaveFocus();
 
     await user.click(within(form).getByRole("button", { name: "Create the plan" }));
     expect(within(form).getByText("Enter the key of a role.")).toBeInTheDocument();
@@ -305,8 +320,12 @@ describe("the supporters screen", () => {
     });
 
     await user.click(within(form).getByRole("button", { name: "Create the plan" }));
-    expect(await within(form).findByText(/Created the plan ⁨Supporter⁩\./u)).toBeInTheDocument();
-    expect(within(form).getByRole("textbox", { name: "Name" })).toHaveValue("");
+    // The panel closes; the result shows above the plans and focus is back on the button.
+    expect(await within(plans).findByRole("status")).toHaveTextContent(/Created the plan ⁨Supporter⁩\./u);
+    expect(within(plans).queryByRole("region", { name: "Create a plan" })).not.toBeInTheDocument();
+    expect(within(plans).getByRole("button", { name: "Create a plan" })).toHaveFocus();
+    await user.click(within(plans).getByRole("button", { name: "Create a plan" }));
+    expect(within(plans).getByRole("textbox", { name: "Name" })).toHaveValue("");
   });
 
   test("retires a plan after asking", async () => {

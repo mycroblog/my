@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The costs screen below its heading (ADR-0067 §7, ADR-0068 §9, manage_finance): the totals by week, month or year
-// under tabs, amortized (the default) or in cash, with the rules that cut their periods next to them; the form that
-// records a cost paid once or every N weeks, months or years; the recorded items, newest first, each with its
-// schedule, dates and prices and the dialogs that change its label, revise its price and set its end, and canceling
-// it after an alert dialog; the state of the billing imports with importing now; and the income that the payment
-// provider records (ADR-0073 §6): its totals under the same tabs, with the gross, the fees, the net, the balance and
-// the members of each plan, and its money movements, newest first, with their subscribers by username, narrowed to a
-// kind and a range of dates, which only this screen shows. The granularity, the basis and the movements' filter are
+// The costs screen below its heading (ADR-0067 §7, ADR-0068 §9, manage_finance; web-client/screens/admin-finance.md),
+// in two tabs kept in the URL: reading and recording (audit A12). The overview has the totals by week, month or year
+// under tabs, amortized (the default) or in cash, with the rules that cut their periods next to them, and the income
+// that the payment provider records (ADR-0073 §6) under the same tabs, with the gross, the fees, the net, the balance
+// and the members of each plan; what is published of them; and the money movements, newest first, with their
+// subscribers by username, narrowed to a kind and a range of dates, which only this screen shows. The records have the
+// recorded items, newest first, in the list-and-add part (`ListSection`) whose one primary action opens the form that
+// records a cost paid once or every N weeks, months or years, each item with its schedule, dates and prices and the
+// dialogs that change its label, revise its price and set its end, and canceling it after an alert dialog; and the
+// state of the billing imports with importing now. The tab, the granularity, the basis and the movements' filter are
 // in the URL (web-client/README.md S3). Amounts and dates are formatted with Intl (ADR-0067 §10); names, providers and
-// memos are the operator's words, shown with dir="auto". What a change did stays in a StatusMessage above the list;
-// a failure stays there too (role="alert", web-client/README.md E2).
+// memos are the operator's words, shown with dir="auto". What recording or changing an item did, and a failed change,
+// show above the items (web-client/README.md E2).
 import {
   Box,
   Button,
@@ -21,20 +23,26 @@ import {
   Dialog,
   DialogTrigger,
   EmptyState,
+  FormActionBar,
   Heading,
   Hint,
   InlineError,
   Link,
+  ListSection,
   Radio,
   RadioGroup,
   Select,
   SelectItem,
   Stack,
   StatusMessage,
+  Tab,
   TableCell,
   TableColumnHeader,
   TableRow,
   TableRowHeader,
+  TabList,
+  TabPanel,
+  Tabs,
   Text,
   TextArea,
   TextField,
@@ -62,7 +70,7 @@ import {
   useFormatTotals,
   utcDate,
 } from "../../costs";
-import { DateTime, Section, RecordList, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
+import { DateTime, Section, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
 import { instanceQueryOptions } from "../api/documents";
 import { FinancePublicationForm } from "./PublicationSettings";
 import {
@@ -131,7 +139,19 @@ const errorKindLabels: Readonly<Record<NonNullable<BillingImport["last_run"]>["e
   unavailable: "client:admin.finance.imports.error.unavailable",
 };
 
+/** The tabs of the screen: reading the costs and the income, and recording the costs. */
+export type FinanceTab = "overview" | "records";
+const financeTabs = ["overview", "records"] as const satisfies readonly FinanceTab[];
+
+function isFinanceTab(key: unknown): key is FinanceTab {
+  return financeTabs.some((tab) => tab === key);
+}
+
 export type FinanceSettingsProps = {
+  /** The tab of the screen, from the URL. */
+  tab: FinanceTab;
+  /** Shows another tab: the route puts it into the URL. */
+  onTabChange: (tab: FinanceTab) => void;
   /** The granularity and the basis of the totals, from the URL. */
   granularity: CostGranularity;
   basis: CostBasis;
@@ -149,36 +169,42 @@ export function FinanceSettings(props: FinanceSettingsProps) {
   const t = useT();
   return (
     <RequirePermission permission="manage_finance">
-      <Stack gap="8">
+      <Stack gap="6">
         <Hint size="inherit">{t("client:admin.finance.description")}</Hint>
-        <Section surface="card" title={t("client:admin.finance.totals.title")}>
-          <Card>
-            <TotalsSection {...props} />
-          </Card>
-        </Section>
-        <Section surface="card" title={t("client:admin.finance.publication.title")}>
-          <Card>
-            <PublicationSection granularity={props.granularity} basis={props.basis} today={props.today} />
-          </Card>
-        </Section>
-        <Section surface="card" title={t("client:admin.finance.new.title")}>
-          <Card>
-            <NewCostItemForm />
-          </Card>
-        </Section>
-        <Section surface="card" title={t("client:admin.finance.list.title")}>
-          <Card>
+        <Tabs
+          selectedKey={props.tab}
+          onSelectionChange={(key) => {
+            if (isFinanceTab(key)) props.onTabChange(key);
+          }}
+        >
+          <TabList aria-label={t("client:admin.finance.tabs.label")}>
+            <Tab id="overview">{t("client:admin.finance.tabs.overview")}</Tab>
+            <Tab id="records">{t("client:admin.finance.tabs.records")}</Tab>
+          </TabList>
+          <TabPanel id="overview" gap="8" offset="4">
+            <Section surface="card" title={t("client:admin.finance.totals.title")}>
+              <Card>
+                <TotalsSection {...props} />
+              </Card>
+            </Section>
+            <Section surface="card" title={t("client:admin.finance.publication.title")}>
+              <Card>
+                <PublicationSection granularity={props.granularity} basis={props.basis} today={props.today} />
+              </Card>
+            </Section>
+            <Section surface="card" title={t("client:admin.finance.movements.title")}>
+              <IncomeMovements filter={props.movements} onFilterChange={props.onMovementsChange} />
+            </Section>
+          </TabPanel>
+          <TabPanel id="records" gap="8" offset="4">
             <CostItemList today={props.today} />
-          </Card>
-        </Section>
-        <Section surface="card" title={t("client:admin.finance.imports.title")}>
-          <Card>
-            <BillingImports />
-          </Card>
-        </Section>
-        <Section surface="card" title={t("client:admin.finance.movements.title")}>
-          <IncomeMovements filter={props.movements} onFilterChange={props.onMovementsChange} />
-        </Section>
+            <Section surface="card" title={t("client:admin.finance.imports.title")}>
+              <Card>
+                <BillingImports />
+              </Card>
+            </Section>
+          </TabPanel>
+        </Tabs>
       </Stack>
     </RequirePermission>
   );
@@ -391,13 +417,19 @@ function PriceFields({
   );
 }
 
-function NewCostItemForm() {
+/** The form that records a cost, in the add panel of the items: it closes once the item is recorded. */
+function NewCostItemForm({ form, close }: { form: NewCostItemFormState; close: () => void }) {
   const t = useT();
-  const items = useCostItems();
-  const form = useNewCostItemForm(items.items[0]?.prices[0]?.price.currency ?? "USD");
   const { draft, errors } = form;
   return (
-    <Stack as="form" gap="6" onSubmit={form.submit} noValidate>
+    <Stack
+      as="form"
+      gap="6"
+      onSubmit={(event) => {
+        form.submit(event, close);
+      }}
+      noValidate
+    >
       <LabelFields label={draft} onChange={form.change} errors={errors} />
       <RadioGroup
         label={t("client:admin.finance.schedule")}
@@ -455,26 +487,31 @@ function NewCostItemForm() {
         />
       )}
       <PriceFields price={draft} onChange={form.change} errors={errors} />
-      {form.failure !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.finance.create_failed", { reason: form.failure })}
-        </InlineError>
-      )}
-      <div>
+      <FormActionBar
+        result={
+          form.failure === undefined
+            ? undefined
+            : { tone: "danger", message: t("client:admin.finance.create_failed", { reason: form.failure }) }
+        }
+      >
         <Button type="submit" variant="primary" isPending={form.isPending}>
           {t("client:admin.finance.create")}
         </Button>
-      </div>
-      <StatusMessage>{form.status}</StatusMessage>
+        <Button onPress={close}>{t("client:admin.finance.cancel")}</Button>
+      </FormActionBar>
     </Stack>
   );
 }
 
+type NewCostItemFormState = ReturnType<typeof useNewCostItemForm>;
+
+/** The recorded items in the list-and-add part, whose one primary action records a cost. */
 function CostItemList({ today }: { today: string }) {
   const t = useT();
   const list = useCostItems();
   const listRef = useRef<HTMLUListElement>(null);
   const [status, setStatus] = useState<string | undefined>(undefined);
+  const form = useNewCostItemForm(list.items[0]?.prices[0]?.price.currency ?? "USD", setStatus);
   // A change keeps the row and may close its dialog: focus moves to the row's heading. A canceled item leaves the
   // list: focus moves to the next row's button.
   const changed = useFocusHeadingAfterMove(listRef);
@@ -487,29 +524,30 @@ function CostItemList({ today }: { today: string }) {
     else changed(item.id);
     setStatus(done);
   });
+  let result: { tone: "success" | "danger"; message: string } | undefined;
+  if (actions.error !== undefined)
+    result = { tone: "danger", message: t("client:admin.finance.change_failed", { reason: actions.error }) };
+  else if (status !== undefined) result = { tone: "success", message: status };
+  const count = list.items.length;
   return (
-    <Stack gap="3">
-      <StatusMessage>{status}</StatusMessage>
-      {actions.error !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.finance.change_failed", { reason: actions.error })}
-        </InlineError>
-      )}
-      <RecordList
-        list={list}
-        getId={(item) => item.id}
-        listRef={listRef}
-        empty={
-          <EmptyState
-            headingLevel={3}
-            heading={t("client:admin.finance.empty")}
-            description={t("client:admin.finance.empty.description")}
-          />
-        }
-      >
-        {(item) => <CostItemRow item={item} today={today} actions={actions} />}
-      </RecordList>
-    </Stack>
+    <ListSection
+      title={t("client:admin.finance.list.title")}
+      items={list.items}
+      itemKey={(item) => item.id}
+      renderItem={(item) => <CostItemRow item={item} today={today} actions={actions} />}
+      listRef={listRef}
+      countLabel={
+        list.hasMore ? t("client:admin.finance.count_at_least", { count }) : t("client:admin.finance.count", { count })
+      }
+      hasMore={list.hasMore}
+      more={{ label: t("client:admin.list.more"), onPress: list.loadMore, isPending: list.isLoadingMore }}
+      empty={{ heading: t("client:admin.finance.empty"), description: t("client:admin.finance.empty.description") }}
+      add={{
+        label: t("client:admin.finance.new.title"),
+        panel: (close) => <NewCostItemForm form={form} close={close} />,
+      }}
+      result={result}
+    />
   );
 }
 

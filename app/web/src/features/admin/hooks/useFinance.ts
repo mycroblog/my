@@ -175,8 +175,11 @@ function emptyDraft(currency: string): NewCostDraft {
   };
 }
 
-/** The form of a new cost item; the currency starts as that of the newest item. It empties once the list shows the item. */
-export function useNewCostItemForm(defaultCurrency: string) {
+/**
+ * The form of a new cost item; the currency starts as that of the newest item. It empties once the list shows the item,
+ * and gives what it did to `onCreated` (the list's result).
+ */
+export function useNewCostItemForm(defaultCurrency: string, onCreated: (message: string) => void) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -184,17 +187,13 @@ export function useNewCostItemForm(defaultCurrency: string) {
   const priceErrors = usePriceErrors();
   const [draft, setDraft] = useState<NewCostDraft>(() => emptyDraft(defaultCurrency));
   const [submitted, setSubmitted] = useState(false);
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const create = useMutation({
     ...createCostItemMutation(api),
-    onMutate: () => {
-      setStatus(undefined);
-    },
     onSuccess: async (item) => {
       await refreshCosts(queryClient);
       setDraft((current) => emptyDraft(current.currency));
       setSubmitted(false);
-      setStatus(t("client:admin.finance.created", { name: item.name }));
+      onCreated(t("client:admin.finance.created", { name: item.name }));
     },
   });
   const errorsOf = (value: NewCostDraft) => {
@@ -223,26 +222,29 @@ export function useNewCostItemForm(defaultCurrency: string) {
       setDraft((current) => ({ ...current, ...patch }));
     },
     errors,
-    submit: (event: SyntheticEvent<HTMLFormElement>) => {
+    /** Records the cost once the draft is valid; `onAdded` runs once it is recorded (to close the add panel). */
+    submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => {
       event.preventDefault();
       setSubmitted(true);
       if (create.isPending || Object.keys(errorsOf(draft)).length > 0) return;
-      create.mutate({
-        schedule: draft.schedule,
-        interval: draft.schedule === "once" ? 1 : Number(draft.interval),
-        starts_on: draft.startsOn,
-        ...(draft.endsOn === "" || draft.schedule === "once" ? {} : { ends_on: draft.endsOn }),
-        name: draft.name.trim(),
-        provider: draft.provider.trim(),
-        category: draft.category,
-        memo: draft.memo.trim(),
-        price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
-      });
+      create.mutate(
+        {
+          schedule: draft.schedule,
+          interval: draft.schedule === "once" ? 1 : Number(draft.interval),
+          starts_on: draft.startsOn,
+          ...(draft.endsOn === "" || draft.schedule === "once" ? {} : { ends_on: draft.endsOn }),
+          name: draft.name.trim(),
+          provider: draft.provider.trim(),
+          category: draft.category,
+          memo: draft.memo.trim(),
+          price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
+        },
+        { onSuccess: () => onAdded?.() },
+      );
     },
     isPending: create.isPending,
     /** Why recording failed, localized; the form keeps what was typed. */
     failure: create.isError ? errorMessage(create.error) : undefined,
-    status,
   };
 }
 

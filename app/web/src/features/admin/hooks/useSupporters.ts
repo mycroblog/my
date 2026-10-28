@@ -275,26 +275,22 @@ function checkDraft(draft: PlanDraft, t: Translate, isNew: boolean): PlanFieldEr
   return undefined;
 }
 
-/** The form of a new plan. A success empties it, keeping the currency, and says so in the form's StatusMessage. */
-export function useNewPlanForm() {
+/**
+ * The form of a new plan. A success empties it, keeping the currency, and gives what it did to `onCreated` (the list's
+ * result).
+ */
+export function useNewPlanForm(onCreated: (message: string) => void) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const notice = useNotice();
   const [draft, setDraft] = useState<PlanDraft>(emptyDraft);
   const [invalid, setInvalid] = useState<PlanFieldError | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...createSupporterPlanMutation(api),
-    onMutate: () => {
-      setStatus(undefined);
-    },
     onSuccess: async (plan) => {
       await refreshSupporters(api, queryClient);
       setDraft((current) => ({ ...emptyDraft, currency: current.currency }));
-      const message = t("client:admin.supporters.plan.created", { name: planName(plan) });
-      setStatus(message);
-      notice.inPlace(message);
+      onCreated(t("client:admin.supporters.plan.created", { name: planName(plan) }));
     },
   });
   return {
@@ -302,7 +298,8 @@ export function useNewPlanForm() {
     change: (change: Partial<PlanDraft>) => {
       setDraft((previous) => ({ ...previous, ...change }));
     },
-    submit: (event: SyntheticEvent<HTMLFormElement>) => {
+    /** Creates the plan once its draft is valid; `onAdded` runs once it is created (to close the add panel). */
+    submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => {
       event.preventDefault();
       if (mutation.isPending) return;
       const checked = checkDraft(draft, t, true);
@@ -312,21 +309,23 @@ export function useNewPlanForm() {
         return;
       }
       const description = draft.description.trim();
-      mutation.mutate({
-        role: draft.role.trim(),
-        name: draft.name.trim(),
-        ...(description === "" ? {} : { description }),
-        monthly_price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
-        annual_discount_percent: Number(draft.discount.trim()),
-        emoji_limit: Number(draft.emojiLimit.trim()),
-        rank: Number(draft.rank.trim()),
-        visibility: draft.visibility,
-      });
+      mutation.mutate(
+        {
+          role: draft.role.trim(),
+          name: draft.name.trim(),
+          ...(description === "" ? {} : { description }),
+          monthly_price: { amount: draft.amount.trim(), currency: draft.currency.trim() },
+          annual_discount_percent: Number(draft.discount.trim()),
+          emoji_limit: Number(draft.emojiLimit.trim()),
+          rank: Number(draft.rank.trim()),
+          visibility: draft.visibility,
+        },
+        { onSuccess: () => onAdded?.() },
+      );
     },
     isPending: mutation.isPending,
     /** Why the plan was refused, next to its field; the draft stays. */
     error: invalid ?? (mutation.isError ? refusal(mutation.error, "role") : undefined),
-    status,
   };
 }
 
@@ -357,8 +356,10 @@ export type PlanActions = {
   retire: (plan: SupporterPlan) => Promise<boolean>;
   /** Why the last retirement failed, in the server's words. */
   error: string | undefined;
-  /** What the last change did, for the list's StatusMessage. */
+  /** What the last change did, for the list's result. */
   status: string | undefined;
+  /** Shows and announces what a change made elsewhere (creating in the add panel) did, as the list's result. */
+  report: (message: string) => void;
 };
 
 /** Changing and retiring the plans of the list. */
@@ -404,6 +405,10 @@ export function usePlanActions(): PlanActions {
     },
     error: retire.isError ? errorMessage(retire.error) : undefined,
     status,
+    report: (message) => {
+      retire.reset();
+      report(message);
+    },
   };
 }
 
