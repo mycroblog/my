@@ -104,7 +104,8 @@ generated from the config schema, and `go:test` fails when it is stale.
 
 `.claude/settings.json` runs `scripts/agentkit-hook.sh` ([ADR-0004](docs/adr/0004-claude-code-hooks.md)): at session
 start it builds and indexes; it denies reading a whole Markdown file of 40KB or more (code: 80KB) and watching CI with
-`gh pr checks --watch` / `gh run watch`, with the agentkit command to use instead; it hints at `find` for unbounded
+`gh pr checks --watch` / `gh run watch`, and polling for a background command with a loop that sleeps or with
+`pgrep`, with what to use instead; it hints at `find` for unbounded
 recursive greps; and it cuts Bash output over 20,000 characters to its head and tail, saving the whole to
 `.tmp/agentkit/out/`. `AGENTKIT_BIG_FILE` and `AGENTKIT_MAX_OUTPUT` change the limits.
 

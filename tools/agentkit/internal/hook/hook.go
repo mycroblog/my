@@ -4,7 +4,7 @@
 //
 // PreToolUse (Bash, Read) denies the calls whose output costs far more than the agentkit command that answers
 // the same question — reading a whole document of tens of thousands of tokens, watching CI with
-// `gh pr checks --watch` — and hints at agentkit find for repository-wide greps. PostToolUse (Bash) cuts an
+// `gh pr checks --watch` — and the polling loops that wait for a background command and misfire, and hints at agentkit find for repository-wide greps. PostToolUse (Bash) cuts an
 // output longer than AGENTKIT_MAX_OUTPUT characters to its head and tail and saves the whole of it to a
 // file the agent can grep. Both fail open: anything unexpected leaves the call alone.
 package hook
@@ -54,7 +54,12 @@ func bigFile() int64 { return int64(envInt("AGENTKIT_BIG_FILE", 40000)) }
 
 var (
 	// gh in command position only (the start of a line, or after ; & | or a subshell), not in a quoted string.
-	reWatch    = regexp.MustCompile(`(?m)(^|[;&|(])\s*gh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch\b)`)
+	reWatch = regexp.MustCompile(`(?m)(^|[;&|(])\s*gh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch\b)`)
+	// a loop (until / while) whose body sleeps, and pgrep, both in command position: waiting for a background
+	// command this way hangs or ends early (`pgrep -f` matches the polling shell's own command line).
+	reLoop     = regexp.MustCompile(`(?m)(^|[;&|(])\s*((do|then|!)\s+)*(until|while)\s`)
+	reSleep    = regexp.MustCompile(`(?m)(^|[;&|(])\s*((do|then)\s+)*sleep\s`)
+	rePgrep    = regexp.MustCompile(`(?m)(^|[;&|(])\s*((until|while|if|do|then|!)\s+)*pgrep\b`)
 	reCat      = regexp.MustCompile(`^\s*cat\s+([^\s|;&<>]+)\s*$`)
 	reGrepAll  = regexp.MustCompile(`\b(grep\s+(-\w*[rR]\w*|--recursive)|rg)\b`)
 	reLimited  = regexp.MustCompile(`\|\s*(head|tail|wc|sort\s+-u\s*\|\s*head)|\s-(\w*[lcq]\w*)\b|--count|--files-with-matches|--max-count|-m\s*\d`)
@@ -128,6 +133,12 @@ func Pre(in Input, w io.Writer) error {
 				"Run `scripts/agentkit.sh pr wait <pr>` in the background instead: it prints one line when CI passes, "+
 				"or the failing lines of the failed jobs (exit 3 on a conflict). An orchestrator watching many PRs uses "+
 				"`scripts/agentkit.sh pr watch` with the Monitor tool.")
+		}
+		if rePgrep.MatchString(cmd) || (reLoop.MatchString(cmd) && reSleep.MatchString(cmd)) {
+			return deny(w, "Polling for a background command (an until / while loop that sleeps, or pgrep) hangs or ends "+
+				"early: `pgrep -f` matches the polling shell's own command line. Run the long command with the Bash tool's "+
+				"run_in_background and wait for its completion notification; wait for CI with `scripts/agentkit.sh pr wait <pr>` "+
+				"in the background, and for many PRs with `scripts/agentkit.sh pr watch` and the Monitor tool.")
 		}
 		if m := reCat.FindStringSubmatch(cmd); m != nil {
 			if reason := bigDoc(in.Cwd, m[1]); reason != "" {
