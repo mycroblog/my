@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/internal/platform"
 )
 
 // TestOwnModerationActions checks, through the composition root, what a local account learns of
@@ -166,7 +167,9 @@ func TestAppealFromTheSignInScreens(t *testing.T) {
 // out by the deletion and cannot sign in again.
 func TestBanAppealFromTheSignInScreens(t *testing.T) {
 	t.Parallel()
-	c := newStatusesClient(t, "alice", "bob")
+	// The status page counts the days left from a reading of the clock after the ban, which
+	// must not be earlier than the ban.
+	c := newStatusesClientWith(t, nil, platform.AppOptions{Clock: newSteadyClock()}, "alice", "bob")
 	ctx := t.Context()
 	ban, err := c.app.Moderation.IssueAccountAction(ctx, appmoderation.AccountActionInput{
 		TargetAccountID: c.ids["bob"], Kind: moderation.ActionBan, ReasonCategory: moderation.CategoryLegal, PublicReason: "Illegal content.",
