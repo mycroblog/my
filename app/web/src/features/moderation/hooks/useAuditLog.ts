@@ -6,7 +6,14 @@ import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type ClientMessageKey } from "../../../lib/i18n";
-import { type AuditAction, type AuditActorKind, type AuditEntry, type AuditLogFilter, auditLogQueryOptions, type AuditTargetKind } from "../api/staff";
+import {
+  type AuditAction,
+  type AuditActorKind,
+  type AuditEntry,
+  type AuditLogFilter,
+  auditLogQueryOptions,
+  type AuditTargetKind,
+} from "../api/staff";
 import type { PagedPages } from "./pagedList";
 
 export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> = {
@@ -148,7 +155,9 @@ export const auditActorKindLabels: Readonly<Record<AuditActorKind, ClientMessage
  * The other kinds of target (settings, rules, registrations) have no screen of their own, and a target that is
  * gone (erased past its retention, or deleted) has nothing left to show, so their entries show the label only.
  */
-export function auditTargetHref(entry: Pick<AuditEntry, "target_kind" | "target_id" | "target_label" | "target_exists">): string | undefined {
+export function auditTargetHref(
+  entry: Pick<AuditEntry, "target_kind" | "target_id" | "target_label" | "target_exists">,
+): string | undefined {
   if (!entry.target_exists) return undefined;
   const id = encodeURIComponent(entry.target_id);
   switch (entry.target_kind) {
@@ -227,8 +236,14 @@ export function useAuditLog(filter: AuditLogFilter, onPagesLoaded: (pages: numbe
   const api = useApi();
   const query = useSuspenseInfiniteQuery(auditLogQueryOptions(api, filter));
   const items = query.data.pages.flatMap((page) => page.items);
-  const actorEntry = filter.actor === undefined ? undefined : items.find((entry) => entry.actor_account_id === filter.actor && entry.actor_account !== undefined);
-  const targetEntry = filter.target === undefined ? undefined : items.find((entry) => entry.target_kind === filter.targetKind && entry.target_id === filter.target);
+  const actorEntry =
+    filter.actor === undefined
+      ? undefined
+      : items.find((entry) => entry.actor_account_id === filter.actor && entry.actor_account !== undefined);
+  const targetEntry =
+    filter.target === undefined
+      ? undefined
+      : items.find((entry) => entry.target_kind === filter.targetKind && entry.target_id === filter.target);
   return {
     items,
     pages: query.data.pages.map((page) => page.items).filter((entries) => entries.length > 0),

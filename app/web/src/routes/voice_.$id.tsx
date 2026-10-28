@@ -19,8 +19,11 @@ export const Route = createFileRoute("/voice_/$id")({
     await session.restore();
     // A failure does not fail the page: the page tells an ended, hidden, or unknown room from the summary.
     const room =
-      session.status === "signed-in" ? await queryClient.query({ ...voiceRoomQueryOptions(api, id), staleTime: Infinity }).catch(() => undefined) : undefined;
-    if (room === undefined) await queryClient.query({ ...voiceRoomSummaryQueryOptions(api, id), staleTime: Infinity }).catch(() => undefined);
+      session.status === "signed-in"
+        ? await queryClient.query({ ...voiceRoomQueryOptions(api, id), staleTime: Infinity }).catch(() => undefined)
+        : undefined;
+    if (room === undefined)
+      await queryClient.query({ ...voiceRoomSummaryQueryOptions(api, id), staleTime: Infinity }).catch(() => undefined);
   },
   component: VoiceRoomPage,
   errorComponent: VoiceRoomError,

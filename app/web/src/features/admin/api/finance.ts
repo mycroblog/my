@@ -47,7 +47,10 @@ export function costItemsQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/cost_items", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/cost_items", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/cost_items", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -84,13 +87,23 @@ export function adminIncomeTotalsQueryOptions(api: Api, granularity: CostGranula
 }
 
 /** The kinds of the money movements, in the order of the filter. */
-export const incomeKinds = ["payment", "refund", "chargeback", "chargeback_reversal", "fee"] as const satisfies readonly IncomeKind[];
+export const incomeKinds = [
+  "payment",
+  "refund",
+  "chargeback",
+  "chargeback_reversal",
+  "fee",
+] as const satisfies readonly IncomeKind[];
 
 /**
  * The money movements shown: of a kind, and counted on or after `from` and on or before `to` (`YYYY-MM-DD`, the dates
  * in the provider's reporting time zone); undefined narrows nothing.
  */
-export type IncomeMovementFilter = { kind?: IncomeKind | undefined; from?: string | undefined; to?: string | undefined };
+export type IncomeMovementFilter = {
+  kind?: IncomeKind | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+};
 
 /** The payment provider's money movements of the income, newest first, narrowed by the filter (GET /admin/income_movements). */
 export function incomeMovementsQueryOptions(api: Api, filter: IncomeMovementFilter) {
@@ -102,7 +115,10 @@ export function incomeMovementsQueryOptions(api: Api, filter: IncomeMovementFilt
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/income_movements", narrow, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/income_movements", { params: { query: { ...pageQuery(pageParam), ...narrow } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/income_movements", {
+        params: { query: { ...pageQuery(pageParam), ...narrow } },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -145,7 +161,10 @@ export function reviseCostItemPriceMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/cost_items/{id}/price_revisions"] as const,
     mutationFn: async ({ id, body }: { id: string; body: Schemas["CostPriceRevisionRequest"] }): Promise<CostItem> => {
-      const { data, error } = await api.fetch.POST("/admin/cost_items/{id}/price_revisions", { params: { path: { id } }, body });
+      const { data, error } = await api.fetch.POST("/admin/cost_items/{id}/price_revisions", {
+        params: { path: { id } },
+        body,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -200,5 +219,8 @@ export async function refreshCosts(queryClient: QueryClient): Promise<void> {
 
 /** Marks what an import started by hand changes: the state of the imports and the audit log. */
 export async function refreshBillingImports(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/admin/billing_imports"] }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/billing_imports"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }

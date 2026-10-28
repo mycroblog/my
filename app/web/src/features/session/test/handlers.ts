@@ -5,5 +5,7 @@ import { viewerFixture } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
 
 export const handlers = [
-  http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => withViewer(request, () => HttpResponse.json(viewerFixture))),
+  http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(viewerFixture)),
+  ),
 ];

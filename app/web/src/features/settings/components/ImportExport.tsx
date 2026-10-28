@@ -30,7 +30,13 @@ import {
   dataImportKinds,
   type DataImportSkipped,
 } from "../api/importExport";
-import { type CsvExports, type ImportForm, useCsvExports, useDataImports, useImportForm } from "../hooks/useImportExport";
+import {
+  type CsvExports,
+  type ImportForm,
+  useCsvExports,
+  useDataImports,
+  useImportForm,
+} from "../hooks/useImportExport";
 
 const kindLabels: Readonly<Record<DataImportKind, ClientMessageKey>> = {
   following: "client:settings.import_export.kind.following",
@@ -256,7 +262,10 @@ function PreviewView({ result, form }: { result: DataImportPreview; form: Import
             {result.skipped.slice(0, maxSkippedShown).map((line) => (
               <Stack as="li" key={line.line}>
                 <Text dir="auto" wrap="anywhere">
-                  {t("client:settings.import_export.import.preview.skipped_line", { line: line.line, value: line.value })}
+                  {t("client:settings.import_export.import.preview.skipped_line", {
+                    line: line.line,
+                    value: line.value,
+                  })}
                 </Text>
                 <Text tone="muted">{t(skipReasons[line.reason])}</Text>
               </Stack>
@@ -265,7 +274,11 @@ function PreviewView({ result, form }: { result: DataImportPreview; form: Import
         </Stack>
       )}
       <div>
-        <Button variant={form.mode === "overwrite" ? "danger" : "primary"} onPress={form.start} isPending={form.isStarting}>
+        <Button
+          variant={form.mode === "overwrite" ? "danger" : "primary"}
+          onPress={form.start}
+          isPending={form.isStarting}
+        >
           {t("client:settings.import_export.import.start")}
         </Button>
       </div>
@@ -302,8 +315,12 @@ function ImportRow({ item }: { item: DataImport }) {
         })}
       </Heading>
       <DescriptionList columns={4}>
-        <DescriptionItem term={t("client:settings.import_export.history.state")}>{t(stateLabels[item.state])}</DescriptionItem>
-        <DescriptionItem term={t("client:settings.import_export.history.mode")}>{t(modeLabels[item.mode])}</DescriptionItem>
+        <DescriptionItem term={t("client:settings.import_export.history.state")}>
+          {t(stateLabels[item.state])}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:settings.import_export.history.mode")}>
+          {t(modeLabels[item.mode])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:settings.import_export.history.progress")}>
           <Text numeric>
             {t("client:settings.import_export.history.progress_value", {

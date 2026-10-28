@@ -21,7 +21,8 @@ const audioFile = Buffer.from(
 );
 
 /** A poster as an SVG, served from the page's origin like the media files. */
-const posterFile = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>';
+const posterFile =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>';
 
 const alice: Account = {
   id: "0192f0c4-7a8e-7000-8000-000000000001",
@@ -99,8 +100,14 @@ const post: Status = {
 /** Answers the client API as Alice's session with the post, and the media files. */
 async function serveApi(page: Page): Promise<void> {
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route(`**${mediaBase}/**`, (route) => {
     const name = new URL(route.request().url()).pathname.slice(mediaBase.length + 1);
     if (name === "poster.svg") return route.fulfill({ contentType: "image/svg+xml", body: posterFile });
@@ -111,11 +118,28 @@ async function serveApi(page: Page): Promise<void> {
     const path = new URL(route.request().url()).pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500 }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500 },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [post] });
@@ -132,7 +156,10 @@ test.describe("a post with videos and audio", () => {
     await expect(page.getByRole("main").getByRole("article")).toBeVisible();
   });
 
-  test("plays them in their cells with controls, never by themselves, without axe violations or sideways scrolling", async ({ page, makeAxeBuilder }) => {
+  test("plays them in their cells with controls, never by themselves, without axe violations or sideways scrolling", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const article = page.getByRole("main").getByRole("article");
     const videos = article.locator("video");
     const audio = article.locator("audio");

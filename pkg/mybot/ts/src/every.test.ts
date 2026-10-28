@@ -44,7 +44,9 @@ describe("every", () => {
   });
 
   test("the idempotency key names the job and the time in RFC 3339", () => {
-    expect(everyIdempotencyKey("morning", Date.parse("2026-10-25T09:00:00.000Z"))).toBe("mybot:every:morning:2026-10-25T09:00:00Z");
+    expect(everyIdempotencyKey("morning", Date.parse("2026-10-25T09:00:00.000Z"))).toBe(
+      "mybot:every:morning:2026-10-25T09:00:00Z",
+    );
   });
 
   test("runs at each time, posts once per run, and records the last run", async () => {
@@ -85,7 +87,10 @@ describe("every", () => {
     await stop();
     srv.close();
 
-    expect(posts.map((p) => p.idempotencyKey)).toEqual(["mybot:every:hourly:2026-10-25T09:00:00Z", "mybot:every:hourly:2026-10-25T10:00:00Z"]);
+    expect(posts.map((p) => p.idempotencyKey)).toEqual([
+      "mybot:every:hourly:2026-10-25T09:00:00Z",
+      "mybot:every:hourly:2026-10-25T10:00:00Z",
+    ]);
     expect(posts.map((p) => p.request.visibility)).toEqual(["public", "public"]);
     expect(errors).toHaveLength(2);
     expect(errors[0]).toBeInstanceOf(PostedAlreadyError);

@@ -69,8 +69,19 @@ function totals(url: URL): Schemas["FinanceCostTotals"] {
         ],
         estimated: false,
         items: [
-          { provider: "cloud", category: "compute", amount: { amount: "12.34", currency: "USD" }, name: longName, memo: "الخادم الرئيسي" },
-          { provider: "registrar", category: "domain", amount: { amount: "1650", currency: "JPY" }, name: "example.com" },
+          {
+            provider: "cloud",
+            category: "compute",
+            amount: { amount: "12.34", currency: "USD" },
+            name: longName,
+            memo: "الخادم الرئيسي",
+          },
+          {
+            provider: "registrar",
+            category: "domain",
+            amount: { amount: "1650", currency: "JPY" },
+            name: "example.com",
+          },
         ],
       },
     ],
@@ -95,20 +106,37 @@ function incomeTotals(url: URL): Schemas["IncomeTotals"] {
         { amount: "-12.34", currency: "USD" },
       ],
     })),
-    plans: [{ plan_id: "0192f0c4-7a8e-7000-8000-0000000000c1", name: "A plan with a rather long name that has to wrap on the narrowest screens", members: 3 }],
-    rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+    plans: [
+      {
+        plan_id: "0192f0c4-7a8e-7000-8000-0000000000c1",
+        name: "A plan with a rather long name that has to wrap on the narrowest screens",
+        members: 3,
+      },
+    ],
+    rules: {
+      week_start: "monday",
+      providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+      amortize_after_days: 31,
+    },
   };
 }
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of the supporter; returns the paths of the admin requests the app sent, which should be none. */
 async function serveApi(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const adminRequests: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow push" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow push" }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -121,7 +149,8 @@ async function serveApi(page: Page) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -129,7 +158,14 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /timelines/home") return json(route, { items: [] });
@@ -146,7 +182,10 @@ function hasTabBar(page: Page): boolean {
 }
 
 test.describe("the finances page", () => {
-  test("is in the navigation without the staff's entries, and shows the totals and the items", async ({ page, makeAxeBuilder }) => {
+  test("is in the navigation without the staff's entries, and shows the totals and the items", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const adminRequests = await serveApi(page);
     await page.goto("/home");
     const nav = page.getByRole("navigation").first();
@@ -178,7 +217,9 @@ test.describe("the finances page", () => {
 
     const income = main.getByRole("region", { name: message("income.title"), exact: true });
     await expect(income.getByRole("table")).toBeVisible();
-    await expect(income.getByText("A plan with a rather long name that has to wrap on the narrowest screens")).toHaveAttribute("dir", "auto");
+    await expect(
+      income.getByText("A plan with a rather long name that has to wrap on the narrowest screens"),
+    ).toHaveAttribute("dir", "auto");
 
     // The tabs choose the periods of the costs and of the income together.
     await main.getByRole("tab", { name: message("costs.granularity.week"), exact: true }).click();

@@ -211,7 +211,9 @@ export function TextAreaField({
       {...(rows === undefined ? {} : { rows })}
     />
   );
-  const describedBy = [ariaDescribedBy, remaining === undefined ? undefined : countId].filter((id) => id !== undefined).join(" ");
+  const describedBy = [ariaDescribedBy, remaining === undefined ? undefined : countId]
+    .filter((id) => id !== undefined)
+    .join(" ");
 
   return (
     <RACTextField

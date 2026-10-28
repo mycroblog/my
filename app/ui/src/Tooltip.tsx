@@ -4,7 +4,12 @@
 // (aria-describedby). It never holds focus or interactive content; use a Popover for that.
 // A tooltip does not replace an accessible name: an icon-only button still needs its own aria-label.
 import type { ReactNode, Ref } from "react";
-import { OverlayArrow, Tooltip as AriaTooltip, TooltipTrigger, type TooltipProps as AriaTooltipProps } from "react-aria-components";
+import {
+  OverlayArrow,
+  Tooltip as AriaTooltip,
+  TooltipTrigger,
+  type TooltipProps as AriaTooltipProps,
+} from "react-aria-components";
 import { tv } from "tailwind-variants";
 
 export { TooltipTrigger };

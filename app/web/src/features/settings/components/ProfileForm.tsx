@@ -20,7 +20,14 @@ import { textHighlights } from "../../../lib/textHighlights";
 import { CompletionTextArea, CompletionTextField } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import { acceptedImageTypes } from "../api/media";
-import { characterCount, type FieldDraft, type ImageControl, profileLimits, type ServerCrawlerPolicy, useProfileForm } from "../hooks/useProfileForm";
+import {
+  characterCount,
+  type FieldDraft,
+  type ImageControl,
+  profileLimits,
+  type ServerCrawlerPolicy,
+  useProfileForm,
+} from "../hooks/useProfileForm";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 /**
@@ -38,20 +45,32 @@ export function ProfileForm() {
   const shortcodes = useCustomEmojiShortcodes();
   // Only an invalid text sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
   const lengthCheck: LengthCheck = (value, max) =>
-    characterCount(value) > max ? { isInvalid: true, errorMessage: t("client:settings.profile.too_long", { max: String(max) }) } : {};
+    characterCount(value) > max
+      ? { isInvalid: true, errorMessage: t("client:settings.profile.too_long", { max: String(max) }) }
+      : {};
   return (
     <>
       <Stack as="form" onSubmit={form.submit} gap="6">
         <ImageSection
           titleKey="client:settings.profile.avatar"
           control={form.avatar}
-          preview={<Avatar src={form.avatar.url} name={form.displayName.value || form.account.username} seed={form.account.id} decorative size="xl" />}
+          preview={
+            <Avatar
+              src={form.avatar.url}
+              name={form.displayName.value || form.account.username}
+              seed={form.account.id}
+              decorative
+              size="xl"
+            />
+          }
         />
         <ImageSection
           titleKey="client:settings.profile.header"
           control={form.header}
           preview={
-            form.header.url === undefined ? null : <ProfileHeaderImage sources={{ still: [{ url: form.header.url }] }} size="preview" />
+            form.header.url === undefined ? null : (
+              <ProfileHeaderImage sources={{ still: [{ url: form.header.url }] }} size="preview" />
+            )
           }
         />
         <Stack gap="1">
@@ -59,7 +78,9 @@ export function ProfileForm() {
             completes="emoji"
             id={displayNameId}
             label={t("client:settings.profile.display_name")}
-            description={t("client:settings.profile.display_name.description", { max: String(profileLimits.displayName) })}
+            description={t("client:settings.profile.display_name.description", {
+              max: String(profileLimits.displayName),
+            })}
             value={form.displayName.value}
             onChange={form.displayName.onChange}
             {...lengthCheck(form.displayName.value, profileLimits.displayName)}
@@ -85,12 +106,19 @@ export function ProfileForm() {
             characterLimit={profileLimits.note}
             highlights={textHighlights(form.note.value, { tokens: "all", shortcodes, limit: profileLimits.note })}
             formatRemaining={(remaining) =>
-              remaining < 0 ? t("client:settings.profile.characters_over", { count: -remaining }) : t("client:settings.profile.characters_left", { count: remaining })
+              remaining < 0
+                ? t("client:settings.profile.characters_over", { count: -remaining })
+                : t("client:settings.profile.characters_left", { count: remaining })
             }
             errorMessage={t("client:settings.profile.too_long", { max: String(profileLimits.note) })}
             rows={4}
             endAction={
-              <EmojiPickerButton fieldId={noteId} value={form.note.value} onChange={form.note.onChange} label={t("client:settings.profile.note.emoji")} />
+              <EmojiPickerButton
+                fieldId={noteId}
+                value={form.note.value}
+                onChange={form.note.onChange}
+                label={t("client:settings.profile.note.emoji")}
+              />
             }
           />
         </Stack>
@@ -200,12 +228,22 @@ function ImageSection({ titleKey, control, preview }: ImageSectionProps) {
             if (file !== undefined) control.choose(file);
           }}
         >
-          <Button size="sm" isPending={control.isUploading} aria-describedby={control.error === undefined ? headingId : `${headingId} ${errorId}`}>
+          <Button
+            size="sm"
+            isPending={control.isUploading}
+            aria-describedby={control.error === undefined ? headingId : `${headingId} ${errorId}`}
+          >
             {t("client:settings.profile.image.choose")}
           </Button>
         </FileTrigger>
         {control.hasImage && (
-          <Button size="sm" variant="ghost" onPress={control.remove} isDisabled={control.isUploading} aria-describedby={headingId}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={control.remove}
+            isDisabled={control.isUploading}
+            aria-describedby={headingId}
+          >
             {t("client:settings.profile.image.remove")}
           </Button>
         )}
@@ -288,7 +326,9 @@ function FieldRow({ field, number, onChange, onRemove, lengthCheck }: FieldRowPr
         }}
         {...lengthCheck(field.name, profileLimits.fieldName)}
         // A missing label is reported when the form is submitted, as the content is often typed first.
-        validate={(name) => (name === "" && field.value !== "" ? t("client:settings.profile.field.name_required") : null)}
+        validate={(name) =>
+          name === "" && field.value !== "" ? t("client:settings.profile.field.name_required") : null
+        }
       />
       <CompletionTextField
         completes="all"

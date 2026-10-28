@@ -2,7 +2,21 @@
 // A remote server's page below its heading (federation.md §7.3): its health, why it is in its state, when
 // deliveries last resumed, the button that resumes them, the way to its moderation actions (FR-702), the refetch
 // of its accounts' posts (FR-407), and the history of its availability, newest first.
-import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, Link, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader } from "@my/ui";
+import {
+  Button,
+  Card,
+  DescriptionItem,
+  DescriptionList,
+  EmptyState,
+  Heading,
+  Hint,
+  Link,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+} from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { AvailabilityEvent } from "../api/staff";
@@ -47,31 +61,52 @@ function InstanceView({ domain }: InstanceDetailProps) {
     <Stack gap="6">
       <Card>
         <Stack gap="4">
-        <DescriptionList columns={3}>
-          <DescriptionItem term={t("client:admin.instance.state")}>
-            <InstanceStateLabel state={health.state} />
-          </DescriptionItem>
-          <DescriptionItem term={t("client:admin.instance.since")}>{health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}</DescriptionItem>
-          <DescriptionItem term={t("client:admin.instance.reason")}>{latest === undefined ? t("client:admin.instance.none") : t(reasonLabels[latest.reason])}</DescriptionItem>
-          <DescriptionItem term={t("client:admin.instance.failure_days")}>{t("client:admin.instance.failure_days.value", { count: health.failure_days })}</DescriptionItem>
-          <DescriptionItem term={t("client:admin.instance.last_failure")}>
-            {health.last_failure_day === undefined ? t("client:admin.instance.none") : <Day value={health.last_failure_day} />}
-          </DescriptionItem>
-          <DescriptionItem term={t("client:admin.instance.last_resumed")}>{resumed === undefined ? t("client:admin.instance.none") : <DateTime value={resumed.occurred_at} />}</DescriptionItem>
-        </DescriptionList>
-        {view.canMarkAvailable && (
-          <Stack align="start" gap="1">
-            <Button variant="primary" isPending={view.isMarking} onPress={view.markAvailable} aria-describedby={descriptionId}>
-              {t("client:admin.instance.mark_available")}
-            </Button>
-            <Hint id={descriptionId}>{t("client:admin.instance.mark_available.description")}</Hint>
-          </Stack>
-        )}
+          <DescriptionList columns={3}>
+            <DescriptionItem term={t("client:admin.instance.state")}>
+              <InstanceStateLabel state={health.state} />
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.instance.since")}>
+              {health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.instance.reason")}>
+              {latest === undefined ? t("client:admin.instance.none") : t(reasonLabels[latest.reason])}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.instance.failure_days")}>
+              {t("client:admin.instance.failure_days.value", { count: health.failure_days })}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.instance.last_failure")}>
+              {health.last_failure_day === undefined ? (
+                t("client:admin.instance.none")
+              ) : (
+                <Day value={health.last_failure_day} />
+              )}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.instance.last_resumed")}>
+              {resumed === undefined ? t("client:admin.instance.none") : <DateTime value={resumed.occurred_at} />}
+            </DescriptionItem>
+          </DescriptionList>
+          {view.canMarkAvailable && (
+            <Stack align="start" gap="1">
+              <Button
+                variant="primary"
+                isPending={view.isMarking}
+                onPress={view.markAvailable}
+                aria-describedby={descriptionId}
+              >
+                {t("client:admin.instance.mark_available")}
+              </Button>
+              <Hint id={descriptionId}>{t("client:admin.instance.mark_available.description")}</Hint>
+            </Stack>
+          )}
         </Stack>
       </Card>
       <DetailSection title={t("client:admin.instance.moderation.title")}>
         <Stack align="start" gap="1">
-          <Link href={`/moderation/domain-actions?domain=${encodeURIComponent(domain)}`} variant="standalone" aria-describedby={moderationId}>
+          <Link
+            href={`/moderation/domain-actions?domain=${encodeURIComponent(domain)}`}
+            variant="standalone"
+            aria-describedby={moderationId}
+          >
             {t("client:admin.instance.moderation.link")}
           </Link>
           <Hint id={moderationId}>{t("client:admin.instance.moderation.description")}</Hint>

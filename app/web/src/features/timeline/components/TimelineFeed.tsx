@@ -30,7 +30,15 @@ const noPosts: readonly Status[] = [];
  * A timeline as a feed (web-client/README.md Y6) with its older pages loaded as the reader nears the end, or an
  * empty state. The first page comes from the route loader; render it inside the route that loads it.
  */
-export function TimelineFeed({ timeline, "aria-labelledby": labelledBy, origin, pinned = noPosts, feedRef, keepPosition, onTopChange }: TimelineFeedProps) {
+export function TimelineFeed({
+  timeline,
+  "aria-labelledby": labelledBy,
+  origin,
+  pinned = noPosts,
+  feedRef,
+  keepPosition,
+  onTopChange,
+}: TimelineFeedProps) {
   const t = useT();
   const { statuses, hasMore, isLoadingMore, loadMore, loadMoreError } = useTimeline(timeline);
   // A pinned post is in the timeline too, further down, so its entry at the top has a key of its own.
@@ -44,7 +52,16 @@ export function TimelineFeed({ timeline, "aria-labelledby": labelledBy, origin, 
   return (
     <Stack>
       {origin !== undefined && (
-        <Cluster align="baseline" gap="3" rowGap="1" border="bottom" paddingX="4" paddingY="3" textSize="sm" tone="muted">
+        <Cluster
+          align="baseline"
+          gap="3"
+          rowGap="1"
+          border="bottom"
+          paddingX="4"
+          paddingY="3"
+          textSize="sm"
+          tone="muted"
+        >
           <p>{origin.notice}</p>
           <p>{origin.link}</p>
         </Cluster>
@@ -98,9 +115,19 @@ function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: Timel
         />
       );
     case "local":
-      return <EmptyState heading={t("client:timeline.empty.local.heading")} description={t("client:timeline.empty.local.description")} />;
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.local.heading")}
+          description={t("client:timeline.empty.local.description")}
+        />
+      );
     case "public":
-      return <EmptyState heading={t("client:timeline.empty.public.heading")} description={t("client:timeline.empty.public.description")} />;
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.public.heading")}
+          description={t("client:timeline.empty.public.description")}
+        />
+      );
     case "tag":
       return (
         <EmptyState
@@ -109,9 +136,19 @@ function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: Timel
         />
       );
     case "bookmarks":
-      return <EmptyState heading={t("client:timeline.empty.bookmarks.heading")} description={t("client:timeline.empty.bookmarks.description")} />;
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.bookmarks.heading")}
+          description={t("client:timeline.empty.bookmarks.description")}
+        />
+      );
     case "quotes":
-      return <EmptyState heading={t("client:timeline.empty.quotes.heading")} description={t("client:timeline.empty.quotes.description")} />;
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.quotes.heading")}
+          description={t("client:timeline.empty.quotes.description")}
+        />
+      );
     case "account":
       // A profile's timeline sits under the level-two heading of its tab.
       return (

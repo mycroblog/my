@@ -51,7 +51,9 @@ function audioContext(): AudioContext {
 
 /** The error of a context that did not start: the browser blocks the audio until a gesture resumes it. */
 function blocked(context: AudioContext): DOMException | null {
-  return context.state === "running" ? null : new DOMException("voice: the audio is blocked until a gesture", "NotAllowedError");
+  return context.state === "running"
+    ? null
+    : new DOMException("voice: the audio is blocked until a gesture", "NotAllowedError");
 }
 
 /**

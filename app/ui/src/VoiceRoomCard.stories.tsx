@@ -60,7 +60,10 @@ export const Default: Story = {
     await expect(canvas.getByText("Live")).toBeVisible();
     await expect(canvas.getByText("12 people · 38 min")).toBeVisible();
     await expect(canvas.getByRole("heading", { level: 2, name: "Friday night radio" })).toBeVisible();
-    await expect(canvas.getByRole("link", { name: "Friday night radio" })).toHaveAttribute("href", "/voice/0192f0c4-7a8e-7000-8000-0000000000f1");
+    await expect(canvas.getByRole("link", { name: "Friday night radio" })).toHaveAttribute(
+      "href",
+      "/voice/0192f0c4-7a8e-7000-8000-0000000000f1",
+    );
     await expect(canvas.getByRole("link", { name: "Alice Example" })).toBeVisible();
     await expect(canvas.getByRole("list", { name: "Hashtags" })).toBeVisible();
   },

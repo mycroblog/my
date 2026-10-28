@@ -40,7 +40,8 @@ const resolveColor = colorResolver(themeCss);
 
 for (const [name, value] of palette) {
   try {
-    if (!inSrgbGamut(parseColor(value))) problems.push(`theme.css: --palette-${name} (${value}) is outside the sRGB gamut`);
+    if (!inSrgbGamut(parseColor(value)))
+      problems.push(`theme.css: --palette-${name} (${value}) is outside the sRGB gamut`);
   } catch (error) {
     problems.push(`theme.css: --palette-${name}: ${(error as Error).message}`);
   }
@@ -77,7 +78,9 @@ for (const pair of colorPairs) {
     }
     return ratio.toFixed(2).padStart(5);
   });
-  rows.push(`  ${`${pair.fg} on ${pair.bg}`.padEnd(32)} ${pair.use.padEnd(4)} light ${ratios[0] ?? ""}  dark ${ratios[1] ?? ""}`);
+  rows.push(
+    `  ${`${pair.fg} on ${pair.bg}`.padEnd(32)} ${pair.use.padEnd(4)} light ${ratios[0] ?? ""}  dark ${ratios[1] ?? ""}`,
+  );
 }
 for (const name of semantic.keys()) {
   if (!covered.has(name)) {
@@ -151,7 +154,7 @@ function isDefaultPaletteColor(value: string): boolean {
   if (!Object.hasOwn(defaultColors, hue) || ["inherit", "current", "transparent"].includes(hue)) return false;
   return rest.length === 0 || (rest.length === 1 && /^(?:50|[1-9]00|950)$/.test(rest[0] ?? ""));
 }
-const colorLiteral =/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix|light-dark)\(/i;
+const colorLiteral = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix|light-dark)\(/i;
 const colorProperties = /(?:^|-)(?:color|fill|stroke|background)$|^background$|^border(?:-[a-z]+)*-color$/;
 
 /** Resolves the stylesheet and package imports of an app's entry stylesheet the way Vite does. */
@@ -186,11 +189,18 @@ for (const entry of process.argv.slice(2).map((arg) => resolve(arg))) {
     files++;
     const content = readFileSync(file, "utf8");
     const where = (position: number) => `${relative(process.cwd(), file)}:${lineOf(content, position)}`;
-    for (const { candidate, position } of scanner.getCandidatesWithPositions({ content, extension: extname(file).slice(1) })) {
+    for (const { candidate, position } of scanner.getCandidatesWithPositions({
+      content,
+      extension: extname(file).slice(1),
+    })) {
       for (const parsed of design.parseCandidate(candidate)) {
         const variants = parsed.variants.map((variant) => design.printVariant(variant));
         if (parsed.kind === "arbitrary") {
-          if (colorProperties.test(parsed.property) || colorLiteral.test(parsed.value) || parsed.value.includes("--palette-")) {
+          if (
+            colorProperties.test(parsed.property) ||
+            colorLiteral.test(parsed.value) ||
+            parsed.value.includes("--palette-")
+          ) {
             problems.push(`${where(position)}: ${candidate} sets a color without a semantic token (D8)`);
           }
           continue;
@@ -203,7 +213,11 @@ for (const entry of process.argv.slice(2).map((arg) => resolve(arg))) {
         }
         if (parsed.kind === "functional" && parsed.value !== null) {
           const value = parsed.value;
-          if (value.kind === "arbitrary" && tokenOnlyRoots.test(parsed.root) && !(parsed.root === "shadow" && value.dataType === "color")) {
+          if (
+            value.kind === "arbitrary" &&
+            tokenOnlyRoots.test(parsed.root) &&
+            !(parsed.root === "shadow" && value.dataType === "color")
+          ) {
             problems.push(`${where(position)}: ${candidate} uses an arbitrary value; use a token (app/ui/README.md)`);
           } else if (
             value.kind === "named" &&
@@ -211,7 +225,9 @@ for (const entry of process.argv.slice(2).map((arg) => resolve(arg))) {
             /^[0-9.]+$/.test(value.value) &&
             !spacingSteps.has(value.value)
           ) {
-            problems.push(`${where(position)}: ${candidate} uses a spacing step outside ${[...spacingSteps].join(", ")} (app/ui/README.md)`);
+            problems.push(
+              `${where(position)}: ${candidate} uses a spacing step outside ${[...spacingSteps].join(", ")} (app/ui/README.md)`,
+            );
           }
         }
         if (parsed.kind !== "functional" || !colorRoots.has(parsed.root) || parsed.value === null) continue;
@@ -261,8 +277,14 @@ try {
     } else if (token.kind === "length") {
       const match = length.exec(override.value);
       const rem = match === null ? Number.NaN : Number(match[1] ?? 0) / (match[2] === "px" ? 16 : 1);
-      if (Number.isNaN(rem) || (token.min !== undefined && rem < token.min) || (token.max !== undefined && rem > token.max)) {
-        problems.push(`${where}: --${override.token} (${override.value}) is not a length from ${token.min ?? 0} to ${token.max ?? "∞"}rem`);
+      if (
+        Number.isNaN(rem) ||
+        (token.min !== undefined && rem < token.min) ||
+        (token.max !== undefined && rem > token.max)
+      ) {
+        problems.push(
+          `${where}: --${override.token} (${override.value}) is not a length from ${token.min ?? 0} to ${token.max ?? "∞"}rem`,
+        );
       }
     } else {
       problems.push(`${where}: --${override.token} is a ${token.kind}; this check validates only colors and lengths`);
@@ -270,7 +292,9 @@ try {
   }
   for (const { fg, bg, use, scheme, ratio, minimum } of themeContrast(colors)) {
     if (ratio === null || ratio < minimum) {
-      problems.push(`${where}: ${fg} on ${bg} is ${ratio?.toFixed(2) ?? "?"}:1 in the ${scheme} theme; ${use} needs ${minimum}:1`);
+      problems.push(
+        `${where}: ${fg} on ${bg} is ${ratio?.toFixed(2) ?? "?"}:1 in the ${scheme} theme; ${use} needs ${minimum}:1`,
+      );
     }
   }
 }

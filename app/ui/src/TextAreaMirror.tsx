@@ -124,7 +124,12 @@ export function highlightRuns(length: number, highlights: readonly TextHighlight
 }
 
 /** The text with its highlighted runs as marks, and the caret marker at the caret. */
-function mirroredText(text: string, highlights: readonly TextHighlight[], caret: number | null, caretRef: Ref<HTMLSpanElement> | undefined) {
+function mirroredText(
+  text: string,
+  highlights: readonly TextHighlight[],
+  caret: number | null,
+  caretRef: Ref<HTMLSpanElement> | undefined,
+) {
   const marker = <span key="caret" ref={caretRef} />;
   const nodes: ReactNode[] = [];
   for (const run of highlightRuns(text.length, highlights, caret)) {
@@ -176,7 +181,15 @@ export type TextAreaMirrorProps = {
 };
 
 /** The aria-hidden mirror behind a text area or a text input. */
-export function TextAreaMirror({ textareaRef, text, caret, caretRef, highlights = noHighlights, singleLine = false, onSync }: TextAreaMirrorProps) {
+export function TextAreaMirror({
+  textareaRef,
+  text,
+  caret,
+  caretRef,
+  highlights = noHighlights,
+  singleLine = false,
+  onSync,
+}: TextAreaMirrorProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const synced = useEffectEvent(() => {
     onSync?.();

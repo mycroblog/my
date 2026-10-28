@@ -38,7 +38,11 @@ export function MutedAccounts() {
       details={(mute) => (
         <>
           {mute.expires_at !== undefined && (
-            <span>{t("client:settings.mutes.until", { date: intl.formatDate(mute.expires_at, { dateStyle: "medium", timeStyle: "short" }) })}</span>
+            <span>
+              {t("client:settings.mutes.until", {
+                date: intl.formatDate(mute.expires_at, { dateStyle: "medium", timeStyle: "short" }),
+              })}
+            </span>
           )}
           {mute.notifications && <span>{t("client:settings.mutes.notifications")}</span>}
         </>
@@ -154,7 +158,14 @@ type ActionButtonProps = {
 };
 
 /** A button of a row; it names the account too ("Unblock Bob"), as every row has the same buttons. */
-function ActionButton({ action, account, onDone, label, variant = "secondary", isDisabled = false }: ActionButtonProps) {
+function ActionButton({
+  action,
+  account,
+  onDone,
+  label,
+  variant = "secondary",
+  isDisabled = false,
+}: ActionButtonProps) {
   const t = useT();
   const name = account.display_name || account.username;
   return (

@@ -31,7 +31,9 @@ function SearchPage() {
         initialQuery={q ?? ""}
         onFound={(acct, query) => {
           // This page keeps the search, so that going back from the profile shows it again.
-          void navigate({ search: { q: query }, replace: true }).then(() => navigate({ to: "/@{$acct}", params: { acct } }));
+          void navigate({ search: { q: query }, replace: true }).then(() =>
+            navigate({ to: "/@{$acct}", params: { acct } }),
+          );
         }}
       />
     </>

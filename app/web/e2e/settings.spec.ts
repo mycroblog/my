@@ -33,23 +33,43 @@ const viewer = {
 const supporterBadgeId = "0192f0c4-7a8e-7000-8000-0000000000b1";
 
 /** Another account, as the lists of the settings show it. */
-const bob = { ...viewer, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob@remote.example", display_name: "Bob" };
+const bob = {
+  ...viewer,
+  id: "0192f0c4-7a8e-7000-8000-000000000002",
+  username: "bob",
+  acct: "bob@remote.example",
+  display_name: "Bob",
+};
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: status < 400 ? "application/json" : "application/problem+json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /**
  * What the played server is like beyond the defaults: the viewer's permissions, whether it sends email, and
  * whether the viewer has chosen their time zone (UTC) yet.
  */
-type ServerOptions = { permissions?: string[]; sendsEmail?: boolean; timeZoneChosen?: boolean; emailSuppression?: { kind: string; since: string } };
+type ServerOptions = {
+  permissions?: string[];
+  sendsEmail?: boolean;
+  timeZoneChosen?: boolean;
+  emailSuppression?: { kind: string; since: string };
+};
 
 /**
  * Plays the server of a signed-in user whose preferences start in `locale`: the refresh endpoint resumes the
  * session, and the preferences remember their changes (across reloads too). Returns the changes the app sent.
  */
-async function signedInServer(page: Page, locale: string, { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression }: ServerOptions = {}) {
+async function signedInServer(
+  page: Page,
+  locale: string,
+  { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression }: ServerOptions = {},
+) {
   let preferences = {
     locale,
     time_zone: "UTC",
@@ -94,9 +114,35 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
   ];
   // The apps the user authorized (ADR-0090 §5): the web client, an app from a metadata document with a long name that was never recorded as used, and a self-declared one.
   let authorizedApps: Record<string, unknown>[] = [
-    { id: "0192f0c4-7a8e-7000-8000-000000000cc1", client_id: "my-web", name: "Web", registration: "first_party", first_party: true, scope: "read write follow push", authorized_at: "2026-10-01T00:00:00Z", last_used_at: "2026-10-21T09:00:00Z" },
-    { id: "0192f0c4-7a8e-7000-8000-000000000cc2", client_id: "https://a-very-long-subdomain-name-for-the-narrowest-screens.example/client.json", name: "A reader app with a very long name for the narrowest phone screens", registration: "metadata_document", first_party: false, scope: "read:statuses read:accounts write:statuses", authorized_at: "2026-10-10T12:00:00Z" },
-    { id: "0192f0c4-7a8e-7000-8000-000000000cc3", client_id: "my_ci_dyn", name: "Scribe", registration: "dynamic", first_party: false, scope: "read", authorized_at: "2026-10-12T12:00:00Z", last_used_at: "2026-10-20T08:00:00Z" },
+    {
+      id: "0192f0c4-7a8e-7000-8000-000000000cc1",
+      client_id: "my-web",
+      name: "Web",
+      registration: "first_party",
+      first_party: true,
+      scope: "read write follow push",
+      authorized_at: "2026-10-01T00:00:00Z",
+      last_used_at: "2026-10-21T09:00:00Z",
+    },
+    {
+      id: "0192f0c4-7a8e-7000-8000-000000000cc2",
+      client_id: "https://a-very-long-subdomain-name-for-the-narrowest-screens.example/client.json",
+      name: "A reader app with a very long name for the narrowest phone screens",
+      registration: "metadata_document",
+      first_party: false,
+      scope: "read:statuses read:accounts write:statuses",
+      authorized_at: "2026-10-10T12:00:00Z",
+    },
+    {
+      id: "0192f0c4-7a8e-7000-8000-000000000cc3",
+      client_id: "my_ci_dyn",
+      name: "Scribe",
+      registration: "dynamic",
+      first_party: false,
+      scope: "read",
+      authorized_at: "2026-10-12T12:00:00Z",
+      last_used_at: "2026-10-20T08:00:00Z",
+    },
   ];
   // The accounts the user links at the login providers (FR-010): one at a provider with a long name, and a second
   // provider that allows links.
@@ -104,21 +150,38 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
   const linkableProvider = "0192f0c4-7a8e-7000-8000-000000000dd2";
   const linkedIdentities = {
     items: [
-      { id: "0192f0c4-7a8e-7000-8000-000000000de1", provider_id: linkedProvider, provider_kind: "oidc", provider_name: "Example Workspace with a very long name for narrow phones", linked_at: "2026-10-16T09:30:00Z", available: true },
+      {
+        id: "0192f0c4-7a8e-7000-8000-000000000de1",
+        provider_id: linkedProvider,
+        provider_kind: "oidc",
+        provider_name: "Example Workspace with a very long name for narrow phones",
+        linked_at: "2026-10-16T09:30:00Z",
+        available: true,
+      },
     ],
     providers: [
-      { id: linkedProvider, kind: "oidc", display_name: "Example Workspace with a very long name for narrow phones", allow_link: true },
+      {
+        id: linkedProvider,
+        kind: "oidc",
+        display_name: "Example Workspace with a very long name for narrow phones",
+        allow_link: true,
+      },
       { id: linkableProvider, kind: "oidc", display_name: "Lab ID", allow_link: true },
     ],
   };
   const changes: unknown[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }),
+  );
   // The provider's sign-in page; the test sends the browser back from it.
-  await page.route("**/auth/external/*/start*", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Lab ID</title>" }));
+  await page.route("**/auth/external/*/start*", (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Lab ID</title>" }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const revoked = /^\/authorized_apps\/(.+)$/.exec(path);
     if (request.method() === "DELETE" && revoked !== null) {
       changes.push({ revoked: revoked[1] });
@@ -127,7 +190,20 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
     }
     switch (`${request.method()} ${path}`) {
       case "GET /instance":
-        return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, sends_email: sendsEmail, rules: [], search_indexing: "deny", ai_usage: "deny" });
+        return json(route, {
+          domain: "my.example",
+          name: "my example",
+          version: "0.0.0",
+          source_url: "https://github.com/mycroblog/my",
+          registrations: { mode: "open" },
+          federation: { mode: "both" },
+          limits: { max_post_characters: 500, require_media_description: false },
+          timelines: { local: "everyone", federated: "everyone" },
+          sends_email: sendsEmail,
+          rules: [],
+          search_indexing: "deny",
+          ai_usage: "deny",
+        });
       case "GET /accounts/verify_credentials":
         return json(route, { ...viewer, permissions });
       case "GET /preferences":
@@ -135,7 +211,11 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
       case "PATCH /preferences": {
         const change = request.postDataJSON() as Partial<typeof preferences>;
         changes.push(change);
-        preferences = { ...preferences, ...change, time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined };
+        preferences = {
+          ...preferences,
+          ...change,
+          time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
+        };
         return json(route, preferences);
       }
       case "GET /blocks":
@@ -146,7 +226,10 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         // A long domain, and one in IDNA A-labels that the page shows with its U-labels too.
         return json(route, {
           domain_mutes: [
-            { domain: "a-very-long-subdomain-name-for-the-narrowest-screens.spam.example", created_at: "2026-10-17T10:00:00Z" },
+            {
+              domain: "a-very-long-subdomain-name-for-the-narrowest-screens.spam.example",
+              created_at: "2026-10-17T10:00:00Z",
+            },
             { domain: "xn--r8jz45g.xn--zckzah", created_at: "2026-10-18T10:00:00Z" },
           ],
         });
@@ -186,7 +269,9 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
           entries: 1200,
           present: 30,
           removals: 4,
-          skipped: [{ line: 7, value: "a-very-long-line-that-is-not-an-address-and-goes-on-and-on@", reason: "invalid" }],
+          skipped: [
+            { line: 7, value: "a-very-long-line-that-is-not-an-address-and-goes-on-and-on@", reason: "invalid" },
+          ],
         });
       case "GET /preferences/badges":
         return json(route, { items: badgeChoices });
@@ -194,7 +279,10 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         const { displayed } = request.postDataJSON() as { displayed: boolean };
         changes.push({ badge: displayed });
         badgeChoices = badgeChoices.map((c) => (c.role_id === supporterBadgeId ? { ...c, displayed } : c));
-        return json(route, badgeChoices.find((c) => c.role_id === supporterBadgeId));
+        return json(
+          route,
+          badgeChoices.find((c) => c.role_id === supporterBadgeId),
+        );
       }
       case "GET /preferences/auto_delete":
         return json(route, autoDeletePolicy);
@@ -207,15 +295,32 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         return json(route, { has_password: true });
       case "GET /passkeys":
         return json(route, {
-          items: [{ id: "0192f0c4-7a8e-7000-8000-000000000ab1", name: "A password manager with a long name on a narrow phone", created_at: "2026-10-16T09:30:00Z" }],
+          items: [
+            {
+              id: "0192f0c4-7a8e-7000-8000-000000000ab1",
+              name: "A password manager with a long name on a narrow phone",
+              created_at: "2026-10-16T09:30:00Z",
+            },
+          ],
         });
       case "GET /authorized_apps":
         return json(route, { items: authorizedApps });
       case "GET /oauth_apps":
         return json(route, { items: oauthApps });
       case "POST /oauth_apps": {
-        const body = request.postDataJSON() as { name: string; redirect_uris: string[]; scope: string; client_type: string };
-        const app = { id: "0192f0c4-7a8e-7000-8000-000000000bb2", client_id: "my_ci_registered", ...body, disabled: false, created_at: "2026-10-21T09:30:00Z" };
+        const body = request.postDataJSON() as {
+          name: string;
+          redirect_uris: string[];
+          scope: string;
+          client_type: string;
+        };
+        const app = {
+          id: "0192f0c4-7a8e-7000-8000-000000000bb2",
+          client_id: "my_ci_registered",
+          ...body,
+          disabled: false,
+          created_at: "2026-10-21T09:30:00Z",
+        };
         oauthApps.push(app);
         return json(route, { app, client_secret: "my_cs_e2e-secret-shown-once" }, 201);
       }
@@ -232,7 +337,11 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
         return json(route, { start_url: start.href, expires_at: "2026-10-21T09:40:00Z" });
       }
       case `DELETE /linked_identities/${linkedIdentities.items[0]?.id ?? ""}`:
-        return json(route, { type: "/api/v1/problems/last-sign-in-method", title: "This is your last way to sign in.", status: 409 }, 409);
+        return json(
+          route,
+          { type: "/api/v1/problems/last-sign-in-method", title: "This is your last way to sign in.", status: 409 },
+          409,
+        );
       default:
         return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
     }
@@ -315,24 +424,47 @@ const totpSetup = {
   expires_at: "2026-10-20T00:15:00Z",
 };
 
-test("linking an account confirms with the password and comes back linked; unlinking the last way to sign in says why", async ({ page, makeAxeBuilder }) => {
+test("linking an account confirms with the password and comes back linked; unlinking the last way to sign in says why", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   const changes = await signedInServer(page, projectLocale());
   await page.goto("/settings/linked-accounts");
   const main = page.getByRole("main");
-  await main.getByRole("button", { name: message("settings.linked_accounts.link").replace("{provider}", "Lab ID"), exact: true }).click();
+  await main
+    .getByRole("button", {
+      name: message("settings.linked_accounts.link").replace("{provider}", "Lab ID"),
+      exact: true,
+    })
+    .click();
   const dialog = page.getByRole("alertdialog");
   await dialog.locator('input[type="password"][autocomplete="current-password"]').fill("correct horse");
   await expectNoAxeViolations(makeAxeBuilder);
   await dialog.getByRole("button", { name: message("settings.linked_accounts.link.continue"), exact: true }).click();
   // The provider sends the browser back with the account linked, and the page opens again with the outcome.
-  await page.waitForURL(/\/auth\/external\/0192f0c4-7a8e-7000-8000-000000000dd2\/start\?return_to=%2Fsettings%2Flinked-accounts$/);
-  await page.goto("/settings/linked-accounts#linked=0192f0c4-7a8e-7000-8000-000000000dd2&provider=0192f0c4-7a8e-7000-8000-000000000dd2");
-  await expect(main.getByRole("status")).toHaveText(message("settings.linked_accounts.linked").replace("{provider}", "Lab ID"));
+  await page.waitForURL(
+    /\/auth\/external\/0192f0c4-7a8e-7000-8000-000000000dd2\/start\?return_to=%2Fsettings%2Flinked-accounts$/,
+  );
+  await page.goto(
+    "/settings/linked-accounts#linked=0192f0c4-7a8e-7000-8000-000000000dd2&provider=0192f0c4-7a8e-7000-8000-000000000dd2",
+  );
+  await expect(main.getByRole("status")).toHaveText(
+    message("settings.linked_accounts.linked").replace("{provider}", "Lab ID"),
+  );
   // The outcome leaves the address, so that a reload does not show it again.
   await expect(page).toHaveURL(/\/settings\/linked-accounts$/);
-  expect(changes).toContainEqual({ link: { provider_id: "0192f0c4-7a8e-7000-8000-000000000dd2", password: "correct horse", return_to: "/settings/linked-accounts" } });
+  expect(changes).toContainEqual({
+    link: {
+      provider_id: "0192f0c4-7a8e-7000-8000-000000000dd2",
+      password: "correct horse",
+      return_to: "/settings/linked-accounts",
+    },
+  });
 
-  await main.getByRole("button", { name: new RegExp(message("settings.linked_accounts.unlink")) }).first().click();
+  await main
+    .getByRole("button", { name: new RegExp(message("settings.linked_accounts.unlink")) })
+    .first()
+    .click();
   const unlink = page.getByRole("alertdialog");
   await unlink.getByRole("button", { name: message("settings.linked_accounts.unlink"), exact: true }).click();
   await expect(unlink.getByRole("alert")).toHaveText(message("settings.linked_accounts.unlink.last"));
@@ -340,22 +472,34 @@ test("linking an account confirms with the password and comes back linked; unlin
   await expectNoHorizontalScroll(page);
 });
 
-test("two-factor setup shows the QR code and the key without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+test("two-factor setup shows the QR code and the key without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await signedInServer(page, projectLocale());
   await page.goto("/settings/two-factor");
-  await page.getByRole("main").getByRole("button", { name: message("settings.two_factor.setup.start"), exact: true }).click();
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: message("settings.two_factor.setup.start"), exact: true })
+    .click();
   await expect(page.getByRole("main").getByRole("img")).toBeVisible();
   await expect(page.getByRole("main").getByRole("textbox")).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });
 
-test("registering an app shows its secret once without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+test("registering an app shows its secret once without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await signedInServer(page, projectLocale());
   await page.goto("/settings/apps");
   const main = page.getByRole("main");
   const form = main.getByRole("region", { name: message("settings.apps.new.title") });
-  await form.getByRole("textbox", { name: message("settings.apps.name") }).first().fill("E2E bot");
+  await form
+    .getByRole("textbox", { name: message("settings.apps.name") })
+    .first()
+    .fill("E2E bot");
   await form.getByRole("textbox", { name: message("settings.apps.redirect_uris") }).fill("http://127.0.0.1/callback");
   // By keyboard: the radio's input is visually hidden under its drawn circle.
   const confidential = form.getByRole("radio", { name: message("settings.apps.client_type.confidential") });
@@ -374,7 +518,10 @@ test("registering an app shows its secret once without axe violations or horizon
   await expect(page.getByText("my_cs_e2e-secret-shown-once")).toHaveCount(0);
 });
 
-test("revoking an authorized app asks first, then drops it from the list, without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+test("revoking an authorized app asks first, then drops it from the list, without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   const changes = await signedInServer(page, projectLocale());
   await page.goto("/settings/authorized-apps");
   const main = page.getByRole("main");
@@ -384,7 +531,11 @@ test("revoking an authorized app asks first, then drops it from the list, withou
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
   // By keyboard: the button opens a dialog that asks before revoking.
-  const revoke = main.getByRole("button", { name: message("settings.list.action").replace("{action}", message("settings.authorized_apps.revoke")).replace("{name}", name) });
+  const revoke = main.getByRole("button", {
+    name: message("settings.list.action")
+      .replace("{action}", message("settings.authorized_apps.revoke"))
+      .replace("{name}", name),
+  });
   await revoke.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("alertdialog");
@@ -396,7 +547,10 @@ test("revoking an authorized app asks first, then drops it from the list, withou
   expect(changes).toContainEqual({ revoked: "0192f0c4-7a8e-7000-8000-000000000cc2" });
 });
 
-test("checking a file to import shows what it does without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+test("checking a file to import shows what it does without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await signedInServer(page, projectLocale());
   await page.goto("/settings/import-export");
   const main = page.getByRole("main");
@@ -406,10 +560,16 @@ test("checking a file to import shows what it does without axe violations or hor
   await page.keyboard.press("Space");
   await expect(overwrite).toBeChecked();
   // FileTrigger's input is hidden; Playwright sets its files as the file picker would.
-  await main.locator('input[type="file"]').setInputFiles({ name: "following_accounts.csv", mimeType: "text/csv", buffer: Buffer.from("bob@remote.example\n") });
+  await main.locator('input[type="file"]').setInputFiles({
+    name: "following_accounts.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("bob@remote.example\n"),
+  });
   await main.getByRole("button", { name: message("settings.import_export.import.preview"), exact: true }).click();
   const preview = main.getByRole("region", { name: message("settings.import_export.import.preview.title") });
-  await expect(preview.getByRole("button", { name: message("settings.import_export.import.start"), exact: true })).toBeVisible();
+  await expect(
+    preview.getByRole("button", { name: message("settings.import_export.import.start"), exact: true }),
+  ).toBeVisible();
   await expect(preview).toMatchAriaSnapshot(`
     - region:
       - heading [level=3]
@@ -428,7 +588,10 @@ test("checking a file to import shows what it does without axe violations or hor
   await expectNoHorizontalScroll(page);
 });
 
-test("the automatic deletion of old posts is turned on and saved without axe violations or horizontal scroll", async ({ page, makeAxeBuilder }) => {
+test("the automatic deletion of old posts is turned on and saved without axe violations or horizontal scroll", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await signedInServer(page, projectLocale());
   await page.goto("/settings/auto-delete");
   const main = page.getByRole("main");
@@ -443,7 +606,9 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   await expect(keepMedia).toBeChecked();
   await main.getByRole("button", { name: message("settings.auto_delete.save"), exact: true }).click();
   // The status names the age in the plural form of the locale; its words before the number are enough.
-  await expect(main.getByRole("status").getByText(message("settings.auto_delete.saved_on").replace(/\{.*$/s, "").trim())).toBeVisible();
+  await expect(
+    main.getByRole("status").getByText(message("settings.auto_delete.saved_on").replace(/\{.*$/s, "").trim()),
+  ).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });
@@ -520,12 +685,17 @@ test.describe("display language", () => {
 });
 
 test.describe("theme", () => {
-  test("switches at once, passes axe in both themes, and stays after a reload without reaching the server", async ({ page, makeAxeBuilder }) => {
+  test("switches at once, passes axe in both themes, and stays after a reload without reaching the server", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.emulateMedia({ colorScheme: "light" });
     const changes = await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
     // The theme: the OS setting (checked), light and dark.
-    const theme = page.getByRole("main").getByRole("radiogroup", { name: message("settings.theme.label"), exact: true });
+    const theme = page
+      .getByRole("main")
+      .getByRole("radiogroup", { name: message("settings.theme.label"), exact: true });
     await expect(theme.getByRole("radio").first()).toBeChecked();
     const html = page.locator("html");
     await expect(html).not.toHaveAttribute("data-theme");
@@ -550,14 +720,26 @@ test.describe("theme", () => {
 });
 
 test.describe("navigation", () => {
-  test("is arranged from the keyboard alone, passes axe, and stays after a reload", async ({ page, makeAxeBuilder }) => {
+  test("is arranged from the keyboard alone, passes axe, and stays after a reload", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
     const section = page.getByRole("main").getByRole("region", { name: message("settings.navigation.title") });
     const name = (item: string) => message(`shell.nav.${item}`);
-    const moveUp = (item: string) => section.getByRole("button", { name: message("settings.navigation.move_up").replace("{name}", name(item)), exact: true });
+    const moveUp = (item: string) =>
+      section.getByRole("button", {
+        name: message("settings.navigation.move_up").replace("{name}", name(item)),
+        exact: true,
+      });
     /** The addresses of the navigation's links in their order, the ones the width hides included. */
-    const order = () => page.getByRole("navigation").getByRole("list").locator("a").evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+    const order = () =>
+      page
+        .getByRole("navigation")
+        .getByRole("list")
+        .locator("a")
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
     await expect(section.getByRole("checkbox")).toHaveCount(8);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -566,19 +748,25 @@ test.describe("navigation", () => {
     await moveUp("search").focus();
     await page.keyboard.press("Enter");
     await expect(moveUp("search")).toBeFocused();
-    await expect.poll(order).toEqual(["/home", "/local", "/public", "/search", "/notifications", "/profile", "/bookmarks", "/settings"]);
+    await expect
+      .poll(order)
+      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/profile", "/bookmarks", "/settings"]);
 
     // Space on a checkbox hides Profile.
     await section.getByRole("checkbox", { name: name("profile"), exact: true }).focus();
     await page.keyboard.press("Space");
     await expect(section.getByRole("checkbox", { name: name("profile"), exact: true })).not.toBeChecked();
-    await expect.poll(order).toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
+    await expect
+      .poll(order)
+      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
     await page.reload();
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-    await expect.poll(order).toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
+    await expect
+      .poll(order)
+      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
     await expect(section.getByRole("checkbox", { name: name("profile"), exact: true })).not.toBeChecked();
   });
 });
@@ -596,7 +784,12 @@ test.describe("profile form", () => {
     await expect(displayName).toBeFocused();
     await expect(displayName).toHaveAttribute("aria-invalid", "true");
     const describedBy = (await displayName.getAttribute("aria-describedby")) ?? "";
-    const descriptions = page.locator(describedBy.split(" ").map((id) => `[id="${id}"]`).join(", "));
+    const descriptions = page.locator(
+      describedBy
+        .split(" ")
+        .map((id) => `[id="${id}"]`)
+        .join(", "),
+    );
     // The description and the error message.
     await expect(descriptions).toHaveCount(2);
     await expect(descriptions.last()).toBeVisible();
@@ -644,10 +837,15 @@ test.describe("profile form", () => {
 });
 
 test.describe("post defaults", () => {
-  test("the default post language and the request for descriptions are saved from the keyboard", async ({ page, makeAxeBuilder }) => {
+  test("the default post language and the request for descriptions are saved from the keyboard", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
-    const language = page.getByRole("main").getByRole("button", { name: message("settings.default_post_language.label") });
+    const language = page
+      .getByRole("main")
+      .getByRole("button", { name: message("settings.default_post_language.label") });
     await expect(language).toContainText(message("compose.language.und"));
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -660,7 +858,9 @@ test.describe("post defaults", () => {
     await expect(language).toContainText(japanese);
 
     // Space toggles a switch (WAI-ARIA APG, Switch pattern).
-    const ask = page.getByRole("main").getByRole("switch", { name: message("settings.require_media_description.label") });
+    const ask = page
+      .getByRole("main")
+      .getByRole("switch", { name: message("settings.require_media_description.label") });
     await expect(ask).not.toBeChecked();
     await ask.focus();
     await page.keyboard.press("Space");
@@ -668,16 +868,24 @@ test.describe("post defaults", () => {
     await expect.poll(() => changes).toEqual([{ default_post_language: "ja" }, { require_media_description: true }]);
 
     await page.reload();
-    await expect(page.getByRole("main").getByRole("button", { name: message("settings.default_post_language.label") })).toContainText(japanese);
-    await expect(page.getByRole("main").getByRole("switch", { name: message("settings.require_media_description.label") })).toBeChecked();
+    await expect(
+      page.getByRole("main").getByRole("button", { name: message("settings.default_post_language.label") }),
+    ).toContainText(japanese);
+    await expect(
+      page.getByRole("main").getByRole("switch", { name: message("settings.require_media_description.label") }),
+    ).toBeChecked();
   });
 });
 
 test.describe("email suppression", () => {
   test("says that emails do not reach the address, and what to do", async ({ page, makeAxeBuilder }) => {
-    await signedInServer(page, projectLocale(), { emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    await signedInServer(page, projectLocale(), {
+      emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
+    });
     await page.goto("/settings/preferences");
-    const section = page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true });
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("settings.email_suppression.title"), exact: true });
     await expect(section).toBeVisible();
     await expect(section).toContainText(message("settings.email_suppression.hard_bounce"));
     await expect(section).toContainText(message("settings.email_suppression.hard_bounce.action"));
@@ -689,7 +897,9 @@ test.describe("email suppression", () => {
     await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true }),
+    ).toHaveCount(0);
   });
 });
 
@@ -723,7 +933,9 @@ test.describe("moderator notifications by email", () => {
   test("says why there is no switch when the server sends no email", async ({ page, makeAxeBuilder }) => {
     await signedInServer(page, projectLocale(), { permissions: ["manage_accounts"], sendsEmail: false });
     await page.goto("/settings/preferences");
-    const section = page.getByRole("main").getByRole("region", { name: message("settings.moderator_notifications.title"), exact: true });
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("settings.moderator_notifications.title"), exact: true });
     await expect(section).toMatchAriaSnapshot(`
       - region:
         - heading [level=2]
@@ -736,10 +948,15 @@ test.describe("moderator notifications by email", () => {
 });
 
 test.describe("badges on the profile", () => {
-  test("a badge is shown from the keyboard, each switch named by its badge, and stays after a reload", async ({ page, makeAxeBuilder }) => {
+  test("a badge is shown from the keyboard, each switch named by its badge, and stays after a reload", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await signedInServer(page, projectLocale());
     await page.goto("/settings/profile");
-    const section = page.getByRole("main").getByRole("region", { name: message("settings.profile.badges"), exact: true });
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("settings.profile.badges"), exact: true });
     // The badges' names are the staff's text in any script, the same in every locale (ADR-0071).
     await expect(section).toMatchAriaSnapshot(`
       - region:
@@ -766,7 +983,10 @@ test.describe("badges on the profile", () => {
 });
 
 test.describe("time zone", () => {
-  test("names the zones in the display language with their offset, and describes them by their IANA name", async ({ page, makeAxeBuilder }) => {
+  test("names the zones in the display language with their offset, and describes them by their IANA name", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
     const select = page.locator('main button[aria-haspopup="listbox"]').nth(1);
@@ -798,7 +1018,10 @@ test.describe("time zone of the device", () => {
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
-  test("tells that the chosen zone is not the browser's, and switches to it from the keyboard", async ({ page, makeAxeBuilder }) => {
+  test("tells that the chosen zone is not the browser's, and switches to it from the keyboard", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await signedInServer(page, projectLocale());
     await page.goto("/settings/preferences");
     const select = page.locator('main button[aria-haspopup="listbox"]').nth(1);

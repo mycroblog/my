@@ -68,13 +68,25 @@ class Link {
 
   constructor(options: LinkOptions) {
     this.role = options.role;
-    this.audios = new RemoteAudios(options.connection.environment, options.connection.events.onPlaybackBlocked, options.roster, options.talking);
+    this.audios = new RemoteAudios(
+      options.connection.environment,
+      options.connection.events.onPlaybackBlocked,
+      options.roster,
+      options.talking,
+    );
     const { grant } = options;
     const channel = grant.options.channel_id ?? "";
-    const connectionOptions: ConnectionOptions = { audio: true, video: false, audioCodecType: "OPUS", clientId: options.connection.session };
+    const connectionOptions: ConnectionOptions = {
+      audio: true,
+      video: false,
+      audioCodecType: "OPUS",
+      clientId: options.connection.session,
+    };
     const signaling = options.sdk.connection(signalingUrls(grant));
     this.#sora =
-      options.role === "sendrecv" ? signaling.sendrecv(channel, metadata(grant), connectionOptions) : signaling.recvonly(channel, metadata(grant), connectionOptions);
+      options.role === "sendrecv"
+        ? signaling.sendrecv(channel, metadata(grant), connectionOptions)
+        : signaling.recvonly(channel, metadata(grant), connectionOptions);
     this.#sora.on("track", (event) => {
       const stream = event.streams[0];
       if (stream === undefined || event.track.kind !== "audio") return;
@@ -261,14 +273,16 @@ class SoraConnection implements VoiceConnection {
 
   /** Sends the microphone only while the user wants it and speaks. */
   #applyMicrophoneTracks(): void {
-    for (const track of this.#microphone?.getAudioTracks() ?? []) track.enabled = this.#wantMicrophone && this.#roster.speaker;
+    for (const track of this.#microphone?.getAudioTracks() ?? [])
+      track.enabled = this.#wantMicrophone && this.#roster.speaker;
     this.#measureMicrophone();
   }
 
   /** Measures the microphone while a sendrecv connection sends it: the user talks only then. */
   #measureMicrophone(): void {
     const microphone = this.#microphone;
-    if (microphone !== null && this.#wantMicrophone && this.#roster.speaker && this.#link?.role === "sendrecv") this.#talking.watch(microphoneKey, this.#options.session, microphone);
+    if (microphone !== null && this.#wantMicrophone && this.#roster.speaker && this.#link?.role === "sendrecv")
+      this.#talking.watch(microphoneKey, this.#options.session, microphone);
     else this.#talking.unwatch(microphoneKey);
   }
 
@@ -296,7 +310,10 @@ class SoraConnection implements VoiceConnection {
         await this.#join("sendrecv");
       }
       // Otherwise the sendrecv grant comes on the room stream, after the `state` that made the user a speaker.
-      await this.#waiters.wait(() => this.#closed || this.#link?.role === "sendrecv", "Sora did not let the session send");
+      await this.#waiters.wait(
+        () => this.#closed || this.#link?.role === "sendrecv",
+        "Sora did not let the session send",
+      );
     }
     this.#applyMicrophoneTracks();
   }

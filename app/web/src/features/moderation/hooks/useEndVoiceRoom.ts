@@ -27,7 +27,11 @@ export type EndVoiceRoom = {
 };
 
 /** Ending the room `roomId` of `report`; `onEnded` runs once the page shows the room ended (to move focus). */
-export function useEndVoiceRoom(report: Pick<ReportDetail, "id" | "target_account_id">, roomId: string, onEnded: () => void): EndVoiceRoom {
+export function useEndVoiceRoom(
+  report: Pick<ReportDetail, "id" | "target_account_id">,
+  roomId: string,
+  onEnded: () => void,
+): EndVoiceRoom {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();

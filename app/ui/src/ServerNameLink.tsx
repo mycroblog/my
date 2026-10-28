@@ -38,7 +38,13 @@ export function ServerNameLink({ name, description, current = false, size }: Ser
   const descriptionId = useId();
   return (
     <p dir="auto" className={slots.base()}>
-      <Link href="/" aria-current={current ? "page" : undefined} aria-describedby={descriptionId} variant="standalone" className={slots.link()}>
+      <Link
+        href="/"
+        aria-current={current ? "page" : undefined}
+        aria-describedby={descriptionId}
+        variant="standalone"
+        className={slots.link()}
+      >
         {name}
       </Link>
       {/* A description of a hidden element is still read (accname), and the element stays out of the tree. */}

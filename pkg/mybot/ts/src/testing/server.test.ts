@@ -18,7 +18,9 @@ describe("Server", () => {
   test("answers 401 without an access token, and 404 for what it does not serve", async () => {
     const srv = new Server();
     expect((await srv.fetch(new Request(`${srv.url}/api/v1/accounts/verify_credentials`))).status).toBe(401);
-    const missing = await srv.fetch(new Request(`${srv.url}/api/v1/timelines/home`, { headers: { Authorization: "Bearer x" } }));
+    const missing = await srv.fetch(
+      new Request(`${srv.url}/api/v1/timelines/home`, { headers: { Authorization: "Bearer x" } }),
+    );
     expect(missing.status).toBe(404);
     expect(missing.headers.get("Content-Type")).toBe("application/problem+json");
   });
@@ -46,7 +48,9 @@ describe("Server", () => {
     const page = async (cursor?: string) =>
       (await (
         await srv.fetch(
-          new Request(`${srv.url}/api/v1/notifications?limit=2${cursor === undefined ? "" : `&cursor=${cursor}`}`, { headers: { Authorization: "Bearer x" } }),
+          new Request(`${srv.url}/api/v1/notifications?limit=2${cursor === undefined ? "" : `&cursor=${cursor}`}`, {
+            headers: { Authorization: "Bearer x" },
+          }),
         )
       ).json()) as { items: { id: string }[]; next_cursor?: string };
     const first = await page();

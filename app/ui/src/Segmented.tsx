@@ -23,7 +23,14 @@ const segmented = tv({
 
 export type SegmentedProps = Omit<
   RACToggleButtonGroupProps,
-  "className" | "style" | "selectionMode" | "disallowEmptySelection" | "selectedKeys" | "defaultSelectedKeys" | "onSelectionChange" | "orientation"
+  | "className"
+  | "style"
+  | "selectionMode"
+  | "disallowEmptySelection"
+  | "selectedKeys"
+  | "defaultSelectedKeys"
+  | "onSelectionChange"
+  | "orientation"
 > & {
   /** What the segments switch (“Layout”), for assistive technology. */
   "aria-label": string;

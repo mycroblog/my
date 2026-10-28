@@ -43,7 +43,12 @@ function roomFixture(overrides: Partial<Schemas["AdminReportVoiceRoom"]> = {}): 
     revisions: [openingRevision, reportedRevision],
     participations: [
       { account_id: otherAccountFixture.id, joined_at: "2026-10-26T12:00:00Z" },
-      { account_id: carol.id, joined_at: "2026-10-26T12:10:00Z", left_at: "2026-10-26T12:20:00Z", leave_reason: "removed" },
+      {
+        account_id: carol.id,
+        joined_at: "2026-10-26T12:10:00Z",
+        left_at: "2026-10-26T12:20:00Z",
+        leave_reason: "removed",
+      },
       { account_id: viewerFixture.id, joined_at: "2026-10-26T12:40:00Z" },
     ],
     bans: [{ account_id: carol.id, banned_by_account_id: otherAccountFixture.id, banned_at: "2026-10-26T12:20:00Z" }],
@@ -59,9 +64,20 @@ function roomReportServer(room: Schemas["AdminReportVoiceRoom"]) {
   const ends: Schemas["AdminVoiceRoomEnd"][] = [];
   server.use(
     http.get(`${apiBase}/admin/reports/:id`, () =>
-      HttpResponse.json(reportFixture({ id: reportId, status_ids: [], statuses: [], voice_room_id: roomId, voice_room: current, comment: "Selling things." })),
+      HttpResponse.json(
+        reportFixture({
+          id: reportId,
+          status_ids: [],
+          statuses: [],
+          voice_room_id: roomId,
+          voice_room: current,
+          comment: "Selling things.",
+        }),
+      ),
     ),
-    http.get(`${apiBase}/accounts/:id`, ({ params }) => (params["id"] === carol.id ? HttpResponse.json(carol) : undefined)),
+    http.get(`${apiBase}/accounts/:id`, ({ params }) =>
+      params["id"] === carol.id ? HttpResponse.json(carol) : undefined,
+    ),
     http.post(`${apiBase}/admin/voice_rooms/:id/end`, async ({ request }) => {
       const body = (await request.json()) as Schemas["AdminVoiceRoomEnd"];
       ends.push(body);
@@ -72,7 +88,9 @@ function roomReportServer(room: Schemas["AdminReportVoiceRoom"]) {
         ended_by_account_id: viewerFixture.id,
         ...(body.reason === undefined ? {} : { end_note: body.reason }),
         participations: current.participations.map((participation) =>
-          participation.left_at === undefined ? { ...participation, left_at: "2026-10-26T13:00:00Z", leave_reason: "room_ended" } : participation,
+          participation.left_at === undefined
+            ? { ...participation, left_at: "2026-10-26T13:00:00Z", leave_reason: "room_ended" }
+            : participation,
         ),
       };
       return new HttpResponse(null, { status: 204 });
@@ -96,11 +114,15 @@ describe("the report of a voice chat room", () => {
     expect(within(section).getByText("Open")).toBeInTheDocument();
 
     // Oldest first, the one in effect when the room was reported marked.
-    const [opening, reported, ...rest] = within(within(section).getByRole("region", { name: "Revisions of the settings" })).getAllByRole("listitem");
+    const [opening, reported, ...rest] = within(
+      within(section).getByRole("region", { name: "Revisions of the settings" }),
+    ).getAllByRole("listitem");
     expect(rest).toHaveLength(0);
     expect(opening).toHaveTextContent("Friday night radio");
     expect(opening).not.toHaveTextContent("When reported");
-    expect(reported).toHaveTextContent(/When reported.*Buy my stuff.*#Deals.*Everyone who joins.*Discounts every hour\./u);
+    expect(reported).toHaveTextContent(
+      /When reported.*Buy my stuff.*#Deals.*Everyone who joins.*Discounts every hour\./u,
+    );
 
     const participants = within(section).getByRole("region", { name: "Participants" });
     expect(await within(participants).findAllByText("Carol")).not.toHaveLength(0);
@@ -133,7 +155,9 @@ describe("the report of a voice chat room", () => {
     await waitFor(() => {
       expect(within(section).getByRole("heading", { level: 2, name: "Voice chat room" })).toHaveFocus();
     });
-    expect(within(within(section).getByRole("region", { name: "Participants" })).getAllByText("The room ended")).toHaveLength(2);
+    expect(
+      within(within(section).getByRole("region", { name: "Participants" })).getAllByText("The room ended"),
+    ).toHaveLength(2);
   });
 
   test("ends the room without a reason", async () => {
@@ -141,7 +165,11 @@ describe("the report of a voice chat room", () => {
     const { user } = await renderApp({ path: `/moderation/reports/${reportId}` });
     const section = await screen.findByRole("region", { name: "Voice chat room" });
     await user.click(within(section).getByRole("button", { name: "End room" }));
-    await user.click(within(await screen.findByRole("alertdialog", { name: "End this room?" })).getByRole("button", { name: "End room" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: "End this room?" })).getByRole("button", {
+        name: "End room",
+      }),
+    );
     expect(await within(section).findByText("Ended the room.")).toBeInTheDocument();
     expect(api.ends).toEqual([{}]);
   });
@@ -161,7 +189,13 @@ describe("the report of a voice chat room", () => {
   });
 
   test("offers no ending for a room that ended, and names who ended it and why", async () => {
-    roomReportServer(roomFixture({ ended_at: "2026-10-26T13:00:00Z", end_reason: "host", ended_by_account_id: otherAccountFixture.id }));
+    roomReportServer(
+      roomFixture({
+        ended_at: "2026-10-26T13:00:00Z",
+        end_reason: "host",
+        ended_by_account_id: otherAccountFixture.id,
+      }),
+    );
     await renderApp({ path: `/moderation/reports/${reportId}` });
     const section = await screen.findByRole("region", { name: "Voice chat room" });
     expect(within(section).getByText("Ended")).toBeInTheDocument();

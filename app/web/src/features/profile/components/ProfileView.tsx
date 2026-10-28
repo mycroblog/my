@@ -79,7 +79,11 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
         handle={profile.handle}
         badges={<RoleBadgeList label={t("client:profile.badges")} badges={profile.badges} />}
         tags={tags}
-        note={profile.note !== null && <PostContent html={profile.note} emojis={account.emojis} onLinkClick={profile.onLinkClick} />}
+        note={
+          profile.note !== null && (
+            <PostContent html={profile.note} emojis={account.emojis} onLinkClick={profile.onLinkClick} />
+          )
+        }
         fields={
           profile.fields.length > 0 && (
             <ProfileFields>
@@ -126,7 +130,13 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
       )}
       {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
       <ProfileVoiceRoom accountId={account.id} name={isolate(profile.name)} />
-      <ProfileTabs accountId={account.id} name={profile.name} original={profile.original} tab={tab} onTabChange={onTabChange} />
+      <ProfileTabs
+        accountId={account.id}
+        name={profile.name}
+        original={profile.original}
+        tab={tab}
+        onTabChange={onTabChange}
+      />
     </Stack>
   );
 }
@@ -171,7 +181,12 @@ function ProfileTabs({ accountId, name, original, tab, onTabChange }: ProfileTab
   );
 }
 
-type AccountPostsProps = { accountId: string; filter: AccountTimelineFilter; original: ProfileViewData["original"]; labelledBy: string };
+type AccountPostsProps = {
+  accountId: string;
+  filter: AccountTimelineFilter;
+  original: ProfileViewData["original"];
+  labelledBy: string;
+};
 
 /**
  * A tab's posts. For an account of another server they are only those this instance has received, which
@@ -204,13 +219,21 @@ function AccountPosts({ accountId, filter, original, labelledBy }: AccountPostsP
       {filter === "posts" ? (
         <PostsWithPinned accountId={accountId} labelledBy={labelledBy} origin={origin} />
       ) : (
-        <TimelineFeed timeline={{ kind: "account", id: accountId, filter }} aria-labelledby={labelledBy} {...(origin !== undefined && { origin })} />
+        <TimelineFeed
+          timeline={{ kind: "account", id: accountId, filter }}
+          aria-labelledby={labelledBy}
+          {...(origin !== undefined && { origin })}
+        />
       )}
     </Stack>
   );
 }
 
-type PostsWithPinnedProps = { accountId: string; labelledBy: string; origin: ComponentProps<typeof TimelineFeed>["origin"] };
+type PostsWithPinnedProps = {
+  accountId: string;
+  labelledBy: string;
+  origin: ComponentProps<typeof TimelineFeed>["origin"];
+};
 
 /** The posts tab: the account's pinned posts at the top of its posts (FR-403), as Mastodon shows them. */
 function PostsWithPinned({ accountId, labelledBy, origin }: PostsWithPinnedProps) {

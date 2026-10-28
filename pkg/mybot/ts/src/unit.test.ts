@@ -16,9 +16,15 @@ describe("plainText", () => {
   test.each([
     ["", ""],
     ["<p>hello</p>", "hello"],
-    [`<p><span class="h-card"><a href="https://example.com/@bot" class="u-url mention">@<span>bot</span></a></span> ping</p>`, "@bot ping"],
+    [
+      `<p><span class="h-card"><a href="https://example.com/@bot" class="u-url mention">@<span>bot</span></a></span> ping</p>`,
+      "@bot ping",
+    ],
     ["<p>one<br>two<br/>three</p><p>four</p>", "one\ntwo\nthree\n\nfour"],
-    [`<p>see <a href="https://example.com/x"><span class="invisible">https://</span>example.com/x</a></p>`, "see https://example.com/x"],
+    [
+      `<p>see <a href="https://example.com/x"><span class="invisible">https://</span>example.com/x</a></p>`,
+      "see https://example.com/x",
+    ],
     ["<p>a &amp; b &lt;c&gt; &#39;d&#39; &#x1F600;</p>", "a & b <c> 'd' 😀"],
     ["<p>1 < 2</p>", "1 < 2"],
   ])("%p", (input, want) => {
@@ -65,7 +71,11 @@ test("defaultHelp lists the commands with their descriptions", () => {
 
 test("missingScopes counts the broad scopes", () => {
   const need = ["read:accounts", "read:notifications", "read:statuses", "write:statuses", "write:accounts"];
-  expect(missingScopes("read:accounts read:notifications follow", need)).toEqual(["read:statuses", "write:statuses", "write:accounts"]);
+  expect(missingScopes("read:accounts read:notifications follow", need)).toEqual([
+    "read:statuses",
+    "write:statuses",
+    "write:accounts",
+  ]);
   expect(missingScopes("read write:statuses write:accounts", need)).toEqual([]);
   expect(missingScopes("follow", ["write:follows"])).toEqual([]);
 });

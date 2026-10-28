@@ -37,10 +37,14 @@ export function TwoFactorSettings() {
       <Section title={t("client:settings.two_factor.status.title")}>
         {status.enabled ? (
           <DescriptionList columns={2}>
-            <DescriptionItem term={t("client:settings.two_factor.status")}>{t("client:settings.two_factor.status.on")}</DescriptionItem>
+            <DescriptionItem term={t("client:settings.two_factor.status")}>
+              {t("client:settings.two_factor.status.on")}
+            </DescriptionItem>
             {status.enrolled_at !== undefined && (
               <DescriptionItem term={t("client:settings.two_factor.enrolled_at")}>
-                <time dateTime={status.enrolled_at}>{intl.formatDate(status.enrolled_at, { dateStyle: "medium", timeStyle: "short" })}</time>
+                <time dateTime={status.enrolled_at}>
+                  {intl.formatDate(status.enrolled_at, { dateStyle: "medium", timeStyle: "short" })}
+                </time>
               </DescriptionItem>
             )}
             {status.recovery_codes_remaining !== undefined && (
@@ -58,7 +62,10 @@ export function TwoFactorSettings() {
         <>
           <Section title={t("client:settings.two_factor.recovery_codes.title")}>
             <Hint>{t("client:settings.two_factor.recovery_codes.description")}</Hint>
-            <CodeFormView form={settings.regenerate} submitLabel={t("client:settings.two_factor.recovery_codes.replace")} />
+            <CodeFormView
+              form={settings.regenerate}
+              submitLabel={t("client:settings.two_factor.recovery_codes.replace")}
+            />
           </Section>
           <Section title={t("client:settings.two_factor.disable.title")}>
             <Hint>{t("client:settings.two_factor.disable.description")}</Hint>
@@ -111,7 +118,11 @@ function SetupSteps({ setup, form }: { setup: TotpSetup; form: CodeForm }) {
         <li>{t("client:settings.two_factor.setup.step.scan")}</li>
         <li>{t("client:settings.two_factor.setup.step.confirm")}</li>
       </Stack>
-      <QrCode size={setup.qr_code.size} path={setup.qr_code.path} label={t("client:settings.two_factor.setup.qr_code")} />
+      <QrCode
+        size={setup.qr_code.size}
+        path={setup.qr_code.path}
+        label={t("client:settings.two_factor.setup.qr_code")}
+      />
       <Stack gap="1">
         <Text id={secretId} size="sm" weight="medium">
           {t("client:settings.two_factor.setup.secret")}
@@ -131,7 +142,15 @@ function SetupSteps({ setup, form }: { setup: TotpSetup; form: CodeForm }) {
 }
 
 /** A form that sends a code of the app (or a recovery code) to confirm what its button says. */
-function CodeFormView({ form, submitLabel, description }: { form: CodeForm; submitLabel: string; description?: string }) {
+function CodeFormView({
+  form,
+  submitLabel,
+  description,
+}: {
+  form: CodeForm;
+  submitLabel: string;
+  description?: string;
+}) {
   const t = useT();
   return (
     <Stack as="form" onSubmit={form.submit} align="start" gap="3">

@@ -29,7 +29,15 @@ export type EmptyStateProps = Omit<ComponentPropsWithRef<"div">, "children" | "t
 };
 
 /** What a list, a timeline or a search shows when it has nothing to show. */
-export function EmptyState({ heading, headingLevel = 2, description, illustration, action, className, ...props }: EmptyStateProps) {
+export function EmptyState({
+  heading,
+  headingLevel = 2,
+  description,
+  illustration,
+  action,
+  className,
+  ...props
+}: EmptyStateProps) {
   const slots = emptyState();
   const Heading = `h${String(headingLevel)}` as `h${HeadingLevel}`;
   return (

@@ -45,7 +45,19 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function Row({ isUnread, name = "Alice", text = "favourited your post", others = 0, quote }: { isUnread: boolean; name?: string; text?: string; others?: number; quote?: React.ReactNode }) {
+function Row({
+  isUnread,
+  name = "Alice",
+  text = "favourited your post",
+  others = 0,
+  quote,
+}: {
+  isUnread: boolean;
+  name?: string;
+  text?: string;
+  others?: number;
+  quote?: React.ReactNode;
+}) {
   return (
     <PostCard
       avatar={avatar}
@@ -74,7 +86,10 @@ function Row({ isUnread, name = "Alice", text = "favourited your post", others =
 
 const excerpt = (
   <PostExcerpt href="#post">
-    <PostExcerptText lang="en">Hello from the local timeline! A long line follows so that the excerpt reaches its third line and is cut there, as a quote of a post is.</PostExcerptText>
+    <PostExcerptText lang="en">
+      Hello from the local timeline! A long line follows so that the excerpt reaches its third line and is cut there, as
+      a quote of a post is.
+    </PostExcerptText>
   </PostExcerpt>
 );
 
@@ -99,11 +114,30 @@ export const Group: Story = {
 };
 
 export const LongName: Story = {
-  render: () => <Row isUnread={false} name="Alexandria Montgomery-Featherstonehaugh-Wolfeschlegelsteinhausenbergerdorff" quote={excerpt} />,
+  render: () => (
+    <Row
+      isUnread={false}
+      name="Alexandria Montgomery-Featherstonehaugh-Wolfeschlegelsteinhausenbergerdorff"
+      quote={excerpt}
+    />
+  ),
 };
 
 export const Rtl: Story = {
-  render: () => <Row isUnread name="مريم" text="أعجبها منشورك" quote={<PostExcerpt href="#post"><PostExcerptText lang="ar">مرحبا بكم في الخط الزمني المحلي، هذا نص طويل يمتد على عدة أسطر ليظهر القطع بعد السطر الثالث من الاقتباس.</PostExcerptText></PostExcerpt>} />,
+  render: () => (
+    <Row
+      isUnread
+      name="مريم"
+      text="أعجبها منشورك"
+      quote={
+        <PostExcerpt href="#post">
+          <PostExcerptText lang="ar">
+            مرحبا بكم في الخط الزمني المحلي، هذا نص طويل يمتد على عدة أسطر ليظهر القطع بعد السطر الثالث من الاقتباس.
+          </PostExcerptText>
+        </PostExcerpt>
+      }
+    />
+  ),
 };
 
 /** A post behind a content warning quotes the warning only. */

@@ -11,7 +11,8 @@ export function useReaderInFeed(feedRef: RefObject<HTMLElement | null>): boolean
   const [focused, setFocused] = useState(false);
   const [selecting, setSelecting] = useState(false);
   useEffect(() => {
-    const inFeed = (node: EventTarget | Node | null) => node instanceof Node && feedRef.current?.contains(node) === true;
+    const inFeed = (node: EventTarget | Node | null) =>
+      node instanceof Node && feedRef.current?.contains(node) === true;
     const onFocusIn = (event: FocusEvent) => {
       setFocused(inFeed(event.target));
     };
@@ -21,7 +22,9 @@ export function useReaderInFeed(feedRef: RefObject<HTMLElement | null>): boolean
     };
     const onSelectionChange = () => {
       const selection = document.getSelection();
-      setSelecting(selection !== null && !selection.isCollapsed && inFeed(selection.anchorNode) && inFeed(selection.focusNode));
+      setSelecting(
+        selection !== null && !selection.isCollapsed && inFeed(selection.anchorNode) && inFeed(selection.focusNode),
+      );
     };
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);

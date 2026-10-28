@@ -10,7 +10,6 @@ import { apiBase, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 
-
 const termsUrl = "http://localhost:3000/about/terms";
 const privacyUrl = "http://localhost:3000/about/privacy";
 const documentHtml = "<h2>Accounts</h2><p>Be kind.</p><h2>Content</h2><p>Be honest.</p>";
@@ -25,7 +24,11 @@ describe("the links to the server's documents", () => {
     await renderApp({ path: "/login" });
 
     const links = await screen.findByRole("navigation", { name: "Terms and policies" });
-    expect(within(links).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    expect(
+      within(links)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
       ["Terms of service", "/about/terms"],
       ["Privacy policy", "/about/privacy"],
     ]);
@@ -36,7 +39,11 @@ describe("the links to the server's documents", () => {
     publish({ privacy_policy_url: privacyUrl });
     const view = await renderApp({ path: "/login" });
     const links = await screen.findByRole("navigation", { name: "Terms and policies" });
-    expect(within(links).getAllByRole("link").map((link) => link.textContent)).toEqual(["Privacy policy"]);
+    expect(
+      within(links)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Privacy policy"]);
     view.unmount();
 
     publish({});
@@ -67,7 +74,11 @@ describe("the links to the server's documents", () => {
     await user.click(within(screen.getByRole("navigation", { name: "Main" })).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
     const links = within(sheet).getByRole("navigation", { name: "Terms and policies" });
-    expect(within(links).getAllByRole("link").map((link) => link.textContent)).toEqual(["Terms of service", "Privacy policy"]);
+    expect(
+      within(links)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Terms of service", "Privacy policy"]);
   });
 });
 
@@ -77,7 +88,11 @@ describe("the pages of the documents", () => {
     ["privacy_policy", "/about/privacy", "Privacy policy"],
     ["commerce_disclosure", "/about/commerce", "Commerce disclosures"],
   ])("show the %s with a table of contents, without signing in", async (kind, path, name) => {
-    server.use(http.get(`${apiBase}/instance/documents/${kind}`, () => HttpResponse.json({ kind, html: documentHtml, revised_at: "2026-10-12T08:00:00Z" })));
+    server.use(
+      http.get(`${apiBase}/instance/documents/${kind}`, () =>
+        HttpResponse.json({ kind, html: documentHtml, revised_at: "2026-10-12T08:00:00Z" }),
+      ),
+    );
     await renderApp({ path });
 
     expect(await screen.findByRole("heading", { level: 1, name })).toBeInTheDocument();
@@ -88,13 +103,20 @@ describe("the pages of the documents", () => {
     expect(body).toHaveAttribute("dir", "auto");
     expect(screen.getByText(/Last revised October 12, 2026/u)).toBeInTheDocument();
     const contents = screen.getAllByRole("navigation", { name: "On this page" })[0] as HTMLElement;
-    expect(within(contents).getAllByRole("link").map((link) => link.textContent)).toEqual(["Accounts", "Content"]);
+    expect(
+      within(contents)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Accounts", "Content"]);
   });
 
   test("show the not-found page for a document the server has not published", async () => {
     server.use(
       http.get(`${apiBase}/instance/documents/terms`, () =>
-        HttpResponse.json({ type: "about:blank", title: "Not found", status: 404 }, { status: 404, headers: { "Content-Type": "application/problem+json" } }),
+        HttpResponse.json(
+          { type: "about:blank", title: "Not found", status: 404 },
+          { status: 404, headers: { "Content-Type": "application/problem+json" } },
+        ),
       ),
     );
     await renderApp({ path: "/about/terms" });

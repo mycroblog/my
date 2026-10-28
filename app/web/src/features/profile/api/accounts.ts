@@ -29,7 +29,8 @@ export function accountQueryOptions(api: Api, acct: string) {
 export function relationshipQueryOptions(api: Api, id: string) {
   return {
     ...api.query.queryOptions("get", "/accounts/relationships", { params: { query: { id: [id] } } }),
-    select: (relationships: Relationship[]): Relationship | null => relationships.find((relationship) => relationship.id === id) ?? null,
+    select: (relationships: Relationship[]): Relationship | null =>
+      relationships.find((relationship) => relationship.id === id) ?? null,
   };
 }
 
@@ -110,7 +111,12 @@ function changesFollows(change: RelationshipChange): boolean {
  * or a mute changes every list of posts, which leave out the accounts the viewer blocks or mutes. The lists of
  * the blocked and muted accounts in the settings are left to the caller (storeRelationship).
  */
-export function refreshRelationship(queryClient: QueryClient, change: RelationshipChange, accountId: string, viewerId: string): Promise<void> {
+export function refreshRelationship(
+  queryClient: QueryClient,
+  change: RelationshipChange,
+  accountId: string,
+  viewerId: string,
+): Promise<void> {
   const follows = changesFollows(change);
   const posts = change !== "accept";
   return queryClient.invalidateQueries({
@@ -120,7 +126,12 @@ export function refreshRelationship(queryClient: QueryClient, change: Relationsh
         const id = (query.state.data as Account | undefined)?.id;
         return follows && (id === accountId || id === viewerId);
       }
-      if (path === "/accounts/verify_credentials" || path === "/accounts/{id}/followers" || path === "/accounts/{id}/following") return follows;
+      if (
+        path === "/accounts/verify_credentials" ||
+        path === "/accounts/{id}/followers" ||
+        path === "/accounts/{id}/following"
+      )
+        return follows;
       if (change === "follow" || change === "unfollow") return path === "/timelines/home";
       return posts && isPostListQuery(query.queryKey);
     },
@@ -131,7 +142,13 @@ export function refreshRelationship(queryClient: QueryClient, change: Relationsh
  * Puts a changed relationship into the cache and marks stale what it changes (refreshRelationship), and the
  * settings' lists of the accounts that the viewer blocks and mutes; resolves once those on screen are fetched again.
  */
-export async function storeRelationship(queryClient: QueryClient, api: Api, relationship: Relationship, action: RelationshipAction, viewerId: string): Promise<void> {
+export async function storeRelationship(
+  queryClient: QueryClient,
+  api: Api,
+  relationship: Relationship,
+  action: RelationshipAction,
+  viewerId: string,
+): Promise<void> {
   queryClient.setQueryData(relationshipQueryOptions(api, relationship.id).queryKey, [relationship]);
   await Promise.all([
     refreshRelationship(queryClient, action, relationship.id, viewerId),

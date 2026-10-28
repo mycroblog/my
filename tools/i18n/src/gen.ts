@@ -8,7 +8,16 @@
 // The files Go reads are committed, so building the Go server never needs Bun; the TS-only files are
 // not (ADR-0081). A file is written only when its content changes, through a rename, so the checks and
 // builds that read these files while a generator runs beside them never see a partial file.
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { isPseudo, loadCatalog, loadCatalogFiles, localesDir, rel } from "./catalog";
 import { generate, type Part, pseudoPart } from "./generate";
@@ -21,7 +30,11 @@ const files = await generate(loadCatalog(catalogFiles), parts);
 for (const { path, locale, ns } of catalogFiles) {
   if (isPseudo(locale) && parts.includes(pseudoPart(ns || basename(path, ".json"))) && !files.has(path)) {
     rmSync(path);
-    for (let dir = dirname(path); dir !== join(localesDir, locale) && readdirSync(dir).length === 0; dir = dirname(dir)) {
+    for (
+      let dir = dirname(path);
+      dir !== join(localesDir, locale) && readdirSync(dir).length === 0;
+      dir = dirname(dir)
+    ) {
       rmdirSync(dir);
     }
   }

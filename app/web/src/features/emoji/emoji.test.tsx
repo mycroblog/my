@@ -65,7 +65,12 @@ describe("the emoji used often", () => {
 });
 
 /** Opens the post form and returns it with its text. */
-async function openForm(user: Awaited<ReturnType<typeof renderApp>>["user"], open = "Write a post", title = "New post", label = "Your post") {
+async function openForm(
+  user: Awaited<ReturnType<typeof renderApp>>["user"],
+  open = "Write a post",
+  title = "New post",
+  label = "Your post",
+) {
   await user.click((await screen.findAllByRole("button", { name: open }))[0] as HTMLElement);
   const sheet = await screen.findByRole("dialog", { name: title });
   return { sheet, text: await within(sheet).findByRole("textbox", { name: label }) };
@@ -73,7 +78,10 @@ async function openForm(user: Awaited<ReturnType<typeof renderApp>>["user"], ope
 
 describe("the picker of the post form", () => {
   test("offers the Unicode emoji on a server without custom emoji, found by a Japanese keyword", async () => {
-    server.use(signedInHandler, http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })));
+    server.use(
+      signedInHandler,
+      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })),
+    );
     const { user } = await renderApp({ locale: "ja" });
     const { sheet, text } = await openForm(user, "投稿を書く", "新しい投稿", "投稿の本文");
     await user.type(text, "やあ");
@@ -89,7 +97,11 @@ describe("the picker of the post form", () => {
     });
     // No custom emoji: the frequent ones (the default reactions), then the nine groups, without a custom section.
     const toolbar = within(picker).getByRole("toolbar", { name: "絵文字の分類" });
-    expect(within(toolbar).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+    expect(
+      within(toolbar)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label")),
+    ).toEqual([
       "よく使う絵文字",
       "顔と感情",
       "人と体",
@@ -174,7 +186,10 @@ describe("the picker of the post form", () => {
   test("puts a picked custom emoji into the text at the caret, and offers it first next time", async () => {
     server.use(
       signedInHandler,
-      customEmojisHandler([pickerEmojiFixture("wave", { aliases: ["hello"] }), pickerEmojiFixture("blobcat", { category: "Blobs" })]),
+      customEmojisHandler([
+        pickerEmojiFixture("wave", { aliases: ["hello"] }),
+        pickerEmojiFixture("blobcat", { category: "Blobs" }),
+      ]),
     );
     const { user } = await renderApp();
     const { sheet, text } = await openForm(user);

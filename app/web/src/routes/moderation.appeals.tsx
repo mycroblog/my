@@ -19,7 +19,9 @@ export const Route = createFileRoute("/moderation/appeals")({
   loaderDeps: ({ search: { state } }): { filter: AppealFilter } => ({ filter: state ?? "pending" }),
   beforeLoad: requireSignIn,
   loader: ({ context, deps: { filter } }) =>
-    loadWithPermission(context, "manage_accounts", () => context.queryClient.infiniteQuery({ ...appealsQueryOptions(context.api, filter), staleTime: Infinity })),
+    loadWithPermission(context, "manage_accounts", () =>
+      context.queryClient.infiniteQuery({ ...appealsQueryOptions(context.api, filter), staleTime: Infinity }),
+    ),
   component: AppealsPage,
   errorComponent: AppealsError,
 });

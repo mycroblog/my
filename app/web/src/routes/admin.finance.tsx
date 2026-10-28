@@ -62,11 +62,20 @@ export const Route = createFileRoute("/admin/finance")({
   loader: ({ context, deps: { granularity, basis, today, movements } }) =>
     loadWithPermission(context, "manage_finance", () =>
       Promise.all([
-        context.queryClient.query({ ...costTotalsQueryOptions(context.api, granularity, basis, today), staleTime: Infinity }),
+        context.queryClient.query({
+          ...costTotalsQueryOptions(context.api, granularity, basis, today),
+          staleTime: Infinity,
+        }),
         context.queryClient.infiniteQuery({ ...costItemsQueryOptions(context.api), staleTime: Infinity }),
         context.queryClient.query({ ...billingImportsQueryOptions(context.api), staleTime: Infinity }),
-        context.queryClient.query({ ...adminIncomeTotalsQueryOptions(context.api, granularity, basis, today), staleTime: Infinity }),
-        context.queryClient.infiniteQuery({ ...incomeMovementsQueryOptions(context.api, movements), staleTime: Infinity }),
+        context.queryClient.query({
+          ...adminIncomeTotalsQueryOptions(context.api, granularity, basis, today),
+          staleTime: Infinity,
+        }),
+        context.queryClient.infiniteQuery({
+          ...incomeMovementsQueryOptions(context.api, movements),
+          staleTime: Infinity,
+        }),
       ]),
     ),
   component: FinancePage,

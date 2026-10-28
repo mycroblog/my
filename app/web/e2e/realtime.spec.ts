@@ -52,8 +52,16 @@ function status(n: number, text: string): Status {
 }
 
 const loaded = [status(2, "The newest post when the page opened."), status(1, "An older post.")];
-const arriving = status(3, "A post that arrived through the stream, with a long unbroken address https://example.com/a/very/long/path/that/must/wrap/before/it/scrolls/the/page");
-const notification: Notification = { id: "0192f0c4-7a8e-7000-8000-0000000000c1", type: "follow", created_at: "2026-10-16T10:00:00Z", account: bob };
+const arriving = status(
+  3,
+  "A post that arrived through the stream, with a long unbroken address https://example.com/a/very/long/path/that/must/wrap/before/it/scrolls/the/page",
+);
+const notification: Notification = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000c1",
+  type: "follow",
+  created_at: "2026-10-16T10:00:00Z",
+  account: bob,
+};
 
 /** One SSE event as the server writes it. */
 const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -65,16 +73,27 @@ const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.str
 async function signedInServer(page: Page, events: string, unreadFromStream = 0) {
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   let connections = 0;
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/timelines/home*", (route) => route.fulfill(json({ items: loaded })));
   // Once the first stream has sent its notification, the server counts it as unread too: the client reads the
   // marker again after every reconnect.
   await page.route("**/api/v1/notifications/marker", (route) =>
-    route.fulfill(json({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 1 + (connections > 0 ? unreadFromStream : 0) })),
+    route.fulfill(
+      json({
+        last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+        unread_count: 1 + (connections > 0 ? unreadFromStream : 0),
+      }),
+    ),
   );
   await page.route("**/api/v1/streaming", async (route) => {
     connections += 1;
-    await route.fulfill({ status: 200, contentType: "text/event-stream", body: `: connected\n\n${connections === 1 ? events : ""}` });
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: `: connected\n\n${connections === 1 ? events : ""}`,
+    });
   });
 }
 
@@ -159,9 +178,13 @@ async function autoInsertServer(page: Page, many: Status[]) {
     release = resolve;
   });
   let sent = false;
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/timelines/home*", (route) => route.fulfill(json({ items: many })));
-  await page.route("**/api/v1/notifications/marker", (route) => route.fulfill(json({ last_read_id: "0", unread_count: 0 })));
+  await page.route("**/api/v1/notifications/marker", (route) =>
+    route.fulfill(json({ last_read_id: "0", unread_count: 0 })),
+  );
   await page.route("**/api/v1/preferences", (route) =>
     route.fulfill(
       json({
@@ -183,7 +206,13 @@ async function autoInsertServer(page: Page, many: Status[]) {
     await gate;
     const first = !sent;
     sent = true;
-    await route.fulfill({ status: 200, contentType: "text/event-stream", body: `: connected\n\n${first ? sse("update", status(11, "A post that arrived through the stream.")) : ""}` }).catch(() => undefined);
+    await route
+      .fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: `: connected\n\n${first ? sse("update", status(11, "A post that arrived through the stream.")) : ""}`,
+      })
+      .catch(() => undefined);
   });
   return release;
 }

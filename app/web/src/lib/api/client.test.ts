@@ -33,14 +33,21 @@ async function setUp(locale = "en") {
   const session = new Session({ apiOrigin, maintenance });
   sessions.push(session);
   const i18n = await loadI18n(locale);
-  return { session, maintenance, reloads, api: createApi({ apiOrigin, session, locale: new AppLocale(i18n), maintenance }) };
+  return {
+    session,
+    maintenance,
+    reloads,
+    api: createApi({ apiOrigin, session, locale: new AppLocale(i18n), maintenance }),
+  };
 }
 
 test("resumes the session before the first request and sends its token as a Bearer token", async () => {
   server.use(
     http.post(oauthPaths.refresh, () => tokenResponse("access-1")),
     http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) =>
-      request.headers.get("Authorization") === "Bearer access-1" ? HttpResponse.json(viewerFixture) : problem(401, "/api/v1/problems/invalid-token", "Invalid token"),
+      request.headers.get("Authorization") === "Bearer access-1"
+        ? HttpResponse.json(viewerFixture)
+        : problem(401, "/api/v1/problems/invalid-token", "Invalid token"),
     ),
   );
   const { api, session } = await setUp();
@@ -61,7 +68,9 @@ test("after a 401 refreshes the token once and sends the request again with the 
     }),
     http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => {
       authorizations.push(request.headers.get("Authorization"));
-      return request.headers.get("Authorization") === "Bearer access-2" ? HttpResponse.json(viewerFixture) : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+      return request.headers.get("Authorization") === "Bearer access-2"
+        ? HttpResponse.json(viewerFixture)
+        : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
     }),
   );
   const { api } = await setUp();
@@ -80,14 +89,20 @@ test("a second 401 stands as an ApiError, and a refused refresh signs out", asyn
       refreshes++;
       return refreshes === 1 ? tokenResponse("access-1") : oauthError("invalid_grant");
     }),
-    http.get(`${apiBase}/accounts/verify_credentials`, () => problem(401, "/api/v1/problems/invalid-token", "The access token is invalid.")),
+    http.get(`${apiBase}/accounts/verify_credentials`, () =>
+      problem(401, "/api/v1/problems/invalid-token", "The access token is invalid."),
+    ),
   );
   const { api, session } = await setUp();
 
   const failure = api.fetch.GET("/accounts/verify_credentials");
 
   await expect(failure).rejects.toBeInstanceOf(ApiError);
-  await expect(failure).rejects.toMatchObject({ status: 401, type: "/api/v1/problems/invalid-token", message: "The access token is invalid." });
+  await expect(failure).rejects.toMatchObject({
+    status: 401,
+    type: "/api/v1/problems/invalid-token",
+    message: "The access token is invalid.",
+  });
   expect(session.status).toBe("signed-out");
   expect(refreshes).toBe(2);
 });
@@ -96,18 +111,33 @@ test("sends the page's locale and keeps the server's localized problem as the me
   server.use(
     http.get(`${apiBase}/instance`, ({ request }) =>
       HttpResponse.json(
-        { type: "about:blank", title: "サービスを利用できません", detail: `${request.headers.get("Accept-Language") ?? ""} で説明しています`, status: 503 },
+        {
+          type: "about:blank",
+          title: "サービスを利用できません",
+          detail: `${request.headers.get("Accept-Language") ?? ""} で説明しています`,
+          status: 503,
+        },
         { status: 503, headers: { "Content-Type": "application/problem+json" } },
       ),
     ),
   );
   const { api } = await setUp("ja");
 
-  await expect(api.fetch.GET("/instance")).rejects.toMatchObject({ name: "ApiError", status: 503, title: "サービスを利用できません", message: "ja で説明しています" });
+  await expect(api.fetch.GET("/instance")).rejects.toMatchObject({
+    name: "ApiError",
+    status: 503,
+    title: "サービスを利用できません",
+    message: "ja で説明しています",
+  });
 });
 
 test("describes an error without a problem document from the client's catalog", async () => {
-  server.use(http.get(`${apiBase}/instance`, () => new HttpResponse("<h1>Bad Gateway</h1>", { status: 502, headers: { "Content-Type": "text/html" } })));
+  server.use(
+    http.get(
+      `${apiBase}/instance`,
+      () => new HttpResponse("<h1>Bad Gateway</h1>", { status: 502, headers: { "Content-Type": "text/html" } }),
+    ),
+  );
   const { api } = await setUp();
 
   await expect(api.fetch.GET("/instance")).rejects.toMatchObject({
@@ -120,7 +150,11 @@ test("describes an error without a problem document from the client's catalog", 
 test("keeps when a rate-limited request may be sent again, from Retry-After in seconds or as a date", async () => {
   const { api } = await setUp();
   const before = Date.now();
-  server.use(http.get(`${apiBase}/instance`, () => problem(429, "about:blank", "Too many requests.", { headers: { "Retry-After": "30" } })));
+  server.use(
+    http.get(`${apiBase}/instance`, () =>
+      problem(429, "about:blank", "Too many requests.", { headers: { "Retry-After": "30" } }),
+    ),
+  );
 
   const inSeconds: unknown = await api.fetch.GET("/instance").catch((error: unknown) => error);
 
@@ -128,14 +162,24 @@ test("keeps when a rate-limited request may be sent again, from Retry-After in s
   expect(rateLimitedUntil(inSeconds)).toBeGreaterThanOrEqual(before + 30_000);
   expect(rateLimitedUntil(inSeconds)).toBeLessThanOrEqual(Date.now() + 30_000);
 
-  server.use(http.get(`${apiBase}/instance`, () => problem(429, "about:blank", "Too many requests.", { headers: { "Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT" } })));
+  server.use(
+    http.get(`${apiBase}/instance`, () =>
+      problem(429, "about:blank", "Too many requests.", {
+        headers: { "Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT" },
+      }),
+    ),
+  );
   const atDate = await api.fetch.GET("/instance").catch((error: unknown) => error);
   expect(rateLimitedUntil(atDate)).toBe(Date.UTC(2026, 9, 21, 7, 28));
 
   // Without Retry-After, or for another status, nothing says when to try again.
   server.use(http.get(`${apiBase}/instance`, () => problem(429, "about:blank", "Too many requests.")));
   expect(rateLimitedUntil(await api.fetch.GET("/instance").catch((error: unknown) => error))).toBeUndefined();
-  server.use(http.get(`${apiBase}/instance`, () => problem(503, "about:blank", "Unavailable", { headers: { "Retry-After": "30" } })));
+  server.use(
+    http.get(`${apiBase}/instance`, () =>
+      problem(503, "about:blank", "Unavailable", { headers: { "Retry-After": "30" } }),
+    ),
+  );
   expect(rateLimitedUntil(await api.fetch.GET("/instance").catch((error: unknown) => error))).toBeUndefined();
 });
 
@@ -170,7 +214,10 @@ test("answers without a token when signed out", async () => {
 function maintenanceResponse(members: Record<string, string> = {}, retryAfter = "600") {
   return HttpResponse.json(
     { type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503, ...members },
-    { status: 503, headers: { "Content-Type": "application/problem+json", "Retry-After": retryAfter, "Cache-Control": "no-store" } },
+    {
+      status: 503,
+      headers: { "Content-Type": "application/problem+json", "Retry-After": retryAfter, "Cache-Control": "no-store" },
+    },
   );
 }
 
@@ -184,8 +231,18 @@ describe("the server's maintenance", () => {
         return underMaintenance ? maintenanceResponse() : tokenResponse("access-1");
       }),
       http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => {
-        if (underMaintenance) return maintenanceResponse({ message: "Upgrading the database.", until: "2026-10-25T12:00:00Z", status_page_url: "https://status.my.example/" }, "30");
-        return request.headers.get("Authorization") === "Bearer access-1" ? HttpResponse.json(viewerFixture) : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+        if (underMaintenance)
+          return maintenanceResponse(
+            {
+              message: "Upgrading the database.",
+              until: "2026-10-25T12:00:00Z",
+              status_page_url: "https://status.my.example/",
+            },
+            "30",
+          );
+        return request.headers.get("Authorization") === "Bearer access-1"
+          ? HttpResponse.json(viewerFixture)
+          : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
       }),
     );
     const { api, session, maintenance, reloads } = await setUp();
@@ -226,7 +283,9 @@ describe("the server's maintenance", () => {
     let underMaintenance = false;
     server.use(
       http.post(oauthPaths.refresh, () => (underMaintenance ? maintenanceResponse() : tokenResponse("access-1"))),
-      http.get(`${apiBase}/accounts/verify_credentials`, () => problem(401, "/api/v1/problems/invalid-token", "Invalid token")),
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        problem(401, "/api/v1/problems/invalid-token", "Invalid token"),
+      ),
     );
     const { api, session, maintenance } = await setUp();
     await session.restore();
@@ -269,7 +328,11 @@ describe("the server's maintenance", () => {
   });
 
   test("keeps only the well-formed members it shows", async () => {
-    server.use(http.get(`${apiBase}/instance`, () => maintenanceResponse({ message: "  ", until: "soon", status_page_url: "http://status.my.example/" })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        maintenanceResponse({ message: "  ", until: "soon", status_page_url: "http://status.my.example/" }),
+      ),
+    );
     const { api } = await setUp();
 
     const failure: unknown = await api.fetch.GET("/instance").catch((error: unknown) => error);
@@ -279,7 +342,11 @@ describe("the server's maintenance", () => {
   });
 
   test("another 503 is no maintenance", async () => {
-    server.use(http.get(`${apiBase}/instance`, () => problem(503, "about:blank", "Unavailable", { headers: { "Retry-After": "30" } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        problem(503, "about:blank", "Unavailable", { headers: { "Retry-After": "30" } }),
+      ),
+    );
     const { api, maintenance } = await setUp();
 
     const failure: unknown = await api.fetch.GET("/instance").catch((error: unknown) => error);
@@ -315,7 +382,10 @@ test("keeps the caller's Idempotency-Key", async () => {
   );
   const { api } = await setUp();
 
-  await api.fetch.POST("/statuses", { params: { header: { "Idempotency-Key": "draft-1" } }, body: { text: "Hello", visibility: "public" } });
+  await api.fetch.POST("/statuses", {
+    params: { header: { "Idempotency-Key": "draft-1" } },
+    body: { text: "Hello", visibility: "public" },
+  });
 
   expect(key).toBe("draft-1");
 });
@@ -366,7 +436,8 @@ describe("the event stream", () => {
       }),
       http.get(`${apiBase}/streaming`, ({ request }) => {
         authorizations.push(request.headers.get("Authorization"));
-        if (request.headers.get("Authorization") !== "Bearer access-2") return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+        if (request.headers.get("Authorization") !== "Bearer access-2")
+          return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
         const { response, stream } = eventStreamResponse();
         stream.send("something_new", { id: "x" });
         stream.send("update", timelineStatusFixture);

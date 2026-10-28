@@ -50,12 +50,18 @@ function linkServer(initial: Schemas["LinkedIdentity"][], { last = false } = {})
       if (body.password !== undefined && body.password !== "correct horse") {
         return problem(422, "/api/v1/problems/wrong-password", "The password is wrong.");
       }
-      return HttpResponse.json({ start_url: `https://social.example/auth/external/${body.provider_id}/start?intent=x`, expires_at: "2026-10-20T00:10:00Z" });
+      return HttpResponse.json({
+        start_url: `https://social.example/auth/external/${body.provider_id}/start?intent=x`,
+        expires_at: "2026-10-20T00:10:00Z",
+      });
     }),
     http.post(`${apiBase}/linked_identities/confirmation`, async ({ request }) => {
       const body = (await request.json()) as Schemas["ExternalConfirmationRequest"];
       confirmations.push(body);
-      return HttpResponse.json({ start_url: `https://social.example/auth/external/${body.provider_id}/start?intent=y`, expires_at: "2026-10-20T00:10:00Z" });
+      return HttpResponse.json({
+        start_url: `https://social.example/auth/external/${body.provider_id}/start?intent=y`,
+        expires_at: "2026-10-20T00:10:00Z",
+      });
     }),
   );
   return { links, confirmations };
@@ -91,7 +97,11 @@ describe("linked accounts", () => {
     await waitFor(() => {
       expect(leftTo.map(String)).toEqual([`https://social.example/auth/external/${lab}/start?intent=x`]);
     });
-    expect(api.links.at(-1)).toEqual({ provider_id: lab, password: "correct horse", return_to: "/settings/linked-accounts" });
+    expect(api.links.at(-1)).toEqual({
+      provider_id: lab,
+      password: "correct horse",
+      return_to: "/settings/linked-accounts",
+    });
   });
 
   test("says what the provider's round trip did, and takes the outcome out of the address", async () => {
@@ -106,7 +116,10 @@ describe("linked accounts", () => {
   test("says why a link failed", async () => {
     linkServer([]);
     await renderApp({ path: `/settings/linked-accounts#external_error=linked_elsewhere&provider=${lab}` });
-    expect(await screen.findByText("That account is linked to another user of this server.")).toHaveAttribute("role", "alert");
+    expect(await screen.findByText("That account is linked to another user of this server.")).toHaveAttribute(
+      "role",
+      "alert",
+    );
   });
 
   test("unlinks an account after a dialog, and says when it is the last way to sign in", async () => {
@@ -152,11 +165,15 @@ describe("a user who signs in only with a linked account", () => {
     await waitFor(() => {
       expect(view.leftTo.map(String)).toEqual([`https://social.example/auth/external/${corp}/start?intent=y`]);
     });
-    expect(api.confirmations).toEqual([{ provider_id: corp, operation: "account_deletion", return_to: "/settings/account" }]);
+    expect(api.confirmations).toEqual([
+      { provider_id: corp, operation: "account_deletion", return_to: "/settings/account" },
+    ]);
     view.unmount();
 
     // The provider sends the browser back with the confirmation.
-    const { user } = await renderApp({ path: `/settings/account#external_confirmation=tok-1&operation=account_deletion&provider=${corp}` });
+    const { user } = await renderApp({
+      path: `/settings/account#external_confirmation=tok-1&operation=account_deletion&provider=${corp}`,
+    });
     const back = await screen.findByRole("region", { name: "Delete your account" });
     expect(within(back).getByText("You signed in again with Corp SSO. Finish within 10 minutes.")).toBeInTheDocument();
     await user.click(within(back).getByRole("button", { name: "Delete account…" }));

@@ -15,7 +15,15 @@
 import { randomBytes } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
 import type { Page } from "@playwright/test";
-import { axeBuilder, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, openFromNavigation, test as base } from "./fixtures";
+import {
+  axeBuilder,
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  localeDir,
+  openFromNavigation,
+  test as base,
+} from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
@@ -78,7 +86,10 @@ function png(width: number, height: number): Buffer {
   header.writeUInt32BE(height, 4);
   header.writeUInt8(8, 8); // bit depth
   header.writeUInt8(2, 9); // truecolor
-  const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: width }, () => [0x2a, 0x7a, 0xb0]).flat())]);
+  const row = Buffer.concat([
+    Buffer.from([0]),
+    Buffer.from(Array.from({ length: width }, () => [0x2a, 0x7a, 0xb0]).flat()),
+  ]);
   const pixels = Buffer.concat(Array.from({ length: height }, () => row));
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -109,7 +120,8 @@ async function signInToApp(page: Page, user: User, { hasSession = false } = {}):
   await expect(pageHeading(page)).toBeVisible();
   const authorized = page.waitForRequest(
     (request) =>
-      new URL(request.url()).pathname.startsWith("/api/") && request.headers()["authorization"]?.startsWith("Bearer ") === true,
+      new URL(request.url()).pathname.startsWith("/api/") &&
+      request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
   await page.getByRole("main").getByRole("button").click();
   if (!hasSession) {
@@ -151,7 +163,12 @@ async function openComposer(page: Page) {
 
 /** Asserts that a toast says `text`; an earlier toast may still say it too. */
 async function expectToast(page: Page, text: string): Promise<void> {
-  await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(text).last()).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: message("shell.toast.region") })
+      .getByText(text)
+      .last(),
+  ).toBeVisible();
 }
 
 /** The article of the feed whose text contains `text`. */
@@ -178,9 +195,16 @@ async function findInFeed(page: Page, text: string) {
 }
 
 test.describe("the main flow", () => {
-  test.skip(!ownsServer, "the flow creates users with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the flow creates users with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
 
-  test("sign up, sign in, post, read the timelines, follow, and get notified", async ({ page, secondPage: bobPage }, testInfo) => {    test.setTimeout(180_000);
+  test("sign up, sign in, post, read the timelines, follow, and get notified", async ({
+    page,
+    secondPage: bobPage,
+  }, testInfo) => {
+    test.setTimeout(180_000);
     const run = randomBytes(3).toString("hex");
     const alice = newUser("a");
     const bob = newUser("b");
@@ -213,7 +237,11 @@ test.describe("the main flow", () => {
     await test.step("the second user signs in and asks to approve followers", async () => {
       await signInToApp(bobPage, bob);
       await navigate(bobPage, "settings");
-      await bobPage.getByRole("main").getByRole("link", { name: literal(message("settings.profile.title")) }).first().click();
+      await bobPage
+        .getByRole("main")
+        .getByRole("link", { name: literal(message("settings.profile.title")) })
+        .first()
+        .click();
       await expect(pageHeading(bobPage)).toHaveText(message("settings.profile.title"));
       await bobPage.getByText(message("settings.profile.locked"), { exact: true }).click();
       await bobPage.getByRole("button", { name: message("settings.profile.save") }).click();
@@ -233,7 +261,9 @@ test.describe("the main flow", () => {
       const chooser = page.waitForEvent("filechooser");
       await form.getByRole("button", { name: message("compose.media.add") }).click();
       await (await chooser).setFiles({ name: "e2e.png", mimeType: "image/png", buffer: png(64, 48) });
-      await form.getByRole("textbox", { name: message("compose.media.description.label", { position: "1" }) }).fill(description);
+      await form
+        .getByRole("textbox", { name: message("compose.media.description.label", { position: "1" }) })
+        .fill(description);
       await expectQuality(page);
       await form.getByRole("button", { name: message("compose.submit") }).click();
       await expectToast(page, message("compose.posted"));
@@ -271,7 +301,10 @@ test.describe("the main flow", () => {
     await test.step("the second user reads the post on the local timeline and follows its author", async () => {
       await navigate(bobPage, "local");
       const article = await findInFeed(bobPage, warning);
-      await article.getByRole("link", { name: literal(alice.username) }).first().click();
+      await article
+        .getByRole("link", { name: literal(alice.username) })
+        .first()
+        .click();
       await expect(pageHeading(bobPage)).toHaveText(alice.username);
       await bobPage.getByRole("button", { name: message("profile.follow") }).click();
       await expect(bobPage.getByRole("button", { name: message("profile.follow.following") })).toBeVisible();
@@ -305,7 +338,11 @@ test.describe("the main flow", () => {
     await test.step("a followers-only post reaches the follower's home timeline but not the local one", async () => {
       const form = await openComposer(page);
       await form.getByRole("textbox", { name: message("compose.text.label") }).fill(followersOnly);
-      await form.getByRole("button", { name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }) }).click();
+      await form
+        .getByRole("button", {
+          name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }),
+        })
+        .click();
       // React Aria hides the native radio under its drawing; the label is what the user presses.
       const choices = page.getByRole("radiogroup", { name: message("compose.visibility.title") });
       await choices.getByText(message("compose.visibility.private"), { exact: true }).click();
@@ -329,7 +366,10 @@ test.describe("the main flow", () => {
 
     await test.step("the first user is notified of the follower and asks to follow back", async () => {
       await navigate(page, "notifications");
-      const notification = page.getByRole("feed").getByRole("article").filter({ hasText: message("notifications.type.follow", { name: bob.username }) });
+      const notification = page
+        .getByRole("feed")
+        .getByRole("article")
+        .filter({ hasText: message("notifications.type.follow", { name: bob.username }) });
       await expect(notification).toBeVisible();
       await expect(page.getByRole("main")).toMatchAriaSnapshot(`
         - heading [level=1]
@@ -362,11 +402,18 @@ test.describe("the main flow", () => {
     await test.step("the second user is notified of the request and accepts it", async () => {
       await navigate(bobPage, "notifications");
       await expect(
-        bobPage.getByRole("feed").getByRole("article").filter({ hasText: message("notifications.type.follow_request", { name: alice.username }) }),
+        bobPage
+          .getByRole("feed")
+          .getByRole("article")
+          .filter({ hasText: message("notifications.type.follow_request", { name: alice.username }) }),
       ).toBeVisible();
       await expectQuality(bobPage);
       await navigate(bobPage, "settings");
-      await bobPage.getByRole("main").getByRole("link", { name: literal(message("settings.follow_requests.title")) }).first().click();
+      await bobPage
+        .getByRole("main")
+        .getByRole("link", { name: literal(message("settings.follow_requests.title")) })
+        .first()
+        .click();
       await expect(pageHeading(bobPage)).toHaveText(message("settings.follow_requests.title"));
       await expect(bobPage.getByRole("main")).toMatchAriaSnapshot(`
         - heading [level=1]
@@ -385,7 +432,10 @@ test.describe("the main flow", () => {
     await test.step("the first user is notified that the request was accepted", async () => {
       await navigate(page, "notifications");
       await expect(
-        page.getByRole("feed").getByRole("article").filter({ hasText: message("notifications.type.follow_accepted", { name: bob.username }) }),
+        page
+          .getByRole("feed")
+          .getByRole("article")
+          .filter({ hasText: message("notifications.type.follow_accepted", { name: bob.username }) }),
       ).toBeVisible();
       await expectQuality(page);
     });

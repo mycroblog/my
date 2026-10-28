@@ -25,7 +25,12 @@ export function StaffModeEntry() {
         {t("client:admin.mode.title")}
       </Heading>
       <Stack border="lg" paddingX="4" paddingY="3">
-        <Link href={moderation.available ? "/moderation" : "/admin"} variant="standalone" aria-describedby={descriptionId} gap={2}>
+        <Link
+          href={moderation.available ? "/moderation" : "/admin"}
+          variant="standalone"
+          aria-describedby={descriptionId}
+          gap={2}
+        >
           {t("client:admin.mode.title")}
           {pending > 0 && (
             <>

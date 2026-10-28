@@ -39,7 +39,13 @@ export { Segmented, SegmentedItem, type SegmentedItemProps, type SegmentedProps 
 
 // Overlays, tabs and announcements.
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
-export { AnnouncerProvider, useAnnouncer, type Announce, type AnnouncerProviderProps, type Politeness } from "./Announcer";
+export {
+  AnnouncerProvider,
+  useAnnouncer,
+  type Announce,
+  type AnnouncerProviderProps,
+  type Politeness,
+} from "./Announcer";
 export { Dialog, DialogTrigger, Sheet, type DialogProps, type DialogTriggerProps, type SheetProps } from "./Dialog";
 export {
   Menu,
@@ -54,8 +60,24 @@ export {
 } from "./Menu";
 export { Pagination, type PaginationProps, type PaginationTarget } from "./Pagination";
 export { Popover, PopoverTrigger, type PopoverProps } from "./Popover";
-export { Tab, TabList, TabPanel, Tabs, type TabListProps, type TabPanelProps, type TabProps, type TabsProps } from "./Tabs";
-export { ToastProvider, useToast, type ToastApi, type ToastOptions, type ToastProviderProps, type ToastTone } from "./Toast";
+export {
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  type TabListProps,
+  type TabPanelProps,
+  type TabProps,
+  type TabsProps,
+} from "./Tabs";
+export {
+  ToastProvider,
+  useToast,
+  type ToastApi,
+  type ToastOptions,
+  type ToastProviderProps,
+  type ToastTone,
+} from "./Toast";
 export { Tooltip, TooltipTrigger, type TooltipProps, type TooltipTriggerProps } from "./Tooltip";
 
 // Display.
@@ -63,7 +85,12 @@ export { Avatar, type AvatarProps } from "./Avatar";
 export { Badge, type BadgeProps } from "./Badge";
 export { RailItem, type RailItemBadge, type RailItemProps } from "./RailItem";
 export { RoleBadge, RoleBadgeList, type RoleBadgeListProps, type RoleBadgeProps } from "./RoleBadge";
-export { DescriptionItem, DescriptionList, type DescriptionItemProps, type DescriptionListProps } from "./DescriptionList";
+export {
+  DescriptionItem,
+  DescriptionList,
+  type DescriptionItemProps,
+  type DescriptionListProps,
+} from "./DescriptionList";
 export { EmptyState, type EmptyStateProps, type HeadingLevel } from "./EmptyState";
 export { NoticeBanner, type NoticeBannerProps } from "./NoticeBanner";
 export { OfflineBanner, type OfflineBannerProps } from "./OfflineBanner";
@@ -128,7 +155,13 @@ export {
 
 // Timeline.
 export { ContentWarning, type ContentWarningProps } from "./ContentWarning";
-export { CustomEmoji, EmojiText, type CustomEmojiImage, type CustomEmojiProps, type EmojiTextProps } from "./CustomEmoji";
+export {
+  CustomEmoji,
+  EmojiText,
+  type CustomEmojiImage,
+  type CustomEmojiProps,
+  type EmojiTextProps,
+} from "./CustomEmoji";
 export {
   EmojiPicker,
   emojiMatchRank,
@@ -154,7 +187,13 @@ export { MediaGrid, type MediaGridProps, type MediaItem, type MediaPlayback } fr
 export type { MediaViewerLabels } from "./MediaViewer";
 export { NewItemsButton, type NewItemsButtonProps } from "./NewItemsButton";
 export { PostCard, PostCardAuthor, type PostCardAuthorProps, type PostCardProps } from "./PostCard";
-export { PostContent, sanitizedHtmlText, serverSanitizedHtml, type PostContentProps, type SanitizedHtml } from "./PostContent";
+export {
+  PostContent,
+  sanitizedHtmlText,
+  serverSanitizedHtml,
+  type PostContentProps,
+  type SanitizedHtml,
+} from "./PostContent";
 export { QuoteCard, type QuoteCardProps } from "./QuoteCard";
 
 // The design tokens a server theme may override (ADR-0059), and the contrast of their colors under a theme.
@@ -169,7 +208,14 @@ export { Box, type BoxProps } from "./Box";
 export { Card, type CardElement, type CardProps } from "./Card";
 export { SettingsLayout, type SettingsLayoutProps } from "./SettingsLayout";
 // The frame of the admin and moderation mode and the parts its list screens share.
-export { AdminNavBack, AdminNavSection, AdminShell, type AdminNavBackProps, type AdminNavSectionProps, type AdminShellProps } from "./AdminShell";
+export {
+  AdminNavBack,
+  AdminNavSection,
+  AdminShell,
+  type AdminNavBackProps,
+  type AdminNavSectionProps,
+  type AdminShellProps,
+} from "./AdminShell";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 export { FeatureCard, type FeatureCardProps } from "./FeatureCard";
 // An open voice chat room in a list (ADR-0100 §8).
@@ -193,7 +239,15 @@ export type { LayoutElement, Space } from "./layout";
 export { Stack, type StackProps } from "./Stack";
 export { Heading, type HeadingProps } from "./Heading";
 export { SectionHeader, type SectionHeaderProps } from "./SectionHeader";
-export { Hint, InlineError, Text, type HintProps, type InlineErrorProps, type TextElement, type TextProps } from "./Text";
+export {
+  Hint,
+  InlineError,
+  Text,
+  type HintProps,
+  type InlineErrorProps,
+  type TextElement,
+  type TextProps,
+} from "./Text";
 export { DialogActions, type DialogActionsProps } from "./DialogActions";
 export { Tag, type TagProps } from "./Tag";
 export { Form, type FormProps } from "./Form";
@@ -237,11 +291,31 @@ export {
   type PostCardOriginProps,
   type PostCardTimeLinkProps,
 } from "./PostCardParts";
-export { NotificationLinks, NotificationOthers, NotificationSentence, type NotificationOthersProps, type NotificationSentenceProps } from "./NotificationRow";
-export { PostExcerpt, PostExcerptText, QuoteBlock, type PostExcerptProps, type PostExcerptTextProps, type QuoteBlockProps } from "./Quote";
+export {
+  NotificationLinks,
+  NotificationOthers,
+  NotificationSentence,
+  type NotificationOthersProps,
+  type NotificationSentenceProps,
+} from "./NotificationRow";
+export {
+  PostExcerpt,
+  PostExcerptText,
+  QuoteBlock,
+  type PostExcerptProps,
+  type PostExcerptTextProps,
+  type QuoteBlockProps,
+} from "./Quote";
 
 // The app shell (web-client/09-app-shell.md §9): the frame, the navigation, the page heading and the routes' states.
-export { AppShell, AsidePanel, ShellDock, type AppShellProps, type AsidePanelProps, type ShellDockProps } from "./AppShell";
+export {
+  AppShell,
+  AsidePanel,
+  ShellDock,
+  type AppShellProps,
+  type AsidePanelProps,
+  type ShellDockProps,
+} from "./AppShell";
 export { CallBar, type CallBarProps } from "./CallBar";
 export { AvatarStack, type AvatarStackItem, type AvatarStackProps } from "./AvatarStack";
 export { MiniPlayer, type MiniPlayerAvatar, type MiniPlayerProps } from "./MiniPlayer";
@@ -288,7 +362,14 @@ export { EmojiTile, type EmojiTileProps } from "./EmojiTile";
 export { CodeBlock, type CodeBlockProps } from "./CodeBlock";
 export { PreviewImage, type PreviewImageProps } from "./PreviewImage";
 export { ThemePreview, type ThemePreviewProps } from "./ThemePreview";
-export { ReactionChip, ReactionEmoji, ReactionRow, type ReactionChipProps, type ReactionEmojiProps, type ReactionRowProps } from "./ReactionChip";
+export {
+  ReactionChip,
+  ReactionEmoji,
+  ReactionRow,
+  type ReactionChipProps,
+  type ReactionEmojiProps,
+  type ReactionRowProps,
+} from "./ReactionChip";
 export { DetailSection, type DetailSectionProps } from "./DetailSection";
 export { BannerImage, type BannerImageProps } from "./BannerImage";
 export { IconLabel, type IconLabelProps } from "./IconLabel";

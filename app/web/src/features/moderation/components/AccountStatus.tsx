@@ -5,7 +5,22 @@
 // button that opens the appeal in an alert dialog (ConfirmDialog: an action is appealed once, and the appeal
 // cannot be changed); one appealed already shows the appeal's state instead, and one whose window closed
 // says so. Dates are in the user's locale and time zone (react-intl's, from the preferences).
-import { Box, Button, ConfirmDialog, DescriptionItem, DescriptionList, DetailSection, EmptyState, Heading, Hint, ReasonField, Spinner, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DetailSection,
+  EmptyState,
+  Heading,
+  Hint,
+  ReasonField,
+  Spinner,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, type Translate, useT } from "../../../lib/i18n";
@@ -18,7 +33,15 @@ import {
   type ModerationAppeal,
   type ModerationAppealState,
 } from "../api/actions";
-import { type ActionList, type AppealForm, appealHeadingId, useActionStatuses, useActiveActions, useAppealForm, usePastActions } from "../hooks/useAccountStatus";
+import {
+  type ActionList,
+  type AppealForm,
+  appealHeadingId,
+  useActionStatuses,
+  useActiveActions,
+  useAppealForm,
+  usePastActions,
+} from "../hooks/useAccountStatus";
 
 const stateLabels: Readonly<Record<ModerationActionState, ClientMessageKey>> = {
   active: "client:account_status.state.active",
@@ -36,7 +59,14 @@ const appealStateLabels: Readonly<Record<ModerationAppealState, ClientMessageKey
  * The kinds that can last for a time; the others (a notice, the actions on posts, a ban) have no end. One of
  * these in effect without an end lasts until a moderator lifts it.
  */
-const timedKinds: ReadonlySet<ModerationActionKind> = new Set(["force_sensitive", "limit", "restrict_posting", "restrict_interaction", "disable_login", "suspend"]);
+const timedKinds: ReadonlySet<ModerationActionKind> = new Set([
+  "force_sensitive",
+  "limit",
+  "restrict_posting",
+  "restrict_interaction",
+  "disable_login",
+  "suspend",
+]);
 
 /** The format of every date and time on the page. */
 const dateTimeFormat = { dateStyle: "medium", timeStyle: "short" } as const;
@@ -59,11 +89,21 @@ export function AccountStatus() {
         <ActionListView
           list={active}
           form={form}
-          empty={<EmptyState headingLevel={3} heading={t("client:account_status.active.empty")} description={t("client:account_status.active.empty.description")} />}
+          empty={
+            <EmptyState
+              headingLevel={3}
+              heading={t("client:account_status.active.empty")}
+              description={t("client:account_status.active.empty.description")}
+            />
+          }
         />
       </DetailSection>
       <DetailSection title={t("client:account_status.past.title")}>
-        <ActionListView list={past} form={form} empty={<EmptyState headingLevel={3} heading={t("client:account_status.past.empty")} />} />
+        <ActionListView
+          list={past}
+          form={form}
+          empty={<EmptyState headingLevel={3} heading={t("client:account_status.past.empty")} />}
+        />
       </DetailSection>
       <AppealDialog form={form} />
     </Stack>
@@ -107,7 +147,9 @@ function ActionRow({ action, form }: { action: ModerationAction; form: AppealFor
       </Heading>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:account_status.state")}>{t(stateLabels[action.state])}</DescriptionItem>
-        <DescriptionItem term={t("client:account_status.reason_category")}>{action.reason_category_label}</DescriptionItem>
+        <DescriptionItem term={t("client:account_status.reason_category")}>
+          {action.reason_category_label}
+        </DescriptionItem>
         <DescriptionItem term={t("client:account_status.issued_at")}>
           <DateTime value={action.issued_at} />
         </DescriptionItem>
@@ -117,7 +159,11 @@ function ActionRow({ action, form }: { action: ModerationAction; form: AppealFor
           </DescriptionItem>
         ) : (
           action.state === "active" &&
-          timedKinds.has(action.kind) && <DescriptionItem term={t("client:account_status.expires_at")}>{t("client:account_status.expires_at.none")}</DescriptionItem>
+          timedKinds.has(action.kind) && (
+            <DescriptionItem term={t("client:account_status.expires_at")}>
+              {t("client:account_status.expires_at.none")}
+            </DescriptionItem>
+          )
         )}
         {action.lifted_at !== undefined && (
           <DescriptionItem term={t("client:account_status.lifted_at")}>
@@ -183,13 +229,16 @@ function AppealPart({ action, form }: { action: ModerationAction; form: AppealFo
   if (action.appeal !== undefined) {
     body = <AppealFacts appeal={action.appeal} />;
   } else if (action.appealable) {
-    const deadline = action.appeal_deadline === undefined ? undefined : intl.formatDate(action.appeal_deadline, dateTimeFormat);
+    const deadline =
+      action.appeal_deadline === undefined ? undefined : intl.formatDate(action.appeal_deadline, dateTimeFormat);
     body = (
       <Stack align="start" gap="2">
         {deadline !== undefined && <p>{t("client:account_status.appeal.until", { date: deadline })}</p>}
         <Button
           size="sm"
-          aria-label={t("client:account_status.appeal.open_of", { date: intl.formatDate(action.issued_at, dateTimeFormat) })}
+          aria-label={t("client:account_status.appeal.open_of", {
+            date: intl.formatDate(action.issued_at, dateTimeFormat),
+          })}
           onPress={() => {
             form.open(action);
           }}
@@ -223,7 +272,9 @@ function AppealFacts({ appeal }: { appeal: ModerationAppeal }) {
   return (
     <Stack gap="3">
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:account_status.appeal.state")}>{t(appealStateLabels[appeal.state])}</DescriptionItem>
+        <DescriptionItem term={t("client:account_status.appeal.state")}>
+          {t(appealStateLabels[appeal.state])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:account_status.appeal.submitted_at")}>
           <DateTime value={appeal.submitted_at} />
         </DescriptionItem>
@@ -255,7 +306,8 @@ function AppealFacts({ appeal }: { appeal: ModerationAppeal }) {
 /** Why an appeal's text cannot be sent, or null when it can. */
 function validateAppealText(t: Translate, text: string): string | null {
   if (text.trim() === "") return t("client:account_status.appeal.text.required");
-  if (Array.from(text).length > appealTextLimit) return t("client:account_status.appeal.text.too_long", { max: appealTextLimit });
+  if (Array.from(text).length > appealTextLimit)
+    return t("client:account_status.appeal.text.too_long", { max: appealTextLimit });
   return null;
 }
 
@@ -280,7 +332,9 @@ function AppealDialog({ form }: { form: AppealForm }) {
         form.submit();
       }}
       isPending={form.isPending}
-      {...(form.error === undefined ? {} : { errorMessage: t("client:account_status.appeal.failed", { reason: form.error }) })}
+      {...(form.error === undefined
+        ? {}
+        : { errorMessage: t("client:account_status.appeal.failed", { reason: form.error }) })}
     >
       <ReasonField
         label={t("client:account_status.appeal.text.label")}
@@ -293,7 +347,9 @@ function AppealDialog({ form }: { form: AppealForm }) {
         validate={(value) => validateAppealText(t, value)}
         characterLimit={appealTextLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:account_status.appeal.characters_over", { count: -remaining }) : t("client:account_status.appeal.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:account_status.appeal.characters_over", { count: -remaining })
+            : t("client:account_status.appeal.characters_left", { count: remaining })
         }
         errorMessage={validateAppealText(t, form.text) ?? t("client:account_status.appeal.text.required")}
       />

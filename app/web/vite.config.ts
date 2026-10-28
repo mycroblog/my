@@ -96,7 +96,12 @@ export default defineConfig({
         rollupFormat: "iife",
         // The worker is a build of its own: its bundled npm packages (Workbox) get their own notices.
         buildPlugins: {
-          vite: [{ name: "my:sw-licenses", config: () => ({ build: { license: { fileName: "licenses/npm-packages-sw.md" } } }) }],
+          vite: [
+            {
+              name: "my:sw-licenses",
+              config: () => ({ build: { license: { fileName: "licenses/npm-packages-sw.md" } } }),
+            },
+          ],
         },
         globPatterns: ["**/*.{js,css,svg,png,woff2}"],
         // index.html is the stand-in shell of `vite preview` (the worker precaches the server's shell at /

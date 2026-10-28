@@ -17,10 +17,18 @@ configure({ asyncUtilTimeout: 10_000 });
 beforeAll(() => {
   server.listen({ onUnhandledFrame: "error" });
   // jsdom has no Element.scrollIntoView; a page that scrolls an element into view (a post's page) calls it.
-  Object.defineProperty(Element.prototype, "scrollIntoView", { configurable: true, writable: true, value: () => undefined });
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
   // Nor does jsdom draw: without the canvas package, getContext logs "Not implemented". The blur of a picture
   // (@my/ui's Blurhash) then draws nothing, as in a browser without a 2D canvas.
-  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { configurable: true, writable: true, value: () => null });
+  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+    configurable: true,
+    writable: true,
+    value: () => null,
+  });
   // The completion of a text field (@my/ui TextAreaAutocomplete) moves virtual focus to an option, and React Aria tells
   // the field with a blur event of its own (its relatedTarget is the option), sent from a React effect. user-event
   // answers each blur of an edited field with a change event wrapped in act, which React refuses while it commits
@@ -29,7 +37,8 @@ beforeAll(() => {
   window.addEventListener(
     "blur",
     (event) => {
-      if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option") event.stopImmediatePropagation();
+      if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option")
+        event.stopImmediatePropagation();
     },
     { capture: true },
   );

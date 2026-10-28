@@ -75,10 +75,18 @@ describe("Feed", () => {
 
   it("knows the set size when there is nothing more to load, or when it is given", () => {
     const { rerender } = render(<Timeline hasMore={false} />);
-    expect(screen.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual(["3", "3", "3"]);
+    expect(screen.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual([
+      "3",
+      "3",
+      "3",
+    ]);
     expect(screen.queryByRole("button", { name: "Load more posts" })).not.toBeInTheDocument();
     rerender(<Timeline setSize={40} />);
-    expect(screen.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual(["40", "40", "40"]);
+    expect(screen.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual([
+      "40",
+      "40",
+      "40",
+    ]);
   });
 
   it("is busy exactly while loading", () => {

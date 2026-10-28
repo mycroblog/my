@@ -37,7 +37,12 @@ export type TagChoice = { name: string; statusesCount: number | undefined };
  * The hashtags to offer for the query `query`: those of `recent` that start with it first (the latest first), then the
  * server's suggestions `found` in their order, each once, at most `limit`.
  */
-export function rankTags(query: string, found: readonly { name: string; statuses_count: number }[], recent: readonly string[], limit: number): TagChoice[] {
+export function rankTags(
+  query: string,
+  found: readonly { name: string; statuses_count: number }[],
+  recent: readonly string[],
+  limit: number,
+): TagChoice[] {
   const prefix = normalizeTag(query);
   const counts = new Map(found.map((tag) => [normalizeTag(tag.name), tag.statuses_count]));
   const choices: TagChoice[] = [];

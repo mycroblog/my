@@ -10,7 +10,27 @@
 // page in a StatusMessage (role="status") next to what caused it (web-client/14-admin.md §14). A viewer with manage_roles
 // also has the account's roles, to grant and revoke (AccountRoles); one with manage_domains, the refetch of a
 // remote account's posts from its server (RefetchStatusesSection).
-import { AccountItem, Box, Button, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, DetailSection, EmptyState, Heading, Hint, Link, ReasonField, RegionError, SectionHeader, Spinner, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  AccountItem,
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DetailSection,
+  EmptyState,
+  Heading,
+  Hint,
+  Link,
+  ReasonField,
+  RegionError,
+  SectionHeader,
+  Spinner,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -83,7 +103,9 @@ function AccountPage({ id }: { id: string }) {
           </Stack>
         )}
       </DetailSection>
-      {!account.local && account.state !== "deleted" && canRefetch && <RefetchStatusesSection target={{ kind: "account", id: account.id }} />}
+      {!account.local && account.state !== "deleted" && canRefetch && (
+        <RefetchStatusesSection target={{ kind: "account", id: account.id }} />
+      )}
       {account.local && canManageRoles && <AccountRoles accountId={account.id} handle={isolate(handle)} />}
       {account.local && account.email_verified !== undefined && (
         <EmailSuppressionSection id={account.id} suppression={account.email_suppression} handle={isolate(handle)} />
@@ -91,7 +113,9 @@ function AccountPage({ id }: { id: string }) {
       {account.local && account.two_factor_enabled !== undefined && (
         <TwoFactorSection id={account.id} enabled={account.two_factor_enabled} handle={isolate(handle)} />
       )}
-      {account.local && account.two_factor_enabled !== undefined && canRecoverSignIn && <PasswordResetSection id={account.id} handle={isolate(handle)} />}
+      {account.local && account.two_factor_enabled !== undefined && canRecoverSignIn && (
+        <PasswordResetSection id={account.id} handle={isolate(handle)} />
+      )}
       {account.local && <PrivateDataSection id={account.id} />}
       <ActionHistory account={account} />
       <DetailSection title={t("client:admin.account.reports.title")}>
@@ -105,7 +129,13 @@ function AccountPage({ id }: { id: string }) {
           <>
             <Hint>{t("client:admin.account.action.posts")}</Hint>
             <AccountActionForm
-              target={{ accountId: account.id, remote: !account.local, statusIds: [], category: "other", hasEmail: account.email_verified !== undefined }}
+              target={{
+                accountId: account.id,
+                remote: !account.local,
+                statusIds: [],
+                category: "other",
+                hasEmail: account.email_verified !== undefined,
+              }}
               handle={handle}
               posts={[]}
               onIssued={(action) => {
@@ -141,7 +171,10 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
         )}
         {canAudit && (
           <li>
-            <Link href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(account.id)}`} variant="standalone">
+            <Link
+              href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(account.id)}`}
+              variant="standalone"
+            >
               {t("client:admin.account.audit")}
             </Link>
           </li>
@@ -158,7 +191,9 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
           <DateTime value={account.account.created_at} />
         </DescriptionItem>
         {account.registration_state !== undefined && (
-          <DescriptionItem term={t("client:admin.accounts.registration")}>{t(adminAccountRegistrationStateLabels[account.registration_state])}</DescriptionItem>
+          <DescriptionItem term={t("client:admin.accounts.registration")}>
+            {t(adminAccountRegistrationStateLabels[account.registration_state])}
+          </DescriptionItem>
         )}
         {registration !== undefined && (
           <>
@@ -169,7 +204,9 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
               <DateTime value={registration.state_changed_at} />
             </DescriptionItem>
             <DescriptionItem term={t("client:admin.account.registration.invite")}>
-              {registration.invite_id === undefined ? t("client:admin.account.registration.invite.none") : t("client:admin.account.registration.invite.used")}
+              {registration.invite_id === undefined
+                ? t("client:admin.account.registration.invite.none")
+                : t("client:admin.account.registration.invite.used")}
             </DescriptionItem>
           </>
         )}
@@ -214,7 +251,15 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
  * since when, and lifting it, which asks first; the lift is recorded in the audit log. Nothing shows while the address
  * is not suppressed, except what a lift just did.
  */
-function EmailSuppressionSection({ id, suppression, handle }: { id: string; suppression: EmailSuppression | undefined; handle: string }) {
+function EmailSuppressionSection({
+  id,
+  suppression,
+  handle,
+}: {
+  id: string;
+  suppression: EmailSuppression | undefined;
+  handle: string;
+}) {
   const t = useT();
   const intl = useIntl();
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -228,8 +273,16 @@ function EmailSuppressionSection({ id, suppression, handle }: { id: string; supp
       <StatusMessage tone="success">{lift.status}</StatusMessage>
       {suppression !== undefined && (
         <Stack align="start" gap="3">
-          <p>{suppression.kind === "hard_bounce" ? t("client:admin.account.email_suppression.hard_bounce") : t("client:admin.account.email_suppression.complaint")}</p>
-          <p>{t("client:admin.account.email_suppression.since", { since: intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" }) })}</p>
+          <p>
+            {suppression.kind === "hard_bounce"
+              ? t("client:admin.account.email_suppression.hard_bounce")
+              : t("client:admin.account.email_suppression.complaint")}
+          </p>
+          <p>
+            {t("client:admin.account.email_suppression.since", {
+              since: intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" }),
+            })}
+          </p>
           {canLift && (
             <>
               <Hint>{t("client:admin.account.email_suppression.lift.description")}</Hint>
@@ -253,7 +306,9 @@ function EmailSuppressionSection({ id, suppression, handle }: { id: string; supp
           lift.confirm();
         }}
         isPending={lift.isPending}
-        {...(lift.error === undefined ? {} : { errorMessage: t("client:admin.account.email_suppression.failed", { reason: lift.error }) })}
+        {...(lift.error === undefined
+          ? {}
+          : { errorMessage: t("client:admin.account.email_suppression.failed", { reason: lift.error }) })}
       />
     </DetailSection>
   );
@@ -296,7 +351,9 @@ function TwoFactorSection({ id, enabled, handle }: { id: string; enabled: boolea
           remove.confirm();
         }}
         isPending={remove.isPending}
-        {...(remove.error === undefined ? {} : { errorMessage: t("client:admin.account.two_factor.failed", { reason: remove.error }) })}
+        {...(remove.error === undefined
+          ? {}
+          : { errorMessage: t("client:admin.account.two_factor.failed", { reason: remove.error }) })}
       />
     </DetailSection>
   );
@@ -324,7 +381,9 @@ function PasswordResetSection({ id, handle }: { id: string; handle: string }) {
             {t("client:admin.account.password_reset.link")}
           </Text>
           <Hint>
-            {t("client:admin.account.password_reset.link.notice", { expiresAt: intl.formatDate(link.expires_at, { dateStyle: "medium", timeStyle: "short" }) })}
+            {t("client:admin.account.password_reset.link.notice", {
+              expiresAt: intl.formatDate(link.expires_at, { dateStyle: "medium", timeStyle: "short" }),
+            })}
           </Hint>
           {/* A URL reads left to right in every locale. */}
           <Text as="p" mono wrap="anywhere" selectAll aria-labelledby={linkLabelId} dir="ltr">
@@ -362,7 +421,9 @@ function PasswordResetSection({ id, handle }: { id: string; handle: string }) {
           issue.confirm();
         }}
         isPending={issue.isPending}
-        {...(issue.error === undefined ? {} : { errorMessage: t("client:admin.account.password_reset.failed", { reason: issue.error }) })}
+        {...(issue.error === undefined
+          ? {}
+          : { errorMessage: t("client:admin.account.password_reset.failed", { reason: issue.error }) })}
       />
     </DetailSection>
   );
@@ -379,7 +440,9 @@ function PrivateDataSection({ id }: { id: string }) {
   });
   return (
     <DetailSection title={t("client:admin.account.private.title")} headingRef={headingRef}>
-      <StatusMessage>{privateData.data === undefined ? undefined : t("client:admin.account.private.shown")}</StatusMessage>
+      <StatusMessage>
+        {privateData.data === undefined ? undefined : t("client:admin.account.private.shown")}
+      </StatusMessage>
       {privateData.data === undefined ? (
         <Stack align="start" gap="3">
           <Hint>{t("client:admin.account.private.description")}</Hint>
@@ -425,7 +488,9 @@ function PrivateData({ data }: { data: AdminAccountPrivateData }) {
                 {data.email}
               </Text>
               <Hint as="span">
-                {data.email_verified === true ? t("client:admin.account.email_verified.yes") : t("client:admin.account.email_verified.no")}
+                {data.email_verified === true
+                  ? t("client:admin.account.email_verified.yes")
+                  : t("client:admin.account.email_verified.no")}
               </Hint>
               {emailDomain !== undefined && emailDomain !== "" && (
                 <Link href={searchHref({ email_domain: emailDomain })} variant="standalone" size="sm">
@@ -539,7 +604,11 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
           getId={(action) => action.id}
           listRef={listRef}
           empty={<EmptyState headingLevel={3} heading={t("client:admin.report.history.empty")} />}
-          moreError={actions.error !== undefined && <RegionError heading={t("client:admin.report.history.failed")} reason={actions.error} />}
+          moreError={
+            actions.error !== undefined && (
+              <RegionError heading={t("client:admin.report.history.failed")} reason={actions.error} />
+            )
+          }
         >
           {(action) => <ActionRow action={action} local={account.local} lift={lift} />}
         </RecordList>
@@ -561,7 +630,9 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
           lift.confirm();
         }}
         isPending={lift.isPending}
-        {...(lift.error === undefined ? {} : { errorMessage: t("client:admin.account.actions.lift_failed", { reason: lift.error }) })}
+        {...(lift.error === undefined
+          ? {}
+          : { errorMessage: t("client:admin.account.actions.lift_failed", { reason: lift.error }) })}
       >
         <ReasonField
           label={t("client:admin.account.actions.lift_reason")}
@@ -570,7 +641,9 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
           onChange={lift.changeReason}
           characterLimit={accountActionTextLimit}
           formatRemaining={(remaining) =>
-            remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining })
+            remaining < 0
+              ? t("client:admin.account_actions.characters_over", { count: -remaining })
+              : t("client:admin.account_actions.characters_left", { count: remaining })
           }
           errorMessage={t("client:admin.account_actions.too_long", { max: accountActionTextLimit })}
         />
@@ -597,18 +670,18 @@ function ActionRow({ action, local, lift }: { action: AccountAction; local: bool
         actions={
           liftable && (
             <Button
-            size="sm"
-            isPending={lift.isPending && lift.confirmation?.action.id === action.id}
-            aria-label={t("client:admin.account.actions.lift_action", {
-              kind,
-              date: intl.formatDate(action.issued_at, { dateStyle: "medium", timeStyle: "short" }),
-            })}
-            onPress={() => {
-              lift.open(action);
-            }}
-        >
-            {t("client:admin.account.actions.lift")}
-        </Button>
+              size="sm"
+              isPending={lift.isPending && lift.confirmation?.action.id === action.id}
+              aria-label={t("client:admin.account.actions.lift_action", {
+                kind,
+                date: intl.formatDate(action.issued_at, { dateStyle: "medium", timeStyle: "short" }),
+              })}
+              onPress={() => {
+                lift.open(action);
+              }}
+            >
+              {t("client:admin.account.actions.lift")}
+            </Button>
           )
         }
       >
@@ -618,26 +691,40 @@ function ActionRow({ action, local, lift }: { action: AccountAction; local: bool
       </SectionHeader>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.account_actions.state")}>
-          <Text {...(action.state === "active" && { weight: "semibold" as const })}>{t(accountActionStateLabels[action.state])}</Text>
+          <Text {...(action.state === "active" && { weight: "semibold" as const })}>
+            {t(accountActionStateLabels[action.state])}
+          </Text>
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.issued_at")}>
           <DateTime value={action.issued_at} />
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.expires_at")}>
-          {action.expires_at === undefined ? t("client:admin.account_actions.duration.indefinite") : <DateTime value={action.expires_at} />}
+          {action.expires_at === undefined ? (
+            t("client:admin.account_actions.duration.indefinite")
+          ) : (
+            <DateTime value={action.expires_at} />
+          )}
         </DescriptionItem>
         {action.lifted_at !== undefined && (
           <DescriptionItem term={t("client:admin.account.actions.lifted_at")}>
             <DateTime value={action.lifted_at} />
           </DescriptionItem>
         )}
-        <DescriptionItem term={t("client:admin.account_actions.category")}>{t(reportCategoryLabels[action.reason_category])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.account_actions.category")}>
+          {t(reportCategoryLabels[action.reason_category])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.account.actions.issuer")}>
-          {action.issued_by_account_id === undefined ? t(issuerLabels[action.issuer]) : <AssigneeName id={action.issued_by_account_id} />}
+          {action.issued_by_account_id === undefined ? (
+            t(issuerLabels[action.issuer])
+          ) : (
+            <AssigneeName id={action.issued_by_account_id} />
+          )}
         </DescriptionItem>
         {local && (
           <DescriptionItem term={t("client:admin.account.actions.notified")}>
-            {action.notify_target ? t("client:admin.account.actions.notified.yes") : t("client:admin.account.actions.notified.no")}
+            {action.notify_target
+              ? t("client:admin.account.actions.notified.yes")
+              : t("client:admin.account.actions.notified.no")}
           </DescriptionItem>
         )}
         {action.status_ids !== undefined && (
@@ -653,7 +740,9 @@ function ActionRow({ action, local, lift }: { action: AccountAction; local: bool
           </DescriptionItem>
         )}
       </DescriptionList>
-      {(action.public_reason !== undefined || action.private_note !== undefined || action.lift_reason !== undefined) && (
+      {(action.public_reason !== undefined ||
+        action.private_note !== undefined ||
+        action.lift_reason !== undefined) && (
         <DescriptionList>
           {action.public_reason !== undefined && (
             <DescriptionItem term={t("client:admin.account_actions.public_reason")}>
@@ -696,7 +785,9 @@ function AccountReports({ reports }: { reports: readonly Report[] }) {
   return (
     <Stack as="ul" divided>
       {reports.map((report) => {
-        const title = t("client:admin.account.reports.item", { date: intl.formatDate(report.filed_at, { dateStyle: "medium", timeStyle: "short" }) });
+        const title = t("client:admin.account.reports.item", {
+          date: intl.formatDate(report.filed_at, { dateStyle: "medium", timeStyle: "short" }),
+        });
         return (
           <Stack as="li" container gap="2" paddingY="3" key={report.id}>
             <Heading level={3}>
@@ -710,9 +801,13 @@ function AccountReports({ reports }: { reports: readonly Report[] }) {
             </Heading>
             <DescriptionList columns={3}>
               <DescriptionItem term={t("client:admin.report.state")}>
-                {report.outcome === undefined ? t(reportStateLabels[report.state]) : t(reportOutcomeLabels[report.outcome])}
+                {report.outcome === undefined
+                  ? t(reportStateLabels[report.state])
+                  : t(reportOutcomeLabels[report.outcome])}
               </DescriptionItem>
-              <DescriptionItem term={t("client:admin.report.category")}>{t(reportCategoryLabels[report.category])}</DescriptionItem>
+              <DescriptionItem term={t("client:admin.report.category")}>
+                {t(reportCategoryLabels[report.category])}
+              </DescriptionItem>
               <DescriptionItem term={t("client:admin.report.reporter")}>
                 <AccountLabel account={report.reporter_account} />
               </DescriptionItem>

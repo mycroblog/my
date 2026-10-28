@@ -66,7 +66,8 @@ export function accountFixture(n: number, name: string, domain = "remote.example
     username,
     acct: domain === instanceFixture.domain ? username : `${username}@${domain}`,
     domain,
-    uri: domain === instanceFixture.domain ? `https://${domain}/ap/actors/${id}` : `https://${domain}/users/${username}`,
+    uri:
+      domain === instanceFixture.domain ? `https://${domain}/ap/actors/${id}` : `https://${domain}/users/${username}`,
     display_name: name,
     note: "",
     fields: [],
@@ -95,8 +96,18 @@ function namedAccountFixture(n: number, username: string, displayName: string, d
  * with a 30-character display name, an account of another server with an Arabic (right-to-left) display
  * name, and one on a long domain whose handle does not fit the card.
  */
-export const longNameAccountFixture: Schemas["Account"] = namedAccountFixture(21, "maximiliana", "Maximiliana Theodora Wolfharte", instanceFixture.domain);
-export const rtlNameAccountFixture: Schemas["Account"] = namedAccountFixture(22, "abdulrahman", "عبد الرحمن بن محمد الهاشمي", "remote.example");
+export const longNameAccountFixture: Schemas["Account"] = namedAccountFixture(
+  21,
+  "maximiliana",
+  "Maximiliana Theodora Wolfharte",
+  instanceFixture.domain,
+);
+export const rtlNameAccountFixture: Schemas["Account"] = namedAccountFixture(
+  22,
+  "abdulrahman",
+  "عبد الرحمن بن محمد الهاشمي",
+  "remote.example",
+);
 export const longDomainAccountFixture: Schemas["Account"] = namedAccountFixture(
   23,
   "dmitri",
@@ -105,7 +116,10 @@ export const longDomainAccountFixture: Schemas["Account"] = namedAccountFixture(
 );
 
 /** The `Relationship` with account `id` when the viewer has none, or with `overrides`. */
-export function relationshipFixture(id: string, overrides: Partial<Schemas["Relationship"]> = {}): Schemas["Relationship"] {
+export function relationshipFixture(
+  id: string,
+  overrides: Partial<Schemas["Relationship"]> = {},
+): Schemas["Relationship"] {
   return {
     id,
     following: false,
@@ -145,8 +159,18 @@ export function imageFixture(url: string): Schemas["MediaVariants"] {
  * A `MediaAttachment` with `id` in `state`; a ready one has its renditions, their URLs as `url` and
  * `preview_url`, and its blurhash, as GET /media/{id} answers once the server has processed the file.
  */
-export function mediaFixture(id: string, state: Schemas["MediaAttachment"]["state"] = "ready", description?: string): Schemas["MediaAttachment"] {
-  const variant = (size: string) => ({ url: `https://my.example/media/${id}/r/${size}.webp`, content_type: "image/webp", width: 640, height: 360, size: 1000 });
+export function mediaFixture(
+  id: string,
+  state: Schemas["MediaAttachment"]["state"] = "ready",
+  description?: string,
+): Schemas["MediaAttachment"] {
+  const variant = (size: string) => ({
+    url: `https://my.example/media/${id}/r/${size}.webp`,
+    content_type: "image/webp",
+    width: 640,
+    height: 360,
+    size: 1000,
+  });
   return {
     id,
     type: "image",
@@ -183,7 +207,11 @@ function remoteMediaFixture(id: string, description?: string): Schemas["MediaAtt
 }
 
 /** A public English `Status` `id` by `account` with no media, mentions, tags or counts, with `overrides`. */
-function postFixture(account: Schemas["Account"], id: string, overrides: Partial<Schemas["Status"]>): Schemas["Status"] {
+function postFixture(
+  account: Schemas["Account"],
+  id: string,
+  overrides: Partial<Schemas["Status"]>,
+): Schemas["Status"] {
   return {
     id,
     uri: `https://my.example/users/${account.username}/statuses/${id}`,
@@ -208,7 +236,11 @@ function postFixture(account: Schemas["Account"], id: string, overrides: Partial
 
 /** A `Status` by the viewer, with `overrides`. */
 export function viewerStatusFixture(overrides: Partial<Schemas["Status"]> = {}): Schemas["Status"] {
-  return postFixture(viewerFixture, "0192f0c4-7a8e-7000-8000-0000000000a1", { content: "<p>Hello</p>", created_at: "2026-10-16T00:00:00Z", ...overrides });
+  return postFixture(viewerFixture, "0192f0c4-7a8e-7000-8000-0000000000a1", {
+    content: "<p>Hello</p>",
+    created_at: "2026-10-16T00:00:00Z",
+    ...overrides,
+  });
 }
 
 /** A post by Bob that mentions Alice. */
@@ -221,11 +253,15 @@ export function statusFixture(id: string): Schemas["Status"] {
 }
 
 /** A local post of another account, for the timelines. */
-export const timelineStatusFixture: Schemas["Status"] = postFixture(otherAccountFixture, "0192f0c4-7a8e-7000-8000-0000000000a1", {
-  uri: "https://my.example/ap/statuses/0192f0c4-7a8e-7000-8000-0000000000a1",
-  url: "https://my.example/@bob/status/0192f0c4-7a8e-7000-8000-0000000000a1",
-  content: "<p>Hello from the local timeline!</p>",
-});
+export const timelineStatusFixture: Schemas["Status"] = postFixture(
+  otherAccountFixture,
+  "0192f0c4-7a8e-7000-8000-0000000000a1",
+  {
+    uri: "https://my.example/ap/statuses/0192f0c4-7a8e-7000-8000-0000000000a1",
+    url: "https://my.example/@bob/status/0192f0c4-7a8e-7000-8000-0000000000a1",
+    content: "<p>Hello from the local timeline!</p>",
+  },
+);
 
 /** A page of a timeline with the given statuses and, when there are older ones, the cursor to them. */
 export function statusPage(items: Schemas["Status"][], nextCursor?: string): Schemas["StatusPage"] {
@@ -236,10 +272,17 @@ export function statusPage(items: Schemas["Status"][], nextCursor?: string): Sch
  * A post of Carol on another server: its page is on that server, it has a content warning, and its two
  * pictures come through the media proxy, the second without a description.
  */
-export const remoteStatusFixture: Schemas["Status"] = postFixture(remoteAccountFixture, "0192f0c4-7a8e-7000-8000-0000000003c1", {
-  uri: "https://remote.example/users/carol/statuses/1",
-  url: "https://remote.example/@carol/1",
-  content: "<p>Hello from another server!</p>",
-  spoiler_text: "Cats",
-  media_attachments: [remoteMediaFixture("0192f0c4-7a8e-7000-8000-0000000003d1", "A cat on a sofa"), remoteMediaFixture("0192f0c4-7a8e-7000-8000-0000000003d2")],
-});
+export const remoteStatusFixture: Schemas["Status"] = postFixture(
+  remoteAccountFixture,
+  "0192f0c4-7a8e-7000-8000-0000000003c1",
+  {
+    uri: "https://remote.example/users/carol/statuses/1",
+    url: "https://remote.example/@carol/1",
+    content: "<p>Hello from another server!</p>",
+    spoiler_text: "Cats",
+    media_attachments: [
+      remoteMediaFixture("0192f0c4-7a8e-7000-8000-0000000003d1", "A cat on a sofa"),
+      remoteMediaFixture("0192f0c4-7a8e-7000-8000-0000000003d2"),
+    ],
+  },
+);

@@ -6,7 +6,15 @@ import { infiniteQueryOptions, type QueryClient, type QueryKey } from "@tanstack
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 import type { components } from "@mycroblog/mykit";
-import { forPost, type LikeSlot, updateCachedStatuses, withLikeSlot, withLikeSlotFrom, withRelation, withRelationFrom } from "./cache";
+import {
+  forPost,
+  type LikeSlot,
+  updateCachedStatuses,
+  withLikeSlot,
+  withLikeSlotFrom,
+  withRelation,
+  withRelationFrom,
+} from "./cache";
 
 /** A status (post or boost), as the client API returns it. */
 export type Status = components["schemas"]["Status"];
@@ -62,7 +70,12 @@ export function statusHistoryQueryOptions(api: Api, id: string) {
  * shows at once with a button to try again, instead of after seconds of silent retries.
  */
 export function statusSourceQueryOptions(api: Api, id: string) {
-  return api.query.queryOptions("get", "/statuses/{id}/source", { params: { path: { id } } }, { staleTime: 0, gcTime: 0, retry: false });
+  return api.query.queryOptions(
+    "get",
+    "/statuses/{id}/source",
+    { params: { path: { id } } },
+    { staleTime: 0, gcTime: 0, retry: false },
+  );
 }
 
 /** The instance, for the most characters a post may have (`limits.max_post_characters`). */
@@ -84,7 +97,10 @@ export async function editStatus(api: Api, id: string, body: EditStatusRequest):
  * (Y7). The history has one more revision: it is marked stale, and fetched again if it is on screen.
  */
 export async function cacheEditedStatus(api: Api, queryClient: QueryClient, edited: Status): Promise<void> {
-  updateCachedStatuses(queryClient, forPost(edited.id, () => edited));
+  updateCachedStatuses(
+    queryClient,
+    forPost(edited.id, () => edited),
+  );
   await queryClient.invalidateQueries({ queryKey: statusHistoryQueryOptions(api, edited.id).queryKey, exact: true });
 }
 
@@ -99,7 +115,9 @@ export async function setRelation(api: Api, relation: Relation, id: string, on: 
       case "boost":
         return on ? api.fetch.POST("/statuses/{id}/boost", init) : api.fetch.DELETE("/statuses/{id}/boost", init);
       case "favourite":
-        return on ? api.fetch.POST("/statuses/{id}/favourite", init) : api.fetch.DELETE("/statuses/{id}/favourite", init);
+        return on
+          ? api.fetch.POST("/statuses/{id}/favourite", init)
+          : api.fetch.DELETE("/statuses/{id}/favourite", init);
       case "bookmark":
         return on ? api.fetch.POST("/statuses/{id}/bookmark", init) : api.fetch.DELETE("/statuses/{id}/bookmark", init);
     }
@@ -113,14 +131,26 @@ export async function setRelation(api: Api, relation: Relation, id: string, on: 
  * Turns the viewer's `relation` to post `id` to `on` in every cached copy of the post before the server answers
  * (web-client/README.md S8), after cancelling a refetch of the post that would overwrite it with the old state.
  */
-export async function cacheRelationPending(api: Api, queryClient: QueryClient, id: string, relation: Relation, on: boolean): Promise<void> {
+export async function cacheRelationPending(
+  api: Api,
+  queryClient: QueryClient,
+  id: string,
+  relation: Relation,
+  on: boolean,
+): Promise<void> {
   await queryClient.cancelQueries({ queryKey: statusQueryOptions(api, id).queryKey });
-  updateCachedStatuses(queryClient, forPost(id, (status) => withRelation(status, relation, on)));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => withRelation(status, relation, on)),
+  );
 }
 
 /** Puts back the viewer's `relation` to post `id` as it was before a press to `on` that the server refused. */
 export function restoreRelation(queryClient: QueryClient, id: string, relation: Relation, on: boolean): void {
-  updateCachedStatuses(queryClient, forPost(id, (status) => withRelation(status, relation, !on)));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => withRelation(status, relation, !on)),
+  );
 }
 
 /**
@@ -158,14 +188,25 @@ export function setLikeSlot(api: Api, id: string, slot: LikeSlot, previous: Like
  * Fills the viewer's Like slot of post `id` (a favourite, a reaction, or nothing) in every cached copy of the post
  * before the server answers (web-client/README.md S8), after cancelling a refetch of the post that would overwrite it.
  */
-export async function cacheLikeSlotPending(api: Api, queryClient: QueryClient, id: string, slot: LikeSlot): Promise<void> {
+export async function cacheLikeSlotPending(
+  api: Api,
+  queryClient: QueryClient,
+  id: string,
+  slot: LikeSlot,
+): Promise<void> {
   await queryClient.cancelQueries({ queryKey: statusQueryOptions(api, id).queryKey });
-  updateCachedStatuses(queryClient, forPost(id, (status) => withLikeSlot(status, slot)));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => withLikeSlot(status, slot)),
+  );
 }
 
 /** Puts back the viewer's Like slot of post `id` as it was before a change that the server refused. */
 export function restoreLikeSlot(queryClient: QueryClient, id: string, slot: LikeSlot): void {
-  updateCachedStatuses(queryClient, forPost(id, (status) => withLikeSlot(status, slot)));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => withLikeSlot(status, slot)),
+  );
 }
 
 /**
@@ -175,7 +216,10 @@ export function restoreLikeSlot(queryClient: QueryClient, id: string, slot: Like
 export function cacheLikeSlotAnswer(queryClient: QueryClient, id: string, answer: Status, last: boolean): void {
   if (!last) return;
   const from = answer.boost ?? answer;
-  updateCachedStatuses(queryClient, forPost(id, (status) => withLikeSlotFrom(status, from)));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => withLikeSlotFrom(status, from)),
+  );
 }
 
 /** How many reactions a page of the accounts that reacted holds. */
@@ -190,7 +234,10 @@ export function reactorsQueryOptions(api: Api, id: string) {
     queryKey: ["get", "/statuses/{id}/reactions", { params: { path: { id } } }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
       const { data, error } = await api.fetch.GET("/statuses/{id}/reactions", {
-        params: { path: { id }, query: { limit: reactorsPageSize, ...(pageParam !== undefined && { cursor: pageParam }) } },
+        params: {
+          path: { id },
+          query: { limit: reactorsPageSize, ...(pageParam !== undefined && { cursor: pageParam }) },
+        },
         signal,
       });
       if (data === undefined) throw new ApiError(error);
@@ -218,10 +265,20 @@ function isAccountStatusesQuery(queryKey: QueryKey, accountId: string): boolean 
  * removed post stays, shown unbookmarked, so that the press can be undone and focus stays on its button; the post is
  * gone when the list is opened again.
  */
-export function cacheRelationAnswer(queryClient: QueryClient, id: string, relation: Relation, answer: Status, last: boolean, viewerId: string): void {
+export function cacheRelationAnswer(
+  queryClient: QueryClient,
+  id: string,
+  relation: Relation,
+  answer: Status,
+  last: boolean,
+  viewerId: string,
+): void {
   if (last) {
     const from = answer.boost ?? answer;
-    updateCachedStatuses(queryClient, forPost(id, (status) => withRelationFrom(status, relation, from)));
+    updateCachedStatuses(
+      queryClient,
+      forPost(id, (status) => withRelationFrom(status, relation, from)),
+    );
   }
   if (relation === "boost") {
     void queryClient.invalidateQueries({
@@ -230,7 +287,10 @@ export function cacheRelationAnswer(queryClient: QueryClient, id: string, relati
     });
   }
   if (relation === "bookmark") {
-    void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/bookmarks", refetchType: "none" });
+    void queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[1] === "/bookmarks",
+      refetchType: "none",
+    });
   }
 }
 
@@ -239,7 +299,9 @@ export function cacheRelationAnswer(queryClient: QueryClient, id: string, relati
  * (GET /accounts/{id}/statuses?pinned=true, FR-403). For a remote account, those this server knows of.
  */
 export function pinnedStatusesQueryOptions(api: Api, accountId: string) {
-  return api.query.queryOptions("get", "/accounts/{id}/statuses", { params: { path: { id: accountId }, query: { pinned: true } } });
+  return api.query.queryOptions("get", "/accounts/{id}/statuses", {
+    params: { path: { id: accountId }, query: { pinned: true } },
+  });
 }
 
 /**
@@ -248,7 +310,9 @@ export function pinnedStatusesQueryOptions(api: Api, accountId: string) {
  */
 export async function setPin(api: Api, id: string, on: boolean): Promise<Status> {
   const init = { params: { path: { id } } };
-  const { data, error } = await (on ? api.fetch.POST("/statuses/{id}/pin", init) : api.fetch.DELETE("/statuses/{id}/pin", init));
+  const { data, error } = await (on
+    ? api.fetch.POST("/statuses/{id}/pin", init)
+    : api.fetch.DELETE("/statuses/{id}/pin", init));
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
   return data;
@@ -259,9 +323,18 @@ export async function setPin(api: Api, id: string, on: boolean): Promise<Status>
  * S1): every copy of the post takes its `pinned`, and the viewer's pinned posts, a list that changes, are read
  * again. Resolves once the list on screen has been read again, so that the success shows with it.
  */
-export async function cachePinAnswer(api: Api, queryClient: QueryClient, id: string, answer: Status, viewerId: string): Promise<void> {
+export async function cachePinAnswer(
+  api: Api,
+  queryClient: QueryClient,
+  id: string,
+  answer: Status,
+  viewerId: string,
+): Promise<void> {
   const pinned = answer.pinned === true;
-  updateCachedStatuses(queryClient, forPost(id, (status) => (status.pinned === pinned ? status : { ...status, pinned })));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => (status.pinned === pinned ? status : { ...status, pinned })),
+  );
   await queryClient.invalidateQueries({ queryKey: pinnedStatusesQueryOptions(api, viewerId).queryKey });
 }
 
@@ -286,7 +359,10 @@ export async function votePoll(api: Api, id: string, pollId: string, choices: re
 export function cacheVoteAnswer(queryClient: QueryClient, id: string, answer: Status): void {
   const { poll } = answer.boost ?? answer;
   if (poll === undefined) return;
-  updateCachedStatuses(queryClient, forPost(id, (status) => ({ ...status, poll })));
+  updateCachedStatuses(
+    queryClient,
+    forPost(id, (status) => ({ ...status, poll })),
+  );
 }
 
 /**
@@ -310,10 +386,16 @@ export async function deleteStatus(api: Api, id: string): Promise<void> {
 export function cacheDeletedStatus(api: Api, queryClient: QueryClient, post: Status): void {
   queryClient.removeQueries({ queryKey: statusQueryOptions(api, post.id).queryKey, exact: true });
   queryClient.removeQueries({ queryKey: statusContextQueryOptions(api, post.id).queryKey, exact: true });
-  updateCachedStatuses(queryClient, forPost(post.id, () => null));
+  updateCachedStatuses(
+    queryClient,
+    forPost(post.id, () => null),
+  );
   const parentId = post.in_reply_to_id;
   if (parentId !== undefined) {
-    updateCachedStatuses(queryClient, forPost(parentId, (parent) => ({ ...parent, replies_count: Math.max(0, parent.replies_count - 1) })));
+    updateCachedStatuses(
+      queryClient,
+      forPost(parentId, (parent) => ({ ...parent, replies_count: Math.max(0, parent.replies_count - 1) })),
+    );
   }
 }
 
@@ -343,7 +425,10 @@ export function statusShareUrl(status: Pick<Status, "url" | "uri">): string {
 
 /** Changes who may quote the viewer's post `id` (PUT /statuses/{id}/quote_policy, FR-114); returns the post after it. */
 export async function setQuotePolicy(api: Api, id: string, policy: QuotePolicy): Promise<Status> {
-  const { data, error } = await api.fetch.PUT("/statuses/{id}/quote_policy", { params: { path: { id } }, body: { quote_policy: policy } });
+  const { data, error } = await api.fetch.PUT("/statuses/{id}/quote_policy", {
+    params: { path: { id } },
+    body: { quote_policy: policy },
+  });
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
   return data;
@@ -351,7 +436,13 @@ export async function setQuotePolicy(api: Api, id: string, policy: QuotePolicy):
 
 /** Puts the server's answer to a change of the quote policy into every cached copy of the post (S1). */
 export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status): void {
-  updateCachedStatuses(queryClient, forPost(answer.id, (status) => ({ ...status, ...(answer.quote_policy === undefined ? {} : { quote_policy: answer.quote_policy }) })));
+  updateCachedStatuses(
+    queryClient,
+    forPost(answer.id, (status) => ({
+      ...status,
+      ...(answer.quote_policy === undefined ? {} : { quote_policy: answer.quote_policy }),
+    })),
+  );
 }
 
 /**
@@ -360,7 +451,9 @@ export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status)
  */
 export async function revokeQuote(api: Api, quotedId: string, quotingId: string): Promise<void> {
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
-  await api.fetch.POST("/statuses/{id}/quotes/{quote_id}/revoke", { params: { path: { id: quotedId, quote_id: quotingId } } });
+  await api.fetch.POST("/statuses/{id}/quotes/{quote_id}/revoke", {
+    params: { path: { id: quotedId, quote_id: quotingId } },
+  });
 }
 
 /**
@@ -368,6 +461,11 @@ export async function revokeQuote(api: Api, quotedId: string, quotingId: string)
  * without the quoted post, and the list of the quotes of `quotedId`, which changes, is marked stale.
  */
 export async function cacheRevokedQuote(queryClient: QueryClient, quotedId: string, quotingId: string): Promise<void> {
-  updateCachedStatuses(queryClient, forPost(quotingId, (status) => (status.quote === undefined ? status : { ...status, quote: { state: "revoked" } })));
-  await queryClient.invalidateQueries({ queryKey: ["get", "/statuses/{id}/quotes", { params: { path: { id: quotedId } } }] });
+  updateCachedStatuses(
+    queryClient,
+    forPost(quotingId, (status) => (status.quote === undefined ? status : { ...status, quote: { state: "revoked" } })),
+  );
+  await queryClient.invalidateQueries({
+    queryKey: ["get", "/statuses/{id}/quotes", { params: { path: { id: quotedId } } }],
+  });
 }

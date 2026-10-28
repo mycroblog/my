@@ -106,7 +106,8 @@ export class TalkingDetector {
 
   #report(): void {
     const sessions = new Set<string>();
-    for (const entry of this.#entries.values()) if (entry.talking && entry.session !== undefined) sessions.add(entry.session);
+    for (const entry of this.#entries.values())
+      if (entry.talking && entry.session !== undefined) sessions.add(entry.session);
     if (sameSessions(sessions, this.#reported)) return;
     this.#reported = sessions;
     this.#onChange(sessions);

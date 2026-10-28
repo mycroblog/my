@@ -7,8 +7,40 @@
 const undeterminedLanguage = "und";
 
 const commonLanguages: readonly string[] = [
-  "ar", "ca", "cs", "da", "de", "el", "en", "eo", "es", "eu", "fa", "fi", "fr", "ga", "gl", "he", "hi", "hu", "id", "it",
-  "ja", "ko", "nl", "no", "pl", "pt", "ro", "ru", "sv", "th", "tr", "uk", "vi", "zh",
+  "ar",
+  "ca",
+  "cs",
+  "da",
+  "de",
+  "el",
+  "en",
+  "eo",
+  "es",
+  "eu",
+  "fa",
+  "fi",
+  "fr",
+  "ga",
+  "gl",
+  "he",
+  "hi",
+  "hu",
+  "id",
+  "it",
+  "ja",
+  "ko",
+  "nl",
+  "no",
+  "pl",
+  "pt",
+  "ro",
+  "ru",
+  "sv",
+  "th",
+  "tr",
+  "uk",
+  "vi",
+  "zh",
 ];
 
 export type LanguageOption = { id: string; name: string };
@@ -27,10 +59,16 @@ function languageName(names: Intl.DisplayNames, tag: string): string {
  * The language choices, sorted by name in `locale`, with "undetermined" (named `undeterminedName`) first
  * and the tags in `include` added when they are not in the list.
  */
-export function languageOptions(locale: string, include: readonly string[], undeterminedName: string): LanguageOption[] {
+export function languageOptions(
+  locale: string,
+  include: readonly string[],
+  undeterminedName: string,
+): LanguageOption[] {
   const names = new Intl.DisplayNames([locale], { type: "language" });
   const collator = new Intl.Collator(locale);
   const tags = [...new Set([...commonLanguages, ...include])].filter((tag) => tag !== undeterminedLanguage);
-  const options = tags.map((id) => ({ id, name: languageName(names, id) })).toSorted((a, b) => collator.compare(a.name, b.name));
+  const options = tags
+    .map((id) => ({ id, name: languageName(names, id) }))
+    .toSorted((a, b) => collator.compare(a.name, b.name));
   return [{ id: undeterminedLanguage, name: undeterminedName }, ...options];
 }

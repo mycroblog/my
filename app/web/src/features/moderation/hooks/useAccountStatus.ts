@@ -56,7 +56,10 @@ export function usePastActions(): ActionList {
 }
 
 /** One post an action acted on: loading, shown, or not visible any more (deleted, as `delete_statuses` does). */
-export type ActionStatus = { id: string; status: "loading" } | { id: string; status: "found"; value: Status } | { id: string; status: "missing" };
+export type ActionStatus =
+  | { id: string; status: "loading" }
+  | { id: string; status: "found"; value: Status }
+  | { id: string; status: "missing" };
 
 /** The posts that an action on posts acted on, in its order. */
 export function useActionStatuses(statusIds: readonly string[]): ActionStatus[] {

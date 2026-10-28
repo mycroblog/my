@@ -137,7 +137,9 @@ describe("the end of a session", () => {
 
     await a.signOut();
 
-    expect(revoked.map((form) => Object.fromEntries(form))).toEqual([{ token: "access-1", token_type_hint: "access_token", client_id: "my-web" }]);
+    expect(revoked.map((form) => Object.fromEntries(form))).toEqual([
+      { token: "access-1", token_type_hint: "access_token", client_id: "my-web" },
+    ]);
     expect(a.accessToken).toBeNull();
     await waitFor(() => {
       expect(b.status).toBe("signed-out");

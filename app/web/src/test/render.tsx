@@ -22,7 +22,10 @@ const testConfig: RuntimeConfig = {
 };
 
 /** Renders a component inside the config, i18n and external link providers, in `locale` (the source locale by default). */
-export async function renderWithProviders(ui: ReactNode, { locale = "en", ...options }: Omit<RenderOptions, "wrapper"> & { locale?: string } = {}) {
+export async function renderWithProviders(
+  ui: ReactNode,
+  { locale = "en", ...options }: Omit<RenderOptions, "wrapper"> & { locale?: string } = {},
+) {
   const i18n = await loadI18n(locale);
   const user = userEvent.setup();
   const result = render(ui, {
@@ -51,7 +54,11 @@ export type RenderAppOptions = {
  * QueryClient and session as main.tsx makes them (the session resumes from the refresh endpoint, which
  * answers "signed out" by default), and MSW for the network. Wait for the first page with a `findBy` query.
  */
-export async function renderApp({ path = "/home", locale = "en", createRouter = createAppRouter }: RenderAppOptions = {}) {
+export async function renderApp({
+  path = "/home",
+  locale = "en",
+  createRouter = createAppRouter,
+}: RenderAppOptions = {}) {
   const i18n: I18n = await loadI18n(locale);
   /** Where the app sent the browser away to (the authorization screen); jsdom cannot load it. */
   const leftTo: URL[] = [];

@@ -54,10 +54,18 @@ export function StatusPoll({ status, canVote }: StatusPollProps) {
         closedLabel={view.closed ? t("client:status.poll.closed") : undefined}
         ends={
           !view.closed && view.ends !== null
-            ? { dateTime: view.ends.dateTime, absolute: view.ends.absolute, text: t("client:status.poll.ends", { time: view.ends.relative }) }
+            ? {
+                dateTime: view.ends.dateTime,
+                absolute: view.ends.absolute,
+                text: t("client:status.poll.ends", { time: view.ends.relative }),
+              }
             : null
         }
-        remoteLabel={view.remoteHost !== null && form === null ? t("client:status.poll.remote_counts", { host: view.remoteHost }) : undefined}
+        remoteLabel={
+          view.remoteHost !== null && form === null
+            ? t("client:status.poll.remote_counts", { host: view.remoteHost })
+            : undefined
+        }
       />
     </Poll>
   );

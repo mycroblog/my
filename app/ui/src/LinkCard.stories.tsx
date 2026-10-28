@@ -64,7 +64,8 @@ export const Sensitive: Story = {
 /** Long texts wrap and the description is cut to two lines. */
 export const LongText: Story = {
   args: {
-    title: "A very long title of a page that goes on and on, much longer than the room of one line on a phone, to check that it wraps",
+    title:
+      "A very long title of a page that goes on and on, much longer than the room of one line on a phone, to check that it wraps",
     description: "A description that is long enough to be cut. ".repeat(10),
     siteName: "a-very-long-site-name-without-any-spaces-at-all.example",
   },
@@ -72,5 +73,10 @@ export const LongText: Story = {
 
 /** A page in a right-to-left language keeps its own direction. */
 export const RightToLeft: Story = {
-  args: { title: "شروق الشمس مرة أخرى", description: "أشرقت الشمس من الشرق كما في كل يوم.", siteName: "أخبار", lang: "ar" },
+  args: {
+    title: "شروق الشمس مرة أخرى",
+    description: "أشرقت الشمس من الشرق كما في كل يوم.",
+    siteName: "أخبار",
+    lang: "ar",
+  },
 };

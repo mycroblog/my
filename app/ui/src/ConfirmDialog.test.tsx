@@ -18,11 +18,30 @@ function Suspend({ onConfirm, withFields = false }: { onConfirm: (close: () => v
   return (
     <DialogTrigger>
       <Button>Suspend example.com</Button>
-      <ConfirmDialog title="Suspend example.com?" description="Deliveries stop." confirmLabel="Suspend" cancelLabel="Cancel" onConfirm={onConfirm}>
+      <ConfirmDialog
+        title="Suspend example.com?"
+        description="Deliveries stop."
+        confirmLabel="Suspend"
+        cancelLabel="Cancel"
+        onConfirm={onConfirm}
+      >
         {withFields ? (
           <>
-            <ReasonField label="Reason" isRequired value={reason} onChange={setReason} characterLimit={100} formatRemaining={formatRemaining} />
-            <DurationSelect label="Duration" durations={[day]} formatDuration={() => "1 day"} indefiniteLabel="Indefinitely" defaultValue={null} />
+            <ReasonField
+              label="Reason"
+              isRequired
+              value={reason}
+              onChange={setReason}
+              characterLimit={100}
+              formatRemaining={formatRemaining}
+            />
+            <DurationSelect
+              label="Duration"
+              durations={[day]}
+              formatDuration={() => "1 day"}
+              indefiniteLabel="Indefinitely"
+              defaultValue={null}
+            />
           </>
         ) : undefined}
       </ConfirmDialog>
@@ -120,7 +139,15 @@ describe("ConfirmDialog", () => {
 
   it("shows a failure in the dialog as an alert", async () => {
     render(
-      <ConfirmDialog defaultOpen title="Suspend?" description="Deliveries stop." confirmLabel="Suspend" cancelLabel="Cancel" onConfirm={vi.fn()} errorMessage="Could not suspend." />,
+      <ConfirmDialog
+        defaultOpen
+        title="Suspend?"
+        description="Deliveries stop."
+        confirmLabel="Suspend"
+        cancelLabel="Cancel"
+        onConfirm={vi.fn()}
+        errorMessage="Could not suspend."
+      />,
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not suspend.");
   });

@@ -44,18 +44,28 @@ function invitesServer(initial: readonly Schemas["AdminInvite"][]) {
 describe("the invites", () => {
   beforeEach(() => {
     server.use(signedInHandler, operatorHandler(["manage_invites"]));
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, registrations: { mode: "invite" } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, registrations: { mode: "invite" } }),
+      ),
+    );
   });
 
   test("lists the invites with how they were used", async () => {
-    const { max_uses: _, expires_at: __, ...unlimitedInvite } = inviteFixture({ id: "0192f0c4-7a8e-7000-8000-0000000006a2", code: "ZZZZYYYYXXXXWWWW", uses: 3 });
+    const {
+      max_uses: _,
+      expires_at: __,
+      ...unlimitedInvite
+    } = inviteFixture({ id: "0192f0c4-7a8e-7000-8000-0000000006a2", code: "ZZZZYYYYXXXXWWWW", uses: 3 });
     invitesServer([inviteFixture({ uses: 1, state: "exhausted" }), unlimitedInvite]);
     await renderApp({ path: "/moderation/invites" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Invites" })).toBeInTheDocument();
     expect(screen.queryByText(/does not take sign-ups with an invite/)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Invites" })).toBeInTheDocument();
-    const [exhausted, unlimited] = within(screen.getByRole("table", { name: "Invites" })).getAllByRole("row").slice(1);
+    const [exhausted, unlimited] = within(screen.getByRole("table", { name: "Invites" }))
+      .getAllByRole("row")
+      .slice(1);
     if (exhausted === undefined || unlimited === undefined) throw new Error("expected two invites");
     expect(within(exhausted).getByRole("rowheader", { name: "ABCDEFGHJKLMNPQR" })).toBeInTheDocument();
     expect(within(exhausted).getByText("Used up")).toBeInTheDocument();
@@ -74,7 +84,10 @@ describe("the invites", () => {
     await user.click(within(form).getByRole("button", { name: "Create the invite" }));
 
     expect(await within(form).findByText("Created the invite NEWCODE234567ABC.")).toBeInTheDocument();
-    expect(within(form).getByText("https://my.example/auth/sign_up?invite=NEWCODE234567ABC")).toHaveAttribute("dir", "ltr");
+    expect(within(form).getByText("https://my.example/auth/sign_up?invite=NEWCODE234567ABC")).toHaveAttribute(
+      "dir",
+      "ltr",
+    );
     expect(invites.created).toEqual([{ max_uses: 1, expires_in: 7 * 86_400 }]);
     expect(await screen.findByRole("rowheader", { name: "NEWCODE234567ABC" })).toBeInTheDocument();
   });
@@ -98,7 +111,9 @@ describe("the invites", () => {
     const { user } = await renderApp({ path: "/moderation/invites" });
     await user.click(await screen.findByRole("button", { name: /^Revoke the invite ABCDEFGHJKLMNPQR/ }));
 
-    expect(await screen.findByText("Revoked the invite ABCDEFGHJKLMNPQR. Nobody can sign up with it anymore.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Revoked the invite ABCDEFGHJKLMNPQR. Nobody can sign up with it anymore."),
+    ).toBeInTheDocument();
     const heading = screen.getByRole("rowheader", { name: "ABCDEFGHJKLMNPQR" });
     await waitFor(() => {
       expect(heading).toHaveFocus();

@@ -46,7 +46,11 @@ describe("the landing page", () => {
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
 
     const about = screen.getByRole("region", { name: "About this server" });
-    expect(within(about).getAllByText(/./u, { selector: "p" }).map((p) => p.textContent)).toEqual(["We grow vegetables.", "Everyone is welcome."]);
+    expect(
+      within(about)
+        .getAllByText(/./u, { selector: "p" })
+        .map((p) => p.textContent),
+    ).toEqual(["We grow vegetables.", "Everyone is welcome."]);
 
     const rules = screen.getByRole("region", { name: "Rules" });
     const rule = within(rules).getByRole("listitem");
@@ -78,13 +82,11 @@ describe("the landing page", () => {
 
     await screen.findByRole("region", { name: "Terms and policies" });
     const main = screen.getByRole("main");
-    expect(within(main).getAllByRole("region").map((region) => within(region).getByRole("heading", { level: 2 }).textContent)).toEqual([
-      "What you can do with my",
-      "About this server",
-      "Recent posts",
-      "Rules",
-      "Terms and policies",
-    ]);
+    expect(
+      within(main)
+        .getAllByRole("region")
+        .map((region) => within(region).getByRole("heading", { level: 2 }).textContent),
+    ).toEqual(["What you can do with my", "About this server", "Recent posts", "Rules", "Terms and policies"]);
     const documents = within(main).getByRole("region", { name: "Terms and policies" });
     const more = within(main).getByRole("link", { name: "More about this server" });
     const source = within(main).getByRole("link", { name: newTabName("View the source code") });
@@ -103,16 +105,27 @@ describe("the landing page", () => {
 
     serveInstance({ source_url: "mailto:source@my.example" });
     await renderApp({ path: "/" });
-    expect(await screen.findByRole("link", { name: "Request the source code by email" })).toHaveAttribute("href", "mailto:source@my.example");
+    expect(await screen.findByRole("link", { name: "Request the source code by email" })).toHaveAttribute(
+      "href",
+      "mailto:source@my.example",
+    );
   });
 
   test("shows the server's thumbnail above its summary", async () => {
     serveInstance({
       short_description: "A small server for gardeners.",
-      thumbnail: { url: "https://my.example/media/beach/r/large.webp", width: 1600, height: 900, alt: "A beach at dawn" },
+      thumbnail: {
+        url: "https://my.example/media/beach/r/large.webp",
+        width: 1600,
+        height: 900,
+        alt: "A beach at dawn",
+      },
     });
     await renderApp({ path: "/" });
-    expect(await screen.findByRole("img", { name: "A beach at dawn" })).toHaveAttribute("src", "https://my.example/media/beach/r/large.webp");
+    expect(await screen.findByRole("img", { name: "A beach at dawn" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/beach/r/large.webp",
+    );
   });
 
   test("links to the server's registration page, which loads in place of the app", async () => {
@@ -127,7 +140,11 @@ describe("the landing page", () => {
 
   test.each([
     { mode: "open", name: "Create an account", description: "" },
-    { mode: "invite", name: "Create an account with an invite", description: "Only people with an invite can create an account." },
+    {
+      mode: "invite",
+      name: "Create an account with an invite",
+      description: "Only people with an invite can create an account.",
+    },
   ] as const)("names the registration link after the $mode mode", async ({ mode, name, description }) => {
     serveInstance({ registrations: { mode } });
     await renderApp({ path: "/" });
@@ -182,7 +199,9 @@ describe("the landing page", () => {
     );
     const { user } = await renderApp({ path: "/" });
     const posts = await screen.findByRole("region", { name: "Recent posts" });
-    expect(await within(posts).findByRole("heading", { level: 3, name: "Couldn't load the recent posts" })).toBeInTheDocument();
+    expect(
+      await within(posts).findByRole("heading", { level: 3, name: "Couldn't load the recent posts" }),
+    ).toBeInTheDocument();
     fail = false;
     await user.click(within(posts).getByRole("button", { name: "Try again" }));
     expect(await within(posts).findByRole("feed", { name: "Recent posts" })).toBeInTheDocument();

@@ -75,7 +75,15 @@ export function refreshDomainMutes(queryClient: QueryClient, list: boolean): Pro
 
 /** Takes an unmuted domain off the cached list at once, so that the screen can move focus to the next row. */
 export function removeDomainMute(queryClient: QueryClient, api: Api, domain: string): void {
-  queryClient.setQueryData(domainMutesQueryOptions(api).queryKey, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, domain_mutes: page.domain_mutes.filter((mute) => mute.domain !== domain) })) },
+  queryClient.setQueryData(
+    domainMutesQueryOptions(api).queryKey,
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          domain_mutes: page.domain_mutes.filter((mute) => mute.domain !== domain),
+        })),
+      },
   );
 }

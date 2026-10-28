@@ -67,7 +67,9 @@ function timeZone(zone: string, locale: string, at: Date): TimeZone {
   }
   // CLDR names a zone it has no name for by its offset in every style; the option shows the offset once.
   const offsetName = zoneName(locale, zone, "longOffset", at);
-  const name = [zoneName(locale, zone, "longGeneric", at), zoneName(locale, zone, "long", at)].find((n) => n !== "" && n !== offsetName);
+  const name = [zoneName(locale, zone, "longGeneric", at), zoneName(locale, zone, "long", at)].find(
+    (n) => n !== "" && n !== offsetName,
+  );
   return { id: zone, name, offset: formatOffset(minutes), minutes };
 }
 
@@ -80,7 +82,9 @@ function timeZones(current: string, locale: string, at: Date): TimeZone[] {
   const collator = new Intl.Collator(locale);
   return (zones.includes(current) ? zones : [current, ...zones])
     .map((zone) => timeZone(zone, locale, at))
-    .toSorted((a, b) => a.minutes - b.minutes || collator.compare(a.name ?? "", b.name ?? "") || collator.compare(a.id, b.id));
+    .toSorted(
+      (a, b) => a.minutes - b.minutes || collator.compare(a.name ?? "", b.name ?? "") || collator.compare(a.id, b.id),
+    );
 }
 
 /** An option of the time zone select: the IANA name as `id`, its label, and the text type-ahead matches. */

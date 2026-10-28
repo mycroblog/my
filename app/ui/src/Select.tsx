@@ -25,12 +25,18 @@ const select = tv({
     value: "truncate data-placeholder:text-fg-muted **:[[slot=description]]:hidden",
     chevron: "size-4 shrink-0 fill-none stroke-current stroke-2 text-fg-muted",
     // overscroll-contain keeps the scroll from chaining to the page on iOS WebKit (web-client/09-app-shell.md §9).
-    popover: "min-w-(--trigger-width) overflow-auto overscroll-contain rounded-lg border border-border bg-surface-raised p-1 shadow-md",
+    popover:
+      "min-w-(--trigger-width) overflow-auto overscroll-contain rounded-lg border border-border bg-surface-raised p-1 shadow-md",
     listBox: "outline-hidden",
   },
   variants: {
     variant: {
-      field: { trigger: [fieldControl(), "justify-between group-data-invalid:border-danger group-data-invalid:ring-1 group-data-invalid:ring-danger data-pressed:bg-surface-raised"] },
+      field: {
+        trigger: [
+          fieldControl(),
+          "justify-between group-data-invalid:border-danger group-data-invalid:ring-1 group-data-invalid:ring-danger data-pressed:bg-surface-raised",
+        ],
+      },
       // Looks like a ghost Button of the `toolbar` size, with its icon as large, so that it lines up with the buttons beside it.
       toolbar: {
         root: "min-w-0 flex-row items-center",
@@ -47,7 +53,8 @@ const select = tv({
   defaultVariants: { variant: "field" },
 });
 
-export interface SelectProps<T extends object> extends Omit<RACSelectProps<T>, "children" | "selectionMode">, FieldTextProps {
+export interface SelectProps<T extends object>
+  extends Omit<RACSelectProps<T>, "children" | "selectionMode">, FieldTextProps {
   /** The options, for a dynamic collection rendered by a `children` function. */
   items?: ListBoxProps<T>["items"];
   /** `SelectItem`s, or a function from an item of `items` to its `SelectItem`. */
@@ -73,7 +80,18 @@ export interface SelectProps<T extends object> extends Omit<RACSelectProps<T>, "
  * list, typing jumps to an option. Controlled with `value` / `onChange` or uncontrolled with `defaultValue`;
  * the value is the selected `SelectItem`'s `id`.
  */
-export function Select<T extends object>({ label, description, errorMessage, items, children, className, variant, icon, tooltip, ...props }: SelectProps<T>) {
+export function Select<T extends object>({
+  label,
+  description,
+  errorMessage,
+  items,
+  children,
+  className,
+  variant,
+  icon,
+  tooltip,
+  ...props
+}: SelectProps<T>) {
   const styles = select({ variant });
   const trigger = (
     <Button className={styles.trigger()}>
@@ -97,13 +115,13 @@ export function Select<T extends object>({ label, description, errorMessage, ite
               <Tooltip>{tooltip}</Tooltip>
             </TooltipTrigger>
           )}
-      {description !== undefined && <FieldDescription>{description}</FieldDescription>}
-      <FieldError>{errorMessage}</FieldError>
-      <Popover className={styles.popover()}>
-        <ListBox className={styles.listBox()} {...(items === undefined ? {} : { items })}>
-          {children}
-        </ListBox>
-      </Popover>
+          {description !== undefined && <FieldDescription>{description}</FieldDescription>}
+          <FieldError>{errorMessage}</FieldError>
+          <Popover className={styles.popover()}>
+            <ListBox className={styles.listBox()} {...(items === undefined ? {} : { items })}>
+              {children}
+            </ListBox>
+          </Popover>
         </>
       )}
     </RACSelect>
@@ -139,7 +157,11 @@ export function SelectItem<T extends object>({ children, description, className,
   const styles = selectItem();
   const textValue = props.textValue ?? (typeof children === "string" ? children : undefined);
   return (
-    <ListBoxItem {...props} {...(textValue === undefined ? {} : { textValue })} className={composeRenderProps(className, (className) => styles.root({ className }))}>
+    <ListBoxItem
+      {...props}
+      {...(textValue === undefined ? {} : { textValue })}
+      className={composeRenderProps(className, (className) => styles.root({ className }))}
+    >
       {({ isSelected }) => (
         <>
           {isSelected ? (

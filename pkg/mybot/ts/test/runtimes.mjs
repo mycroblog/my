@@ -12,7 +12,10 @@ import { Bot, FileStore, plainText } from "../dist/index.js";
 import { Server } from "../dist/testing/index.js";
 import { staticToken } from "@mycroblog/mykit";
 
-const runtime = typeof globalThis.Deno === "object" ? `Deno ${globalThis.Deno.version.deno}` : `Node.js ${globalThis.process.version}`;
+const runtime =
+  typeof globalThis.Deno === "object"
+    ? `Deno ${globalThis.Deno.version.deno}`
+    : `Node.js ${globalThis.process.version}`;
 
 const notificationId = "01900000-0000-7000-8000-000000000010";
 const alice = { id: "01900000-0000-7000-8000-000000000001", username: "alice", acct: "alice", bot: false };
@@ -21,7 +24,12 @@ const mention = {
   type: "mention",
   created_at: new Date().toISOString(),
   account: alice,
-  status: { id: "01900000-0000-7000-8000-000000000510", account: alice, content: "<p>@bot ping</p>", visibility: "public" },
+  status: {
+    id: "01900000-0000-7000-8000-000000000510",
+    account: alice,
+    content: "<p>@bot ping</p>",
+    visibility: "public",
+  },
 };
 const posts = [];
 
@@ -31,7 +39,13 @@ async function fakeFetch(request) {
   const json = (body) => new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
   switch (`${request.method} ${url.pathname}`) {
     case "GET /api/v1/accounts/verify_credentials":
-      return json({ id: "01900000-0000-7000-8000-000000000000", username: "bot", acct: "bot", domain: "example.com", bot: true });
+      return json({
+        id: "01900000-0000-7000-8000-000000000000",
+        username: "bot",
+        acct: "bot",
+        domain: "example.com",
+        bot: true,
+      });
     case "GET /api/v1/notifications":
       return json({ items: [mention] });
     case "POST /api/v1/statuses":
@@ -76,20 +90,33 @@ try {
 
   check(posts.length === 1, `posted ${String(posts.length)} replies, want 1`);
   check(posts[0].key === `mybot:reply:${notificationId}:1`, `the Idempotency-Key is ${String(posts[0].key)}`);
-  check(posts[0].body.text === "@alice pong" && posts[0].body.visibility === "unlisted", `the reply is ${JSON.stringify(posts[0].body)}`);
+  check(
+    posts[0].body.text === "@alice pong" && posts[0].body.visibility === "unlisted",
+    `the reply is ${JSON.stringify(posts[0].body)}`,
+  );
   const state = JSON.parse(await readFile(path, "utf8"));
-  check(typeof state.processed[notificationId] === "string" && state.position === notificationId, `the state file is ${JSON.stringify(state)}`);
+  check(
+    typeof state.processed[notificationId] === "string" && state.position === notificationId,
+    `the state file is ${JSON.stringify(state)}`,
+  );
   check(plainText("<p>a &amp; b</p>") === "a & b", "plainText");
 
   // The scheduled jobs (croner and the time zones of Intl) and the fake server of @mycroblog/mybot/testing.
   const srv = new Server({ now: Date.parse("2026-10-25T12:30:00Z") });
   const scheduled = new Bot(srv.options());
-  scheduled.every("0 9 * * *", async (ctx) => {
-    await ctx.post("good morning");
-  }, { name: "morning", timeZone: "Asia/Tokyo" });
+  scheduled.every(
+    "0 9 * * *",
+    async (ctx) => {
+      await ctx.post("good morning");
+    },
+    { name: "morning", timeZone: "Asia/Tokyo" },
+  );
   await scheduled.runOnce();
   const key = srv.posted()[0]?.idempotencyKey;
-  check(key === "mybot:every:morning:2026-10-25T00:00:00Z", `the scheduled post has the Idempotency-Key ${String(key)}`);
+  check(
+    key === "mybot:every:morning:2026-10-25T00:00:00Z",
+    `the scheduled post has the Idempotency-Key ${String(key)}`,
+  );
   console.log(`${runtime}: @mycroblog/mybot loads and runs a bot`);
 } finally {
   await rm(dir, { recursive: true, force: true });

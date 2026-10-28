@@ -2,7 +2,13 @@
 // A non-modal popover dialog anchored to its trigger: React Aria's Popover + Dialog. Focus moves into it
 // on open, Esc or a press outside closes it, and focus returns to the trigger (WAI-ARIA APG, dialog pattern).
 import type { ReactNode, Ref } from "react";
-import { Dialog, DialogTrigger, Heading, Popover as AriaPopover, type PopoverProps as AriaPopoverProps } from "react-aria-components";
+import {
+  Dialog,
+  DialogTrigger,
+  Heading,
+  Popover as AriaPopover,
+  type PopoverProps as AriaPopoverProps,
+} from "react-aria-components";
 import { tv } from "tailwind-variants";
 
 /** The trigger of a Popover: wraps the trigger button and the Popover, and owns the open state. */
@@ -20,7 +26,9 @@ const popover = tv({
   },
 });
 
-type Labelled = { /** A visible heading that names the popover. */ title: ReactNode; "aria-label"?: never } | { title?: never; "aria-label": string };
+type Labelled =
+  | { /** A visible heading that names the popover. */ title: ReactNode; "aria-label"?: never }
+  | { title?: never; "aria-label": string };
 
 export type PopoverProps = Labelled &
   Pick<AriaPopoverProps, "placement" | "offset" | "isOpen" | "defaultOpen" | "onOpenChange" | "triggerRef"> & {
@@ -32,7 +40,15 @@ export type PopoverProps = Labelled &
   };
 
 /** A popover with interactive content. Put it inside a `PopoverTrigger` after its trigger button. */
-export function Popover({ title, "aria-label": ariaLabel, children, className, ref, placement = "bottom", ...props }: PopoverProps) {
+export function Popover({
+  title,
+  "aria-label": ariaLabel,
+  children,
+  className,
+  ref,
+  placement = "bottom",
+  ...props
+}: PopoverProps) {
   const styles = popover();
   return (
     <AriaPopover {...props} ref={ref} placement={placement} className={styles.root({ class: className })}>

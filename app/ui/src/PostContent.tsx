@@ -144,9 +144,23 @@ function linkClickListener(onLinkClick: PostContentProps["onLinkClick"]): RefCal
   return (element) => {
     if (element === null) return;
     const listener = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
       const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!(link instanceof HTMLAnchorElement) || !element.contains(link) || link.target !== "" || link.hasAttribute("download")) return;
+      if (
+        !(link instanceof HTMLAnchorElement) ||
+        !element.contains(link) ||
+        link.target !== "" ||
+        link.hasAttribute("download")
+      )
+        return;
       onLinkClick(event, link);
     };
     element.addEventListener("click", listener);
@@ -166,7 +180,10 @@ const newTabMark = "data-new-tab";
  * server's `rel` and the "opens in a new tab" text after its content. The links are in HTML that React does not
  * render, so they change after React set it, and change back before React replaces it.
  */
-function linkTargetSetter(html: SanitizedHtml, { newTabLabel, isAppLink }: ExternalLinkSettings): RefCallback<HTMLDivElement> | undefined {
+function linkTargetSetter(
+  html: SanitizedHtml,
+  { newTabLabel, isAppLink }: ExternalLinkSettings,
+): RefCallback<HTMLDivElement> | undefined {
   if (html === "") return undefined;
   return (element) => {
     if (element === null) return;
@@ -212,7 +229,11 @@ function linkTargetSetter(html: SanitizedHtml, { newTabLabel, isAppLink }: Exter
  * after React set it, and come out again before React replaces it: the callback is made anew whenever
  * the body or its emoji change, and React calls the cleanup of the previous one first.
  */
-function emojiDrawer(html: SanitizedHtml, emojis: readonly CustomEmojiImage[], allowMotion: boolean): RefCallback<HTMLDivElement> | undefined {
+function emojiDrawer(
+  html: SanitizedHtml,
+  emojis: readonly CustomEmojiImage[],
+  allowMotion: boolean,
+): RefCallback<HTMLDivElement> | undefined {
   if (emojis.length === 0 || html === "") return undefined;
   return (element) => {
     if (element === null) return;
@@ -227,14 +248,31 @@ function emojiDrawer(html: SanitizedHtml, emojis: readonly CustomEmojiImage[], a
  * own pages through its router), and `emojis` to draw its custom emoji. The links to any other page open in a
  * new tab (`ExternalLinkContext`).
  */
-export function PostContent({ html, framed, lang, onLinkClick, emojis = noCustomEmojis, emojiMotion: motion, size, lineClamp, className, ref, ...props }: PostContentProps) {
+export function PostContent({
+  html,
+  framed,
+  lang,
+  onLinkClick,
+  emojis = noCustomEmojis,
+  emojiMotion: motion,
+  size,
+  lineClamp,
+  className,
+  ref,
+  ...props
+}: PostContentProps) {
   const plays = useAnimationsPlay();
   const links = use(ExternalLinkContext);
   const emojiMotion = motion ?? plays;
   return (
     <div
       {...props}
-      ref={mergeRefs(ref, linkTargetSetter(html, links), linkClickListener(onLinkClick), emojiDrawer(html, emojis, emojiMotion))}
+      ref={mergeRefs(
+        ref,
+        linkTargetSetter(html, links),
+        linkClickListener(onLinkClick),
+        emojiDrawer(html, emojis, emojiMotion),
+      )}
       dir="auto"
       lang={lang}
       className={postContent({ size, framed, lineClamp, className })}

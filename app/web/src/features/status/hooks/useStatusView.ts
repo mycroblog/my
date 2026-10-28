@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What a status card shows, as plain values for the slots of @my/ui's PostCard (web-client/README.md A4): the
 // hook decides what to show and formats it; the component only places it. It returns no JSX.
-import { type CustomEmojiImage, type ImageSources, type LinkCardImage, type MediaItem, type SanitizedHtml, serverSanitizedHtml } from "@my/ui";
+import {
+  type CustomEmojiImage,
+  type ImageSources,
+  type LinkCardImage,
+  type MediaItem,
+  type SanitizedHtml,
+  serverSanitizedHtml,
+} from "@my/ui";
 import { useIntl } from "react-intl";
 import { useContentLinkClick } from "../../../lib/contentLinks";
 import { handleOf, isRemoteAcct } from "../../../lib/handle";
@@ -9,7 +16,14 @@ import { hostOf } from "../../../lib/host";
 import { profilePath } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useT } from "../../../lib/i18n";
-import { type LinkCard, type MediaAttachment, type Status, statusHistoryPath, statusPath, statusShareUrl } from "../api/status";
+import {
+  type LinkCard,
+  type MediaAttachment,
+  type Status,
+  statusHistoryPath,
+  statusPath,
+  statusShareUrl,
+} from "../api/status";
 import { imageSources, originalImage } from "../../../lib/images";
 
 export type StatusView = {
@@ -20,7 +34,14 @@ export type StatusView = {
    * profile page, and avatar URL (undefined when the account has none, and the avatar shows its fallback),
    * with the custom emoji of the name.
    */
-  author: { id: string; name: string; emojis: readonly CustomEmojiImage[]; handle: string; href: string; avatar: ImageSources | undefined };
+  author: {
+    id: string;
+    name: string;
+    emojis: readonly CustomEmojiImage[];
+    handle: string;
+    href: string;
+    avatar: ImageSources | undefined;
+  };
   /** When the post was written: the ISO date for `<time>`, the relative time to show, and the full date and time. */
   time: TimeView;
   /** The web client's address of the post (the boosted post for a boost), which its time links to. */
@@ -75,8 +96,14 @@ function useLinkCardView(card: LinkCard | undefined): LinkCardView | null {
   const author =
     card.author === undefined
       ? card.author_name
-      : t("client:timeline.card.account", { name: card.author.display_name || card.author.username, handle: handleOf(card.author.acct) });
-  const date = card.published_at === undefined ? undefined : intl.formatDate(Date.parse(card.published_at), { dateStyle: "medium" });
+      : t("client:timeline.card.account", {
+          name: card.author.display_name || card.author.username,
+          handle: handleOf(card.author.acct),
+        });
+  const date =
+    card.published_at === undefined
+      ? undefined
+      : intl.formatDate(Date.parse(card.published_at), { dateStyle: "medium" });
   let byline: string | null = null;
   if (author !== undefined && date !== undefined) byline = t("client:timeline.card.author_published", { author, date });
   else if (author !== undefined) byline = t("client:timeline.card.author", { author });
@@ -90,7 +117,13 @@ function useLinkCardView(card: LinkCard | undefined): LinkCardView | null {
     image:
       card.image === undefined
         ? undefined
-        : { src: card.image.url, width: card.image.width, height: card.image.height, blurhash: card.image.blurhash, alt: card.image.description },
+        : {
+            src: card.image.url,
+            width: card.image.width,
+            height: card.image.height,
+            blurhash: card.image.blurhash,
+            alt: card.image.description,
+          },
     byline,
   };
 }
@@ -110,7 +143,14 @@ export function mediaItems(attachments: readonly MediaAttachment[], lang: string
       case "image":
         return attachment.preview_url === undefined
           ? []
-          : [{ ...common, src: attachment.preview_url, sources: imageSources(attachment.variants), original: originalImage(attachment.variants, attachment.url, attachment.meta) }];
+          : [
+              {
+                ...common,
+                src: attachment.preview_url,
+                sources: imageSources(attachment.variants),
+                original: originalImage(attachment.variants, attachment.url, attachment.meta),
+              },
+            ];
       case "video":
       case "audio":
       case "gifv":
@@ -150,7 +190,11 @@ export function useStatusView(status: Status): StatusView {
     boostedBy:
       status.boost === undefined
         ? null
-        : { name: status.account.display_name || status.account.username, emojis: status.account.emojis, href: profilePath(status.account.acct) },
+        : {
+            name: status.account.display_name || status.account.username,
+            emojis: status.account.emojis,
+            href: profilePath(status.account.acct),
+          },
     author: {
       id: post.account.id,
       name: post.account.display_name || post.account.username,

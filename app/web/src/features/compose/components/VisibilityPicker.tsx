@@ -1,5 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, EyeIcon, Popover, PopoverTrigger, Radio, RadioGroup, Tooltip, TooltipTrigger, VisuallyHidden } from "@my/ui";
+import {
+  Box,
+  Button,
+  EyeIcon,
+  Popover,
+  PopoverTrigger,
+  Radio,
+  RadioGroup,
+  Tooltip,
+  TooltipTrigger,
+  VisuallyHidden,
+} from "@my/ui";
 import { useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import type { PostingLimits, Visibility } from "../api/compose";
@@ -32,7 +43,9 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
   const [isOpen, setIsOpen] = useState(false);
   const title = t("client:compose.visibility.title");
   const ceilingHint =
-    limits === null ? undefined : t("client:compose.visibility.ceiling", { visibility: t(visibilityLabel[limits.visibility_ceiling]) });
+    limits === null
+      ? undefined
+      : t("client:compose.visibility.ceiling", { visibility: t(visibilityLabel[limits.visibility_ceiling]) });
   const buttonLabel = t("client:compose.visibility.button", { visibility: t(visibilityLabel[value]) });
   return (
     <PopoverTrigger isOpen={isOpen} onOpenChange={setIsOpen}>

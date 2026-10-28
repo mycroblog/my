@@ -72,10 +72,12 @@ export function refetchInstanceOnFederationRestricted(queryClient: QueryClient, 
     void queryClient.invalidateQueries({ queryKey: api.query.queryOptions("get", "/instance").queryKey });
   };
   const unsubscribeQueries = queryClient.getQueryCache().subscribe((event) => {
-    if (event.type === "updated" && event.action.type === "error" && isFederationRestricted(event.action.error)) refetch();
+    if (event.type === "updated" && event.action.type === "error" && isFederationRestricted(event.action.error))
+      refetch();
   });
   const unsubscribeMutations = queryClient.getMutationCache().subscribe((event) => {
-    if (event.type === "updated" && event.action.type === "error" && isFederationRestricted(event.action.error)) refetch();
+    if (event.type === "updated" && event.action.type === "error" && isFederationRestricted(event.action.error))
+      refetch();
   });
   return () => {
     unsubscribeQueries();

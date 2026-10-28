@@ -23,7 +23,10 @@ const noticeBanner = tv({
   },
 });
 
-export type NoticeBannerProps = Omit<ComponentPropsWithRef<"section">, "children" | "className" | "style" | "aria-label"> & {
+export type NoticeBannerProps = Omit<
+  ComponentPropsWithRef<"section">,
+  "children" | "className" | "style" | "aria-label"
+> & {
   /** The region's name, for the landmark list ("Notice of the server's closure"). */
   label: string;
   /** The one line that says what the notice is about. */

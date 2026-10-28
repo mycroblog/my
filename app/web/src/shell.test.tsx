@@ -43,7 +43,10 @@ beforeEach(() => {
 
 describe("the display locale", () => {
   test("stays the user's while GET /preferences is rate-limited after a reload", async () => {
-    server.use(resumableSession(), http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })));
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })),
+    );
     // The instance's locale is English; the user's preferences say Japanese.
     const { unmount, session } = await renderApp({ path: "/home", locale: (await loadStartI18n(document)).locale });
     await screen.findByRole("heading", { level: 1, name: "ホーム" });
@@ -86,10 +89,17 @@ describe("a request of the shell that fails", () => {
     { name: "the notification marker", path: "/notifications/marker" },
   ] as const;
 
-  test.each(requests.flatMap((request) => [
-    { ...request, failure: "a server error", respond: () => problem(500, "about:blank", "Internal Server Error"), limited: false },
-    { ...request, failure: "a 429", respond: () => rateLimited(30), limited: true },
-  ]))("leaves the page and the navigation in place: $name with $failure", async ({ path, respond, limited }) => {
+  test.each(
+    requests.flatMap((request) => [
+      {
+        ...request,
+        failure: "a server error",
+        respond: () => problem(500, "about:blank", "Internal Server Error"),
+        limited: false,
+      },
+      { ...request, failure: "a 429", respond: () => rateLimited(30), limited: true },
+    ]),
+  )("leaves the page and the navigation in place: $name with $failure", async ({ path, respond, limited }) => {
     server.use(resumableSession(), http.get(`${apiBase}${path}`, respond));
     await renderApp({ path: "/local" });
 
@@ -167,13 +177,17 @@ describe("the account section of the settings page", () => {
     let failing = true;
     server.use(
       resumableSession(),
-      http.get(`${apiBase}/accounts/verify_credentials`, () => (failing ? problem(500, "about:blank", "Internal Server Error") : undefined)),
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        failing ? problem(500, "about:blank", "Internal Server Error") : undefined,
+      ),
     );
     const viewers = countRequests("/accounts/verify_credentials");
     const { user } = await renderApp({ path: "/settings" });
     const account = await screen.findByRole("region", { name: "Account" });
 
-    expect(await within(account).findByRole("heading", { level: 3, name: "Could not load your account" })).toBeInTheDocument();
+    expect(
+      await within(account).findByRole("heading", { level: 3, name: "Could not load your account" }),
+    ).toBeInTheDocument();
     expect(within(account).getByText("Internal Server Error")).toBeInTheDocument();
     // The first request and one more try.
     expect(viewers.count).toBe(2);

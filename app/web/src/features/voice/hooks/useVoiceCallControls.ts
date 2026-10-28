@@ -50,7 +50,9 @@ export function useVoiceCallControls(): VoiceCallControls | null {
   const { call, snapshot } = state;
   if (call === null || snapshot === undefined || snapshot.phase === "ended") return null;
   const room = snapshot.room;
-  const self = room.participants.find((p) => p.session === call.session) ?? room.participants.find((p) => p.account.id === viewerId);
+  const self =
+    room.participants.find((p) => p.session === call.session) ??
+    room.participants.find((p) => p.account.id === viewerId);
   const isHost = self?.host ?? false;
   const others = room.participants.filter((p) => p !== self);
   return {
@@ -75,7 +77,10 @@ export function useVoiceCallControls(): VoiceCallControls | null {
     resumePlayback: () => {
       void call.resumePlayback();
     },
-    talking: snapshot.talking.size === 0 ? [] : room.participants.filter((p) => p.session !== undefined && snapshot.talking.has(p.session)),
+    talking:
+      snapshot.talking.size === 0
+        ? []
+        : room.participants.filter((p) => p.session !== undefined && snapshot.talking.has(p.session)),
     mustChoose: isHost && others.length > 0,
     nextHosts: others,
     leave: state.leave,

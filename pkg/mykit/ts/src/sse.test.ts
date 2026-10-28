@@ -13,7 +13,9 @@ describe("EventStreamParser", () => {
   });
 
   test("skips comments, such as the server's heartbeat", () => {
-    expect(parseAll(": connected\n\n: heartbeat\n\nevent: notification\ndata: x\n\n")).toEqual([{ event: "notification", data: "x" }]);
+    expect(parseAll(": connected\n\n: heartbeat\n\nevent: notification\ndata: x\n\n")).toEqual([
+      { event: "notification", data: "x" },
+    ]);
   });
 
   test("joins data lines with LF and names an event without a type message", () => {
@@ -21,7 +23,9 @@ describe("EventStreamParser", () => {
   });
 
   test("removes only one space after the colon, and takes a field without a colon as empty", () => {
-    expect(parseAll("data:no space\ndata:  two spaces\ndata\n\n")).toEqual([{ event: "message", data: "no space\n two spaces\n" }]);
+    expect(parseAll("data:no space\ndata:  two spaces\ndata\n\n")).toEqual([
+      { event: "message", data: "no space\n two spaces\n" },
+    ]);
   });
 
   test("does not dispatch an event without data, and resets the type after each event", () => {

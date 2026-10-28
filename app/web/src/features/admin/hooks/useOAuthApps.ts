@@ -84,7 +84,13 @@ export function useOAuthAppActions(): OAuthAppActions {
     setStatus(undefined);
   };
   const pendingId = disabling.isPending ? disabling.variables.id : allowing.isPending ? allowing.variables : undefined;
-  const failed = disabling.isError ? disabling.error : denying.isError ? denying.error : allowing.isError ? allowing.error : undefined;
+  const failed = disabling.isError
+    ? disabling.error
+    : denying.isError
+      ? denying.error
+      : allowing.isError
+        ? allowing.error
+        : undefined;
   return {
     setDisabled: (client, disable) => {
       resetAll();
@@ -93,7 +99,11 @@ export function useOAuthAppActions(): OAuthAppActions {
         {
           onSuccess: () => {
             void refreshOAuthApps(queryClient).then(() => {
-              report(t(disable ? "client:admin.oauth_apps.disabled_done" : "client:admin.oauth_apps.enabled_done", { name: appName(client) }));
+              report(
+                t(disable ? "client:admin.oauth_apps.disabled_done" : "client:admin.oauth_apps.enabled_done", {
+                  name: appName(client),
+                }),
+              );
             });
           },
         },

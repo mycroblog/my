@@ -47,7 +47,8 @@ export function useDataExports(): DataExports {
   const queryClient = useQueryClient();
   const query = useSuspenseQuery({
     ...dataExportsQueryOptions(api),
-    refetchInterval: (q) => (q.state.data?.items.some((item) => item.state === "pending") === true ? pendingPollInterval : false),
+    refetchInterval: (q) =>
+      q.state.data?.items.some((item) => item.state === "pending") === true ? pendingPollInterval : false,
   });
   const [status, setStatus] = useState<string | undefined>(undefined);
   const request = useMutation({

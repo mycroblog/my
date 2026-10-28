@@ -59,7 +59,9 @@ export function useDomainBlockExport(): DomainBlockExport {
       if (!mutation.isPending) mutation.mutate();
     },
     isPending: mutation.isPending,
-    status: mutation.isSuccess ? t("client:admin.domain_actions.csv.export.done", { name: domainBlockFileName }) : undefined,
+    status: mutation.isSuccess
+      ? t("client:admin.domain_actions.csv.export.done", { name: domainBlockFileName })
+      : undefined,
     error: mutation.isError ? errorMessage(mutation.error) : undefined,
   };
 }
@@ -70,7 +72,8 @@ const kilobytes = domainBlockImportByteLimit / 1000;
 /** Why a CSV cannot be sent, localized, or null when it can: it is empty or larger than the server reads. */
 export function validateDomainBlockCsv(t: Translate, text: string): string | null {
   if (text.trim() === "") return t("client:admin.domain_actions.csv.csv.required");
-  if (new TextEncoder().encode(text).length > domainBlockImportByteLimit) return t("client:admin.domain_actions.csv.csv.too_large", { max: kilobytes });
+  if (new TextEncoder().encode(text).length > domainBlockImportByteLimit)
+    return t("client:admin.domain_actions.csv.csv.too_large", { max: kilobytes });
   return null;
 }
 
@@ -148,7 +151,9 @@ export function useDomainBlockImportForm(): DomainBlockImportForm {
     },
   });
   const rows = preview.data?.rows;
-  const chosenRows = (rows ?? []).filter((row) => row.status === "importable" && row.block !== undefined && !cleared.has(row.line));
+  const chosenRows = (rows ?? []).filter(
+    (row) => row.status === "importable" && row.block !== undefined && !cleared.has(row.line),
+  );
   const run = () => {
     importing.mutate({
       blocks: chosenRows.flatMap((row) => (row.block === undefined ? [] : [row.block])),
@@ -156,7 +161,11 @@ export function useDomainBlockImportForm(): DomainBlockImportForm {
     });
   };
   const suspended = chosenRows.filter((row) => row.issue.includes("suspend")).length;
-  const importError = noneChosen ? t("client:admin.domain_actions.csv.none_selected") : importing.isError ? errorMessage(importing.error) : undefined;
+  const importError = noneChosen
+    ? t("client:admin.domain_actions.csv.none_selected")
+    : importing.isError
+      ? errorMessage(importing.error)
+      : undefined;
   return {
     text,
     changeText: (next) => {
@@ -164,7 +173,10 @@ export function useDomainBlockImportForm(): DomainBlockImportForm {
     },
     chooseFile: (chosen) => {
       if (chosen.size > domainBlockImportByteLimit) {
-        setFile({ status: "failed", message: t("client:admin.domain_actions.csv.file.too_large", { name: chosen.name, max: kilobytes }) });
+        setFile({
+          status: "failed",
+          message: t("client:admin.domain_actions.csv.file.too_large", { name: chosen.name, max: kilobytes }),
+        });
         return;
       }
       chosen.text().then(
@@ -173,7 +185,10 @@ export function useDomainBlockImportForm(): DomainBlockImportForm {
           setFile({ status: "read", message: t("client:admin.domain_actions.csv.file.read", { name: chosen.name }) });
         },
         () => {
-          setFile({ status: "failed", message: t("client:admin.domain_actions.csv.file.failed", { name: chosen.name }) });
+          setFile({
+            status: "failed",
+            message: t("client:admin.domain_actions.csv.file.failed", { name: chosen.name }),
+          });
         },
       );
     },

@@ -15,5 +15,8 @@ export function useMediaQuery(query: string): boolean {
       list.removeEventListener("change", onChange);
     };
   };
-  return useSyncExternalStore(subscribe, () => typeof window.matchMedia === "function" && window.matchMedia(query).matches);
+  return useSyncExternalStore(
+    subscribe,
+    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
+  );
 }

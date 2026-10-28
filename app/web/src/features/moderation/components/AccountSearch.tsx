@@ -4,7 +4,26 @@
 // TextFields, checked by the browser's constraint validation before the search runs. The route keeps the search
 // in the address (web-client/README.md S3). A local account can be searched by its email address, its email domain or
 // an IP address it used, one of them at a time; the results never show them (the account's page does, when asked).
-import { AccountItem, Box, Button, Card, DetailSection, EmptyState, Grid, RegionError, Select, SelectItem, Spinner, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, TextField } from "@my/ui";
+import {
+  AccountItem,
+  Box,
+  Button,
+  Card,
+  DetailSection,
+  EmptyState,
+  Grid,
+  RegionError,
+  Select,
+  SelectItem,
+  Spinner,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  TextField,
+} from "@my/ui";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import {
@@ -154,7 +173,9 @@ function SearchForm({ search, onSearch }: AccountSearchProps) {
             autoComplete="off"
             spellCheck="false"
             errorMessage={(validation) =>
-              validation.validationDetails.valueMissing ? t("client:admin.accounts.search.contact.required") : t("client:admin.accounts.search.contact.invalid")
+              validation.validationDetails.valueMissing
+                ? t("client:admin.accounts.search.contact.required")
+                : t("client:admin.accounts.search.contact.invalid")
             }
           />
         )}
@@ -200,7 +221,11 @@ function Results({ search }: { search: AdminAccountSearch }) {
           }
         />
       ) : isFiltered(search) ? (
-        <EmptyState headingLevel={3} heading={t("client:admin.accounts.empty.filtered")} description={t("client:admin.accounts.empty.filtered.description")} />
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:admin.accounts.empty.filtered")}
+          description={t("client:admin.accounts.empty.filtered.description")}
+        />
       ) : (
         <EmptyState headingLevel={3} heading={t("client:admin.accounts.empty")} />
       );
@@ -214,10 +239,16 @@ function Results({ search }: { search: AdminAccountSearch }) {
           empty={
             <Stack gap="4">
               {empty}
-              {results.moreError !== undefined && <RegionError heading={t("client:admin.accounts.results.more_failed")} reason={results.moreError} />}
+              {results.moreError !== undefined && (
+                <RegionError heading={t("client:admin.accounts.results.more_failed")} reason={results.moreError} />
+              )}
             </Stack>
           }
-          moreError={results.moreError !== undefined && <RegionError heading={t("client:admin.accounts.results.more_failed")} reason={results.moreError} />}
+          moreError={
+            results.moreError !== undefined && (
+              <RegionError heading={t("client:admin.accounts.results.more_failed")} reason={results.moreError} />
+            )
+          }
           head={
             <>
               <TableColumnHeader>{t("client:admin.accounts.column.account")}</TableColumnHeader>

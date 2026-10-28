@@ -9,7 +9,10 @@ const indefinite = "indefinite";
 
 type Option = { id: string; seconds: number | null; label: string };
 
-export type DurationSelectProps = Omit<SelectProps<Option>, "items" | "children" | "value" | "defaultValue" | "onChange"> & {
+export type DurationSelectProps = Omit<
+  SelectProps<Option>,
+  "items" | "children" | "value" | "defaultValue" | "onChange"
+> & {
   /** The durations to choose from, in seconds, in the order to show them. */
   durations: readonly number[];
   /** A duration in words, in the viewer's locale ("7 days"). */
@@ -31,8 +34,20 @@ function toKey(seconds: number | null | undefined): string | null | undefined {
  * A duration select (React Aria Select, the APG select-only combobox). "No end" comes last, after the
  * durations, so that the default reading order goes from the lightest choice to the heaviest.
  */
-export function DurationSelect({ durations, formatDuration, indefiniteLabel, value, defaultValue, onChange, ...props }: DurationSelectProps) {
-  const options: Option[] = durations.map((seconds) => ({ id: String(seconds), seconds, label: formatDuration(seconds) }));
+export function DurationSelect({
+  durations,
+  formatDuration,
+  indefiniteLabel,
+  value,
+  defaultValue,
+  onChange,
+  ...props
+}: DurationSelectProps) {
+  const options: Option[] = durations.map((seconds) => ({
+    id: String(seconds),
+    seconds,
+    label: formatDuration(seconds),
+  }));
   if (indefiniteLabel !== undefined) options.push({ id: indefinite, seconds: null, label: indefiniteLabel });
   const selected = toKey(value);
   const initial = toKey(defaultValue);

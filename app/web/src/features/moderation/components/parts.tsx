@@ -3,7 +3,19 @@
 // same shape: the permission gate and its message, the paged list of records (rows with dividers, the empty
 // state and "show more"), the titled section of a detail page, a server's state in words, a domain in both
 // of its forms, and dates in the viewer's locale and time zone. The facts of a record are @my/ui's DescriptionList.
-import { Box, Button, Card, DetailSection, EmptyState, Pagination, Stack, Table, TableBody, TableHead, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Card,
+  DetailSection,
+  EmptyState,
+  Pagination,
+  Stack,
+  Table,
+  TableBody,
+  TableHead,
+  Text,
+} from "@my/ui";
 import { Fragment, type ReactNode, type Ref, type RefObject, useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -22,9 +34,11 @@ const stateLabels: Readonly<Record<InstanceState, ClientMessageKey>> = {
 /** A server's state in words, not by color alone (WCAG 1.4.1): the color only repeats it. */
 export function InstanceStateLabel({ state }: { state: InstanceState }) {
   const t = useT();
-  return <Text weight="semibold" tone={state === "unavailable" ? "danger" : "success"}>
+  return (
+    <Text weight="semibold" tone={state === "unavailable" ? "danger" : "success"}>
       {t(stateLabels[state])}
-    </Text>;
+    </Text>
+  );
 }
 
 /**
@@ -74,7 +88,12 @@ function MoreButton<T>({ list }: { list: PagedList<T> }) {
 /** What an admin screen shows instead of its content to a viewer whose roles lack `permission`. */
 export function MissingPermission({ permission }: { permission: Permission }) {
   const t = useT();
-  return <EmptyState heading={t("client:admin.missing_permission.heading")} description={t("client:admin.missing_permission.description", { permission })} />;
+  return (
+    <EmptyState
+      heading={t("client:admin.missing_permission.heading")}
+      description={t("client:admin.missing_permission.description", { permission })}
+    />
+  );
 }
 
 /**
@@ -151,7 +170,16 @@ export type RecordTableProps<T> = {
  * previous and next only; next past the loaded pages loads one more (useListPages). Key the component by whatever
  * the list is of (the filter), so that another list starts at its first page.
  */
-export function RecordTable<T>({ list, caption, head, getId, children, empty, moreError, tableRef }: RecordTableProps<T>) {
+export function RecordTable<T>({
+  list,
+  caption,
+  head,
+  getId,
+  children,
+  empty,
+  moreError,
+  tableRef,
+}: RecordTableProps<T>) {
   const t = useT();
   const pages = useListPages(list);
   if (list.items.length === 0) return empty;

@@ -5,11 +5,32 @@
 // alert dialog (ConfirmDialog); a refusal (a role above the viewer's, the last admin) stays in it with the
 // reason. What a change did stays in the region's StatusMessage, and focus moves to the region's heading, since
 // the pressed button gives way to the other one.
-import { Button, ConfirmDialog, DescriptionItem, DescriptionList, DetailSection, EmptyState, Heading, Hint, RegionError, SectionHeader, Spinner, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  Button,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DetailSection,
+  EmptyState,
+  Heading,
+  Hint,
+  RegionError,
+  SectionHeader,
+  Spinner,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { useRef } from "react";
 import { useT } from "../../../lib/i18n";
 import { adminRoleKey } from "../api/roles";
-import { type AccountRoles as AccountRolesState, type RoleChanges, type RoleRow, useAccountRoles, useRoleChanges } from "../hooks/useRoles";
+import {
+  type AccountRoles as AccountRolesState,
+  type RoleChanges,
+  type RoleRow,
+  useAccountRoles,
+  useRoleChanges,
+} from "../hooks/useRoles";
 import { RecordList, useFocusAfterChange } from "./parts";
 
 /** A role's key, an identifier that reads left to right in every locale. */
@@ -120,16 +141,24 @@ function RoleItem({ row, changes }: { row: RoleRow; changes: RoleChanges }) {
       </SectionHeader>
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.account.roles.held")}>
-          <Text {...(held && { weight: "semibold" as const })}>{held ? t("client:admin.account.roles.held.yes") : t("client:admin.account.roles.held.no")}</Text>
+          <Text {...(held && { weight: "semibold" as const })}>
+            {held ? t("client:admin.account.roles.held.yes") : t("client:admin.account.roles.held.no")}
+          </Text>
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account.roles.permissions")}>
-          {role.permissions.length === 0 ? t("client:admin.account.roles.permissions.none") : <RoleKey value={role.permissions.join(", ")} />}
+          {role.permissions.length === 0 ? (
+            t("client:admin.account.roles.permissions.none")
+          ) : (
+            <RoleKey value={role.permissions.join(", ")} />
+          )}
         </DescriptionItem>
       </DescriptionList>
       {outrankedBy !== undefined && (
         <Hint>{t("client:admin.account.roles.outranked", { role: isolatedKey(outrankedBy.key) })}</Hint>
       )}
-      {cannotGrant && <Hint>{t("client:admin.account.roles.missing_permissions", { permissions: missing.join(", ") })}</Hint>}
+      {cannotGrant && (
+        <Hint>{t("client:admin.account.roles.missing_permissions", { permissions: missing.join(", ") })}</Hint>
+      )}
     </Stack>
   );
 }
@@ -150,7 +179,11 @@ function RoleChangeDialog({ changes, handle }: { changes: RoleChanges; handle: s
       onOpenChange={(isOpen) => {
         if (!isOpen) changes.cancel();
       }}
-      title={grant ? t("client:admin.account.roles.confirm_grant.title", { role, handle }) : t("client:admin.account.roles.confirm_revoke.title", { role, handle })}
+      title={
+        grant
+          ? t("client:admin.account.roles.confirm_grant.title", { role, handle })
+          : t("client:admin.account.roles.confirm_revoke.title", { role, handle })
+      }
       description={description}
       confirmLabel={grant ? t("client:admin.account.roles.grant") : t("client:admin.account.roles.revoke")}
       cancelLabel={t("client:admin.account_actions.confirm.cancel")}

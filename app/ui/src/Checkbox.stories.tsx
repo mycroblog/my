@@ -20,7 +20,9 @@ export const Invalid: Story = {
   args: { children: "I accept the server rules", isInvalid: true, errorMessage: "Accept the rules to continue." },
 };
 
-export const InvalidChecked: Story = { args: { children: "I accept the server rules", isInvalid: true, defaultSelected: true } };
+export const InvalidChecked: Story = {
+  args: { children: "I accept the server rules", isInvalid: true, defaultSelected: true },
+};
 
 export const Disabled: Story = {
   render: (args) => (

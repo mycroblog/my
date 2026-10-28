@@ -69,7 +69,8 @@ function MaintenanceScreen({ error }: { error: MaintenanceError }) {
     setChecking(false);
     setTries((count) => count + 1);
     // Without a failure the server has answered, and the page is loading again.
-    if (failure !== null) announce(failure instanceof MaintenanceError ? t("client:maintenance.still") : errorMessage(failure));
+    if (failure !== null)
+      announce(failure instanceof MaintenanceError ? t("client:maintenance.still") : errorMessage(failure));
   };
 
   return (
@@ -85,7 +86,11 @@ function MaintenanceScreen({ error }: { error: MaintenanceError }) {
         </Text>
       )}
       {error.until !== undefined && (
-        <Text as="p">{t("client:maintenance.until", { time: intl.formatDate(error.until, { dateStyle: "full", timeStyle: "short" }) })}</Text>
+        <Text as="p">
+          {t("client:maintenance.until", {
+            time: intl.formatDate(error.until, { dateStyle: "full", timeStyle: "short" }),
+          })}
+        </Text>
       )}
       {error.statusPageUrl !== undefined && (
         <p>

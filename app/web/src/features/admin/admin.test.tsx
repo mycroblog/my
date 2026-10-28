@@ -22,7 +22,8 @@ function recordAdminRequests() {
   const requests: string[] = [];
   server.events.on("request:start", ({ request }) => {
     const url = new URL(request.url);
-    if (url.pathname.startsWith(`${apiBase}/admin/`)) requests.push(`${request.method} ${url.pathname.slice(apiBase.length)}${url.search}`);
+    if (url.pathname.startsWith(`${apiBase}/admin/`))
+      requests.push(`${request.method} ${url.pathname.slice(apiBase.length)}${url.search}`);
   });
   return requests;
 }
@@ -42,7 +43,11 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     await renderApp({ path: "/admin" });
 
     const menu = await screen.findByRole("region", { name: "Administration" });
-    expect(within(menu).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/admin", "/admin/jobs"]);
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/admin", "/admin/jobs"]);
     expect(await within(screen.getByRole("main")).findByRole("link", { name: "Jobs" })).toHaveAccessibleDescription(
       "Background jobs waiting, running, retrying and failed, why they failed, and running failed ones again.",
     );
@@ -54,7 +59,11 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     await renderApp({ path: "/moderation" });
 
     const menu = await screen.findByRole("region", { name: "Moderation" });
-    expect(within(menu).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
       "/moderation",
       "/moderation/reports",
       "/moderation/appeals",
@@ -64,22 +73,42 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
       "/moderation/audit-log",
     ]);
     const main = within(screen.getByRole("main"));
-    expect(await main.findByRole("link", { name: "Audit log" })).toHaveAccessibleDescription("Who did what in the administration, and when.");
-    expect(main.getByRole("link", { name: "Registrations" })).toHaveAccessibleDescription("Sign-ups that await approval, and approving or rejecting them.");
-    expect(main.getByRole("link", { name: "Appeals" })).toHaveAccessibleDescription("Review appeals of moderation actions and uphold or overturn them.");
+    expect(await main.findByRole("link", { name: "Audit log" })).toHaveAccessibleDescription(
+      "Who did what in the administration, and when.",
+    );
+    expect(main.getByRole("link", { name: "Registrations" })).toHaveAccessibleDescription(
+      "Sign-ups that await approval, and approving or rejecting them.",
+    );
+    expect(main.getByRole("link", { name: "Appeals" })).toHaveAccessibleDescription(
+      "Review appeals of moderation actions and uphold or overturn them.",
+    );
     expect(screen.queryByRole("region", { name: "Administration" })).not.toBeInTheDocument();
   });
 
   test("an administrator has both, Moderation first", async () => {
     server.use(
-      operatorHandler(["manage_reports", "manage_accounts", "manage_domains", "manage_rules", "manage_settings", "manage_roles", "manage_invites", "view_audit", "manage_jobs"]),
+      operatorHandler([
+        "manage_reports",
+        "manage_accounts",
+        "manage_domains",
+        "manage_rules",
+        "manage_settings",
+        "manage_roles",
+        "manage_invites",
+        "view_audit",
+        "manage_jobs",
+      ]),
     );
     await renderApp({ path: "/moderation" });
 
     const moderation = await screen.findByRole("region", { name: "Moderation" });
     const admin = screen.getByRole("region", { name: "Administration" });
     expect(moderation.compareDocumentPosition(admin) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(moderation).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+    expect(
+      within(moderation)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
       "/moderation",
       "/moderation/reports",
       "/moderation/appeals",
@@ -91,7 +120,11 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
       "/moderation/instances",
       "/moderation/audit-log",
     ]);
-    expect(within(admin).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+    expect(
+      within(admin)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
       "/admin",
       "/admin/settings",
       "/admin/rules",
@@ -166,13 +199,31 @@ describe("the queue dashboard", () => {
       operatorHandler(["manage_jobs"]),
       http.get(`${apiBase}/admin/queue`, () => HttpResponse.json(queue)),
       http.get(`${apiBase}/admin/jobs`, ({ request }) =>
-        HttpResponse.json({ items: new URL(request.url).searchParams.get("state") === "dead" ? [deliver, cleanup] : [running, retrying] }),
+        HttpResponse.json({
+          items: new URL(request.url).searchParams.get("state") === "dead" ? [deliver, cleanup] : [running, retrying],
+        }),
       ),
       http.get(`${apiBase}/admin/jobs/:id/attempts`, () =>
         HttpResponse.json({
           items: [
-            { attempt: 2, type: "federation.deliver", outcome: "retry", error: "503 Service Unavailable", worker: "worker-1", started_at: "2026-10-17T10:00:00Z", finished_at: "2026-10-17T10:00:01Z" },
-            { attempt: 1, type: "federation.deliver", outcome: "retry", error: "connection refused", worker: "worker-2", started_at: "2026-10-17T09:00:00Z", finished_at: "2026-10-17T09:00:01Z" },
+            {
+              attempt: 2,
+              type: "federation.deliver",
+              outcome: "retry",
+              error: "503 Service Unavailable",
+              worker: "worker-1",
+              started_at: "2026-10-17T10:00:00Z",
+              finished_at: "2026-10-17T10:00:01Z",
+            },
+            {
+              attempt: 1,
+              type: "federation.deliver",
+              outcome: "retry",
+              error: "connection refused",
+              worker: "worker-2",
+              started_at: "2026-10-17T09:00:00Z",
+              finished_at: "2026-10-17T09:00:01Z",
+            },
           ],
         }),
       ),
@@ -183,7 +234,11 @@ describe("the queue dashboard", () => {
     const summary = screen.getByRole("region", { name: "Queue" });
     expect(within(summary).getByText("db")).toBeInTheDocument();
     const types = within(summary).getByRole("list", { name: "Jobs by type" });
-    expect(within(types).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["media.process", "federation.deliver", "kv.cleanup"]);
+    expect(
+      within(types)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(["media.process", "federation.deliver", "kv.cleanup"]);
     expect(screen.getByRole("tab", { name: "Pending", selected: true })).toBeInTheDocument();
 
     const jobs = screen.getByRole("tabpanel", { name: "Pending" });
@@ -199,7 +254,9 @@ describe("the queue dashboard", () => {
     expect(history).toHaveAttribute("aria-expanded", "true");
     expect(await within(jobs).findByRole("heading", { level: 4, name: "Attempt 2: retried" })).toBeInTheDocument();
     expect(within(jobs).getByText("connection refused")).toBeInTheDocument();
-    expect(requests.filter((request) => request.includes("/attempts"))).toEqual([`GET /admin/jobs/${retrying.id}/attempts?limit=40`]);
+    expect(requests.filter((request) => request.includes("/attempts"))).toEqual([
+      `GET /admin/jobs/${retrying.id}/attempts?limit=40`,
+    ]);
 
     await user.click(history);
     expect(history).toHaveAttribute("aria-expanded", "false");
@@ -229,7 +286,9 @@ describe("the queue dashboard", () => {
     expect(within(jobs).getByText("deliver:x")).toBeInTheDocument();
     expect(within(jobs).getByText('{"delivery_id":"x"}')).toBeInTheDocument();
 
-    await user.click(within(jobs).getByRole("button", { name: /^Run again: federation\.deliver, failed Oct 17, 2026/ }));
+    await user.click(
+      within(jobs).getByRole("button", { name: /^Run again: federation\.deliver, failed Oct 17, 2026/ }),
+    );
 
     await waitFor(() => {
       expect(within(jobs).queryByRole("heading", { level: 3, name: "federation.deliver" })).not.toBeInTheDocument();
@@ -272,12 +331,16 @@ describe("the queue dashboard", () => {
   test("a queue that cannot list its pending jobs says so, and still lists the failed ones", async () => {
     server.use(
       operatorHandler(["manage_jobs"]),
-      http.get(`${apiBase}/admin/queue`, () => HttpResponse.json({ adapter: "sqs", pending_listing: false, counts: [] })),
+      http.get(`${apiBase}/admin/queue`, () =>
+        HttpResponse.json({ adapter: "sqs", pending_listing: false, counts: [] }),
+      ),
       http.get(`${apiBase}/admin/jobs`, () => HttpResponse.json({ items: [deliver] })),
     );
     const { user } = await renderApp({ path: "/admin/jobs" });
 
-    expect(await screen.findByRole("heading", { level: 3, name: "This queue cannot list these jobs" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 3, name: "This queue cannot list these jobs" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/This queue cannot list its waiting, running and retrying jobs/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Failed" }));

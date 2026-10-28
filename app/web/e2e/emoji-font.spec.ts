@@ -99,7 +99,10 @@ function expectedFormat(): "colrv1" | "svg" {
 
 test.describe("the emoji font", () => {
   test("is not loaded by a page without emoji, even with the text symbols left out of its range", async ({ page }) => {
-    const requested = await openLanding(page, ["<p>The tomatoes are ripe!</p>", "<p>#1 tip: water at 7am © Bob ™ ↔ ▶</p>"]);
+    const requested = await openLanding(page, [
+      "<p>The tomatoes are ripe!</p>",
+      "<p>#1 tip: water at 7am © Bob ™ ↔ ▶</p>",
+    ]);
     // A font the page needs is requested before document.fonts settles; give a late one a moment to show.
     await page.waitForTimeout(500);
     expect(requested).toEqual([]);
@@ -107,11 +110,14 @@ test.describe("the emoji font", () => {
 
   test("loads only the splits of the emoji the page shows, in the format the browser supports", async ({ page }) => {
     const requested = await openLanding(page, ["<p>Sprouts today 🌱</p>", "<p>Thank you 😊</p>"]);
-    await expect.poll(() => [...new Set(requested)].sort()).toEqual(
-      [`${expectedFormat()}/animals-nature`, `${expectedFormat()}/smileys-emotion`].sort(),
-    );
-    const loaded = await page.evaluate(() =>
-      [...document.fonts].filter((face) => face.family.replaceAll('"', "") === "my Noto Color Emoji" && face.status === "loaded").length,
+    await expect
+      .poll(() => [...new Set(requested)].sort())
+      .toEqual([`${expectedFormat()}/animals-nature`, `${expectedFormat()}/smileys-emotion`].sort());
+    const loaded = await page.evaluate(
+      () =>
+        [...document.fonts].filter(
+          (face) => face.family.replaceAll('"', "") === "my Noto Color Emoji" && face.status === "loaded",
+        ).length,
     );
     expect(loaded).toBe(2);
   });

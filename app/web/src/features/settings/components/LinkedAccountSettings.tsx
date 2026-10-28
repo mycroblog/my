@@ -6,13 +6,33 @@
 // Provider names are shown as the administrators wrote them (dir="auto"). What the provider's round trip did stays on
 // the page in a StatusMessage or an alert at its top; unlinking is announced and moves focus to the next row
 // (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).
-import { Box, Button, Cluster, ConfirmDialog, EmptyState, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextField,
+} from "@my/ui";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import type { LinkedIdentity } from "../api/linkedIdentities";
-import { type LinkAccount, type UnlinkAccount, useLinkAccount, useLinkedAccountList, useLinkOutcome, useUnlinkAccount } from "../hooks/useLinkedAccounts";
+import {
+  type LinkAccount,
+  type UnlinkAccount,
+  useLinkAccount,
+  useLinkedAccountList,
+  useLinkOutcome,
+  useUnlinkAccount,
+} from "../hooks/useLinkedAccounts";
 import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 export function LinkedAccountSettings() {
@@ -102,7 +122,15 @@ function LinkedAccountList() {
 }
 
 /** A linked account: its provider and when it was linked, with the button that unlinks it. */
-function LinkedAccountRow({ link, unlink, onUnlink }: { link: LinkedIdentity; unlink: UnlinkAccount; onUnlink: () => void }) {
+function LinkedAccountRow({
+  link,
+  unlink,
+  onUnlink,
+}: {
+  link: LinkedIdentity;
+  unlink: UnlinkAccount;
+  onUnlink: () => void;
+}) {
   const t = useT();
   const intl = useIntl();
   const label = t("client:settings.linked_accounts.unlink");

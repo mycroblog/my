@@ -82,7 +82,8 @@ const post: Schemas["Status"] = {
   reactions: [],
 };
 
-const comment = "This account posts the same advertisement in reply to everyone who mentions the server, many times a day.";
+const comment =
+  "This account posts the same advertisement in reply to everyone who mentions the server, many times a day.";
 
 function report(id: string, overrides: Partial<Report> = {}): Report {
   return {
@@ -101,7 +102,14 @@ function report(id: string, overrides: Partial<Report> = {}): Report {
     status_ids: [postId],
     rule_ids: [],
     statuses: [{ status: post }],
-    notes: [{ id: "0192f0c4-7a8e-7000-8000-0000000e0001", author_account_id: moderator.id, body: "Same as last week.", created_at: "2026-10-16T10:00:00Z" }],
+    notes: [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000e0001",
+        author_account_id: moderator.id,
+        body: "Same as last week.",
+        created_at: "2026-10-16T10:00:00Z",
+      },
+    ],
     target_history: { reports_count: 3, actions_count: 1 },
     ...overrides,
   };
@@ -110,27 +118,61 @@ function report(id: string, overrides: Partial<Report> = {}): Report {
 const reportId = "0192f0c4-7a8e-7000-8000-0000000c0002";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in moderator; returns the account actions taken. */
 async function moderatorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
-  let reports: Report[] = [report(reportId), report("0192f0c4-7a8e-7000-8000-0000000c0001", { filed_at: "2026-10-15T09:00:00Z", comment: "" })];
+  let reports: Report[] = [
+    report(reportId),
+    report("0192f0c4-7a8e-7000-8000-0000000c0001", { filed_at: "2026-10-15T09:00:00Z", comment: "" }),
+  ];
   const actions: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
-    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`) return json(route, moderator);
+    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`)
+      return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/reports") {
       const state = url.searchParams.get("state");
@@ -139,18 +181,45 @@ async function moderatorServer(page: Page) {
     const one = /^GET \/admin\/reports\/([^/]+)$/.exec(key);
     if (one) {
       const found = reports.find((item) => item.id === one[1]);
-      return found === undefined ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404) : json(route, found);
+      return found === undefined
+        ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404)
+        : json(route, found);
     }
     if (key === `GET /admin/accounts/${target.id}/actions`) {
       return json(route, {
-        items: [{ id: "0192f0c4-7a8e-7000-8000-0000000d0000", account_id: target.id, kind: "warn", reason_category: "spam", issuer: "moderator", notify_target: true, state: "active", issued_at: "2026-10-09T00:00:00Z" }],
+        items: [
+          {
+            id: "0192f0c4-7a8e-7000-8000-0000000d0000",
+            account_id: target.id,
+            kind: "warn",
+            reason_category: "spam",
+            issuer: "moderator",
+            notify_target: true,
+            state: "active",
+            issued_at: "2026-10-09T00:00:00Z",
+          },
+        ],
       });
     }
     if (key === `POST /admin/accounts/${target.id}/actions`) {
       const body = request.postDataJSON() as Schemas["CreateAccountActionRequest"];
       actions.push(`${body.kind} ${body.report_id ?? ""}`);
-      reports = reports.map((item) => (item.id === body.report_id ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" } : item));
-      return json(route, { id: "0192f0c4-7a8e-7000-8000-0000000d0001", account_id: target.id, kind: body.kind, reason_category: body.reason_category, issuer: "moderator", notify_target: body.notify_target, state: "active", issued_at: "2026-10-17T00:00:00Z", report_id: body.report_id });
+      reports = reports.map((item) =>
+        item.id === body.report_id
+          ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" }
+          : item,
+      );
+      return json(route, {
+        id: "0192f0c4-7a8e-7000-8000-0000000d0001",
+        account_id: target.id,
+        kind: body.kind,
+        reason_category: body.reason_category,
+        issuer: "moderator",
+        notify_target: body.notify_target,
+        state: "active",
+        issued_at: "2026-10-17T00:00:00Z",
+        report_id: body.report_id,
+      });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -159,7 +228,10 @@ async function moderatorServer(page: Page) {
 
 /** The rows of the queue: the table's body rows, each headed by its report's link. */
 function rows(page: Page) {
-  return page.getByRole("main").getByRole("row").filter({ has: page.getByRole("rowheader") });
+  return page
+    .getByRole("main")
+    .getByRole("row")
+    .filter({ has: page.getByRole("rowheader") });
 }
 
 test.describe("page /moderation/reports", () => {
@@ -195,7 +267,10 @@ test.describe("page /moderation/reports/{id}", () => {
 });
 
 test.describe("reports", () => {
-  test("opens a report from the queue, asks before a ban, and resolves it with an action that takes it off the queue", async ({ page, makeAxeBuilder }) => {
+  test("opens a report from the queue, asks before a ban, and resolves it with an action that takes it off the queue", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const actions = await moderatorServer(page);
     await page.goto("/moderation/reports");
     await expect(rows(page)).toHaveCount(2);
@@ -257,6 +332,9 @@ test.describe("reports", () => {
     // Back on the queue, the report is gone from the open ones.
     await main.getByRole("link").first().click();
     await expect(rows(page)).toHaveCount(1);
-    await expect(rows(page).first().getByRole("link")).toHaveAttribute("href", "/moderation/reports/0192f0c4-7a8e-7000-8000-0000000c0001");
+    await expect(rows(page).first().getByRole("link")).toHaveAttribute(
+      "href",
+      "/moderation/reports/0192f0c4-7a8e-7000-8000-0000000c0001",
+    );
   });
 });

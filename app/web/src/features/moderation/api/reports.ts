@@ -43,7 +43,10 @@ export function reportsQueryOptions(api: Api, state: ReportFilter) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/reports", { state }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/reports", { params: { query: { ...pageQuery(pageParam), state } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/reports", {
+        params: { query: { ...pageQuery(pageParam), state } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -73,7 +76,10 @@ export function accountActionsQueryOptions(api: Api, accountId: string) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/accounts/{id}/actions", { id: accountId }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/accounts/{id}/actions", { params: { path: { id: accountId }, query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/accounts/{id}/actions", {
+        params: { path: { id: accountId }, query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -89,7 +95,9 @@ export function accountActionsQueryOptions(api: Api, accountId: string) {
  * is fetched again before it shows (S7), so it never shows the report as it was: a resolved report in the open tab.
  */
 export function refreshReportLists(queryClient: QueryClient): Promise<void> {
-  return queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/admin/reports" || query.queryKey[1] === "/admin/counts" });
+  return queryClient.invalidateQueries({
+    predicate: (query) => query.queryKey[1] === "/admin/reports" || query.queryKey[1] === "/admin/counts",
+  });
 }
 
 /**
@@ -115,7 +123,8 @@ export async function storeReportNote(queryClient: QueryClient, api: Api, report
 type ReportOperation = "assign_to_self" | "unassign" | "reopen";
 
 /** One change of a report: the operation and the report. */
-export type ChangeReport = { id: string; operation: ReportOperation } | { id: string; operation: "resolve"; outcome: ReportOutcome };
+export type ChangeReport =
+  { id: string; operation: ReportOperation } | { id: string; operation: "resolve"; outcome: ReportOutcome };
 
 /**
  * Takes a report, leaves it, reopens it, or resolves it (POST /admin/reports/{id}/assign_to_self | unassign |
@@ -150,7 +159,10 @@ export function addReportNoteMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/reports/{id}/notes"] as const,
     mutationFn: async ({ id, body }: { id: string; body: string }): Promise<ReportDetail> => {
-      const { data, error } = await api.fetch.POST("/admin/reports/{id}/notes", { params: { path: { id } }, body: { body } });
+      const { data, error } = await api.fetch.POST("/admin/reports/{id}/notes", {
+        params: { path: { id } },
+        body: { body },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -166,7 +178,10 @@ export function createAccountActionMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/accounts/{id}/actions"] as const,
     mutationFn: async ({ accountId, body }: { accountId: string; body: NewAccountAction }): Promise<AccountAction> => {
-      const { data, error } = await api.fetch.POST("/admin/accounts/{id}/actions", { params: { path: { id: accountId } }, body });
+      const { data, error } = await api.fetch.POST("/admin/accounts/{id}/actions", {
+        params: { path: { id: accountId } },
+        body,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -191,7 +206,10 @@ export function endVoiceRoomMutation(api: Api) {
     mutationKey: ["post", "/admin/voice_rooms/{id}/end"] as const,
     mutationFn: async ({ roomId, reason }: { roomId: string; reason: string }): Promise<void> => {
       // The middleware throws an ApiError for every error status.
-      await api.fetch.POST("/admin/voice_rooms/{id}/end", { params: { path: { id: roomId } }, body: reason === "" ? {} : { reason } });
+      await api.fetch.POST("/admin/voice_rooms/{id}/end", {
+        params: { path: { id: roomId } },
+        body: reason === "" ? {} : { reason },
+      });
     },
   };
 }
@@ -202,11 +220,17 @@ export function endVoiceRoomMutation(api: Api) {
  * whose answers no longer have the room open; and the reported host's account, whose profile links its open room.
  * Resolves once those on screen are fetched again.
  */
-export async function refreshEndedVoiceRoom(queryClient: QueryClient, api: Api, report: Pick<ReportDetail, "id" | "target_account_id">): Promise<void> {
+export async function refreshEndedVoiceRoom(
+  queryClient: QueryClient,
+  api: Api,
+  report: Pick<ReportDetail, "id" | "target_account_id">,
+): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: reportQueryOptions(api, report.id).queryKey }),
     refreshAuditLog(queryClient),
-    queryClient.invalidateQueries({ predicate: (query) => typeof query.queryKey[1] === "string" && query.queryKey[1].startsWith("/voice/") }),
+    queryClient.invalidateQueries({
+      predicate: (query) => typeof query.queryKey[1] === "string" && query.queryKey[1].startsWith("/voice/"),
+    }),
     queryClient.invalidateQueries({ queryKey: accountByIdQueryOptions(api, report.target_account_id).queryKey }),
   ]);
 }

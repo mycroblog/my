@@ -75,7 +75,12 @@ const subscription: Schemas["AdminSupporterSubscription"] = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of the administrator: the program, the plans and the subscriptions change with each write, which `sent` records. */
@@ -83,14 +88,24 @@ async function serveApi(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   let enabled = false;
-  let plans = [plan("0192f0c4-7a8e-7000-8000-0000000000c1"), plan("0192f0c4-7a8e-7000-8000-0000000000c2", { name: "داعم ذهبي", rank: 2, members: 0 })];
+  let plans = [
+    plan("0192f0c4-7a8e-7000-8000-0000000000c1"),
+    plan("0192f0c4-7a8e-7000-8000-0000000000c2", { name: "داعم ذهبي", rank: 2, members: 0 }),
+  ];
   let subscriptions = [subscription];
   let reconciles = 0;
   const paymentStatus: Schemas["PaymentStatus"] = {
     provider: "stripe",
     mode: "test",
     time_zone: "UTC",
-    last_reconcile: { outcome: "failed", error_kind: "permission", requests: 1, checked_subscriptions: 0, corrected_subscriptions: 0, occurred_at: "2026-10-22T00:00:00Z" },
+    last_reconcile: {
+      outcome: "failed",
+      error_kind: "permission",
+      requests: 1,
+      checked_subscriptions: 0,
+      corrected_subscriptions: 0,
+      occurred_at: "2026-10-22T00:00:00Z",
+    },
     warnings: ["no_webhook"],
   };
   const program = (): Schemas["AdminSupporterProgram"] => ({
@@ -103,7 +118,14 @@ async function serveApi(page: Page) {
     can_enable: true,
     warnings: ["no_commerce_disclosure"],
   });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -115,7 +137,8 @@ async function serveApi(page: Page) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -123,10 +146,18 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/supporter_program") return json(route, program());
     if (key === "PUT /admin/supporter_program") {
@@ -145,7 +176,12 @@ async function serveApi(page: Page) {
     if (key === "POST /admin/supporter_plans") {
       const body = request.postDataJSON() as Schemas["AdminSupporterPlanCreateRequest"];
       sent.push(`create ${body.role} ${body.monthly_price.amount} ${body.monthly_price.currency}`);
-      const created = plan("0192f0c4-7a8e-7000-8000-0000000000c3", { name: body.name, rank: body.rank, prices_ready: false, members: 0 });
+      const created = plan("0192f0c4-7a8e-7000-8000-0000000000c3", {
+        name: body.name,
+        rank: body.rank,
+        prices_ready: false,
+        members: 0,
+      });
       plans = [...plans, created];
       return json(route, created);
     }
@@ -169,14 +205,23 @@ test.describe("supporters", () => {
   test("shows the payment provider's state and reconciles now once an hour", async ({ page, makeAxeBuilder }) => {
     const sent = await serveApi(page);
     await page.goto("/admin/supporters");
-    const payment = page.getByRole("main").getByRole("region", { name: message("admin.supporters.payment.title"), exact: true });
+    const payment = page
+      .getByRole("main")
+      .getByRole("region", { name: message("admin.supporters.payment.title"), exact: true });
     await expect(payment.getByText(message("admin.supporters.payment.mode.test"), { exact: true })).toBeVisible();
-    await expect(payment.getByText(message("admin.supporters.payment.error.permission"), { exact: true })).toBeVisible();
-    await expect(payment.getByText(message("admin.supporters.payment.warning.no_webhook"), { exact: true })).toBeVisible();
+    await expect(
+      payment.getByText(message("admin.supporters.payment.error.permission"), { exact: true }),
+    ).toBeVisible();
+    await expect(
+      payment.getByText(message("admin.supporters.payment.warning.no_webhook"), { exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    const reconcile = payment.getByRole("button", { name: message("admin.supporters.payment.reconcile.run"), exact: true });
+    const reconcile = payment.getByRole("button", {
+      name: message("admin.supporters.payment.reconcile.run"),
+      exact: true,
+    });
     await reconcile.click();
     await expect(payment.getByRole("status")).toHaveText(message("admin.supporters.payment.reconcile.queued"));
     await reconcile.click();
@@ -186,12 +231,17 @@ test.describe("supporters", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("enables the program, creates and retires a plan, and ends a subscription after their dialogs", async ({ page, makeAxeBuilder }) => {
+  test("enables the program, creates and retires a plan, and ends a subscription after their dialogs", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent = await serveApi(page);
     await page.goto("/admin/supporters");
     const main = page.getByRole("main");
     const programRegion = main.getByRole("region", { name: message("admin.supporters.program.title"), exact: true });
-    await expect(programRegion.getByText(message("admin.supporters.warning.no_commerce_disclosure"), { exact: false })).toBeVisible();
+    await expect(
+      programRegion.getByText(message("admin.supporters.warning.no_commerce_disclosure"), { exact: false }),
+    ).toBeVisible();
     const plansRegion = main.getByRole("region", { name: message("admin.supporters.plans.title"), exact: true });
     await expect(plansRegion.getByText("داعم ذهبي")).toHaveAttribute("dir", "auto");
     await expectNoAxeViolations(makeAxeBuilder);
@@ -199,7 +249,9 @@ test.describe("supporters", () => {
 
     // React Aria hides the native switch under its drawing; the label is what the user presses.
     await programRegion.getByText(message("admin.supporters.program.switch"), { exact: true }).click();
-    await expect(programRegion.getByRole("switch", { name: message("admin.supporters.program.switch"), exact: true })).toBeChecked();
+    await expect(
+      programRegion.getByRole("switch", { name: message("admin.supporters.program.switch"), exact: true }),
+    ).toBeChecked();
     expect(sent).toContain("program true");
 
     const form = main.getByRole("region", { name: message("admin.supporters.new.title"), exact: true });
@@ -214,21 +266,37 @@ test.describe("supporters", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await plansRegion.getByRole("button", { name: message("admin.supporters.plan.retire_plan", { name: "⁨Fan⁩" }), exact: true }).click();
+    await plansRegion
+      .getByRole("button", { name: message("admin.supporters.plan.retire_plan", { name: "⁨Fan⁩" }), exact: true })
+      .click();
     const retireDialog = page.getByRole("alertdialog");
     await expect(retireDialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await retireDialog.getByRole("button", { name: message("admin.supporters.plan.retire"), exact: true }).click();
-    await expect(main.getByRole("region", { name: message("admin.supporters.retired.title"), exact: true })).toBeVisible();
+    await expect(
+      main.getByRole("region", { name: message("admin.supporters.retired.title"), exact: true }),
+    ).toBeVisible();
     expect(sent).toContain("retire");
 
-    const subscriptionsRegion = main.getByRole("region", { name: message("admin.supporters.subscriptions.title"), exact: true });
-    await subscriptionsRegion.getByRole("button", { name: message("admin.supporters.subscription.cancel_of", { name: "⁦@bob⁩" }), exact: true }).click();
+    const subscriptionsRegion = main.getByRole("region", {
+      name: message("admin.supporters.subscriptions.title"),
+      exact: true,
+    });
+    await subscriptionsRegion
+      .getByRole("button", {
+        name: message("admin.supporters.subscription.cancel_of", { name: "⁦@bob⁩" }),
+        exact: true,
+      })
+      .click();
     const cancelDialog = page.getByRole("alertdialog");
     await expect(cancelDialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
-    await cancelDialog.getByRole("button", { name: message("admin.supporters.subscription.cancel"), exact: true }).click();
-    await expect(subscriptionsRegion.getByRole("cell", { name: message("admin.supporters.state.expired"), exact: true })).toBeVisible();
+    await cancelDialog
+      .getByRole("button", { name: message("admin.supporters.subscription.cancel"), exact: true })
+      .click();
+    await expect(
+      subscriptionsRegion.getByRole("cell", { name: message("admin.supporters.state.expired"), exact: true }),
+    ).toBeVisible();
     expect(sent).toContain("cancel");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

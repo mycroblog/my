@@ -33,7 +33,9 @@ const known: Schemas["Account"][] = [
   remoteAccountFixture,
 ];
 
-const followList = (id: string): Schemas["AccountPage"] => ({ accounts: [id === viewerFixture.id ? otherAccountFixture : viewerFixture] });
+const followList = (id: string): Schemas["AccountPage"] => ({
+  accounts: [id === viewerFixture.id ? otherAccountFixture : viewerFixture],
+});
 
 export const handlers = [
   http.get(`${apiBase}/accounts/lookup`, ({ request }) => {
@@ -42,17 +44,23 @@ export const handlers = [
     return found === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(found);
   }),
   http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id)))),
+    withViewer(request, () =>
+      HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id))),
+    ),
   ),
   http.post(`${apiBase}/accounts/:id/:action`, ({ request, params }) => {
     if (!authorized(request)) return unauthenticated(request);
     const after = relationshipAfter[String(params["action"])];
-    return after === undefined ? problem(404, "about:blank", "Not Found") : HttpResponse.json(relationshipFixture(String(params["id"]), after));
+    return after === undefined
+      ? problem(404, "about:blank", "Not Found")
+      : HttpResponse.json(relationshipFixture(String(params["id"]), after));
   }),
   http.get(`${apiBase}/accounts/:id/statuses`, ({ params, request }) =>
     new URL(request.url).searchParams.get("pinned") === "true"
       ? HttpResponse.json(statusPage([]))
-      : HttpResponse.json(statusPage([params["id"] === remoteAccountFixture.id ? remoteStatusFixture : timelineStatusFixture])),
+      : HttpResponse.json(
+          statusPage([params["id"] === remoteAccountFixture.id ? remoteStatusFixture : timelineStatusFixture]),
+        ),
   ),
   http.get(`${apiBase}/accounts/:id/followers`, ({ params }) => HttpResponse.json(followList(String(params["id"])))),
   http.get(`${apiBase}/accounts/:id/following`, ({ params }) => HttpResponse.json(followList(String(params["id"])))),

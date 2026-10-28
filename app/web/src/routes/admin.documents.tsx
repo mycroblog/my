@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/documents")({
   staticData: { title: "client:admin.documents.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_settings", () => context.queryClient.query({ ...instanceTextsQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_settings", () =>
+      context.queryClient.query({ ...instanceTextsQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: DocumentsPage,
   errorComponent: DocumentsError,
 });

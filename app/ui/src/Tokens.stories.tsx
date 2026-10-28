@@ -26,7 +26,10 @@ function ColorPairs() {
           className="flex items-center gap-3 rounded-md border border-border p-3"
           // A UI pair only needs 3:1, so its label is in the text color checked on the same background (fg on most,
           // toast-fg on the dark toast pill); the swatch shows the pair.
-          style={{ backgroundColor: `var(--color-${bg})`, color: `var(--color-${use === "text" ? fg : labelColor(bg)})` }}
+          style={{
+            backgroundColor: `var(--color-${bg})`,
+            color: `var(--color-${use === "text" ? fg : labelColor(bg)})`,
+          }}
         >
           {use === "text" ? (
             <span className="text-lg font-semibold">Aa あ ع</span>
@@ -49,7 +52,10 @@ function DecorativeColors() {
     <ul className="flex flex-wrap gap-4">
       {decorativeColors.map((name) => (
         <li key={name} className="flex flex-col items-center gap-1">
-          <span className="size-16 rounded-md border border-border" style={{ backgroundColor: `var(--color-${name})` }} />
+          <span
+            className="size-16 rounded-md border border-border"
+            style={{ backgroundColor: `var(--color-${name})` }}
+          />
           <code className="font-mono text-sm text-fg-muted">{name}</code>
         </li>
       ))}
@@ -107,7 +113,11 @@ function Shapes() {
       </ul>
       <div className="flex flex-wrap gap-4">
         {surfaces.map((name) => (
-          <div key={name} className="focus-ring rounded-md border border-border-strong p-3" style={{ backgroundColor: `var(--color-${name})` }}>
+          <div
+            key={name}
+            className="focus-ring rounded-md border border-border-strong p-3"
+            style={{ backgroundColor: `var(--color-${name})` }}
+          >
             <code className="font-mono text-sm">focus-ring on {name}</code>
           </div>
         ))}

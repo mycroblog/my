@@ -35,10 +35,16 @@ export function useAnimationsPlay(): boolean {
 }
 
 /** The `src`, `srcset` and `sizes` of a set of renditions: a `srcset` only when every one has a known width. */
-function sourceAttributes(candidates: readonly ImageCandidate[], sizes: string | undefined): { src: string; srcSet?: string; sizes?: string } {
-  const unique = candidates.filter((candidate, i) => candidates.findIndex((other) => other.url === candidate.url) === i);
+function sourceAttributes(
+  candidates: readonly ImageCandidate[],
+  sizes: string | undefined,
+): { src: string; srcSet?: string; sizes?: string } {
+  const unique = candidates.filter(
+    (candidate, i) => candidates.findIndex((other) => other.url === candidate.url) === i,
+  );
   const src = unique[0]?.url ?? "";
-  if (unique.length < 2 || sizes === undefined || unique.some((candidate) => candidate.width === undefined)) return { src };
+  if (unique.length < 2 || sizes === undefined || unique.some((candidate) => candidate.width === undefined))
+    return { src };
   return { src, srcSet: unique.map((candidate) => `${candidate.url} ${String(candidate.width)}w`).join(", "), sizes };
 }
 
@@ -59,14 +65,19 @@ export function Picture({ sources, sizes, onPointerEnter, onPointerLeave, ...pro
   const [hovered, setHovered] = useState(false);
   const still = sourceAttributes(sources.still, sizes);
   const animated = sources.animated;
-  if (animated === undefined || animated.length === 0) return <img {...props} {...still} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} />;
+  if (animated === undefined || animated.length === 0)
+    return <img {...props} {...still} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} />;
   const moving = sourceAttributes(animated, sizes);
   // The <img> stays in place whether the <source> is there or not: the browser picks the rendition again when a
   // <source> comes or goes, and the pointer stays over the same element.
   return (
     <picture>
       {(plays || hovered) && (
-        <source media="(prefers-reduced-motion: no-preference)" srcSet={moving.srcSet ?? moving.src} {...(moving.sizes === undefined ? {} : { sizes: moving.sizes })} />
+        <source
+          media="(prefers-reduced-motion: no-preference)"
+          srcSet={moving.srcSet ?? moving.src}
+          {...(moving.sizes === undefined ? {} : { sizes: moving.sizes })}
+        />
       )}
       <img
         {...props}

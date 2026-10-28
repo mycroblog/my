@@ -92,7 +92,14 @@ export function AccountItem({
   const slots = accountItem({ layout, link: isLink, trailing: hasTrailing ? trailingPlacement : "none" });
   const content = (
     <>
-      <Avatar sources={avatar} src={avatarSrc} name={name} seed={avatarSeed} decorative className={slots.avatar({ className: showDetails ? "row-span-3" : "row-span-2" })} />
+      <Avatar
+        sources={avatar}
+        src={avatarSrc}
+        name={name}
+        seed={avatarSeed}
+        decorative
+        className={slots.avatar({ className: showDetails ? "row-span-3" : "row-span-2" })}
+      />
       <span dir="auto" className={slots.name()}>
         {nameContent ?? name}
       </span>

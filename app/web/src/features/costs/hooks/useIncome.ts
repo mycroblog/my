@@ -20,11 +20,20 @@ export type Income =
  */
 export function usePublicIncome(granularity: CostGranularity, basis: CostBasis, today: string): Income {
   const api = useApi();
-  const query = useQuery({ ...publicIncomeTotalsQueryOptions(api, granularity, basis, today), retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...publicIncomeTotalsQueryOptions(api, granularity, basis, today),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) return { status: "ready", totals: query.data };
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }
@@ -34,13 +43,27 @@ export function usePublicIncome(granularity: CostGranularity, basis: CostBasis, 
  * ADR-0073 §6): the net and the balance always, the members of each plan when the instance shows them. A viewer
  * without the permission sends nothing.
  */
-export function useFinanceIncome(granularity: CostGranularity, basis: CostBasis, today: string): Exclude<Income, { status: "hidden" }> {
+export function useFinanceIncome(
+  granularity: CostGranularity,
+  basis: CostBasis,
+  today: string,
+): Exclude<Income, { status: "hidden" }> {
   const api = useApi();
   const { allowed } = useFinanceAccess();
-  const query = useQuery({ ...financeIncomeTotalsQueryOptions(api, granularity, basis, today), enabled: allowed, retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...financeIncomeTotalsQueryOptions(api, granularity, basis, today),
+    enabled: allowed,
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) return { status: "ready", totals: query.data };
   if (query.error !== null) {
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }

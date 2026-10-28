@@ -107,15 +107,22 @@ const retryAfter = 3;
  */
 async function serveApi(page: Page, limited: () => boolean) {
   const counts = { preferences: 0 };
-  const json = (route: Route, body: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  const json = (route: Route, body: unknown) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   const tooMany = (route: Route) =>
     route.fulfill({
       status: 429,
       contentType: "application/problem+json",
       headers: { "Retry-After": String(retryAfter) },
-      body: JSON.stringify({ type: "about:blank", title: "Too many requests.", status: 429 } satisfies Schemas["Problem"]),
+      body: JSON.stringify({
+        type: "about:blank",
+        title: "Too many requests.",
+        status: 429,
+      } satisfies Schemas["Problem"]),
     });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => json(route, alice));
   await page.route("**/api/v1/preferences", (route) => {
     counts.preferences++;
@@ -138,7 +145,9 @@ async function serveApi(page: Page, limited: () => boolean) {
     limited() ? tooMany(route) : json(route, { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 0 }),
   );
   await page.route("**/api/v1/instance", (route) => json(route, instance));
-  await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [post] } satisfies Schemas["StatusPage"]));
+  await page.route("**/api/v1/timelines/local*", (route) =>
+    json(route, { items: [post] } satisfies Schemas["StatusPage"]),
+  );
   return counts;
 }
 

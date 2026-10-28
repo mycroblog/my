@@ -29,7 +29,14 @@ export function QrCode({ size, path, label, className, ...props }: QrCodeProps) 
   const { base, ground, modules } = qrCode();
   const box = String(size);
   return (
-    <svg {...props} viewBox={`0 0 ${box} ${box}`} role="img" aria-label={label} shapeRendering="crispEdges" className={base({ className })}>
+    <svg
+      {...props}
+      viewBox={`0 0 ${box} ${box}`}
+      role="img"
+      aria-label={label}
+      shapeRendering="crispEdges"
+      className={base({ className })}
+    >
       <rect width={size} height={size} className={ground()} />
       <path d={path} className={modules()} />
     </svg>

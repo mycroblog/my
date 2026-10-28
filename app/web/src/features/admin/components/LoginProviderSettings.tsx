@@ -120,7 +120,11 @@ function LoginProviderList() {
         getId={(provider) => provider.id}
         tableRef={tableRef}
         empty={
-          <EmptyState headingLevel={3} heading={t("client:admin.login_providers.empty")} description={t("client:admin.login_providers.empty.description")} />
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.login_providers.empty")}
+            description={t("client:admin.login_providers.empty.description")}
+          />
         }
         head={
           <>
@@ -163,9 +167,15 @@ function LoginProviderRow({ provider, actions }: { provider: LoginProvider; acti
       <TableCell>{t(loginProviderKindLabels[provider.kind])}</TableCell>
       <TableCell>
         <Stack gap="1">
-          <span>{t(enabled ? "client:admin.login_providers.state.enabled" : "client:admin.login_providers.state.disabled")}</span>
+          <span>
+            {t(enabled ? "client:admin.login_providers.state.enabled" : "client:admin.login_providers.state.disabled")}
+          </span>
           <Text size="sm" tone="muted">
-            {t(provider.allow_signup ? "client:admin.login_providers.state.signup_allowed" : "client:admin.login_providers.state.signup_closed")}
+            {t(
+              provider.allow_signup
+                ? "client:admin.login_providers.state.signup_allowed"
+                : "client:admin.login_providers.state.signup_closed",
+            )}
           </Text>
         </Stack>
       </TableCell>
@@ -206,14 +216,27 @@ function EditLoginProvider({ provider, actions, isPending }: RowActionProps) {
       <Button size="sm" isDisabled={isPending} aria-label={t("client:admin.login_providers.edit_provider", { name })}>
         {t("client:admin.login_providers.edit")}
       </Button>
-      <Dialog title={t("client:admin.login_providers.edit.title", { name })} closeLabel={t("client:admin.login_providers.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.login_providers.edit.title", { name })}
+        closeLabel={t("client:admin.login_providers.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditLoginProviderForm provider={provider} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
   );
 }
 
-function EditLoginProviderForm({ provider, actions, close }: { provider: LoginProvider; actions: LoginProviderActions; close: () => void }) {
+function EditLoginProviderForm({
+  provider,
+  actions,
+  close,
+}: {
+  provider: LoginProvider;
+  actions: LoginProviderActions;
+  close: () => void;
+}) {
   const t = useT();
   const [draft, setDraft] = useState<LoginProviderDraft>(() => draftOf(provider));
   const [isSaving, setIsSaving] = useState(false);
@@ -261,14 +284,27 @@ function RotateSecret({ provider, actions, isPending }: RowActionProps) {
       <Button size="sm" isDisabled={isPending} aria-label={t("client:admin.login_providers.rotate_provider", { name })}>
         {t("client:admin.login_providers.rotate")}
       </Button>
-      <Dialog title={t("client:admin.login_providers.rotate.title", { name })} closeLabel={t("client:admin.login_providers.close")} isDismissable={false} size="sm">
+      <Dialog
+        title={t("client:admin.login_providers.rotate.title", { name })}
+        closeLabel={t("client:admin.login_providers.close")}
+        isDismissable={false}
+        size="sm"
+      >
         {({ close }) => <RotateSecretForm provider={provider} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
   );
 }
 
-function RotateSecretForm({ provider, actions, close }: { provider: LoginProvider; actions: LoginProviderActions; close: () => void }) {
+function RotateSecretForm({
+  provider,
+  actions,
+  close,
+}: {
+  provider: LoginProvider;
+  actions: LoginProviderActions;
+  close: () => void;
+}) {
   const t = useT();
   const [secret, setSecret] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -310,7 +346,11 @@ function DisableLoginProvider({ provider, actions, isPending }: RowActionProps) 
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" isDisabled={isPending} aria-label={t("client:admin.login_providers.disable_provider", { name })}>
+      <Button
+        size="sm"
+        isDisabled={isPending}
+        aria-label={t("client:admin.login_providers.disable_provider", { name })}
+      >
         {t("client:admin.login_providers.disable")}
       </Button>
       <ConfirmDialog
@@ -319,7 +359,10 @@ function DisableLoginProvider({ provider, actions, isPending }: RowActionProps) 
         confirmLabel={t("client:admin.login_providers.disable")}
         cancelLabel={t("client:admin.login_providers.cancel")}
         isPending={isDisabling}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.login_providers.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.login_providers.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDisabling(true);
           setFailed(false);
@@ -342,7 +385,12 @@ function DeleteLoginProvider({ provider, actions, isPending }: RowActionProps) {
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger" isDisabled={isPending} aria-label={t("client:admin.login_providers.delete_provider", { name })}>
+      <Button
+        size="sm"
+        variant="danger"
+        isDisabled={isPending}
+        aria-label={t("client:admin.login_providers.delete_provider", { name })}
+      >
         {t("client:admin.login_providers.delete")}
       </Button>
       <ConfirmDialog
@@ -351,7 +399,10 @@ function DeleteLoginProvider({ provider, actions, isPending }: RowActionProps) {
         confirmLabel={t("client:admin.login_providers.delete")}
         cancelLabel={t("client:admin.login_providers.cancel")}
         isPending={isDeleting}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.login_providers.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.login_providers.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDeleting(true);
           setFailed(false);

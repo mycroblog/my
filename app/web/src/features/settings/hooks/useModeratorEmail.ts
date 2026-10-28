@@ -9,7 +9,12 @@ import type { PreferenceControl } from "./usePreferences";
  * The permissions whose holders get moderator notifications (admin_report, admin_sign_up, admin_appeal,
  * admin_webhook_disabled for manage_webhooks, and admin_custom_emoji_request for manage_custom_emojis).
  */
-const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis"];
+const moderatorPermissions: readonly Permission[] = [
+  "manage_reports",
+  "manage_accounts",
+  "manage_webhooks",
+  "manage_custom_emojis",
+];
 
 /** What the preferences show of `email_moderator_notifications`. */
 export type ModeratorEmail =

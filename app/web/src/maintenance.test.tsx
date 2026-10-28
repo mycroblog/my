@@ -21,7 +21,10 @@ const maintenanceMode = http.all("*", ({ request }) => {
   if (!underMaintenance || !(pathname.startsWith("/api/") || pathname.startsWith("/oauth/"))) return undefined;
   return HttpResponse.json(
     { type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503, ...members },
-    { status: 503, headers: { "Content-Type": "application/problem+json", "Retry-After": retryAfter, "Cache-Control": "no-store" } },
+    {
+      status: 503,
+      headers: { "Content-Type": "application/problem+json", "Retry-After": retryAfter, "Cache-Control": "no-store" },
+    },
   );
 });
 
@@ -42,7 +45,11 @@ describe("the maintenance screen", () => {
     });
     server.use(maintenanceMode);
     underMaintenance = true;
-    members = { message: "Upgrading the database.", until: "2026-10-25T12:00:00Z", status_page_url: "https://status.my.example/" };
+    members = {
+      message: "Upgrading the database.",
+      until: "2026-10-25T12:00:00Z",
+      status_page_url: "https://status.my.example/",
+    };
 
     // The next request of the page meets the maintenance.
     await act(() => api.fetch.GET("/instance").catch(() => undefined));
@@ -56,9 +63,14 @@ describe("the maintenance screen", () => {
     expect(notice).toHaveAttribute("dir", "auto");
     expect(notice).toHaveAttribute("lang", "");
     // In the user's time zone (UTC in the preferences fixture), not the browser's.
-    const until = new Intl.DateTimeFormat("en", { dateStyle: "full", timeStyle: "short", timeZone: "UTC" }).format(Date.UTC(2026, 9, 25, 12));
+    const until = new Intl.DateTimeFormat("en", { dateStyle: "full", timeStyle: "short", timeZone: "UTC" }).format(
+      Date.UTC(2026, 9, 25, 12),
+    );
     expect(screen.getByText(`Expected to end: ${until}`)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /See the status page/ })).toHaveAttribute("href", "https://status.my.example/");
+    expect(screen.getByRole("link", { name: /See the status page/ })).toHaveAttribute(
+      "href",
+      "https://status.my.example/",
+    );
     expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
     expect(document.title).toBe("Under maintenance – my example");
     expect(session.status).toBe("signed-in");

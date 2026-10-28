@@ -6,7 +6,14 @@ import { screen, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import type { Preferences, PreferencesChange } from "./api/me";
-import { otherAccountFixture, preferencesFixture, relationshipFixture, type Schemas, statusPage, timelineStatusFixture } from "../../test/fixtures";
+import {
+  otherAccountFixture,
+  preferencesFixture,
+  relationshipFixture,
+  type Schemas,
+  statusPage,
+  timelineStatusFixture,
+} from "../../test/fixtures";
 import { apiBase, resumableSession } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -42,12 +49,18 @@ describe("a change of the timeline languages", () => {
       http.get(`${apiBase}/timelines/local`, async () => {
         await delay(latency);
         const languages = preferences.timeline_languages;
-        const posts = [timelineStatusFixture, japanesePost].filter((post) => languages.length === 0 || languages.includes(post.language));
+        const posts = [timelineStatusFixture, japanesePost].filter(
+          (post) => languages.length === 0 || languages.includes(post.language),
+        );
         return HttpResponse.json(statusPage(posts));
       }),
     );
     const { user, router } = await renderApp({ path: "/local" });
-    expect(await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", { description: "Hello from the local timeline!" })).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", {
+        description: "Hello from the local timeline!",
+      }),
+    ).toBeInTheDocument();
 
     await router.navigate({ to: "/settings/preferences" });
     const languages = await screen.findByRole("group", { name: "Languages of your timelines" });
@@ -59,7 +72,9 @@ describe("a change of the timeline languages", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Local timeline" })).toBeInTheDocument();
     // The timeline shows only the posts in Japanese from its first render, not the list from before the change.
     expect(within(localFeed()).getByRole("article", { description: "こんにちは" })).toBeInTheDocument();
-    expect(within(localFeed()).queryByRole("article", { description: "Hello from the local timeline!" })).not.toBeInTheDocument();
+    expect(
+      within(localFeed()).queryByRole("article", { description: "Hello from the local timeline!" }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -89,6 +104,8 @@ describe("an unblock from the settings", () => {
     await router.navigate({ to: "/local" });
     expect(await screen.findByRole("heading", { level: 1, name: "Local timeline" })).toBeInTheDocument();
     // The timeline shows Bob's post from its first render, not the empty list from before the unblock.
-    expect(within(localFeed()).getByRole("article", { description: "Hello from the local timeline!" })).toBeInTheDocument();
+    expect(
+      within(localFeed()).getByRole("article", { description: "Hello from the local timeline!" }),
+    ).toBeInTheDocument();
   });
 });

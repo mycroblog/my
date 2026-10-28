@@ -14,7 +14,11 @@ import type { Status } from "./api/status";
 const bobsId = "0192f0c4-7a8e-7000-8000-0000000000f1";
 const ownId = "0192f0c4-7a8e-7000-8000-0000000000f2";
 const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>", quotable: true };
-const own: Status = { ...viewerStatusFixture({ id: ownId, content: "<p>My post</p>" }), quotable: true, quote_policy: "public" };
+const own: Status = {
+  ...viewerStatusFixture({ id: ownId, content: "<p>My post</p>" }),
+  quotable: true,
+  quote_policy: "public",
+};
 
 function signedIn() {
   server.use(http.post(oauthPaths.refresh, () => tokenResponse("test-access-token")));
@@ -70,7 +74,9 @@ describe("quoting a post", () => {
     await user.click(within(sheet).getByRole("button", { name: "Post" }));
 
     await findToast("Posted.");
-    expect(sent).toEqual([expect.objectContaining({ text: "Look at this", quoted_status_id: bobsId, quote_policy: "followers" })]);
+    expect(sent).toEqual([
+      expect.objectContaining({ text: "Look at this", quoted_status_id: bobsId, quote_policy: "followers" }),
+    ]);
   });
 
   test("can be dropped from the draft", async () => {
@@ -120,8 +126,16 @@ describe("the viewer's own post", () => {
   test("lists the posts that quote it", async () => {
     signedIn();
     serve(own);
-    const quoting: Status = { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000f3"), content: "<p>Quoting you</p>", quote: { state: "accepted", quoted_status: own } };
-    server.use(http.get(`${apiBase}/statuses/:id/quotes`, () => HttpResponse.json({ items: [quoting] } satisfies Schemas["StatusPage"])));
+    const quoting: Status = {
+      ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000f3"),
+      content: "<p>Quoting you</p>",
+      quote: { state: "accepted", quoted_status: own },
+    };
+    server.use(
+      http.get(`${apiBase}/statuses/:id/quotes`, () =>
+        HttpResponse.json({ items: [quoting] } satisfies Schemas["StatusPage"]),
+      ),
+    );
     const { user } = await renderApp({ path: `/@alice/status/${ownId}` });
 
     await user.click(await screen.findByRole("button", { name: "More actions" }));
@@ -177,12 +191,17 @@ describe("a quote of the viewer's post", () => {
 
     await findToast("Your post was removed from the quote");
     expect(revoked).toEqual([`${ownId}:${bobsId}`]);
-    expect(await screen.findByRole("group", { name: "Quoted post" })).toHaveTextContent("The author of the quoted post withdrew it from this quote.");
+    expect(await screen.findByRole("group", { name: "Quoted post" })).toHaveTextContent(
+      "The author of the quoted post withdrew it from this quote.",
+    );
   });
 
   test("offers no revocation for a quote of someone else's post", async () => {
     signedIn();
-    serve({ ...bobs, quote: { state: "accepted", quoted_status: statusFixture("0192f0c4-7a8e-7000-8000-0000000000f4") } });
+    serve({
+      ...bobs,
+      quote: { state: "accepted", quoted_status: statusFixture("0192f0c4-7a8e-7000-8000-0000000000f4") },
+    });
     const { user } = await renderApp({ path: `/@bob/status/${bobsId}` });
 
     await user.click(await screen.findByRole("button", { name: "More actions" }));

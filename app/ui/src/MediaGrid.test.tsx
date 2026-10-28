@@ -15,8 +15,17 @@ const items: readonly MediaItem[] = [
 
 describe("MediaGrid", () => {
   it("names each picture by its description, or says it has none", () => {
-    const { container } = render(<MediaGrid items={items} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} />);
-    expect(ariaSnapshot(container)).toBe([`- img "A cat on a sofa" [lang=en] [dir=auto]`, `- img "No description"`].join("\n"));
+    const { container } = render(
+      <MediaGrid
+        items={items}
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+      />,
+    );
+    expect(ariaSnapshot(container)).toBe(
+      [`- img "A cat on a sofa" [lang=en] [dir=auto]`, `- img "No description"`].join("\n"),
+    );
     // Nothing is drawn for the picture without a description; its name already says it to screen readers.
     expect(screen.queryByText("No description")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
@@ -34,14 +43,30 @@ describe("MediaGrid", () => {
 
   it("shows at most four pictures", () => {
     const many = ["1", "2", "3", "4", "5"].map((id) => ({ id, src: `/${id}.png`, alt: `Picture ${id}` }));
-    render(<MediaGrid items={many} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} />);
+    render(
+      <MediaGrid
+        items={many}
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+      />,
+    );
     expect(screen.getAllByRole("img")).toHaveLength(4);
   });
 
   it("conceals sensitive media until the toggle is pressed, keeping focus on it", async () => {
     const user = userEvent.setup();
     const onRevealedChange = vi.fn();
-    render(<MediaGrid items={items} sensitive noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} onRevealedChange={onRevealedChange} />);
+    render(
+      <MediaGrid
+        items={items}
+        sensitive
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+        onRevealedChange={onRevealedChange}
+      />,
+    );
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: "Show sensitive media" });
     expect(toggle).toHaveAttribute("aria-pressed", "false");
@@ -64,7 +89,15 @@ describe("MediaGrid", () => {
       { id: "b", src: "/b.png", alt: "A dog", blurhash: "not a blurhash" },
       { id: "c", src: "/c.png", alt: "A bird" },
     ];
-    const { container } = render(<MediaGrid items={blurred} sensitive noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} />);
+    const { container } = render(
+      <MediaGrid
+        items={blurred}
+        sensitive
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+      />,
+    );
     // Only a valid blurhash draws a blur; the other cells keep their plain surface. The blur is decorative.
     // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a decorative canvas has no role.
     const blurs = () => container.querySelectorAll("canvas");
@@ -87,13 +120,27 @@ describe("MediaGrid", () => {
       next: "Next image",
     };
     const viewable: readonly MediaItem[] = [
-      { id: "a", src: "/a-small.webp", alt: "A cat on a sofa", lang: "en", original: { sources: { still: [{ url: "/a-large.png" }] }, width: 1600, height: 900 } },
+      {
+        id: "a",
+        src: "/a-small.webp",
+        alt: "A cat on a sofa",
+        lang: "en",
+        original: { sources: { still: [{ url: "/a-large.png" }] }, width: 1600, height: 900 },
+      },
       { id: "b", src: "/b-small.webp", alt: null, original: { sources: { still: [{ url: "/b-large.png" }] } } },
     ];
 
     it("opens a picture at its original size, steps with the buttons and the arrow keys, and closes on Esc", async () => {
       const user = userEvent.setup();
-      render(<MediaGrid items={viewable} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} viewerLabels={viewerLabels} />);
+      render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
       const first = screen.getByRole("button", { name: "A cat on a sofa" });
       expect(first).toHaveAttribute("aria-haspopup", "dialog");
 
@@ -127,7 +174,15 @@ describe("MediaGrid", () => {
 
     it("shows the description over the picture on demand, and only for a picture that has one", async () => {
       const user = userEvent.setup();
-      render(<MediaGrid items={viewable} noDescriptionLabel="No description" revealLabel="Show sensitive media" viewerLabels={viewerLabels} audioLabels={audioLabels} />);
+      render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          viewerLabels={viewerLabels}
+          audioLabels={audioLabels}
+        />,
+      );
       await user.click(screen.getByRole("button", { name: "A cat on a sofa" }));
       const dialog = await screen.findByRole("dialog", { name: "Image 1 of 2" });
       const toggle = within(dialog).getByRole("button", { name: "Description" });
@@ -150,13 +205,37 @@ describe("MediaGrid", () => {
 
     it("does not open pictures without viewer labels, an original, or while they are concealed", async () => {
       const user = userEvent.setup();
-      const { rerender } = render(<MediaGrid items={viewable} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} />);
+      const { rerender } = render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+        />,
+      );
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
 
-      rerender(<MediaGrid items={items} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} viewerLabels={viewerLabels} />);
+      rerender(
+        <MediaGrid
+          items={items}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
 
-      rerender(<MediaGrid items={viewable} sensitive noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} viewerLabels={viewerLabels} />);
+      rerender(
+        <MediaGrid
+          items={viewable}
+          sensitive
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
       expect(screen.getAllByRole("button")).toHaveLength(1);
       await user.click(screen.getByRole("button", { name: "Show sensitive media" }));
       expect(screen.getByRole("button", { name: "A cat on a sofa" })).toBeInTheDocument();
@@ -169,7 +248,14 @@ describe("MediaGrid", () => {
       { id: "a", src: "/cover.png", playback: { kind: "audio", url: "/song.mp3" }, alt: "A song" },
       { id: "n", src: undefined, playback: { kind: "audio", url: "/talk.ogg" }, alt: null },
     ];
-    const { container } = render(<MediaGrid items={playables} noDescriptionLabel="No description" revealLabel="Show sensitive media" audioLabels={audioLabels} />);
+    const { container } = render(
+      <MediaGrid
+        items={playables}
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+      />,
+    );
     // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- <video> and <audio> have no ARIA role.
     const [video, ...audios] = Array.from(container.querySelectorAll("video, audio"));
     expect(video).toHaveAttribute("src", "/clip.mp4");
@@ -178,7 +264,13 @@ describe("MediaGrid", () => {
     expect(video).not.toHaveAttribute("autoplay");
     expect(video).toHaveAccessibleName("A cat jumps");
     // An audio file is played by an AudioPlayer: the browser's controls are off, and the player is named by the description.
-    expect(audios.map((audio) => [audio.getAttribute("src"), audio.hasAttribute("controls"), audio.hasAttribute("autoplay")])).toEqual([
+    expect(
+      audios.map((audio) => [
+        audio.getAttribute("src"),
+        audio.hasAttribute("controls"),
+        audio.hasAttribute("autoplay"),
+      ]),
+    ).toEqual([
       ["/song.mp3", false, false],
       ["/talk.ogg", false, false],
     ]);
@@ -191,7 +283,9 @@ describe("MediaGrid", () => {
   });
 
   it("loops a gifv by itself only while animations play and motion is not reduced", () => {
-    const gifv: readonly MediaItem[] = [{ id: "g", src: "/still.png", playback: { kind: "gifv", url: "/loop.mp4" }, alt: "A dancing cat" }];
+    const gifv: readonly MediaItem[] = [
+      { id: "g", src: "/still.png", playback: { kind: "gifv", url: "/loop.mp4" }, alt: "A dancing cat" },
+    ];
     const props = { items: gifv, noDescriptionLabel: "No description", revealLabel: "Show sensitive media" };
     const { container, rerender } = render(<MediaGrid {...props} audioLabels={audioLabels} />);
     // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a <video> has no ARIA role.
@@ -208,7 +302,11 @@ describe("MediaGrid", () => {
     expect(video()).not.toHaveAttribute("autoplay");
     expect(video()).toHaveAttribute("controls");
 
-    const matchMedia = vi.fn((query: string) => ({ matches: query === "(prefers-reduced-motion: reduce)", addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    const matchMedia = vi.fn((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
     vi.stubGlobal("matchMedia", matchMedia);
     try {
       rerender(<MediaGrid key="reduced" {...props} audioLabels={audioLabels} />);

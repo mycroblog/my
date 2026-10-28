@@ -9,7 +9,15 @@ import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type Translate, useT } from "../../../lib/i18n";
-import { cacheSavedTheme, customCssLimit, setThemeMutation, type ThemeError, themeErrorsOf, themeQueryOptions, type ThemeTokenValue } from "../api/theme";
+import {
+  cacheSavedTheme,
+  customCssLimit,
+  setThemeMutation,
+  type ThemeError,
+  themeErrorsOf,
+  themeQueryOptions,
+  type ThemeTokenValue,
+} from "../api/theme";
 
 const hexColor = /^#[0-9a-f]{6}$/i;
 const hexAlphaColor = /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i;
@@ -67,9 +75,18 @@ function describeThemeError(t: Translate, e: ThemeError): string {
   }
 }
 
-function contrastSentence(t: Translate, fg: string, bg: string, scheme: Scheme, ratio: number, minimum: number): string {
+function contrastSentence(
+  t: Translate,
+  fg: string,
+  bg: string,
+  scheme: Scheme,
+  ratio: number,
+  minimum: number,
+): string {
   const args = { fg, bg, ratio: ratio.toFixed(2), minimum: String(minimum) };
-  return scheme === "light" ? t("client:admin.theme.contrast.failing_light", args) : t("client:admin.theme.contrast.failing_dark", args);
+  return scheme === "light"
+    ? t("client:admin.theme.contrast.failing_light", args)
+    : t("client:admin.theme.contrast.failing_dark", args);
 }
 
 export function useThemeSettings() {
@@ -99,7 +116,9 @@ export function useThemeSettings() {
       dark: input(draftKey(token.name, "dark")),
       alpha: token.alpha === true,
     }));
-  const valueFields: ValueField[] = themeTokens.filter((token) => token.kind !== "color").map((token) => ({ token, input: input(draftKey(token.name)) }));
+  const valueFields: ValueField[] = themeTokens
+    .filter((token) => token.kind !== "color")
+    .map((token) => ({ token, input: input(draftKey(token.name)) }));
   const customCss = cssDraft ?? data.custom_css;
 
   // A color with one theme filled takes the default for the other.
@@ -108,28 +127,41 @@ export function useThemeSettings() {
     const light = field.light.value.trim();
     const dark = field.dark.value.trim();
     if (light === "" && dark === "") continue;
-    colorOverrides.set(field.token, { light: light === "" ? field.defaults.light : light, dark: dark === "" ? field.defaults.dark : dark });
+    colorOverrides.set(field.token, {
+      light: light === "" ? field.defaults.light : light,
+      dark: dark === "" ? field.defaults.dark : dark,
+    });
   }
   const malformedColors = colorFields.flatMap((field) =>
     (["light", "dark"] as const).flatMap((scheme) => {
       const value = field[scheme].value.trim();
       if (value === "" || (field.alpha ? hexAlphaColor : hexColor).test(value)) return [];
-      return [scheme === "light" ? t("client:admin.theme.error.invalid_light", { token: field.token }) : t("client:admin.theme.error.invalid_dark", { token: field.token })];
+      return [
+        scheme === "light"
+          ? t("client:admin.theme.error.invalid_light", { token: field.token })
+          : t("client:admin.theme.error.invalid_dark", { token: field.token }),
+      ];
     }),
   );
   const failingPairs = themeContrast(colorOverrides)
     .filter((c) => c.ratio !== null && c.ratio < c.minimum)
-    .map((c) => ({ key: `${c.fg}/${c.bg}/${c.scheme}`, text: contrastSentence(t, c.fg, c.bg, c.scheme, c.ratio ?? 0, c.minimum) }));
+    .map((c) => ({
+      key: `${c.fg}/${c.bg}/${c.scheme}`,
+      text: contrastSentence(t, c.fg, c.bg, c.scheme, c.ratio ?? 0, c.minimum),
+    }));
 
   const tokens: ThemeTokenValue[] = [
     ...[...colorOverrides].map(([token, value]) => ({ token, light: value.light, dark: value.dark })),
-    ...valueFields.filter((field) => field.input.value.trim() !== "").map((field) => ({ token: field.token.name, value: field.input.value.trim() })),
+    ...valueFields
+      .filter((field) => field.input.value.trim() !== "")
+      .map((field) => ({ token: field.token.name, value: field.input.value.trim() })),
   ];
 
   // The preview applies the overrides as custom properties of its region, which the utilities inside read.
   const previewStyle: Record<string, string> = {};
   for (const [token, value] of colorOverrides) {
-    if (hexAlphaColor.test(value.light) && hexAlphaColor.test(value.dark)) previewStyle[`--${token}`] = `light-dark(${value.light}, ${value.dark})`;
+    if (hexAlphaColor.test(value.light) && hexAlphaColor.test(value.dark))
+      previewStyle[`--${token}`] = `light-dark(${value.light}, ${value.dark})`;
   }
   for (const field of valueFields) {
     const value = field.input.value.trim();
@@ -158,7 +190,10 @@ export function useThemeSettings() {
       onChange: (value: string) => {
         setCssDraft(value);
       },
-      error: byteLength(customCss) > customCssLimit ? t("client:admin.theme.error.css_too_long", { max: String(customCssLimit) }) : undefined,
+      error:
+        byteLength(customCss) > customCssLimit
+          ? t("client:admin.theme.error.css_too_long", { max: String(customCssLimit) })
+          : undefined,
     },
     /** The colors that are not `#rrggbb` (`#rrggbbaa` where translucency is allowed), as sentences. */
     malformedColors,

@@ -150,7 +150,11 @@ if (process.argv[3] === "--deps-of") {
   walkDeps(realpathSync(dir));
 }
 const roots =
-  process.argv[3] === "--deps-of" ? [] : process.argv.length > 3 ? process.argv.slice(3) : [join(import.meta.dir, "..", "node_modules")];
+  process.argv[3] === "--deps-of"
+    ? []
+    : process.argv.length > 3
+      ? process.argv.slice(3)
+      : [join(import.meta.dir, "..", "node_modules")];
 for (const root of roots) {
   if (!existsSync(root)) {
     console.error(`error: ${root} does not exist; install the dependencies first`);

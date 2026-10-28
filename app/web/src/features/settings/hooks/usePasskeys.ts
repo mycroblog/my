@@ -130,7 +130,8 @@ export function usePasskeyForm(): PasskeyForm {
     },
     isPending: register.isPending,
     passwordError: failure === "wrong-password" ? t("client:settings.passkeys.add.wrong_password") : undefined,
-    error: failure === undefined || failure === "wrong-password" ? undefined : failureMessage(t, failure, register.error),
+    error:
+      failure === undefined || failure === "wrong-password" ? undefined : failureMessage(t, failure, register.error),
     status,
   };
 }
@@ -163,7 +164,9 @@ export function useRemovePasskey(): RemovePasskey {
   });
   return {
     pendingId: remove.isPending ? remove.variables : undefined,
-    error: remove.isError ? t("client:settings.passkeys.remove.failed", { reason: errorMessage(remove.error) }) : undefined,
+    error: remove.isError
+      ? t("client:settings.passkeys.remove.failed", { reason: errorMessage(remove.error) })
+      : undefined,
     reset: remove.reset,
     run: (passkey, onDone) => {
       remove.mutate(passkey.id, {

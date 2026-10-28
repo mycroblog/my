@@ -21,5 +21,10 @@ export function useCustomEmojiShortcodes(): ReadonlySet<string> {
 export function useCustomEmojiImages(): ReadonlyMap<string, CustomEmojiImage> {
   const api = useApi();
   const { data } = useQuery(customEmojisQueryOptions(api));
-  return new Map(data?.items.map((emoji) => [emoji.shortcode, { shortcode: emoji.shortcode, url: emoji.url, static_url: emoji.static_url }]));
+  return new Map(
+    data?.items.map((emoji) => [
+      emoji.shortcode,
+      { shortcode: emoji.shortcode, url: emoji.url, static_url: emoji.static_url },
+    ]),
+  );
 }

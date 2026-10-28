@@ -75,7 +75,10 @@ export function useLiftDomainAction(onLifted: (action: DomainAction) => void): L
     },
     // The action stays in effect, and its row and focus stay (web-client/README.md E2).
     onError: (error) => {
-      toast.show({ message: t("client:admin.domain_actions.lift_failed", { reason: errorMessage(error) }), tone: "danger" });
+      toast.show({
+        message: t("client:admin.domain_actions.lift_failed", { reason: errorMessage(error) }),
+        tone: "danger",
+      });
     },
   });
   const pendingIds = useMutationState({
@@ -151,7 +154,12 @@ export function useDomainActionForm(initialDomain: string): DomainActionForm {
       await cacheIssuedDomainAction(queryClient, action);
       setConfirming(false);
       setDraft(emptyDraft(draft.domain));
-      setStatus(t("client:admin.domain_actions.issued", { kind: t(domainActionKindLabels[action.kind]), domain: domainInText(t, action.domain) }));
+      setStatus(
+        t("client:admin.domain_actions.issued", {
+          kind: t(domainActionKindLabels[action.kind]),
+          domain: domainInText(t, action.domain),
+        }),
+      );
     },
   });
   const run = () => {

@@ -30,7 +30,11 @@ export function AccountMoveSettings() {
   return (
     <Stack container gap="8">
       <StatusMessage>{status}</StatusMessage>
-      {movedTo === undefined ? <MoveAccount onStatus={setStatus} /> : <MovedAccount target={movedTo} onStatus={setStatus} />}
+      {movedTo === undefined ? (
+        <MoveAccount onStatus={setStatus} />
+      ) : (
+        <MovedAccount target={movedTo} onStatus={setStatus} />
+      )}
     </Stack>
   );
 }
@@ -60,36 +64,45 @@ function MoveAccount({ onStatus }: { onStatus: (status: string | undefined) => v
       <Section title={t("client:account_move.move.form.title")}>
         <p>
           {/* The address is no running text: it reads left to right whatever the sentence around it (Y10). */}
-          {intl.formatMessage({ id: "client:account_move.move.prerequisite" }, { url: <bdi key="url" dir="ltr">{url}</bdi> })}
+          {intl.formatMessage(
+            { id: "client:account_move.move.prerequisite" },
+            {
+              url: (
+                <bdi key="url" dir="ltr">
+                  {url}
+                </bdi>
+              ),
+            },
+          )}
         </p>
         {/* A user with neither a password nor a passkey signs in again at a linked provider first. */}
         {move.external.isPreferred && <ExternalConfirmationChoice confirmation={move.external} />}
         {(!move.external.isPreferred || move.external.confirmed !== undefined) && (
-        <Stack as="form" onSubmit={move.submit} align="start" gap="4">
-          <Box width="sm">
-            <TextField
-              label={t("client:account_move.move.target.field")}
-              description={t("client:account_move.move.target.description")}
-              value={move.input}
-              onChange={move.setInput}
-              isRequired
-              maxLength={targetInputLimit}
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck="false"
-              inputMode="url"
-              errorMessage={t("client:account_move.move.target.required")}
-            />
-          </Box>
-          {move.lookupError !== undefined && (
-            <InlineError alert size="inherit">
-              {move.lookupError}
-            </InlineError>
-          )}
-          <Button type="submit" variant="primary" isPending={move.isLookingUp}>
-            {t("client:account_move.move.target.submit")}
-          </Button>
-        </Stack>
+          <Stack as="form" onSubmit={move.submit} align="start" gap="4">
+            <Box width="sm">
+              <TextField
+                label={t("client:account_move.move.target.field")}
+                description={t("client:account_move.move.target.description")}
+                value={move.input}
+                onChange={move.setInput}
+                isRequired
+                maxLength={targetInputLimit}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+                inputMode="url"
+                errorMessage={t("client:account_move.move.target.required")}
+              />
+            </Box>
+            {move.lookupError !== undefined && (
+              <InlineError alert size="inherit">
+                {move.lookupError}
+              </InlineError>
+            )}
+            <Button type="submit" variant="primary" isPending={move.isLookingUp}>
+              {t("client:account_move.move.target.submit")}
+            </Button>
+          </Stack>
         )}
       </Section>
       <MoveDialog move={move} />
@@ -164,7 +177,13 @@ function MoveDialog({ move }: { move: AccountMove }) {
 }
 
 /** The account has moved: where to, what it still does, and the dialog that cancels the move. */
-function MovedAccount({ target, onStatus }: { target: { acct: string }; onStatus: (status: string | undefined) => void }) {
+function MovedAccount({
+  target,
+  onStatus,
+}: {
+  target: { acct: string };
+  onStatus: (status: string | undefined) => void;
+}) {
   const t = useT();
   const cancellation = useMoveCancellation(onStatus);
   const handle = isolate(handleOf(target.acct));

@@ -7,7 +7,20 @@
 // such an account is offered while the instance does not follow other servers (ADR-0076). A list of
 // accounts (the notifications) can show the follow button alone, and leave mute, block and report to the
 // profile.
-import { Box, Button, Cluster, Dialog, DialogActions, Hint, Link, Menu, MenuItem, MenuTrigger, MoreIcon, Stack } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  Dialog,
+  DialogActions,
+  Hint,
+  Link,
+  Menu,
+  MenuItem,
+  MenuTrigger,
+  MoreIcon,
+  Stack,
+} from "@my/ui";
 import { useId, useState } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
 import { ReportDialog } from "../../report";
@@ -51,7 +64,12 @@ export function RelationshipActions({ account, name, state, showMenu = true }: R
   }
 }
 
-type OtherActionsProps = { account: Account; name: string; state: Extract<RelationshipState, { kind: "other" }>; showMenu: boolean };
+type OtherActionsProps = {
+  account: Account;
+  name: string;
+  state: Extract<RelationshipState, { kind: "other" }>;
+  showMenu: boolean;
+};
 
 /** The follow button's label and variant, and the change it asks for, for where the follow stands. */
 function followButtonOf(t: Translate, account: Account, state: OtherActionsProps["state"]) {
@@ -128,7 +146,9 @@ function OtherActions({ account, name, state, showMenu }: OtherActionsProps) {
             >
               {/* The items keep their ids when their action flips: React Aria's collections cannot change an
                   item's id while the menu is still mounted while it closes. */}
-              <MenuItem id="mute">{relationship.muting ? t("client:profile.menu.unmute") : t("client:profile.menu.mute")}</MenuItem>
+              <MenuItem id="mute">
+                {relationship.muting ? t("client:profile.menu.unmute") : t("client:profile.menu.mute")}
+              </MenuItem>
               <MenuItem id="block" intent={relationship.blocking ? "neutral" : "danger"}>
                 {relationship.blocking ? t("client:profile.menu.unblock") : t("client:profile.menu.block")}
               </MenuItem>
@@ -223,15 +243,15 @@ function ConfirmDialog({ isOpen, kind, name, onCancel, onConfirm }: ConfirmDialo
       <Stack gap="4">
         <p>{text.body}</p>
         <DialogActions>
-        <Button onPress={onCancel}>{t("client:profile.confirm.cancel")}</Button>
-        <Button
-          variant={text.run === "block" ? "danger" : "primary"}
-          onPress={() => {
-            onConfirm(text.run);
-          }}
-        >
-          {text.action}
-        </Button>
+          <Button onPress={onCancel}>{t("client:profile.confirm.cancel")}</Button>
+          <Button
+            variant={text.run === "block" ? "danger" : "primary"}
+            onPress={() => {
+              onConfirm(text.run);
+            }}
+          >
+            {text.action}
+          </Button>
         </DialogActions>
       </Stack>
     </Dialog>

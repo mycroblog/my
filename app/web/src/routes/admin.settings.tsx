@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
-import { instanceSettingsQueryOptions, instanceTextsQueryOptions, ownInstanceQueryOptions, ServerSettings } from "../features/admin";
+import {
+  instanceSettingsQueryOptions,
+  instanceTextsQueryOptions,
+  ownInstanceQueryOptions,
+  ServerSettings,
+} from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";

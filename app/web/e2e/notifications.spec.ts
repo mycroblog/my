@@ -42,7 +42,8 @@ const post = {
   uri: `https://my.example/users/bob/statuses/${postId}`,
   url: `https://my.example/@bob/status/${postId}`,
   account: bob,
-  content: "<p>@alice https://example.com/a/very/long/path/that/must/wrap/somewhere/before/it/scrolls/the/page/sideways</p>",
+  content:
+    "<p>@alice https://example.com/a/very/long/path/that/must/wrap/somewhere/before/it/scrolls/the/page/sideways</p>",
   spoiler_text: "",
   sensitive: false,
   visibility: "public",
@@ -68,7 +69,12 @@ const notifications = [
     account: bob,
     status: { ...post, spoiler_text: "spoilers" },
   },
-  { id: "0192f0c4-7a8e-7000-8000-0000000000a1", type: "follow", created_at: "2026-10-15T09:00:00Z", account: { ...bob, display_name: "ボブ・とても長い表示名の人です ✨✨✨✨✨" } },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+    type: "follow",
+    created_at: "2026-10-15T09:00:00Z",
+    account: { ...bob, display_name: "ボブ・とても長い表示名の人です ✨✨✨✨✨" },
+  },
 ];
 
 /**
@@ -92,9 +98,14 @@ async function signedInServer(page: Page) {
     muting: false,
     muting_notifications: false,
   };
-  let marker: { last_read_id: string; unread_count: number } = { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 2 };
+  let marker: { last_read_id: string; unread_count: number } = {
+    last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+    unread_count: 2,
+  };
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
   await page.route("**/api/v1/accounts/relationships*", (route) => route.fulfill(json([relationship])));
   await page.route(`**/api/v1/accounts/${bob.id}/follow`, (route) => {
@@ -138,7 +149,10 @@ test.describe("notifications", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("the page lists the notifications, passes axe, and does not scroll sideways", async ({ page, makeAxeBuilder }) => {
+  test("the page lists the notifications, passes axe, and does not scroll sideways", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.goto("/notifications");
     const feed = page.getByRole("feed");
     await expect(feed.getByRole("article")).toHaveCount(3);
@@ -187,7 +201,12 @@ test.describe("notifications", () => {
     await page.goto("/notifications");
     await expect(page.getByRole("feed").getByRole("article")).toHaveCount(3);
     await expect.poll(() => server.updates).toEqual([mentionId]);
-    await expect(page.getByRole("navigation").locator('a[href="/notifications"]').locator('[aria-hidden="true"]', { hasText: "2" })).toHaveCount(0);
+    await expect(
+      page
+        .getByRole("navigation")
+        .locator('a[href="/notifications"]')
+        .locator('[aria-hidden="true"]', { hasText: "2" }),
+    ).toHaveCount(0);
   });
 
   test("from the keyboard alone, a follow leads to the follower's profile and follows back", async ({ page }) => {
@@ -217,9 +236,24 @@ test.describe("notifications", () => {
     await expect(page).toHaveURL(/\/@bob$/);
   });
 
-  test("the favourites of one post are one row that counts the people, and the marker moves to the newest", async ({ page, makeAxeBuilder }) => {
-    const carol = { ...bob, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol", display_name: "Carol" };
-    const favourite = (id: string, account: typeof bob) => ({ id, type: "favourite", created_at: "2026-10-16T09:00:00Z", account, status: post });
+  test("the favourites of one post are one row that counts the people, and the marker moves to the newest", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const carol = {
+      ...bob,
+      id: "0192f0c4-7a8e-7000-8000-000000000003",
+      username: "carol",
+      acct: "carol",
+      display_name: "Carol",
+    };
+    const favourite = (id: string, account: typeof bob) => ({
+      id,
+      type: "favourite",
+      created_at: "2026-10-16T09:00:00Z",
+      account,
+      status: post,
+    });
     const newest = "0192f0c4-7a8e-7000-8000-0000000000a6";
     // Registered after the default list, so it answers instead of it (Playwright tries the newest route first).
     await page.route(
@@ -228,7 +262,9 @@ test.describe("notifications", () => {
         route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ items: [favourite(newest, carol), favourite("0192f0c4-7a8e-7000-8000-0000000000a5", bob), notifications[2]] }),
+          body: JSON.stringify({
+            items: [favourite(newest, carol), favourite("0192f0c4-7a8e-7000-8000-0000000000a5", bob), notifications[2]],
+          }),
         }),
     );
     await page.goto("/notifications");
@@ -285,7 +321,9 @@ test.describe("notifications", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("the type tabs scroll sideways under a finger, and a tap selects the one reached", async ({ page }, testInfo) => {
+  test("the type tabs scroll sideways under a finger, and a tap selects the one reached", async ({
+    page,
+  }, testInfo) => {
     test.skip(testInfo.project.use.hasTouch !== true, "touch only on the phone widths");
     await page.goto("/notifications");
     const list = page.getByRole("tablist");
@@ -310,7 +348,8 @@ test.describe("notifications", () => {
       await expect(list).not.toHaveAttribute("data-overflow-end", { timeout: 1000 });
     }).toPass();
     // The list scrolled: the tabs at the inline start are now behind the fade of that edge.
-    if (await list.evaluate((element) => element.scrollWidth > element.clientWidth)) await expect(list).toHaveAttribute("data-overflow-start");
+    if (await list.evaluate((element) => element.scrollWidth > element.clientWidth))
+      await expect(list).toHaveAttribute("data-overflow-start");
     await expectTabWhollyVisible(favourites);
     await favourites.tap();
     await expect(favourites).toHaveAttribute("aria-selected", "true");

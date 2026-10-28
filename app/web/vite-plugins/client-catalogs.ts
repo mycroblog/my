@@ -39,7 +39,9 @@ export function clientCatalogs(localesDir: string): Plugin {
       if (!id.startsWith("\0")) return undefined;
       const virtual = id.slice(1);
       if (virtual === indexId) {
-        const loaders = catalogLocales(localesDir).map((l) => `${JSON.stringify(l)}: () => import("virtual:locales/${l}/client")`);
+        const loaders = catalogLocales(localesDir).map(
+          (l) => `${JSON.stringify(l)}: () => import("virtual:locales/${l}/client")`,
+        );
         return `export default {${loaders.join(", ")}};\n`;
       }
       const locale = catalogId.exec(virtual)?.[1];

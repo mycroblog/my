@@ -10,7 +10,16 @@ import { type StaffPageBadge, StaffPages } from "./StaffPages";
 
 /** The count that a screen's link shows, by the screen's address, and the words of its badge. */
 const pageCounts: Readonly<
-  Record<string, { count: AdminCount; label: "client:admin.menu.open_reports" | "client:admin.menu.pending_registrations" | "client:admin.menu.pending_appeals" }>
+  Record<
+    string,
+    {
+      count: AdminCount;
+      label:
+        | "client:admin.menu.open_reports"
+        | "client:admin.menu.pending_registrations"
+        | "client:admin.menu.pending_appeals";
+    }
+  >
 > = {
   "/moderation/reports": { count: "open_reports", label: "client:admin.menu.open_reports" },
   "/moderation/registrations": { count: "pending_registrations", label: "client:admin.menu.pending_registrations" },
@@ -36,7 +45,10 @@ export function ModerationPages() {
     <StaffPages
       pages={moderationPages}
       badgeOf={badgeOf}
-      none={{ heading: "client:admin.moderation.none.heading", description: "client:admin.moderation.none.description" }}
+      none={{
+        heading: "client:admin.moderation.none.heading",
+        description: "client:admin.moderation.none.description",
+      }}
     />
   );
 }

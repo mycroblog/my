@@ -7,7 +7,36 @@
 // one at once. The plans' names and descriptions are the administrators' text, shown with dir="auto". What a change did
 // stays in a StatusMessage (role="status"), and a refusal is said in the server's words next to its field or under the
 // form (role="alert"). Retiring a plan and ending a subscription ask first in an alert dialog: neither can be undone.
-import { Button, Card, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Dialog, DialogTrigger, EmptyState, Heading, Hint, InlineError, Link, ListToolbar, Radio, RadioGroup, Select, SelectItem, Stack, StatusMessage, Switch, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, TextArea, TextField } from "@my/ui";
+import {
+  Button,
+  Card,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  DialogTrigger,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Link,
+  ListToolbar,
+  Radio,
+  RadioGroup,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  Switch,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  TextArea,
+  TextField,
+} from "@my/ui";
 import { type SubmitEvent, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -152,7 +181,11 @@ function Program() {
           {t("client:admin.supporters.program.subscription_count", { count: program.live_subscriptions })}
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.program.changed_at")}>
-          {program.changed_at === undefined ? t("client:admin.supporters.program.never") : <DateTime value={program.changed_at} />}
+          {program.changed_at === undefined ? (
+            t("client:admin.supporters.program.never")
+          ) : (
+            <DateTime value={program.changed_at} />
+          )}
         </DescriptionItem>
       </DescriptionList>
       {program.warnings.length > 0 && (
@@ -217,12 +250,18 @@ function PaymentStatusView() {
         <DescriptionItem term={t("client:admin.supporters.payment.provider")}>
           <span dir="ltr">{status.provider}</span>
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.supporters.payment.mode")}>{t(paymentModeLabels[status.mode])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.supporters.payment.mode")}>
+          {t(paymentModeLabels[status.mode])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.payment.time_zone")}>
           <span dir="ltr">{status.time_zone}</span>
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.payment.last_webhook")}>
-          {status.last_webhook_at === undefined ? t("client:admin.supporters.payment.no_webhook") : <DateTime value={status.last_webhook_at} />}
+          {status.last_webhook_at === undefined ? (
+            t("client:admin.supporters.payment.no_webhook")
+          ) : (
+            <DateTime value={status.last_webhook_at} />
+          )}
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.payment.last_reconcile")}>
           {last === undefined ? (
@@ -236,14 +275,22 @@ function PaymentStatusView() {
         </DescriptionItem>
         {last !== undefined && (
           <>
-            <DescriptionItem term={t("client:admin.supporters.payment.requests")}>{intl.formatNumber(last.requests)}</DescriptionItem>
-            <DescriptionItem term={t("client:admin.supporters.payment.checked")}>{intl.formatNumber(last.checked_subscriptions)}</DescriptionItem>
-            <DescriptionItem term={t("client:admin.supporters.payment.corrected")}>{intl.formatNumber(last.corrected_subscriptions)}</DescriptionItem>
+            <DescriptionItem term={t("client:admin.supporters.payment.requests")}>
+              {intl.formatNumber(last.requests)}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.supporters.payment.checked")}>
+              {intl.formatNumber(last.checked_subscriptions)}
+            </DescriptionItem>
+            <DescriptionItem term={t("client:admin.supporters.payment.corrected")}>
+              {intl.formatNumber(last.corrected_subscriptions)}
+            </DescriptionItem>
           </>
         )}
       </DescriptionList>
       {last !== undefined && last.error_kind !== "none" && (
-        <Text as="p" tone={last.outcome === "failed" ? "danger" : "muted"}>{t(reconcileErrorFixes[last.error_kind])}</Text>
+        <Text as="p" tone={last.outcome === "failed" ? "danger" : "muted"}>
+          {t(reconcileErrorFixes[last.error_kind])}
+        </Text>
       )}
       {status.warnings.length > 0 && (
         <Stack as="ul" gap="1">
@@ -288,7 +335,9 @@ type PlanFieldsProps = {
 function PlanFields({ draft, change, error, isNew, autoFocus = false }: PlanFieldsProps) {
   const t = useT();
   const formatRemaining = (remaining: number) =>
-    remaining < 0 ? t("client:admin.supporters.plan.characters_over", { count: -remaining }) : t("client:admin.supporters.plan.characters_left", { count: remaining });
+    remaining < 0
+      ? t("client:admin.supporters.plan.characters_over", { count: -remaining })
+      : t("client:admin.supporters.plan.characters_left", { count: remaining });
   return (
     <>
       {isNew && (
@@ -470,7 +519,13 @@ function Plans() {
             <RecordList
               list={list(active)}
               getId={(plan) => plan.id}
-              empty={<EmptyState headingLevel={3} heading={t("client:admin.supporters.plans.empty")} description={t("client:admin.supporters.plans.empty.description")} />}
+              empty={
+                <EmptyState
+                  headingLevel={3}
+                  heading={t("client:admin.supporters.plans.empty")}
+                  description={t("client:admin.supporters.plans.empty.description")}
+                />
+              }
             >
               {(plan) => <PlanRow plan={plan} actions={actions} />}
             </RecordList>
@@ -507,8 +562,14 @@ function PlanRow({ plan, actions }: { plan: SupporterPlan; actions: PlanActions 
           {plan.name}
         </span>
       </Heading>
-      {!plan.retired && !plan.prices_ready && <Text as="p" tone="warning">{t("client:admin.supporters.plan.preparing")}</Text>}
-      {!plan.retired && plan.visibility === "hidden" && <Hint size="inherit">{t("client:admin.supporters.plan.visibility.hidden")}</Hint>}
+      {!plan.retired && !plan.prices_ready && (
+        <Text as="p" tone="warning">
+          {t("client:admin.supporters.plan.preparing")}
+        </Text>
+      )}
+      {!plan.retired && plan.visibility === "hidden" && (
+        <Hint size="inherit">{t("client:admin.supporters.plan.visibility.hidden")}</Hint>
+      )}
       {plan.description !== "" && (
         <Text as="p" whitespace="preLine" dir="auto" lang="">
           {plan.description}
@@ -517,12 +578,18 @@ function PlanRow({ plan, actions }: { plan: SupporterPlan; actions: PlanActions 
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.supporters.plan.monthly")}>{format(plan.monthly_price)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.plan.yearly")}>
-          {t("client:admin.supporters.plan.yearly_value", { amount: format(plan.yearly_price), discount: String(plan.annual_discount_percent) })}
+          {t("client:admin.supporters.plan.yearly_value", {
+            amount: format(plan.yearly_price),
+            discount: String(plan.annual_discount_percent),
+          })}
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.plan.rank")}>{plan.rank}</DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.plan.emoji_limit")}>{plan.emoji_limit}</DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.plan.role")}>
-          {t("client:admin.supporters.plan.role_value", { role: `⁦${plan.role.key}⁩`, position: String(plan.role.position) })}
+          {t("client:admin.supporters.plan.role_value", {
+            role: `⁦${plan.role.key}⁩`,
+            position: String(plan.role.position),
+          })}
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.supporters.plan.permissions")}>
           <RolePermissions permissions={plan.role.permissions} />
@@ -555,7 +622,12 @@ function EditPlan({ plan, actions }: { plan: SupporterPlan; actions: PlanActions
       <Button size="sm" aria-label={t("client:admin.supporters.plan.edit_plan", { name })}>
         {t("client:admin.supporters.plan.edit")}
       </Button>
-      <Dialog title={t("client:admin.supporters.plan.edit.title", { name })} closeLabel={t("client:admin.supporters.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.supporters.plan.edit.title", { name })}
+        closeLabel={t("client:admin.supporters.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditPlanForm plan={plan} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -617,7 +689,10 @@ function RetirePlan({ plan, actions }: { plan: SupporterPlan; actions: PlanActio
         cancelLabel={t("client:admin.supporters.cancel")}
         tone="danger"
         isPending={isRetiring}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.supporters.plan.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.supporters.plan.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsRetiring(true);
           setFailed(false);
@@ -640,7 +715,10 @@ function Subscriptions({ filter, onFilterChange }: SupporterSettingsProps) {
   const { active, retired } = useSupporterPlans();
   const list = useSupporterSubscriptions(filter);
   const actions = useSubscriptionActions();
-  const plans = [{ id: anyChoice, name: t("client:admin.supporters.filter.any_plan") }, ...[...active, ...retired].map((plan) => ({ id: plan.id, name: plan.name }))];
+  const plans = [
+    { id: anyChoice, name: t("client:admin.supporters.filter.any_plan") },
+    ...[...active, ...retired].map((plan) => ({ id: plan.id, name: plan.name })),
+  ];
   const states = [
     { id: anyChoice, name: t("client:admin.supporters.filter.any_state") },
     ...supporterSubscriptionStates.map((state) => ({ id: state, name: t(stateLabels[state]) })),
@@ -715,10 +793,19 @@ function LabeledDate({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SubscriptionRow({ subscription, actions }: { subscription: SupporterSubscription; actions: SubscriptionActions }) {
+function SubscriptionRow({
+  subscription,
+  actions,
+}: {
+  subscription: SupporterSubscription;
+  actions: SubscriptionActions;
+}) {
   const t = useT();
   const format = useFormatMoney();
-  const who = subscription.username === undefined ? t("client:admin.supporters.subscription.deleted_account") : `@${subscription.username}`;
+  const who =
+    subscription.username === undefined
+      ? t("client:admin.supporters.subscription.deleted_account")
+      : `@${subscription.username}`;
   return (
     <TableRow data-row-id={subscription.id}>
       <TableRowHeader wrap="anywhere">
@@ -731,9 +818,14 @@ function SubscriptionRow({ subscription, actions }: { subscription: SupporterSub
         </span>
       </TableCell>
       <TableCell numeric>
-        {t(subscription.interval === "year" ? "client:admin.supporters.subscription.per_year" : "client:admin.supporters.subscription.per_month", {
-          amount: format(subscription.price),
-        })}
+        {t(
+          subscription.interval === "year"
+            ? "client:admin.supporters.subscription.per_year"
+            : "client:admin.supporters.subscription.per_month",
+          {
+            amount: format(subscription.price),
+          },
+        )}
       </TableCell>
       <TableCell>
         <DateTime value={subscription.started_at} />
@@ -741,26 +833,48 @@ function SubscriptionRow({ subscription, actions }: { subscription: SupporterSub
       <TableCell>
         <Stack gap="1">
           {subscription.period_ends_at !== undefined && (
-            <LabeledDate label={t("client:admin.supporters.subscription.period_ends_at")} value={subscription.period_ends_at} />
+            <LabeledDate
+              label={t("client:admin.supporters.subscription.period_ends_at")}
+              value={subscription.period_ends_at}
+            />
           )}
           {subscription.grace_ends_at !== undefined && (
-            <LabeledDate label={t("client:admin.supporters.subscription.grace_ends_at")} value={subscription.grace_ends_at} />
+            <LabeledDate
+              label={t("client:admin.supporters.subscription.grace_ends_at")}
+              value={subscription.grace_ends_at}
+            />
           )}
           {subscription.scheduled_interval !== undefined && (
             <Cluster as="span" gap="1" rowGap="0">
               <span>{t("client:admin.supporters.subscription.scheduled")}</span>
-              <span>{t(subscription.scheduled_interval === "year" ? "client:admin.supporters.subscription.scheduled_year" : "client:admin.supporters.subscription.scheduled_month")}</span>
+              <span>
+                {t(
+                  subscription.scheduled_interval === "year"
+                    ? "client:admin.supporters.subscription.scheduled_year"
+                    : "client:admin.supporters.subscription.scheduled_month",
+                )}
+              </span>
             </Cluster>
           )}
         </Stack>
       </TableCell>
-      <TableCell>{isLive(subscription.state) && <CancelSubscription subscription={subscription} who={who} actions={actions} />}</TableCell>
+      <TableCell>
+        {isLive(subscription.state) && <CancelSubscription subscription={subscription} who={who} actions={actions} />}
+      </TableCell>
     </TableRow>
   );
 }
 
 /** Ending a subscription at once, after an alert dialog: the role goes now, without a refund. */
-function CancelSubscription({ subscription, who, actions }: { subscription: SupporterSubscription; who: string; actions: SubscriptionActions }) {
+function CancelSubscription({
+  subscription,
+  who,
+  actions,
+}: {
+  subscription: SupporterSubscription;
+  who: string;
+  actions: SubscriptionActions;
+}) {
   const t = useT();
   const name = `⁦${who}⁩`;
   const [isCanceling, setIsCanceling] = useState(false);
@@ -778,7 +892,10 @@ function CancelSubscription({ subscription, who, actions }: { subscription: Supp
           cancelLabel={t("client:admin.supporters.cancel")}
           tone="danger"
           isPending={isCanceling}
-          {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.supporters.subscription.cancel_failed", { reason: actions.error }) })}
+          {...(failed &&
+            actions.error !== undefined && {
+              errorMessage: t("client:admin.supporters.subscription.cancel_failed", { reason: actions.error }),
+            })}
           onConfirm={(close) => {
             setIsCanceling(true);
             setFailed(false);

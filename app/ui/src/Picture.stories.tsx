@@ -44,7 +44,10 @@ export const Still: Story = {
 export const Animated: Story = {
   args: { sources: { still, animated } },
   play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelector("source")).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
+    await expect(canvasElement.querySelector("source")).toHaveAttribute(
+      "media",
+      "(prefers-reduced-motion: no-preference)",
+    );
     await loaded(canvasElement);
   },
 };

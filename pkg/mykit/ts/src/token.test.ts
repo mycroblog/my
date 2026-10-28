@@ -20,13 +20,24 @@ function tokenEndpoint() {
     if (used.has(refresh)) return json(400, { error: "invalid_grant" });
     used.add(refresh);
     n++;
-    return json(200, { access_token: `a${String(n)}`, token_type: "Bearer", expires_in: 3600, refresh_token: `r${String(n)}`, scope: "read" });
+    return json(200, {
+      access_token: `a${String(n)}`,
+      token_type: "Bearer",
+      expires_in: 3600,
+      refresh_token: `r${String(n)}`,
+      scope: "read",
+    });
   });
   return { fetch: f.fetch, grants };
 }
 
 function oauth(fetch: OAuthConfig["fetch"]): OAuthConfig {
-  return { server, clientId: "https://app.example/client.json", redirectUri: "https://app.example/cb", ...(fetch === undefined ? {} : { fetch }) };
+  return {
+    server,
+    clientId: "https://app.example/client.json",
+    redirectUri: "https://app.example/cb",
+    ...(fetch === undefined ? {} : { fetch }),
+  };
 }
 
 describe("RefreshingTokenSource", () => {
@@ -78,7 +89,12 @@ describe("RefreshingTokenSource", () => {
   test("an expired token is renewed before the request", async () => {
     const endpoint = tokenEndpoint();
     let now = 1_000_000;
-    const source = new RefreshingTokenSource(oauth(endpoint.fetch), { accessToken: "a0", refreshToken: "r0", expiresAt: now + 60_000 }, undefined, () => now);
+    const source = new RefreshingTokenSource(
+      oauth(endpoint.fetch),
+      { accessToken: "a0", refreshToken: "r0", expiresAt: now + 60_000 },
+      undefined,
+      () => now,
+    );
     expect(await source.getAccessToken()).toBe("a0");
     now += 45_000; // within the 30-second skew of the expiry
     expect(await source.getAccessToken()).toBe("a1");
@@ -108,13 +124,17 @@ describe("RefreshingTokenSource", () => {
     const endpoint = tokenEndpoint();
     let failing = 2;
     const saved: string[] = [];
-    const source = new RefreshingTokenSource(oauth(endpoint.fetch), { accessToken: "a0", refreshToken: "r0", expiresAt: 0 }, (t) => {
-      if (failing > 0) {
-        failing--;
-        throw new Error("disk full");
-      }
-      saved.push(t.refreshToken ?? "");
-    });
+    const source = new RefreshingTokenSource(
+      oauth(endpoint.fetch),
+      { accessToken: "a0", refreshToken: "r0", expiresAt: 0 },
+      (t) => {
+        if (failing > 0) {
+          failing--;
+          throw new Error("disk full");
+        }
+        saved.push(t.refreshToken ?? "");
+      },
+    );
     expect(String(await source.getAccessToken().catch((e: unknown) => e))).toContain("disk full");
     expect(String(await source.getAccessToken().catch((e: unknown) => e))).toContain("disk full");
     expect(await source.refresh("a0")).toBe("a1");
@@ -136,7 +156,9 @@ describe("RefreshingTokenSource", () => {
 
 describe("PKCE and the code exchange", () => {
   test("the S256 challenge of RFC 7636 Appendix B", async () => {
-    expect(await codeChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+    expect(await codeChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe(
+      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+    );
   });
 
   test("a new verifier is 43 base64url characters", () => {
@@ -146,7 +168,9 @@ describe("PKCE and the code exchange", () => {
   });
 
   test("a redirect of the token endpoint is not followed", async () => {
-    const f = fakeFetch(() => new Response(null, { status: 307, headers: { Location: "https://elsewhere.example/oauth/token" } }));
+    const f = fakeFetch(
+      () => new Response(null, { status: 307, headers: { Location: "https://elsewhere.example/oauth/token" } }),
+    );
     const error = (await exchange(oauth(f.fetch), "code1", "verifier1").catch((e: unknown) => e)) as OAuthError;
     expect(error).toBeInstanceOf(OAuthError);
     expect(error.status).toBe(307);
@@ -154,7 +178,9 @@ describe("PKCE and the code exchange", () => {
   });
 
   test("a public client sends its client_id in the form", async () => {
-    const f = fakeFetch(() => json(200, { access_token: "a1", token_type: "Bearer", refresh_token: "r1", expires_in: 60 }));
+    const f = fakeFetch(() =>
+      json(200, { access_token: "a1", token_type: "Bearer", refresh_token: "r1", expires_in: 60 }),
+    );
     const before = Date.now();
     const token = await exchange(oauth(f.fetch), "code1", "verifier1");
     expect(token.accessToken).toBe("a1");

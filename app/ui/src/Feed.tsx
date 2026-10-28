@@ -14,7 +14,19 @@
 // Only the articles near the viewport are mounted (TanStack Virtual, ADR-0025), and the article that has
 // focus stays mounted when it scrolls away, so focus is never lost to virtualization.
 import { defaultRangeExtractor, type Range, useWindowVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import { type ComponentPropsWithRef, createContext, type Key, type ReactNode, type Ref, use, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
+import {
+  type ComponentPropsWithRef,
+  createContext,
+  type Key,
+  type ReactNode,
+  type Ref,
+  use,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { mergeRefs, useKeyboard } from "react-aria";
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
@@ -65,7 +77,13 @@ export function FeedArticle({ ref, style, className, ...props }: FeedArticleProp
       aria-posinset={item.index + 1}
       aria-setsize={item.setSize}
       data-index={item.index}
-      style={{ ...style, position: "absolute", insetBlockStart: 0, insetInline: 0, transform: `translateY(${String(item.offset)}px)` }}
+      style={{
+        ...style,
+        position: "absolute",
+        insetBlockStart: 0,
+        insetInline: 0,
+        transform: `translateY(${String(item.offset)}px)`,
+      }}
       className={article({ className })}
     />
   );
@@ -132,7 +150,8 @@ function useVirtualFeed(options: VirtualFeedOptions): VirtualFeed {
 }
 
 /** Elements that can take focus with Tab, in the selectors browsers use; filtered further by `isTabbable`. */
-const focusable = "a[href], area[href], button, input, select, textarea, iframe, summary, [contenteditable], [tabindex]";
+const focusable =
+  "a[href], area[href], button, input, select, textarea, iframe, summary, [contenteditable], [tabindex]";
 
 function isTabbable(element: HTMLElement): boolean {
   return element.tabIndex >= 0 && !element.matches(":disabled") && element.closest("[hidden], [inert]") === null;
@@ -153,7 +172,10 @@ function isTextEntry(target: EventTarget): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
 }
 
-export type FeedProps<T> = Omit<ComponentPropsWithRef<"div">, "children" | "role" | "aria-label" | "aria-labelledby" | "aria-busy"> & {
+export type FeedProps<T> = Omit<
+  ComponentPropsWithRef<"div">,
+  "children" | "role" | "aria-label" | "aria-labelledby" | "aria-busy"
+> & {
   /** The loaded items, oldest last. */
   items: readonly T[];
   /** A stable key of an item (its ID). */
@@ -303,7 +325,8 @@ export function Feed<T>({
       const index = items.findIndex((item) => getKey(item) === anchor.key);
       // Only a move of the item's index means items were inserted above it; a resize or a scroll moves nothing to correct.
       const top = index < 0 || index === anchor.index ? undefined : viewportTopOf(index);
-      if (top !== undefined && Math.abs(top - anchor.viewportTop) >= 1) window.scrollBy({ top: top - anchor.viewportTop, behavior: "instant" });
+      if (top !== undefined && Math.abs(top - anchor.viewportTop) >= 1)
+        window.scrollBy({ top: top - anchor.viewportTop, behavior: "instant" });
     }
     rememberAnchor();
   });
@@ -328,7 +351,8 @@ export function Feed<T>({
     };
   }, [hasMore, isLoading, items.length]);
 
-  const articleAt = (index: number) => listRef.current?.querySelector<HTMLElement>(`:scope > [data-index="${String(index)}"]`) ?? null;
+  const articleAt = (index: number) =>
+    listRef.current?.querySelector<HTMLElement>(`:scope > [data-index="${String(index)}"]`) ?? null;
 
   const focusArticle = (index: number) => {
     const item = items[index];
@@ -356,7 +380,14 @@ export function Feed<T>({
     onKeyDown: (event) => {
       const list = listRef.current;
       const index = indexOf(event.target);
-      if (list === null || index < 0 || event.isDefaultPrevented() || isTextEntry(event.target) || event.altKey || event.shiftKey) {
+      if (
+        list === null ||
+        index < 0 ||
+        event.isDefaultPrevented() ||
+        isTextEntry(event.target) ||
+        event.altKey ||
+        event.shiftKey
+      ) {
         event.continuePropagation();
         return;
       }
@@ -397,7 +428,8 @@ export function Feed<T>({
           if (item !== undefined) setFocusedKey(getKey(item));
         }}
         onBlur={(event) => {
-          if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) setFocusedKey(null);
+          if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget))
+            setFocusedKey(null);
         }}
       >
         {virtualItems.map((virtualItem) => {

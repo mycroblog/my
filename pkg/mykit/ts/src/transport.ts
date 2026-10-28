@@ -41,7 +41,13 @@ export type TransportOptions = {
  * and it turns a failure to get an answer into a NetworkError. Every middleware of the client sees only the last
  * answer.
  */
-export function createTransport({ fetch, basePath, tokenSource, retry, sleep = sleepSignal }: TransportOptions): (request: Request) => Promise<Response> {
+export function createTransport({
+  fetch,
+  basePath,
+  tokenSource,
+  retry,
+  sleep = sleepSignal,
+}: TransportOptions): (request: Request) => Promise<Response> {
   const maxRetries = retry?.disabled === true ? 0 : (retry?.maxRetries ?? defaultMaxRetries);
   const maxWait = retry?.maxWait ?? defaultMaxWait;
   return async (request) => {

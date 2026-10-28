@@ -22,8 +22,10 @@ export function DocumentLinks({ labelledBy, placement = "inline" }: DocumentLink
   return (
     <Box
       as="nav"
-      {...(labelledBy === undefined ? { "aria-label": t("client:documents.label") } : { "aria-labelledby": labelledBy })}
-      {...(placement === "sheet" ? { marginTop: "3", border: "top", paddingX: "3", paddingTop: "3" } as const : {})}
+      {...(labelledBy === undefined
+        ? { "aria-label": t("client:documents.label") }
+        : { "aria-labelledby": labelledBy })}
+      {...(placement === "sheet" ? ({ marginTop: "3", border: "top", paddingX: "3", paddingTop: "3" } as const) : {})}
     >
       <Cluster as="ul" gap="4" rowGap="1" textSize="sm">
         {links.map((link) => (

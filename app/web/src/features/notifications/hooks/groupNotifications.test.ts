@@ -25,13 +25,24 @@ function rows(notifications: Notification[]): string[][] {
 
 describe("groupNotifications", () => {
   test("puts the favourites of one post in the row of the newest one, wherever the others are", () => {
-    const [a, b, c, d] = [notification(1, "favourite"), notification(2, "follow"), notification(3, "favourite"), notification(4, "favourite", postB)];
+    const [a, b, c, d] = [
+      notification(1, "favourite"),
+      notification(2, "follow"),
+      notification(3, "favourite"),
+      notification(4, "favourite", postB),
+    ];
 
     expect(rows([a, b, c, d])).toEqual([[a.id, c.id], [b.id], [d.id]]);
   });
 
   test("keeps the favourites and the boosts of a post apart, and never groups other types", () => {
-    const items = [notification(1, "favourite"), notification(2, "boost"), notification(3, "boost"), notification(4, "mention"), notification(5, "mention")];
+    const items = [
+      notification(1, "favourite"),
+      notification(2, "boost"),
+      notification(3, "boost"),
+      notification(4, "mention"),
+      notification(5, "mention"),
+    ];
 
     expect(rows(items)).toEqual([[items[0]?.id], [items[1]?.id, items[2]?.id], [items[3]?.id], [items[4]?.id]]);
   });
@@ -39,7 +50,9 @@ describe("groupNotifications", () => {
   test("keys a row by its type and post, so it keeps its key as it grows", () => {
     const [a, b] = [notification(1, "favourite"), notification(2, "favourite")];
 
-    expect(groupNotifications([b]).map((group) => group.key)).toEqual(groupNotifications([a, b]).map((group) => group.key));
+    expect(groupNotifications([b]).map((group) => group.key)).toEqual(
+      groupNotifications([a, b]).map((group) => group.key),
+    );
   });
 
   test("does not group notifications whose post the user may not see, and counts a repeated one once", () => {

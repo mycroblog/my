@@ -30,8 +30,13 @@ const linkCard = tv({
   },
   variants: {
     revealed: {
-      false: { toggle: "inset-0 m-auto size-fit min-h-10 max-w-[calc(100%-1rem)] px-4 py-2 text-sm shadow-md pointer-coarse:min-h-11" },
-      true: { toggle: "inset-s-1.5 top-1.5 grid size-8 place-items-center shadow-sm pointer-coarse:size-11 [&>svg]:size-5" },
+      false: {
+        toggle:
+          "inset-0 m-auto size-fit min-h-10 max-w-[calc(100%-1rem)] px-4 py-2 text-sm shadow-md pointer-coarse:min-h-11",
+      },
+      true: {
+        toggle: "inset-s-1.5 top-1.5 grid size-8 place-items-center shadow-sm pointer-coarse:size-11 [&>svg]:size-5",
+      },
     },
   },
 });
@@ -101,7 +106,9 @@ export function LinkCard({
     <div {...props} className={slots.base({ className })}>
       {image !== undefined && (
         <div className={slots.media()}>
-          {image.blurhash !== undefined && !(revealed && loaded) && <Blurhash hash={image.blurhash} className={slots.blur()} />}
+          {image.blurhash !== undefined && !(revealed && loaded) && (
+            <Blurhash hash={image.blurhash} className={slots.blur()} />
+          )}
           {revealed && (
             <img
               src={image.src}

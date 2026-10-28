@@ -43,12 +43,12 @@ export function SettingsLayout({ menu, menuLabel, view, heading, children }: Set
     <div className={slots.root()}>
       {heading}
       <div className={slots.base()}>
-      <nav aria-label={menuLabel} className={slots.menu()}>
-        <Card padding="3">{menu}</Card>
-      </nav>
-      <div className={slots.pane()}>
-        <Card padding="8">{children}</Card>
-      </div>
+        <nav aria-label={menuLabel} className={slots.menu()}>
+          <Card padding="3">{menu}</Card>
+        </nav>
+        <div className={slots.pane()}>
+          <Card padding="8">{children}</Card>
+        </div>
       </div>
     </div>
   );

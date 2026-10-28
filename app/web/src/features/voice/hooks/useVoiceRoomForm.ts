@@ -135,7 +135,8 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
   const viewer = useViewer();
   const open = useMutation({
     mutationKey: openVoiceRoomMutation(api).mutationKey,
-    mutationFn: ({ settings }: { settings: VoiceRoomSettings; gesture: VoiceCallGesture | undefined }) => openVoiceRoomMutation(api).mutationFn(settings),
+    mutationFn: ({ settings }: { settings: VoiceRoomSettings; gesture: VoiceCallGesture | undefined }) =>
+      openVoiceRoomMutation(api).mutationFn(settings),
     onSuccess: async (joined: VoiceRoomJoin, { gesture }) => {
       await cacheVoiceRoom(api, queryClient, joined.room, { opened: true });
       // Opening the room joined the host (ADR-0100 §5): the call starts here, with the audio started by the submit.
@@ -162,14 +163,29 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
     }
     const description = characterCount(draft.description.trim());
     if (description > voiceRoomLimits.description) {
-      return { field: "description", message: t("client:voice.form.characters_over", { count: description - voiceRoomLimits.description }) };
+      return {
+        field: "description",
+        message: t("client:voice.form.characters_over", { count: description - voiceRoomLimits.description }),
+      };
     }
     const tags = parseHashtags(draft.hashtags);
     if (tags.length > voiceRoomLimits.hashtags) {
-      return { field: "hashtags", message: t("client:voice.form.hashtags.invalid", { max: String(voiceRoomLimits.hashtags) }) };
+      return {
+        field: "hashtags",
+        message: t("client:voice.form.hashtags.invalid", { max: String(voiceRoomLimits.hashtags) }),
+      };
     }
-    if (tags.some((tag) => characterCount(normalizedTag(tag)) > voiceRoomLimits.hashtagLength || characterCount(tag) > voiceRoomLimits.hashtagLength)) {
-      return { field: "hashtags", message: t("client:voice.form.hashtags.too_long", { max: String(voiceRoomLimits.hashtagLength) }) };
+    if (
+      tags.some(
+        (tag) =>
+          characterCount(normalizedTag(tag)) > voiceRoomLimits.hashtagLength ||
+          characterCount(tag) > voiceRoomLimits.hashtagLength,
+      )
+    ) {
+      return {
+        field: "hashtags",
+        message: t("client:voice.form.hashtags.too_long", { max: String(voiceRoomLimits.hashtagLength) }),
+      };
     }
     return undefined;
   };

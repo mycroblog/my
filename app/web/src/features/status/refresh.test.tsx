@@ -5,7 +5,13 @@
 import { screen, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { type Schemas, statusPage, timelineStatusFixture, viewerFixture, viewerStatusFixture } from "../../test/fixtures";
+import {
+  type Schemas,
+  statusPage,
+  timelineStatusFixture,
+  viewerFixture,
+  viewerStatusFixture,
+} from "../../test/fixtures";
 import { apiBase, resumableSession } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -31,7 +37,9 @@ function navigation() {
 
 async function openProfile(user: Awaited<ReturnType<typeof renderApp>>["user"]) {
   await user.click(within(navigation()).getByRole("link", { name: "Profile" }));
-  expect(await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 5 })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 5 }),
+  ).toBeInTheDocument();
   return screen.getByRole("feed", { name: "Posts" });
 }
 
@@ -50,7 +58,9 @@ describe("a boost", () => {
     expect(await screen.findByText("No posts yet", {}, { timeout: latency * 5 })).toBeInTheDocument();
 
     await router.navigate({ to: "/local" });
-    const article = await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", { description: "Hello from the local timeline!" });
+    const article = await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", {
+      description: "Hello from the local timeline!",
+    });
     await user.click(within(article).getByRole("button", { name: "Boost", pressed: false }));
     expect(await screen.findByText("Boosted")).toBeInTheDocument();
 
@@ -74,13 +84,21 @@ describe("a deleted post", () => {
       }),
     );
     const { user, router } = await renderApp({ path: "/profile" });
-    expect(within(await screen.findByRole("feed", { name: "Posts" }, { timeout: latency * 5 })).getByRole("article", { description: "My post" })).toBeInTheDocument();
+    expect(
+      within(await screen.findByRole("feed", { name: "Posts" }, { timeout: latency * 5 })).getByRole("article", {
+        description: "My post",
+      }),
+    ).toBeInTheDocument();
 
     await router.navigate({ to: "/@{$acct}/status/$id", params: { acct: viewerFixture.acct, id: own.id } });
     const article = await screen.findByRole("article", { description: "My post" });
     await user.click(await within(article).findByRole("button", { name: "More actions" }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
-    await user.click(within(await screen.findByRole("alertdialog", { name: "Delete this post?" })).getByRole("button", { name: "Delete" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: "Delete this post?" })).getByRole("button", {
+        name: "Delete",
+      }),
+    );
     expect(await screen.findByText("Post deleted")).toBeInTheDocument();
 
     await router.navigate({ to: "/profile" });

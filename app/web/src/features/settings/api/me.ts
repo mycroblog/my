@@ -60,9 +60,15 @@ function isTimelineQuery(queryKey: QueryKey): boolean {
  * resolves once those on screen are fetched again; a profile shows its posts in every language. A change of
  * the locale is handled where the app displays it (lib/services.ts marks every query).
  */
-export async function cacheSavedPreferences(api: Api, queryClient: QueryClient, preferences: Preferences, change: PreferencesChange): Promise<void> {
+export async function cacheSavedPreferences(
+  api: Api,
+  queryClient: QueryClient,
+  preferences: Preferences,
+  change: PreferencesChange,
+): Promise<void> {
   queryClient.setQueryData(preferencesQueryOptions(api).queryKey, preferences);
-  if (change.timeline_languages !== undefined) await queryClient.invalidateQueries({ predicate: (query) => isTimelineQuery(query.queryKey) });
+  if (change.timeline_languages !== undefined)
+    await queryClient.invalidateQueries({ predicate: (query) => isTimelineQuery(query.queryKey) });
 }
 
 /**

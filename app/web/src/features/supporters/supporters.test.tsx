@@ -62,7 +62,12 @@ function subscriptionServer(initial: Schemas["OwnSupporterSubscription"]) {
       delete rest.scheduled_change;
       return rest;
     }),
-    answer("/supporter/subscription/change", (s) => ({ ...s, plan_id: goldId, plan_name: gold.name, price: gold.monthly_price })),
+    answer("/supporter/subscription/change", (s) => ({
+      ...s,
+      plan_id: goldId,
+      plan_name: gold.name,
+      price: gold.monthly_price,
+    })),
     http.post(`${apiBase}/supporter/checkout`, async ({ request }) => {
       requests.push({ path: "/supporter/checkout", body: await request.json() });
       return withViewer(request, () => HttpResponse.json({ subscription_id: "sub", redirect_url: checkoutUrl }));
@@ -103,14 +108,19 @@ describe("the page of the supporter plans", () => {
     const goldRadio = within(plans).getByRole("radio", { name: "ゴールド" });
     expect(goldRadio).toHaveAccessibleDescription(/¥1,000 a month or ¥10,800 a year/u);
     await user.click(goldRadio);
-    await user.click(within(screen.getByRole("radiogroup", { name: "Payment" })).getByRole("radio", { name: "Yearly" }));
+    await user.click(
+      within(screen.getByRole("radiogroup", { name: "Payment" })).getByRole("radio", { name: "Yearly" }),
+    );
     await user.click(screen.getByRole("button", { name: "Subscribe" }));
 
     const dialog = await screen.findByRole("alertdialog", { name: "Subscribe to ⁨ゴールド⁩?" });
     expect(within(dialog).getByText("¥10,800 a year, the same at every renewal")).toBeInTheDocument();
     expect(within(dialog).getByText("Now, then every year")).toBeInTheDocument();
     expect(within(dialog).getByText(/The benefits stay until the end of the period you paid for/u)).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: /Commerce disclosures/u })).toHaveAttribute("href", "/about/commerce");
+    expect(within(dialog).getByRole("link", { name: /Commerce disclosures/u })).toHaveAttribute(
+      "href",
+      "/about/commerce",
+    );
     expect(leftTo).toEqual([]);
     await user.click(within(dialog).getByRole("button", { name: "Go to payment" }));
 
@@ -136,13 +146,17 @@ describe("the page of the supporter plans", () => {
     );
     await renderApp({ path: "/settings/supporter" });
 
-    expect(await screen.findByRole("heading", { name: "This server does not offer supporter plans." })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "This server does not offer supporter plans." }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Plan" })).not.toBeInTheDocument();
   });
 
   test("re-reads the subscription when the checkout returns, and waits for its confirmation", async () => {
     server.use(enabledInstance(), plansHandler());
-    const { requests } = subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { state: "pending", plan_name: "Basic" }) });
+    const { requests } = subscriptionServer({
+      subscription: ownSubscriptionFixture(basicId, { state: "pending", plan_name: "Basic" }),
+    });
     // The provider adds its checkout's ID under a key of its own.
     await renderApp({ path: "/settings/supporter?checkout=success&checkout_id=cs_test_1" });
 
@@ -179,7 +193,9 @@ describe("the page of the supporter plans", () => {
     expect(dialog).toHaveAccessibleDescription(/the benefits stay until then/u);
     await user.click(within(dialog).getByRole("button", { name: "Cancel the subscription" }));
 
-    expect(await within(section).findByText("Cancelled the subscription at the end of the period.")).toBeInTheDocument();
+    expect(
+      await within(section).findByText("Cancelled the subscription at the end of the period."),
+    ).toBeInTheDocument();
     expect(within(section).getByText("Ends on")).toBeInTheDocument();
     await user.click(within(section).getByRole("button", { name: "Resume the subscription" }));
     expect(await within(section).findByText("Resumed the subscription.")).toBeInTheDocument();
@@ -200,7 +216,9 @@ describe("the page of the supporter plans", () => {
     await user.click(within(dialog).getByRole("button", { name: "Change the plan" }));
 
     expect(await screen.findByText("Changed the plan.")).toBeInTheDocument();
-    expect(requests).toEqual([{ path: "/supporter/subscription/change", body: { plan_id: goldId, interval: "month" } }]);
+    expect(requests).toEqual([
+      { path: "/supporter/subscription/change", body: { plan_id: goldId, interval: "month" } },
+    ]);
   });
 
   test("withdraws a scheduled change", async () => {
@@ -208,7 +226,13 @@ describe("the page of the supporter plans", () => {
     const { requests } = subscriptionServer({
       subscription: ownSubscriptionFixture(goldId, {
         plan_name: gold.name,
-        scheduled_change: { plan_id: basicId, plan_name: "Basic", interval: "month", price: basic.monthly_price, effective_at: "2026-11-20T00:00:00Z" },
+        scheduled_change: {
+          plan_id: basicId,
+          plan_name: "Basic",
+          interval: "month",
+          price: basic.monthly_price,
+          effective_at: "2026-11-20T00:00:00Z",
+        },
       }),
     });
     const { user } = await renderApp({ path: "/settings/supporter" });
@@ -222,7 +246,9 @@ describe("the page of the supporter plans", () => {
 
   test("asks to fix a failed payment and opens the provider's portal", async () => {
     server.use(enabledInstance(), plansHandler());
-    subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { state: "past_due", grace_ends_at: "2026-10-27T00:00:00Z" }) });
+    subscriptionServer({
+      subscription: ownSubscriptionFixture(basicId, { state: "past_due", grace_ends_at: "2026-10-27T00:00:00Z" }),
+    });
     const { user, leftTo } = await renderApp({ path: "/settings/supporter" });
 
     expect(await screen.findByText(/A payment failed\. Update your payment method/u)).toBeInTheDocument();
@@ -235,7 +261,9 @@ describe("the page of the supporter plans", () => {
 
   test("lets a pending subscription continue to the checkout", async () => {
     server.use(enabledInstance(), plansHandler());
-    const { requests } = subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { state: "pending", interval: "year" }) });
+    const { requests } = subscriptionServer({
+      subscription: ownSubscriptionFixture(basicId, { state: "pending", interval: "year" }),
+    });
     const { user, leftTo } = await renderApp({ path: "/settings/supporter" });
 
     await user.click(await screen.findByRole("button", { name: "Continue to payment" }));
@@ -280,7 +308,10 @@ describe("the Tauri app", () => {
     await renderApp({ path: "/about" });
 
     const section = await screen.findByRole("region", { name: "Supporters" });
-    expect(within(section).getByRole("link", { name: "See the supporter list" })).toHaveAttribute("href", "/about/supporters");
+    expect(within(section).getByRole("link", { name: "See the supporter list" })).toHaveAttribute(
+      "href",
+      "/about/supporters",
+    );
     expect(within(section).queryByRole("link", { name: "See the plans and subscribe" })).not.toBeInTheDocument();
     expect(within(section).queryByText("Basic")).not.toBeInTheDocument();
   });
@@ -294,7 +325,10 @@ describe("the about page", () => {
     const section = await screen.findByRole("region", { name: "Supporters" });
     expect(await within(section).findByText("ゴールド")).toHaveAttribute("dir", "auto");
     expect(within(section).getByText("¥1,000 a month or ¥10,800 a year")).toBeInTheDocument();
-    expect(within(section).getByRole("link", { name: "See the plans and subscribe" })).toHaveAttribute("href", "/settings/supporter");
+    expect(within(section).getByRole("link", { name: "See the plans and subscribe" })).toHaveAttribute(
+      "href",
+      "/settings/supporter",
+    );
     expect(within(section).queryByRole("link", { name: "See the supporter list" })).not.toBeInTheDocument();
   });
 
@@ -338,19 +372,26 @@ describe("the supporter list", () => {
     server.use(http.get(`${apiBase}/instance/supporters`, () => problem(404, "about:blank", "Not Found")));
     await renderApp({ path: "/about/supporters" });
 
-    expect(await screen.findByRole("heading", { name: "This server does not publish a supporter list." })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "This server does not publish a supporter list." }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "About this server" })).toHaveAttribute("href", "/about");
   });
 
   test("asks a visitor without a session to sign in (401)", async () => {
     server.use(
       http.post("/oauth/token/refresh", () => HttpResponse.json({ error: "invalid_grant" }, { status: 400 })),
-      http.get(`${apiBase}/instance/supporters`, () => problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated")),
+      http.get(`${apiBase}/instance/supporters`, () =>
+        problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
+      ),
     );
     await renderApp({ path: "/about/supporters" });
 
     expect(await screen.findByText("Only signed-in users can read the supporter list.")).toBeInTheDocument();
-    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login?return_to=%2Fabout%2Fsupporters");
+    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login?return_to=%2Fabout%2Fsupporters",
+    );
   });
 });
 
@@ -380,7 +421,10 @@ describe("the choice to be on the supporter list", () => {
   });
 
   test("is not offered to a user who is not a member", async () => {
-    server.use(enabledInstance("public"), http.get(`${apiBase}/preferences/supporter_listing`, () => problem(404, "about:blank", "Not Found")));
+    server.use(
+      enabledInstance("public"),
+      http.get(`${apiBase}/preferences/supporter_listing`, () => problem(404, "about:blank", "Not Found")),
+    );
     await renderApp({ path: "/settings/profile" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Profile" })).toBeInTheDocument();

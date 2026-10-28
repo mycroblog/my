@@ -16,16 +16,31 @@ const completionStaleTime = 60_000;
 
 /** The accounts whose username, `username@domain` or display name word starts with `q`. */
 function accountSearchQueryOptions(api: Api, q: string) {
-  return api.query.queryOptions("get", "/accounts/search", { params: { query: { q } } }, { staleTime: completionStaleTime, retry: false });
+  return api.query.queryOptions(
+    "get",
+    "/accounts/search",
+    { params: { query: { q } } },
+    { staleTime: completionStaleTime, retry: false },
+  );
 }
 
 /** The hashtags that start with `q`, the most used first. */
 function tagSearchQueryOptions(api: Api, q: string) {
-  return api.query.queryOptions("get", "/tags/search", { params: { query: { q } } }, { staleTime: completionStaleTime, retry: false });
+  return api.query.queryOptions(
+    "get",
+    "/tags/search",
+    { params: { query: { q } } },
+    { staleTime: completionStaleTime, retry: false },
+  );
 }
 
 /** Runs `read`; when `signal` aborts first, cancels the query of `queryKey`, which goes back to what it held. */
-async function cancellable<T>(queryClient: QueryClient, queryKey: QueryKey, signal: AbortSignal, read: () => Promise<T>): Promise<T> {
+async function cancellable<T>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  signal: AbortSignal,
+  read: () => Promise<T>,
+): Promise<T> {
   const cancel = () => {
     void queryClient.cancelQueries({ queryKey, exact: true });
   };
@@ -44,7 +59,12 @@ export function searchAccounts(api: Api, queryClient: QueryClient, q: string, si
 }
 
 /** The hashtags that GET /tags/search finds for `q`, from the cache while it is fresh. */
-export function searchTags(api: Api, queryClient: QueryClient, q: string, signal: AbortSignal): Promise<TagSuggestion[]> {
+export function searchTags(
+  api: Api,
+  queryClient: QueryClient,
+  q: string,
+  signal: AbortSignal,
+): Promise<TagSuggestion[]> {
   const options = tagSearchQueryOptions(api, q);
   return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options));
 }
@@ -54,7 +74,13 @@ export function searchTags(api: Api, queryClient: QueryClient, q: string, signal
  * (not while the instance takes nothing in from other servers, ADR-0076); undefined when it is not found (404), the
  * fetch budget is spent (429) or the request fails.
  */
-export function lookUpAccount(api: Api, queryClient: QueryClient, acct: string, resolve: boolean, signal: AbortSignal): Promise<Account | undefined> {
+export function lookUpAccount(
+  api: Api,
+  queryClient: QueryClient,
+  acct: string,
+  resolve: boolean,
+  signal: AbortSignal,
+): Promise<Account | undefined> {
   const options = lookupAccountQueryOptions(api, acct, resolve);
   return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options)).catch(() => undefined);
 }

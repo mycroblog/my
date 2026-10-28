@@ -52,7 +52,8 @@ export function useRuleDraft(rule?: Rule) {
     if (text.trim() === "" && (submitted || text !== "")) return t("client:admin.rules.no_text");
     return undefined;
   })();
-  const hintError = characterCount(hint) > ruleHintLimit ? t("client:admin.rules.too_long", { max: String(ruleHintLimit) }) : undefined;
+  const hintError =
+    characterCount(hint) > ruleHintLimit ? t("client:admin.rules.too_long", { max: String(ruleHintLimit) }) : undefined;
 
   const fields: RuleFields = {
     text,
@@ -135,7 +136,9 @@ export type RuleActions = {
  * The changes of the rules in the list. Each says what it did through `onDone(rule, status)` once the list shows
  * it (the rules are fetched again first), so that the screen can move focus and keep the status next to the list.
  */
-export function useRuleActions(onDone: (rule: Rule, status: string, change: "updated" | "moved" | "retired") => void): RuleActions {
+export function useRuleActions(
+  onDone: (rule: Rule, status: string, change: "updated" | "moved" | "retired") => void,
+): RuleActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();

@@ -18,7 +18,11 @@ beforeEach(() => {
 
 type Alias = Schemas["AccountAlias"];
 
-const old: Alias = { uri: "https://old.example/users/alice", acct: "alice@old.example", created_at: "2026-10-01T09:00:00Z" };
+const old: Alias = {
+  uri: "https://old.example/users/alice",
+  acct: "alice@old.example",
+  created_at: "2026-10-01T09:00:00Z",
+};
 const carol = accountFixture(7, "Carol", "new.example");
 
 /** Plays the aliases the server keeps; returns what the app sent. */
@@ -31,8 +35,16 @@ function aliasesServer(initial: Alias[]) {
     http.post(`${apiBase}/accounts/aliases`, async ({ request }) => {
       const { acct } = (await request.json()) as Schemas["AddAccountAliasRequest"];
       added.push(acct);
-      if (acct === "nobody@nowhere.example") return problem(422, "/api/v1/problems/invalid-alias", "That account cannot be an alias.");
-      aliases = [...aliases, { uri: `https://${acct.split("@")[1] ?? ""}/users/${acct.split("@")[0] ?? ""}`, acct, created_at: "2026-10-20T09:00:00Z" }];
+      if (acct === "nobody@nowhere.example")
+        return problem(422, "/api/v1/problems/invalid-alias", "That account cannot be an alias.");
+      aliases = [
+        ...aliases,
+        {
+          uri: `https://${acct.split("@")[1] ?? ""}/users/${acct.split("@")[0] ?? ""}`,
+          acct,
+          created_at: "2026-10-20T09:00:00Z",
+        },
+      ];
       return HttpResponse.json({ aliases });
     }),
     http.post(`${apiBase}/accounts/aliases/remove`, async ({ request }) => {
@@ -51,7 +63,9 @@ function moveServer({ moved = false }: { moved?: boolean } = {}) {
   const moves: Schemas["MoveOwnAccountRequest"][] = [];
   let cancellations = 0;
   server.use(
-    http.get(`${apiBase}/accounts/verify_credentials`, () => HttpResponse.json({ ...viewerFixture, ...(movedTo === undefined ? {} : { moved: movedTo }) })),
+    http.get(`${apiBase}/accounts/verify_credentials`, () =>
+      HttpResponse.json({ ...viewerFixture, ...(movedTo === undefined ? {} : { moved: movedTo }) }),
+    ),
     http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: true })),
     http.get(`${apiBase}/accounts/lookup`, ({ request }) => {
       const acct = new URL(request.url).searchParams.get("acct");
@@ -91,7 +105,9 @@ describe("the aliases", () => {
     await user.click(screen.getByRole("button", { name: "Add alias" }));
 
     expect(await within(list).findByText("@bob@other.example")).toBeInTheDocument();
-    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent("Added the alias ⁨@bob@other.example⁩.");
+    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent(
+      "Added the alias ⁨@bob@other.example⁩.",
+    );
     expect(api.added).toEqual(["bob@other.example"]);
     expect(field).toHaveValue("");
   });
@@ -105,7 +121,9 @@ describe("the aliases", () => {
     await user.type(field, "nobody@nowhere.example");
     await user.click(screen.getByRole("button", { name: "Add alias" }));
 
-    expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent("The alias could not be added: That account cannot be an alias.");
+    expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
+      "The alias could not be added: That account cannot be an alias.",
+    );
     expect(field).toHaveValue("nobody@nowhere.example");
   });
 
@@ -121,11 +139,17 @@ describe("the aliases", () => {
 
   test("replaces the form with a note at the most aliases", async () => {
     aliasesServer(
-      ["a", "b", "c", "d", "e"].map((name, index) => ({ uri: `https://x.example/users/${name}`, acct: `${name}@x.example`, created_at: `2026-10-0${String(index + 1)}T00:00:00Z` })),
+      ["a", "b", "c", "d", "e"].map((name, index) => ({
+        uri: `https://x.example/users/${name}`,
+        acct: `${name}@x.example`,
+        created_at: `2026-10-0${String(index + 1)}T00:00:00Z`,
+      })),
     );
     await renderApp({ path: "/settings/aliases" });
 
-    expect(await screen.findByText("You have 5 aliases, the most there can be. Remove one to add another.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You have 5 aliases, the most there can be. Remove one to add another."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add alias" })).not.toBeInTheDocument();
   });
 });
@@ -147,11 +171,12 @@ describe("moving the account", () => {
     expect(within(dialog).getByText("What moves")).toBeInTheDocument();
     expect(within(dialog).getByText("Your followers")).toBeInTheDocument();
     expect(within(dialog).getByText("What stays here")).toBeInTheDocument();
-    expect(within(dialog).getByText("Your posts, the accounts you follow, your blocks, mutes, and bookmarks")).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: "Export your follows, blocks, mutes, and bookmarks as CSV files" })).toHaveAttribute(
-      "href",
-      "/settings/import-export",
-    );
+    expect(
+      within(dialog).getByText("Your posts, the accounts you follow, your blocks, mutes, and bookmarks"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("link", { name: "Export your follows, blocks, mutes, and bookmarks as CSV files" }),
+    ).toHaveAttribute("href", "/settings/import-export");
     // Focus starts on the password, not on the button that moves.
     const password = within(dialog).getByLabelText(/Password/);
     expect(password).toHaveFocus();
@@ -165,7 +190,9 @@ describe("moving the account", () => {
     await user.click(within(dialog).getByRole("button", { name: "Move account" }));
 
     expect(await screen.findByRole("heading", { level: 2, name: "Your account has moved" })).toBeInTheDocument();
-    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent("Your account moved to ⁨@carol@new.example⁩.");
+    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent(
+      "Your account moved to ⁨@carol@new.example⁩.",
+    );
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(api.moves).toEqual([
       { target_account_id: carol.id, password: "wrong" },
@@ -180,7 +207,9 @@ describe("moving the account", () => {
     await user.type(await screen.findByRole("textbox", { name: /New account/ }), "@nobody@nowhere.example");
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent("That account could not be found:");
+    expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
+      "That account could not be found:",
+    );
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
@@ -202,7 +231,10 @@ describe("moving the account", () => {
     const { user } = await renderApp({ path: "/settings/move" });
 
     expect(await screen.findByRole("heading", { level: 2, name: "Your account has moved" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open ⁨@carol@new.example⁩" })).toHaveAttribute("href", "/@carol@new.example");
+    expect(screen.getByRole("link", { name: "Open ⁨@carol@new.example⁩" })).toHaveAttribute(
+      "href",
+      "/@carol@new.example",
+    );
     expect(screen.queryByRole("textbox", { name: /New account/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel the move…" }));

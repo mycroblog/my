@@ -84,7 +84,9 @@ test("lets the server decide every page online: its status and its link preview 
   await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
 
   // No page is stored: only the generic shell at /home, from the precache, is ever replayed.
-  const pages = (await cachedURLs(page)).map((url) => new URL(url).pathname).filter((path) => !path.startsWith("/assets/"));
+  const pages = (await cachedURLs(page))
+    .map((url) => new URL(url).pathname)
+    .filter((path) => !path.startsWith("/assets/"));
   expect(pages.filter((path) => path.startsWith("/@"))).toEqual([]);
 });
 
@@ -104,7 +106,9 @@ test("starts the app from the offline shell, but not the server's own pages", as
   // The page says why it cannot load instead of a skeleton that never ends, under the offline bar
   // (web-client/16-look-states-and-wording.md G17).
   await expect(page.getByRole("status").filter({ hasText: "You are offline." })).toBeVisible();
-  await expect(page.getByRole("main").getByText("You are offline, so the server cannot be reached.", { exact: false })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByText("You are offline, so the server cannot be reached.", { exact: false }),
+  ).toBeVisible();
   await expect(page.getByRole("main").getByRole("progressbar")).toHaveCount(0);
   // GET /instance cannot answer, and the navigation still offers the federated timeline the server offered online.
   await expect(page.getByRole("navigation").locator('a[href="/public"]')).toBeVisible();
@@ -113,7 +117,10 @@ test("starts the app from the offline shell, but not the server's own pages", as
   await context.setOffline(false);
 });
 
-test("opens another page offline with its heading under the offline bar, which goes back online", async ({ page, context }) => {
+test("opens another page offline with its heading under the offline bar, which goes back online", async ({
+  page,
+  context,
+}) => {
   await openControlled(page, "/local");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   await context.setOffline(true);

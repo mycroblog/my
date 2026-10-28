@@ -81,7 +81,9 @@ export function decideAppealMutation(api: Api) {
     mutationFn: async ({ id, decision, reason }: DecideAppeal): Promise<Appeal> => {
       const init = { params: { path: { id } }, body: reason === "" ? {} : { public_reason: reason } };
       const { data, error } =
-        decision === "uphold" ? await api.fetch.POST("/admin/appeals/{id}/uphold", init) : await api.fetch.POST("/admin/appeals/{id}/overturn", init);
+        decision === "uphold"
+          ? await api.fetch.POST("/admin/appeals/{id}/uphold", init)
+          : await api.fetch.POST("/admin/appeals/{id}/overturn", init);
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -98,7 +100,9 @@ export function decideAppealMutation(api: Api) {
  */
 async function refreshAppealLists(queryClient: QueryClient, api: Api, accountId: string): Promise<void> {
   await Promise.all([
-    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/admin/appeals" || query.queryKey[1] === "/admin/counts" }),
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[1] === "/admin/appeals" || query.queryKey[1] === "/admin/counts",
+    }),
     refreshAdminAccount(queryClient, api, accountId, { actions: true }),
     refreshAuditLog(queryClient),
   ]);
@@ -112,7 +116,9 @@ async function refreshAppealLists(queryClient: QueryClient, api: Api, accountId:
 export async function storeAppeal(queryClient: QueryClient, api: Api, appeal: Appeal): Promise<void> {
   await Promise.all([
     refreshAppealLists(queryClient, api, appeal.account_id),
-    appeal.state === "overturned" ? refreshPublicAccount(queryClient, appeal.account_id, appeal.action.kind) : undefined,
+    appeal.state === "overturned"
+      ? refreshPublicAccount(queryClient, appeal.account_id, appeal.action.kind)
+      : undefined,
   ]);
   queryClient.setQueryData(appealQueryOptions(api, appeal.id).queryKey, appeal);
 }

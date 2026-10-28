@@ -21,6 +21,7 @@ export function useDocumentLinks(): DocumentLink[] {
   if (data === undefined) return [];
   const links: DocumentLink[] = [];
   if (data.terms_url !== undefined) links.push({ href: data.terms_url, label: t("client:documents.terms") });
-  if (data.privacy_policy_url !== undefined) links.push({ href: data.privacy_policy_url, label: t("client:documents.privacy_policy") });
+  if (data.privacy_policy_url !== undefined)
+    links.push({ href: data.privacy_policy_url, label: t("client:documents.privacy_policy") });
   return links;
 }

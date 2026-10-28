@@ -7,8 +7,16 @@ import { CustomEmoji, type CustomEmojiImage, EmojiText, insertCustomEmojis, spli
 import { AnimationsPlayContext, AutoplayContext } from "./Picture";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
-const blobcat: CustomEmojiImage = { shortcode: "blobcat", url: "https://example.com/blobcat.gif", static_url: "https://example.com/blobcat.png" };
-const still: CustomEmojiImage = { shortcode: "still", url: "https://example.com/still.png", static_url: "https://example.com/still.png" };
+const blobcat: CustomEmojiImage = {
+  shortcode: "blobcat",
+  url: "https://example.com/blobcat.gif",
+  static_url: "https://example.com/blobcat.png",
+};
+const still: CustomEmojiImage = {
+  shortcode: "still",
+  url: "https://example.com/still.png",
+  static_url: "https://example.com/still.png",
+};
 
 describe("splitCustomEmoji", () => {
   it("replaces only the shortcodes of the given emoji", () => {
@@ -56,7 +64,8 @@ describe("CustomEmoji", () => {
   });
 
   it("follows the app's autoplay setting unless told otherwise", () => {
-    const off = (children: ReactNode) => renderToStaticMarkup(<AutoplayContext value={false}>{children}</AutoplayContext>);
+    const off = (children: ReactNode) =>
+      renderToStaticMarkup(<AutoplayContext value={false}>{children}</AutoplayContext>);
     expect(off(<CustomEmoji emoji={blobcat} />)).not.toContain("<picture");
     expect(off(<CustomEmoji emoji={blobcat} allowMotion />)).toContain("<picture");
   });
@@ -99,14 +108,16 @@ describe("insertCustomEmojis", () => {
     expect(view.getByText(":blobcat:")).toBeInTheDocument();
     expect(view.getByText(":still:")).toBeInTheDocument();
     restore();
-    expect(root.innerHTML).toBe("<p>hi :blobcat: <a href=\"#\">:still:</a></p><pre>:blobcat:</pre><code>:still:</code>");
+    expect(root.innerHTML).toBe('<p>hi :blobcat: <a href="#">:still:</a></p><pre>:blobcat:</pre><code>:still:</code>');
     root.remove();
   });
 });
 
 describe("PostContent with emoji", () => {
   it("draws the emoji of the body, and draws them again in a new body", () => {
-    const { rerender } = render(<PostContent html={serverSanitizedHtml("<p>hello :blobcat:</p>")} emojis={[blobcat]} />);
+    const { rerender } = render(
+      <PostContent html={serverSanitizedHtml("<p>hello :blobcat:</p>")} emojis={[blobcat]} />,
+    );
     expect(screen.getByRole("img", { name: ":blobcat:" })).toBeInTheDocument();
 
     rerender(<PostContent html={serverSanitizedHtml("<p>edited :blobcat: :still:</p>")} emojis={[blobcat, still]} />);

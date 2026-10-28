@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, test } from "bun:test";
 import { ProblemError } from "./problem.js";
-import { HeartbeatTimeoutError, NotEventStreamError, parseStreamEvent, runStream, streamDelay, type StreamEvent, type StreamOptions } from "./stream.js";
+import {
+  HeartbeatTimeoutError,
+  NotEventStreamError,
+  parseStreamEvent,
+  runStream,
+  streamDelay,
+  type StreamEvent,
+  type StreamOptions,
+} from "./stream.js";
 import { fakeFetch, fakeSleep, problem, server, type Handler } from "./test/fake.js";
 import { staticToken, type TokenSource } from "./token.js";
 
@@ -35,7 +43,10 @@ function connections(...handlers: Handler[]) {
 }
 
 /** Runs the stream with options until its open number `stopAt` (from 0), recording what it reports. */
-async function run(options: Omit<StreamOptions, "server" | "signal" | "onEvent" | "onOpen" | "onError">, stopAt: number) {
+async function run(
+  options: Omit<StreamOptions, "server" | "signal" | "onEvent" | "onOpen" | "onError">,
+  stopAt: number,
+) {
   const controller = new AbortController();
   const opens: boolean[] = [];
   const events: StreamEvent[] = [];
@@ -79,7 +90,13 @@ describe("runStream", () => {
 
     expect(r.outcome).toBeNull();
     expect(r.opens).toEqual([false, true]);
-    expect(r.events.map((e) => e.type)).toEqual(["update", "notification", "announcement", "announcement_removed", "unknown"]);
+    expect(r.events.map((e) => e.type)).toEqual([
+      "update",
+      "notification",
+      "announcement",
+      "announcement_removed",
+      "unknown",
+    ]);
     const [update, notification, announcement, removed, unknown] = r.events;
     if (update?.type === "update") expect(update.status.id).toBe("s1");
     if (notification?.type === "notification") expect(notification.notification.id).toBe("n1");
@@ -111,7 +128,17 @@ describe("runStream", () => {
 
   test("keeps a stream whose heartbeats arrive in time", async () => {
     const f = connections(
-      () => sse([": connected\n\n", ": heartbeat\n\n", ": heartbeat\n\n", ": heartbeat\n\n", 'event: announcement_removed\ndata: {"id":"a1"}\n\n'], { gap: 20 }),
+      () =>
+        sse(
+          [
+            ": connected\n\n",
+            ": heartbeat\n\n",
+            ": heartbeat\n\n",
+            ": heartbeat\n\n",
+            'event: announcement_removed\ndata: {"id":"a1"}\n\n',
+          ],
+          { gap: 20 },
+        ),
       () => sse([": connected\n\n"], { hold: true }),
     );
     const r = await run({ fetch: f.fetch, sleep: fakeSleep().sleep, heartbeatTimeout: 300 }, 1);
@@ -148,7 +175,9 @@ describe("runStream", () => {
       },
     };
     const f = connections((r) =>
-      r.headers.get("Authorization") === "Bearer a1" ? sse([": connected\n\n"], { hold: true }) : problem(401, "/api/v1/problems/invalid-token"),
+      r.headers.get("Authorization") === "Bearer a1"
+        ? sse([": connected\n\n"], { hold: true })
+        : problem(401, "/api/v1/problems/invalid-token"),
     );
     const r = await run({ fetch: f.fetch, sleep: fakeSleep().sleep, tokenSource: tokens }, 0);
     expect(refreshes).toBe(1);

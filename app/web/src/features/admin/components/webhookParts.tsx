@@ -4,8 +4,20 @@
 import { Button, Checkbox, Grid, Hint, InlineError, Stack, Text, TextField } from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { webhookDescriptionLimit, type WebhookEventType, webhookEvents, type WebhookMessageType, webhookUrlLimit } from "../api/webhooks";
-import { type ShownSecret, useCopySecret, type WebhookDraft, type WebhookFieldError, webhookName } from "../hooks/useWebhooks";
+import {
+  webhookDescriptionLimit,
+  type WebhookEventType,
+  webhookEvents,
+  type WebhookMessageType,
+  webhookUrlLimit,
+} from "../api/webhooks";
+import {
+  type ShownSecret,
+  useCopySecret,
+  type WebhookDraft,
+  type WebhookFieldError,
+  webhookName,
+} from "../hooks/useWebhooks";
 
 export const webhookEventLabels: Readonly<Record<WebhookMessageType, ClientMessageKey>> = {
   "report.created": "client:admin.webhooks.event.report_created",
@@ -42,9 +54,14 @@ export function WebhookFields({ draft, change, error, autoFocus = false }: Webho
   const eventsId = useId();
   const eventsHintId = useId();
   const eventsErrorId = useId();
-  const fieldError = (field: WebhookFieldError["field"]) => (error?.field === field ? { isInvalid: true, errorMessage: error.message } : {});
+  const fieldError = (field: WebhookFieldError["field"]) =>
+    error?.field === field ? { isInvalid: true, errorMessage: error.message } : {};
   const toggle = (event: WebhookEventType, selected: boolean) => {
-    change({ events: selected ? webhookEvents.filter((e) => e === event || draft.events.includes(e)) : draft.events.filter((e) => e !== event) });
+    change({
+      events: selected
+        ? webhookEvents.filter((e) => e === event || draft.events.includes(e))
+        : draft.events.filter((e) => e !== event),
+    });
   };
   return (
     <>
@@ -74,16 +91,16 @@ export function WebhookFields({ draft, change, error, autoFocus = false }: Webho
         autoComplete="off"
         {...fieldError("description")}
       />
-      <Stack gap="2"
+      <Stack
+        gap="2"
         role="group"
         aria-labelledby={eventsId}
-        aria-describedby={error?.field === "events" ? `${eventsHintId} ${eventsErrorId}` : eventsHintId}>
+        aria-describedby={error?.field === "events" ? `${eventsHintId} ${eventsErrorId}` : eventsHintId}
+      >
         <Text size="sm" tone="fg" weight="medium" id={eventsId}>
           {t("client:admin.webhooks.events")}
         </Text>
-        <Hint id={eventsHintId}>
-          {t("client:admin.webhooks.events.description")}
-        </Hint>
+        <Hint id={eventsHintId}>{t("client:admin.webhooks.events.description")}</Hint>
         <Grid at="md" gap="2">
           {webhookEvents.map((event) => (
             <Checkbox
@@ -100,7 +117,9 @@ export function WebhookFields({ draft, change, error, autoFocus = false }: Webho
         {error?.field === "events" && (
           <Stack gap="1" tone="danger" textSize="sm" id={eventsErrorId} role="alert">
             <p>{error.message}</p>
-            {error.missing.length > 0 && <p>{t("client:admin.webhooks.missing_permissions", { permissions: `⁦${error.missing.join(", ")}⁩` })}</p>}
+            {error.missing.length > 0 && (
+              <p>{t("client:admin.webhooks.missing_permissions", { permissions: `⁦${error.missing.join(", ")}⁩` })}</p>
+            )}
           </Stack>
         )}
       </Stack>

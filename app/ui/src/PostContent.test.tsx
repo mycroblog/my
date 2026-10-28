@@ -18,7 +18,12 @@ function newTab(name: string): RegExp {
 /** The app's settings of the links: its own pages are the hashtag pages of example.com. */
 function withLinks(children: ReactNode) {
   return (
-    <ExternalLinkContext value={{ newTabLabel: "(opens in a new tab)", isAppLink: (url) => url.host === "example.com" && url.pathname.startsWith("/tags/") }}>
+    <ExternalLinkContext
+      value={{
+        newTabLabel: "(opens in a new tab)",
+        isAppLink: (url) => url.host === "example.com" && url.pathname.startsWith("/tags/"),
+      }}
+    >
       {children}
     </ExternalLinkContext>
   );
@@ -30,8 +35,12 @@ describe("PostContent", () => {
   });
 
   it("renders the sanitized HTML with the post's own direction and language", () => {
-    const { container } = render(<PostContent html={serverSanitizedHtml('<p>مرحبا <a href="https://example.com/">#tag</a></p>')} lang="ar" />);
-    expect(ariaSnapshot(container)).toBe([`- generic [lang=ar] [dir=auto]:`, `  - text: "مرحبا"`, `  - link "#tag"`].join("\n"));
+    const { container } = render(
+      <PostContent html={serverSanitizedHtml('<p>مرحبا <a href="https://example.com/">#tag</a></p>')} lang="ar" />,
+    );
+    expect(ariaSnapshot(container)).toBe(
+      [`- generic [lang=ar] [dir=auto]:`, `  - text: "مرحبا"`, `  - link "#tag"`].join("\n"),
+    );
   });
 
   it("accepts only HTML marked as server-sanitized", () => {
@@ -96,7 +105,11 @@ describe("PostContent", () => {
     await user.click(screen.getByRole("link", { name: "#cats" }));
     await user.keyboard("{/Control}");
 
-    expect(followed).toEqual(["https://example.com/tags/cats", "https://example.com/tags/cats", "https://example.com/tags/cats"]);
+    expect(followed).toEqual([
+      "https://example.com/tags/cats",
+      "https://example.com/tags/cats",
+      "https://example.com/tags/cats",
+    ]);
     expect(onLinkClick.mock.calls.every(([event]) => event.defaultPrevented)).toBe(true);
   });
 
@@ -125,7 +138,9 @@ describe("sanitizedHtmlText", () => {
   });
 
   it("returns the text without markup, with paragraphs and line breaks as line breaks", () => {
-    expect(sanitizedHtmlText(serverSanitizedHtml('<p>one<br>two</p><p> <a href="https://example.com/">three</a> </p>'))).toBe("one\ntwo\nthree");
+    expect(
+      sanitizedHtmlText(serverSanitizedHtml('<p>one<br>two</p><p> <a href="https://example.com/">three</a> </p>')),
+    ).toBe("one\ntwo\nthree");
     expect(sanitizedHtmlText(serverSanitizedHtml("plain &amp; text"))).toBe("plain & text");
     expect(sanitizedHtmlText(serverSanitizedHtml(""))).toBe("");
   });

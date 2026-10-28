@@ -20,7 +20,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const WithDescription: Story = { args: { description: "A few words about you.", placeholder: "I post about…", rows: 3 } };
+export const WithDescription: Story = {
+  args: { description: "A few words about you.", placeholder: "I post about…", rows: 3 },
+};
 
 export const Invalid: Story = {
   args: { defaultValue: "", isInvalid: true, errorMessage: "Write something before saving." },
@@ -54,7 +56,8 @@ export const WithEndAction: Story = {
     label: "Post",
     characterLimit: 500,
     formatRemaining,
-    defaultValue: "The text wraps before it reaches the button in the corner, so that no line runs under it, however long it gets.",
+    defaultValue:
+      "The text wraps before it reaches the button in the corner, so that no line runs under it, however long it gets.",
     endAction: (
       <TooltipTrigger>
         <Button variant="ghost" size="icon" aria-label="Add emoji">

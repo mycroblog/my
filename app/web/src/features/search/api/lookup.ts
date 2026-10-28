@@ -19,7 +19,9 @@ export const maxSearchLength = 2048;
  * from its server; that needs the viewer's token.
  */
 export async function lookupAccount(api: Api, query: string, resolve: boolean): Promise<Account> {
-  const { data, error } = await api.fetch.GET("/accounts/lookup", { params: { query: resolve ? { acct: query, resolve: true } : { acct: query } } });
+  const { data, error } = await api.fetch.GET("/accounts/lookup", {
+    params: { query: resolve ? { acct: query, resolve: true } : { acct: query } },
+  });
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
   return data;

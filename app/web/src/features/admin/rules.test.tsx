@@ -29,7 +29,8 @@ function rulesServer(initial: readonly Rule[]) {
   let rules = [...initial];
   const writes: { method: string; path: string; body: unknown }[] = [];
   const record = async (request: Request) => {
-    const body: unknown = request.method === "POST" && request.url.endsWith("/retire") ? undefined : await request.clone().json();
+    const body: unknown =
+      request.method === "POST" && request.url.endsWith("/retire") ? undefined : await request.clone().json();
     writes.push({ method: request.method, path: new URL(request.url).pathname.replace("/api/v1", ""), body });
   };
   server.use(
@@ -44,7 +45,18 @@ function rulesServer(initial: readonly Rule[]) {
     http.patch(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
       await record(request);
       const { text, hint } = (await request.json()) as Schemas["InstanceRuleInput"];
-      rules = rules.map((rule) => (rule.id === params["id"] ? { id: rule.id, position: rule.position, created_at: rule.created_at, revised_at: rule.revised_at, text, ...(hint === undefined ? {} : { hint }) } : rule));
+      rules = rules.map((rule) =>
+        rule.id === params["id"]
+          ? {
+              id: rule.id,
+              position: rule.position,
+              created_at: rule.created_at,
+              revised_at: rule.revised_at,
+              text,
+              ...(hint === undefined ? {} : { hint }),
+            }
+          : rule,
+      );
       return HttpResponse.json(rules.find((rule) => rule.id === params["id"]));
     }),
     http.post(`${apiBase}/admin/rules/:id/move`, async ({ request, params }) => {
@@ -53,7 +65,10 @@ function rulesServer(initial: readonly Rule[]) {
       const moved = rules.find((rule) => rule.id === params["id"]);
       if (moved === undefined) return new HttpResponse(null, { status: 404 });
       const others = rules.filter((rule) => rule.id !== moved.id);
-      rules = [...others.slice(0, position - 1), moved, ...others.slice(position - 1)].map((rule, index) => ({ ...rule, position: index + 1 }));
+      rules = [...others.slice(0, position - 1), moved, ...others.slice(position - 1)].map((rule, index) => ({
+        ...rule,
+        position: index + 1,
+      }));
       return HttpResponse.json(rules[position - 1]);
     }),
     http.post(`${apiBase}/admin/rules/:id/retire`, async ({ request, params }) => {
@@ -81,7 +96,10 @@ describe("the rules", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Rules" })).toBeInTheDocument();
     const list = screen.getByRole("region", { name: "Rules in effect" });
     const headings = within(list).getAllByRole("heading", { level: 3 });
-    expect(headings.map((heading) => heading.textContent)).toEqual([`Rule 1: ${isolated("Be kind")}`, `Rule 2: ${isolated("No spam")}`]);
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      `Rule 1: ${isolated("Be kind")}`,
+      `Rule 2: ${isolated("No spam")}`,
+    ]);
     // The administrator's hint, in a language the app does not know.
     const hint = within(list).getByText("No harassment.");
     expect(hint).toHaveAttribute("dir", "auto");
@@ -100,9 +118,17 @@ describe("the rules", () => {
     await user.type(within(form).getByRole("textbox", { name: "Hint" }), "Link the source.");
     await user.click(within(form).getByRole("button", { name: "Add the rule" }));
 
-    expect(await within(form).findByText("Added the rule after the others. The audit log records the change.")).toBeInTheDocument();
-    expect(rules.writes).toEqual([{ method: "POST", path: "/admin/rules", body: { text: "作者を明記する", hint: "Link the source." } }]);
-    expect(within(screen.getByRole("region", { name: "Rules in effect" })).getByRole("heading", { name: `Rule 2: ${isolated("作者を明記する")}` })).toBeInTheDocument();
+    expect(
+      await within(form).findByText("Added the rule after the others. The audit log records the change."),
+    ).toBeInTheDocument();
+    expect(rules.writes).toEqual([
+      { method: "POST", path: "/admin/rules", body: { text: "作者を明記する", hint: "Link the source." } },
+    ]);
+    expect(
+      within(screen.getByRole("region", { name: "Rules in effect" })).getByRole("heading", {
+        name: `Rule 2: ${isolated("作者を明記する")}`,
+      }),
+    ).toBeInTheDocument();
     expect(within(form).getByRole("textbox", { name: "Rule" })).toHaveValue("");
   });
 
@@ -148,7 +174,9 @@ describe("the rules", () => {
 
     expect(await screen.findByText("Saved “No spam or ads”. The audit log records the change.")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(rules.writes).toEqual([{ method: "PATCH", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } }]);
+    expect(rules.writes).toEqual([
+      { method: "PATCH", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } },
+    ]);
   });
 
   test("retires a rule after asking", async () => {

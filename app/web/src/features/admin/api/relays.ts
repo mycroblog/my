@@ -26,7 +26,13 @@ export const relayUrlLimit = 2048;
 /** The ways of joining a relay, in the order of the form after detecting it automatically (RelayProtocol). */
 export const relayProtocols = ["mastodon", "litepub"] as const satisfies readonly RelayProtocol[];
 
-const relayProblemReasons: readonly string[] = ["url", "exists", "domain_suspended", "not_actor", "state"] satisfies readonly RelayProblemReason[];
+const relayProblemReasons: readonly string[] = [
+  "url",
+  "exists",
+  "domain_suspended",
+  "not_actor",
+  "state",
+] satisfies readonly RelayProblemReason[];
 
 /** The relays, in registration order. */
 export function relaysQueryOptions(api: Api) {
@@ -37,7 +43,9 @@ export function relaysQueryOptions(api: Api) {
 export function relayProblemReason(error: unknown): RelayProblemReason | undefined {
   if (!(error instanceof ApiError) || error.type !== invalidRelayProblem) return undefined;
   const reason = error.document["reason"];
-  return typeof reason === "string" && relayProblemReasons.includes(reason) ? (reason as RelayProblemReason) : undefined;
+  return typeof reason === "string" && relayProblemReasons.includes(reason)
+    ? (reason as RelayProblemReason)
+    : undefined;
 }
 
 /** Registers a relay and joins it (POST /admin/relays), as the options of useMutation. */
@@ -83,5 +91,8 @@ export function deleteRelayMutation(api: Api) {
  * the queries shown now are fetched again and awaited.
  */
 export async function refreshRelays(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/admin/relays"] }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/relays"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }

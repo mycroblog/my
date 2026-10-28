@@ -20,7 +20,11 @@ const meta = {
     children: (
       <>
         <TextField name="key" label="Key" isRequired />
-        <TextField name="name" label="Name of a role whose name is much longer than the room it has" description="Shown on the badge." />
+        <TextField
+          name="name"
+          label="Name of a role whose name is much longer than the room it has"
+          description="Shown on the badge."
+        />
         <Button type="submit" variant="primary">
           Create
         </Button>

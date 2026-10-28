@@ -77,7 +77,12 @@ export type VoiceStreamOptions = {
  * rejects with the ApiError of a refused stream (a 404 for a session that is no longer the user's), a network
  * failure, or a VoiceStreamSilentError.
  */
-export async function readVoiceStream(api: Api, id: string, session: string, { signal, onOpen, onEvent }: VoiceStreamOptions): Promise<void> {
+export async function readVoiceStream(
+  api: Api,
+  id: string,
+  session: string,
+  { signal, onOpen, onEvent }: VoiceStreamOptions,
+): Promise<void> {
   const silence = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const arm = () => {
@@ -89,7 +94,11 @@ export async function readVoiceStream(api: Api, id: string, session: string, { s
   const both = AbortSignal.any([signal, silence.signal]);
   arm();
   try {
-    const { data } = await api.fetch.GET("/voice/rooms/{id}/stream", { params: { path: { id }, query: { session } }, parseAs: "stream", signal: both });
+    const { data } = await api.fetch.GET("/voice/rooms/{id}/stream", {
+      params: { path: { id }, query: { session } },
+      parseAs: "stream",
+      signal: both,
+    });
     if (data === undefined || data === null) return;
     onOpen();
     const reader = data.getReader();
@@ -149,7 +158,10 @@ export async function sendVoiceHeartbeat(api: Api, id: string, session: string):
 
 /** A new grant for the session, 10 minutes before the one it has expires. */
 export async function refreshVoiceGrant(api: Api, id: string, session: string): Promise<VoiceGrantData> {
-  const { data, error } = await api.fetch.POST("/voice/rooms/{id}/grant", { params: { path: { id } }, body: { session } });
+  const { data, error } = await api.fetch.POST("/voice/rooms/{id}/grant", {
+    params: { path: { id } },
+    body: { session },
+  });
   if (data === undefined) throw new ApiError(error);
   return data;
 }
@@ -183,7 +195,9 @@ export async function leaveVoiceRoom(api: Api, id: string, choice: VoiceLeaveCho
  * others in it is refused (the server's 409) and stays the host until the grace after the heartbeats stop.
  */
 export function leaveVoiceRoomOnUnload(api: Api, id: string): void {
-  void api.fetch.DELETE("/voice/rooms/{id}/participation", { params: { path: { id } }, keepalive: true }).catch(() => undefined);
+  void api.fetch
+    .DELETE("/voice/rooms/{id}/participation", { params: { path: { id } }, keepalive: true })
+    .catch(() => undefined);
 }
 
 /** The user's own operations in a room, each answering the room after it. */
@@ -207,10 +221,16 @@ export async function voiceSelfOperation(api: Api, id: string, operation: VoiceS
  * An operation of the host or a co-host on a participant: let speak (`grant`), dismiss the raised hand, stop speaking
  * (`revoke`), mute, remove; and of the host only: make or stop being a co-host, and hand the room over.
  */
-export type VoiceParticipantOperation = "grant" | "dismiss" | "revoke" | "mute" | "remove" | "cohost" | "uncohost" | "hand-over";
+export type VoiceParticipantOperation =
+  "grant" | "dismiss" | "revoke" | "mute" | "remove" | "cohost" | "uncohost" | "hand-over";
 
 /** Runs `operation` on the participant `accountId`; the room after it, when the server answers one. */
-export async function voiceParticipantOperation(api: Api, id: string, accountId: string, operation: VoiceParticipantOperation): Promise<VoiceRoom | undefined> {
+export async function voiceParticipantOperation(
+  api: Api,
+  id: string,
+  accountId: string,
+  operation: VoiceParticipantOperation,
+): Promise<VoiceRoom | undefined> {
   const params = { params: { path: { id, account_id: accountId } } };
   switch (operation) {
     case "grant": {
@@ -239,7 +259,10 @@ export async function voiceParticipantOperation(api: Api, id: string, accountId:
       return data;
     }
     case "hand-over": {
-      const { data, error } = await api.fetch.POST("/voice/rooms/{id}/host", { params: { path: { id } }, body: { account_id: accountId } });
+      const { data, error } = await api.fetch.POST("/voice/rooms/{id}/host", {
+        params: { path: { id } },
+        body: { account_id: accountId },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     }
@@ -253,10 +276,18 @@ export async function voiceParticipantOperation(api: Api, id: string, accountId:
 }
 
 /** Invites the local user `username` to the room as a listener or a speaker: finds the account, then invites it. */
-export async function inviteToVoiceRoom(api: Api, id: string, username: string, role: VoiceRole): Promise<Schemas["VoiceRoomInvitation"]> {
+export async function inviteToVoiceRoom(
+  api: Api,
+  id: string,
+  username: string,
+  role: VoiceRole,
+): Promise<Schemas["VoiceRoomInvitation"]> {
   const found = await api.fetch.GET("/accounts/lookup", { params: { query: { acct: username.trim() } } });
   if (found.data === undefined) throw new ApiError(found.error);
-  const { data, error } = await api.fetch.POST("/voice/rooms/{id}/invitations", { params: { path: { id } }, body: { account_id: found.data.id, role } });
+  const { data, error } = await api.fetch.POST("/voice/rooms/{id}/invitations", {
+    params: { path: { id } },
+    body: { account_id: found.data.id, role },
+  });
   if (data === undefined) throw new ApiError(error);
   return data;
 }
@@ -270,6 +301,8 @@ export function cacheVoiceRoomState(api: Api, queryClient: QueryClient, room: Vo
 export async function refreshVoiceRoom(api: Api, queryClient: QueryClient, id: string): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: voiceRoomQueryOptions(api, id).queryKey }),
-    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/voice/rooms" }),
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/voice/rooms",
+    }),
   ]);
 }

@@ -109,15 +109,30 @@ export async function tokenRequest(oauth: OAuthConfig, params: Record<string, st
         // No error document: the status below.
       }
     }
-    throw new OAuthError(response.status, code === "" ? response.statusText || String(response.status) : code, description);
+    throw new OAuthError(
+      response.status,
+      code === "" ? response.statusText || String(response.status) : code,
+      description,
+    );
   }
-  let tr: { access_token?: unknown; token_type?: unknown; expires_in?: unknown; refresh_token?: unknown; scope?: unknown };
+  let tr: {
+    access_token?: unknown;
+    token_type?: unknown;
+    expires_in?: unknown;
+    refresh_token?: unknown;
+    scope?: unknown;
+  };
   try {
     tr = JSON.parse(body) as typeof tr;
   } catch (error) {
     throw new OAuthError(response.status, "invalid_response", error instanceof Error ? error.message : String(error));
   }
-  if (typeof tr.access_token !== "string" || tr.access_token === "" || typeof tr.token_type !== "string" || tr.token_type.toLowerCase() !== "bearer") {
+  if (
+    typeof tr.access_token !== "string" ||
+    tr.access_token === "" ||
+    typeof tr.token_type !== "string" ||
+    tr.token_type.toLowerCase() !== "bearer"
+  ) {
     throw new OAuthError(response.status, "invalid_response", "no bearer access token");
   }
   const token: Token = { accessToken: tr.access_token };

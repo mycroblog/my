@@ -49,7 +49,23 @@ const admin: Schemas["AdminRole"] = {
   id: "0192f0c4-7a8e-7000-8000-000000000a01",
   key: "admin",
   position: 1000,
-  permissions: ["manage_reports", "manage_accounts", "manage_domains", "manage_rules", "manage_settings", "manage_roles", "manage_invites", "view_audit", "manage_jobs", "manage_login_recovery", "manage_custom_emojis", "manage_webhooks", "manage_announcements", "manage_finance", "manage_supporters"],
+  permissions: [
+    "manage_reports",
+    "manage_accounts",
+    "manage_domains",
+    "manage_rules",
+    "manage_settings",
+    "manage_roles",
+    "manage_invites",
+    "view_audit",
+    "manage_jobs",
+    "manage_login_recovery",
+    "manage_custom_emojis",
+    "manage_webhooks",
+    "manage_announcements",
+    "manage_finance",
+    "manage_supporters",
+  ],
 };
 const staff: Schemas["AdminRole"] = {
   id: "0192f0c4-7a8e-7000-8000-000000000a03",
@@ -57,11 +73,21 @@ const staff: Schemas["AdminRole"] = {
   position: 500,
   permissions: ["manage_reports", "manage_accounts", "manage_roles", "view_audit"],
 };
-const moderator: Schemas["AdminRole"] = { id: "0192f0c4-7a8e-7000-8000-000000000a02", key: "moderator", position: 100, permissions: ["manage_reports", "manage_accounts", "view_audit"] };
+const moderator: Schemas["AdminRole"] = {
+  id: "0192f0c4-7a8e-7000-8000-000000000a02",
+  key: "moderator",
+  position: 100,
+  permissions: ["manage_reports", "manage_accounts", "view_audit"],
+};
 const roles = [admin, staff, moderator];
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of the signed-in viewer; returns the role changes the app sent. */
@@ -83,19 +109,44 @@ async function rolesServer(page: Page) {
     reports: [],
   });
   const heldList = () => ({ items: roles.filter((role) => held.includes(role)) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${viewer.id}`) return json(route, viewer);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/counts") return json(route, {});
     if (key === `GET /admin/accounts/${local.id}`) return json(route, detail());
@@ -115,11 +166,17 @@ async function rolesServer(page: Page) {
 
 /** The roles region: the one whose rows are headed by the role keys. */
 function rolesRegion(page: Page) {
-  return page.getByRole("main").getByRole("region").filter({ has: page.getByRole("heading", { level: 3, name: "moderator", exact: true }) });
+  return page
+    .getByRole("main")
+    .getByRole("region")
+    .filter({ has: page.getByRole("heading", { level: 3, name: "moderator", exact: true }) });
 }
 
 test.describe("roles", () => {
-  test("grants a role by keyboard after its confirmation, with a role above the viewer's highest one explained", async ({ page, makeAxeBuilder }) => {
+  test("grants a role by keyboard after its confirmation, with a role above the viewer's highest one explained", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await rolesServer(page);
     await page.goto(`/moderation/accounts/${local.id}`);
     const region = rolesRegion(page);
@@ -155,7 +212,9 @@ test.describe("roles", () => {
     await expectNoHorizontalScroll(page);
 
     // By keyboard: the moderator's grant opens its confirmation, with focus on cancel.
-    const row = region.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "moderator", exact: true }) });
+    const row = region
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: "moderator", exact: true }) });
     await row.getByRole("button").focus();
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("alertdialog");
@@ -180,7 +239,9 @@ test.describe("roles", () => {
     expect(changes).toEqual([`PUT /admin/accounts/${local.id}/roles/moderator`]);
     await expect(region.getByRole("heading", { level: 2 })).toBeFocused();
     await expect(region.getByRole("status").filter({ hasText: /\S/ })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("region").first().getByText("moderator", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("region").first().getByText("moderator", { exact: true }),
+    ).toBeVisible();
     await expect(page.locator("[data-exiting]")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, test } from "vitest";
-import { durationParts, maxPollOptions, minPollOptions, newPoll, pollDurations, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
+import {
+  durationParts,
+  maxPollOptions,
+  minPollOptions,
+  newPoll,
+  pollDurations,
+  pollProblem,
+  pollRequest,
+  withOption,
+  withoutOption,
+} from "./poll";
 
 describe("the poll of a new post", () => {
   test("starts with two empty options for a day, and keeps between the fewest and the most options", () => {
@@ -18,11 +28,20 @@ describe("the poll of a new post", () => {
 
   test("is sent only with options that are filled in and different once trimmed", () => {
     const [a, b] = newPoll().options;
-    const poll = (titles: [string, string]) => ({ ...newPoll(), options: [{ key: a?.key ?? "a", title: titles[0] }, { key: b?.key ?? "b", title: titles[1] }] });
+    const poll = (titles: [string, string]) => ({
+      ...newPoll(),
+      options: [
+        { key: a?.key ?? "a", title: titles[0] },
+        { key: b?.key ?? "b", title: titles[1] },
+      ],
+    });
     expect(pollProblem(poll(["Tea", " "]))).toBe("empty");
     expect(pollProblem(poll(["Tea", " Tea "]))).toBe("duplicate");
     expect(pollProblem(poll(["Tea", "Coffee"]))).toBeNull();
-    expect(pollRequest({ ...poll([" Tea ", "Coffee"]), expiresIn: 300 })).toEqual({ options: ["Tea", "Coffee"], expires_in: 300 });
+    expect(pollRequest({ ...poll([" Tea ", "Coffee"]), expiresIn: 300 })).toEqual({
+      options: ["Tea", "Coffee"],
+      expires_in: 300,
+    });
     expect(pollRequest({ ...poll(["Tea", "Coffee"]), multiple: true, hideTotals: true })).toEqual({
       options: ["Tea", "Coffee"],
       expires_in: 86400,

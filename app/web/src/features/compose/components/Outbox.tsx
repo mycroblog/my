@@ -26,7 +26,13 @@ export function Outbox({ items, onRetry, onEdit, canEdit, onDiscard }: OutboxPro
           text={item.text}
           lang={item.language}
           sendingLabel={item.status === "sending" ? t("client:compose.outbox.sending") : undefined}
-          error={item.status === "sending" ? undefined : item.status === "failed" ? t("client:compose.outbox.failed", { reason: item.message }) : t("client:compose.outbox.unsent")}
+          error={
+            item.status === "sending"
+              ? undefined
+              : item.status === "failed"
+                ? t("client:compose.outbox.failed", { reason: item.message })
+                : t("client:compose.outbox.unsent")
+          }
         >
           <Button
             size="sm"

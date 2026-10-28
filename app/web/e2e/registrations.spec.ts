@@ -33,7 +33,12 @@ const longReason = `I would like to post about birds. My blog is at https://bird
 const arabicReason = "أريد الانضمام إلى هذا المجتمع";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 type Registration = Record<string, unknown> & { user_id: string; username: string };
@@ -67,19 +72,44 @@ async function moderatorServer(page: Page) {
     },
   ];
   const decisions: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "approval" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/registrations") return json(route, { items: pending });
     const decide = /^POST \/admin\/registrations\/([^/]+)\/(approve|reject)$/.exec(key);
@@ -89,7 +119,11 @@ async function moderatorServer(page: Page) {
       decisions.push(`${decision} ${userId} ${body.note ?? ""}`.trim());
       const registration = pending.find((item) => item.user_id === userId);
       pending = pending.filter((item) => item.user_id !== userId);
-      return json(route, { ...registration, state: decision === "approve" ? "approved" : "rejected", since: "2026-10-17T00:00:00Z" });
+      return json(route, {
+        ...registration,
+        state: decision === "approve" ? "approved" : "rejected",
+        since: "2026-10-17T00:00:00Z",
+      });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -113,7 +147,10 @@ test.describe("page /moderation/registrations", () => {
 });
 
 test.describe("registrations", () => {
-  test("lists the registrations with their reasons, approves one with a note after confirming, and rejects the other", async ({ page, makeAxeBuilder }) => {
+  test("lists the registrations with their reasons, approves one with a note after confirming, and rejects the other", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const decisions = await moderatorServer(page);
     await page.goto("/moderation/registrations");
     const main = page.getByRole("main");
@@ -169,7 +206,10 @@ test.describe("registrations", () => {
     await expect(list).toBeHidden();
     await expect(main.getByRole("status").filter({ hasText: "@carol" })).toBeVisible();
     await expect(main.getByRole("heading", { level: 1 })).toBeFocused();
-    expect(decisions).toEqual(["approve 0192f0c4-7a8e-7000-8000-0000000000b1 Known from the birding club.", "reject 0192f0c4-7a8e-7000-8000-0000000000b2"]);
+    expect(decisions).toEqual([
+      "approve 0192f0c4-7a8e-7000-8000-0000000000b1 Known from the birding club.",
+      "reject 0192f0c4-7a8e-7000-8000-0000000000b2",
+    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

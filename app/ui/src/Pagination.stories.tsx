@@ -57,7 +57,15 @@ export const Links: Story = {
 
 /** A list that pages by cursor shows only the ends. */
 export const CursorOnly: Story = {
-  render: (args) => <Pagination label={args.label} previousLabel="Previous" nextLabel="Next" previous={null} next={{ onPress: () => {} }} />,
+  render: (args) => (
+    <Pagination
+      label={args.label}
+      previousLabel="Previous"
+      nextLabel="Next"
+      previous={null}
+      next={{ onPress: () => {} }}
+    />
+  ),
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("button", { name: "Previous" })).toBeDisabled();
     await expect(canvas.getByRole("button", { name: "Next" })).toBeEnabled();

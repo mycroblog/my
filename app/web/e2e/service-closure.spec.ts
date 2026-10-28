@@ -40,7 +40,12 @@ const user = {
 const operatorMessage = `Thank you for the years${"-and-more".repeat(8)}`;
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the server with the closure `state`; `signedIn` makes the OAuth refresh and the account answer. */
@@ -66,13 +71,26 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
         timelines: { local: "everyone", federated: "everyone" },
         federation: { mode: "both" },
         rules: [],
-        closure: { state, closes_at: "2026-12-01T00:00:00Z", export_until: "2027-01-15T00:00:00Z", message: operatorMessage },
+        closure: {
+          state,
+          closes_at: "2026-12-01T00:00:00Z",
+          export_until: "2027-01-15T00:00:00Z",
+          message: operatorMessage,
+        },
       });
     }
-    if (request.headers()["authorization"] !== "Bearer e2e-token") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     if (key === "GET /accounts/verify_credentials") return json(route, user);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /exports") return json(route, { items: [] });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
@@ -81,7 +99,10 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
 
 test.describe("the announced closure", () => {
   for (const path of ["/login", "/about"]) {
-    test(`shows its notice on ${path}, and the keyboard reaches the export and the move`, async ({ page, makeAxeBuilder }) => {
+    test(`shows its notice on ${path}, and the keyboard reaches the export and the move`, async ({
+      page,
+      makeAxeBuilder,
+    }) => {
       await server(page, "announced", { signedIn: false });
       await page.goto(path);
       const notice = page.getByRole("region", { name: message("closure.label"), exact: true });
@@ -116,11 +137,18 @@ test.describe("the closed server", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("gives a signed-in user the closed screen alone, with the archives of the data", async ({ page, makeAxeBuilder }) => {
+  test("gives a signed-in user the closed screen alone, with the archives of the data", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await server(page, "closed", { signedIn: true });
     await page.goto("/home");
-    await expect(page.getByRole("heading", { level: 1, name: message("closure.closed.title"), exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: message("settings.account.export.request"), exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: message("closure.closed.title"), exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: message("settings.account.export.request"), exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: message("closure.closed.sign_out"), exact: true })).toBeVisible();
     await expect(page.getByRole("navigation")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);

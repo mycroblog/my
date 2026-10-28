@@ -38,7 +38,8 @@ export function useLoginProviders(): LoginProvider[] {
 }
 
 /** The fields of a provider that the server may refuse, and the rest of the form. */
-export type LoginProviderField = "kind" | "display_name" | "issuer" | "client_id" | "client_secret" | "scopes" | "conditions" | "form";
+export type LoginProviderField =
+  "kind" | "display_name" | "issuer" | "client_id" | "client_secret" | "scopes" | "conditions" | "form";
 
 /** Why the settings of a provider were refused: the field and the localized reason. */
 export type LoginProviderFieldError = { field: LoginProviderField; message: string };
@@ -134,7 +135,11 @@ function claimsOf(draft: LoginProviderDraft): LoginProviderClaimCondition[] | un
  * The settings of the draft that both a setup and a change send, only the ones its kind takes; or the field error
  * of a condition row that lacks its claim or its values.
  */
-function settingsOf(draft: LoginProviderDraft, incomplete: string, badGuild: string): LoginProviderChange | LoginProviderFieldError {
+function settingsOf(
+  draft: LoginProviderDraft,
+  incomplete: string,
+  badGuild: string,
+): LoginProviderChange | LoginProviderFieldError {
   const settings: LoginProviderChange = {
     display_name: draft.displayName.trim(),
     client_id: draft.clientId.trim(),
@@ -191,7 +196,11 @@ export function useLoginProviderForm() {
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (mutation.isPending) return;
-      const settings = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"), t("client:admin.login_providers.guilds.invalid"));
+      const settings = settingsOf(
+        draft,
+        t("client:admin.login_providers.conditions.incomplete"),
+        t("client:admin.login_providers.guilds.invalid"),
+      );
       if (isFieldError(settings)) {
         mutation.reset();
         setInvalid(settings);
@@ -201,7 +210,12 @@ export function useLoginProviderForm() {
       const { client_id: clientId = "", ...rest } = settings;
       // Without a client ID and secret, a Mastodon provider registers its client at the server.
       const registers = draft.kind === "mastodon" && clientId === "" && draft.clientSecret === "";
-      const body: NewLoginProvider = { ...rest, kind: draft.kind, display_name: settings.display_name ?? "", ...(!registers && { client_id: clientId, client_secret: draft.clientSecret }) };
+      const body: NewLoginProvider = {
+        ...rest,
+        kind: draft.kind,
+        display_name: settings.display_name ?? "",
+        ...(!registers && { client_id: clientId, client_secret: draft.clientSecret }),
+      };
       mutation.mutate(body);
     },
     isPending: mutation.isPending,
@@ -210,7 +224,10 @@ export function useLoginProviderForm() {
     /** The new provider, whose callback URL is shown until the next submit. */
     created,
     /** What the last submit did, for the form's StatusMessage. */
-    status: created === undefined ? undefined : t("client:admin.login_providers.created", { name: loginProviderName(created) }),
+    status:
+      created === undefined
+        ? undefined
+        : t("client:admin.login_providers.created", { name: loginProviderName(created) }),
   };
 }
 
@@ -284,7 +301,11 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
   return {
     update: async (provider, draft) => {
       resetAll();
-      const change = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"), t("client:admin.login_providers.guilds.invalid"));
+      const change = settingsOf(
+        draft,
+        t("client:admin.login_providers.conditions.incomplete"),
+        t("client:admin.login_providers.guilds.invalid"),
+      );
       if (isFieldError(change)) return change;
       try {
         const saved = await update.mutateAsync({ id: provider.id, change });
@@ -311,7 +332,11 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
       try {
         const saved = await enable.mutateAsync({ id: provider.id, enabled });
         await refreshLoginProviders(queryClient);
-        report(t(enabled ? "client:admin.login_providers.enabled_status" : "client:admin.login_providers.disabled_status", { name: loginProviderName(saved) }));
+        report(
+          t(enabled ? "client:admin.login_providers.enabled_status" : "client:admin.login_providers.disabled_status", {
+            name: loginProviderName(saved),
+          }),
+        );
         return true;
       } catch {
         return false;

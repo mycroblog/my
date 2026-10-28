@@ -28,7 +28,12 @@ export class RemoteAudios {
   readonly #talking: TalkingDetector | undefined;
   readonly #prefix = `${String(++audiosMade)}:`;
 
-  constructor(environment: VoiceEnvironment, onPlaybackBlocked: () => void, roster: VoiceRoster, talking?: TalkingDetector) {
+  constructor(
+    environment: VoiceEnvironment,
+    onPlaybackBlocked: () => void,
+    roster: VoiceRoster,
+    talking?: TalkingDetector,
+  ) {
     this.#environment = environment;
     this.#onPlaybackBlocked = onPlaybackBlocked;
     this.#speakers = speakers(roster);

@@ -79,7 +79,10 @@ export function useLiftSignupBlock(onLifted: (block: SignupBlock) => void): Lift
     },
     // The block stays in effect, and its row and focus stay (web-client/README.md E2).
     onError: (error) => {
-      toast.show({ message: t("client:admin.signup_blocks.lift_failed", { reason: errorMessage(error) }), tone: "danger" });
+      toast.show({
+        message: t("client:admin.signup_blocks.lift_failed", { reason: errorMessage(error) }),
+        tone: "danger",
+      });
     },
   });
   const pendingIds = useMutationState({

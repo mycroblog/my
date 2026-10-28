@@ -5,13 +5,41 @@
 // a domain action suspends its server. A relay is left while pending or joined, joined again once left or
 // rejected, and then deleted after an alert dialog. What a change did stays above the list in a StatusMessage
 // (role="status"), and a failure stays there too (role="alert").
-import { Button, Card, Checkbox, Cluster, ConfirmDialog, DialogTrigger, EmptyState, Hint, InlineError, Select, SelectItem, Stack, StatusMessage, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, TextField } from "@my/ui";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Cluster,
+  ConfirmDialog,
+  DialogTrigger,
+  EmptyState,
+  Hint,
+  InlineError,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  TextField,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { DateTime, DetailSection, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type Relay, type RelayProtocol, relayProtocols, type RelayState, relayUrlLimit } from "../api/relays";
-import { type RelayActions, relayHeading, relayName, type RelayProtocolChoice, useRelayActions, useRelayForm, useRelays } from "../hooks/useRelays";
+import {
+  type RelayActions,
+  relayHeading,
+  relayName,
+  type RelayProtocolChoice,
+  useRelayActions,
+  useRelayForm,
+  useRelays,
+} from "../hooks/useRelays";
 
 const protocolLabels: Readonly<Record<RelayProtocol, ClientMessageKey>> = {
   mastodon: "client:admin.relays.protocol.mastodon",
@@ -134,7 +162,13 @@ function RelayList() {
         caption={t("client:admin.relays.list.title")}
         getId={(relay) => relay.id}
         tableRef={tableRef}
-        empty={<EmptyState headingLevel={3} heading={t("client:admin.relays.empty")} description={t("client:admin.relays.empty.description")} />}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.relays.empty")}
+            description={t("client:admin.relays.empty.description")}
+          />
+        }
         head={
           <>
             <TableColumnHeader>{t("client:admin.relays.url")}</TableColumnHeader>
@@ -197,7 +231,9 @@ function RelayRow({ relay, actions }: { relay: Relay; actions: RelayActions }) {
       <TableCell>{t(relay.receive ? "client:admin.relays.receive.yes" : "client:admin.relays.receive.no")}</TableCell>
       <TableCell numeric>{t("client:admin.relays.activities", { count: relay.taken_last_day })}</TableCell>
       <TableCell numeric>
-        <Text {...(relay.dropped_last_day > 0 && { tone: "warning" as const })}>{t("client:admin.relays.activities", { count: relay.dropped_last_day })}</Text>
+        <Text {...(relay.dropped_last_day > 0 && { tone: "warning" as const })}>
+          {t("client:admin.relays.activities", { count: relay.dropped_last_day })}
+        </Text>
       </TableCell>
       <TableCell>
         <Cluster gap="2" align="center">
@@ -227,7 +263,12 @@ function DeleteRelay({ relay, actions, isPending }: { relay: Relay; actions: Rel
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger" isDisabled={isPending} aria-label={t("client:admin.relays.delete_relay", { name })}>
+      <Button
+        size="sm"
+        variant="danger"
+        isDisabled={isPending}
+        aria-label={t("client:admin.relays.delete_relay", { name })}
+      >
         {t("client:admin.relays.delete")}
       </Button>
       <ConfirmDialog
@@ -236,7 +277,10 @@ function DeleteRelay({ relay, actions, isPending }: { relay: Relay; actions: Rel
         confirmLabel={t("client:admin.relays.delete")}
         cancelLabel={t("client:admin.relays.cancel")}
         isPending={isDeleting}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.relays.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.relays.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDeleting(true);
           setFailed(false);

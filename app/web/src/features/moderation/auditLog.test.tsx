@@ -22,7 +22,8 @@ function recordAuditRequests() {
   const requests: string[] = [];
   server.events.on("request:start", ({ request }) => {
     const url = new URL(request.url);
-    if (url.pathname === `${apiBase}/admin/audit_log`) requests.push(`${url.pathname.slice(apiBase.length)}${url.search}`);
+    if (url.pathname === `${apiBase}/admin/audit_log`)
+      requests.push(`${url.pathname.slice(apiBase.length)}${url.search}`);
   });
   return requests;
 }
@@ -94,7 +95,9 @@ const auditLogHandler = http.get(`${apiBase}/admin/audit_log`, ({ request }) => 
   const start = query.get("cursor") === null ? 0 : matching.findIndex((entry) => entry.id === query.get("cursor")) + 1;
   const items = matching.slice(start, start + 2);
   const last = items.at(-1);
-  return HttpResponse.json(start + 2 < matching.length && last !== undefined ? { items, next_cursor: last.id } : { items });
+  return HttpResponse.json(
+    start + 2 < matching.length && last !== undefined ? { items, next_cursor: last.id } : { items },
+  );
 });
 
 /** The rows of the table of operations, without its header row. */
@@ -126,14 +129,23 @@ describe("the audit log", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Audit log" })).toBeInTheDocument();
     expect(await screen.findByRole("rowheader", { name: "Account action taken" })).toBeInTheDocument();
-    expect(rows().map((item) => within(item).getByRole("rowheader").textContent)).toEqual(["Account action taken", "Domain action taken"]);
+    expect(rows().map((item) => within(item).getByRole("rowheader").textContent)).toEqual([
+      "Account action taken",
+      "Domain action taken",
+    ]);
 
     const first = within(row("Account action taken"));
     expect(first.getByText("Mona")).toBeInTheDocument();
     expect(first.getByText("@mona")).toBeInTheDocument();
     expect(first.getByText("Oct 17, 2026, 9:30 AM")).toBeInTheDocument();
-    expect(first.getByRole("link", { name: "@carol@remote.example" })).toHaveAttribute("href", "/moderation/accounts/0192f0c4-7a8e-7000-8000-000000000003");
-    expect(within(row("Domain action taken")).getByRole("link", { name: "spam.example" })).toHaveAttribute("href", "/moderation/domain-actions?filter=all&domain=spam.example");
+    expect(first.getByRole("link", { name: "@carol@remote.example" })).toHaveAttribute(
+      "href",
+      "/moderation/accounts/0192f0c4-7a8e-7000-8000-000000000003",
+    );
+    expect(within(row("Domain action taken")).getByRole("link", { name: "spam.example" })).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions?filter=all&domain=spam.example",
+    );
 
     expect(within(pagination()).getByRole("button", { name: "Previous" })).toBeDisabled();
     await user.click(within(pagination()).getByRole("button", { name: "Next" }));
@@ -159,7 +171,9 @@ describe("the audit log", () => {
     server.use(operatorHandler(["view_audit"]), auditLogHandler);
     const { user, router } = await renderApp({ path: "/moderation/audit-log" });
 
-    await user.click(within(await screen.findByRole("navigation", { name: "Pages" })).getByRole("button", { name: "Next" }));
+    await user.click(
+      within(await screen.findByRole("navigation", { name: "Pages" })).getByRole("button", { name: "Next" }),
+    );
     expect(await screen.findByRole("rowheader", { name: "Setting changed" })).toBeInTheDocument();
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ pages: 2 });
@@ -202,7 +216,9 @@ describe("the audit log", () => {
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ action: "domain_action_issued", target_kind: "setting" });
     });
-    expect(await screen.findByRole("heading", { level: 2, name: "No operations match the filters" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "No operations match the filters" }),
+    ).toBeInTheDocument();
 
     const [clear] = screen.getAllByRole("link", { name: "Clear filters" });
     if (clear === undefined) throw new Error("no clear link");
@@ -231,15 +247,25 @@ describe("the audit log", () => {
     });
     // The row stays, and its link now lets go of the filter.
     await waitFor(() => {
-      expect(within(row("Account action taken")).getByRole("link", { name: "Show operations by all people" })).toHaveFocus();
+      expect(
+        within(row("Account action taken")).getByRole("link", { name: "Show operations by all people" }),
+      ).toHaveFocus();
     });
     const filters = screen.getByRole("group", { name: "Filters" });
     // The chosen actor and target are listed under the selects.
     expect(screen.getAllByRole("definition")[0]).toHaveTextContent("Mona");
 
-    await user.click(within(row("Domain action taken")).getByRole("link", { name: `Show only operations on ${isolated("spam.example")}` }));
+    await user.click(
+      within(row("Domain action taken")).getByRole("link", {
+        name: `Show only operations on ${isolated("spam.example")}`,
+      }),
+    );
     await waitFor(() => {
-      expect(router.state.location.search).toEqual({ actor: moderator.id, target_kind: "domain", target: "spam.example" });
+      expect(router.state.location.search).toEqual({
+        actor: moderator.id,
+        target_kind: "domain",
+        target: "spam.example",
+      });
     });
     await waitFor(() => {
       expect(rows()).toHaveLength(1);
@@ -277,14 +303,17 @@ describe("the audit log", () => {
     server.use(
       operatorHandler(["view_audit"]),
       http.get(`${apiBase}/admin/audit_log`, ({ request }) => {
-        if (new URL(request.url).searchParams.get("cursor") === null) return HttpResponse.json({ items: [suspension], next_cursor: suspension.id });
+        if (new URL(request.url).searchParams.get("cursor") === null)
+          return HttpResponse.json({ items: [suspension], next_cursor: suspension.id });
         if (fail) return problem(500, "about:blank", "The database is unavailable.");
         return HttpResponse.json({ items: [domainLimit] });
       }),
     );
     const { user, router } = await renderApp({ path: "/moderation/audit-log" });
 
-    await user.click(within(await screen.findByRole("navigation", { name: "Pages" })).getByRole("button", { name: "Next" }));
+    await user.click(
+      within(await screen.findByRole("navigation", { name: "Pages" })).getByRole("button", { name: "Next" }),
+    );
     expect(await screen.findByText("Could not load more operations")).toBeInTheDocument();
     expect(screen.getByText("The database is unavailable.")).toBeInTheDocument();
     expect(rows()).toHaveLength(1);
@@ -327,34 +356,97 @@ describe("the audit log", () => {
 
 describe("the link of an entry's target", () => {
   test("goes to the admin screen of an account, a report, a domain or a sign-up block while the target is there", () => {
-    expect(auditTargetHref({ target_kind: "account", target_id: "a1", target_label: "a1", target_exists: true })).toBe("/moderation/accounts/a1");
-    expect(auditTargetHref({ target_kind: "report", target_id: "r1", target_label: "r1", target_exists: true })).toBe("/moderation/reports/r1");
-    expect(auditTargetHref({ target_kind: "domain", target_id: "spam.example", target_label: "spam.example", target_exists: true })).toBe(
-      "/moderation/domain-actions?filter=all&domain=spam.example",
+    expect(auditTargetHref({ target_kind: "account", target_id: "a1", target_label: "a1", target_exists: true })).toBe(
+      "/moderation/accounts/a1",
     );
-    expect(auditTargetHref({ target_kind: "signup_block", target_id: "0192f0c4-7a8e-7000-8000-0000000001a1", target_label: "0192f0c4-7a8e-7000-8000-0000000001a1", target_exists: true })).toBe("/moderation/signup-blocks?filter=all");
-    expect(auditTargetHref({ target_kind: "setting", target_id: "registration_mode", target_label: "registration_mode", target_exists: true })).toBeUndefined();
+    expect(auditTargetHref({ target_kind: "report", target_id: "r1", target_label: "r1", target_exists: true })).toBe(
+      "/moderation/reports/r1",
+    );
+    expect(
+      auditTargetHref({
+        target_kind: "domain",
+        target_id: "spam.example",
+        target_label: "spam.example",
+        target_exists: true,
+      }),
+    ).toBe("/moderation/domain-actions?filter=all&domain=spam.example");
+    expect(
+      auditTargetHref({
+        target_kind: "signup_block",
+        target_id: "0192f0c4-7a8e-7000-8000-0000000001a1",
+        target_label: "0192f0c4-7a8e-7000-8000-0000000001a1",
+        target_exists: true,
+      }),
+    ).toBe("/moderation/signup-blocks?filter=all");
+    expect(
+      auditTargetHref({
+        target_kind: "setting",
+        target_id: "registration_mode",
+        target_label: "registration_mode",
+        target_exists: true,
+      }),
+    ).toBeUndefined();
   });
 
   test("goes to the custom emoji screen searched by the emoji's shortcode, of this server or of its domain", () => {
-    expect(auditTargetHref({ target_kind: "custom_emoji", target_id: "e1", target_label: ":blobcat:", target_exists: true })).toBe("/admin/custom-emojis?shortcode=blobcat");
-    expect(auditTargetHref({ target_kind: "custom_emoji", target_id: "e2", target_label: ":blobfox:@remote.example", target_exists: true })).toBe(
-      "/admin/custom-emojis?origin=remote&shortcode=blobfox&domain=remote.example",
-    );
+    expect(
+      auditTargetHref({ target_kind: "custom_emoji", target_id: "e1", target_label: ":blobcat:", target_exists: true }),
+    ).toBe("/admin/custom-emojis?shortcode=blobcat");
+    expect(
+      auditTargetHref({
+        target_kind: "custom_emoji",
+        target_id: "e2",
+        target_label: ":blobfox:@remote.example",
+        target_exists: true,
+      }),
+    ).toBe("/admin/custom-emojis?origin=remote&shortcode=blobfox&domain=remote.example");
   });
 
   test("goes to the list of roles or invites, and to the page of a webhook", () => {
-    expect(auditTargetHref({ target_kind: "role", target_id: "role1", target_label: "helper", target_exists: true })).toBe("/admin/roles");
-    expect(auditTargetHref({ target_kind: "invite", target_id: "inv1", target_label: "ABCD…", target_exists: true })).toBe("/moderation/invites");
-    expect(auditTargetHref({ target_kind: "webhook", target_id: "w1", target_label: "Chat (hooks.example)", target_exists: true })).toBe("/admin/webhooks/w1");
-    expect(auditTargetHref({ target_kind: "login_provider", target_id: "lp1", target_label: "Google", target_exists: true })).toBe("/admin/login-providers");
+    expect(
+      auditTargetHref({ target_kind: "role", target_id: "role1", target_label: "helper", target_exists: true }),
+    ).toBe("/admin/roles");
+    expect(
+      auditTargetHref({ target_kind: "invite", target_id: "inv1", target_label: "ABCD…", target_exists: true }),
+    ).toBe("/moderation/invites");
+    expect(
+      auditTargetHref({
+        target_kind: "webhook",
+        target_id: "w1",
+        target_label: "Chat (hooks.example)",
+        target_exists: true,
+      }),
+    ).toBe("/admin/webhooks/w1");
+    expect(
+      auditTargetHref({ target_kind: "login_provider", target_id: "lp1", target_label: "Google", target_exists: true }),
+    ).toBe("/admin/login-providers");
   });
 
   test("is not there for a target that is gone or deleted", () => {
-    expect(auditTargetHref({ target_kind: "account", target_id: "a1", target_label: "a1", target_exists: false })).toBeUndefined();
-    expect(auditTargetHref({ target_kind: "report", target_id: "r1", target_label: "r1", target_exists: false })).toBeUndefined();
-    expect(auditTargetHref({ target_kind: "role", target_id: "role1", target_label: "helper", target_exists: false })).toBeUndefined();
-    expect(auditTargetHref({ target_kind: "custom_emoji", target_id: "e1", target_label: ":blobcat:", target_exists: false })).toBeUndefined();
-    expect(auditTargetHref({ target_kind: "webhook", target_id: "w1", target_label: "Chat (hooks.example)", target_exists: false })).toBeUndefined();
+    expect(
+      auditTargetHref({ target_kind: "account", target_id: "a1", target_label: "a1", target_exists: false }),
+    ).toBeUndefined();
+    expect(
+      auditTargetHref({ target_kind: "report", target_id: "r1", target_label: "r1", target_exists: false }),
+    ).toBeUndefined();
+    expect(
+      auditTargetHref({ target_kind: "role", target_id: "role1", target_label: "helper", target_exists: false }),
+    ).toBeUndefined();
+    expect(
+      auditTargetHref({
+        target_kind: "custom_emoji",
+        target_id: "e1",
+        target_label: ":blobcat:",
+        target_exists: false,
+      }),
+    ).toBeUndefined();
+    expect(
+      auditTargetHref({
+        target_kind: "webhook",
+        target_id: "w1",
+        target_label: "Chat (hooks.example)",
+        target_exists: false,
+      }),
+    ).toBeUndefined();
   });
 });

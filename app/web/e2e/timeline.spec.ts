@@ -27,9 +27,13 @@ const account: Status["account"] = {
 };
 
 /** A picture that the fixture serves on the preview's origin (servedImage), so that no request leaves it. */
-const picture = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>')}`);
+const picture = servedImage(
+  `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>')}`,
+);
 /** An avatar, served the same way. */
-const avatar = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`);
+const avatar = servedImage(
+  `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`,
+);
 
 function status(n: number, overrides: Partial<Status> = {}): Status {
   return {
@@ -59,10 +63,19 @@ function firstPage(): StatusPage {
   return {
     items: [
       status(1, {
-        account: { ...account, display_name: "Bartholomew Montgomery-Fitzwilliam the Third", acct: "bartholomew_montgomery_fitzwilliam@social.example.com" },
-        content: '<p>A long link: <a href="https://example.com/a/very/long/path/that/does/not/break/anywhere/on/its/own">https://example.com/a/very/long/path/that/does/not/break/anywhere/on/its/own</a></p>',
+        account: {
+          ...account,
+          display_name: "Bartholomew Montgomery-Fitzwilliam the Third",
+          acct: "bartholomew_montgomery_fitzwilliam@social.example.com",
+        },
+        content:
+          '<p>A long link: <a href="https://example.com/a/very/long/path/that/does/not/break/anywhere/on/its/own">https://example.com/a/very/long/path/that/does/not/break/anywhere/on/its/own</a></p>',
       }),
-      status(2, { account: { ...account, username: "carol", acct: "carol", display_name: "Carol" }, content: "", boost: status(20) }),
+      status(2, {
+        account: { ...account, username: "carol", acct: "carol", display_name: "Carol" },
+        content: "",
+        boost: status(20),
+      }),
       status(3, { spoiler_text: "Food", sensitive: true, media_attachments: [media("m1", "A cake")] }),
       status(4, { media_attachments: [media("m2", "A blue square"), media("m3", undefined)] }),
       status(5, { account: { ...account, avatar: imageVariants(avatar) } }),
@@ -213,7 +226,10 @@ test.describe("the local timeline", () => {
     await expect(articles.first()).toBeFocused();
   });
 
-  test("opens a picture at its original size in a viewer, by pointer or by keyboard alone", async ({ page, makeAxeBuilder }) => {
+  test("opens a picture at its original size in a viewer, by pointer or by keyboard alone", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const article = page.getByRole("feed").getByRole("article").nth(3);
     const square = article.getByRole("button", { name: "A blue square" });
     await square.click();
@@ -259,7 +275,10 @@ test.describe("the hashtag timeline", () => {
   });
 });
 
-test("the home timeline sends to sign in without a session, to come back afterwards", async ({ page, makeAxeBuilder }) => {
+test("the home timeline sends to sign in without a session, to come back afterwards", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await page.goto("/home");
   await expect(page).toHaveURL(/\/login\?/);
   expect(new URL(page.url()).searchParams.get("return_to")).toBe("/home");

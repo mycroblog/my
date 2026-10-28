@@ -9,13 +9,28 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Account } from "./accounts";
 
 /** The fields of an account that a change of its profile (PATCH /accounts/update_credentials) sets. */
-const profileFields = ["display_name", "note", "fields", "emojis", "locked", "bot", "avatar", "header"] as const satisfies readonly (keyof Account)[];
+const profileFields = [
+  "display_name",
+  "note",
+  "fields",
+  "emojis",
+  "locked",
+  "bot",
+  "avatar",
+  "header",
+] as const satisfies readonly (keyof Account)[];
 
 function isAccount(value: unknown): value is Account {
   if (typeof value !== "object" || value === null) return false;
   const { id, username, acct, display_name, fields } = value as Record<string, unknown>;
   // A post's mentions have an id, a username and an acct too, but no display name or fields.
-  return typeof id === "string" && typeof username === "string" && typeof acct === "string" && typeof display_name === "string" && Array.isArray(fields);
+  return (
+    typeof id === "string" &&
+    typeof username === "string" &&
+    typeof acct === "string" &&
+    typeof display_name === "string" &&
+    Array.isArray(fields)
+  );
 }
 
 /** `account` with the profile of `saved`; the fields it has beside those (the follow counts) stay as they are. */
@@ -58,7 +73,10 @@ export function updateCachedAccount(queryClient: QueryClient, saved: Account): v
   // The API's keys start with the method (openapi-react-query's `[method, path, init]`); reads are "get".
   queryClient.setQueriesData(
     {
-      predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] !== "/accounts/verify_credentials" && query.state.data !== undefined,
+      predicate: (query) =>
+        query.queryKey[0] === "get" &&
+        query.queryKey[1] !== "/accounts/verify_credentials" &&
+        query.state.data !== undefined,
     },
     (data: unknown) => {
       const next = updateAccounts(data, saved);

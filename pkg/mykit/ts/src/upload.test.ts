@@ -18,7 +18,11 @@ describe("uploadMedia", () => {
     const [sent] = f.requests;
     expect(sent?.request.url).toBe(`${server}/api/v1/media`);
     expect(sent?.request.headers.get("Content-Type")).toStartWith("multipart/form-data; boundary=");
-    const form = await new Request(sent?.request.url ?? "", { method: "POST", body: sent?.body ?? "", headers: sent?.request.headers ?? {} }).formData();
+    const form = await new Request(sent?.request.url ?? "", {
+      method: "POST",
+      body: sent?.body ?? "",
+      headers: sent?.request.headers ?? {},
+    }).formData();
     const file = form.get("file") as File;
     expect(file.name).toBe("clip.mp4");
     expect(file.type).toBe("video/mp4");
@@ -29,7 +33,11 @@ describe("uploadMedia", () => {
   });
 
   test("is sent again after a 401 with the same body", async () => {
-    const f = fakeFetch((r) => (r.headers.get("Authorization") === "Bearer t2" ? json(202, { id: "m1" }) : problem(401, "/api/v1/problems/invalid-token")));
+    const f = fakeFetch((r) =>
+      r.headers.get("Authorization") === "Bearer t2"
+        ? json(202, { id: "m1" })
+        : problem(401, "/api/v1/problems/invalid-token"),
+    );
     const api = createClient({
       server,
       fetch: f.fetch,

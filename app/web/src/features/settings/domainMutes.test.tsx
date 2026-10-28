@@ -97,7 +97,10 @@ describe("muted domains", () => {
     await user.type(field, "not a domain");
     await user.click(screen.getByRole("button", { name: "Mute" }));
 
-    expect(await screen.findByText("Could not mute the domain: domain is not a valid value.")).toHaveAttribute("role", "alert");
+    expect(await screen.findByText("Could not mute the domain: domain is not a valid value.")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(field).toHaveValue("not a domain");
   });
 });

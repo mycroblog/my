@@ -56,10 +56,17 @@ import {
 } from "../hooks/useSignupBlocks";
 import { DateTime, DetailSection, DomainName, RecordTable, RequirePermission } from "./parts";
 import { SignupBlockImportForm } from "./SignupBlockImport";
-import { day, signupBlockDurations, signupBlockKindDescriptions, signupBlockSeverityDescriptions } from "./signupBlockFields";
+import {
+  day,
+  signupBlockDurations,
+  signupBlockKindDescriptions,
+  signupBlockSeverityDescriptions,
+} from "./signupBlockFields";
 
 /** The label, help and error of the value field for each kind. */
-const valueFields: Readonly<Record<SignupBlockKind, { label: ClientMessageKey; description: ClientMessageKey; required: ClientMessageKey }>> = {
+const valueFields: Readonly<
+  Record<SignupBlockKind, { label: ClientMessageKey; description: ClientMessageKey; required: ClientMessageKey }>
+> = {
   email_domain: {
     label: "client:admin.signup_blocks.value.email_domain",
     description: "client:admin.signup_blocks.value.email_domain.description",
@@ -187,7 +194,9 @@ function NewSignupBlockForm() {
         }}
         characterLimit={signupBlockCommentLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.signup_blocks.characters_over", { count: -remaining }) : t("client:admin.signup_blocks.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.signup_blocks.characters_over", { count: -remaining })
+            : t("client:admin.signup_blocks.characters_left", { count: remaining })
         }
         errorMessage={t("client:admin.signup_blocks.too_long", { max: signupBlockCommentLimit })}
       />
@@ -234,7 +243,12 @@ function SignupBlockTabs({ filter, onFilterChange }: SignupBlocksProps) {
         key={filter}
         filter={filter}
         onLifted={(block) => {
-          setStatus(t("client:admin.signup_blocks.lifted", { kind: t(signupBlockKindLabels[block.kind]), value: signupBlockValueInText(t, block) }));
+          setStatus(
+            t("client:admin.signup_blocks.lifted", {
+              kind: t(signupBlockKindLabels[block.kind]),
+              value: signupBlockValueInText(t, block),
+            }),
+          );
         }}
       />
     </Stack>
@@ -258,7 +272,11 @@ function SignupBlockList({ filter, onLifted }: { filter: SignupBlockFilter; onLi
   });
   const empty =
     filter === "active" ? (
-      <EmptyState headingLevel={3} heading={t("client:admin.signup_blocks.empty.active")} description={t("client:admin.signup_blocks.empty.active.description")} />
+      <EmptyState
+        headingLevel={3}
+        heading={t("client:admin.signup_blocks.empty.active")}
+        description={t("client:admin.signup_blocks.empty.active.description")}
+      />
     ) : (
       <EmptyState headingLevel={3} heading={t("client:admin.signup_blocks.empty.all")} />
     );
@@ -309,12 +327,20 @@ function SignupBlockRow({ block, lift }: { block: SignupBlock; lift: LiftSignupB
       <TableCell>{kind}</TableCell>
       <TableCell>{t(signupBlockSeverityLabels[block.severity])}</TableCell>
       <TableCell>
-        <Text {...(block.state === "active" ? { weight: "semibold" as const } : {})}>{t(stateLabels[block.state])}</Text>
+        <Text {...(block.state === "active" ? { weight: "semibold" as const } : {})}>
+          {t(stateLabels[block.state])}
+        </Text>
       </TableCell>
       <TableCell>
         <DateTime value={block.created_at} />
       </TableCell>
-      <TableCell>{block.expires_at === undefined ? t("client:admin.signup_blocks.duration.indefinite") : <DateTime value={block.expires_at} />}</TableCell>
+      <TableCell>
+        {block.expires_at === undefined ? (
+          t("client:admin.signup_blocks.duration.indefinite")
+        ) : (
+          <DateTime value={block.expires_at} />
+        )}
+      </TableCell>
       <TableCell wrap="anywhere">
         <DescriptionList>
           {block.lifted_at !== undefined && (
@@ -323,7 +349,9 @@ function SignupBlockRow({ block, lift }: { block: SignupBlock; lift: LiftSignupB
             </DescriptionItem>
           )}
           <DescriptionItem term={t("client:admin.signup_blocks.source")}>
-            {block.moderation_action_id === undefined ? t("client:admin.signup_blocks.source.manual") : t("client:admin.signup_blocks.source.ban")}
+            {block.moderation_action_id === undefined
+              ? t("client:admin.signup_blocks.source.manual")
+              : t("client:admin.signup_blocks.source.ban")}
           </DescriptionItem>
           {block.comment !== undefined && (
             <DescriptionItem term={t("client:admin.signup_blocks.comment")}>

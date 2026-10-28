@@ -89,12 +89,20 @@ function instance(federated: Instance["timelines"]["federated"]): Instance {
  */
 async function serveApi(page: Page, federated: boolean): Promise<void> {
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/timelines/home*", (route) => json(route, { items: [] } satisfies StatusPage));
   await page.route("**/api/v1/instance", (route) => json(route, instance(federated ? "everyone" : "off")));
   // The local timeline, which phones open first: its page has the federated timeline as its other tab.
-  await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [status(1, bob)] } satisfies StatusPage));
+  await page.route("**/api/v1/timelines/local*", (route) =>
+    json(route, { items: [status(1, bob)] } satisfies StatusPage),
+  );
   await page.route("**/api/v1/timelines/public*", (route) =>
     federated
       ? json(route, { items: [status(1, bob), status(2, carol), status(3, carol)] } satisfies StatusPage)
@@ -129,7 +137,9 @@ test.describe("the federated timeline while the server serves it", () => {
     await expect(page).toHaveURL(/\/public$/);
     // Where focus goes after a navigation is the shell's, and e2e/shell.spec.ts checks it.
     await expect(federatedLink(page)).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("navigation").locator('a[href="/local"]').filter({ visible: true })).not.toHaveAttribute("aria-current");
+    await expect(
+      page.getByRole("navigation").locator('a[href="/local"]').filter({ visible: true }),
+    ).not.toHaveAttribute("aria-current");
     // A screen of its own: no tabs to the local timeline.
     await expect(page.getByRole("main").getByRole("tablist")).toHaveCount(0);
     // The URL and the navigation can change before the new page renders its heading.
@@ -205,7 +215,8 @@ test.describe("the federated timeline while the server has turned it off", () =>
     await expect(page.getByRole("navigation").locator('a[href="/local"]').filter({ visible: true })).toBeVisible();
     await expect(federatedLink(page)).toHaveCount(0);
     // Home, Local, Notifications, Search and the menu button.
-    if (hasTabBar(page)) await expect(page.getByRole("navigation").getByRole("listitem").filter({ visible: true })).toHaveCount(5);
+    if (hasTabBar(page))
+      await expect(page.getByRole("navigation").getByRole("listitem").filter({ visible: true })).toHaveCount(5);
   });
 
   test("says so at its address, without axe violations", async ({ page, makeAxeBuilder }) => {
@@ -221,15 +232,24 @@ test.describe("the federated timeline while the server keeps it for signed-in us
   test.beforeEach(async ({ page }) => {
     // A visitor: no session to resume, and the timeline is a 401 without one.
     const json = (route: Route, body: unknown, statusCode = 200) =>
-      route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
+      route.fulfill({
+        status: statusCode,
+        contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+        body: JSON.stringify(body),
+      });
     await page.route("**/api/v1/instance", (route) => json(route, instance("logged_in")));
-    await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [status(1, bob)] } satisfies StatusPage));
+    await page.route("**/api/v1/timelines/local*", (route) =>
+      json(route, { items: [status(1, bob)] } satisfies StatusPage),
+    );
     await page.route("**/api/v1/timelines/public*", (route) =>
       json(route, { type: "/api/v1/problems/unauthenticated", title: "Unauthenticated", status: 401 }, 401),
     );
   });
 
-  test("is not in a visitor's navigation, and its address asks to sign in, without axe violations", async ({ page, makeAxeBuilder }) => {
+  test("is not in a visitor's navigation, and its address asks to sign in, without axe violations", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const answered = page.waitForResponse("**/api/v1/instance");
     await page.goto("/public");
     await answered;

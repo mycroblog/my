@@ -20,7 +20,11 @@ export function useModerationCounts(): AdminCounts {
   const status = useSessionStatus();
   const permissions = useViewerPermissions();
   const counted = Object.values(countPermissions).some((permission) => permissions.includes(permission));
-  const counts = useQuery({ ...adminCountsQueryOptions(api), enabled: status === "signed-in" && counted, retry: shellQueryRetry });
+  const counts = useQuery({
+    ...adminCountsQueryOptions(api),
+    enabled: status === "signed-in" && counted,
+    retry: shellQueryRetry,
+  });
   return status === "signed-in" && counted ? (counts.data ?? {}) : {};
 }
 

@@ -4,7 +4,8 @@ import { Cluster } from "./Cluster";
 import { EmojiTile } from "./EmojiTile";
 import { Heading } from "./Heading";
 
-const pixel = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Crect width='8' height='8' fill='%23e11d48'/%3E%3C/svg%3E";
+const pixel =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Crect width='8' height='8' fill='%23e11d48'/%3E%3C/svg%3E";
 
 const meta = {
   title: "Display/EmojiTile",

@@ -83,7 +83,8 @@ export class Dispatcher {
   }
 
   #forgetQueue(sender: string): void {
-    for (const job of this.#queues.get(sender) ?? []) if (job.notification !== undefined) this.#queued.delete(job.notification.id);
+    for (const job of this.#queues.get(sender) ?? [])
+      if (job.notification !== undefined) this.#queued.delete(job.notification.id);
     this.#queues.delete(sender);
   }
 

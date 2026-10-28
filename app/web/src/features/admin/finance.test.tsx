@@ -70,7 +70,14 @@ function totalsServer() {
         ...monthTotals,
         granularity,
         basis,
-        periods: [{ ...period, totals: [{ amount: basis === "cash" ? "1650" : "1000", currency: "JPY" }], breakdown: [], estimated: false }],
+        periods: [
+          {
+            ...period,
+            totals: [{ amount: basis === "cash" ? "1650" : "1000", currency: "JPY" }],
+            breakdown: [],
+            estimated: false,
+          },
+        ],
       });
     }),
   );
@@ -83,7 +90,11 @@ function itemsServer(initial: readonly Schemas["CostItem"][]) {
   const writes: { method: string; path: string; body: unknown }[] = [];
   const record = async (request: Request) => {
     const text = await request.clone().text();
-    writes.push({ method: request.method, path: new URL(request.url).pathname.replace("/api/v1", ""), body: text === "" ? undefined : JSON.parse(text) });
+    writes.push({
+      method: request.method,
+      path: new URL(request.url).pathname.replace("/api/v1", ""),
+      body: text === "" ? undefined : JSON.parse(text),
+    });
   };
   const change = (id: unknown, edit: (item: Schemas["CostItem"]) => Schemas["CostItem"]) => {
     items = items.map((item) => (item.id === id ? edit(item) : item));
@@ -111,7 +122,10 @@ function itemsServer(initial: readonly Schemas["CostItem"][]) {
     http.post(`${apiBase}/admin/cost_items/:id/price_revisions`, async ({ request, params }) => {
       await record(request);
       const body = (await request.json()) as Schemas["CostPriceRevisionRequest"];
-      return change(params["id"], (item) => ({ ...item, prices: [...item.prices, { ...body, revised_at: "2026-10-22T00:00:00Z" }] }));
+      return change(params["id"], (item) => ({
+        ...item,
+        prices: [...item.prices, { ...body, revised_at: "2026-10-22T00:00:00Z" }],
+      }));
     }),
     http.put(`${apiBase}/admin/cost_items/:id/end`, async ({ request, params }) => {
       await record(request);
@@ -139,7 +153,9 @@ const vm = costItemFixture("0199f0e0-0000-7000-8000-0000000000a2", {
   provider: "Cloud",
   category: "compute",
   memo: "the main server",
-  prices: [{ effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" }],
+  prices: [
+    { effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" },
+  ],
 });
 
 describe("the costs screen", () => {
@@ -163,11 +179,18 @@ describe("the costs screen", () => {
     expect(rows[1]).toHaveTextContent("¥140 + $31.24");
     expect(rows[1]).toHaveTextContent("Includes estimates");
     expect(rows[2]).toHaveTextContent("September 2026¥135");
-    expect(within(region).getByRole("region", { name: "Breakdown of October 2026" })).toHaveTextContent("awsStorage$31.24");
+    expect(within(region).getByRole("region", { name: "Breakdown of October 2026" })).toHaveTextContent(
+      "awsStorage$31.24",
+    );
     const rules = within(region).getByRole("region", { name: "How the periods are counted" });
     expect(rules).toHaveTextContent("Weeks run from Monday to Sunday");
     expect(rules).toHaveTextContent("AWS bills by month in the UTC time zone");
-    expect(totals.queries[0]).toEqual({ granularity: "month", basis: "amortized", from: expect.stringMatching(/-01$/u) as string, to: deviceToday() });
+    expect(totals.queries[0]).toEqual({
+      granularity: "month",
+      basis: "amortized",
+      from: expect.stringMatching(/-01$/u) as string,
+      to: deviceToday(),
+    });
 
     await user.click(within(region).getByRole("tab", { name: "Weeks" }));
     expect(await within(region).findByRole("row", { name: /2026-W43/u })).toHaveTextContent("¥1,000");
@@ -175,13 +198,19 @@ describe("the costs screen", () => {
 
     await user.click(within(region).getByRole("radio", { name: /On the payment date/u }));
     expect(await within(region).findByRole("row", { name: /2026-W43/u })).toHaveTextContent("¥1,650");
-    expect(within(region).getByRole("region", { name: "How the periods are counted" })).toHaveTextContent("Every payment counts on its payment date.");
+    expect(within(region).getByRole("region", { name: "How the periods are counted" })).toHaveTextContent(
+      "Every payment counts on its payment date.",
+    );
     expect(router.state.location.search).toEqual({ granularity: "week", basis: "cash" });
 
     await user.click(within(region).getByRole("tab", { name: "Years" }));
     const years = await within(region).findByRole("table", { name: "Totals by Years, On the payment date" });
     expect(within(years).getByRole("row", { name: /^2026/u })).toHaveTextContent("¥1,650");
-    expect(totals.queries.at(-1)).toMatchObject({ granularity: "year", basis: "cash", from: expect.stringMatching(/-01-01$/u) as string });
+    expect(totals.queries.at(-1)).toMatchObject({
+      granularity: "year",
+      basis: "cash",
+      from: expect.stringMatching(/-01-01$/u) as string,
+    });
   });
 
   test("records a cost paid every three months after checking the form", async () => {
@@ -250,14 +279,18 @@ describe("the costs screen", () => {
     await user.type(within(revise).getByLabelText(/From/u), "2026-07-31");
     await user.type(within(revise).getByRole("textbox", { name: "Amount" }), "15.00");
     await user.click(within(revise).getByRole("button", { name: "Save" }));
-    expect(await within(list).findByText("Changed the price of Primary VM. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(list).findByText("Changed the price of Primary VM. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(within(list).getByText("$15.00 from Jul 31, 2026")).toBeInTheDocument();
 
     await user.click(within(list).getByRole("button", { name: "Set the end: Primary VM" }));
     const end = await screen.findByRole("dialog", { name: "End Primary VM" });
     await user.type(within(end).getByLabelText(/Last payment by/u), "2026-12-31");
     await user.click(within(end).getByRole("button", { name: "Save" }));
-    expect(await within(list).findByText("Set the end of Primary VM. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(list).findByText("Set the end of Primary VM. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(within(list).getByText("Dec 31, 2026")).toBeInTheDocument();
 
     await user.click(within(list).getByRole("button", { name: "Delete: example.com" }));
@@ -279,7 +312,11 @@ describe("the costs screen", () => {
   test("keeps a rejected change in its dialog", async () => {
     totalsServer();
     itemsServer([vm]);
-    server.use(http.post(`${apiBase}/admin/cost_items/:id/price_revisions`, () => problem(422, "about:blank", "invalid value: price")));
+    server.use(
+      http.post(`${apiBase}/admin/cost_items/:id/price_revisions`, () =>
+        problem(422, "about:blank", "invalid value: price"),
+      ),
+    );
     const { user } = await renderApp({ path: "/admin/finance" });
     const list = await screen.findByRole("region", { name: "Recorded costs" });
 
@@ -288,7 +325,9 @@ describe("the costs screen", () => {
     await user.type(within(revise).getByLabelText(/From/u), "2026-07-31");
     await user.type(within(revise).getByRole("textbox", { name: "Amount" }), "1.234");
     await user.click(within(revise).getByRole("button", { name: "Save" }));
-    expect(await within(revise).findByRole("alert")).toHaveTextContent("Could not change the cost: invalid value: price");
+    expect(await within(revise).findByRole("alert")).toHaveTextContent(
+      "Could not change the cost: invalid value: price",
+    );
   });
 
   test("shows the state of the billing imports and imports now once an hour", async () => {
@@ -304,7 +343,13 @@ describe("the costs screen", () => {
               provider: "AWS",
               time_zone: "UTC",
               method: "cost_explorer",
-              last_run: { outcome: "failed", error_kind: "request_cap", requests: 0, bytes_billed: 0, occurred_at: "2026-10-21T01:00:00Z" },
+              last_run: {
+                outcome: "failed",
+                error_kind: "request_cap",
+                requests: 0,
+                bytes_billed: 0,
+                occurred_at: "2026-10-21T01:00:00Z",
+              },
               last_success_at: "2026-10-20T01:00:00Z",
               requests_today: 4,
               requests_this_month: 40,
@@ -328,57 +373,67 @@ describe("the costs screen", () => {
     expect(within(region).getByRole("heading", { level: 3, name: "AWS" })).toBeInTheDocument();
     expect(region).toHaveTextContent("Skipped: the cap of billed requests is reached.");
     expect(region).toHaveTextContent("4 of 4");
-    expect(within(region).getByRole("list", { name: "Billing months of AWS" })).toHaveTextContent("October 2026Estimate$31.24");
+    expect(within(region).getByRole("list", { name: "Billing months of AWS" })).toHaveTextContent(
+      "October 2026Estimate$31.24",
+    );
 
     await user.click(within(region).getByRole("button", { name: "Import now: AWS" }));
     expect(await within(region).findByText("Started an import of AWS. The audit log records it.")).toBeInTheDocument();
     await user.click(within(region).getByRole("button", { name: "Import now: AWS" }));
-    expect(await within(region).findByRole("alert")).toHaveTextContent("An import of this provider ran in the last hour.");
+    expect(await within(region).findByRole("alert")).toHaveTextContent(
+      "An import of this provider ran in the last hour.",
+    );
     expect(runs).toEqual(["aws", "aws"]);
   });
 
   test.each([
     { method: "budget", note: true },
     { method: "bigquery", note: false },
-  ] as const)("says whether the Google Cloud figures are an approximation for the $method method", async ({ method, note }) => {
-    totalsServer();
-    itemsServer([]);
-    server.use(
-      http.get(`${apiBase}/admin/billing_imports`, () =>
-        HttpResponse.json({
-          items: [
-            {
-              source: "gcp",
-              provider: "Google Cloud",
-              time_zone: "America/Los_Angeles",
-              method,
-              requests_today: 1,
-              requests_this_month: 3,
-              bytes_billed_this_month: 2048,
-              months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "12.50", currency: "USD" }] }],
-            },
-          ],
-        } satisfies Schemas["BillingImportList"]),
-      ),
-    );
-    await renderApp({ path: "/admin/finance" });
-    const region = await screen.findByRole("region", { name: "Billing imports" });
+  ] as const)(
+    "says whether the Google Cloud figures are an approximation for the $method method",
+    async ({ method, note }) => {
+      totalsServer();
+      itemsServer([]);
+      server.use(
+        http.get(`${apiBase}/admin/billing_imports`, () =>
+          HttpResponse.json({
+            items: [
+              {
+                source: "gcp",
+                provider: "Google Cloud",
+                time_zone: "America/Los_Angeles",
+                method,
+                requests_today: 1,
+                requests_this_month: 3,
+                bytes_billed_this_month: 2048,
+                months: [{ month: "2026-10", kind: "estimate", totals: [{ amount: "12.50", currency: "USD" }] }],
+              },
+            ],
+          } satisfies Schemas["BillingImportList"]),
+        ),
+      );
+      await renderApp({ path: "/admin/finance" });
+      const region = await screen.findByRole("region", { name: "Billing imports" });
 
-    expect(within(region).getByRole("heading", { level: 3, name: "Google Cloud" })).toBeInTheDocument();
-    const approximation = "An approximation from the budget notifications: totals based on estimates, without a breakdown by service.";
-    if (note) {
-      expect(region).toHaveTextContent(approximation);
-      expect(region).not.toHaveTextContent("Bytes billed this month");
-    } else {
-      expect(region).not.toHaveTextContent(approximation);
-      expect(region).toHaveTextContent("Bytes billed this month");
-    }
-  });
+      expect(within(region).getByRole("heading", { level: 3, name: "Google Cloud" })).toBeInTheDocument();
+      const approximation =
+        "An approximation from the budget notifications: totals based on estimates, without a breakdown by service.";
+      if (note) {
+        expect(region).toHaveTextContent(approximation);
+        expect(region).not.toHaveTextContent("Bytes billed this month");
+      } else {
+        expect(region).not.toHaveTextContent(approximation);
+        expect(region).toHaveTextContent("Bytes billed this month");
+      }
+    },
+  );
 });
 
 describe("what the costs screen says of their publication", () => {
   function serveVisibility(visibility: Schemas["Instance"]["finance_visibility"]) {
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, finance_visibility: visibility })));
+    server.use(
+      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, finance_visibility: visibility })),
+    );
   }
 
   test("shows what the server publishes, and links to the server settings for a viewer who may change it", async () => {
@@ -386,8 +441,15 @@ describe("what the costs screen says of their publication", () => {
     serveVisibility("breakdown");
     await renderApp({ path: "/admin/finance" });
 
-    expect(await screen.findByText("The about page publishes the totals of these costs and their breakdown by provider and category.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Change in the server settings" })).toHaveAttribute("href", "/admin/settings");
+    expect(
+      await screen.findByText(
+        "The about page publishes the totals of these costs and their breakdown by provider and category.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Change in the server settings" })).toHaveAttribute(
+      "href",
+      "/admin/settings",
+    );
   });
 
   test("shows what the holders of view_finance see", async () => {
@@ -471,7 +533,10 @@ describe("the income on the costs screen", () => {
         const { kind, from, to } = query;
         return HttpResponse.json({
           items: items.filter(
-            (item) => (kind === undefined || item.kind === kind) && (from === undefined || item.occurred_on >= from) && (to === undefined || item.occurred_on <= to),
+            (item) =>
+              (kind === undefined || item.kind === kind) &&
+              (from === undefined || item.occurred_on >= from) &&
+              (to === undefined || item.occurred_on <= to),
           ),
         } satisfies Schemas["IncomeMovementPage"]);
       }),
@@ -500,12 +565,30 @@ describe("the income on the costs screen", () => {
             },
           ],
           plans: [{ plan_id: "0199f0e0-0000-7000-8000-00000000aa01", name: "Coffee", members: 1 }],
-          rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+          rules: {
+            week_start: "monday",
+            providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+            amortize_after_days: 31,
+          },
         } satisfies Schemas["AdminIncomeTotals"]);
       }),
       http.get(`${apiBase}/admin/income_movements`, () =>
         HttpResponse.json({
-          items: [movement, { id: "0199f0e0-0000-7000-8000-00000000bb02", provider: "stripe", provider_id: "txn_fee", kind: "fee", occurred_at: "2026-10-11T00:00:00Z", occurred_on: "2026-10-11", gross: { amount: "0", currency: "JPY" }, fee: { amount: "84", currency: "JPY" }, net: { amount: "-84", currency: "JPY" }, recorded_at: "2026-10-11T00:01:00Z" }],
+          items: [
+            movement,
+            {
+              id: "0199f0e0-0000-7000-8000-00000000bb02",
+              provider: "stripe",
+              provider_id: "txn_fee",
+              kind: "fee",
+              occurred_at: "2026-10-11T00:00:00Z",
+              occurred_on: "2026-10-11",
+              gross: { amount: "0", currency: "JPY" },
+              fee: { amount: "84", currency: "JPY" },
+              net: { amount: "-84", currency: "JPY" },
+              recorded_at: "2026-10-11T00:01:00Z",
+            },
+          ],
         } satisfies Schemas["IncomeMovementPage"]),
       ),
     );
@@ -522,17 +605,28 @@ describe("the income on the costs screen", () => {
     const region = await screen.findByRole("region", { name: "Totals" });
     const section = within(region).getByRole("region", { name: "Income" });
     const table = within(section).getByRole("table", { name: "Income by Months, Spread over the period paid for" });
-    expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Period", "Gross", "Fees", "Income after fees", "Balance"]);
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Period", "Gross", "Fees", "Income after fees", "Balance"]);
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent("October 2026¥12,000¥432¥11,568+¥11,428");
     expect(within(section).getByRole("heading", { level: 4, name: "Members of each plan" })).toBeInTheDocument();
     expect(within(section).getByRole("region", { name: "Members of each plan" })).toHaveTextContent("Coffee1 member");
     const rules = within(section).getByRole("region", { name: "How the income is counted" });
     expect(rules).toHaveTextContent("stripe dates its payments in the Asia/Tokyo time zone.");
     expect(rules).toHaveTextContent("A payment for more than 31 days");
-    expect(income.queries[0]).toEqual({ granularity: "month", basis: "amortized", from: expect.stringMatching(/-01$/u) as string, to: deviceToday() });
+    expect(income.queries[0]).toEqual({
+      granularity: "month",
+      basis: "amortized",
+      from: expect.stringMatching(/-01$/u) as string,
+      to: deviceToday(),
+    });
 
     await user.click(within(region).getByRole("radio", { name: /On the payment date/u }));
-    expect(await within(section).findByRole("table", { name: "Income by Months, On the payment date" })).toBeInTheDocument();
+    expect(
+      await within(section).findByRole("table", { name: "Income by Months, On the payment date" }),
+    ).toBeInTheDocument();
     expect(income.queries.at(-1)).toMatchObject({ granularity: "month", basis: "cash" });
   });
 
@@ -547,7 +641,10 @@ describe("the income on the costs screen", () => {
     expect(rows[0]).toHaveTextContent("¥11,568");
     expect(rows[0]).toHaveTextContent("¥12,000");
     expect(rows[0]).toHaveTextContent("¥432");
-    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "@alice" })).toHaveAttribute("href", `/moderation/accounts/${String(movement.account_id)}`);
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "@alice" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${String(movement.account_id)}`,
+    );
     expect(within(rows[0] as HTMLElement).getByText("@alice")).toHaveAttribute("dir", "ltr");
     expect(rows[0]).not.toHaveTextContent(String(movement.account_id));
     expect(within(rows[0] as HTMLElement).getByText("txn_1")).toHaveAttribute("dir", "ltr");
@@ -605,11 +702,18 @@ describe("the income on the costs screen", () => {
     await user.type(to, "2026-10-31");
     await user.click(within(region).getByRole("button", { name: "Show these dates" }));
     await waitFor(() => {
-      expect(router.state.location.search).toEqual({ basis: "cash", kind: "refund", from: "2026-10-10", to: "2026-10-31" });
+      expect(router.state.location.search).toEqual({
+        basis: "cash",
+        kind: "refund",
+        from: "2026-10-10",
+        to: "2026-10-31",
+      });
     });
     expect(movements.queries.at(-1)).toEqual({ kind: "refund", from: "2026-10-10", to: "2026-10-31" });
     // Nothing matches: the empty list offers to clear the filters, which moves focus to the kind select.
-    expect(await within(region).findByRole("heading", { level: 3, name: "No movements match the filters" })).toBeInTheDocument();
+    expect(
+      await within(region).findByRole("heading", { level: 3, name: "No movements match the filters" }),
+    ).toBeInTheDocument();
     const clears = within(region).getAllByRole("button", { name: "Clear the filters" });
     // The one above the filters, and the one of the empty list.
     expect(clears).toHaveLength(2);
@@ -637,10 +741,15 @@ describe("the income on the costs screen", () => {
   });
 
   test("shows what the server publishes of the income", async () => {
-    server.use(operatorHandler(["manage_finance"]), http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, income_visibility: "plans" })));
+    server.use(
+      operatorHandler(["manage_finance"]),
+      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, income_visibility: "plans" })),
+    );
     await renderApp({ path: "/admin/finance" });
 
-    expect(await screen.findByText("The about page publishes the totals of the income and the members of each plan.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("The about page publishes the totals of the income and the members of each plan."),
+    ).toBeInTheDocument();
   });
 });
 

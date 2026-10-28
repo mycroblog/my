@@ -10,7 +10,12 @@ import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Sheet } from "./Dialog";
 import { EmojiIcon } from "./Icons";
-import { type TextAutocompleteSuggestion, type TextAutocompleteWord, TextAreaAutocomplete, type TextAreaAutocompleteProps } from "./TextAreaAutocomplete";
+import {
+  type TextAutocompleteSuggestion,
+  type TextAutocompleteWord,
+  TextAreaAutocomplete,
+  type TextAreaAutocompleteProps,
+} from "./TextAreaAutocomplete";
 
 type Suggestion = TextAutocompleteSuggestion & { label: string; detail: string };
 
@@ -18,8 +23,20 @@ type Suggestion = TextAutocompleteSuggestion & { label: string; detail: string }
 const suggestions: Readonly<Record<string, readonly Suggestion[]>> = {
   "@": [
     { id: "alice", value: "@alice", textValue: "Alice Liddell @alice", label: "Alice Liddell", detail: "@alice" },
-    { id: "alan", value: "@alan@example.org", textValue: "Alan @alan@example.org", label: "Alan", detail: "@alan@example.org" },
-    { id: "albert", value: "@albert@mastodon.example", textValue: "アルベルト @albert@mastodon.example", label: "アルベルト", detail: "@albert@mastodon.example" },
+    {
+      id: "alan",
+      value: "@alan@example.org",
+      textValue: "Alan @alan@example.org",
+      label: "Alan",
+      detail: "@alan@example.org",
+    },
+    {
+      id: "albert",
+      value: "@albert@mastodon.example",
+      textValue: "アルベルト @albert@mastodon.example",
+      label: "アルベルト",
+      detail: "@albert@mastodon.example",
+    },
   ],
   "#": [
     { id: "fediverse", value: "#fediverse", textValue: "#fediverse", label: "#fediverse", detail: "1,204 posts" },
@@ -57,7 +74,8 @@ function renderSuggestion(suggestion: Suggestion) {
   );
 }
 
-const formatRemaining = (remaining: number) => (remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`);
+const formatRemaining = (remaining: number) =>
+  remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`;
 
 /**
  * The story's args: the props with the character count's pair as two optional props, since Storybook cannot derive
@@ -85,7 +103,8 @@ function Field({ characterLimit, formatRemaining, ...props }: FieldArgs) {
 function IgnoreVirtualBlur({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onBlur = (event: FocusEvent) => {
-      if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option") event.stopImmediatePropagation();
+      if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option")
+        event.stopImmediatePropagation();
     };
     window.addEventListener("blur", onBlur, { capture: true });
     return () => {
@@ -150,16 +169,24 @@ export const Suggestions: Story = {
     if (popover === null) throw new Error("the listbox has no popover");
     const style = getComputedStyle(textbox);
     const lineHeight = Number.parseFloat(style.lineHeight);
-    const firstLineBottom = textbox.getBoundingClientRect().top + Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.paddingTop) + lineHeight;
+    const firstLineBottom =
+      textbox.getBoundingClientRect().top +
+      Number.parseFloat(style.borderTopWidth) +
+      Number.parseFloat(style.paddingTop) +
+      lineHeight;
     await waitFor(() => expect(Math.abs(popover.getBoundingClientRect().top - firstLineBottom)).toBeLessThanOrEqual(1));
-    await expect(Math.abs(popover.getBoundingClientRect().width - textbox.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+    await expect(
+      Math.abs(popover.getBoundingClientRect().width - textbox.getBoundingClientRect().width),
+    ).toBeLessThanOrEqual(1);
   },
 };
 
 /** The caret on a later line: the list opens under that line, and follows it when the line moves. */
 export const LaterLine: Story = {
   args: {
-    rows: 6, defaultValue: "First line\nSecond line, which is long enough to wrap in a narrow text area when it narrows\n" },
+    rows: 6,
+    defaultValue: "First line\nSecond line, which is long enough to wrap in a narrow text area when it narrows\n",
+  },
   play: async ({ canvas, userEvent, canvasElement }) => {
     const textbox = canvas.getByRole<HTMLTextAreaElement>("textbox", { name: "Post" });
     await userEvent.click(textbox);
@@ -171,9 +198,15 @@ export const LaterLine: Story = {
     const style = getComputedStyle(textbox);
     const lineHeight = Number.parseFloat(style.lineHeight);
     const lineBottom = (line: number) =>
-      textbox.getBoundingClientRect().top + Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.paddingTop) + line * lineHeight - textbox.scrollTop;
+      textbox.getBoundingClientRect().top +
+      Number.parseFloat(style.borderTopWidth) +
+      Number.parseFloat(style.paddingTop) +
+      line * lineHeight -
+      textbox.scrollTop;
     const lineOfCaret = () => Math.round((popover.getBoundingClientRect().top - lineBottom(0)) / lineHeight);
-    await waitFor(() => expect(Math.abs(popover.getBoundingClientRect().top - lineBottom(lineOfCaret()))).toBeLessThanOrEqual(1));
+    await waitFor(() =>
+      expect(Math.abs(popover.getBoundingClientRect().top - lineBottom(lineOfCaret()))).toBeLessThanOrEqual(1),
+    );
     const before = lineOfCaret();
     await expect(before).toBeGreaterThanOrEqual(3);
 
@@ -183,7 +216,9 @@ export const LaterLine: Story = {
     frame.style.inlineSize = "320px";
     try {
       await waitFor(() => expect(lineOfCaret()).toBeGreaterThan(before));
-      await waitFor(() => expect(Math.abs(popover.getBoundingClientRect().top - lineBottom(lineOfCaret()))).toBeLessThanOrEqual(1));
+      await waitFor(() =>
+        expect(Math.abs(popover.getBoundingClientRect().top - lineBottom(lineOfCaret()))).toBeLessThanOrEqual(1),
+      );
     } finally {
       frame.style.inlineSize = width;
     }
@@ -264,7 +299,9 @@ export const Composition: Story = {
     await canvas.findByRole("listbox");
     textbox.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "" }));
     await waitFor(() => expect(canvas.queryByRole("listbox")).not.toBeInTheDocument());
-    textbox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, isComposing: true }));
+    textbox.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, isComposing: true }),
+    );
     textbox.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "" }));
     await canvas.findByRole("listbox");
     // Safari's committing Enter arrives after compositionend with keyCode 229; it does not accept.
@@ -346,7 +383,8 @@ export const WithCountAndEndAction: Story = {
   args: {
     characterLimit: 500,
     formatRemaining,
-    defaultValue: "Mentions like @alice, tags like #fediverse and emoji like :blobcat: wrap before the button in the corner. مرحبا بالعالم",
+    defaultValue:
+      "Mentions like @alice, tags like #fediverse and emoji like :blobcat: wrap before the button in the corner. مرحبا بالعالم",
     endAction: (
       <Button variant="ghost" size="icon" aria-label="Add emoji">
         <EmojiIcon />

@@ -23,7 +23,12 @@ export class MediaProcessingError extends Error {
 export type ImagePurpose = "avatar" | "header" | "emoji" | "attachment";
 
 /** Uploads `file` as a `purpose` image and resolves with it once the server has processed it. */
-export async function uploadImage(api: Api, file: File, purpose: ImagePurpose, signal?: AbortSignal): Promise<MediaAttachment> {
+export async function uploadImage(
+  api: Api,
+  file: File,
+  purpose: ImagePurpose,
+  signal?: AbortSignal,
+): Promise<MediaAttachment> {
   const { data: uploaded } = await api.fetch.POST("/media", {
     // The generated type of a binary property is string; the serializer sends the File itself.
     body: { file: "", purpose },
@@ -39,7 +44,10 @@ export async function uploadImage(api: Api, file: File, purpose: ImagePurpose, s
   for (let poll = 0; media?.state === "processing"; poll++) {
     if (poll >= maxPolls) throw new MediaProcessingError(`media ${media.id} is still processing`);
     await delay(pollInterval, signal);
-    const { data } = await api.fetch.GET("/media/{id}", { params: { path: { id: media.id } }, ...(signal === undefined ? {} : { signal }) });
+    const { data } = await api.fetch.GET("/media/{id}", {
+      params: { path: { id: media.id } },
+      ...(signal === undefined ? {} : { signal }),
+    });
     media = data;
   }
   if (media?.state !== "ready") throw new MediaProcessingError(`media ${media?.id ?? "?"} failed`);

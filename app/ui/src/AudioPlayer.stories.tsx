@@ -10,7 +10,12 @@ const audioFile =
 const meta = {
   title: "Timeline/AudioPlayer",
   component: AudioPlayer,
-  args: { src: audioFile, name: "rain-morning.m4a", lang: "en", labels: { play: "Play", pause: "Pause", seek: "Position in the audio" } },
+  args: {
+    src: audioFile,
+    name: "rain-morning.m4a",
+    lang: "en",
+    labels: { play: "Play", pause: "Pause", seek: "Position in the audio" },
+  },
   decorators: [
     (Story) => (
       <div className="max-w-110">
@@ -40,7 +45,11 @@ export const Playing: Story = {
     await expect(canvas.getByRole("button", { name: "Play" })).toHaveFocus();
     await userEvent.keyboard("{Enter}");
     // The browser may refuse to play without a user gesture or a codec; in that case the button stays as it was.
-    await waitFor(() => expect(canvas.queryByRole("button", { name: "Pause" }) ?? canvas.queryByRole("button", { name: "Play" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        canvas.queryByRole("button", { name: "Pause" }) ?? canvas.queryByRole("button", { name: "Play" }),
+      ).toBeInTheDocument(),
+    );
   },
 };
 

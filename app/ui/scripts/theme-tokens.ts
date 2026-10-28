@@ -42,7 +42,8 @@ function collectTokens(): Token[] {
     if (seen.has(name)) throw new Error(`theme.css: --${name} is declared twice`);
     seen.add(name);
     const rule = tokenRules.find((r) => r.pattern.test(name));
-    if (rule === undefined) throw new Error(`theme.css: --${name} matches no rule in tokenRules or fixedTokens (src/tokens.ts)`);
+    if (rule === undefined)
+      throw new Error(`theme.css: --${name} matches no rule in tokenRules or fixedTokens (src/tokens.ts)`);
     const token: Token = { name, kind: rule.kind };
     if (rule.kind === "color") {
       const light = resolveColor(value, "light");
@@ -94,9 +95,17 @@ function renderGo(tokens: Token[]): string {
     if (t.max !== undefined) fields.push(`Max: ${t.max}`);
     lines.push(`\t{${fields.join(", ")}},`);
   }
-  lines.push("}", "", "// themeContrastPairs are the foreground / background pairs of the color tokens and their minimum", "// contrast ratios (WCAG 2.2 AA).", "var themeContrastPairs = []ContrastPair{");
+  lines.push(
+    "}",
+    "",
+    "// themeContrastPairs are the foreground / background pairs of the color tokens and their minimum",
+    "// contrast ratios (WCAG 2.2 AA).",
+    "var themeContrastPairs = []ContrastPair{",
+  );
   for (const p of themeColorPairs) {
-    lines.push(`\t{FG: ${goString(`color-${p.fg}`)}, BG: ${goString(`color-${p.bg}`)}, Minimum: ${minimumContrast[p.use]}},`);
+    lines.push(
+      `\t{FG: ${goString(`color-${p.fg}`)}, BG: ${goString(`color-${p.bg}`)}, Minimum: ${minimumContrast[p.use]}},`,
+    );
   }
   lines.push("}", "");
   return lines.join("\n");
@@ -149,7 +158,9 @@ export function checkGenerated(): string[] {
   } catch {
     // Missing: reported below.
   }
-  return current === content ? [] : [`${goPath.slice(root.length + 1)} is stale; run \`scripts/task.sh web:tokens-gen\``];
+  return current === content
+    ? []
+    : [`${goPath.slice(root.length + 1)} is stale; run \`scripts/task.sh web:tokens-gen\``];
 }
 
 if (import.meta.main) {

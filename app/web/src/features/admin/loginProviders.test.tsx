@@ -22,7 +22,13 @@ beforeEach(() => {
 
 function problem(reason: string, detail: string) {
   return HttpResponse.json(
-    { type: "/api/v1/problems/invalid-login-provider", title: "The login provider cannot be saved.", status: 422, detail, reason },
+    {
+      type: "/api/v1/problems/invalid-login-provider",
+      title: "The login provider cannot be saved.",
+      status: 422,
+      detail,
+      reason,
+    },
     { status: 422, headers: { "Content-Type": "application/problem+json" } },
   );
 }
@@ -45,7 +51,12 @@ describe("the login providers screen", () => {
         HttpResponse.json({
           items: [
             loginProviderFixture(providerId, { linked_users: 3, allow_signup: true }),
-            loginProviderFixture("p2", { kind: "github", display_name: "GitHub", state: "disabled", organizations: ["my-org"] }),
+            loginProviderFixture("p2", {
+              kind: "github",
+              display_name: "GitHub",
+              state: "disabled",
+              organizations: ["my-org"],
+            }),
           ],
         }),
       ),
@@ -68,7 +79,9 @@ describe("the login providers screen", () => {
   test("sets up an OpenID Connect provider with a condition and shows its callback URL", async () => {
     let sent: Schemas["CreateLoginProviderRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: sent === undefined ? [] : [loginProviderFixture(providerId)] })),
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: sent === undefined ? [] : [loginProviderFixture(providerId)] }),
+      ),
       http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateLoginProviderRequest"];
         return HttpResponse.json(loginProviderFixture(providerId));
@@ -89,10 +102,15 @@ describe("the login providers screen", () => {
     await user.click(within(form).getByRole("button", { name: "Add a condition" }));
     expect(within(form).getByRole("textbox", { name: "Claim of condition 1" })).toHaveFocus();
     await user.type(within(form).getByRole("textbox", { name: "Claim of condition 1" }), "hd");
-    await user.type(within(form).getByRole("textbox", { name: "Allowed values of condition 1" }), "example.com, example.org");
+    await user.type(
+      within(form).getByRole("textbox", { name: "Allowed values of condition 1" }),
+      "example.com, example.org",
+    );
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
-    expect(await within(form).findByText(`https://my.example/auth/external/${providerId}/callback`)).toBeInTheDocument();
+    expect(
+      await within(form).findByText(`https://my.example/auth/external/${providerId}/callback`),
+    ).toBeInTheDocument();
     expect(within(form).getByRole("status")).toHaveTextContent("is set up.");
     expect(sent).toEqual({
       kind: "oidc",
@@ -202,7 +220,9 @@ describe("the login providers screen", () => {
   });
 
   test("shows the server's refusal of the servers on their field", async () => {
-    server.use(http.post(`${apiBase}/admin/login_providers`, () => problem("conditions", "The server IDs are not valid.")));
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, () => problem("conditions", "The server IDs are not valid.")),
+    );
     const { user } = await renderApp({ path: "/admin/login-providers" });
     const form = await screen.findByRole("region", { name: "Set up a login provider" });
     await user.click(within(form).getByRole("radio", { name: "Discord" }));
@@ -220,7 +240,13 @@ describe("the login providers screen", () => {
   });
 
   test("keeps the secret of a Discord provider out of its edit form", async () => {
-    server.use(http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [loginProviderFixture("p3", { kind: "discord", display_name: "Discord", guilds: ["42"] })] })));
+    server.use(
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({
+          items: [loginProviderFixture("p3", { kind: "discord", display_name: "Discord", guilds: ["42"] })],
+        }),
+      ),
+    );
     const { user } = await renderApp({ path: "/admin/login-providers" });
     const list = await screen.findByRole("region", { name: "Login providers of this server" });
     await user.click(within(list).getByRole("button", { name: /^Edit/u }));
@@ -235,7 +261,13 @@ describe("the login providers screen", () => {
     server.use(
       http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateLoginProviderRequest"];
-        return HttpResponse.json(loginProviderFixture(providerId, { kind: "mastodon", display_name: "Social", issuer: "https://social.example" }));
+        return HttpResponse.json(
+          loginProviderFixture(providerId, {
+            kind: "mastodon",
+            display_name: "Social",
+            issuer: "https://social.example",
+          }),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/admin/login-providers" });
@@ -252,11 +284,19 @@ describe("the login providers screen", () => {
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
     expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
-    expect(sent).toEqual({ kind: "mastodon", display_name: "Social", issuer: "social.example", allow_signup: false, allow_link: true });
+    expect(sent).toEqual({
+      kind: "mastodon",
+      display_name: "Social",
+      issuer: "social.example",
+      allow_signup: false,
+      allow_link: true,
+    });
   });
 
   test("shows the server's refusal on its field and keeps the draft", async () => {
-    server.use(http.post(`${apiBase}/admin/login_providers`, () => problem("issuer", "The issuer must be an https URL.")));
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, () => problem("issuer", "The issuer must be an https URL.")),
+    );
     const { user } = await renderApp({ path: "/admin/login-providers" });
     const form = await screen.findByRole("region", { name: "Set up a login provider" });
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
@@ -274,7 +314,9 @@ describe("the login providers screen", () => {
   });
 
   test("shows a refused secret on the secret field", async () => {
-    server.use(http.post(`${apiBase}/admin/login_providers`, () => problem("client_secret", "The client secret is too long.")));
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, () => problem("client_secret", "The client secret is too long.")),
+    );
     const { user } = await renderApp({ path: "/admin/login-providers" });
     const form = await screen.findByRole("region", { name: "Set up a login provider" });
     await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Example SSO");
@@ -309,7 +351,9 @@ describe("the login providers screen", () => {
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
     const conditions = within(form).getByRole("group", { name: "Conditions" });
-    expect(await within(conditions).findByRole("alert")).toHaveTextContent("Each condition needs a claim and at least one value.");
+    expect(await within(conditions).findByRole("alert")).toHaveTextContent(
+      "Each condition needs a claim and at least one value.",
+    );
     expect(posted).toBe(false);
 
     await user.click(within(conditions).getByRole("button", { name: "Remove condition 1" }));
@@ -319,7 +363,9 @@ describe("the login providers screen", () => {
   test("changes a provider in a dialog without its secret", async () => {
     let change: Schemas["UpdateLoginProviderRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [loginProviderFixture(providerId, change)] })),
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: [loginProviderFixture(providerId, change)] }),
+      ),
       http.patch(`${apiBase}/admin/login_providers/:id`, async ({ request }) => {
         change = (await request.json()) as Schemas["UpdateLoginProviderRequest"];
         return HttpResponse.json(loginProviderFixture(providerId, change));
@@ -353,7 +399,9 @@ describe("the login providers screen", () => {
   test("gives a provider a new client secret in a dialog", async () => {
     let rotated: Schemas["RotateLoginProviderSecretRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [loginProviderFixture(providerId)] })),
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: [loginProviderFixture(providerId)] }),
+      ),
       http.post(`${apiBase}/admin/login_providers/:id/rotate_secret`, async ({ request }) => {
         rotated = (await request.json()) as Schemas["RotateLoginProviderSecretRequest"];
         return HttpResponse.json(loginProviderFixture(providerId));
@@ -377,7 +425,9 @@ describe("the login providers screen", () => {
   test("disables a provider after a warning with its linked users, and enables it", async () => {
     let state: Schemas["AdminLoginProviderState"] = "enabled";
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [loginProviderFixture(providerId, { state, linked_users: 2 })] })),
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: [loginProviderFixture(providerId, { state, linked_users: 2 })] }),
+      ),
       http.post(`${apiBase}/admin/login_providers/:id/disable`, () => {
         state = "disabled";
         return HttpResponse.json(loginProviderFixture(providerId, { state, linked_users: 2 }));
@@ -402,7 +452,9 @@ describe("the login providers screen", () => {
   test("deletes a provider after a warning", async () => {
     let deleted = "";
     server.use(
-      http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: deleted === "" ? [loginProviderFixture(providerId, { linked_users: 1 })] : [] })),
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: deleted === "" ? [loginProviderFixture(providerId, { linked_users: 1 })] : [] }),
+      ),
       http.delete(`${apiBase}/admin/login_providers/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });

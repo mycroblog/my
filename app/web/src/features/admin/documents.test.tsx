@@ -50,7 +50,11 @@ function section(name: string): HTMLElement {
 describe("the terms and policies screen", () => {
   test("shows each document, when it was saved, and its page", async () => {
     textsServer([terms]);
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, terms_url: "http://localhost:3000/about/terms" })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, terms_url: "http://localhost:3000/about/terms" }),
+      ),
+    );
     await renderApp({ path: "/admin/documents" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Terms and policies" })).toBeInTheDocument();
@@ -109,7 +113,9 @@ describe("the terms and policies screen", () => {
   test("shows why a save failed under the form and keeps the text", async () => {
     textsServer([]);
     server.use(
-      http.put(`${apiBase}/admin/instance_texts/:key`, () => problem(422, "about:blank", "The property body has an invalid value.")),
+      http.put(`${apiBase}/admin/instance_texts/:key`, () =>
+        problem(422, "about:blank", "The property body has an invalid value."),
+      ),
     );
     const { user } = await renderApp({ path: "/admin/documents" });
 
@@ -117,7 +123,9 @@ describe("the terms and policies screen", () => {
     await user.type(termsSection.getByRole("textbox", { name: "Text" }), "Be kind.");
     await user.click(termsSection.getByRole("button", { name: "Save" }));
 
-    expect(await termsSection.findByRole("alert")).toHaveTextContent("Could not save the text: The property body has an invalid value.");
+    expect(await termsSection.findByRole("alert")).toHaveTextContent(
+      "Could not save the text: The property body has an invalid value.",
+    );
     expect(termsSection.getByRole("textbox", { name: "Text" })).toHaveValue("Be kind.");
   });
 
@@ -148,6 +156,8 @@ describe("the terms and policies screen", () => {
   test("the admin page links to it for manage_settings", async () => {
     await renderApp({ path: "/admin" });
 
-    expect(await within(await screen.findByRole("main")).findByRole("link", { name: "Terms and policies" })).toHaveAttribute("href", "/admin/documents");
+    expect(
+      await within(await screen.findByRole("main")).findByRole("link", { name: "Terms and policies" }),
+    ).toHaveAttribute("href", "/admin/documents");
   });
 });

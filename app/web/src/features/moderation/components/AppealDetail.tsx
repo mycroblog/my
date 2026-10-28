@@ -5,7 +5,21 @@
 // that takes the explanation the user is shown; an overturn lifts the action, and the action's state on the page
 // says so. What the decision did stays in the decision region in a StatusMessage (role="status"), and focus
 // moves to that region's heading, since its buttons give way to the decision.
-import { Box, Button, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, DetailSection, Hint, Link, ReasonField, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DetailSection,
+  Hint,
+  Link,
+  ReasonField,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { useRef } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
 import { type Appeal, type AppealDecision, appealReasonLimit } from "../api/appeals";
@@ -94,16 +108,24 @@ function ActionSummary({ appeal }: { appeal: Appeal }) {
   return (
     <Stack gap="3">
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:admin.appeal.action.kind")}>{t(accountActionKindLabels[action.kind])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.appeal.action.kind")}>
+          {t(accountActionKindLabels[action.kind])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.state")}>
           <Text weight="semibold">{t(accountActionStateLabels[action.state])}</Text>
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.account_actions.category")}>{t(reportCategoryLabels[action.reason_category])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.account_actions.category")}>
+          {t(reportCategoryLabels[action.reason_category])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.issued_at")}>
           <DateTime value={action.issued_at} />
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.expires_at")}>
-          {action.expires_at === undefined ? t("client:admin.account_actions.duration.indefinite") : <DateTime value={action.expires_at} />}
+          {action.expires_at === undefined ? (
+            t("client:admin.account_actions.duration.indefinite")
+          ) : (
+            <DateTime value={action.expires_at} />
+          )}
         </DescriptionItem>
         {action.lifted_at !== undefined && (
           <DescriptionItem term={t("client:admin.appeal.action.lifted_at")}>
@@ -152,7 +174,9 @@ function decisionTexts(t: Translate, decision: AppealDecision, appeal: Appeal): 
     action: t("client:admin.appeal.overturn"),
     title: t("client:admin.appeal.confirm_overturn.title"),
     description:
-      appeal.action.kind === "ban" ? t("client:admin.appeal.confirm_overturn.description_ban") : t("client:admin.appeal.confirm_overturn.description", { kind }),
+      appeal.action.kind === "ban"
+        ? t("client:admin.appeal.confirm_overturn.description_ban")
+        : t("client:admin.appeal.confirm_overturn.description", { kind }),
     tone: "danger",
   };
 }
@@ -194,7 +218,11 @@ function Decision({ appeal }: { appeal: Appeal }) {
         </DescriptionItem>
       )}
       <DescriptionItem term={t("client:admin.appeal.decided_by")}>
-        {appeal.decided_by_account_id === undefined ? t("client:admin.appeal.decided_by.cli") : <AssigneeName id={appeal.decided_by_account_id} />}
+        {appeal.decided_by_account_id === undefined ? (
+          t("client:admin.appeal.decided_by.cli")
+        ) : (
+          <AssigneeName id={appeal.decided_by_account_id} />
+        )}
       </DescriptionItem>
       <DescriptionItem term={t("client:admin.appeal.decision_reason")}>
         <ModeratorText text={appeal.decision_reason} />
@@ -223,7 +251,9 @@ function DecisionDialog({ review, appeal }: { review: AppealReview; appeal: Appe
         review.confirm();
       }}
       isPending={review.isPending}
-      {...(review.error === undefined ? {} : { errorMessage: t("client:admin.appeal.decide_failed", { reason: review.error }) })}
+      {...(review.error === undefined
+        ? {}
+        : { errorMessage: t("client:admin.appeal.decide_failed", { reason: review.error }) })}
     >
       <ReasonField
         label={t("client:admin.appeal.reason")}
@@ -232,7 +262,9 @@ function DecisionDialog({ review, appeal }: { review: AppealReview; appeal: Appe
         onChange={review.changeReason}
         characterLimit={appealReasonLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.account_actions.characters_over", { count: -remaining })
+            : t("client:admin.account_actions.characters_left", { count: remaining })
         }
         errorMessage={t("client:admin.appeal.reason.too_long", { max: appealReasonLimit })}
       />

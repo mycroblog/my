@@ -29,6 +29,8 @@ export const sampleTheme: readonly ThemeOverride[] = [
 
 /** The stylesheet of a theme: one :root rule outside any cascade layer, colors as light-dark(). */
 export function themeStylesheet(overrides: readonly ThemeOverride[]): string {
-  const declarations = overrides.map((o) => `  --${o.token}: ${"value" in o ? o.value : `light-dark(${o.light}, ${o.dark})`};\n`);
+  const declarations = overrides.map(
+    (o) => `  --${o.token}: ${"value" in o ? o.value : `light-dark(${o.light}, ${o.dark})`};\n`,
+  );
   return `:root {\n${declarations.join("")}}\n`;
 }

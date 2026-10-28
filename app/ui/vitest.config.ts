@@ -44,20 +44,20 @@ export default mergeConfig(
           },
         },
         ...locales.flatMap((locale) =>
-        themes.map((theme) => ({
-          extends: true,
-          plugins: [storybookTest({ configDir: ".storybook", initialGlobals: { locale, theme } })],
-          test: {
-            name: `storybook:${locale}:${theme}`,
-            setupFiles: ["./test/consoleGuard.ts", "./.storybook/vitest.setup.ts"],
-            browser: {
-              enabled: true,
-              headless: true,
-              provider: playwright(),
-              instances: [{ browser: "chromium" as const }],
+          themes.map((theme) => ({
+            extends: true,
+            plugins: [storybookTest({ configDir: ".storybook", initialGlobals: { locale, theme } })],
+            test: {
+              name: `storybook:${locale}:${theme}`,
+              setupFiles: ["./test/consoleGuard.ts", "./.storybook/vitest.setup.ts"],
+              browser: {
+                enabled: true,
+                headless: true,
+                provider: playwright(),
+                instances: [{ browser: "chromium" as const }],
+              },
             },
-          },
-        })),
+          })),
         ),
       ],
     },

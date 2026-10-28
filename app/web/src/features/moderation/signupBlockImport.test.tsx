@@ -46,7 +46,15 @@ function importServer(skip: (value: string) => Skipped["reason"] | undefined = (
         if (reason !== undefined) skipped.push({ line: index + 1, value, reason });
         else {
           added += 1;
-          blocks = [signupBlockFixture({ id: `0192f0c4-7a8e-7000-8000-${String(index).padStart(12, "0")}`, kind: body.kind, value, severity: body.severity }), ...blocks];
+          blocks = [
+            signupBlockFixture({
+              id: `0192f0c4-7a8e-7000-8000-${String(index).padStart(12, "0")}`,
+              kind: body.kind,
+              value,
+              severity: body.severity,
+            }),
+            ...blocks,
+          ];
         }
       });
       return HttpResponse.json({ added, skipped });
@@ -55,7 +63,15 @@ function importServer(skip: (value: string) => Skipped["reason"] | undefined = (
   return { imports, fetches };
 }
 
-const list = ["# Disposable email domains", "spam.example", "not a domain", "", "spam.example", "mail.example", "old.example"].join("\n");
+const list = [
+  "# Disposable email domains",
+  "spam.example",
+  "not a domain",
+  "",
+  "spam.example",
+  "mail.example",
+  "old.example",
+].join("\n");
 
 function reasonOf(value: string): Skipped["reason"] | undefined {
   if (value === "not a domain") return "invalid";
@@ -88,14 +104,30 @@ describe("an import of a list of sign-up blocks", () => {
     api.fetches.length = 0;
     await user.click(section.getByRole("button", { name: "Add blocks" }));
 
-    expect(await section.findByText("2 blocks were added: Email domain, Refuse. 3 lines were skipped.")).toBeInTheDocument();
-    expect(api.imports).toEqual([{ kind: "email_domain", text: list, severity: "reject", comment: "Public list of 2026-10.", expires_in: 90 * 86_400 }]);
+    expect(
+      await section.findByText("2 blocks were added: Email domain, Refuse. 3 lines were skipped."),
+    ).toBeInTheDocument();
+    expect(api.imports).toEqual([
+      {
+        kind: "email_domain",
+        text: list,
+        severity: "reject",
+        comment: "Public list of 2026-10.",
+        expires_in: 90 * 86_400,
+      },
+    ]);
     // The list of blocks was fetched again before the result was shown.
     expect(api.fetches).toContain("signup_blocks");
 
     const table = section.getByRole("table", { name: "Lines not added" });
     const rows = within(table).getAllByRole("row");
-    expect(rows.map((row) => within(row).getAllByRole(row === rows[0] ? "columnheader" : "cell").map((cell) => cell.textContent))).toEqual([
+    expect(
+      rows.map((row) =>
+        within(row)
+          .getAllByRole(row === rows[0] ? "columnheader" : "cell")
+          .map((cell) => cell.textContent),
+      ),
+    ).toEqual([
       ["Line", "Value", "Reason"],
       ["3", "not a domain", "Not a valid value for the kind"],
       ["5", "spam.example", "Same as an earlier line"],
@@ -104,11 +136,21 @@ describe("an import of a list of sign-up blocks", () => {
     // The value is as written in the list, in any script.
     expect(within(table).getByRole("cell", { name: "not a domain" })).toHaveAttribute("dir", "auto");
     // The count of each reason.
-    expect(section.getAllByRole("term").map((term) => term.textContent)).toEqual(["Not a valid value for the kind", "Same as an earlier line", "Already blocked"]);
-    expect(section.getAllByRole("definition").map((definition) => definition.textContent)).toEqual(["1 line", "1 line", "1 line"]);
+    expect(section.getAllByRole("term").map((term) => term.textContent)).toEqual([
+      "Not a valid value for the kind",
+      "Same as an earlier line",
+      "Already blocked",
+    ]);
+    expect(section.getAllByRole("definition").map((definition) => definition.textContent)).toEqual([
+      "1 line",
+      "1 line",
+      "1 line",
+    ]);
 
     // The blocks are in the list below.
-    expect(await within(screen.getByRole("table", { name: "In effect" })).findByRole("rowheader", { name: "mail.example" })).toBeInTheDocument();
+    expect(
+      await within(screen.getByRole("table", { name: "In effect" })).findByRole("rowheader", { name: "mail.example" }),
+    ).toBeInTheDocument();
     // The form is ready for the next list with the same settings.
     expect(section.getByRole("textbox", { name: "List" })).toHaveValue("");
     expect(section.getByRole("textbox", { name: "Comment" })).toHaveValue("");
@@ -134,8 +176,12 @@ describe("an import of a list of sign-up blocks", () => {
     await user.click(section.getByRole("radio", { name: "Require approval" }));
     await user.click(section.getByRole("button", { name: "Add blocks" }));
 
-    expect(await section.findByText("2 blocks were added: IP range, Require approval. No line was skipped.")).toBeInTheDocument();
-    expect(api.imports).toEqual([{ kind: "ip_range", text: "192.0.2.0/24\n198.51.100.7,abuse\n", severity: "require_approval" }]);
+    expect(
+      await section.findByText("2 blocks were added: IP range, Require approval. No line was skipped."),
+    ).toBeInTheDocument();
+    expect(api.imports).toEqual([
+      { kind: "ip_range", text: "192.0.2.0/24\n198.51.100.7,abuse\n", severity: "require_approval" },
+    ]);
     expect(section.queryByRole("table")).not.toBeInTheDocument();
   });
 
@@ -150,7 +196,9 @@ describe("an import of a list of sign-up blocks", () => {
     if (input === null || input === undefined) throw new Error("no file input");
     await user.upload(input, new File(["a".repeat(1_000_001)], "huge.txt", { type: "text/plain" }));
 
-    expect(await section.findByRole("alert")).toHaveTextContent("huge.txt is larger than 1 MB. Split the list into smaller files.");
+    expect(await section.findByRole("alert")).toHaveTextContent(
+      "huge.txt is larger than 1 MB. Split the list into smaller files.",
+    );
     expect(section.getByRole("textbox", { name: "List" })).toHaveValue("");
     expect(api.imports).toEqual([]);
   });
@@ -180,7 +228,9 @@ describe("an import of a list of sign-up blocks", () => {
     await user.click(section.getByRole("radio", { name: "Refuse" }));
     await user.click(section.getByRole("button", { name: "Add blocks" }));
 
-    expect(await section.findByText("The list has 10,001 values. Enter 10,000 or fewer, and add the rest in another import")).toBeInTheDocument();
+    expect(
+      await section.findByText("The list has 10,001 values. Enter 10,000 or fewer, and add the rest in another import"),
+    ).toBeInTheDocument();
     expect(api.imports).toEqual([]);
   });
 
@@ -194,7 +244,9 @@ describe("an import of a list of sign-up blocks", () => {
     await user.click(section.getByRole("radio", { name: "Refuse" }));
     await user.click(section.getByRole("button", { name: "Add blocks" }));
 
-    expect(await section.findByText("No block was added: Email domain, Refuse. 150 lines were skipped.")).toBeInTheDocument();
+    expect(
+      await section.findByText("No block was added: Email domain, Refuse. 150 lines were skipped."),
+    ).toBeInTheDocument();
     const table = section.getByRole("table", { name: "Lines not added" });
     // A header row and the first 100 lines.
     expect(within(table).getAllByRole("row")).toHaveLength(101);
@@ -210,7 +262,9 @@ describe("an import of a list of sign-up blocks", () => {
 
   test("a list the server refuses says why under the form, and keeps what was entered", async () => {
     importServer();
-    server.use(http.post(`${apiBase}/admin/signup_blocks/import`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/signup_blocks/import`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: "/moderation/signup-blocks" });
     const section = within(await screen.findByRole("region", { name: "Add from a list" }));
 

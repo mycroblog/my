@@ -17,7 +17,9 @@ export const Route = createFileRoute("/moderation/appeals_/$id")({
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: ({ context, params: { id } }) =>
-    loadWithPermission(context, "manage_accounts", () => context.queryClient.query({ ...appealQueryOptions(context.api, id), staleTime: Infinity })),
+    loadWithPermission(context, "manage_accounts", () =>
+      context.queryClient.query({ ...appealQueryOptions(context.api, id), staleTime: Infinity }),
+    ),
   component: AppealPage,
   errorComponent: AppealError,
 });

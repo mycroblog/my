@@ -19,7 +19,8 @@ const allowed: readonly { text: string; reason: string }[] = [
     // callback, which resizes the overlay, during the screenshot step's resizes; TanStack Virtual's ResizeObserver
     // flushSyncs the Feed "Virtualized" story's items by design, which grows the observed <body>. The browser delivers
     // the notification one frame later and the layout settles: nothing loops, and the screenshots are stable.
-    reason: "an overlay or the virtualized feed resizes in a library's ResizeObserver callback and settles one frame later",
+    reason:
+      "an overlay or the virtualized feed resizes in a library's ResizeObserver callback and settles one frame later",
   },
 ];
 
@@ -68,5 +69,7 @@ afterEach(() => {
   if (logged.length === 0) return;
   const count = logged.length;
   const messages = logged.splice(0).join("\n\n");
-  throw new Error(`the test logged ${count === 1 ? "a warning" : `${count} warnings`} (test/consoleGuard.ts allows none but the known harmless ones):\n\n${messages}`);
+  throw new Error(
+    `the test logged ${count === 1 ? "a warning" : `${count} warnings`} (test/consoleGuard.ts allows none but the known harmless ones):\n\n${messages}`,
+  );
 });

@@ -11,10 +11,26 @@ import { otherAccountFixture, type Schemas, viewerFixture } from "../../test/fix
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { accountActionFixture, appealFixture, domainActionFixture, registrationFixture, reportFixture } from "./test/handlers";
+import {
+  accountActionFixture,
+  appealFixture,
+  domainActionFixture,
+  registrationFixture,
+  reportFixture,
+} from "./test/handlers";
 
 beforeEach(() => {
-  server.use(signedInHandler, operatorHandler(["manage_accounts", "manage_reports", "manage_domains", "manage_settings", "manage_rules", "view_audit"]));
+  server.use(
+    signedInHandler,
+    operatorHandler([
+      "manage_accounts",
+      "manage_reports",
+      "manage_domains",
+      "manage_settings",
+      "manage_rules",
+      "view_audit",
+    ]),
+  );
   document.documentElement.lang = "en";
   document.documentElement.dir = "ltr";
 });
@@ -74,7 +90,9 @@ const writes: Write[] = [
     path: "/admin/account_actions/:id/lift",
     page: `/moderation/accounts/${otherAccountFixture.id}`,
     setup: () => {
-      server.use(http.get(`${apiBase}/admin/accounts/:id/actions`, () => HttpResponse.json({ items: [accountActionFixture()] })));
+      server.use(
+        http.get(`${apiBase}/admin/accounts/:id/actions`, () => HttpResponse.json({ items: [accountActionFixture()] })),
+      );
     },
     write: async (user) => {
       const history = await screen.findByRole("region", { name: "Actions on the account" });
@@ -112,7 +130,9 @@ const writes: Write[] = [
     path: "/admin/domain_actions/:id/lift",
     page: "/moderation/domain-actions",
     setup: () => {
-      server.use(http.get(`${apiBase}/admin/domain_actions`, () => HttpResponse.json({ items: [domainActionFixture()] })));
+      server.use(
+        http.get(`${apiBase}/admin/domain_actions`, () => HttpResponse.json({ items: [domainActionFixture()] })),
+      );
     },
     write: async (user) => {
       await user.click(await screen.findByRole("button", { name: /^Lift Limit for/ }));
@@ -132,7 +152,11 @@ const writes: Write[] = [
     path: "/admin/reports/:id/unassign",
     page: `/moderation/reports/${report.id}`,
     setup: () => {
-      server.use(http.get(`${apiBase}/admin/reports/:id`, () => HttpResponse.json({ ...report, assignee_account_id: viewerFixture.id })));
+      server.use(
+        http.get(`${apiBase}/admin/reports/:id`, () =>
+          HttpResponse.json({ ...report, assignee_account_id: viewerFixture.id }),
+        ),
+      );
     },
     write: (user) => changeReport(user, "Assignee", "Unassign", "Nobody handles this report now."),
   },
@@ -150,7 +174,14 @@ const writes: Write[] = [
     page: `/moderation/reports/${report.id}`,
     setup: () => {
       server.use(
-        http.get(`${apiBase}/admin/reports/:id`, () => HttpResponse.json({ ...report, state: "resolved", outcome: "dismissed", state_changed_at: "2026-10-17T00:00:00Z" })),
+        http.get(`${apiBase}/admin/reports/:id`, () =>
+          HttpResponse.json({
+            ...report,
+            state: "resolved",
+            outcome: "dismissed",
+            state_changed_at: "2026-10-17T00:00:00Z",
+          }),
+        ),
       );
     },
     write: (user) => changeReport(user, "Handling", "Reopen", "The report is open again."),
@@ -173,9 +204,12 @@ const writes: Write[] = [
     path: "/admin/registrations/:userId/approve",
     page: "/moderation/registrations",
     setup: () => {
-      server.use(http.get(`${apiBase}/admin/registrations`, () => HttpResponse.json({ items: [registrationFixture()] })));
+      server.use(
+        http.get(`${apiBase}/admin/registrations`, () => HttpResponse.json({ items: [registrationFixture()] })),
+      );
     },
-    write: (user) => decide(user, `Approve ${isolated("@bob")}`, "Approve", `${isolated("@bob")} is approved and can sign in.`),
+    write: (user) =>
+      decide(user, `Approve ${isolated("@bob")}`, "Approve", `${isolated("@bob")} is approved and can sign in.`),
   },
   {
     action: "registration_rejected",
@@ -183,7 +217,9 @@ const writes: Write[] = [
     path: "/admin/registrations/:userId/reject",
     page: "/moderation/registrations",
     setup: () => {
-      server.use(http.get(`${apiBase}/admin/registrations`, () => HttpResponse.json({ items: [registrationFixture()] })));
+      server.use(
+        http.get(`${apiBase}/admin/registrations`, () => HttpResponse.json({ items: [registrationFixture()] })),
+      );
     },
     write: (user) => decide(user, `Reject ${isolated("@bob")}`, "Reject", `${isolated("@bob")} is rejected.`),
   },
@@ -237,44 +273,47 @@ const writes: Write[] = [
 ];
 
 describe("the audit log after an audited write", () => {
-  test.each(writes)("back on the log after $action, the operation is in it at once, however slowly the log comes", async ({ action, method, path, page, setup, write }) => {
-    let entries: Schemas["AdminAuditEntry"][] = [];
-    server.use(
-      http.get(`${apiBase}/admin/audit_log`, () => HttpResponse.json({ items: entries })),
-      // The server records the write; the handler falls through to the one that answers it.
-      http[method](`${apiBase}${path}`, () => {
-        entries = [
-          {
-            id: "0192f0c4-7a8e-7000-8000-0000000a0475",
-            actor_kind: "user",
-            actor_account_id: viewerFixture.id,
-            action,
-            target_kind: "account",
-            target_id: otherAccountFixture.id,
-            target_label: "@bob",
-            target_exists: true,
-            occurred_at: "2026-10-17T09:30:00Z",
-          },
-        ];
-      }),
-    );
-    setup?.();
-    const { user, router } = await renderApp({ path: "/moderation/audit-log" });
-    expect(await screen.findByRole("heading", { level: 2, name: "No operations yet" })).toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  test.each(writes)(
+    "back on the log after $action, the operation is in it at once, however slowly the log comes",
+    async ({ action, method, path, page, setup, write }) => {
+      let entries: Schemas["AdminAuditEntry"][] = [];
+      server.use(
+        http.get(`${apiBase}/admin/audit_log`, () => HttpResponse.json({ items: entries })),
+        // The server records the write; the handler falls through to the one that answers it.
+        http[method](`${apiBase}${path}`, () => {
+          entries = [
+            {
+              id: "0192f0c4-7a8e-7000-8000-0000000a0475",
+              actor_kind: "user",
+              actor_account_id: viewerFixture.id,
+              action,
+              target_kind: "account",
+              target_id: otherAccountFixture.id,
+              target_label: "@bob",
+              target_exists: true,
+              occurred_at: "2026-10-17T09:30:00Z",
+            },
+          ];
+        }),
+      );
+      setup?.();
+      const { user, router } = await renderApp({ path: "/moderation/audit-log" });
+      expect(await screen.findByRole("heading", { level: 2, name: "No operations yet" })).toBeInTheDocument();
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
-    await router.navigate({ href: page });
-    // From now on the audit log takes a while; the handler falls through to the one above.
-    server.use(
-      http.get(`${apiBase}/admin/audit_log`, async () => {
-        await delay(300);
-      }),
-    );
-    await write(user);
-    expect(entries).toHaveLength(1);
+      await router.navigate({ href: page });
+      // From now on the audit log takes a while; the handler falls through to the one above.
+      server.use(
+        http.get(`${apiBase}/admin/audit_log`, async () => {
+          await delay(300);
+        }),
+      );
+      await write(user);
+      expect(entries).toHaveLength(1);
 
-    await router.navigate({ to: "/moderation/audit-log" });
-    const after = await screen.findByRole("table");
-    expect(within(after).getAllByRole("rowheader").length).toBeGreaterThan(0);
-  });
+      await router.navigate({ to: "/moderation/audit-log" });
+      const after = await screen.findByRole("table");
+      expect(within(after).getAllByRole("rowheader").length).toBeGreaterThan(0);
+    },
+  );
 });

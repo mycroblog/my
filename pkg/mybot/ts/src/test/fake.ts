@@ -159,7 +159,10 @@ export class FakeServer {
       const start = Number(url.searchParams.get("cursor") ?? "0");
       // Small pages, so that the catch-up follows the cursor.
       const end = Math.min(start + 2, this.notifications.length);
-      return json({ items: this.notifications.slice(start, end), ...(end < this.notifications.length ? { next_cursor: String(end) } : {}) });
+      return json({
+        items: this.notifications.slice(start, end),
+        ...(end < this.notifications.length ? { next_cursor: String(end) } : {}),
+      });
     }
     if (route === "POST /api/v1/statuses") {
       const body = (await request.json()) as CreateStatusRequest;
@@ -181,7 +184,13 @@ export class FakeServer {
       if (next === undefined) return json({ error: "invalid_grant" }, 400);
       this.tokens.delete(rt);
       this.tokens.set(next, `${next}'`);
-      return json({ access_token: `at-${next}`, token_type: "Bearer", expires_in: 3600, refresh_token: next, scope: this.scope });
+      return json({
+        access_token: `at-${next}`,
+        token_type: "Bearer",
+        expires_in: 3600,
+        refresh_token: next,
+        scope: this.scope,
+      });
     }
     return json({ type: "about:blank", title: "not found", status: 404 }, 404, "application/problem+json");
   };

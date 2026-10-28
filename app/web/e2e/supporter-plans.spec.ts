@@ -23,7 +23,14 @@ function message(key: string, values: Record<string, string> = {}): string {
 const basicId = "0192f0c4-7a8e-7000-8000-0000000000c1";
 const goldId = "0192f0c4-7a8e-7000-8000-0000000000c2";
 const plans: Schemas["SupporterPlan"][] = [
-  { id: basicId, name: "Basic", description: "", rank: 1, monthly_price: { amount: "500", currency: "JPY" }, yearly_price: { amount: "5400", currency: "JPY" } },
+  {
+    id: basicId,
+    name: "Basic",
+    description: "",
+    rank: 1,
+    monthly_price: { amount: "500", currency: "JPY" },
+    yearly_price: { amount: "5400", currency: "JPY" },
+  },
   {
     id: goldId,
     name: "داعم ذهبي",
@@ -67,11 +74,19 @@ const viewer = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API: the program enabled with the list public, the viewer's subscription `own` (signed in when `signedIn`). */
-async function serveApi(page: Page, { own, signedIn }: { own: Schemas["OwnSupporterSubscription"]; signedIn: boolean }) {
+async function serveApi(
+  page: Page,
+  { own, signedIn }: { own: Schemas["OwnSupporterSubscription"]; signedIn: boolean },
+) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   await page.route("**/oauth/token/refresh", (route) =>
@@ -79,7 +94,9 @@ async function serveApi(page: Page, { own, signedIn }: { own: Schemas["OwnSuppor
       ? json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" })
       : json(route, { error: "invalid_grant" }, 400),
   );
-  await page.route(`${checkoutUrl}*`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Checkout</title>" }));
+  await page.route(`${checkoutUrl}*`, (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Checkout</title>" }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
@@ -109,7 +126,14 @@ async function serveApi(page: Page, { own, signedIn }: { own: Schemas["OwnSuppor
     }
     if (key === "GET /accounts/verify_credentials") return json(route, viewer);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /instance/supporter_plans") return json(route, { items: plans });

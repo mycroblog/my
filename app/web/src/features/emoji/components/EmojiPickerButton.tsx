@@ -28,7 +28,14 @@ export function EmojiPickerButton({ label, isDisabled = false, ...target }: Emoj
           if (isOpen) picker.preload();
         }}
       >
-        <Button variant="ghost" size="icon" aria-label={name} isDisabled={isDisabled} onHoverStart={picker.preload} onFocus={picker.preload}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={name}
+          isDisabled={isDisabled}
+          onHoverStart={picker.preload}
+          onFocus={picker.preload}
+        >
           <EmojiIcon />
         </Button>
         <Popover aria-label={t("client:emoji.picker.title")} placement="bottom end">

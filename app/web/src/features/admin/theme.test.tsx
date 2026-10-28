@@ -40,10 +40,16 @@ describe("the server's theme", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Theme" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "color-accent, light theme" })).toHaveValue("#1447e6");
     expect(screen.getByRole("textbox", { name: "color-surface, light theme" })).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "color-surface, light theme" })).toHaveAccessibleDescription(/Default: #fcf9f6/);
+    expect(screen.getByRole("textbox", { name: "color-surface, light theme" })).toHaveAccessibleDescription(
+      /Default: #fcf9f6/,
+    );
     expect(screen.getByRole("textbox", { name: "radius-md" })).toHaveValue("2px");
     expect(screen.getByRole("textbox", { name: "Custom CSS" })).toHaveValue(".brand { color: red }");
-    expect(within(screen.getByRole("region", { name: "Contrast" })).getByText(/Every text and control color has enough contrast/)).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Contrast" })).getByText(
+        /Every text and control color has enough contrast/,
+      ),
+    ).toBeInTheDocument();
   });
 
   test("shows the pairs that lose contrast as a color is typed, and saves the overrides", async () => {
@@ -51,14 +57,22 @@ describe("the server's theme", () => {
     server.use(
       http.put(`${apiBase}/admin/theme`, async ({ request }) => {
         saved = (await request.json()) as Schemas["SetThemeRequest"];
-        return HttpResponse.json({ ...saved, revision: "r2", revised_at: "2026-10-20T00:00:00Z" } satisfies Schemas["AdminTheme"]);
+        return HttpResponse.json({
+          ...saved,
+          revision: "r2",
+          revised_at: "2026-10-20T00:00:00Z",
+        } satisfies Schemas["AdminTheme"]);
       }),
     );
     const { user } = await renderApp({ path: "/admin/theme" });
     await user.type(await screen.findByRole("textbox", { name: "color-fg-muted, light theme" }), "#cccccc");
 
     const contrast = screen.getByRole("region", { name: "Contrast" });
-    expect(within(contrast).getByText(/color-fg-muted on color-surface has a contrast of [\d.]+:1 in the light theme; it needs 4.5:1/)).toBeInTheDocument();
+    expect(
+      within(contrast).getByText(
+        /color-fg-muted on color-surface has a contrast of [\d.]+:1 in the light theme; it needs 4.5:1/,
+      ),
+    ).toBeInTheDocument();
 
     await user.clear(screen.getByRole("textbox", { name: "color-fg-muted, light theme" }));
     await user.type(screen.getByRole("textbox", { name: "color-fg-muted, light theme" }), "#333333");
@@ -99,7 +113,9 @@ describe("the server's theme", () => {
 
     await screen.findByText("The theme was not saved:");
     // React Aria's live announcer is an alert too.
-    const alert = screen.getAllByRole("alert").find((element) => within(element).queryByText("The theme was not saved:") !== null);
+    const alert = screen
+      .getAllByRole("alert")
+      .find((element) => within(element).queryByText("The theme was not saved:") !== null);
     if (alert === undefined) throw new Error("the reasons are not in an alert");
     expect(within(alert).getByText("radius-md must be from 0 to 2.")).toBeInTheDocument();
     expect(within(alert).getByText("The custom CSS can be at most 65536 bytes.")).toBeInTheDocument();

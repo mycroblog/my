@@ -42,7 +42,12 @@ const administrator = {
 const longName = `Birds${"-and-more".repeat(9)}-of-the-${"x".repeat(5)}`;
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** The instance settings of the form, at their defaults, as GET /admin/settings lists them; `stored` replaces values. */
@@ -70,7 +75,9 @@ function instanceSettings(stored: Readonly<Record<string, string>>) {
     { key: "income_visibility", kind: "enum", default: "private", choices: ["private", "totals", "plans"] },
     { key: "federation_mode", kind: "enum", default: "both", choices: ["off", "inbound", "outbound", "both"] },
   ];
-  return { items: items.map((item) => ({ ...item, value: stored[item.key] ?? item.default, stored: item.key in stored })) };
+  return {
+    items: items.map((item) => ({ ...item, value: stored[item.key] ?? item.default, stored: item.key in stored })),
+  };
 }
 
 /**
@@ -82,12 +89,20 @@ async function administratorServer(page: Page) {
   let name: string | undefined = "my example";
   const settings: Record<string, string> = {};
   const changes: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -104,10 +119,19 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/instance_texts") {
-      return json(route, { items: name === undefined ? [] : [{ key: "name", body: name, revised_at: "2026-10-16T00:00:00Z" }] });
+      return json(route, {
+        items: name === undefined ? [] : [{ key: "name", body: name, revised_at: "2026-10-16T00:00:00Z" }],
+      });
     }
     if (key === "GET /admin/settings") return json(route, instanceSettings(settings));
     if (key === "PATCH /admin/settings") {
@@ -146,7 +170,10 @@ test.describe("page /admin/settings", () => {
 });
 
 test.describe("server settings", () => {
-  test("names the server, and the tab title and the sidebar call it by the new name", async ({ page, makeAxeBuilder }) => {
+  test("names the server, and the tab title and the sidebar call it by the new name", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await administratorServer(page);
     await page.goto("/admin/settings");
     const main = page.getByRole("main");
@@ -185,7 +212,10 @@ test.describe("server policies", () => {
     await page.goto("/admin/settings");
     const main = page.getByRole("main");
     await expect(main.getByRole("textbox").first()).toHaveValue("my example");
-    const registration = main.getByRole("radiogroup", { name: message("admin.settings.registration.mode"), exact: true });
+    const registration = main.getByRole("radiogroup", {
+      name: message("admin.settings.registration.mode"),
+      exact: true,
+    });
     // The radio group holds the saved mode (approval); Down Arrow selects the next one, invite, in every direction.
     await registration.getByRole("radio", { checked: true }).focus();
     await page.keyboard.press("ArrowDown");
@@ -199,13 +229,18 @@ test.describe("server policies", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("narrows the federation direction only after confirming what stops (ADR-0076)", async ({ page, makeAxeBuilder }) => {
+  test("narrows the federation direction only after confirming what stops (ADR-0076)", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const changes = await administratorServer(page);
     await page.goto("/admin/settings");
     const main = page.getByRole("main");
     await expect(main.getByRole("textbox").first()).toHaveValue("my example");
     const direction = main.getByRole("radiogroup", { name: message("admin.settings.federation.mode"), exact: true });
-    await expect(direction.getByRole("radio", { name: message("admin.settings.federation.mode.both"), exact: true })).toBeChecked();
+    await expect(
+      direction.getByRole("radio", { name: message("admin.settings.federation.mode.both"), exact: true }),
+    ).toBeChecked();
     await direction.getByText(message("admin.settings.federation.mode.inbound"), { exact: true }).click();
     const save = main.getByRole("button", { name: message("admin.settings.policies.save"), exact: true });
     await save.click();
@@ -214,12 +249,16 @@ test.describe("server policies", () => {
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("listitem")).toHaveCount(2);
-    await expect(dialog.getByRole("button", { name: message("admin.settings.federation.narrow.cancel"), exact: true })).toBeFocused();
+    await expect(
+      dialog.getByRole("button", { name: message("admin.settings.federation.narrow.cancel"), exact: true }),
+    ).toBeFocused();
     expect(changes).toEqual([]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await dialog.getByRole("button", { name: message("admin.settings.federation.narrow.confirm"), exact: true }).click();
+    await dialog
+      .getByRole("button", { name: message("admin.settings.federation.narrow.confirm"), exact: true })
+      .click();
     await expect(dialog).toBeHidden();
     await expect(main.getByRole("status").last()).not.toBeEmpty();
     expect(changes).toEqual(["federation_mode=inbound"]);

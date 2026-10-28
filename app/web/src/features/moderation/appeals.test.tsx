@@ -21,9 +21,16 @@ type Appeal = Schemas["AdminAppeal"];
 
 const pending = appealFixture();
 // An appeal in Arabic, which reads right to left whatever the page's direction.
-const arabic = appealFixture({ id: "0192f0c4-7a8e-7000-8000-0000000f0002", text: "لم أنشر إعلانات", submitted_at: "2026-10-16T08:00:00Z" });
+const arabic = appealFixture({
+  id: "0192f0c4-7a8e-7000-8000-0000000f0002",
+  text: "لم أنشر إعلانات",
+  submitted_at: "2026-10-16T08:00:00Z",
+});
 const upheld = decidedAppeal(
-  appealFixture({ id: "0192f0c4-7a8e-7000-8000-0000000f0003", action: { ...pending.action, id: "0192f0c4-7a8e-7000-8000-0000000d0103", kind: "limit" } }),
+  appealFixture({
+    id: "0192f0c4-7a8e-7000-8000-0000000f0003",
+    action: { ...pending.action, id: "0192f0c4-7a8e-7000-8000-0000000d0103", kind: "limit" },
+  }),
   "uphold",
   "The posts break rule 2.",
 );
@@ -48,7 +55,9 @@ function appealsServer(initial: Appeal[]) {
     http.get(`${apiBase}/admin/appeals`, ({ request }) => {
       const state = new URL(request.url).searchParams.get("state");
       lists.push(state ?? "all");
-      return HttpResponse.json({ items: state === null ? appeals : appeals.filter((appeal) => appeal.state === state) });
+      return HttpResponse.json({
+        items: state === null ? appeals : appeals.filter((appeal) => appeal.state === state),
+      });
     }),
     http.get(`${apiBase}/admin/appeals/:id`, ({ params }) => {
       const appeal = appeals.find((item) => item.id === String(params["id"]));
@@ -129,7 +138,9 @@ describe("the list of appeals", () => {
   });
 
   test("shows why when the server refuses the permission after all", async () => {
-    server.use(http.get(`${apiBase}/admin/appeals`, () => problem(403, "/api/v1/problems/missing-permission", "Forbidden")));
+    server.use(
+      http.get(`${apiBase}/admin/appeals`, () => problem(403, "/api/v1/problems/missing-permission", "Forbidden")),
+    );
     await renderApp({ path: "/moderation/appeals" });
 
     expect(await screen.findByRole("heading", { name: "You cannot use this screen" })).toBeInTheDocument();
@@ -163,7 +174,9 @@ describe("an appeal's page", () => {
 
     await user.click(await screen.findByRole("button", { name: "Overturn" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Overturn this appeal?" });
-    expect(dialog).toHaveAccessibleDescription("The action “Suspend” is lifted now. Deleted posts stay deleted. The decision cannot be changed afterwards.");
+    expect(dialog).toHaveAccessibleDescription(
+      "The action “Suspend” is lifted now. Deleted posts stay deleted. The decision cannot be changed afterwards.",
+    );
     const reason = within(dialog).getByRole("textbox", { name: "Explanation to the user" });
     await waitFor(() => {
       expect(reason).toHaveFocus();
@@ -173,7 +186,9 @@ describe("an appeal's page", () => {
     await user.click(within(dialog).getByRole("button", { name: "Overturn" }));
 
     const review = screen.getByRole("region", { name: "Review" });
-    expect(await within(review).findByRole("status")).toHaveTextContent("The appeal is overturned and the action is lifted.");
+    expect(await within(review).findByRole("status")).toHaveTextContent(
+      "The appeal is overturned and the action is lifted.",
+    );
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     const action = screen.getByRole("region", { name: "Moderation action" });
     expect(within(action).getByText("Lifted", { selector: "span" })).toBeInTheDocument();
@@ -184,7 +199,9 @@ describe("an appeal's page", () => {
     await waitFor(() => {
       expect(within(review).getByRole("heading", { level: 2, name: "Review" })).toHaveFocus();
     });
-    expect(api.decisions).toEqual([{ id: pending.id, decision: "overturn", body: { public_reason: "The link was to your own blog." } }]);
+    expect(api.decisions).toEqual([
+      { id: pending.id, decision: "overturn", body: { public_reason: "The link was to your own blog." } },
+    ]);
   });
 
   test("upholds without an explanation: the action stays", async () => {
@@ -197,7 +214,9 @@ describe("an appeal's page", () => {
 
     const review = screen.getByRole("region", { name: "Review" });
     expect(await within(review).findByRole("status")).toHaveTextContent("The appeal is upheld. The action stays.");
-    expect(within(screen.getByRole("region", { name: "Moderation action" })).getByText("In effect")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Moderation action" })).getByText("In effect"),
+    ).toBeInTheDocument();
     expect(within(review).getByText("Upheld")).toBeInTheDocument();
     expect(within(review).getByText("You")).toBeInTheDocument();
     expect(api.decisions).toEqual([{ id: pending.id, decision: "uphold", body: {} }]);
@@ -220,7 +239,9 @@ describe("an appeal's page", () => {
     );
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Overturn" }));
     const review = await screen.findByRole("region", { name: "Review" });
-    expect(await within(review).findByRole("status")).toHaveTextContent("The appeal is overturned and the action is lifted.");
+    expect(await within(review).findByRole("status")).toHaveTextContent(
+      "The appeal is overturned and the action is lifted.",
+    );
     await waitFor(() => {
       expect(within(review).getByRole("heading", { level: 2, name: "Review" })).toHaveFocus();
     });
@@ -242,17 +263,23 @@ describe("an appeal's page", () => {
     // Another moderator decides it the other way first; every list of appeals takes a while from now on.
     const other = decidedAppeal(pending, "overturn", undefined);
     server.use(
-      http.post(`${apiBase}/admin/appeals/:id/uphold`, () => problem(409, "/api/v1/problems/appeal-decided", "The appeal is already decided")),
+      http.post(`${apiBase}/admin/appeals/:id/uphold`, () =>
+        problem(409, "/api/v1/problems/appeal-decided", "The appeal is already decided"),
+      ),
       http.get(`${apiBase}/admin/appeals/:id`, () => HttpResponse.json(other)),
       http.get(`${apiBase}/admin/appeals`, async ({ request }) => {
         await delay(300);
         const state = new URL(request.url).searchParams.get("state");
-        return HttpResponse.json({ items: [other, arabic].filter((appeal) => state === null || appeal.state === state) });
+        return HttpResponse.json({
+          items: [other, arabic].filter((appeal) => state === null || appeal.state === state),
+        });
       }),
     );
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Uphold" }));
     const review = await screen.findByRole("region", { name: "Review" });
-    expect(await within(review).findByRole("status")).toHaveTextContent("Another moderator already reviewed this appeal. That decision stands.");
+    expect(await within(review).findByRole("status")).toHaveTextContent(
+      "Another moderator already reviewed this appeal. That decision stands.",
+    );
 
     await user.click(screen.getByRole("link", { name: "Back to appeals" }));
     expect(await screen.findByText(arabic.text)).toBeInTheDocument();
@@ -285,7 +312,11 @@ describe("an appeal's page", () => {
 
   test("a failed decision stays in the confirmation to try again", async () => {
     appealsServer([pending]);
-    server.use(http.post(`${apiBase}/admin/appeals/:id/overturn`, () => problem(422, "/api/v1/problems/not-appealable", "The account is deleted")));
+    server.use(
+      http.post(`${apiBase}/admin/appeals/:id/overturn`, () =>
+        problem(422, "/api/v1/problems/not-appealable", "The account is deleted"),
+      ),
+    );
     const { user } = await renderApp({ path: `/moderation/appeals/${pending.id}` });
 
     await user.click(await screen.findByRole("button", { name: "Overturn" }));
@@ -294,7 +325,9 @@ describe("an appeal's page", () => {
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^Could not save the decision: /);
     // The modal dialog hides the page from assistive technology while it is open.
-    expect(within(screen.getByRole("region", { name: "Moderation action", hidden: true })).getByText("In effect")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Moderation action", hidden: true })).getByText("In effect"),
+    ).toBeInTheDocument();
   });
 
   test("an appeal that another moderator decided the other way first shows that decision", async () => {
@@ -305,7 +338,9 @@ describe("an appeal's page", () => {
         reads += 1;
         return HttpResponse.json(reads === 1 ? pending : other);
       }),
-      http.post(`${apiBase}/admin/appeals/:id/overturn`, () => problem(409, "/api/v1/problems/appeal-decided", "The appeal is already decided")),
+      http.post(`${apiBase}/admin/appeals/:id/overturn`, () =>
+        problem(409, "/api/v1/problems/appeal-decided", "The appeal is already decided"),
+      ),
     );
     const { user } = await renderApp({ path: `/moderation/appeals/${pending.id}` });
 
@@ -313,7 +348,9 @@ describe("an appeal's page", () => {
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Overturn" }));
 
     const review = screen.getByRole("region", { name: "Review" });
-    expect(await within(review).findByRole("status")).toHaveTextContent("Another moderator already reviewed this appeal. That decision stands.");
+    expect(await within(review).findByRole("status")).toHaveTextContent(
+      "Another moderator already reviewed this appeal. That decision stands.",
+    );
     expect(within(review).getByText("Upheld")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });

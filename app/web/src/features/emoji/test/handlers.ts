@@ -6,7 +6,10 @@ import type { Schemas } from "../../../test/fixtures";
 import { apiBase } from "../../../test/msw/http";
 
 /** An emoji of the picker, its images at media.example. */
-export function pickerEmojiFixture(shortcode: string, init: Partial<Schemas["PickerCustomEmoji"]> = {}): Schemas["PickerCustomEmoji"] {
+export function pickerEmojiFixture(
+  shortcode: string,
+  init: Partial<Schemas["PickerCustomEmoji"]> = {},
+): Schemas["PickerCustomEmoji"] {
   return {
     shortcode,
     url: `https://media.example/emoji/${shortcode}.png`,
@@ -18,7 +21,9 @@ export function pickerEmojiFixture(shortcode: string, init: Partial<Schemas["Pic
 
 /** GET /custom_emojis answering `items`. */
 export function customEmojisHandler(items: Schemas["PickerCustomEmoji"][]) {
-  return http.get(`${apiBase}/custom_emojis`, () => HttpResponse.json({ items } satisfies Schemas["PickerCustomEmojiList"]));
+  return http.get(`${apiBase}/custom_emojis`, () =>
+    HttpResponse.json({ items } satisfies Schemas["PickerCustomEmojiList"]),
+  );
 }
 
 export const handlers = [

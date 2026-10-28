@@ -8,5 +8,12 @@ export type BannerImageProps = Omit<ComponentPropsWithRef<"img">, "className" | 
 
 /** An image at the width of the page, cropped to at most 20rem tall: the picture that represents a server. */
 export function BannerImage({ alt, ...props }: BannerImageProps) {
-  return <img decoding="async" {...props} alt={alt} className="h-auto max-h-80 w-full rounded-xl bg-surface-sunken object-cover" />;
+  return (
+    <img
+      decoding="async"
+      {...props}
+      alt={alt}
+      className="h-auto max-h-80 w-full rounded-xl bg-surface-sunken object-cover"
+    />
+  );
 }

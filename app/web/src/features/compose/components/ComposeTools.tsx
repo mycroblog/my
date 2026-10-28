@@ -105,7 +105,8 @@ export function ComposeTools({ form }: ComposeToolsProps) {
         items={quotePolicies.map((id) => ({ id, name: t(quotePolicyLabel[id]) }))}
         value={form.quotePolicy}
         onChange={(quotePolicy) => {
-          if (quotePolicy === "public" || quotePolicy === "followers" || quotePolicy === "nobody") form.edit({ quotePolicy });
+          if (quotePolicy === "public" || quotePolicy === "followers" || quotePolicy === "nobody")
+            form.edit({ quotePolicy });
         }}
       >
         {(option) => (

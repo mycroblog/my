@@ -5,13 +5,36 @@
 // as well as the pointer (no dragging); focus then moves to the moved rule's heading. Editing opens a dialog with the
 // text and the hint; retiring cannot be undone, so it asks first (an alert dialog). What a change did stays on the
 // page in a StatusMessage above the list; a failure stays there too (role="alert", web-client/README.md E2).
-import { Box, Button, Cluster, ConfirmDialog, Dialog, DialogTrigger, EmptyState, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  Dialog,
+  DialogTrigger,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextArea,
+  TextField,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval, useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
 import { DetailSection, RequirePermission } from "../../moderation";
 import { type Rule, ruleHintLimit, ruleTextLimit } from "../api/rules";
-import { type RuleActions, type RuleFields, useNewRuleForm, useRuleActions, useRuleDraft, useRuleList } from "../hooks/useRules";
+import {
+  type RuleActions,
+  type RuleFields,
+  useNewRuleForm,
+  useRuleActions,
+  useRuleDraft,
+  useRuleList,
+} from "../hooks/useRules";
 
 export function RuleSettings() {
   const t = useT();
@@ -51,7 +74,9 @@ function RuleTextFields({ fields, autoFocus = false }: { fields: RuleFields; aut
         rows={2}
         characterLimit={ruleHintLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.settings.characters_over", { count: -remaining })
+            : t("client:admin.settings.characters_left", { count: remaining })
         }
         {...(fields.hintError === undefined ? {} : { isInvalid: true, errorMessage: fields.hintError })}
       />
@@ -104,7 +129,11 @@ function RuleList() {
         </InlineError>
       )}
       {rules.length === 0 ? (
-        <EmptyState headingLevel={3} heading={t("client:admin.rules.empty")} description={t("client:admin.rules.empty.description")} />
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:admin.rules.empty")}
+          description={t("client:admin.rules.empty.description")}
+        />
       ) : (
         <Stack as="ol" divided ref={listRef}>
           {rules.map((rule, index) => (
@@ -177,7 +206,12 @@ function EditRule({ rule, name, actions }: RuleActionProps) {
       <Button size="sm" aria-label={t("client:admin.rules.edit_rule", { rule: name })}>
         {t("client:admin.rules.edit")}
       </Button>
-      <Dialog title={t("client:admin.rules.edit.title")} closeLabel={t("client:admin.rules.edit.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.rules.edit.title")}
+        closeLabel={t("client:admin.rules.edit.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditRuleForm rule={rule} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -190,7 +224,9 @@ function EditRuleForm({ rule, actions, close }: { rule: Rule; actions: RuleActio
   const [isSaving, setIsSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
-    <Stack as="form" gap="4"
+    <Stack
+      as="form"
+      gap="4"
       onSubmit={(event) => {
         event.preventDefault();
         if (isSaving) return;
@@ -203,7 +239,8 @@ function EditRuleForm({ rule, actions, close }: { rule: Rule; actions: RuleActio
           if (saved) close();
           else setFailed(true);
         });
-      }}>
+      }}
+    >
       <RuleTextFields fields={draft.fields} autoFocus />
       {failed && actions.error !== undefined && (
         <InlineError size="inherit" alert>
@@ -236,7 +273,10 @@ function RetireRule({ rule, name, actions }: RuleActionProps) {
         confirmLabel={t("client:admin.rules.retire")}
         cancelLabel={t("client:admin.rules.cancel")}
         isPending={isRetiring}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.rules.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.rules.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsRetiring(true);
           setFailed(false);

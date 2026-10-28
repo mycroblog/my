@@ -51,7 +51,9 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
         <Stack gap="8">
           {costs.status !== "hidden" && (
             <DetailSection title={t("client:costs.public.costs")}>
-              {instance?.finance_visibility === "totals" && <Hint size="inherit">{t("client:costs.public.totals_only")}</Hint>}
+              {instance?.finance_visibility === "totals" && (
+                <Hint size="inherit">{t("client:costs.public.totals_only")}</Hint>
+              )}
               {costs.status === "loading" && (
                 <div aria-busy="true">
                   <Spinner label={t("client:costs.public.loading")} />

@@ -73,7 +73,9 @@ const callDockButton = tv({
     },
     variant: {
       /** The main control: the microphone that is on. */
-      primary: { base: "bg-accent-fill text-accent-fill-fg data-hovered:bg-accent-fill-hover data-pressed:bg-accent-fill-hover" },
+      primary: {
+        base: "bg-accent-fill text-accent-fill-fg data-hovered:bg-accent-fill-hover data-pressed:bg-accent-fill-hover",
+      },
       /** The other controls, on cream. */
       soft: { base: "bg-surface-sunken text-fg data-hovered:bg-soft data-pressed:bg-soft" },
       /** Leaving the call, as the dock's last button. */
@@ -83,7 +85,9 @@ const callDockButton = tv({
     },
     /** The look of a toggle that is on; the icon should change its shape too (web-client/16-look-states-and-wording.md G13). */
     selectedTone: {
-      accent: { base: "data-selected:bg-accent-fill data-selected:text-accent-fill-fg data-selected:data-hovered:bg-accent-fill-hover" },
+      accent: {
+        base: "data-selected:bg-accent-fill data-selected:text-accent-fill-fg data-selected:data-hovered:bg-accent-fill-hover",
+      },
       hand: { base: "data-selected:bg-hand data-selected:text-hand-fg data-selected:data-hovered:shadow-md" },
     },
     showLabel: {
@@ -153,7 +157,9 @@ export function CallDockButton(props: CallDockButtonProps) {
     <>
       {icon}
       {showLabel && <span>{label}</span>}
-      {count !== undefined && <Badge id={countId} tone="hand" count={count.value} label={count.label} className={slots.count()} />}
+      {count !== undefined && (
+        <Badge id={countId} tone="hand" count={count.value} label={count.label} className={slots.count()} />
+      )}
     </>
   );
   // The name is the label alone, also with a count: the count describes the button, so its name stays the same.
@@ -165,7 +171,11 @@ export function CallDockButton(props: CallDockButtonProps) {
   };
   const button =
     props.isSelected === undefined ? (
-      <RACButton {...common} {...(props.onPress === undefined ? {} : { onPress: props.onPress })} isPending={props.isPending ?? false}>
+      <RACButton
+        {...common}
+        {...(props.onPress === undefined ? {} : { onPress: props.onPress })}
+        isPending={props.isPending ?? false}
+      >
         {content}
       </RACButton>
     ) : (

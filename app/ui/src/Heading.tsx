@@ -49,10 +49,28 @@ export type HeadingProps = Omit<ComponentPropsWithRef<"h2">, "className" | "styl
   spark?: SparkMark;
 };
 
-const defaultSize = { 1: "page", 2: "section", 3: "subsection", 4: "subsection", 5: "subsection", 6: "subsection" } as const;
+const defaultSize = {
+  1: "page",
+  2: "section",
+  3: "subsection",
+  4: "subsection",
+  5: "subsection",
+  6: "subsection",
+} as const;
 
 /** An `h1`–`h6` in a type role. */
-export function Heading({ level, size, tone, wrap, mono, shrink, focusable = false, spark, children, ...props }: HeadingProps) {
+export function Heading({
+  level,
+  size,
+  tone,
+  wrap,
+  mono,
+  shrink,
+  focusable = false,
+  spark,
+  children,
+  ...props
+}: HeadingProps) {
   const Element = `h${String(level)}` as `h${typeof level}`;
   return (
     <Element

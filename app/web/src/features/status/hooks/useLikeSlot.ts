@@ -49,7 +49,8 @@ export function useLikeSlot(post: Status): LikeSlotControl {
     mutationKey,
     // One request at a time per post, in the order pressed (TanStack Query, "Mutation Scopes").
     scope: { id: `status:${post.id}:like-slot` },
-    mutationFn: ({ slot, previous }: { slot: LikeSlot; previous: LikeSlot }) => setLikeSlot(api, post.id, slot, previous),
+    mutationFn: ({ slot, previous }: { slot: LikeSlot; previous: LikeSlot }) =>
+      setLikeSlot(api, post.id, slot, previous),
     onMutate: ({ slot }) => cacheLikeSlotPending(api, queryClient, post.id, slot),
     onSuccess: (answer, { slot, previous }) => {
       // The last press is the only one still running.

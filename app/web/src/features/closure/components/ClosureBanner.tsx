@@ -25,7 +25,10 @@ export function ClosureBanner() {
     return (
       <NoticeBanner
         label={t("client:closure.label")}
-        headline={t("client:closure.announced.headline", { instance, date: intl.formatDate(closure.closes_at, dateFormat) })}
+        headline={t("client:closure.announced.headline", {
+          instance,
+          date: intl.formatDate(closure.closes_at, dateFormat),
+        })}
         actions={
           <>
             <Link href={dataExportPath} variant="standalone">

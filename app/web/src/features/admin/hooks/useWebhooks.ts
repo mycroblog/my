@@ -44,7 +44,9 @@ export function webhookHost(url: string): string {
  * (U+2068 FIRST STRONG ISOLATE or U+2066 LEFT-TO-RIGHT ISOLATE … U+2069 POP DIRECTIONAL ISOLATE).
  */
 export function webhookName(webhook: Pick<Webhook, "description" | "url">): string {
-  return webhook.description === undefined || webhook.description === "" ? `⁦${webhookHost(webhook.url)}⁩` : `⁨${webhook.description}⁩`;
+  return webhook.description === undefined || webhook.description === ""
+    ? `⁦${webhookHost(webhook.url)}⁩`
+    : `⁨${webhook.description}⁩`;
 }
 
 /** The webhooks that are not deleted, newest first. */
@@ -70,7 +72,8 @@ function fieldError(error: unknown): WebhookFieldError {
   const problem = webhookProblem(error);
   const message = errorMessage(error);
   if (problem === undefined) return { field: "form", message, missing: [] };
-  const field: WebhookField = problem.reason === "missing_permission" || problem.reason === "events" ? "events" : (problem.reason ?? "form");
+  const field: WebhookField =
+    problem.reason === "missing_permission" || problem.reason === "events" ? "events" : (problem.reason ?? "form");
   return { field, message, missing: problem.missing };
 }
 
@@ -114,7 +117,11 @@ export function useWebhookForm() {
       event.preventDefault();
       if (mutation.isPending) return;
       const description = draft.description.trim();
-      mutation.mutate({ url: draft.url.trim(), events: [...draft.events], ...(description === "" ? {} : { description }) });
+      mutation.mutate({
+        url: draft.url.trim(),
+        events: [...draft.events],
+        ...(description === "" ? {} : { description }),
+      });
     },
     isPending: mutation.isPending,
     /** Why setting it up failed, next to its field; the draft stays. */
@@ -122,7 +129,8 @@ export function useWebhookForm() {
     /** The new webhook and its secret, until the next submit. */
     created,
     /** What the last submit did, for the form's StatusMessage. */
-    status: created === undefined ? undefined : t("client:admin.webhooks.created", { name: webhookName(created.webhook) }),
+    status:
+      created === undefined ? undefined : t("client:admin.webhooks.created", { name: webhookName(created.webhook) }),
   };
 }
 
@@ -220,7 +228,11 @@ export function useWebhookActions(onDeleted: (id: string) => void): WebhookActio
         {
           onSuccess: (saved) => {
             void refreshWebhooks(queryClient).then(() => {
-              report(t(enabled ? "client:admin.webhooks.enabled_status" : "client:admin.webhooks.disabled_status", { name: webhookName(saved) }));
+              report(
+                t(enabled ? "client:admin.webhooks.enabled_status" : "client:admin.webhooks.disabled_status", {
+                  name: webhookName(saved),
+                }),
+              );
             });
           },
         },

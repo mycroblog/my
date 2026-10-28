@@ -28,7 +28,8 @@ export class ScheduleError extends Error {
 /** Parses a number of a field, digits alone. */
 function value(text: string, f: Field): number {
   const v = Number(text);
-  if (!digits.test(text) || v < f.lo || v > f.hi) throw new Error(`the ${f.name} "${text}" is not a number from ${String(f.lo)} to ${String(f.hi)}`);
+  if (!digits.test(text) || v < f.lo || v > f.hi)
+    throw new Error(`the ${f.name} "${text}" is not a number from ${String(f.lo)} to ${String(f.hi)}`);
   return v;
 }
 
@@ -56,7 +57,8 @@ function parseField(field: string, f: Field): Set<number> {
     if (stepText !== null) {
       const n = Number(stepText);
       const most = f.hi - f.lo + 1;
-      if (!digits.test(stepText) || n < 1 || n > most) throw new Error(`the ${f.name} step "${stepText}" is not a number from 1 to ${String(most)}`);
+      if (!digits.test(stepText) || n < 1 || n > most)
+        throw new Error(`the ${f.name} step "${stepText}" is not a number from 1 to ${String(most)}`);
       step = n;
     }
     for (let v = from; v <= to; v += step) set.add(v);
@@ -120,7 +122,9 @@ export class Schedule {
       throw new ScheduleError(`mybot: the time zone "${timeZone}" is no IANA time zone`);
     }
     if (expr.trim().startsWith("@")) {
-      throw new ScheduleError(`mybot: the cron expression "${expr}": aliases such as @daily are not supported: write the five fields`);
+      throw new ScheduleError(
+        `mybot: the cron expression "${expr}": aliases such as @daily are not supported: write the five fields`,
+      );
     }
     const parts = expr.split(/\s+/).filter((p) => p !== "");
     if (parts.length === 6) {
@@ -129,7 +133,9 @@ export class Schedule {
       );
     }
     if (parts.length !== 5) {
-      throw new ScheduleError(`mybot: the cron expression "${expr}" has ${String(parts.length)} fields, not the five minute hour day month weekday`);
+      throw new ScheduleError(
+        `mybot: the cron expression "${expr}" has ${String(parts.length)} fields, not the five minute hour day month weekday`,
+      );
     }
     let sets: Set<number>[];
     try {

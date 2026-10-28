@@ -32,10 +32,16 @@ const operator = {
 // A long domain in non-Latin letters and its A-labels, to show that both forms wrap at 320 px.
 const unicodeDomain = "とても長いサブドメインの名前.例え.jp";
 const asciiDomain = new URL(`https://${unicodeDomain}`).hostname;
-const longComment = "Spam from every account of this server, reported many times by people here, with no answer from its moderators.";
+const longComment =
+  "Spam from every account of this server, reported many times by people here, with no answer from its moderators.";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 type Action = Record<string, unknown> & { id: string; domain: string; state: string };
@@ -57,19 +63,44 @@ async function operatorServer(page: Page) {
     },
   ];
   const requests: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, operator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/domain_actions") {
       const active = url.searchParams.get("active") === "true";
@@ -78,7 +109,14 @@ async function operatorServer(page: Page) {
     if (key === "POST /admin/domain_actions") {
       const body = request.postDataJSON() as { domain: string; kind: string; obfuscate?: boolean };
       requests.push(`${key} ${body.kind} ${body.domain}`);
-      const action: Action = { id: "0192f0c4-7a8e-7000-8000-0000000000a3", domain: new URL(`https://${body.domain}`).hostname, kind: body.kind, obfuscate: body.obfuscate ?? false, state: "active", issued_at: "2026-10-17T00:00:00Z" };
+      const action: Action = {
+        id: "0192f0c4-7a8e-7000-8000-0000000000a3",
+        domain: new URL(`https://${body.domain}`).hostname,
+        kind: body.kind,
+        obfuscate: body.obfuscate ?? false,
+        state: "active",
+        issued_at: "2026-10-17T00:00:00Z",
+      };
       actions = [action, ...actions];
       return json(route, action);
     }
@@ -86,8 +124,33 @@ async function operatorServer(page: Page) {
       requests.push(key);
       return json(route, {
         rows: [
-          { line: 2, written_domain: "spam.example", status: "importable", issue: ["limit", "reject_media"], block: { domain: "spam.example", severity: "silence", reject_media: true, reject_reports: false, obfuscate: false } },
-          { line: 3, written_domain: asciiDomain, status: "importable", issue: ["reject_reports"], block: { domain: asciiDomain, severity: "noop", reject_media: false, reject_reports: true, obfuscate: false, public_comment: longComment } },
+          {
+            line: 2,
+            written_domain: "spam.example",
+            status: "importable",
+            issue: ["limit", "reject_media"],
+            block: {
+              domain: "spam.example",
+              severity: "silence",
+              reject_media: true,
+              reject_reports: false,
+              obfuscate: false,
+            },
+          },
+          {
+            line: 3,
+            written_domain: asciiDomain,
+            status: "importable",
+            issue: ["reject_reports"],
+            block: {
+              domain: asciiDomain,
+              severity: "noop",
+              reject_media: false,
+              reject_reports: true,
+              obfuscate: false,
+              public_comment: longComment,
+            },
+          },
           { line: 4, written_domain: "not a domain", status: "invalid", issue: [] },
         ],
       });
@@ -95,7 +158,14 @@ async function operatorServer(page: Page) {
     if (key === "POST /admin/domain_actions/import") {
       const body = request.postDataJSON() as { blocks: { domain: string }[] };
       requests.push(`${key} ${body.blocks.map((block) => block.domain).join(" ")}`);
-      const issued = body.blocks.map((block, i) => ({ id: `0192f0c4-7a8e-7000-8000-0000000000b${String(i)}`, domain: block.domain, kind: "reject_reports", obfuscate: false, state: "active", issued_at: "2026-10-17T00:00:00Z" }));
+      const issued = body.blocks.map((block, i) => ({
+        id: `0192f0c4-7a8e-7000-8000-0000000000b${String(i)}`,
+        domain: block.domain,
+        kind: "reject_reports",
+        obfuscate: false,
+        state: "active",
+        issued_at: "2026-10-17T00:00:00Z",
+      }));
       actions = [...issued, ...actions];
       return json(route, { issued, skipped: [] });
     }
@@ -103,8 +173,13 @@ async function operatorServer(page: Page) {
     if (lift) {
       requests.push(key);
       const id = lift[1];
-      actions = actions.map((action) => (action.id === id ? { ...action, state: "lifted", lifted_at: "2026-10-17T01:00:00Z" } : action));
-      return json(route, actions.find((action) => action.id === id));
+      actions = actions.map((action) =>
+        action.id === id ? { ...action, state: "lifted", lifted_at: "2026-10-17T01:00:00Z" } : action,
+      );
+      return json(
+        route,
+        actions.find((action) => action.id === id),
+      );
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -128,7 +203,10 @@ test.describe("page /moderation/domain-actions", () => {
 });
 
 test.describe("domain actions", () => {
-  test("lists an action in both forms of its domain, suspends a domain after confirming, and lifts an action", async ({ page, makeAxeBuilder }) => {
+  test("lists an action in both forms of its domain, suspends a domain after confirming, and lifts an action", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await operatorServer(page);
     await page.goto("/moderation/domain-actions");
     const main = page.getByRole("main");
@@ -137,7 +215,9 @@ test.describe("domain actions", () => {
 
     // The row names the domain in both forms and keeps its details: the comment and the private note.
     const action = list.getByRole("row").nth(1);
-    await expect(action.getByRole("rowheader")).toHaveText(new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`));
+    await expect(action.getByRole("rowheader")).toHaveText(
+      new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`),
+    );
     await expect(action).toContainText(longComment);
     await expect(action).toContainText("See the reports.");
     await expect(action.getByRole("button")).toHaveCount(1);
@@ -172,14 +252,20 @@ test.describe("domain actions", () => {
     await list.getByRole("row").filter({ hasText: unicodeDomain }).getByRole("button").click();
     await expect(list.getByRole("rowheader")).toHaveCount(1);
     await expect(list.getByRole("button")).toBeFocused();
-    expect(requests).toEqual(["POST /admin/domain_actions suspend spam.example", "POST /admin/domain_actions/0192f0c4-7a8e-7000-8000-0000000000a2/lift"]);
+    expect(requests).toEqual([
+      "POST /admin/domain_actions suspend spam.example",
+      "POST /admin/domain_actions/0192f0c4-7a8e-7000-8000-0000000000a2/lift",
+    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
 });
 
 test.describe("Mastodon's domain block CSV", () => {
-  test("previews a CSV, clears a row by keyboard, and imports the rest with focus on the import's heading", async ({ page, makeAxeBuilder }) => {
+  test("previews a CSV, clears a row by keyboard, and imports the rest with focus on the import's heading", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await operatorServer(page);
     await page.goto("/moderation/domain-actions");
     const main = page.getByRole("main");
@@ -207,7 +293,10 @@ test.describe("Mastodon's domain block CSV", () => {
     // The import is the last button of the page; no row suspends, so it asks nothing.
     await main.getByRole("button").last().click();
     await expect(rows).toBeHidden();
-    expect(requests).toEqual(["POST /admin/domain_actions/import/preview", `POST /admin/domain_actions/import ${asciiDomain}`]);
+    expect(requests).toEqual([
+      "POST /admin/domain_actions/import/preview",
+      `POST /admin/domain_actions/import ${asciiDomain}`,
+    ]);
     await expect(main.getByRole("heading", { level: 3 }).last()).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

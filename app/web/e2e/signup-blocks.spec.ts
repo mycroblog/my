@@ -36,7 +36,12 @@ const hash = "5d41402abc4b2a76b9719d911017c592ae0b4f1c7ad8e2c6f5a1b0e9d8c7b6a5";
 const longComment = "Disposable addresses used for many accounts that posted the same advertisement on the same day.";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 type Block = Record<string, unknown> & { id: string; value: string; state: string };
@@ -55,24 +60,57 @@ async function moderatorServer(page: Page) {
       created_at: "2026-10-12T08:00:00Z",
       expires_at: "2026-11-11T08:00:00Z",
     },
-    { id: "0192f0c4-7a8e-7000-8000-0000000001a1", kind: "email_hash", value: hash, severity: "require_approval", state: "active", created_at: "2026-10-11T08:00:00Z" },
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000001a1",
+      kind: "email_hash",
+      value: hash,
+      severity: "require_approval",
+      state: "active",
+      created_at: "2026-10-11T08:00:00Z",
+    },
   ];
   const requests: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/signup_blocks") {
       const active = url.searchParams.get("active") === "true";
@@ -82,7 +120,14 @@ async function moderatorServer(page: Page) {
       const body = request.postDataJSON() as { kind: string; value: string; severity: string };
       requests.push(`${key} ${body.kind} ${body.value} ${body.severity}`);
       const value = body.kind === "email_domain" ? new URL(`https://${body.value}`).hostname : body.value;
-      const block: Block = { id: "0192f0c4-7a8e-7000-8000-0000000001a3", kind: body.kind, value, severity: body.severity, state: "active", created_at: "2026-10-17T00:00:00Z" };
+      const block: Block = {
+        id: "0192f0c4-7a8e-7000-8000-0000000001a3",
+        kind: body.kind,
+        value,
+        severity: body.severity,
+        state: "active",
+        created_at: "2026-10-17T00:00:00Z",
+      };
       blocks = [block, ...blocks];
       return json(route, block);
     }
@@ -99,7 +144,17 @@ async function moderatorServer(page: Page) {
         else if (!value.includes(".")) skipped.push({ line: index + 1, value, reason: "invalid" });
         else {
           added += 1;
-          blocks = [{ id: `0192f0c4-7a8e-7000-8000-${String(index).padStart(12, "0")}`, kind: body.kind, value, severity: body.severity, state: "active", created_at: "2026-10-17T00:00:00Z" }, ...blocks];
+          blocks = [
+            {
+              id: `0192f0c4-7a8e-7000-8000-${String(index).padStart(12, "0")}`,
+              kind: body.kind,
+              value,
+              severity: body.severity,
+              state: "active",
+              created_at: "2026-10-17T00:00:00Z",
+            },
+            ...blocks,
+          ];
         }
       });
       return json(route, { added, skipped });
@@ -108,8 +163,13 @@ async function moderatorServer(page: Page) {
     if (lift) {
       requests.push(key);
       const id = lift[1];
-      blocks = blocks.map((block) => (block.id === id ? { ...block, state: "lifted", lifted_at: "2026-10-17T01:00:00Z" } : block));
-      return json(route, blocks.find((block) => block.id === id));
+      blocks = blocks.map((block) =>
+        block.id === id ? { ...block, state: "lifted", lifted_at: "2026-10-17T01:00:00Z" } : block,
+      );
+      return json(
+        route,
+        blocks.find((block) => block.id === id),
+      );
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -133,7 +193,10 @@ test.describe("page /moderation/signup-blocks", () => {
 });
 
 test.describe("sign-up blocks", () => {
-  test("lists a block in both forms of its domain, adds a block on an email domain with the keyboard, and lifts a block", async ({ page, makeAxeBuilder }) => {
+  test("lists a block in both forms of its domain, adds a block on an email domain with the keyboard, and lifts a block", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await moderatorServer(page);
     await page.goto("/moderation/signup-blocks");
     const main = page.getByRole("main");
@@ -142,7 +205,9 @@ test.describe("sign-up blocks", () => {
 
     // The first row names the domain in both forms and keeps its details: the source and the comment.
     const first = list.getByRole("row").nth(1);
-    await expect(first.getByRole("rowheader")).toHaveText(new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`));
+    await expect(first.getByRole("rowheader")).toHaveText(
+      new RegExp(`${unicodeDomain.replaceAll(".", "\\.")}.*${asciiDomain.replaceAll(".", "\\.")}`),
+    );
     await expect(first).toContainText(longComment);
     await expect(first.getByRole("button")).toHaveCount(1);
     await expect(list.getByRole("row").nth(2).getByRole("rowheader")).toHaveText(hash);
@@ -170,7 +235,10 @@ test.describe("sign-up blocks", () => {
     await expect(list.getByRole("rowheader")).toHaveCount(2);
     // Focus moves to the button of the row that took the lifted one's place.
     await expect(list.getByRole("row").filter({ hasText: hash }).getByRole("button")).toBeFocused();
-    expect(requests).toEqual(["POST /admin/signup_blocks email_domain spam.example require_approval", "POST /admin/signup_blocks/0192f0c4-7a8e-7000-8000-0000000001a2/lift"]);
+    expect(requests).toEqual([
+      "POST /admin/signup_blocks email_domain spam.example require_approval",
+      "POST /admin/signup_blocks/0192f0c4-7a8e-7000-8000-0000000001a2/lift",
+    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -186,7 +254,11 @@ test.describe("an import of a list of sign-up blocks", () => {
     const section = main.getByRole("region").nth(1);
     const listField = section.getByRole("textbox").first();
     await listField.focus();
-    await page.keyboard.insertText(["# Disposable email domains", "throwaway.example", unicodeDomain, "not-a-domain", "", "mailinator.example"].join("\n"));
+    await page.keyboard.insertText(
+      ["# Disposable email domains", "throwaway.example", unicodeDomain, "not-a-domain", "", "mailinator.example"].join(
+        "\n",
+      ),
+    );
     // Tab past the file button to the first effect, which none is chosen in yet, and choose it with Space.
     await page.keyboard.press("Tab");
     await expect(section.getByRole("button").first()).toBeFocused();

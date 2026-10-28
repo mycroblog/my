@@ -151,13 +151,21 @@ export function useLinkAccount(): LinkAccount {
       leaveApp(url);
     },
   });
-  const method: LinkConfirmationMethod = hasPassword ? "password" : hasPasskey && supportsPasskeys() ? "passkey" : "external";
+  const method: LinkConfirmationMethod = hasPassword
+    ? "password"
+    : hasPasskey && supportsPasskeys()
+      ? "passkey"
+      : "external";
   let error: string | undefined;
   if (begin.isError) {
     const failure = confirmationFailure(begin.error);
     if (failure === "wrong-password") error = t("client:settings.linked_accounts.link.wrong_password");
-    else if (isExternalConfirmationExpired(begin.error)) error = t("client:settings.external_confirmation.failed.expired");
-    else error = confirmationErrorMessage(t, failure, begin.error, (reason) => t("client:settings.linked_accounts.link.failed", { reason }));
+    else if (isExternalConfirmationExpired(begin.error))
+      error = t("client:settings.external_confirmation.failed.expired");
+    else
+      error = confirmationErrorMessage(t, failure, begin.error, (reason) =>
+        t("client:settings.linked_accounts.link.failed", { reason }),
+      );
   }
   return {
     providers: list.providers.filter((p) => p.allow_link && !list.items.some((link) => link.provider_id === p.id)),

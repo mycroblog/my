@@ -10,7 +10,10 @@ export const apiBase = "/api/v1";
 /** An RFC 9457 problem response, as the client API writes it. */
 export function problem(status: number, type: string, title: string, init: { headers?: Record<string, string> } = {}) {
   const body: Schemas["Problem"] = { type, title, status };
-  return HttpResponse.json(body, { status, headers: { "Content-Type": "application/problem+json", "Cache-Control": "no-store", ...init.headers } });
+  return HttpResponse.json(body, {
+    status,
+    headers: { "Content-Type": "application/problem+json", "Cache-Control": "no-store", ...init.headers },
+  });
 }
 
 /** The access token that the default handlers accept. */
@@ -25,7 +28,9 @@ export function authorized(request: Request): boolean {
 export function unauthenticated(request: Request) {
   return request.headers.get("Authorization") === null
     ? problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated", { headers: { "WWW-Authenticate": "Bearer" } })
-    : problem(401, "/api/v1/problems/invalid-token", "Invalid token", { headers: { "WWW-Authenticate": 'Bearer error="invalid_token"' } });
+    : problem(401, "/api/v1/problems/invalid-token", "Invalid token", {
+        headers: { "WWW-Authenticate": 'Bearer error="invalid_token"' },
+      });
 }
 
 /** Answers with `respond()` when the request carries the access token the default handlers accept. */
@@ -38,7 +43,9 @@ export function withViewer(request: Request, respond: () => Response): Response 
  * screens' tests start with it, as the default viewer has no permissions.
  */
 export function operatorHandler(permissions: Schemas["Permission"][]) {
-  return http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions })));
+  return http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions })),
+  );
 }
 
 /** The OAuth endpoints (internal/interface/oauth). */
@@ -51,7 +58,10 @@ export const oauthPaths = {
 
 /** A token response of the OAuth endpoints (RFC 6749 §5.1), without a refresh token as for the web client. */
 export function tokenResponse(accessToken: string) {
-  return HttpResponse.json({ access_token: accessToken, token_type: "Bearer", expires_in: 3600, scope: "read write follow push" }, { headers: { "Cache-Control": "no-store" } });
+  return HttpResponse.json(
+    { access_token: accessToken, token_type: "Bearer", expires_in: 3600, scope: "read write follow push" },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 /** An OAuth error response (RFC 6749 §5.2). */

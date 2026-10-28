@@ -5,7 +5,14 @@ import { Button, Checkbox, Cluster, Fieldset, Hint, InlineError, Stack, Text, Te
 import { useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type LoginProviderKind, loginProviderLimits } from "../api/loginProviders";
-import { type ClaimDraft, type LoginProviderDraft, type LoginProviderField, type LoginProviderFieldError, newClaimDraft, useCopyCallbackUrl } from "../hooks/useLoginProviders";
+import {
+  type ClaimDraft,
+  type LoginProviderDraft,
+  type LoginProviderField,
+  type LoginProviderFieldError,
+  newClaimDraft,
+  useCopyCallbackUrl,
+} from "../hooks/useLoginProviders";
 
 export const loginProviderKindLabels: Readonly<Record<LoginProviderKind, ClientMessageKey>> = {
   oidc: "client:admin.login_providers.kind.oidc",
@@ -31,14 +38,19 @@ type LoginProviderFieldsProps = {
  */
 export function LoginProviderFields({ draft, change, error, withSecret, autoFocus = false }: LoginProviderFieldsProps) {
   const t = useT();
-  const fieldError = (field: LoginProviderField) => (error?.field === field ? { isInvalid: true, errorMessage: error.message } : {});
+  const fieldError = (field: LoginProviderField) =>
+    error?.field === field ? { isInvalid: true, errorMessage: error.message } : {};
   // A new Mastodon provider registers its client at the server unless the administrator enters one.
   const registers = withSecret && draft.kind === "mastodon";
   return (
     <>
       <TextField
         label={t("client:admin.login_providers.display_name")}
-        description={t(draft.kind === "oidc" ? "client:admin.login_providers.display_name.description_oidc" : "client:admin.login_providers.display_name.description")}
+        description={t(
+          draft.kind === "oidc"
+            ? "client:admin.login_providers.display_name.description_oidc"
+            : "client:admin.login_providers.display_name.description",
+        )}
         value={draft.displayName}
         onChange={(displayName) => {
           change({ displayName });
@@ -217,7 +229,15 @@ export function SecretField({
  * The conditions of an `oidc` provider: a row per claim with its allowed values, in a group. A new row takes the
  * focus; removing one gives it to the button that adds a row.
  */
-function ClaimConditions({ claims, change, error }: { claims: readonly ClaimDraft[]; change: (claims: readonly ClaimDraft[]) => void; error: LoginProviderFieldError | undefined }) {
+function ClaimConditions({
+  claims,
+  change,
+  error,
+}: {
+  claims: readonly ClaimDraft[];
+  change: (claims: readonly ClaimDraft[]) => void;
+  error: LoginProviderFieldError | undefined;
+}) {
   const t = useT();
   const errorId = useId();
   const addRef = useRef<HTMLDivElement>(null);

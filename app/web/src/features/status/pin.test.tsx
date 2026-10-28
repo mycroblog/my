@@ -12,7 +12,10 @@ import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
 
 const first: Status = viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f1", content: "<p>First post</p>" });
-const second: Status = viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f2", content: "<p>Second post</p>" });
+const second: Status = viewerStatusFixture({
+  id: "0192f0c4-7a8e-7000-8000-0000000000f2",
+  content: "<p>Second post</p>",
+});
 
 /**
  * The viewer's profile, with the posts in `posts` of which `pinned` are pinned (newest pin first); the pins and
@@ -35,7 +38,12 @@ function viewerPosts({ posts, pinned = [], limit = 5 }: { posts: Status[]; pinne
       const id = String(params["id"]);
       requests.push(`POST pin ${id}`);
       if (!pins.includes(id) && pins.length >= limit) {
-        const body: Schemas["Problem"] = { type: "about:blank", title: "Unprocessable Content", status: 422, detail: "You can pin up to 5 posts." };
+        const body: Schemas["Problem"] = {
+          type: "about:blank",
+          title: "Unprocessable Content",
+          status: 422,
+          detail: "You can pin up to 5 posts.",
+        };
         return HttpResponse.json(body, { status: 422, headers: { "Content-Type": "application/problem+json" } });
       }
       if (!pins.includes(id)) pins = [id, ...pins];
@@ -100,7 +108,11 @@ describe("pinning a post", () => {
     const feed = await findPostsFeed();
     expect(within(feed).getAllByRole("article")).toHaveLength(2);
 
-    await user.click(await within(within(feed).getByRole("article", { description: "First post" })).findByRole("button", { name: "More actions" }));
+    await user.click(
+      await within(within(feed).getByRole("article", { description: "First post" })).findByRole("button", {
+        name: "More actions",
+      }),
+    );
     await user.click(await screen.findByRole("menuitem", { name: "Pin to profile" }));
 
     expect(await findToast("Post pinned to your profile")).toBeInTheDocument();
@@ -134,19 +146,29 @@ describe("pinning a post", () => {
   });
 
   test("is offered for the viewer's own posts that are not direct only", async () => {
-    const direct: Status = viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f3", content: "<p>Direct post</p>", visibility: "direct" });
+    const direct: Status = viewerStatusFixture({
+      id: "0192f0c4-7a8e-7000-8000-0000000000f3",
+      content: "<p>Direct post</p>",
+      visibility: "direct",
+    });
     const others: Status = { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000f4"), content: "<p>Bob's post</p>" };
     viewerPosts({ posts: [first] });
     server.use(http.get(`${apiBase}/timelines/home`, () => HttpResponse.json(statusPage([first, direct, others]))));
     const { user } = await renderApp({ path: "/home" });
     const feed = await screen.findByRole("feed", { name: "Home" });
 
-    await user.click(await within(within(feed).getByRole("article", { description: "First post" })).findByRole("button", { name: "More actions" }));
+    await user.click(
+      await within(within(feed).getByRole("article", { description: "First post" })).findByRole("button", {
+        name: "More actions",
+      }),
+    );
     expect(await screen.findByRole("menuitem", { name: "Pin to profile" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
 
     for (const description of ["Direct post", "Bob's post"]) {
-      await user.click(within(within(feed).getByRole("article", { description })).getByRole("button", { name: "More actions" }));
+      await user.click(
+        within(within(feed).getByRole("article", { description })).getByRole("button", { name: "More actions" }),
+      );
       expect(await screen.findByRole("menuitem", { name: "Copy link" })).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Pin to profile" })).not.toBeInTheDocument();
       await user.keyboard("{Escape}");

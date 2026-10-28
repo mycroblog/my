@@ -4,7 +4,16 @@
 // (fields of a form, short lists).
 import { createElement } from "react";
 import { tv } from "tailwind-variants";
-import { box, type BoxProps, columnGaps, type LayoutElement, type PolymorphicProps, rowGaps, type Space, splitBox } from "./layout";
+import {
+  box,
+  type BoxProps,
+  columnGaps,
+  type LayoutElement,
+  type PolymorphicProps,
+  rowGaps,
+  type Space,
+  splitBox,
+} from "./layout";
 
 const grid = tv({
   extend: box,
@@ -40,5 +49,8 @@ export type GridProps<E extends LayoutElement = "div"> = PolymorphicProps<E, Gri
 /** Children in equal columns (`grid grid-cols-1 @sm:grid-cols-2`). */
 export function Grid<E extends LayoutElement = "div">(props: GridProps<E>) {
   const [boxProps, { as, columns, at, gap, rowGap, ...rest }] = splitBox(props);
-  return createElement(as ?? "div", { ...rest, className: grid({ ...boxProps, columns, at, gap, rowGap: rowGap ?? gap }) });
+  return createElement(as ?? "div", {
+    ...rest,
+    className: grid({ ...boxProps, columns, at, gap, rowGap: rowGap ?? gap }),
+  });
 }

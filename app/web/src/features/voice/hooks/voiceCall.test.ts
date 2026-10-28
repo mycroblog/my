@@ -10,31 +10,61 @@ import type { VoiceRoom } from "../api/voice";
 import type { VoiceConnection, VoiceConnectionOptions } from "../rtc/types";
 import { FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, settle } from "../test/fakeRtc";
 import { participantFixture, voiceRoomFixture } from "../test/handlers";
-import { grantRenewalLead, heartbeatInterval, reactionDuration, VoiceCall, type VoiceCallNotice, type VoiceCallServer, type VoiceJoin } from "./voiceCall";
+import {
+  grantRenewalLead,
+  heartbeatInterval,
+  reactionDuration,
+  VoiceCall,
+  type VoiceCallNotice,
+  type VoiceCallServer,
+  type VoiceJoin,
+} from "./voiceCall";
 
 const now = Date.parse("2026-10-26T12:00:00Z");
 
 function grantFixture(overrides: Partial<VoiceGrantData> = {}): VoiceGrantData {
-  return { kind: "p2p", options: {}, ice_servers: [{ urls: ["stun:stun.example"] }], relay_only: false, expires_at: new Date(now + 60 * 60_000).toISOString(), ...overrides };
+  return {
+    kind: "p2p",
+    options: {},
+    ice_servers: [{ urls: ["stun:stun.example"] }],
+    relay_only: false,
+    expires_at: new Date(now + 60 * 60_000).toISOString(),
+    ...overrides,
+  };
 }
 
 const live: VoiceRoom = voiceRoomFixture({
-  participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }), participantFixture(viewerFixture, { session: "s5" })],
+  participants: [
+    participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }),
+    participantFixture(viewerFixture, { session: "s5" }),
+  ],
 });
 
 const notFound = () => new ApiError({ type: "about:blank", title: "Not Found", status: 404 });
 
 /** A call with a fake server whose room stream the test drives. */
-type SetupOptions = { getMicrophone?: () => Promise<MediaStream>; connect?: (options: VoiceConnectionOptions) => VoiceConnection };
+type SetupOptions = {
+  getMicrophone?: () => Promise<MediaStream>;
+  connect?: (options: VoiceConnectionOptions) => VoiceConnection;
+};
 
 function setup(join: VoiceJoin = { session: "s5", grant: grantFixture(), room: live }, options: SetupOptions = {}) {
-  const streams: { session: string; options: VoiceStreamOptions; end: () => void; fail: (error: unknown) => void }[] = [];
+  const streams: { session: string; options: VoiceStreamOptions; end: () => void; fail: (error: unknown) => void }[] =
+    [];
   const notices: VoiceCallNotice[] = [];
   const server = {
     join: vi.fn<VoiceCallServer["join"]>(() => Promise.resolve({ ...join, session: "s7" })),
     abandon: vi.fn<VoiceCallServer["abandon"]>(() => Promise.resolve()),
     heartbeat: vi.fn<VoiceCallServer["heartbeat"]>(() => Promise.resolve()),
-    refreshGrant: vi.fn<VoiceCallServer["refreshGrant"]>(() => Promise.resolve(grantFixture({ ice_servers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], relay_only: true, expires_at: new Date(now + 120 * 60_000).toISOString() }))),
+    refreshGrant: vi.fn<VoiceCallServer["refreshGrant"]>(() =>
+      Promise.resolve(
+        grantFixture({
+          ice_servers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }],
+          relay_only: true,
+          expires_at: new Date(now + 120 * 60_000).toISOString(),
+        }),
+      ),
+    ),
     sendSignal: vi.fn<VoiceCallServer["sendSignal"]>(() => Promise.resolve()),
     setMic: vi.fn<VoiceCallServer["setMic"]>(() => Promise.resolve()),
     openStream: vi.fn<VoiceCallServer["openStream"]>(
@@ -127,7 +157,9 @@ test("asks for a new grant 10 minutes before it expires, and restarts ICE with i
   await vi.advanceTimersByTimeAsync(1_000);
   expect(server.refreshGrant).toHaveBeenCalledWith("s5");
   await settle();
-  expect(pc?.configurations).toEqual([{ iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], iceTransportPolicy: "relay" }]);
+  expect(pc?.configurations).toEqual([
+    { iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], iceTransportPolicy: "relay" },
+  ]);
   expect(pc?.restarts).toBe(1);
   call.close();
 });
@@ -151,7 +183,13 @@ describe("the room stream's events", () => {
     call.start();
     send({ type: "state", room: live });
     expect(server.onRoom).toHaveBeenCalledWith(live);
-    send({ type: "state", room: { ...live, participants: live.participants.map((p) => (p.session === "s5" ? { ...p, role: "speaker" } : p)) } });
+    send({
+      type: "state",
+      room: {
+        ...live,
+        participants: live.participants.map((p) => (p.session === "s5" ? { ...p, role: "speaker" } : p)),
+      },
+    });
     expect(notices).toContainEqual({ kind: "speaker" });
     await settle();
     await call.setMicrophone(true);
@@ -169,13 +207,24 @@ describe("the room stream's events", () => {
   test("tells the hosts of a raised hand", () => {
     const hosted: VoiceRoom = {
       ...live,
-      participants: [participantFixture(viewerFixture, { role: "speaker", host: true, session: "s5" }), participantFixture(otherAccountFixture, { session: "s9" })],
+      participants: [
+        participantFixture(viewerFixture, { role: "speaker", host: true, session: "s5" }),
+        participantFixture(otherAccountFixture, { session: "s9" }),
+      ],
     };
     const { call, send, notices } = setup({ session: "s5", grant: grantFixture(), room: hosted });
     call.start();
     send({ type: "state", room: hosted });
-    send({ type: "state", room: { ...hosted, participants: hosted.participants.map((p) => (p.session === "s9" ? { ...p, hand_raised: true } : p)) } });
-    expect(notices).toEqual([{ kind: "hand-raised", participant: expect.objectContaining({ session: "s9" }) as unknown }]);
+    send({
+      type: "state",
+      room: {
+        ...hosted,
+        participants: hosted.participants.map((p) => (p.session === "s9" ? { ...p, hand_raised: true } : p)),
+      },
+    });
+    expect(notices).toEqual([
+      { kind: "hand-raised", participant: expect.objectContaining({ session: "s9" }) as unknown },
+    ]);
     call.close();
   });
 
@@ -227,7 +276,14 @@ function fakeConnection() {
 
 test("an SFU's grant is not renewed on a schedule; a grant event renews it without restarting ICE", async () => {
   const connection = fakeConnection();
-  const { call, server, send } = setup({ session: "s5", grant: grantFixture({ kind: "livekit", expires_at: new Date(now + 60_000).toISOString() }), room: live }, { connect: () => connection });
+  const { call, server, send } = setup(
+    {
+      session: "s5",
+      grant: grantFixture({ kind: "livekit", expires_at: new Date(now + 60_000).toISOString() }),
+      room: live,
+    },
+    { connect: () => connection },
+  );
   call.start();
   await vi.advanceTimersByTimeAsync(10 * 60_000);
   expect(server.refreshGrant).not.toHaveBeenCalled();
@@ -239,7 +295,10 @@ test("an SFU's grant is not renewed on a schedule; a grant event renews it witho
 });
 
 describe("the microphone", () => {
-  const speaking: VoiceRoom = { ...live, participants: live.participants.map((p) => (p.session === "s5" ? { ...p, role: "speaker" } : p)) };
+  const speaking: VoiceRoom = {
+    ...live,
+    participants: live.participants.map((p) => (p.session === "s5" ? { ...p, role: "speaker" } : p)),
+  };
 
   test("works as soon as a write says the user speaks, before the next state", async () => {
     const { call, server } = setup();
@@ -263,7 +322,9 @@ describe("the microphone", () => {
   });
 
   test("says why the browser did not give it", async () => {
-    const { call } = setup(undefined, { getMicrophone: () => Promise.reject(new DOMException("no", "NotAllowedError")) });
+    const { call } = setup(undefined, {
+      getMicrophone: () => Promise.reject(new DOMException("no", "NotAllowedError")),
+    });
     call.start();
     call.applyRoom(speaking);
     await settle();
@@ -275,11 +336,20 @@ describe("the microphone", () => {
 
 test("waits out a 429 of a signal and sends it again", async () => {
   const { call, server, send } = setup();
-  server.sendSignal.mockRejectedValueOnce(new ApiError({ type: "about:blank", title: "Too Many Requests", status: 429 }, { retryAt: now + 2_000 }));
+  server.sendSignal.mockRejectedValueOnce(
+    new ApiError({ type: "about:blank", title: "Too Many Requests", status: 429 }, { retryAt: now + 2_000 }),
+  );
   call.start();
   // s9 > s5: s9 offers; s5 answers.
   send({ type: "state", room: live });
-  send({ type: "signal", signal: { from: "s9", kind: "offer", sdp: "v=0\r\na=ice-ufrag:x\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" } });
+  send({
+    type: "signal",
+    signal: {
+      from: "s9",
+      kind: "offer",
+      sdp: "v=0\r\na=ice-ufrag:x\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
+    },
+  });
   await settle();
   expect(server.sendSignal).toHaveBeenCalledTimes(1);
   await vi.advanceTimersByTimeAsync(2_000);
@@ -333,7 +403,8 @@ describe("who is talking", () => {
     call.start();
     await settle();
     expect(call.getSnapshot().talking.size).toBe(0);
-    const talk = (index: number, sessions: string[]) => connections[index]?.options.events.onTalking?.(new Set(sessions));
+    const talk = (index: number, sessions: string[]) =>
+      connections[index]?.options.events.onTalking?.(new Set(sessions));
 
     const renders = vi.fn();
     const unsubscribe = call.subscribe(renders);

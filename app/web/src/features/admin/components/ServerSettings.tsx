@@ -93,7 +93,9 @@ function DescriptionInput({ field, label }: { field: DescriptionField; label: st
       rows={field.key === "description" ? 6 : 3}
       characterLimit={limit}
       formatRemaining={(remaining) =>
-        remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining })
+        remaining < 0
+          ? t("client:admin.settings.characters_over", { count: -remaining })
+          : t("client:admin.settings.characters_left", { count: remaining })
       }
       errorMessage={t("client:admin.settings.name.too_long", { max: String(limit) })}
     />
@@ -170,13 +172,21 @@ function ContactForm() {
               <Button
                 size="sm"
                 isPending={form.thumbnail.isUploading}
-                aria-describedby={form.thumbnail.error === undefined ? thumbnailHeadingId : `${thumbnailHeadingId} ${uploadErrorId}`}
+                aria-describedby={
+                  form.thumbnail.error === undefined ? thumbnailHeadingId : `${thumbnailHeadingId} ${uploadErrorId}`
+                }
               >
                 {t("client:admin.settings.contact.thumbnail.choose")}
               </Button>
             </FileTrigger>
             {form.thumbnail.url !== undefined && (
-              <Button size="sm" variant="ghost" onPress={form.thumbnail.remove} isDisabled={form.thumbnail.isUploading} aria-describedby={thumbnailHeadingId}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onPress={form.thumbnail.remove}
+                isDisabled={form.thumbnail.isUploading}
+                aria-describedby={thumbnailHeadingId}
+              >
                 {t("client:admin.settings.contact.thumbnail.remove")}
               </Button>
             )}
@@ -193,7 +203,9 @@ function ContactForm() {
             rows={2}
             characterLimit={thumbnailAltLimit}
             formatRemaining={(remaining) =>
-              remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining })
+              remaining < 0
+                ? t("client:admin.settings.characters_over", { count: -remaining })
+                : t("client:admin.settings.characters_left", { count: remaining })
             }
             errorMessage={t("client:admin.settings.name.too_long", { max: String(thumbnailAltLimit) })}
           />
@@ -216,79 +228,243 @@ function ContactForm() {
 
 /** Who may read a public timeline (FR-202), the choices of both timelines' settings. */
 const timelineAccessChoices = [
-    { value: "everyone", label: "client:admin.settings.timelines.access.everyone", description: "client:admin.settings.timelines.access.everyone.description" },
-    { value: "logged_in", label: "client:admin.settings.timelines.access.logged_in", description: "client:admin.settings.timelines.access.logged_in.description" },
-    { value: "off", label: "client:admin.settings.timelines.access.off", description: "client:admin.settings.timelines.access.off.description" },
-  ] as const satisfies readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[];
+  {
+    value: "everyone",
+    label: "client:admin.settings.timelines.access.everyone",
+    description: "client:admin.settings.timelines.access.everyone.description",
+  },
+  {
+    value: "logged_in",
+    label: "client:admin.settings.timelines.access.logged_in",
+    description: "client:admin.settings.timelines.access.logged_in.description",
+  },
+  {
+    value: "off",
+    label: "client:admin.settings.timelines.access.off",
+    description: "client:admin.settings.timelines.access.off.description",
+  },
+] as const satisfies readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[];
 
 /** The words and the description of each choice of the settings chosen with radio buttons. */
 const choices = {
   registration_mode: [
-    { value: "open", label: "client:admin.settings.registration.open", description: "client:admin.settings.registration.open.description" },
-    { value: "approval", label: "client:admin.settings.registration.approval", description: "client:admin.settings.registration.approval.description" },
-    { value: "invite", label: "client:admin.settings.registration.invite", description: "client:admin.settings.registration.invite.description" },
-    { value: "closed", label: "client:admin.settings.registration.closed", description: "client:admin.settings.registration.closed.description" },
+    {
+      value: "open",
+      label: "client:admin.settings.registration.open",
+      description: "client:admin.settings.registration.open.description",
+    },
+    {
+      value: "approval",
+      label: "client:admin.settings.registration.approval",
+      description: "client:admin.settings.registration.approval.description",
+    },
+    {
+      value: "invite",
+      label: "client:admin.settings.registration.invite",
+      description: "client:admin.settings.registration.invite.description",
+    },
+    {
+      value: "closed",
+      label: "client:admin.settings.registration.closed",
+      description: "client:admin.settings.registration.closed.description",
+    },
   ],
   federation_mode: [
-    { value: "both", label: "client:admin.settings.federation.mode.both", description: "client:admin.settings.federation.mode.both.description" },
-    { value: "inbound", label: "client:admin.settings.federation.mode.inbound", description: "client:admin.settings.federation.mode.inbound.description" },
-    { value: "outbound", label: "client:admin.settings.federation.mode.outbound", description: "client:admin.settings.federation.mode.outbound.description" },
-    { value: "off", label: "client:admin.settings.federation.mode.off", description: "client:admin.settings.federation.mode.off.description" },
+    {
+      value: "both",
+      label: "client:admin.settings.federation.mode.both",
+      description: "client:admin.settings.federation.mode.both.description",
+    },
+    {
+      value: "inbound",
+      label: "client:admin.settings.federation.mode.inbound",
+      description: "client:admin.settings.federation.mode.inbound.description",
+    },
+    {
+      value: "outbound",
+      label: "client:admin.settings.federation.mode.outbound",
+      description: "client:admin.settings.federation.mode.outbound.description",
+    },
+    {
+      value: "off",
+      label: "client:admin.settings.federation.mode.off",
+      description: "client:admin.settings.federation.mode.off.description",
+    },
   ],
   remote_media_policy: [
-    { value: "none", label: "client:admin.settings.remote_media.none", description: "client:admin.settings.remote_media.none.description" },
-    { value: "avatars", label: "client:admin.settings.remote_media.avatars", description: "client:admin.settings.remote_media.avatars.description" },
-    { value: "all", label: "client:admin.settings.remote_media.all", description: "client:admin.settings.remote_media.all.description" },
+    {
+      value: "none",
+      label: "client:admin.settings.remote_media.none",
+      description: "client:admin.settings.remote_media.none.description",
+    },
+    {
+      value: "avatars",
+      label: "client:admin.settings.remote_media.avatars",
+      description: "client:admin.settings.remote_media.avatars.description",
+    },
+    {
+      value: "all",
+      label: "client:admin.settings.remote_media.all",
+      description: "client:admin.settings.remote_media.all.description",
+    },
   ],
   domain_actions_visibility: [
-    { value: "none", label: "client:admin.settings.audience.none", description: "client:admin.settings.domain_actions.list.none" },
-    { value: "users", label: "client:admin.settings.audience.users", description: "client:admin.settings.domain_actions.list.users" },
-    { value: "all", label: "client:admin.settings.audience.all", description: "client:admin.settings.domain_actions.list.all" },
+    {
+      value: "none",
+      label: "client:admin.settings.audience.none",
+      description: "client:admin.settings.domain_actions.list.none",
+    },
+    {
+      value: "users",
+      label: "client:admin.settings.audience.users",
+      description: "client:admin.settings.domain_actions.list.users",
+    },
+    {
+      value: "all",
+      label: "client:admin.settings.audience.all",
+      description: "client:admin.settings.domain_actions.list.all",
+    },
   ],
   domain_actions_rationale_visibility: [
-    { value: "none", label: "client:admin.settings.audience.none", description: "client:admin.settings.domain_actions.comments.none" },
-    { value: "users", label: "client:admin.settings.audience.users", description: "client:admin.settings.domain_actions.comments.users" },
-    { value: "all", label: "client:admin.settings.audience.all", description: "client:admin.settings.domain_actions.comments.all" },
+    {
+      value: "none",
+      label: "client:admin.settings.audience.none",
+      description: "client:admin.settings.domain_actions.comments.none",
+    },
+    {
+      value: "users",
+      label: "client:admin.settings.audience.users",
+      description: "client:admin.settings.domain_actions.comments.users",
+    },
+    {
+      value: "all",
+      label: "client:admin.settings.audience.all",
+      description: "client:admin.settings.domain_actions.comments.all",
+    },
   ],
   finance_visibility: [
-    { value: "private", label: "client:admin.settings.finance.private", description: "client:admin.settings.finance.private.description" },
-    { value: "totals", label: "client:admin.settings.finance.totals", description: "client:admin.settings.finance.totals.description" },
-    { value: "breakdown", label: "client:admin.settings.finance.breakdown", description: "client:admin.settings.finance.breakdown.description" },
+    {
+      value: "private",
+      label: "client:admin.settings.finance.private",
+      description: "client:admin.settings.finance.private.description",
+    },
+    {
+      value: "totals",
+      label: "client:admin.settings.finance.totals",
+      description: "client:admin.settings.finance.totals.description",
+    },
+    {
+      value: "breakdown",
+      label: "client:admin.settings.finance.breakdown",
+      description: "client:admin.settings.finance.breakdown.description",
+    },
   ],
   finance_viewer_income: [
-    { value: "totals", label: "client:admin.settings.finance.viewer.income.totals", description: "client:admin.settings.finance.viewer.income.totals.description" },
-    { value: "plans", label: "client:admin.settings.finance.viewer.income.plans", description: "client:admin.settings.finance.viewer.income.plans.description" },
+    {
+      value: "totals",
+      label: "client:admin.settings.finance.viewer.income.totals",
+      description: "client:admin.settings.finance.viewer.income.totals.description",
+    },
+    {
+      value: "plans",
+      label: "client:admin.settings.finance.viewer.income.plans",
+      description: "client:admin.settings.finance.viewer.income.plans.description",
+    },
   ],
   income_visibility: [
-    { value: "private", label: "client:admin.settings.income.private", description: "client:admin.settings.income.private.description" },
-    { value: "totals", label: "client:admin.settings.income.totals", description: "client:admin.settings.income.totals.description" },
-    { value: "plans", label: "client:admin.settings.income.plans", description: "client:admin.settings.income.plans.description" },
+    {
+      value: "private",
+      label: "client:admin.settings.income.private",
+      description: "client:admin.settings.income.private.description",
+    },
+    {
+      value: "totals",
+      label: "client:admin.settings.income.totals",
+      description: "client:admin.settings.income.totals.description",
+    },
+    {
+      value: "plans",
+      label: "client:admin.settings.income.plans",
+      description: "client:admin.settings.income.plans.description",
+    },
   ],
   local_timeline_access: timelineAccessChoices,
   federated_timeline_access: timelineAccessChoices,
   supporter_list_visibility: [
-    { value: "off", label: "client:admin.settings.supporter_list.off", description: "client:admin.settings.supporter_list.off.description" },
-    { value: "public", label: "client:admin.settings.supporter_list.public", description: "client:admin.settings.supporter_list.public.description" },
-    { value: "signed_in", label: "client:admin.settings.supporter_list.signed_in", description: "client:admin.settings.supporter_list.signed_in.description" },
+    {
+      value: "off",
+      label: "client:admin.settings.supporter_list.off",
+      description: "client:admin.settings.supporter_list.off.description",
+    },
+    {
+      value: "public",
+      label: "client:admin.settings.supporter_list.public",
+      description: "client:admin.settings.supporter_list.public.description",
+    },
+    {
+      value: "signed_in",
+      label: "client:admin.settings.supporter_list.signed_in",
+      description: "client:admin.settings.supporter_list.signed_in.description",
+    },
   ],
   search_indexing: [
-    { value: "allow", label: "client:admin.settings.crawlers.search.allow", description: "client:admin.settings.crawlers.search.allow.description" },
-    { value: "deny", label: "client:admin.settings.crawlers.search.deny", description: "client:admin.settings.crawlers.search.deny.description" },
+    {
+      value: "allow",
+      label: "client:admin.settings.crawlers.search.allow",
+      description: "client:admin.settings.crawlers.search.allow.description",
+    },
+    {
+      value: "deny",
+      label: "client:admin.settings.crawlers.search.deny",
+      description: "client:admin.settings.crawlers.search.deny.description",
+    },
   ],
   ai_usage: [
-    { value: "allow", label: "client:admin.settings.crawlers.ai.allow", description: "client:admin.settings.crawlers.ai.allow.description" },
-    { value: "deny_training", label: "client:admin.settings.crawlers.ai.deny_training", description: "client:admin.settings.crawlers.ai.deny_training.description" },
-    { value: "deny", label: "client:admin.settings.crawlers.ai.deny", description: "client:admin.settings.crawlers.ai.deny.description" },
+    {
+      value: "allow",
+      label: "client:admin.settings.crawlers.ai.allow",
+      description: "client:admin.settings.crawlers.ai.allow.description",
+    },
+    {
+      value: "deny_training",
+      label: "client:admin.settings.crawlers.ai.deny_training",
+      description: "client:admin.settings.crawlers.ai.deny_training.description",
+    },
+    {
+      value: "deny",
+      label: "client:admin.settings.crawlers.ai.deny",
+      description: "client:admin.settings.crawlers.ai.deny.description",
+    },
   ],
   voice_room_starters: [
-    { value: "everyone", label: "client:admin.settings.voice.starters.everyone", description: "client:admin.settings.voice.starters.everyone.description" },
-    { value: "permitted", label: "client:admin.settings.voice.starters.permitted", description: "client:admin.settings.voice.starters.permitted.description" },
+    {
+      value: "everyone",
+      label: "client:admin.settings.voice.starters.everyone",
+      description: "client:admin.settings.voice.starters.everyone.description",
+    },
+    {
+      value: "permitted",
+      label: "client:admin.settings.voice.starters.permitted",
+      description: "client:admin.settings.voice.starters.permitted.description",
+    },
   ],
-} as const satisfies Partial<Record<PolicyKey, readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[]>>;
+} as const satisfies Partial<
+  Record<PolicyKey, readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[]>
+>;
 
 type RadioKey = keyof typeof choices;
 
-function PolicyRadios({ form, setting, label, description }: { form: ReturnType<typeof useServerPolicies>; setting: RadioKey; label: string; description?: string }) {
+function PolicyRadios({
+  form,
+  setting,
+  label,
+  description,
+}: {
+  form: ReturnType<typeof useServerPolicies>;
+  setting: RadioKey;
+  label: string;
+  description?: string;
+}) {
   const t = useT();
   return (
     <RadioGroup
@@ -308,7 +484,17 @@ function PolicyRadios({ form, setting, label, description }: { form: ReturnType<
   );
 }
 
-function PolicyCheckbox({ form, setting, label, description }: { form: ReturnType<typeof useServerPolicies>; setting: PolicyKey; label: string; description: string }) {
+function PolicyCheckbox({
+  form,
+  setting,
+  label,
+  description,
+}: {
+  form: ReturnType<typeof useServerPolicies>;
+  setting: PolicyKey;
+  label: string;
+  description: string;
+}) {
   return (
     <Checkbox
       isSelected={form.value(setting) === "true"}
@@ -330,7 +516,12 @@ function PoliciesForm() {
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
       <DetailSection title={t("client:admin.settings.registration.title")}>
-        <PolicyRadios form={form} setting="registration_mode" label={t("client:admin.settings.registration.mode")} description={t("client:admin.settings.registration.description")} />
+        <PolicyRadios
+          form={form}
+          setting="registration_mode"
+          label={t("client:admin.settings.registration.mode")}
+          description={t("client:admin.settings.registration.description")}
+        />
       </DetailSection>
       <DetailSection title={t("client:admin.settings.oauth_apps.title")}>
         <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
@@ -405,7 +596,11 @@ function PoliciesForm() {
           label={t("client:admin.settings.federation.authorized_fetch")}
           description={t("client:admin.settings.federation.authorized_fetch.description")}
         />
-        <PolicyRadios form={form} setting="remote_media_policy" label={t("client:admin.settings.remote_media.policy")} />
+        <PolicyRadios
+          form={form}
+          setting="remote_media_policy"
+          label={t("client:admin.settings.remote_media.policy")}
+        />
         <Select
           label={t("client:admin.settings.remote_media.ttl")}
           description={t("client:admin.settings.remote_media.ttl.description")}
@@ -430,8 +625,16 @@ function PoliciesForm() {
       </DetailSection>
       <DetailSection title={t("client:admin.settings.domain_actions.title")}>
         <Hint size="inherit">{t("client:admin.settings.domain_actions.description")}</Hint>
-        <PolicyRadios form={form} setting="domain_actions_visibility" label={t("client:admin.settings.domain_actions.list")} />
-        <PolicyRadios form={form} setting="domain_actions_rationale_visibility" label={t("client:admin.settings.domain_actions.comments")} />
+        <PolicyRadios
+          form={form}
+          setting="domain_actions_visibility"
+          label={t("client:admin.settings.domain_actions.list")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="domain_actions_rationale_visibility"
+          label={t("client:admin.settings.domain_actions.comments")}
+        />
       </DetailSection>
       <DetailSection title={t("client:admin.settings.finance.title")}>
         <Hint size="inherit">{t("client:admin.settings.finance.description")}</Hint>
@@ -449,7 +652,11 @@ function PoliciesForm() {
           label={t("client:admin.settings.finance.viewer.item_memos")}
           description={t("client:admin.settings.finance.viewer.item_memos.description")}
         />
-        <PolicyRadios form={form} setting="finance_viewer_income" label={t("client:admin.settings.finance.viewer.income")} />
+        <PolicyRadios
+          form={form}
+          setting="finance_viewer_income"
+          label={t("client:admin.settings.finance.viewer.income")}
+        />
       </DetailSection>
       <DetailSection title={t("client:admin.settings.income.title")}>
         <Hint size="inherit">{t("client:admin.settings.income.description")}</Hint>
@@ -457,7 +664,11 @@ function PoliciesForm() {
       </DetailSection>
       <DetailSection title={t("client:admin.settings.supporter_list.title")}>
         <Hint size="inherit">{t("client:admin.settings.supporter_list.description")}</Hint>
-        <PolicyRadios form={form} setting="supporter_list_visibility" label={t("client:admin.settings.supporter_list.visibility")} />
+        <PolicyRadios
+          form={form}
+          setting="supporter_list_visibility"
+          label={t("client:admin.settings.supporter_list.visibility")}
+        />
       </DetailSection>
       <DetailSection title={t("client:admin.settings.crawlers.title")}>
         <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
@@ -489,7 +700,10 @@ function PoliciesForm() {
           />
           <TextField
             label={t("client:admin.settings.voice.retention")}
-            description={t("client:admin.settings.voice.retention.description", { min: String(form.voiceRetention.min), max: String(form.voiceRetention.max) })}
+            description={t("client:admin.settings.voice.retention.description", {
+              min: String(form.voiceRetention.min),
+              max: String(form.voiceRetention.max),
+            })}
             value={form.value("retention_voice_participants")}
             onChange={(value) => {
               form.change("retention_voice_participants", value);
@@ -497,7 +711,9 @@ function PoliciesForm() {
             inputMode="numeric"
             autoComplete="off"
             // Only an invalid value sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
-            {...(form.voiceRetention.error === undefined ? {} : { isInvalid: true, errorMessage: form.voiceRetention.error })}
+            {...(form.voiceRetention.error === undefined
+              ? {}
+              : { isInvalid: true, errorMessage: form.voiceRetention.error })}
           />
         </DetailSection>
       )}
@@ -515,7 +731,12 @@ function PoliciesForm() {
         <StatusMessage>{form.status}</StatusMessage>
       </Stack>
       {form.narrowing !== null && (
-        <NarrowingDialog narrowing={form.narrowing} isOpen={form.isConfirming} onConfirm={form.confirm} onCancel={form.cancel} />
+        <NarrowingDialog
+          narrowing={form.narrowing}
+          isOpen={form.isConfirming}
+          onConfirm={form.confirm}
+          onCancel={form.cancel}
+        />
       )}
     </Stack>
   );
@@ -528,7 +749,12 @@ const modeLabels = {
   both: "client:admin.settings.federation.mode.both",
 } as const satisfies Record<FederationNarrowing["to"], ClientMessageKey>;
 
-type NarrowingDialogProps = { narrowing: FederationNarrowing; isOpen: boolean; onConfirm: () => void; onCancel: () => void };
+type NarrowingDialogProps = {
+  narrowing: FederationNarrowing;
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
 
 /**
  * Asks before the federation mode narrows (ADR-0076, "設定"): an alert dialog (WAI-ARIA APG) that lists what stops
@@ -549,7 +775,12 @@ function NarrowingDialog({ narrowing, isOpen, onConfirm, onCancel }: NarrowingDi
       }}
     >
       <Stack gap="4">
-        <p>{t("client:admin.settings.federation.narrow.description", { from: t(modeLabels[narrowing.from]), to: t(modeLabels[narrowing.to]) })}</p>
+        <p>
+          {t("client:admin.settings.federation.narrow.description", {
+            from: t(modeLabels[narrowing.from]),
+            to: t(modeLabels[narrowing.to]),
+          })}
+        </p>
         <Stack as="ul" marker="disc" gap="2">
           {narrowing.stopsSending && <li>{t("client:admin.settings.federation.narrow.sending")}</li>}
           {narrowing.stopsReceiving && <li>{t("client:admin.settings.federation.narrow.receiving")}</li>}

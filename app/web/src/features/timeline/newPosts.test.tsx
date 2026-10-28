@@ -14,7 +14,13 @@ import { renderApp } from "../../test/render";
 /** A post newer than the fixture of the home timeline. */
 function newStatus(n: number): Status {
   const id = `0192f0c4-7a8e-7000-8000-0000000001${String(n).padStart(2, "0")}`;
-  return { ...timelineStatusFixture, id, uri: `https://my.example/ap/statuses/${id}`, url: `https://my.example/@bob/status/${id}`, content: `<p>New post ${String(n)}</p>` };
+  return {
+    ...timelineStatusFixture,
+    id,
+    uri: `https://my.example/ap/statuses/${id}`,
+    url: `https://my.example/@bob/status/${id}`,
+    content: `<p>New post ${String(n)}</p>`,
+  };
 }
 
 /** The reconnect waits about a second after a stream ends (@mycroblog/mykit runStream). */
@@ -44,7 +50,11 @@ describe("new posts in the home timeline", () => {
 
     // The feed did not change, and the count is in a polite status region.
     expect(within(feed).getAllByRole("article")).toHaveLength(1);
-    expect(screen.getAllByRole("status").filter((region) => within(region).queryByRole("button", { name: "2 new posts" }) !== null)).toHaveLength(1);
+    expect(
+      screen
+        .getAllByRole("status")
+        .filter((region) => within(region).queryByRole("button", { name: "2 new posts" }) !== null),
+    ).toHaveLength(1);
 
     await user.click(button);
 
@@ -86,11 +96,17 @@ describe("new posts in the home timeline", () => {
     // The cached home timeline is not stale yet, so opening it again does not fetch it (the server would
     // not have the new post either: its handler answers the fixture only). Wait until the app has the entry, waiting or in the timeline's cache. It goes to the stream open at
     // each try: a slow runner may still be opening a new one after the navigation (the same entry counts once).
-    await waitFor(() => {
-      streams.current().send("update", newStatus(1));
-      const cached = [queryClient.getQueryData(["stream", "home-new-statuses"]), queryClient.getQueryData(["get", "/timelines/home", "pages"])];
-      expect(JSON.stringify(cached), `after ${String(streams.connections())} connections`).toContain(newStatus(1).id);
-    }, { timeout: 3_000 });
+    await waitFor(
+      () => {
+        streams.current().send("update", newStatus(1));
+        const cached = [
+          queryClient.getQueryData(["stream", "home-new-statuses"]),
+          queryClient.getQueryData(["get", "/timelines/home", "pages"]),
+        ];
+        expect(JSON.stringify(cached), `after ${String(streams.connections())} connections`).toContain(newStatus(1).id);
+      },
+      { timeout: 3_000 },
+    );
     await act(() => router.navigate({ to: "/home" }));
 
     const feed = await screen.findByRole("feed", { name: "Home" });
@@ -150,7 +166,11 @@ describe("the event stream", () => {
 
     // The feed starts again from the new first page; the older posts follow it on scrolling.
     await waitFor(() => {
-      expect(within(feed).getAllByRole("article").map((article) => article.getAttribute("aria-posinset"))).toEqual(["1", "2"]);
+      expect(
+        within(feed)
+          .getAllByRole("article")
+          .map((article) => article.getAttribute("aria-posinset")),
+      ).toEqual(["1", "2"]);
     });
     expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 3");
     expect(screen.getByRole("button", { name: "Load more posts" })).toBeInTheDocument();
@@ -196,7 +216,8 @@ describe("the event stream", () => {
         const token = request.headers.get("Authorization");
         tokens.push(token ?? "");
         // Only the newest token is valid.
-        if (token !== `Bearer token-${String(issued)}`) return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+        if (token !== `Bearer token-${String(issued)}`)
+          return problem(401, "/api/v1/problems/invalid-token", "Invalid token");
         const { response, stream } = eventStreamResponse();
         streams.push(stream);
         return response;
@@ -261,7 +282,11 @@ class FakeIntersectionObserver {
   static setTopInView(isIntersecting: boolean) {
     for (const observer of FakeIntersectionObserver.observers) {
       for (const target of observer.targets) {
-        if (target.getAttribute("aria-hidden") === "true") observer.callback([{ target, isIntersecting } as IntersectionObserverEntry], observer as unknown as IntersectionObserver);
+        if (target.getAttribute("aria-hidden") === "true")
+          observer.callback(
+            [{ target, isIntersecting } as IntersectionObserverEntry],
+            observer as unknown as IntersectionObserver,
+          );
       }
     }
   }
@@ -273,7 +298,11 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const streams = streamingServer();
     server.use(resumableSession(), streams.handler);
-    server.use(http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: autoInsert })));
+    server.use(
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: autoInsert }),
+      ),
+    );
     const view = await openHome();
     await waitFor(() => {
       expect(streams.connections()).toBe(1);
@@ -298,7 +327,11 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 1");
     expect(screen.queryByRole("button", { name: /new post/ })).not.toBeInTheDocument();
     expect(document.body).toHaveFocus();
-    expect(within(feed).getAllByRole("article").map((article) => article.getAttribute("aria-posinset"))).toEqual(["1", "2"]);
+    expect(
+      within(feed)
+        .getAllByRole("article")
+        .map((article) => article.getAttribute("aria-posinset")),
+    ).toEqual(["1", "2"]);
   });
 
   test("keep waiting behind the button when the setting is off", async () => {
@@ -391,7 +424,9 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     const streams = streamingServer();
     server.use(resumableSession(), streams.handler);
     server.use(
-      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: true })),
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: true }),
+      ),
       http.get(`${apiBase}/timelines/home`, () => HttpResponse.json(page)),
     );
     const { feed } = await openHome();
@@ -402,9 +437,12 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     page = statusPage([newStatus(3), newStatus(2)], "older");
     streams.current().close();
 
-    await waitFor(() => {
-      expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 3");
-    }, { timeout: 4_000 });
+    await waitFor(
+      () => {
+        expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 3");
+      },
+      { timeout: 4_000 },
+    );
     expect(screen.queryByRole("button", { name: /new post/ })).not.toBeInTheDocument();
   });
 
@@ -415,7 +453,9 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     const streams = streamingServer();
     server.use(resumableSession(), streams.handler);
     server.use(
-      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: true })),
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: true }),
+      ),
       http.get(`${apiBase}/timelines/home`, () => HttpResponse.json(page)),
     );
     const { feed, user } = await openHome();

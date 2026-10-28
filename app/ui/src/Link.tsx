@@ -49,5 +49,10 @@ export type LinkProps = RACLinkProps &
  * `excludeFromTabOrder` to useFocusable, which sets the `tabindex`.
  */
 export function Link({ variant, gap, wrap, size, className, ...props }: LinkProps) {
-  return <RACLink {...props} className={composeRenderProps(className, (className) => link({ variant, gap, wrap, size, className }))} />;
+  return (
+    <RACLink
+      {...props}
+      className={composeRenderProps(className, (className) => link({ variant, gap, wrap, size, className }))}
+    />
+  );
 }

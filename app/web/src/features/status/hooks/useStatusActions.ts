@@ -92,7 +92,12 @@ export type StatusActions = {
    * Who may quote the viewer's own post and its change (ADR-0069 §1), with the address of the posts that quote it;
    * null for others' posts.
    */
-  quotePolicy: { value: QuotePolicy; set: (policy: QuotePolicy) => void; isPending: boolean; quotesPath: string } | null;
+  quotePolicy: {
+    value: QuotePolicy;
+    set: (policy: QuotePolicy) => void;
+    isPending: boolean;
+    quotesPath: string;
+  } | null;
   /**
    * Revokes the approval of this post's quote of the viewer's post (ADR-0069 §3): only for an approved quote of a
    * post of the viewer; null otherwise. The result or the failure is shown.
@@ -196,7 +201,10 @@ export function useStatusActions(status: Status): StatusActions | null {
     },
     onError: (error, { on }) => {
       const reason = errorMessage(error);
-      toast.show({ message: on ? t("client:status.pin.failed", { reason }) : t("client:status.unpin.failed", { reason }), tone: "danger" });
+      toast.show({
+        message: on ? t("client:status.pin.failed", { reason }) : t("client:status.unpin.failed", { reason }),
+        tone: "danger",
+      });
     },
   });
 
@@ -227,7 +235,8 @@ export function useStatusActions(status: Status): StatusActions | null {
   const isAuthor = post.account.id === viewer.account.id;
   const isPinned = post.pinned === true;
   const quoted = post.quote?.quoted_status;
-  const ownQuoted = quoted !== undefined && quoted.account.id === viewer.account.id && post.quote?.state === "accepted" && !isAuthor;
+  const ownQuoted =
+    quoted !== undefined && quoted.account.id === viewer.account.id && post.quote?.state === "accepted" && !isAuthor;
   const staysLocal = !reachesRemote && isRemoteAcct(post.account.acct);
   return {
     reply: () => {
@@ -245,7 +254,9 @@ export function useStatusActions(status: Status): StatusActions | null {
     bookmark,
     react: (emoji) => {
       const { slot } = likeSlot;
-      likeSlot.set(slot.kind === "reaction" && slot.emoji.name === emoji.name ? { kind: "none" } : { kind: "reaction", emoji });
+      likeSlot.set(
+        slot.kind === "reaction" && slot.emoji.name === emoji.name ? { kind: "none" } : { kind: "reaction", emoji },
+      );
     },
     copyLink: () => {
       navigator.clipboard.writeText(statusShareUrl(post)).then(
@@ -258,7 +269,13 @@ export function useStatusActions(status: Status): StatusActions | null {
         },
       );
     },
-    delete: isAuthor ? () => remove.mutateAsync().then(() => true, () => false) : null,
+    delete: isAuthor
+      ? () =>
+          remove.mutateAsync().then(
+            () => true,
+            () => false,
+          )
+      : null,
     canEdit: isAuthor && post.poll === undefined,
     isDeleting: remove.isPending,
     canReport: !isAuthor,

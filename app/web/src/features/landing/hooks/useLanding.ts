@@ -43,7 +43,11 @@ export type Landing = {
 export function useSignUpHref(): string | undefined {
   const api = useApi();
   const { apiOrigin } = useConfig();
-  const { data: mode } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader, select: (instance) => instance.registrations.mode });
+  const { data: mode } = useQuery({
+    ...instanceQueryOptions(api),
+    ...shellQueryReader,
+    select: (instance) => instance.registrations.mode,
+  });
   return mode === undefined || mode === "closed" ? undefined : new URL(signUpPath, apiOrigin).href;
 }
 

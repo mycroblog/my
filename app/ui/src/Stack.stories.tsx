@@ -103,7 +103,10 @@ export const Markers: Story = {
       <Stack as="ul" marker="disc" gap="1">
         <li>Dates are in the instance&apos;s time zone.</li>
         <li>Weeks start on Monday.</li>
-        <li>A payment for a year is spread over its twelve months, so a long sentence like this one wraps onto the next line.</li>
+        <li>
+          A payment for a year is spread over its twelve months, so a long sentence like this one wraps onto the next
+          line.
+        </li>
       </Stack>
       <Stack as="ol" marker="decimal" gap="1">
         <li>Record the payment.</li>

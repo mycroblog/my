@@ -45,6 +45,8 @@ export const WithDescriptions: Story = {
   },
 };
 
-export const Invalid: Story = { args: { defaultValue: null, isInvalid: true, errorMessage: "Choose who can see this post." } };
+export const Invalid: Story = {
+  args: { defaultValue: null, isInvalid: true, errorMessage: "Choose who can see this post." },
+};
 
 export const Disabled: Story = { args: { isDisabled: true } };

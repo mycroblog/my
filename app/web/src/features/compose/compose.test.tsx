@@ -11,7 +11,15 @@ import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RouterContext } from "../../lib/query";
 import { apiBase, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
-import { accountFixture, instanceFixture, preferencesFixture, relationshipFixture, remoteAccountFixture, viewerFixture, viewerStatusFixture } from "../../test/fixtures";
+import {
+  accountFixture,
+  instanceFixture,
+  preferencesFixture,
+  relationshipFixture,
+  remoteAccountFixture,
+  viewerFixture,
+  viewerStatusFixture,
+} from "../../test/fixtures";
 import { uploadedMediaId } from "./test/handlers";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -29,7 +37,10 @@ function recordPosts(...answers: (() => Response)[]) {
   const sent: Sent[] = [];
   server.use(
     http.post(`${apiBase}/statuses`, async ({ request }) => {
-      sent.push({ body: (await request.clone().json()) as Record<string, unknown>, idempotencyKey: request.headers.get("Idempotency-Key") });
+      sent.push({
+        body: (await request.clone().json()) as Record<string, unknown>,
+        idempotencyKey: request.headers.get("Idempotency-Key"),
+      });
       const answer = answers.shift();
       return answer === undefined ? undefined : answer();
     }),
@@ -80,7 +91,11 @@ describe("the new-post form", () => {
 
     await user.click(within(sheet).getByRole("button", { name: "Visibility: Public" }));
     const choices = await screen.findByRole("radiogroup", { name: "Who can see this post?" });
-    expect(within(choices).getAllByRole("radio").map((radio) => radio.getAttribute("value"))).toEqual(["public", "local", "unlisted", "private", "direct"]);
+    expect(
+      within(choices)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["public", "local", "unlisted", "private", "direct"]);
     expect(within(choices).getByRole("radio", { name: "This server" })).toHaveAccessibleDescription(
       "People signed in here, and your followers on other servers. Shown on this server's local timeline.",
     );
@@ -120,7 +135,10 @@ describe("the new-post form", () => {
     expect(images).toHaveAccessibleDescription(
       "Up to 4 files: JPEG, PNG, GIF, or WebP images, MP4 or WebM video, or MP3, Ogg, or M4A audio. Location and other metadata are removed.",
     );
-    expect(within(sheet).getByRole("button", { name: "Add a content warning" })).toHaveAttribute("aria-pressed", "false");
+    expect(within(sheet).getByRole("button", { name: "Add a content warning" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     const visibility = within(sheet).getByRole("button", { name: "Visibility: Public" });
     expect(visibility).toHaveTextContent("Public");
     expect(visibility).toHaveAccessibleDescription("Anyone, here and on other servers. Shown on the public timelines.");
@@ -290,10 +308,14 @@ describe("the new-post form", () => {
     });
     const sent = recordPosts();
     server.use(
-      http.post(`${apiBase}/statuses`, async () => {
-        await failure;
-        return problem(500, "about:blank", "Broken");
-      }, { once: true }),
+      http.post(
+        `${apiBase}/statuses`,
+        async () => {
+          await failure;
+          return problem(500, "about:blank", "Broken");
+        },
+        { once: true },
+      ),
     );
     const { user } = await renderApp();
     const sheet = await openSheet(user);
@@ -329,7 +351,14 @@ describe("the new-post form", () => {
 
   test("counts against the instance's limit and refuses text that is too long", async () => {
     signedIn();
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, limits: { max_post_characters: 10, require_media_description: false } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          limits: { max_post_characters: 10, require_media_description: false },
+        }),
+      ),
+    );
     const { user } = await renderApp();
     const sheet = await openSheet(user);
 
@@ -343,9 +372,23 @@ describe("the new-post form", () => {
   test("highlights mentions, hashtags, URLs, known shortcodes and the text over the limit on a layer hidden from assistive technology", async () => {
     signedIn();
     server.use(
-      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, limits: { max_post_characters: 50, require_media_description: false } })),
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          limits: { max_post_characters: 50, require_media_description: false },
+        }),
+      ),
       http.get(`${apiBase}/custom_emojis`, () =>
-        HttpResponse.json({ items: [{ shortcode: "blobcat", url: "https://media.example/blobcat.png", static_url: "https://media.example/blobcat.png", aliases: [] }] }),
+        HttpResponse.json({
+          items: [
+            {
+              shortcode: "blobcat",
+              url: "https://media.example/blobcat.png",
+              static_url: "https://media.example/blobcat.png",
+              aliases: [],
+            },
+          ],
+        }),
       ),
     );
     const { user } = await renderApp();
@@ -375,7 +418,10 @@ describe("hints before posting", () => {
     signedIn();
     server.use(
       http.get(`${apiBase}/accounts/verify_credentials`, () =>
-        HttpResponse.json({ ...viewerFixture, posting: { visibility_ceiling: "private", visibilities: ["private", "direct"] } }),
+        HttpResponse.json({
+          ...viewerFixture,
+          posting: { visibility_ceiling: "private", visibilities: ["private", "direct"] },
+        }),
       ),
     );
     const sent = recordPosts();
@@ -388,7 +434,8 @@ describe("hints before posting", () => {
     expect(choices).toHaveAccessibleDescription(
       "Your account can post at most as “Followers” right now. A wider choice is posted as “Followers”.",
     );
-    for (const name of ["Public", "This server", "Unlisted"]) expect(within(choices).getByRole("radio", { name })).toBeDisabled();
+    for (const name of ["Public", "This server", "Unlisted"])
+      expect(within(choices).getByRole("radio", { name })).toBeDisabled();
     expect(within(choices).getByRole("radio", { name: "Followers" })).toBeChecked();
     expect(within(choices).getByRole("radio", { name: "Mentioned people" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Done" }));
@@ -415,7 +462,10 @@ describe("hints before posting", () => {
       "@carol@remote.example is on another server and does not follow you, so they will not receive this post. Outside this server, “This server” posts reach only your followers, who see this mention as a plain link.";
 
     // The local viewer and an unknown handle are not warned about; neither is a public post.
-    await user.type(await within(sheet).findByRole("textbox", { name: "Your post" }), "Hi @Carol@remote.example, @alice@my.example and @nobody@else.example");
+    await user.type(
+      await within(sheet).findByRole("textbox", { name: "Your post" }),
+      "Hi @Carol@remote.example, @alice@my.example and @nobody@else.example",
+    );
     await user.click(within(sheet).getByRole("button", { name: "Visibility: Public" }));
     await user.click(await screen.findByRole("radio", { name: "This server" }));
     await user.click(screen.getByRole("button", { name: "Done" }));
@@ -448,7 +498,10 @@ describe("hints before posting", () => {
     await user.click(await within(sheet).findByRole("button", { name: "Visibility: Public" }));
     await user.click(await screen.findByRole("radio", { name: "This server" }));
     await user.click(screen.getByRole("button", { name: "Done" }));
-    await user.type(within(sheet).getByRole("textbox", { name: "Your post" }), "Hi @carol@remote.example and @dave@new.example");
+    await user.type(
+      within(sheet).getByRole("textbox", { name: "Your post" }),
+      "Hi @carol@remote.example and @dave@new.example",
+    );
 
     expect(
       await within(sheet).findByText(
@@ -490,9 +543,13 @@ async function stubImageApis() {
   // and Blob, so the upload uses Node.js's own: Blob and File from node:buffer (the web tsconfig has no
   // Node.js types, hence the untyped import), and the FormData class of Node.js's fetch, from a Response.
   const nodeBuffer = "node:buffer";
-  const { Blob: NodeBlob, File: NodeFile } = (await import(/* @vite-ignore */ nodeBuffer)) as { Blob: typeof Blob; File: typeof File };
-  const NodeFormData = (await new Response("", { headers: { "Content-Type": "application/x-www-form-urlencoded" } }).formData())
-    .constructor as typeof FormData;
+  const { Blob: NodeBlob, File: NodeFile } = (await import(/* @vite-ignore */ nodeBuffer)) as {
+    Blob: typeof Blob;
+    File: typeof File;
+  };
+  const NodeFormData = (
+    await new Response("", { headers: { "Content-Type": "application/x-www-form-urlencoded" } }).formData()
+  ).constructor as typeof FormData;
   vi.stubGlobal("FormData", NodeFormData);
   vi.stubGlobal("Blob", NodeBlob);
   vi.stubGlobal("File", NodeFile);
@@ -556,7 +613,9 @@ describe("images", () => {
 
     const description = await within(sheet).findByRole("textbox", { name: "Description of attachment 1" });
     expect(description).toHaveAccessibleDescription(/Describe it for people who cannot see or hear it\./);
-    expect(within(sheet).getByRole("button", { name: "Add images, video, or audio" })).toHaveAccessibleDescription(/^1 file attached Up to 4 files/);
+    expect(within(sheet).getByRole("button", { name: "Add images, video, or audio" })).toHaveAccessibleDescription(
+      /^1 file attached Up to 4 files/,
+    );
     expect(within(sheet).getByRole("button", { name: "Post" })).toBeDisabled();
     // 6000 × 4000 is more than 3840 × 2160 pixels of area: scaled to fit, with the aspect ratio kept.
     await waitFor(() => {
@@ -589,7 +648,11 @@ describe("images", () => {
   test("ask before posting without descriptions when the preferences require them", async () => {
     signedIn();
     await stubImageApis();
-    server.use(http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, require_media_description: true })));
+    server.use(
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, require_media_description: true }),
+      ),
+    );
     const sent = recordPosts();
     const { user } = await renderApp();
     const sheet = await openSheet(user);
@@ -622,9 +685,16 @@ describe("images", () => {
     signedIn();
     await stubImageApis();
     server.use(
-      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, limits: { ...instanceFixture.limits, require_media_description: true } })),
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          limits: { ...instanceFixture.limits, require_media_description: true },
+        }),
+      ),
       // The server's requirement wins over the preference's question.
-      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, require_media_description: true })),
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, require_media_description: true }),
+      ),
     );
     const sent = recordPosts();
     const { user } = await renderApp();
@@ -707,7 +777,10 @@ describe("videos and audio files", () => {
     await waitFor(() => {
       expect(parts).toHaveLength(2);
     });
-    const [video, audio] = [parts.find((p) => p.file.name === "IMG_0002.MOV"), parts.find((p) => p.file.name === "song.mp3")];
+    const [video, audio] = [
+      parts.find((p) => p.file.name === "IMG_0002.MOV"),
+      parts.find((p) => p.file.name === "song.mp3"),
+    ];
     // The files go as they are: the server removes their metadata without re-encoding them.
     expect(video?.file.type).toBe("video/quicktime");
     expect(await video?.file.text()).toBe("moov and mdat");
@@ -724,9 +797,15 @@ describe("videos and audio files", () => {
     const { user } = await renderApp();
     const sheet = await openSheet(user);
     // The picker offers only the accepted types; a file dropped past it is still checked.
-    await userEvent.setup({ applyAccept: false }).upload(fileInput(), new File(["mkv"], "movie.mkv", { type: "video/x-matroska" }));
+    await userEvent
+      .setup({ applyAccept: false })
+      .upload(fileInput(), new File(["mkv"], "movie.mkv", { type: "video/x-matroska" }));
 
-    expect(await screen.findByText("movie.mkv is not a JPEG, PNG, GIF, or WebP image, an MP4 or WebM video, or an MP3, Ogg, or M4A audio file.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "movie.mkv is not a JPEG, PNG, GIF, or WebP image, an MP4 or WebM video, or an MP3, Ogg, or M4A audio file.",
+      ),
+    ).toBeInTheDocument();
     expect(within(sheet).queryByRole("list", { name: "Attached media" })).not.toBeInTheDocument();
     expect(parts).toHaveLength(0);
   });
@@ -735,12 +814,23 @@ describe("videos and audio files", () => {
 /** A post by someone else, in the `local` visibility, that mentions the viewer and a third account. */
 const localPost = viewerStatusFixture({
   id: "0192f0c4-7a8e-7000-8000-0000000000c1",
-  account: { ...viewerStatusFixture().account, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob" },
+  account: {
+    ...viewerStatusFixture().account,
+    id: "0192f0c4-7a8e-7000-8000-000000000002",
+    username: "bob",
+    acct: "bob",
+    display_name: "Bob",
+  },
   content: "<p>Anyone around?</p>",
   visibility: "local",
   mentions: [
     { id: "0192f0c4-7a8e-7000-8000-000000000001", username: "alice", acct: "alice", url: "https://my.example/@alice" },
-    { id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol@remote.example", url: "https://remote.example/@carol" },
+    {
+      id: "0192f0c4-7a8e-7000-8000-000000000003",
+      username: "carol",
+      acct: "carol@remote.example",
+      url: "https://remote.example/@carol",
+    },
   ],
 });
 
@@ -763,7 +853,10 @@ function ReplyPage() {
   );
 }
 
-function createReplyRouter({ history, ...context }: RouterContext & { history: ReturnType<typeof createMemoryHistory> }) {
+function createReplyRouter({
+  history,
+  ...context
+}: RouterContext & { history: ReturnType<typeof createMemoryHistory> }) {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
     component: () => (
       <ComposeProvider>
@@ -824,11 +917,17 @@ describe("replies", () => {
 describe("the new-post buttons (web-client/16-look-states-and-wording.md G4)", () => {
   /** Matches the given media queries only, as a viewport of that width would. */
   function stubViewport(...matching: string[]) {
-    vi.stubGlobal("matchMedia", (query: string) => ({ matches: matching.includes(query), media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: matching.includes(query),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
   }
 
   /** The rail's button, in the navigation (the stylesheet shows it from md only). */
-  const railButton = () => within(screen.getByRole("navigation", { name: "Main" })).getByRole("button", { name: "Write a post" });
+  const railButton = () =>
+    within(screen.getByRole("navigation", { name: "Main" })).getByRole("button", { name: "Write a post" });
 
   test.each(["/home", "/local", "/tags/hello", "/@bob"])("floats over %s, a feed, below md", async (path) => {
     signedIn();

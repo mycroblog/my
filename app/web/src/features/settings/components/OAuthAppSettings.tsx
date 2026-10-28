@@ -131,13 +131,25 @@ function SecretNotice({ shown }: { shown: ShownSecret }) {
           : t("client:settings.apps.secret.notice")}
       </Hint>
       <CopyValue label={t("client:settings.apps.client_id")} value={shown.app.client_id} />
-      {shown.secret !== undefined && <CopyValue label={t("client:settings.apps.secret.client_secret")} value={shown.secret} />}
+      {shown.secret !== undefined && (
+        <CopyValue label={t("client:settings.apps.secret.client_secret")} value={shown.secret} />
+      )}
     </Stack>
   );
 }
 
 /** The fields of an app; the type is chosen when registering and never changes. */
-function AppFields({ draft, change, withType, autoFocus = false }: { draft: AppDraft; change: (change: Partial<AppDraft>) => void; withType: boolean; autoFocus?: boolean }) {
+function AppFields({
+  draft,
+  change,
+  withType,
+  autoFocus = false,
+}: {
+  draft: AppDraft;
+  change: (change: Partial<AppDraft>) => void;
+  withType: boolean;
+  autoFocus?: boolean;
+}) {
   const t = useT();
   return (
     <>
@@ -288,7 +300,9 @@ function AppRow({ app, remove, rotate, onRotated, onRemoved }: AppRowProps) {
           </Text>
         </DescriptionItem>
         <DescriptionItem term={t("client:settings.apps.client_type")}>
-          {app.client_type === "confidential" ? t("client:settings.apps.type.confidential") : t("client:settings.apps.type.public")}
+          {app.client_type === "confidential"
+            ? t("client:settings.apps.type.confidential")
+            : t("client:settings.apps.type.public")}
         </DescriptionItem>
         <DescriptionItem term={t("client:settings.apps.scope")}>
           <Text mono dir="ltr" wrap="anywhere">
@@ -296,14 +310,23 @@ function AppRow({ app, remove, rotate, onRotated, onRemoved }: AppRowProps) {
           </Text>
         </DescriptionItem>
       </DescriptionList>
-      <Hint as="span">{t("client:settings.apps.created_at", { date: intl.formatDate(app.created_at, { dateStyle: "medium", timeStyle: "short" }) })}</Hint>
+      <Hint as="span">
+        {t("client:settings.apps.created_at", {
+          date: intl.formatDate(app.created_at, { dateStyle: "medium", timeStyle: "short" }),
+        })}
+      </Hint>
       {app.disabled && <Hint>{t("client:settings.apps.disabled")}</Hint>}
       <Cluster gap="2">
         <DialogTrigger>
           <Button size="sm" aria-label={action(editLabel)}>
             {editLabel}
           </Button>
-          <Dialog title={t("client:settings.apps.edit.title", { name: app.name })} closeLabel={t("client:settings.apps.edit.close")} isDismissable={false} size="md">
+          <Dialog
+            title={t("client:settings.apps.edit.title", { name: app.name })}
+            closeLabel={t("client:settings.apps.edit.close")}
+            isDismissable={false}
+            size="md"
+          >
             {({ close }) => <EditAppForm app={app} close={close} />}
           </Dialog>
         </DialogTrigger>
@@ -311,7 +334,12 @@ function AppRow({ app, remove, rotate, onRotated, onRemoved }: AppRowProps) {
           <Button size="sm" aria-label={action(tokenLabel)}>
             {tokenLabel}
           </Button>
-          <Dialog title={t("client:settings.apps.token.title", { name: app.name })} closeLabel={t("client:settings.apps.edit.close")} isDismissable={false} size="md">
+          <Dialog
+            title={t("client:settings.apps.token.title", { name: app.name })}
+            closeLabel={t("client:settings.apps.edit.close")}
+            isDismissable={false}
+            size="md"
+          >
             {({ close }) => <IssueTokenForm app={app} close={close} />}
           </Dialog>
         </DialogTrigger>

@@ -17,7 +17,9 @@ type Story = StoryObj<typeof meta>;
 
 export const HeadlineOnly: Story = {
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("region", { name: "Notice of the server's closure" })).toHaveTextContent("closes on 1 Nov 2026");
+    await expect(canvas.getByRole("region", { name: "Notice of the server's closure" })).toHaveTextContent(
+      "closes on 1 Nov 2026",
+    );
   },
 };
 

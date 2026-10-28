@@ -46,7 +46,12 @@ const appId = "0192f0c4-7a8e-7000-8000-0000000000a1";
 const appName = "A-very-long-named-app-for-testing-that-wraps-at-320-pixels";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the admin API of a signed-in operator with one user-registered app; returns the changes made. */
@@ -65,18 +70,43 @@ async function operatorServer(page: Page) {
     disabled,
     created_at: "2026-10-22T00:00:00Z",
   });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, operator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/oauth_clients") return json(route, { items: [client()] });
     if (key === `POST /admin/oauth_clients/${appId}/disable`) {
@@ -116,7 +146,10 @@ test.describe("OAuth apps", () => {
     await expect(table.getByText(message("admin.oauth_apps.disabled"), { exact: true })).toBeVisible();
     await enable.click();
     await expect(table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") })).toBeVisible();
-    expect(actions).toEqual([`POST /admin/oauth_clients/${appId}/disable`, `POST /admin/oauth_clients/${appId}/enable`]);
+    expect(actions).toEqual([
+      `POST /admin/oauth_clients/${appId}/disable`,
+      `POST /admin/oauth_clients/${appId}/enable`,
+    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

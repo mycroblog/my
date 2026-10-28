@@ -78,7 +78,16 @@ export function CustomEmoji({ emoji, allowMotion: allowed }: CustomEmojiProps) {
   const plays = useAnimationsPlay();
   const allowMotion = allowed ?? plays;
   const label = labelOf(emoji);
-  const image = <img src={emoji.static_url} alt={label} title={label} draggable={false} decoding="async" className={customEmoji()} />;
+  const image = (
+    <img
+      src={emoji.static_url}
+      alt={label}
+      title={label}
+      draggable={false}
+      decoding="async"
+      className={customEmoji()}
+    />
+  );
   if (!animates(emoji, allowMotion)) return image;
   return (
     <picture>
@@ -104,7 +113,11 @@ export function EmojiText({ text, emojis = noCustomEmojis, allowMotion }: EmojiT
   return (
     <>
       {splitCustomEmoji(text, emojis).map((segment) =>
-        "emoji" in segment ? <CustomEmoji key={segment.start} emoji={segment.emoji} allowMotion={allowMotion} /> : segment.text,
+        "emoji" in segment ? (
+          <CustomEmoji key={segment.start} emoji={segment.emoji} allowMotion={allowMotion} />
+        ) : (
+          segment.text
+        ),
       )}
     </>
   );
@@ -139,7 +152,8 @@ export function insertCustomEmojis(root: Element, emojis: readonly CustomEmojiIm
   const texts: Text[] = [];
   for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
     // Code shows what the author typed, colons included.
-    if (node instanceof Text && node.data.includes(":") && node.parentElement?.closest("code, pre") == null) texts.push(node);
+    if (node instanceof Text && node.data.includes(":") && node.parentElement?.closest("code, pre") == null)
+      texts.push(node);
   }
   const inserted: HTMLElement[] = [];
   for (const node of texts) {

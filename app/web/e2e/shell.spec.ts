@@ -31,13 +31,20 @@ const alice = {
  */
 async function serveSignedIn(page: Page, account: Record<string, unknown> = alice): Promise<void> {
   const json = (route: Route, body: unknown, status = 200) =>
-    route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status,
+      contentType: status < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials" || path === "/accounts/lookup") return json(route, account);
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
-    if (path.startsWith("/timelines/") || path === "/notifications" || path.endsWith("/statuses")) return json(route, { items: [] });
+    if (path.startsWith("/timelines/") || path === "/notifications" || path.endsWith("/statuses"))
+      return json(route, { items: [] });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
 }
@@ -148,7 +155,10 @@ test.describe("page /login", () => {
 });
 
 test.describe("the navigation while signed out", () => {
-  test("offers only the pages usable without a session and signing in, without axe violations", async ({ page, makeAxeBuilder }) => {
+  test("offers only the pages usable without a session and signing in, without axe violations", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.goto("/local");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     // Local, Search, About and Sign in, and on phones the Menu button (the instance answers nothing here, so no
@@ -190,7 +200,9 @@ test.describe("layout", () => {
   test("exposes the skip link, the navigation, and the main landmark with one level-one heading", async ({ page }) => {
     // Phones: Home, Local, Notifications, Search and the Menu button. From md: Home, Local, Notifications, Search,
     // Profile, Bookmarks and Settings (the instance answers nothing here, so no Federated).
-    const items = hasTabBar(page) ? ["link", "link", "link", "link", "button"] : ["link", "link", "link", "link", "link", "link", "link"];
+    const items = hasTabBar(page)
+      ? ["link", "link", "link", "link", "button"]
+      : ["link", "link", "link", "link", "link", "link", "link"];
     await expect(page.locator("body")).toMatchAriaSnapshot(`
       - link
       - navigation:
@@ -203,7 +215,9 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   });
 
-  test("puts the navigation on the bottom edge of phones and on the inline-start edge of larger screens", async ({ page }) => {
+  test("puts the navigation on the bottom edge of phones and on the inline-start edge of larger screens", async ({
+    page,
+  }) => {
     const viewport = page.viewportSize();
     const box = await page.getByRole("navigation").boundingBox();
     expect(viewport).not.toBeNull();
@@ -236,12 +250,16 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
 test.describe("the sidebar of desktops", () => {
   /** A long name, which the sidebar cuts to one line; the link is still named by all of it. */
   const displayName = "Bartholomew Montgomery-Fitzwilliam the Third";
-  const avatar = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`);
+  const avatar = servedImage(
+    `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`,
+  );
 
   test.beforeEach(async ({ page }) => {
     // vite preview has no API: answer the session refresh and the viewer's account as a signed-in user's server.
     const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-    await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+    await page.route("**/oauth/token/refresh", (route) =>
+      route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+    );
     await page.route("**/api/v1/accounts/verify_credentials", (route) =>
       route.fulfill(
         json({
@@ -267,7 +285,10 @@ test.describe("the sidebar of desktops", () => {
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("names the server above the list and the signed-in account below it, from lg only", async ({ page, makeAxeBuilder }) => {
+  test("names the server above the list and the signed-in account below it, from lg only", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const viewport = page.viewportSize();
     const navigation = page.getByRole("navigation");
     const viewer = navigation.locator('a[href="/@alice"]');
@@ -320,7 +341,10 @@ ${Array.from({ length: 7 }, () => "          - listitem:\n            - link").j
         [nav, ...nav.querySelectorAll<HTMLElement>("*")]
           .filter((element) => element === nav || ["auto", "scroll"].includes(getComputedStyle(element).overflowX))
           .filter((element) => element.scrollWidth > element.clientWidth)
-          .map((element) => `${element.tagName.toLowerCase()} scrollWidth ${element.scrollWidth}px > clientWidth ${element.clientWidth}px`),
+          .map(
+            (element) =>
+              `${element.tagName.toLowerCase()} scrollWidth ${element.scrollWidth}px > clientWidth ${element.clientWidth}px`,
+          ),
       );
       expect(overflowing, `at ${width}px`).toEqual([]);
     }
@@ -378,7 +402,10 @@ test.describe("the menu of the phones' tab bar", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("opens a sheet with the profile, the bookmarks and the settings from the keyboard, and Esc gives focus back", async ({ page, makeAxeBuilder }) => {
+  test("opens a sheet with the profile, the bookmarks and the settings from the keyboard, and Esc gives focus back", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const menu = page.getByRole("navigation").getByRole("button");
     await menu.focus();
     await page.keyboard.press("Enter");
@@ -419,7 +446,10 @@ test.describe("the menu of the phones' tab bar", () => {
     await expect(menu).toBeFocused();
   });
 
-  test("closes when one of its links is followed, and focus moves to the new page's heading", async ({ page, hasTouch }) => {
+  test("closes when one of its links is followed, and focus moves to the new page's heading", async ({
+    page,
+    hasTouch,
+  }) => {
     const menu = page.getByRole("navigation").getByRole("button");
     if (hasTouch) await menu.tap();
     else await menu.click();

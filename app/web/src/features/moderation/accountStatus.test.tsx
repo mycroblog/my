@@ -81,13 +81,24 @@ function actionsServer(initial: Action[], { refuse, afterRefusal }: { refuse?: s
       }
       const action = actions.find((item) => item.id === id);
       if (action === undefined) return problem(404, "about:blank", "Not Found");
-      const appealed: Action = { ...action, appealable: false, appeal: { id: "0192f0c4-7a8e-7000-8000-0000000007b9", text: body.text, state: "pending", submitted_at: "2026-10-17T00:00:00Z" } };
+      const appealed: Action = {
+        ...action,
+        appealable: false,
+        appeal: {
+          id: "0192f0c4-7a8e-7000-8000-0000000007b9",
+          text: body.text,
+          state: "pending",
+          submitted_at: "2026-10-17T00:00:00Z",
+        },
+      };
       actions = actions.map((item) => (item.id === id ? appealed : item));
       return HttpResponse.json(appealed);
     }),
     // The first post is the viewer's; the second one is deleted.
     http.get(`${apiBase}/statuses/:id`, ({ params }) =>
-      params["id"] === "0192f0c4-7a8e-7000-8000-0000000000a1" ? HttpResponse.json(viewerStatusFixture({ content: "<p>A sunset</p>" })) : problem(404, "about:blank", "Not Found"),
+      params["id"] === "0192f0c4-7a8e-7000-8000-0000000000a1"
+        ? HttpResponse.json(viewerStatusFixture({ content: "<p>A sunset</p>" }))
+        : problem(404, "about:blank", "Not Found"),
     ),
   );
   return { appeals };
@@ -108,8 +119,16 @@ describe("the account status", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Account status" })).toBeInTheDocument();
     const inEffect = screen.getByRole("region", { name: "Actions in effect" });
     const past = screen.getByRole("region", { name: "Past actions" });
-    expect(within(inEffect).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Suspended"]);
-    expect(within(past).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Posts marked as sensitive", "Limited"]);
+    expect(
+      within(inEffect)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(["Suspended"]);
+    expect(
+      within(past)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(["Posts marked as sensitive", "Limited"]);
 
     const suspended = within(await findAction("Suspended"));
     expect(suspended.getByText("In effect")).toBeInTheDocument();
@@ -145,7 +164,11 @@ describe("the account status", () => {
 
   test("shows the dates in the user's locale and time zone", async () => {
     actionsServer([suspension]);
-    server.use(http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja", time_zone: "Asia/Tokyo" })));
+    server.use(
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, locale: "ja", time_zone: "Asia/Tokyo" }),
+      ),
+    );
     await renderApp({ path: "/settings/account-status" });
 
     const format = new Intl.DateTimeFormat("ja", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo" });
@@ -153,14 +176,18 @@ describe("the account status", () => {
     expect(await action.findByText(format.format(new Date(suspension.issued_at)))).toBeInTheDocument();
     expect(action.getByText(format.format(new Date("2026-11-15T09:30:00Z")))).toBeInTheDocument();
     expect(format.format(new Date(suspension.issued_at))).toContain("18:30");
-    expect(action.getByRole("button", { name: `${format.format(new Date(suspension.issued_at))}の処分に異議を申し立てる` })).toBeInTheDocument();
+    expect(
+      action.getByRole("button", { name: `${format.format(new Date(suspension.issued_at))}の処分に異議を申し立てる` }),
+    ).toBeInTheDocument();
   });
 
   test("says when no action is in effect and none is past", async () => {
     actionsServer([]);
     await renderApp({ path: "/settings/account-status" });
 
-    expect(await screen.findByRole("heading", { level: 3, name: "No actions are in effect on your account" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 3, name: "No actions are in effect on your account" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "No past actions" })).toBeInTheDocument();
   });
 
@@ -172,7 +199,9 @@ describe("the account status", () => {
         if (params.get("active") === "true") return HttpResponse.json({ items: [] });
         const cursor = params.get("cursor");
         cursors.push(cursor);
-        return HttpResponse.json(cursor === null ? { items: [suspension, sensitivePosts], next_cursor: "next" } : { items: [overturned] });
+        return HttpResponse.json(
+          cursor === null ? { items: [suspension, sensitivePosts], next_cursor: "next" } : { items: [overturned] },
+        );
       }),
     );
     const { user } = await renderApp({ path: "/settings/account-status" });
@@ -206,7 +235,9 @@ describe("appealing an action", () => {
     // White space only is no reason, and nothing is sent.
     await user.type(text, "   ");
     await user.click(within(dialog).getByRole("button", { name: "Send appeal" }));
-    expect(await within(dialog).findByText("Enter why the moderators should reconsider the action")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Enter why the moderators should reconsider the action"),
+    ).toBeInTheDocument();
     expect(within(dialog).getByRole("textbox")).toBeInvalid();
     expect(api.appeals).toEqual([]);
 
@@ -217,7 +248,11 @@ describe("appealing an action", () => {
       expect(dialog).not.toBeInTheDocument();
     });
     expect(api.appeals).toEqual([{ id: suspension.id, body: { text: "I did not post spam." } }]);
-    expect(await screen.findByText("You appealed “Suspended”. The moderators will tell you their decision in a notification.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "You appealed “Suspended”. The moderators will tell you their decision in a notification.",
+      ),
+    ).toBeInTheDocument();
     const action = within(await findAction("Suspended"));
     expect(action.getByText("Under review")).toBeInTheDocument();
     expect(action.getByText("I did not post spam.")).toBeInTheDocument();
@@ -265,7 +300,9 @@ describe("appealing an action", () => {
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
     const action = within(await findAction("Suspended"));
-    expect(await action.findByText("The time to appeal this action ended on Oct 16, 2026, 10:00 AM.")).toBeInTheDocument();
+    expect(
+      await action.findByText("The time to appeal this action ended on Oct 16, 2026, 10:00 AM."),
+    ).toBeInTheDocument();
     expect(action.queryByRole("button", { name: /Appeal/ })).not.toBeInTheDocument();
   });
 });

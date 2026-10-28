@@ -110,7 +110,9 @@ async function serveApi(page: Page, maintenance: () => boolean) {
     if (route.request().headers().authorization === "Bearer e2e-token") seen.authorized++;
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   };
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => json(route, alice));
   await page.route("**/api/v1/preferences", (route) =>
     json(route, {
@@ -126,9 +128,13 @@ async function serveApi(page: Page, maintenance: () => boolean) {
       timeline_languages: [],
     } satisfies Schemas["Preferences"]),
   );
-  await page.route("**/api/v1/notifications/marker", (route) => json(route, { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 0 }));
+  await page.route("**/api/v1/notifications/marker", (route) =>
+    json(route, { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 0 }),
+  );
   await page.route("**/api/v1/instance", (route) => json(route, instance));
-  await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [post] } satisfies Schemas["StatusPage"]));
+  await page.route("**/api/v1/timelines/local*", (route) =>
+    json(route, { items: [post] } satisfies Schemas["StatusPage"]),
+  );
   // Registered last, so it is tried first: the server's maintenance mode (internal/interface/maintenance).
   const underMaintenance = (route: Route) => {
     if (!maintenance()) return route.fallback();
@@ -151,7 +157,10 @@ async function serveApi(page: Page, maintenance: () => boolean) {
   return seen;
 }
 
-test("the maintenance replaces the app with what the server says, and the app returns after it, still signed in", async ({ page, makeAxeBuilder }) => {
+test("the maintenance replaces the app with what the server says, and the app returns after it, still signed in", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   let maintenance = false;
   const seen = await serveApi(page, () => maintenance);
   await page.goto("/local");
@@ -168,7 +177,9 @@ test("the maintenance replaces the app with what the server says, and the app re
   const noticeText = main.getByText(notice);
   await expect(noticeText).toHaveAttribute("dir", "auto");
   await expect(main.getByText(withAnything("maintenance.until", "time"))).toBeVisible();
-  await expect(main.getByRole("link", { name: new RegExp(escapeRegExp(message("maintenance.status_page"))) })).toHaveAttribute("href", statusPageUrl);
+  await expect(
+    main.getByRole("link", { name: new RegExp(escapeRegExp(message("maintenance.status_page"))) }),
+  ).toHaveAttribute("href", statusPageUrl);
   await expect(main.getByRole("button", { name: message("maintenance.reload") })).toBeVisible();
   await expect(page.getByRole("navigation")).toHaveCount(0);
   await expect(page.getByRole("feed")).toHaveCount(0);

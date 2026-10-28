@@ -11,7 +11,13 @@ import { server } from "../test/msw/server";
 import { createApi } from "./api/client";
 import { Session } from "./auth/session";
 import { ApiError, NetworkError } from "./errors";
-import { ErrorReporter, type ErrorReporterOptions, ErrorReporterProvider, maxReportsPerPage, useBoundaryErrorReport } from "./errorReporting";
+import {
+  ErrorReporter,
+  type ErrorReporterOptions,
+  ErrorReporterProvider,
+  maxReportsPerPage,
+  useBoundaryErrorReport,
+} from "./errorReporting";
 import { loadI18n } from "./i18n";
 import { AppLocale } from "./locale";
 import { Maintenance } from "./maintenance";
@@ -73,7 +79,13 @@ test("sends an error with its name, message, stack, release, and kind as JSON", 
     expect(received).toHaveLength(1);
   });
   expect(received[0]?.contentType).toMatch(/^application\/json/);
-  expect(received[0]?.body).toEqual({ name: "TypeError", message: "boom", stack: error.stack, release: "v0.1.0", kind: "boundary_error" });
+  expect(received[0]?.body).toEqual({
+    name: "TypeError",
+    message: "boom",
+    stack: error.stack,
+    release: "v0.1.0",
+    kind: "boundary_error",
+  });
 });
 
 test("sends the access token of a signed-in user", async () => {
@@ -122,7 +134,10 @@ test("sends nothing for the errors of the API client, the router, aborts, remove
   reporter.report(redirect({ to: "/home" }), "route_error");
   reporter.report(new DOMException("aborted", "AbortError"), "unhandledrejection");
   reporter.report("a string", "unhandledrejection");
-  reporter.report(ownError("Failed to fetch dynamically imported module: https://my.example/assets/Page-1a2B.js"), "route_error");
+  reporter.report(
+    ownError("Failed to fetch dynamically imported module: https://my.example/assets/Page-1a2B.js"),
+    "route_error",
+  );
   const removed = ownError("a chunk failed");
   window.dispatchEvent(Object.assign(new Event("vite:preloadError", { cancelable: true }), { payload: removed }));
   reporter.report(removed, "route_error");
@@ -182,7 +197,10 @@ test("sends a beacon without the token while the page is left, and fetch again o
   expect(beacons).toHaveLength(1);
   expect(beacons[0]?.url).toBe(`${apiOrigin}/api/v1/client_errors`);
   expect(beacons[0]?.data.type).toBe("application/json");
-  expect(JSON.parse((await beacons[0]?.data.text()) ?? "")).toMatchObject({ message: "while leaving", kind: "unhandledrejection" });
+  expect(JSON.parse((await beacons[0]?.data.text()) ?? "")).toMatchObject({
+    message: "while leaving",
+    kind: "unhandledrejection",
+  });
   await waitFor(() => {
     expect(received).toHaveLength(1);
   });

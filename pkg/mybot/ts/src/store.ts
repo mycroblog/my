@@ -52,7 +52,8 @@ export function encodeState(s: StoreState): string {
     processed: Object.fromEntries([...s.processed].map(([id, at]) => [id, new Date(at).toISOString()])),
   };
   if (s.position !== null && s.position !== "") doc["position"] = s.position;
-  if (s.lastRuns.size > 0) doc["last_runs"] = Object.fromEntries([...s.lastRuns].map(([name, at]) => [name, new Date(at).toISOString()]));
+  if (s.lastRuns.size > 0)
+    doc["last_runs"] = Object.fromEntries([...s.lastRuns].map(([name, at]) => [name, new Date(at).toISOString()]));
   if (s.refreshToken !== null && s.refreshToken !== "") doc["refresh_token"] = s.refreshToken;
   return JSON.stringify(doc, null, 2) + "\n";
 }
@@ -65,7 +66,8 @@ function decodeTimes(value: unknown, field: string): Map<string, number> {
   for (const [k, v] of Object.entries(value)) {
     // The Go library writes nanoseconds, which not every runtime's Date.parse reads: milliseconds are enough.
     const at = typeof v === "string" ? Date.parse(v.replace(/(\.\d{3})\d+/, "$1")) : Number.NaN;
-    if (Number.isNaN(at)) throw new Error(`mybot: the field ${field} of the state has a time that is no RFC 3339 string`);
+    if (Number.isNaN(at))
+      throw new Error(`mybot: the field ${field} of the state has a time that is no RFC 3339 string`);
     out.set(k, at);
   }
   return out;
@@ -74,7 +76,8 @@ function decodeTimes(value: unknown, field: string): Map<string, number> {
 /** Reads the JSON document of a FileStore. */
 export function decodeState(text: string): StoreState {
   const doc: unknown = JSON.parse(text);
-  if (typeof doc !== "object" || doc === null || Array.isArray(doc)) throw new Error("mybot: the state is no JSON object");
+  if (typeof doc !== "object" || doc === null || Array.isArray(doc))
+    throw new Error("mybot: the state is no JSON object");
   const d = doc as Record<string, unknown>;
   const str = (v: unknown, field: string): string | null => {
     if (v === undefined || v === null || v === "") return null;

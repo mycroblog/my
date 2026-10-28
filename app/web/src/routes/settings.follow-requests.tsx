@@ -9,7 +9,8 @@ import { SettingsHeading } from "./-layout/SettingsHeading";
 export const Route = createFileRoute("/settings/follow-requests")({
   staticData: { title: "client:settings.follow_requests.title" },
   beforeLoad: requireSignIn,
-  loader: ({ context }) => context.queryClient.infiniteQuery({ ...followRequestsQueryOptions(context.api), staleTime: Infinity }),
+  loader: ({ context }) =>
+    context.queryClient.infiniteQuery({ ...followRequestsQueryOptions(context.api), staleTime: Infinity }),
   component: FollowRequestsPage,
 });
 

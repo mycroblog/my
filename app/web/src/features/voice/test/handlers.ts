@@ -10,13 +10,18 @@ import { apiBase, problem } from "../../../test/msw/http";
 export const roomId = "0192f0c4-7a8e-7000-8000-0000000000f1";
 
 /** A participant of a room: `account` as a listener, with `overrides`. */
-export function participantFixture(account: Schemas["Account"], overrides: Partial<Schemas["VoiceRoomParticipant"]> = {}): Schemas["VoiceRoomParticipant"] {
+export function participantFixture(
+  account: Schemas["Account"],
+  overrides: Partial<Schemas["VoiceRoomParticipant"]> = {},
+): Schemas["VoiceRoomParticipant"] {
   return { account, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false, ...overrides };
 }
 
 /** Bob's open room for every local user, with Bob as its host and only speaker, with `overrides`. */
 export function voiceRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}): Schemas["VoiceRoom"] {
-  const participants = overrides.participants ?? [participantFixture(otherAccountFixture, { role: "speaker", host: true })];
+  const participants = overrides.participants ?? [
+    participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+  ];
   return {
     id: roomId,
     name: "Friday night radio",
@@ -34,7 +39,11 @@ export function voiceRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}):
 
 /** Alice's (the viewer's) open room, with her as its only participant. */
 export function ownRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}): Schemas["VoiceRoom"] {
-  return voiceRoomFixture({ host: viewerFixture, participants: [participantFixture(viewerFixture, { role: "speaker", host: true })], ...overrides });
+  return voiceRoomFixture({
+    host: viewerFixture,
+    participants: [participantFixture(viewerFixture, { role: "speaker", host: true })],
+    ...overrides,
+  });
 }
 
 const voiceOff = () => problem(404, "about:blank", "Not Found");

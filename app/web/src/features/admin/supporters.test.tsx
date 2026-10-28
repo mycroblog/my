@@ -12,7 +12,12 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { paymentStatusFixture, supporterPlanFixture, supporterProgramFixture, supporterSubscriptionFixture } from "./test/handlers";
+import {
+  paymentStatusFixture,
+  supporterPlanFixture,
+  supporterProgramFixture,
+  supporterSubscriptionFixture,
+} from "./test/handlers";
 
 beforeEach(() => {
   document.documentElement.lang = "en";
@@ -21,7 +26,10 @@ beforeEach(() => {
 
 /** A problem document with a localized detail, as the server answers a refusal. */
 function refusal(status: number, type: string, title: string, detail: string, extra: Record<string, unknown> = {}) {
-  return HttpResponse.json({ type, title, status, detail, ...extra }, { status, headers: { "Content-Type": "application/problem+json" } });
+  return HttpResponse.json(
+    { type, title, status, detail, ...extra },
+    { status, headers: { "Content-Type": "application/problem+json" } },
+  );
 }
 
 const planId = "0199f0e0-0000-7000-8000-0000000000c1";
@@ -32,28 +40,46 @@ describe("the supporters screen", () => {
   });
 
   test("shows the program, the plans by rank with the retired ones apart, and the subscriptions", async () => {
-    const { account_id: _account, username: _username, ...erasedSubscription } = supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e2", {
+    const {
+      account_id: _account,
+      username: _username,
+      ...erasedSubscription
+    } = supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e2", {
       state: "expired",
     });
     server.use(
       http.get(`${apiBase}/admin/supporter_program`, () =>
-        HttpResponse.json(supporterProgramFixture({ enabled: true, provider: "stripe", live_subscriptions: 2, commerce_disclosure: false, warnings: ["no_commerce_disclosure"] })),
+        HttpResponse.json(
+          supporterProgramFixture({
+            enabled: true,
+            provider: "stripe",
+            live_subscriptions: 2,
+            commerce_disclosure: false,
+            warnings: ["no_commerce_disclosure"],
+          }),
+        ),
       ),
       http.get(`${apiBase}/admin/supporter_plans`, () =>
         HttpResponse.json({
           items: [
             supporterPlanFixture(planId, { members: 2 }),
-            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c2", { name: "Gold", rank: 2, prices_ready: false }),
-            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c3", { name: "Old", rank: 0, retired: true, retired_at: "2026-10-21T00:00:00Z" }),
+            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c2", {
+              name: "Gold",
+              rank: 2,
+              prices_ready: false,
+            }),
+            supporterPlanFixture("0199f0e0-0000-7000-8000-0000000000c3", {
+              name: "Old",
+              rank: 0,
+              retired: true,
+              retired_at: "2026-10-21T00:00:00Z",
+            }),
           ],
         } satisfies Schemas["AdminSupporterPlanList"]),
       ),
       http.get(`${apiBase}/admin/supporter_subscriptions`, () =>
         HttpResponse.json({
-          items: [
-            supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1"),
-            erasedSubscription,
-          ],
+          items: [supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1"), erasedSubscription],
         }),
       ),
     );
@@ -63,7 +89,10 @@ describe("the supporters screen", () => {
     const program = screen.getByRole("region", { name: "Supporter program" });
     expect(within(program).getByRole("switch", { name: "Enable the supporter program" })).toBeChecked();
     expect(within(program).getByText("2 subscriptions")).toBeInTheDocument();
-    expect(within(program).getByRole("link", { name: "Write them in the terms and policies" })).toHaveAttribute("href", "/admin/documents");
+    expect(within(program).getByRole("link", { name: "Write them in the terms and policies" })).toHaveAttribute(
+      "href",
+      "/admin/documents",
+    );
 
     const plans = screen.getByRole("region", { name: "Plans" });
     const [supporter, gold] = within(plans).getAllByRole("listitem");
@@ -92,11 +121,18 @@ describe("the supporters screen", () => {
 
     server.use(
       http.put(`${apiBase}/admin/supporter_program`, () =>
-        refusal(409, "/api/v1/problems/supporters-unavailable", "The supporter program is not available on this server.", "Configure a payment provider first."),
+        refusal(
+          409,
+          "/api/v1/problems/supporters-unavailable",
+          "The supporter program is not available on this server.",
+          "Configure a payment provider first.",
+        ),
       ),
     );
     await user.click(within(program).getByRole("switch", { name: "Enable the supporter program" }));
-    expect(await within(program).findByRole("alert")).toHaveTextContent("Could not change the supporter program: Configure a payment provider first.");
+    expect(await within(program).findByRole("alert")).toHaveTextContent(
+      "Could not change the supporter program: Configure a payment provider first.",
+    );
 
     let enabled = false;
     server.use(
@@ -104,7 +140,9 @@ describe("the supporters screen", () => {
         enabled = true;
         return HttpResponse.json(supporterProgramFixture({ enabled: true, provider: "stripe" }));
       }),
-      http.get(`${apiBase}/admin/supporter_program`, () => HttpResponse.json(supporterProgramFixture(enabled ? { enabled: true, provider: "stripe" } : {}))),
+      http.get(`${apiBase}/admin/supporter_program`, () =>
+        HttpResponse.json(supporterProgramFixture(enabled ? { enabled: true, provider: "stripe" } : {})),
+      ),
     );
     await user.click(within(program).getByRole("switch", { name: "Enable the supporter program" }));
     expect(await within(program).findByRole("status")).toHaveTextContent("The supporter program is enabled.");
@@ -112,13 +150,18 @@ describe("the supporters screen", () => {
   });
 
   test("keeps the switch off when the program cannot be enabled", async () => {
-    const { configured_provider: _provider, ...noProvider } = supporterProgramFixture({ can_enable: false, warnings: ["no_provider"] });
+    const { configured_provider: _provider, ...noProvider } = supporterProgramFixture({
+      can_enable: false,
+      warnings: ["no_provider"],
+    });
     server.use(http.get(`${apiBase}/admin/supporter_program`, () => HttpResponse.json(noProvider)));
     await renderApp({ path: "/admin/supporters" });
     const program = await screen.findByRole("region", { name: "Supporter program" });
 
     expect(within(program).getByRole("switch", { name: "Enable the supporter program" })).toBeDisabled();
-    expect(within(program).getByText("No payment provider is configured, so the program cannot be enabled.")).toBeInTheDocument();
+    expect(
+      within(program).getByText("No payment provider is configured, so the program cannot be enabled."),
+    ).toBeInTheDocument();
   });
 
   test("shows the payment provider's state, how to fix the last reconciliation, and the webhook warnings", async () => {
@@ -170,12 +213,17 @@ describe("the supporters screen", () => {
     expect(await within(payment).findByRole("status")).toHaveTextContent("The reconciliation is queued.");
 
     await user.click(within(payment).getByRole("button", { name: "Reconcile now" }));
-    expect(await within(payment).findByRole("alert")).toHaveTextContent("A reconciliation already ran in this hour (UTC).");
+    expect(await within(payment).findByRole("alert")).toHaveTextContent(
+      "A reconciliation already ran in this hour (UTC).",
+    );
     expect(queued).toBe(2);
   });
 
   test("shows no payment provider section without a configured provider", async () => {
-    const { configured_provider: _provider, ...noProvider } = supporterProgramFixture({ can_enable: false, warnings: ["no_provider"] });
+    const { configured_provider: _provider, ...noProvider } = supporterProgramFixture({
+      can_enable: false,
+      warnings: ["no_provider"],
+    });
     let read = false;
     server.use(
       http.get(`${apiBase}/admin/supporter_program`, () => HttpResponse.json(noProvider)),
@@ -193,9 +241,16 @@ describe("the supporters screen", () => {
 
   test("shows why disabling is refused while subscriptions go on", async () => {
     server.use(
-      http.get(`${apiBase}/admin/supporter_program`, () => HttpResponse.json(supporterProgramFixture({ enabled: true, provider: "stripe", live_subscriptions: 1 }))),
+      http.get(`${apiBase}/admin/supporter_program`, () =>
+        HttpResponse.json(supporterProgramFixture({ enabled: true, provider: "stripe", live_subscriptions: 1 })),
+      ),
       http.put(`${apiBase}/admin/supporter_program`, () =>
-        refusal(409, "/api/v1/problems/live-subscriptions", "Subscriptions to the supporter plans go on.", "Retire the plans first."),
+        refusal(
+          409,
+          "/api/v1/problems/live-subscriptions",
+          "Subscriptions to the supporter plans go on.",
+          "Retire the plans first.",
+        ),
       ),
     );
     const { user } = await renderApp({ path: "/admin/supporters" });
@@ -212,9 +267,15 @@ describe("the supporters screen", () => {
         const body = (await request.json()) as Schemas["AdminSupporterPlanCreateRequest"];
         sent.push(body);
         if (sent.length === 1) {
-          return refusal(422, "/api/v1/problems/invalid-supporter-plan", "The supporter plan cannot be saved.", "Choose a role that nobody holds.", {
-            reason: "role_held",
-          });
+          return refusal(
+            422,
+            "/api/v1/problems/invalid-supporter-plan",
+            "The supporter plan cannot be saved.",
+            "Choose a role that nobody holds.",
+            {
+              reason: "role_held",
+            },
+          );
         }
         return HttpResponse.json(supporterPlanFixture(planId, { name: body.name }));
       }),
@@ -250,7 +311,11 @@ describe("the supporters screen", () => {
   test("retires a plan after asking", async () => {
     let retired = false;
     server.use(
-      http.get(`${apiBase}/admin/supporter_plans`, () => HttpResponse.json({ items: [supporterPlanFixture(planId, { retired, ...(retired && { retired_at: "2026-10-22T00:00:00Z" }) })] })),
+      http.get(`${apiBase}/admin/supporter_plans`, () =>
+        HttpResponse.json({
+          items: [supporterPlanFixture(planId, { retired, ...(retired && { retired_at: "2026-10-22T00:00:00Z" }) })],
+        }),
+      ),
       http.post(`${apiBase}/admin/supporter_plans/:id/retire`, () => {
         retired = true;
         return new HttpResponse(null, { status: 204 });
@@ -274,7 +339,11 @@ describe("the supporters screen", () => {
     server.use(
       http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) => {
         queries.push(new URL(request.url).search);
-        return HttpResponse.json({ items: [supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1", canceled ? { state: "expired" } : {})] });
+        return HttpResponse.json({
+          items: [
+            supporterSubscriptionFixture("0199f0e0-0000-7000-8000-0000000000e1", canceled ? { state: "expired" } : {}),
+          ],
+        });
       }),
       http.post(`${apiBase}/admin/supporter_subscriptions/:id/cancel`, () => {
         canceled = true;
@@ -325,6 +394,9 @@ describe("the supporters screen without the permission", () => {
     server.use(signedInHandler, operatorHandler(["manage_supporters"]));
     await renderApp({ path: "/admin" });
 
-    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /Supporters/u })).toHaveAttribute("href", "/admin/supporters");
+    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /Supporters/u })).toHaveAttribute(
+      "href",
+      "/admin/supporters",
+    );
   });
 });

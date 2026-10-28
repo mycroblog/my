@@ -7,7 +7,11 @@ import type { Schemas } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
 
 /** An emoji that the user made, at 2026-10-20T00:00:00Z, with `overrides`. */
-export function ownCustomEmojiFixture(id: string, shortcode: string, overrides: Partial<Schemas["OwnCustomEmoji"]> = {}): Schemas["OwnCustomEmoji"] {
+export function ownCustomEmojiFixture(
+  id: string,
+  shortcode: string,
+  overrides: Partial<Schemas["OwnCustomEmoji"]> = {},
+): Schemas["OwnCustomEmoji"] {
   return {
     id,
     shortcode,
@@ -23,7 +27,11 @@ export function ownCustomEmojiFixture(id: string, shortcode: string, overrides: 
 }
 
 /** A pending request of the user for a new emoji, made at 2026-10-21T00:00:00Z, with `overrides`. */
-export function customEmojiRequestFixture(id: string, shortcode: string, overrides: Partial<Schemas["CustomEmojiRequest"]> = {}): Schemas["CustomEmojiRequest"] {
+export function customEmojiRequestFixture(
+  id: string,
+  shortcode: string,
+  overrides: Partial<Schemas["CustomEmojiRequest"]> = {},
+): Schemas["CustomEmojiRequest"] {
   return {
     id,
     kind: "create",
@@ -41,21 +49,39 @@ const createdRequestId = "0199f0e0-0000-7000-8000-00000000e101";
 
 export const handlers = [
   // operationIds listOwnCustomEmojis, updateOwnCustomEmoji, deleteOwnCustomEmoji.
-  http.get(`${apiBase}/custom_emojis/mine`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [], used: 0 } satisfies Schemas["OwnCustomEmojiPage"]))),
+  http.get(`${apiBase}/custom_emojis/mine`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [], used: 0 } satisfies Schemas["OwnCustomEmojiPage"])),
+  ),
   http.patch(`${apiBase}/custom_emojis/mine/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["UpdateOwnCustomEmojiRequest"];
     return withViewer(request, () => HttpResponse.json(ownCustomEmojiFixture(String(params["id"]), "blobcat", body)));
   }),
-  http.delete(`${apiBase}/custom_emojis/mine/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/custom_emojis/mine/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds listCustomEmojiRequests, createCustomEmojiRequest, withdrawCustomEmojiRequest.
-  http.get(`${apiBase}/custom_emoji_requests`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["CustomEmojiRequestPage"]))),
+  http.get(`${apiBase}/custom_emoji_requests`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["CustomEmojiRequestPage"])),
+  ),
   http.post(`${apiBase}/custom_emoji_requests`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["NewCustomEmojiRequest"];
     return withViewer(request, () =>
-      HttpResponse.json(customEmojiRequestFixture(createdRequestId, body.shortcode ?? "blobcat", { kind: body.kind, ...(body.emoji_id === undefined ? {} : { emoji_id: body.emoji_id }) })),
+      HttpResponse.json(
+        customEmojiRequestFixture(createdRequestId, body.shortcode ?? "blobcat", {
+          kind: body.kind,
+          ...(body.emoji_id === undefined ? {} : { emoji_id: body.emoji_id }),
+        }),
+      ),
     );
   }),
   http.post(`${apiBase}/custom_emoji_requests/:id/withdraw`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(customEmojiRequestFixture(String(params["id"]), "blobcat", { state: "withdrawn", decided_at: "2026-10-22T00:00:00Z" }))),
+    withViewer(request, () =>
+      HttpResponse.json(
+        customEmojiRequestFixture(String(params["id"]), "blobcat", {
+          state: "withdrawn",
+          decided_at: "2026-10-22T00:00:00Z",
+        }),
+      ),
+    ),
   ),
 ];

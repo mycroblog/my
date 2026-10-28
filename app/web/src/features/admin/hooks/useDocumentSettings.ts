@@ -8,7 +8,14 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
-import { type DocumentKey, instanceQueryOptions, type InstanceText, instanceTextsQueryOptions, cacheSavedDocument, setDocumentMutation } from "../api/documents";
+import {
+  type DocumentKey,
+  instanceQueryOptions,
+  type InstanceText,
+  instanceTextsQueryOptions,
+  cacheSavedDocument,
+  setDocumentMutation,
+} from "../api/documents";
 
 /** The drafts that differ from what is saved, by document. */
 type Drafts = Readonly<Partial<Record<DocumentKey, string>>>;
@@ -50,7 +57,11 @@ type EditorContext = {
 };
 
 /** One document's form; the screen has three, so this is called three times (never in a loop, web-client/README.md R3). */
-function useDocumentEditor(key: DocumentKey, { texts, drafts, setDraft }: EditorContext, pageUrl: string | undefined): DocumentEditor {
+function useDocumentEditor(
+  key: DocumentKey,
+  { texts, drafts, setDraft }: EditorContext,
+  pageUrl: string | undefined,
+): DocumentEditor {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();

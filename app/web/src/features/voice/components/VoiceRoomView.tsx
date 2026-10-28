@@ -35,7 +35,13 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       return (
         <>
           {renderHeading(t("client:voice.room.title"))}
-          <RegionError heading={t("client:voice.room.failed")} reason={page.reason} retryLabel={t("client:voice.list.retry")} onRetry={page.retry} isRetrying={page.isRetrying} />
+          <RegionError
+            heading={t("client:voice.room.failed")}
+            reason={page.reason}
+            retryLabel={t("client:voice.list.retry")}
+            onRetry={page.retry}
+            isRetrying={page.isRetrying}
+          />
         </>
       );
     case "not-found":
@@ -64,7 +70,9 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       const { summary } = page;
       return (
         <>
-          {renderHeading(summary.name === undefined ? t("client:voice.room.title") : <span dir="auto">{summary.name}</span>)}
+          {renderHeading(
+            summary.name === undefined ? t("client:voice.room.title") : <span dir="auto">{summary.name}</span>,
+          )}
           <Stack gap="4">
             {summary.host !== undefined && <AccountLink account={summary.host} />}
             {summary.description !== undefined && summary.description !== "" && (
@@ -78,7 +86,10 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
               <Callout>
                 <p>{t("client:voice.room.open")}</p>
                 <p>{t("client:voice.room.local_only")}</p>
-                <Link href={`/login?${new URLSearchParams({ return_to: voiceRoomPath(id) }).toString()}`} variant="standalone">
+                <Link
+                  href={`/login?${new URLSearchParams({ return_to: voiceRoomPath(id) }).toString()}`}
+                  variant="standalone"
+                >
                   {t("client:voice.room.sign_in")}
                 </Link>
               </Callout>

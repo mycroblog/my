@@ -18,7 +18,8 @@ for (const path of paths) {
     const failed: string[] = [];
     const isAsset = (type: string) => type === "script" || type === "stylesheet";
     page.on("response", (response) => {
-      if (isAsset(response.request().resourceType()) && response.status() >= 400) failed.push(`${String(response.status())} ${response.url()}`);
+      if (isAsset(response.request().resourceType()) && response.status() >= 400)
+        failed.push(`${String(response.status())} ${response.url()}`);
     });
     page.on("requestfailed", (request) => {
       if (isAsset(request.resourceType())) failed.push(`failed ${request.url()}`);

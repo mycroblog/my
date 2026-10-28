@@ -27,7 +27,11 @@ export function RefetchStatusesSection({ target }: RefetchStatusesSectionProps) 
           {t("client:admin.refetch.button")}
         </Button>
         <Hint id={descriptionId}>
-          {t(target.kind === "account" ? "client:admin.refetch.account.description" : "client:admin.refetch.domain.description")}
+          {t(
+            target.kind === "account"
+              ? "client:admin.refetch.account.description"
+              : "client:admin.refetch.domain.description",
+          )}
         </Hint>
       </Stack>
     </DetailSection>

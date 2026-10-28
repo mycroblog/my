@@ -24,7 +24,11 @@ function announcementsServer(initial: readonly Announcement[]) {
   const writes: { method: string; path: string; body: unknown }[] = [];
   const record = async (request: Request) => {
     const text = await request.clone().text();
-    writes.push({ method: request.method, path: new URL(request.url).pathname.replace("/api/v1", ""), body: text === "" ? undefined : JSON.parse(text) });
+    writes.push({
+      method: request.method,
+      path: new URL(request.url).pathname.replace("/api/v1", ""),
+      body: text === "" ? undefined : JSON.parse(text),
+    });
   };
   const change = (id: unknown, edit: Partial<Announcement>) => {
     announcements = announcements.map((item) => (item.id === id ? { ...item, ...edit } : item));
@@ -61,7 +65,9 @@ function announcementsServer(initial: readonly Announcement[]) {
   return { writes };
 }
 
-const draft = adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000c001", { text: "# Maintenance\n\nOn **Sunday**." });
+const draft = adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000c001", {
+  text: "# Maintenance\n\nOn **Sunday**.",
+});
 const published = adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000c002", {
   text: "Welcome!",
   content: "<p>Welcome!</p>",
@@ -87,7 +93,10 @@ describe("the announcements screen", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Announcements" })).toBeInTheDocument();
     const list = screen.getByRole("region", { name: "All announcements" });
     const headings = within(list).getAllByRole("heading", { level: 3 });
-    expect(headings.map((heading) => heading.textContent)).toEqual([`${isolated("Maintenance")} (Draft)`, `${isolated("Welcome!")} (Published)`]);
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      `${isolated("Maintenance")} (Draft)`,
+      `${isolated("Welcome!")} (Published)`,
+    ]);
     expect(within(list).getByText("Sunday")).toBeInTheDocument();
     expect(within(list).getByRole("button", { name: "Publish: Maintenance" })).toBeInTheDocument();
     expect(within(list).queryByRole("button", { name: "Publish: Welcome!" })).not.toBeInTheDocument();
@@ -105,14 +114,20 @@ describe("the announcements screen", () => {
     await user.type(within(form).getByRole("textbox", { name: "Text" }), "Maintenance tonight");
     await user.click(within(form).getByRole("button", { name: "Publish the announcement" }));
 
-    expect(await within(form).findByText("Published the announcement. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(form).findByText("Published the announcement. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(announcements.writes).toHaveLength(1);
     const body = announcements.writes[0]?.body as Schemas["AdminAnnouncementCreateRequest"];
     expect(body.text).toBe("Maintenance tonight");
     expect(body.publish).toBe(true);
     expect(body.ends_at).toBeDefined();
     expect(Date.parse(body.ends_at ?? "") - Date.now()).toBeGreaterThan(6 * 86_400_000);
-    expect(within(screen.getByRole("region", { name: "All announcements" })).getByRole("heading", { name: `${isolated("Maintenance tonight")} (Published)` })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "All announcements" })).getByRole("heading", {
+        name: `${isolated("Maintenance tonight")} (Published)`,
+      }),
+    ).toBeInTheDocument();
   });
 
   test("keeps a new announcement as a draft", async () => {
@@ -124,7 +139,9 @@ describe("the announcements screen", () => {
     await user.click(within(form).getByRole("checkbox", { name: /Publish now/u }));
     await user.click(within(form).getByRole("button", { name: "Save as a draft" }));
 
-    expect(await within(form).findByText("Saved the announcement as a draft. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(form).findByText("Saved the announcement as a draft. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(announcements.writes[0]?.body).toMatchObject({ text: "Draft", publish: false });
   });
 
@@ -134,9 +151,13 @@ describe("the announcements screen", () => {
     const list = await screen.findByRole("region", { name: "All announcements" });
 
     await user.click(within(list).getByRole("button", { name: "Publish: Maintenance" }));
-    expect(await within(list).findByText("Published Maintenance. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(list).findByText("Published Maintenance. The audit log records the change."),
+    ).toBeInTheDocument();
     await waitFor(() => {
-      expect(within(list).getByRole("heading", { level: 3, name: `${isolated("Maintenance")} (Published)` })).toHaveFocus();
+      expect(
+        within(list).getByRole("heading", { level: 3, name: `${isolated("Maintenance")} (Published)` }),
+      ).toHaveFocus();
     });
 
     await user.click(within(list).getByRole("button", { name: "Edit: Maintenance" }));
@@ -145,12 +166,16 @@ describe("the announcements screen", () => {
     await user.clear(field);
     await user.type(field, "Maintenance moved to Monday");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(await within(list).findByText("Changed Maintenance moved to Monday. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(list).findByText("Changed Maintenance moved to Monday. The audit log records the change."),
+    ).toBeInTheDocument();
 
     await user.click(within(list).getByRole("button", { name: "Withdraw: Maintenance moved to Monday" }));
     const confirm = await screen.findByRole("alertdialog", { name: "Withdraw Maintenance moved to Monday?" });
     await user.click(within(confirm).getByRole("button", { name: "Withdraw" }));
-    expect(await within(list).findByText("Withdrew Maintenance moved to Monday. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(list).findByText("Withdrew Maintenance moved to Monday. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(within(list).queryByRole("button", { name: /Withdraw/u })).not.toBeInTheDocument();
 
     expect(announcements.writes.map((write) => `${write.method} ${write.path}`)).toEqual([

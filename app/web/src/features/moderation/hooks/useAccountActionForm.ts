@@ -12,7 +12,13 @@ import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { cacheIssuedAccountAction, refreshActedReports } from "../api/accounts";
 import { refreshSignupBlockLists } from "../api/signupBlocks";
-import { type AccountAction, type AccountActionCategory, type AccountActionKind, createAccountActionMutation, type NewAccountAction } from "../api/reports";
+import {
+  type AccountAction,
+  type AccountActionCategory,
+  type AccountActionKind,
+  createAccountActionMutation,
+  type NewAccountAction,
+} from "../api/reports";
 
 /** The kinds of action, from the lightest to the heaviest, in the order of the form. */
 const accountActionKinds = [
@@ -95,11 +101,25 @@ type Draft = {
 };
 
 function emptyDraft(target: ActionTarget): Draft {
-  return { kind: null, category: target.category, publicReason: "", privateNote: "", expiresIn: null, notify: true, blockEmail: false, leftOut: [] };
+  return {
+    kind: null,
+    category: target.category,
+    publicReason: "",
+    privateNote: "",
+    expiresIn: null,
+    notify: true,
+    blockEmail: false,
+    leftOut: [],
+  };
 }
 
 /** The request of a draft whose kind is chosen; empty texts and what the kind does not take are left out. */
-function requestOf(draft: Draft, kind: AccountActionKind, target: ActionTarget, statusIds: readonly string[]): NewAccountAction {
+function requestOf(
+  draft: Draft,
+  kind: AccountActionKind,
+  target: ActionTarget,
+  statusIds: readonly string[],
+): NewAccountAction {
   return {
     kind,
     reason_category: draft.category,
@@ -141,14 +161,20 @@ export type AccountActionForm = {
  * are fetched again, after the form is emptied; the reports, the posts acted on and, for a ban that blocks the
  * email address, the lists of sign-up blocks are fetched again after it.
  */
-export function useAccountActionForm(target: ActionTarget, onIssued: (action: AccountAction) => void): AccountActionForm {
+export function useAccountActionForm(
+  target: ActionTarget,
+  onIssued: (action: AccountAction) => void,
+): AccountActionForm {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState(() => emptyDraft(target));
   const [confirming, setConfirming] = useState(false);
   const [isPostMissing, setIsPostMissing] = useState(false);
-  const kinds = accountActionKinds.filter((kind) => (target.remote ? remoteKinds.includes(kind) : true) && (target.statusIds.length > 0 || !postKinds.includes(kind)));
+  const kinds = accountActionKinds.filter(
+    (kind) =>
+      (target.remote ? remoteKinds.includes(kind) : true) && (target.statusIds.length > 0 || !postKinds.includes(kind)),
+  );
   const create = useMutation({
     ...createAccountActionMutation(api),
     onSuccess: async (action, { accountId, body }) => {
@@ -167,7 +193,8 @@ export function useAccountActionForm(target: ActionTarget, onIssued: (action: Ac
   });
   const chosenStatusIds = target.statusIds.filter((id) => !draft.leftOut.includes(id));
   const run = () => {
-    if (draft.kind !== null) create.mutate({ accountId: target.accountId, body: requestOf(draft, draft.kind, target, chosenStatusIds) });
+    if (draft.kind !== null)
+      create.mutate({ accountId: target.accountId, body: requestOf(draft, draft.kind, target, chosenStatusIds) });
   };
   return {
     draft,
@@ -205,7 +232,8 @@ export function useAccountActionForm(target: ActionTarget, onIssued: (action: Ac
             },
           }
         : null,
-    error: create.isError ? t("client:admin.account_actions.issue_failed", { reason: errorMessage(create.error) }) : undefined,
+    error: create.isError
+      ? t("client:admin.account_actions.issue_failed", { reason: errorMessage(create.error) })
+      : undefined,
   };
 }
-

@@ -76,7 +76,9 @@ const planProblemReasons: readonly string[] = [
 export function supporterPlanProblemReason(error: unknown): SupporterPlanProblemReason | undefined {
   if (!(error instanceof ApiError) || error.type !== invalidPlanProblem) return undefined;
   const reason = error.document["reason"];
-  return typeof reason === "string" && planProblemReasons.includes(reason) ? (reason as SupporterPlanProblemReason) : undefined;
+  return typeof reason === "string" && planProblemReasons.includes(reason)
+    ? (reason as SupporterPlanProblemReason)
+    : undefined;
 }
 
 /** The supporter program. */
@@ -99,11 +101,17 @@ export type SupporterSubscriptionFilter = { planId: string | undefined; state: S
 
 /** The subscriptions, newest first (GET /admin/supporter_subscriptions). */
 export function supporterSubscriptionsQueryOptions(api: Api, filter: SupporterSubscriptionFilter) {
-  const narrow = { ...(filter.planId === undefined ? {} : { plan_id: filter.planId }), ...(filter.state === undefined ? {} : { state: filter.state }) };
+  const narrow = {
+    ...(filter.planId === undefined ? {} : { plan_id: filter.planId }),
+    ...(filter.state === undefined ? {} : { state: filter.state }),
+  };
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/supporter_subscriptions", narrow, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/supporter_subscriptions", { params: { query: { ...pageQuery(pageParam), ...narrow } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/supporter_subscriptions", {
+        params: { query: { ...pageQuery(pageParam), ...narrow } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -142,7 +150,10 @@ export function updateSupporterPlanMutation(api: Api) {
   return {
     mutationKey: ["patch", "/admin/supporter_plans/{id}"] as const,
     mutationFn: async ({ id, change }: { id: string; change: SupporterPlanChange }): Promise<SupporterPlan> => {
-      const { data, error } = await api.fetch.PATCH("/admin/supporter_plans/{id}", { params: { path: { id } }, body: change });
+      const { data, error } = await api.fetch.PATCH("/admin/supporter_plans/{id}", {
+        params: { path: { id } },
+        body: change,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -183,7 +194,10 @@ export function runPaymentReconcileMutation(api: Api) {
 
 /** Marks what a reconciliation started by hand changes: the state of the payment provider and the audit log. */
 export async function refreshPaymentStatus(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/admin/payment_status"] }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/payment_status"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }
 
 /**

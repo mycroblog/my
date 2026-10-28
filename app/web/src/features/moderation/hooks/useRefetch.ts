@@ -22,7 +22,8 @@ export type Refetch = {
 };
 
 function sameTarget(a: RefetchTarget, b: RefetchTarget): boolean {
-  if (a.kind === "domain" || b.kind === "domain") return a.kind === "domain" && b.kind === "domain" && a.domain === b.domain;
+  if (a.kind === "domain" || b.kind === "domain")
+    return a.kind === "domain" && b.kind === "domain" && a.domain === b.domain;
   return a.kind === b.kind && a.id === b.id;
 }
 

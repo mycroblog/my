@@ -40,7 +40,13 @@ const fullHandle = /^[A-Za-z0-9_]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u;
 
 function accountSuggestion(account: Account): CompletionSuggestion {
   const handle = `@${account.acct}`;
-  return { kind: "account", id: `account:${account.id}`, value: handle, textValue: `${account.display_name || account.username} ${handle}`, account };
+  return {
+    kind: "account",
+    id: `account:${account.id}`,
+    value: handle,
+    textValue: `${account.display_name || account.username} ${handle}`,
+    account,
+  };
 }
 
 /** The props of @my/ui TextAreaAutocomplete / TextFieldAutocomplete for a field that completes `kinds`, but the rendering of an option. */

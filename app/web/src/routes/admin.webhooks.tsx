@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/webhooks")({
   staticData: { title: "client:admin.webhooks.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_webhooks", () => context.queryClient.query({ ...webhooksQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_webhooks", () =>
+      context.queryClient.query({ ...webhooksQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: WebhooksPage,
   errorComponent: WebhooksError,
 });

@@ -88,7 +88,11 @@ const acceptedAudioTypes: readonly string[] = [
 ];
 
 /** Every type the file picker offers. */
-export const acceptedMediaTypes: readonly string[] = [...acceptedImageTypes, ...acceptedVideoTypes, ...acceptedAudioTypes];
+export const acceptedMediaTypes: readonly string[] = [
+  ...acceptedImageTypes,
+  ...acceptedVideoTypes,
+  ...acceptedAudioTypes,
+];
 
 /** What a picked file is by its declared type, or null for a type the server does not accept. */
 export function mediaKind(type: string): "image" | "video" | "audio" | null {

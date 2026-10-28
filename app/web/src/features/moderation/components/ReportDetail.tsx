@@ -6,7 +6,25 @@
 // moderation action on the target that resolves it, resolving it without one, or reopening it. What a change
 // did stays on the page in a StatusMessage (role="status") next to what caused it; failures are toasts, and a
 // failed note stays under its field (web-client/README.md E2).
-import { AccountItem, Box, Button, Cluster, DescriptionItem, DescriptionList, DetailSection, EmptyState, Heading, Hint, Link, ReasonField, RegionError, Spinner, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  AccountItem,
+  Box,
+  Button,
+  Cluster,
+  DescriptionItem,
+  DescriptionList,
+  DetailSection,
+  EmptyState,
+  Heading,
+  Hint,
+  Link,
+  ReasonField,
+  RegionError,
+  Spinner,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -54,7 +72,9 @@ function ReportPage({ id }: { id: string }) {
   const canAudit = useHasPermission("view_audit");
   const posts = reportedStatuses(report);
   // Deleted posts stay to be reviewed, but no action can delete them or mark them sensitive.
-  const actionable = posts.flatMap((post) => (post.status === "found" && post.deletedAt === undefined ? [post.value] : []));
+  const actionable = posts.flatMap((post) =>
+    post.status === "found" && post.deletedAt === undefined ? [post.value] : [],
+  );
   const [message, setMessage] = useState<Message | undefined>(undefined);
   const resolutionHeadingRef = useRef<HTMLHeadingElement>(null);
   const focusResolution = useFocusAfterChange(resolutionHeadingRef, report.state);
@@ -102,7 +122,10 @@ function ReportPage({ id }: { id: string }) {
               )}
               {canAudit && (
                 <li>
-                  <Link href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(target.id)}`} variant="standalone">
+                  <Link
+                    href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(target.id)}`}
+                    variant="standalone"
+                  >
                     {t("client:admin.report.target.audit")}
                   </Link>
                 </li>
@@ -112,10 +135,14 @@ function ReportPage({ id }: { id: string }) {
         )}
         <DescriptionList columns={2}>
           <DescriptionItem term={t("client:admin.report.target.reports")}>
-            <Text numeric>{t("client:admin.report.target.reports.count", { count: report.target_history.reports_count })}</Text>
+            <Text numeric>
+              {t("client:admin.report.target.reports.count", { count: report.target_history.reports_count })}
+            </Text>
           </DescriptionItem>
           <DescriptionItem term={t("client:admin.report.target.actions")}>
-            <Text numeric>{t("client:admin.report.target.actions.count", { count: report.target_history.actions_count })}</Text>
+            <Text numeric>
+              {t("client:admin.report.target.actions.count", { count: report.target_history.actions_count })}
+            </Text>
           </DescriptionItem>
         </DescriptionList>
       </DetailSection>
@@ -144,7 +171,9 @@ function ReportPage({ id }: { id: string }) {
           <Stack align="start" gap="3">
             <DescriptionList columns={2}>
               <DescriptionItem term={t("client:admin.report.outcome")}>
-                {report.outcome === undefined ? t("client:admin.reports.filter.resolved") : t(reportOutcomeLabels[report.outcome])}
+                {report.outcome === undefined
+                  ? t("client:admin.reports.filter.resolved")
+                  : t(reportOutcomeLabels[report.outcome])}
               </DescriptionItem>
               <DescriptionItem term={t("client:admin.report.resolved_at")}>
                 <DateTime value={report.state_changed_at} />
@@ -173,7 +202,10 @@ function ReportPage({ id }: { id: string }) {
                   handle={handleOf(target)}
                   posts={actionable}
                   onIssued={(action) => {
-                    setMessage({ region: "resolution", text: t("client:admin.report.action.issued", { kind: t(accountActionKindLabels[action.kind]) }) });
+                    setMessage({
+                      region: "resolution",
+                      text: t("client:admin.report.action.issued", { kind: t(accountActionKindLabels[action.kind]) }),
+                    });
                     focusResolution();
                   }}
                 />
@@ -224,7 +256,9 @@ function ReportSummary({ report }: { report: ReportDetail }) {
         <DescriptionItem term={t("client:admin.report.state")}>
           <Text weight="semibold">{t(stateLabels[report.state])}</Text>
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.report.category")}>{t(reportCategoryLabels[report.category])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.report.category")}>
+          {t(reportCategoryLabels[report.category])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.report.filed_at")}>
           <DateTime value={report.filed_at} />
         </DescriptionItem>
@@ -295,7 +329,9 @@ function ReportedPosts({ posts }: { posts: readonly ReportedStatus[] }) {
                 {post.deletedAt !== undefined && (
                   <Box paddingX="4" paddingTop="3">
                     <Hint weight="semibold">
-                      {t("client:admin.report.posts.deleted", { date: intl.formatDate(post.deletedAt, { dateStyle: "medium", timeStyle: "short" }) })}
+                      {t("client:admin.report.posts.deleted", {
+                        date: intl.formatDate(post.deletedAt, { dateStyle: "medium", timeStyle: "short" }),
+                      })}
                     </Hint>
                   </Box>
                 )}
@@ -331,13 +367,18 @@ function TargetActions({ accountId, reportId }: { accountId: string; reportId: s
   const t = useT();
   const actions = useTargetActions(accountId);
   if (actions.isLoading) return <Spinner size="sm" label={t("client:admin.report.history.loading")} />;
-  if (actions.items.length === 0 && actions.error !== undefined) return <RegionError heading={t("client:admin.report.history.failed")} headingLevel={3} reason={actions.error} />;
+  if (actions.items.length === 0 && actions.error !== undefined)
+    return <RegionError heading={t("client:admin.report.history.failed")} headingLevel={3} reason={actions.error} />;
   return (
     <RecordList
       list={actions}
       getId={(action) => action.id}
       empty={<EmptyState headingLevel={3} heading={t("client:admin.report.history.empty")} />}
-      moreError={actions.error !== undefined && <RegionError heading={t("client:admin.report.history.failed")} headingLevel={3} reason={actions.error} />}
+      moreError={
+        actions.error !== undefined && (
+          <RegionError heading={t("client:admin.report.history.failed")} headingLevel={3} reason={actions.error} />
+        )
+      }
     >
       {(action) => <TargetActionRow action={action} fromThisReport={action.report_id === reportId} />}
     </RecordList>
@@ -350,14 +391,22 @@ function TargetActionRow({ action, fromThisReport }: { action: AccountAction; fr
     <Stack gap="2">
       <Heading level={3}>{t(accountActionKindLabels[action.kind])}</Heading>
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:admin.account_actions.state")}>{t(accountActionStateLabels[action.state])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.account_actions.state")}>
+          {t(accountActionStateLabels[action.state])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.issued_at")}>
           <DateTime value={action.issued_at} />
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account_actions.expires_at")}>
-          {action.expires_at === undefined ? t("client:admin.account_actions.duration.indefinite") : <DateTime value={action.expires_at} />}
+          {action.expires_at === undefined ? (
+            t("client:admin.account_actions.duration.indefinite")
+          ) : (
+            <DateTime value={action.expires_at} />
+          )}
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.account_actions.category")}>{t(reportCategoryLabels[action.reason_category])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.account_actions.category")}>
+          {t(reportCategoryLabels[action.reason_category])}
+        </DescriptionItem>
         {action.report_id !== undefined && (
           <DescriptionItem term={t("client:admin.account_actions.report")}>
             {fromThisReport ? (
@@ -433,7 +482,13 @@ function Notes({ report }: { report: ReportDetail }) {
           {report.notes.map((note) => (
             <Stack as="li" key={note.id} gap="1" paddingY="3">
               <Cluster as="span" align="baseline" gap="3" rowGap="0" tone="muted" textSize="sm">
-                <span>{note.author_account_id === undefined ? t("client:admin.report.notes.cli") : <AssigneeName id={note.author_account_id} />}</span>
+                <span>
+                  {note.author_account_id === undefined ? (
+                    t("client:admin.report.notes.cli")
+                  ) : (
+                    <AssigneeName id={note.author_account_id} />
+                  )}
+                </span>
                 <DateTime value={note.created_at} />
               </Cluster>
               {/* Written by a moderator, in any language. */}
@@ -453,11 +508,16 @@ function Notes({ report }: { report: ReportDetail }) {
           isRequired
           characterLimit={reportNoteLimit}
           formatRemaining={(remaining) =>
-            remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining })
+            remaining < 0
+              ? t("client:admin.account_actions.characters_over", { count: -remaining })
+              : t("client:admin.account_actions.characters_left", { count: remaining })
           }
           isInvalid={form.error !== undefined}
           errorMessage={(validation) =>
-            form.error ?? (validation.validationDetails.valueMissing ? t("client:admin.report.notes.blank") : t("client:admin.report.notes.too_long", { max: reportNoteLimit }))
+            form.error ??
+            (validation.validationDetails.valueMissing
+              ? t("client:admin.report.notes.blank")
+              : t("client:admin.report.notes.too_long", { max: reportNoteLimit }))
           }
         />
         <Box>

@@ -25,7 +25,13 @@ export const Offline: Story = {
 
 /** With an action, a link to the server's status page, which follows the message outside the live region. */
 export const WithAction: Story = {
-  args: { action: <ExternalLink href="https://status.example/" variant="standalone">Check the server's status</ExternalLink> },
+  args: {
+    action: (
+      <ExternalLink href="https://status.example/" variant="standalone">
+        Check the server's status
+      </ExternalLink>
+    ),
+  },
   play: async ({ canvas }) => {
     const status = canvas.getByRole("status");
     await expect(status).toHaveTextContent("You're offline.");

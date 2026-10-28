@@ -59,7 +59,9 @@ const carol: Account = {
 };
 
 /** A picture served by the page's fixture, so that no request leaves the preview; it stands in for the media proxy URL. */
-const picture = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>')}`);
+const picture = servedImage(
+  `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#4f6d8f"/></svg>')}`,
+);
 
 /** An image of a remote post: no renditions here, the proxy's URL as `url` and `preview_url`. */
 function remoteMedia(id: string, description: string | undefined): MediaAttachment {
@@ -120,25 +122,60 @@ const fetchedPost: Status = {
 async function serveApi(page: Page, { fetching = false } = {}): Promise<{ statuses: number }> {
   const requests = { statuses: 0 };
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
-    if (path === "/accounts/lookup" && url.searchParams.get("acct") === carol.acct) return json(route, { ...carol, followers_count: 3, following_count: 4 });
+    if (path === "/accounts/lookup" && url.searchParams.get("acct") === carol.acct)
+      return json(route, { ...carol, followers_count: 3, following_count: 4 });
     if (path === "/accounts/relationships") {
       return json(route, [
-        { id: carol.id, following: false, requested: false, followed_by: false, requested_by: false, show_boosts: true, notify: false, blocking: false, muting: false, muting_notifications: false },
+        {
+          id: carol.id,
+          following: false,
+          requested: false,
+          followed_by: false,
+          requested_by: false,
+          show_boosts: true,
+          notify: false,
+          blocking: false,
+          muting: false,
+          muting_notifications: false,
+        },
       ]);
     }
     if (path === `/accounts/${carol.id}/statuses`) {
@@ -146,7 +183,9 @@ async function serveApi(page: Page, { fetching = false } = {}): Promise<{ status
       if (url.searchParams.get("pinned") === "true") return json(route, { items: [] });
       requests.statuses += 1;
       if (!fetching) return json(route, { items: [post] });
-      return requests.statuses === 1 ? json(route, { items: [post], remote_fetch_started: true }) : json(route, { items: [post, fetchedPost] });
+      return requests.statuses === 1
+        ? json(route, { items: [post], remote_fetch_started: true })
+        : json(route, { items: [post, fetchedPost] });
     }
     if (path === `/statuses/${postId}`) return json(route, post);
     if (path === `/statuses/${postId}/context`) return json(route, { ancestors: [], descendants: [] });
@@ -162,24 +201,37 @@ test.describe("a profile of another server", () => {
     await expect(page.getByRole("feed").getByRole("article")).toBeVisible();
   });
 
-  test("says that only the posts this server received are shown, links to the profile and the post on their server, without axe violations or sideways scrolling", async ({ page, makeAxeBuilder }) => {
+  test("says that only the posts this server received are shown, links to the profile and the post on their server, without axe violations or sideways scrolling", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const main = page.getByRole("main");
     await expect(main.getByText(`@${carol.acct}`).first()).toBeVisible();
     await expect(main.getByText(message("profile.remote.notice", host))).toBeVisible();
     // The host inside the sentence is wrapped in directional isolates (web-client/README.md Y10).
-    await expect(main.getByRole("link", { name: message("profile.remote.original", `\u2068${host}\u2069`) })).toHaveAttribute("href", carol.url);
+    await expect(
+      main.getByRole("link", { name: message("profile.remote.original", `\u2068${host}\u2069`) }),
+    ).toHaveAttribute("href", carol.url);
     const article = page.getByRole("feed").getByRole("article");
-    await expect(article.getByRole("link", { name: message("status.original", host) })).toHaveAttribute("href", post.url ?? "");
+    await expect(article.getByRole("link", { name: message("status.original", host) })).toHaveAttribute(
+      "href",
+      post.url ?? "",
+    );
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
 
-  test("names the author's link by the full handle, which is cut on the domain's side when it does not fit", async ({ page }) => {
+  test("names the author's link by the full handle, which is cut on the domain's side when it does not fit", async ({
+    page,
+  }) => {
     const article = page.getByRole("feed").getByRole("article");
     await expect(article.getByRole("link", { name: `Carol @${carol.acct}` })).toBeVisible();
   });
 
-  test("shows the post's pictures behind its content warning, naming the one without a description for screen readers only", async ({ page, makeAxeBuilder }) => {
+  test("shows the post's pictures behind its content warning, naming the one without a description for screen readers only", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const article = page.getByRole("feed").getByRole("article");
     // The first collapsed button is the content warning's; the menu button of the actions is collapsed too.
     await article.getByRole("button", { expanded: false }).first().click();
@@ -195,7 +247,9 @@ test.describe("a profile of another server", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("is the heading, the full handle, the notice with the link to the original profile, and the post with its link", async ({ page }) => {
+  test("is the heading, the full handle, the notice with the link to the original profile, and the post with its link", async ({
+    page,
+  }) => {
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading "Carol" [level=1]
       - paragraph: "@carol@${host}"
@@ -217,7 +271,10 @@ test.describe("a profile of another server", () => {
 });
 
 test.describe("a profile of another server whose recent posts are being fetched", () => {
-  test("says so until it has read the posts again, once, without axe violations or sideways scrolling", async ({ page, makeAxeBuilder }) => {
+  test("says so until it has read the posts again, once, without axe violations or sideways scrolling", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await serveApi(page, { fetching: true });
     await page.goto(`/@${carol.acct}`);
     const main = page.getByRole("main");
@@ -240,7 +297,10 @@ test.describe("a post of another server", () => {
     await page.goto(`/@${carol.acct}/status/${postId}`);
     const article = page.getByRole("main").getByRole("article");
     await expect(article).toBeVisible();
-    await expect(article.getByRole("link", { name: message("status.original", host) })).toHaveAttribute("href", post.url ?? "");
+    await expect(article.getByRole("link", { name: message("status.original", host) })).toHaveAttribute(
+      "href",
+      post.url ?? "",
+    );
     // The first collapsed button is the content warning's; the menu button of the actions is collapsed too.
     await article.getByRole("button", { expanded: false }).first().click();
     await expect(article.getByRole("img")).toHaveCount(2);

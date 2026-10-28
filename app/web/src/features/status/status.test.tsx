@@ -6,7 +6,14 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
-import { remoteStatusFixture, statusFixture, statusPage, timelineStatusFixture, viewerFixture, viewerStatusFixture } from "../../test/fixtures";
+import {
+  remoteStatusFixture,
+  statusFixture,
+  statusPage,
+  timelineStatusFixture,
+  viewerFixture,
+  viewerStatusFixture,
+} from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
@@ -23,7 +30,11 @@ const post: Status = {
   replies_count: 1,
 };
 const reply: Status = {
-  ...viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000c2", content: "<p>The answer</p>", created_at: "2026-10-16T11:00:00Z" }),
+  ...viewerStatusFixture({
+    id: "0192f0c4-7a8e-7000-8000-0000000000c2",
+    content: "<p>The answer</p>",
+    created_at: "2026-10-16T11:00:00Z",
+  }),
   in_reply_to_id: postId,
 };
 
@@ -43,7 +54,9 @@ function signedIn() {
 function serveThread(...statuses: Status[]) {
   server.use(
     http.get(`${apiBase}/statuses/:id/context`, ({ params }) =>
-      params["id"] === postId ? HttpResponse.json({ ancestors: [ancestor], descendants: [reply] }) : HttpResponse.json({ ancestors: [], descendants: [] }),
+      params["id"] === postId
+        ? HttpResponse.json({ ancestors: [ancestor], descendants: [reply] })
+        : HttpResponse.json({ ancestors: [], descendants: [] }),
     ),
     http.get(`${apiBase}/statuses/:id`, ({ params }) => {
       const found = [post, ancestor, reply, ...statuses].find((s) => s.id === params["id"]);
@@ -190,7 +203,9 @@ describe("a post's page", () => {
     serveThread();
     server.use(
       http.get(`${apiBase}/statuses/:id/context`, () =>
-        fail ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json({ ancestors: [], descendants: [reply] }),
+        fail
+          ? problem(503, "about:blank", "Service Unavailable")
+          : HttpResponse.json({ ancestors: [], descendants: [reply] }),
       ),
     );
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
@@ -280,7 +295,10 @@ describe("the actions on a post", () => {
 
     expect(favourite).toHaveAttribute("aria-pressed", "false");
     expect(await within(politeAnnouncements()).findByText("Removed from favourites")).toBeInTheDocument();
-    expect(requests).toEqual([`POST ${apiBase}/statuses/${postId}/favourite`, `DELETE ${apiBase}/statuses/${postId}/favourite`]);
+    expect(requests).toEqual([
+      `POST ${apiBase}/statuses/${postId}/favourite`,
+      `DELETE ${apiBase}/statuses/${postId}/favourite`,
+    ]);
   });
 
   test("set a failed boost back, and say why", async () => {
@@ -293,7 +311,9 @@ describe("the actions on a post", () => {
     await user.click(boost);
 
     expect(await findToast("Could not save the change: Service Unavailable")).toBeInTheDocument();
-    expect(within(screen.getByRole("alert")).getByText("Could not save the change: Service Unavailable")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("alert")).getByText("Could not save the change: Service Unavailable"),
+    ).toBeInTheDocument();
     expect(boost).toHaveAttribute("aria-pressed", "false");
     expect(boost).toHaveAccessibleDescription("1");
   });
@@ -333,8 +353,20 @@ describe("the actions on a post", () => {
   test("show on every copy of the post: the boost of it in the same timeline, and its page", async () => {
     signedIn();
     serveThread();
-    const booster = { ...viewerFixture, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol", display_name: "Carol" };
-    const boostOfPost: Status = { ...timelineStatusFixture, id: "0192f0c4-7a8e-7000-8000-0000000000d1", account: booster, content: "", boost: post };
+    const booster = {
+      ...viewerFixture,
+      id: "0192f0c4-7a8e-7000-8000-000000000003",
+      username: "carol",
+      acct: "carol",
+      display_name: "Carol",
+    };
+    const boostOfPost: Status = {
+      ...timelineStatusFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+      account: booster,
+      content: "",
+      boost: post,
+    };
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([boostOfPost, post]))));
     const { user } = await renderApp({ path: "/local" });
     const feed = await screen.findByRole("feed", { name: "Local timeline" });
@@ -347,10 +379,14 @@ describe("the actions on a post", () => {
     expect(await within(politeAnnouncements()).findByText("Added to favourites")).toBeInTheDocument();
 
     // The page's own answer comes from the server, which now knows the favourite.
-    server.use(http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...post, favourited: true, favourites_count: 3 })));
+    server.use(
+      http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...post, favourited: true, favourites_count: 3 })),
+    );
     await user.click(within(original).getByRole("link", { name: "3 hr. ago" }));
 
-    expect(await within(await findFocusedPost()).findByRole("button", { name: "Favourite", pressed: true })).toBeInTheDocument();
+    expect(
+      await within(await findFocusedPost()).findByRole("button", { name: "Favourite", pressed: true }),
+    ).toBeInTheDocument();
   });
 
   test("copy the post's address", async () => {
@@ -380,7 +416,10 @@ describe("the actions on a post", () => {
 });
 
 describe("deleting a post", () => {
-  const own: Status = { ...viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000e1", content: "<p>My post</p>" }), in_reply_to_id: postId };
+  const own: Status = {
+    ...viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000e1", content: "<p>My post</p>" }),
+    in_reply_to_id: postId,
+  };
 
   test("is offered for the viewer's own posts only", async () => {
     signedIn();
@@ -427,7 +466,11 @@ describe("deleting a post", () => {
     server.use(http.delete(`${apiBase}/statuses/:id`, () => problem(503, "about:blank", "Service Unavailable")));
     const { user } = await renderApp({ path: `/@alice/status/${own.id}` });
 
-    await user.click(await within(await screen.findByRole("article", { description: "My post" })).findByRole("button", { name: "More actions" }));
+    await user.click(
+      await within(await screen.findByRole("article", { description: "My post" })).findByRole("button", {
+        name: "More actions",
+      }),
+    );
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
@@ -468,7 +511,9 @@ describe("a post of another server", () => {
     expect(within(article).getByRole("link", { name: "Carol @carol@remote.example" })).toBeInTheDocument();
     expect(within(article).getByText("@carol@remote.example")).toHaveAttribute("dir", "ltr");
     // The link shows the host and is named by where it leads; the actions stay next to it.
-    const original = within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" });
+    const original = within(article).getByRole("link", {
+      name: "Open the original post on remote.example (opens in a new tab)",
+    });
     expect(original).toHaveAttribute("href", "https://remote.example/@carol/1");
     expect(original).toHaveTextContent("remote.example");
     expect(await within(article).findByRole("button", { name: "Reply" })).toBeInTheDocument();
@@ -493,7 +538,11 @@ describe("a post of another server", () => {
 
   test("draws the custom emoji of its author's name, its content warning and its text, read as their shortcodes", async () => {
     signedIn();
-    const blobcat = { shortcode: "blobcat", url: "https://my.example/media/proxy/e1/full", static_url: "https://my.example/media/proxy/e1/full" };
+    const blobcat = {
+      shortcode: "blobcat",
+      url: "https://my.example/media/proxy/e1/full",
+      static_url: "https://my.example/media/proxy/e1/full",
+    };
     const withEmoji: Status = {
       ...remote,
       account: { ...remote.account, display_name: "Carol :blobcat:", emojis: [blobcat] },
@@ -504,7 +553,9 @@ describe("a post of another server", () => {
     serveThread(withEmoji);
     const { user } = await renderApp({ path: `/@${remote.account.acct}/status/${remote.id}` });
 
-    const article = await screen.findByRole("article", { name: /^Opened post Carol :blobcat: @carol@remote\.example / });
+    const article = await screen.findByRole("article", {
+      name: /^Opened post Carol :blobcat: @carol@remote\.example /,
+    });
     expect(within(article).getByRole("link", { name: "Carol :blobcat: @carol@remote.example" })).toBeInTheDocument();
     await user.click(within(article).getByRole("button", { name: "Show content", expanded: false }));
     const emoji = within(article).getAllByRole("img", { name: ":blobcat:" });
@@ -529,6 +580,8 @@ describe("a post of another server", () => {
     await renderApp({ path: "/local" });
 
     const article = await screen.findByRole("article", { name: "Carol @carol@remote.example 3 hr. ago" });
-    expect(within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" })).toHaveAttribute("href", remote.uri);
+    expect(
+      within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
+    ).toHaveAttribute("href", remote.uri);
   });
 });

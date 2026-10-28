@@ -5,7 +5,27 @@
 // is sent, or until it is withdrawn, and is published at once or kept as a draft. Editing opens a dialog with the
 // text; withdrawing cannot be undone, so it asks first (an alert dialog). What a change did stays on the page in a
 // StatusMessage above the list; a failure stays there too (role="alert", web-client/README.md E2).
-import { Box, Button, Checkbox, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Dialog, DialogTrigger, DurationSelect, EmptyState, Heading, Hint, InlineError, PostContent, serverSanitizedHtml, Stack, StatusMessage, TextArea } from "@my/ui";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  DialogTrigger,
+  DurationSelect,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  PostContent,
+  serverSanitizedHtml,
+  Stack,
+  StatusMessage,
+  TextArea,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
@@ -47,7 +67,9 @@ export function AnnouncementSettings() {
 function useFormatRemaining() {
   const t = useT();
   return (remaining: number) =>
-    remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining });
+    remaining < 0
+      ? t("client:admin.settings.characters_over", { count: -remaining })
+      : t("client:admin.settings.characters_left", { count: remaining });
 }
 
 function NewAnnouncementForm() {
@@ -75,7 +97,11 @@ function NewAnnouncementForm() {
         value={form.duration}
         onChange={form.changeDuration}
       />
-      <Checkbox isSelected={form.publish} onChange={form.changePublish} description={t("client:admin.announcements.publish_now.description")}>
+      <Checkbox
+        isSelected={form.publish}
+        onChange={form.changePublish}
+        description={t("client:admin.announcements.publish_now.description")}
+      >
         {t("client:admin.announcements.publish_now")}
       </Checkbox>
       {form.failure !== undefined && (
@@ -113,7 +139,11 @@ function AnnouncementList() {
         </InlineError>
       )}
       {announcements.length === 0 ? (
-        <EmptyState headingLevel={3} heading={t("client:admin.announcements.empty")} description={t("client:admin.announcements.empty.description")} />
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:admin.announcements.empty")}
+          description={t("client:admin.announcements.empty.description")}
+        />
       ) : (
         <Stack as="ul" divided ref={listRef}>
           {announcements.map((announcement) => (
@@ -136,11 +166,16 @@ function AnnouncementRow({ announcement, actions }: AnnouncementRowProps) {
     <Stack gap="3">
       <Heading level={3} wrap="anywhere" focusable>
         {/* Written by an administrator in any language: U+2068 FIRST STRONG ISOLATE … U+2069 POP DIRECTIONAL ISOLATE. */}
-        {t("client:admin.announcements.heading", { announcement: `⁨${name}⁩`, state: t(stateLabels[announcement.state]) })}
+        {t("client:admin.announcements.heading", {
+          announcement: `⁨${name}⁩`,
+          state: t(stateLabels[announcement.state]),
+        })}
       </Heading>
       <PostContent html={serverSanitizedHtml(announcement.content)} framed />
       <DescriptionList>
-        <DescriptionItem term={t("client:admin.announcements.state")}>{t(stateLabels[announcement.state])}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.announcements.state")}>
+          {t(stateLabels[announcement.state])}
+        </DescriptionItem>
         {announcement.published_at !== undefined && (
           <DescriptionItem term={t("client:admin.announcements.published_at")}>
             <DateTime value={announcement.published_at} />
@@ -152,12 +187,18 @@ function AnnouncementRow({ announcement, actions }: AnnouncementRowProps) {
           </DescriptionItem>
         )}
         <DescriptionItem term={t("client:admin.announcements.ends_at")}>
-          {announcement.ends_at === undefined ? t("client:admin.announcements.until_withdrawn") : <DateTime value={announcement.ends_at} />}
+          {announcement.ends_at === undefined ? (
+            t("client:admin.announcements.until_withdrawn")
+          ) : (
+            <DateTime value={announcement.ends_at} />
+          )}
         </DescriptionItem>
       </DescriptionList>
       {announcement.state !== "withdrawn" && (
         <Cluster gap="2">
-          {announcement.state === "draft" && <PublishAnnouncement announcement={announcement} name={name} actions={actions} />}
+          {announcement.state === "draft" && (
+            <PublishAnnouncement announcement={announcement} name={name} actions={actions} />
+          )}
           <EditAnnouncement announcement={announcement} name={name} actions={actions} />
           <WithdrawAnnouncement announcement={announcement} name={name} actions={actions} />
         </Cluster>
@@ -197,14 +238,27 @@ function EditAnnouncement({ announcement, name, actions }: AnnouncementActionPro
       <Button size="sm" aria-label={t("client:admin.announcements.edit_one", { announcement: name })}>
         {t("client:admin.announcements.edit")}
       </Button>
-      <Dialog title={t("client:admin.announcements.edit.title")} closeLabel={t("client:admin.announcements.edit.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.announcements.edit.title")}
+        closeLabel={t("client:admin.announcements.edit.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditAnnouncementForm announcement={announcement} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
   );
 }
 
-function EditAnnouncementForm({ announcement, actions, close }: { announcement: AdminAnnouncement; actions: AnnouncementActions; close: () => void }) {
+function EditAnnouncementForm({
+  announcement,
+  actions,
+  close,
+}: {
+  announcement: AdminAnnouncement;
+  actions: AnnouncementActions;
+  close: () => void;
+}) {
   const t = useT();
   const formatRemaining = useFormatRemaining();
   const [text, setText] = useState(announcement.text);
@@ -213,7 +267,9 @@ function EditAnnouncementForm({ announcement, actions, close }: { announcement: 
   const [failed, setFailed] = useState(false);
   const textError = submitted ? actions.textError(text) : undefined;
   return (
-    <Stack as="form" gap="4"
+    <Stack
+      as="form"
+      gap="4"
       onSubmit={(event) => {
         event.preventDefault();
         setSubmitted(true);
@@ -225,7 +281,8 @@ function EditAnnouncementForm({ announcement, actions, close }: { announcement: 
           if (saved) close();
           else setFailed(true);
         });
-      }}>
+      }}
+    >
       <TextArea
         label={t("client:admin.announcements.text")}
         description={t("client:admin.announcements.text.description")}
@@ -259,7 +316,11 @@ function WithdrawAnnouncement({ announcement, name, actions }: AnnouncementActio
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger" aria-label={t("client:admin.announcements.withdraw_one", { announcement: name })}>
+      <Button
+        size="sm"
+        variant="danger"
+        aria-label={t("client:admin.announcements.withdraw_one", { announcement: name })}
+      >
         {t("client:admin.announcements.withdraw")}
       </Button>
       <ConfirmDialog
@@ -268,7 +329,10 @@ function WithdrawAnnouncement({ announcement, name, actions }: AnnouncementActio
         confirmLabel={t("client:admin.announcements.withdraw")}
         cancelLabel={t("client:admin.announcements.cancel")}
         isPending={isWithdrawing}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.announcements.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.announcements.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsWithdrawing(true);
           setFailed(false);

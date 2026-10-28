@@ -130,7 +130,9 @@ export async function runStream(options: StreamOptions): Promise<void> {
 function recoverable(error: unknown): boolean {
   if (error instanceof ProblemError) return error.status >= 500 || error.status === 408 || error.status === 429;
   if (error instanceof OAuthError) return error.status >= 500 || error.status === 429;
-  return error instanceof NetworkError || error instanceof HeartbeatTimeoutError || error instanceof NotEventStreamError;
+  return (
+    error instanceof NetworkError || error instanceof HeartbeatTimeoutError || error instanceof NotEventStreamError
+  );
 }
 
 /**
@@ -162,7 +164,8 @@ async function connect(
   // A body that the fetch does not tie to the signal stops here too.
   const stop = () => void reader?.cancel().catch(() => undefined);
   signal.addEventListener("abort", stop, { once: true });
-  const silent = (error: unknown) => (silence.signal.aborted ? (silence.signal.reason as HeartbeatTimeoutError) : error);
+  const silent = (error: unknown) =>
+    silence.signal.aborted ? (silence.signal.reason as HeartbeatTimeoutError) : error;
   arm();
   try {
     let response: Response;
@@ -205,7 +208,12 @@ async function connect(
 }
 
 /** Sends GET /streaming with the access token, refreshing it once after a 401, and returns an event stream's answer. */
-async function open(url: string, fetch: (request: Request) => Promise<Response>, options: StreamOptions, signal: AbortSignal): Promise<Response> {
+async function open(
+  url: string,
+  fetch: (request: Request) => Promise<Response>,
+  options: StreamOptions,
+  signal: AbortSignal,
+): Promise<Response> {
   const { tokenSource } = options;
   let renewed: string | null = null;
   for (let refreshed = false; ; refreshed = true) {
@@ -231,7 +239,9 @@ async function open(url: string, fetch: (request: Request) => Promise<Response>,
     if (response.status >= 400) throw await problemFromResponse(response);
     if (!isEventStream(response)) {
       await response.body?.cancel().catch(() => undefined);
-      throw new NotEventStreamError(`mykit: GET ${url} answered ${response.headers.get("Content-Type") ?? "no content type"}, not an event stream`);
+      throw new NotEventStreamError(
+        `mykit: GET ${url} answered ${response.headers.get("Content-Type") ?? "no content type"}, not an event stream`,
+      );
     }
     return response;
   }

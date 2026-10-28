@@ -6,7 +6,11 @@ import { StarIcon } from "./Icons";
 import { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 
 /** A toggle with its own state, as an app controls it with `isSelected` / `onChange`. */
-function Controlled({ defaultSelected = false, count, ...props }: Omit<ToggleButtonProps, "children"> & { count?: number }) {
+function Controlled({
+  defaultSelected = false,
+  count,
+  ...props
+}: Omit<ToggleButtonProps, "children"> & { count?: number }) {
   const [isSelected, setIsSelected] = useState(defaultSelected);
   return (
     <ToggleButton

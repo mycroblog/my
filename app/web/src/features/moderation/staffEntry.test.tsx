@@ -48,12 +48,19 @@ describe("the navigation's staff entries", () => {
     expect(within(navigation()).queryByRole("link", { name: /^Administration/ })).not.toBeInTheDocument();
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.textContent)).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
     expect(requests).toEqual([]);
   });
 
   test("show a moderator Moderation alone, with the pending count in the rail, the Menu button and the sheet, and open the moderation page", async () => {
-    server.use(operatorHandler(["manage_accounts", "manage_reports"]), countsHandler({ open_reports: 1, pending_registrations: 1, pending_appeals: 1 }));
+    server.use(
+      operatorHandler(["manage_accounts", "manage_reports"]),
+      countsHandler({ open_reports: 1, pending_registrations: 1, pending_appeals: 1 }),
+    );
     const { user } = await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
 
@@ -67,7 +74,11 @@ describe("the navigation's staff entries", () => {
 
     await user.click(menu);
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/profile", "/bookmarks", "/settings", "/moderation", "/", "/about"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/profile", "/bookmarks", "/settings", "/moderation", "/", "/about"]);
     await user.click(within(sheet).getByRole("link", { name: "Moderation, 3 pending" }));
 
     const heading = await screen.findByRole("heading", { level: 1, name: "Moderation" });
@@ -76,12 +87,22 @@ describe("the navigation's staff entries", () => {
     });
     // The page is in the mode: its menu leads with the moderation overview, and the app's navigation is not there.
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
-    expect(within(within(staffMenu()).getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
-    expect(within(staffMenu()).getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute("href", "/moderation/registrations");
+    expect(
+      within(within(staffMenu()).getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Overview" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(within(staffMenu()).getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute(
+      "href",
+      "/moderation/registrations",
+    );
     // The page links to the screens of the viewer's roles, each with its own count in its name.
     const main = within(screen.getByRole("main"));
-    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute("href", "/moderation/registrations");
-    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAccessibleDescription("Sign-ups that await approval, and approving or rejecting them.");
+    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute(
+      "href",
+      "/moderation/registrations",
+    );
+    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAccessibleDescription(
+      "Sign-ups that await approval, and approving or rejecting them.",
+    );
   });
 
   test("the moderation screens are in the mode, whose menu marks the screen and leads back to the app", async () => {
@@ -89,7 +110,10 @@ describe("the navigation's staff entries", () => {
     const { user } = await renderApp({ path: "/moderation/registrations" });
     await screen.findByRole("heading", { level: 1, name: "Registrations" });
 
-    expect(await within(staffMenu()).findByRole("link", { name: /^Registrations/ })).toHaveAttribute("aria-current", "page");
+    expect(await within(staffMenu()).findByRole("link", { name: /^Registrations/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(within(staffMenu()).getByRole("link", { name: "Accounts" })).not.toHaveAttribute("aria-current");
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
 
@@ -116,7 +140,10 @@ describe("the navigation's staff entries", () => {
     await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
 
-    expect(await within(navigation()).findByRole("link", { name: "Moderation" })).toHaveAttribute("href", "/moderation");
+    expect(await within(navigation()).findByRole("link", { name: "Moderation" })).toHaveAttribute(
+      "href",
+      "/moderation",
+    );
     expect(within(navigation()).getByRole("button", { name: "Menu" })).toBeInTheDocument();
     expect(requests).toEqual([]);
   });
@@ -145,12 +172,17 @@ describe("the navigation's staff entries", () => {
 
 describe("the navigation's Administration", () => {
   test("follows Moderation for a user with both areas, has no count, and opens the server administration page", async () => {
-    server.use(operatorHandler(["manage_reports", "manage_settings", "manage_jobs"]), countsHandler({ open_reports: 2 }));
+    server.use(
+      operatorHandler(["manage_reports", "manage_settings", "manage_jobs"]),
+      countsHandler({ open_reports: 2 }),
+    );
     const { user } = await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
 
     await within(navigation()).findByRole("link", { name: "Moderation, 2 pending" });
-    const links = within(navigation()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    const links = within(navigation())
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"));
     expect(links.indexOf("/admin")).toBe(links.indexOf("/moderation") + 1);
     const admin = within(navigation()).getByRole("link", { name: "Administration" });
     expect(admin).toHaveAttribute("href", "/admin");
@@ -159,11 +191,26 @@ describe("the navigation's Administration", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Administration" })).toBeInTheDocument();
     // In the mode, Moderation's group comes first and counts; Administration's has none.
     const groups = within(staffMenu());
-    expect(groups.getByRole("region", { name: "Moderation" }).compareDocumentPosition(groups.getByRole("region", { name: "Administration" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(groups.getByRole("region", { name: "Administration" })).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
-    expect(within(groups.getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Reports 2 open reports" })).not.toHaveAttribute("aria-current");
+    expect(
+      groups
+        .getByRole("region", { name: "Moderation" })
+        .compareDocumentPosition(groups.getByRole("region", { name: "Administration" })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      within(groups.getByRole("region", { name: "Administration" })).getByRole("link", { name: "Overview" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      within(groups.getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Reports 2 open reports" }),
+    ).not.toHaveAttribute("aria-current");
     const main = within(screen.getByRole("main"));
-    expect(main.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/admin/settings", "/admin/theme", "/admin/documents", "/admin/relays", "/admin/jobs"]);
+    expect(main.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/admin/settings",
+      "/admin/theme",
+      "/admin/documents",
+      "/admin/relays",
+      "/admin/jobs",
+    ]);
   });
 
   test("is the only staff entry of a user with server administration permissions alone", async () => {
@@ -182,7 +229,9 @@ describe("the pages of the staff's areas", () => {
   test("the moderation page says so to a user whose roles allow no moderation screen", async () => {
     await renderApp({ path: "/moderation" });
 
-    expect(await screen.findByRole("heading", { level: 2, name: "No moderation screens for your roles" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "No moderation screens for your roles" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Moderation" })).toBeInTheDocument();
   });
 
@@ -190,7 +239,9 @@ describe("the pages of the staff's areas", () => {
     server.use(operatorHandler(["manage_reports", "manage_accounts", "view_audit"]));
     await renderApp({ path: "/admin" });
 
-    expect(await screen.findByRole("heading", { level: 2, name: "No server administration screens for your roles" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "No server administration screens for your roles" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Administration" })).toBeInTheDocument();
   });
 });

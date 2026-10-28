@@ -17,17 +17,20 @@ describe("decodeBlurhash", () => {
     expect(Array.from(pixels ?? []).filter((_, i) => i % 4 === 3)).toEqual(Array.from({ length: 32 * 32 }, () => 255));
   });
 
-  it.each(["LEHV6nWB2yk8pyo0adR*.7kCMdnj", "LGF5]+Yk^6#M@-5c,1J5@[or[Q6.", "L6PZfSi_.AyE_3t7t7R**0o#DgR4", "LKN]Rv%2Tw=w]~RBVZRi};RPxuwH", "KJG8_@Dgx]_4V?xuyE%NRj"])(
-    "decodes %s",
-    (hash) => {
-      expect(decodeBlurhash(hash, 4, 4)).toHaveLength(4 * 4 * 4);
-    },
-  );
+  it.each([
+    "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+    "LGF5]+Yk^6#M@-5c,1J5@[or[Q6.",
+    "L6PZfSi_.AyE_3t7t7R**0o#DgR4",
+    "LKN]Rv%2Tw=w]~RBVZRi};RPxuwH",
+    "KJG8_@Dgx]_4V?xuyE%NRj",
+  ])("decodes %s", (hash) => {
+    expect(decodeBlurhash(hash, 4, 4)).toHaveLength(4 * 4 * 4);
+  });
 
   it.each([
     ["too short", "00TI"],
     ["a length that does not match the components", "LEHV6nWB2yk8pyo0adR*.7kCMdn"],
-    ["a character outside base 83", "00TI\"j"],
+    ["a character outside base 83", '00TI"j'],
   ])("rejects %s", (_, hash) => {
     expect(decodeBlurhash(hash, 4, 4)).toBeNull();
   });

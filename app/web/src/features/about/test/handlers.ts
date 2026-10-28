@@ -15,4 +15,6 @@ export const publicDomainActionsFixture: Schemas["InstanceDomainAction"][] = [
   { domain: "bad.*****le", digest: "2a7d9b8c0f5c4d1e3f0b9c8d7e6f504122334455667788990011aabbccddeeff", kind: "limit" },
 ];
 
-export const handlers = [http.get(`${apiBase}/instance/domain_actions`, () => HttpResponse.json({ items: publicDomainActionsFixture }))];
+export const handlers = [
+  http.get(`${apiBase}/instance/domain_actions`, () => HttpResponse.json({ items: publicDomainActionsFixture })),
+];

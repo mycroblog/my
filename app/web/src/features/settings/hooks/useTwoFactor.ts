@@ -86,7 +86,11 @@ function useCodeForm(mutation: {
 }
 
 /** The alert of a failure that is not the code's own. */
-function failureMessage(t: ReturnType<typeof useT>, failure: ReturnType<typeof twoFactorFailure>, error: unknown): string {
+function failureMessage(
+  t: ReturnType<typeof useT>,
+  failure: ReturnType<typeof twoFactorFailure>,
+  error: unknown,
+): string {
   switch (failure) {
     case "setup-expired":
       return t("client:settings.two_factor.setup.expired");

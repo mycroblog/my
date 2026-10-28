@@ -11,7 +11,11 @@ import { Tag } from "./Tag";
 
 const periods = [
   { name: "October 2026", total: "$12.40 · €3.10", estimated: true },
-  { name: "September 2026", total: "$1,234.56 · €78.90 · ¥12,000 · £4.20 · CHF 9.99 · A$15.00 · C$7.25", estimated: false },
+  {
+    name: "September 2026",
+    total: "$1,234.56 · €78.90 · ¥12,000 · £4.20 · CHF 9.99 · A$15.00 · C$7.25",
+    estimated: false,
+  },
   { name: "August 2026", total: "$0.00", estimated: false },
 ];
 
@@ -73,7 +77,11 @@ export const Compact: Story = {
         <TableBody>
           {[
             [3, "spam.example", "Already blocked"],
-            [12, "a-very-long-subdomain-of-a-server-that-has-no-spaces-at-all.example.social", "Not a domain or an address"],
+            [
+              12,
+              "a-very-long-subdomain-of-a-server-that-has-no-spaces-at-all.example.social",
+              "Not a domain or an address",
+            ],
             [27, "مثال.example", "Already blocked"],
           ].map(([line, value, reason]) => (
             <TableRow key={String(line)}>

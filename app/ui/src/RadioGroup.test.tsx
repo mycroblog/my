@@ -6,7 +6,13 @@ import { Radio, RadioGroup } from "./RadioGroup";
 
 function Visibility(props: { onChange?: (value: string) => void; isInvalid?: boolean }) {
   return (
-    <RadioGroup label="Visibility" description="Who can see this post." errorMessage="Choose who can see it." defaultValue="public" {...props}>
+    <RadioGroup
+      label="Visibility"
+      description="Who can see this post."
+      errorMessage="Choose who can see it."
+      defaultValue="public"
+      {...props}
+    >
       <Radio value="public" description="Anyone, on any server.">
         Public
       </Radio>
@@ -24,7 +30,9 @@ describe("RadioGroup", () => {
     const group = screen.getByRole("radiogroup", { name: "Visibility" });
     expect(group).toHaveAccessibleDescription("Who can see this post.");
     expect(screen.getByRole("radio", { name: "Public" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Public" })).toHaveAccessibleDescription("Anyone, on any server. Who can see this post.");
+    expect(screen.getByRole("radio", { name: "Public" })).toHaveAccessibleDescription(
+      "Anyone, on any server. Who can see this post.",
+    );
   });
 
   it("moves and selects with the arrow keys, skipping disabled options", async () => {

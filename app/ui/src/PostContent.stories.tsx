@@ -80,13 +80,19 @@ export const ShortenedLink: Story = {
 
 /** `size="sm" lineClamp={3}`: an excerpt of a post in a form, cut after three lines. */
 export const Excerpt: Story = {
-  args: { size: "sm", lineClamp: 3, html: serverSanitizedHtml("<p>One</p><p>Two</p><p>Three</p><p>Four</p><p>Five</p>") },
+  args: {
+    size: "sm",
+    lineClamp: 3,
+    html: serverSanitizedHtml("<p>One</p><p>Two</p><p>Three</p><p>Four</p><p>Five</p>"),
+  },
 };
 
 /** A quote and a code block in a right-to-left script: the boxes and their padding mirror with the text. */
 export const RightToLeftQuote: Story = {
   args: {
-    html: serverSanitizedHtml("<p>مرحبا</p><blockquote><p>اقتباس من منشور آخر</p></blockquote><pre><code>make check</code></pre>"),
+    html: serverSanitizedHtml(
+      "<p>مرحبا</p><blockquote><p>اقتباس من منشور آخر</p></blockquote><pre><code>make check</code></pre>",
+    ),
     lang: "ar",
   },
 };

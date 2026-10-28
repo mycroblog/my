@@ -65,7 +65,10 @@ export function decodeBase64url(value: string): ArrayBuffer {
 
 /** Encodes bytes as base64url without padding, as WebAuthn's JSON does. */
 export function encodeBase64url(value: ArrayBuffer | ArrayBufferView): string {
-  const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  const bytes =
+    value instanceof ArrayBuffer
+      ? new Uint8Array(value)
+      : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -108,7 +111,10 @@ export function creationOptions(json: unknown): PublicKeyCredentialCreationOptio
   const timeout = optionalNumber(o, "timeout");
   const exclude = descriptors(o["excludeCredentials"], "excludeCredentials");
   const attestation = oneOf(o, "attestation", attestations);
-  const selection = o["authenticatorSelection"] === undefined ? undefined : record(o["authenticatorSelection"], "authenticatorSelection");
+  const selection =
+    o["authenticatorSelection"] === undefined
+      ? undefined
+      : record(o["authenticatorSelection"], "authenticatorSelection");
   return {
     rp: { name: text(rp, "name"), ...(rpID === undefined ? {} : { id: rpID }) },
     user: { id: bytes(user, "id"), name: text(user, "name"), displayName: text(user, "displayName") },
@@ -164,7 +170,9 @@ export function credentialJSON(credential: PublicKeyCredential): Json {
     type: credential.type,
     // The extension outputs that the server did not ask for are never read (they may hold buffers).
     clientExtensionResults: {},
-    ...(credential.authenticatorAttachment === null ? {} : { authenticatorAttachment: credential.authenticatorAttachment }),
+    ...(credential.authenticatorAttachment === null
+      ? {}
+      : { authenticatorAttachment: credential.authenticatorAttachment }),
   };
   if (response instanceof AuthenticatorAttestationResponse) {
     return {

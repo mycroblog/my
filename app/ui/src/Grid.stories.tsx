@@ -5,7 +5,13 @@ import { Grid } from "./Grid";
 import { Stack } from "./Stack";
 import { Text } from "./Text";
 
-const items = ["Read the timeline", "Write posts", "Manage reports", "Manage the custom emoji of the instance", "Invite people"];
+const items = [
+  "Read the timeline",
+  "Write posts",
+  "Manage reports",
+  "Manage the custom emoji of the instance",
+  "Invite people",
+];
 
 const meta = {
   title: "Layout/Grid",

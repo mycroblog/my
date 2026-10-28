@@ -7,7 +7,8 @@ import { Button } from "./Button";
 import { EmojiText } from "./CustomEmoji";
 import { Stack } from "./Stack";
 
-const orange = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
+const orange =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
 
 const meta = {
   title: "Display/AccountItem",
@@ -73,7 +74,9 @@ export const CustomEmojiName: Story = {
   args: {
     href: "/@alice",
     name: "Alice :blobcat:",
-    nameContent: <EmojiText text="Alice :blobcat:" emojis={[{ shortcode: "blobcat", url: orange, static_url: orange }]} />,
+    nameContent: (
+      <EmojiText text="Alice :blobcat:" emojis={[{ shortcode: "blobcat", url: orange, static_url: orange }]} />
+    ),
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("img", { name: ":blobcat:" })).toBeVisible();

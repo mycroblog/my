@@ -25,14 +25,22 @@ export function useFormatTotals(): (totals: readonly Money[]) => string {
 }
 
 /** The name of a period in the viewer's locale: the month and year, the year, or the dates of an ISO week with its number. */
-export function usePeriodName(): (granularity: CostGranularity, period: Pick<CostPeriodTotal, "label" | "starts_on" | "ends_on">) => string {
+export function usePeriodName(): (
+  granularity: CostGranularity,
+  period: Pick<CostPeriodTotal, "label" | "starts_on" | "ends_on">,
+) => string {
   const intl = useIntl();
   const t = useT();
   return (granularity, period) => {
     const start = utcDate(period.starts_on);
     if (granularity === "year") return intl.formatDate(start, { year: "numeric", timeZone: "UTC" });
     if (granularity === "month") return intl.formatDate(start, { year: "numeric", month: "long", timeZone: "UTC" });
-    const range = intl.formatDateTimeRange(start, utcDate(period.ends_on), { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+    const range = intl.formatDateTimeRange(start, utcDate(period.ends_on), {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    });
     return t("client:costs.period.week", { range, week: period.label });
   };
 }

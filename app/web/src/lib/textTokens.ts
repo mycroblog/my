@@ -111,7 +111,11 @@ function trimURL(u: string): number {
   while (n > 0) {
     const c = u.charAt(n - 1);
     const head = u.slice(0, n);
-    if (".,:;!?'\"*".includes(c) || (c === ")" && count(head, "(") < count(head, ")")) || (c === "]" && count(head, "[") < count(head, "]"))) {
+    if (
+      ".,:;!?'\"*".includes(c) ||
+      (c === ")" && count(head, "(") < count(head, ")")) ||
+      (c === "]" && count(head, "[") < count(head, "]"))
+    ) {
       n--;
     } else {
       break;
@@ -215,7 +219,7 @@ function scanAt(text: string, i: number, prev: string, c: string): TextToken | n
 function linkTokens(text: string): TextToken[] {
   const tokens: TextToken[] = [];
   let prev = "";
-  for (let i = 0; i < text.length; ) {
+  for (let i = 0; i < text.length;) {
     const c = codePointAt(text, i);
     const token = scanAt(text, i, prev, c);
     if (token !== null) {
@@ -236,7 +240,8 @@ function shortcodeTokens(text: string): TextToken[] {
   for (let i = 0; i < text.length; i++) {
     if (text.charAt(i) !== ":" || shortcodeBlocker.test(codePointBefore(text, i))) continue;
     const j = spanFrom(text, i + 1, shortcodeCharacter);
-    if (text.charAt(j) !== ":" || j - i - 1 < minShortcodeLength || shortcodeBlocker.test(codePointAt(text, j + 1))) continue;
+    if (text.charAt(j) !== ":" || j - i - 1 < minShortcodeLength || shortcodeBlocker.test(codePointAt(text, j + 1)))
+      continue;
     tokens.push({ kind: "shortcode", start: i, end: j + 1, text: text.slice(i, j + 1) });
     i = j; // the closing colon cannot open another shortcode: it follows a letter
   }

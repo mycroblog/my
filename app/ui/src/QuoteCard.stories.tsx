@@ -18,7 +18,9 @@ const meta = {
         <time dateTime="2026-10-17T06:52:12Z">2h</time>
       </PostCardTimeLink>
     ),
-    children: <PostContent html={serverSanitizedHtml("<p>The sun rose again this morning, as it does.</p>")} lang="en" />,
+    children: (
+      <PostContent html={serverSanitizedHtml("<p>The sun rose again this morning, as it does.</p>")} lang="en" />
+    ),
   },
 } satisfies Meta<typeof QuoteCard>;
 
@@ -35,7 +37,13 @@ export const Shown: Story = {
 
 /** A quoted post that cannot be shown leaves the notice of why. */
 export const Unavailable: Story = {
-  args: { avatar: undefined, author: undefined, time: undefined, children: undefined, notice: "The quoted post was deleted." },
+  args: {
+    avatar: undefined,
+    author: undefined,
+    time: undefined,
+    children: undefined,
+    notice: "The quoted post was deleted.",
+  },
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("group", { name: "Quoted post" })).toHaveTextContent("The quoted post was deleted.");
   },

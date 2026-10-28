@@ -32,11 +32,31 @@ import { ThemeRadioGroup } from "./ThemeRadioGroup";
 
 /** The visibilities in the order of ADR-0017, widest first, with their label and description. */
 const visibilities: readonly { id: Visibility; label: ClientMessageKey; description: ClientMessageKey }[] = [
-  { id: "public", label: "client:settings.visibility.public", description: "client:settings.visibility.public.description" },
-  { id: "local", label: "client:settings.visibility.local", description: "client:settings.visibility.local.description" },
-  { id: "unlisted", label: "client:settings.visibility.unlisted", description: "client:settings.visibility.unlisted.description" },
-  { id: "private", label: "client:settings.visibility.private", description: "client:settings.visibility.private.description" },
-  { id: "direct", label: "client:settings.visibility.direct", description: "client:settings.visibility.direct.description" },
+  {
+    id: "public",
+    label: "client:settings.visibility.public",
+    description: "client:settings.visibility.public.description",
+  },
+  {
+    id: "local",
+    label: "client:settings.visibility.local",
+    description: "client:settings.visibility.local.description",
+  },
+  {
+    id: "unlisted",
+    label: "client:settings.visibility.unlisted",
+    description: "client:settings.visibility.unlisted.description",
+  },
+  {
+    id: "private",
+    label: "client:settings.visibility.private",
+    description: "client:settings.visibility.private.description",
+  },
+  {
+    id: "direct",
+    label: "client:settings.visibility.direct",
+    description: "client:settings.visibility.direct.description",
+  },
 ];
 
 /**
@@ -200,7 +220,9 @@ function EmailDelivery({ suppression }: { suppression: PreferencesControls["emai
       </Heading>
       <Callout>
         <Text as="p" size="sm" tone="fg">
-          {suppression.kind === "hard_bounce" ? t("client:settings.email_suppression.hard_bounce") : t("client:settings.email_suppression.complaint")}
+          {suppression.kind === "hard_bounce"
+            ? t("client:settings.email_suppression.hard_bounce")
+            : t("client:settings.email_suppression.complaint")}
         </Text>
         <Hint size="inherit">{t("client:settings.email_suppression.since", { since })}</Hint>
         {suppression.kind === "hard_bounce" && (
@@ -339,7 +361,13 @@ function TimeZoneSelect({ control }: { control: PreferenceControl<string> }) {
  * The time zone: each option is the zone's name in the display language with its difference from UTC, and is
  * described by its IANA name, which tells apart the zones of one name (America/New_York, America/Detroit).
  */
-function TimeZoneField({ control, options }: { control: PreferenceControl<string>; options: ReturnType<typeof useTimeZoneOptions> }) {
+function TimeZoneField({
+  control,
+  options,
+}: {
+  control: PreferenceControl<string>;
+  options: ReturnType<typeof useTimeZoneOptions>;
+}) {
   const t = useT();
   return (
     <Select

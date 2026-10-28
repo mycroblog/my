@@ -11,7 +11,8 @@ const postCard = tv({
   slots: {
     // The card is the size container its layout answers to (web-client/README.md D2).
     base: "@container relative mb-3 rounded-xl border border-border bg-surface-raised p-4 shadow-card",
-    context: "mb-2 flex min-w-0 items-center gap-2 text-sm font-bold wrap-anywhere text-success [&>svg]:size-4 [&>svg]:shrink-0",
+    context:
+      "mb-2 flex min-w-0 items-center gap-2 text-sm font-bold wrap-anywhere text-success [&>svg]:size-4 [&>svg]:shrink-0",
     grid: "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2",
     // Narrow: the avatar sits beside the header and the body spans the card. Wide: the avatar has its own column.
     // Positioned, so that the avatar is drawn over the thread's line.
@@ -36,7 +37,10 @@ const postCard = tv({
     // Told apart by a thicker border in the accent color, not by a color alone: it is the only card with a 2px border.
     highlighted: { true: { base: "border-2 border-accent" } },
     // Cards of a thread touch: the corners where they meet are square and the rule between them is the line's.
-    lineAbove: { true: { base: "-mt-px rounded-t-none border-t-transparent", line: "-top-px" }, false: { line: "top-9" } },
+    lineAbove: {
+      true: { base: "-mt-px rounded-t-none border-t-transparent", line: "-top-px" },
+      false: { line: "top-9" },
+    },
     // Below the avatar the line runs down the card, so on a narrow card the body, details and actions under
     // the header move clear of it; from `@md` they are in the avatar's next column anyway.
     lineBelow: {
@@ -137,7 +141,12 @@ export function PostCard({
   const authorId = `${id}-author`;
   const timeId = `${id}-time`;
   const contentId = `${id}-content`;
-  const labelledBy = [...(label === undefined ? [] : [labelId]), ...(context === undefined ? [] : [contextId]), authorId, timeId].join(" ");
+  const labelledBy = [
+    ...(label === undefined ? [] : [labelId]),
+    ...(context === undefined ? [] : [contextId]),
+    authorId,
+    timeId,
+  ].join(" ");
   return (
     <FeedArticle
       {...mergeProps(props, scope.props)}

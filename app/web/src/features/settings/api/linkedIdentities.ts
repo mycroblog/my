@@ -24,7 +24,8 @@ export function linkedIdentitiesQueryOptions(api: Api) {
  * What confirms an operation: the current password, a passkey of the user (the browser's prompt), or the token of a
  * confirmation with a linked provider.
  */
-export type Confirmation = { kind: "password"; password: string } | { kind: "passkey" } | { kind: "external"; token: string };
+export type Confirmation =
+  { kind: "password"; password: string } | { kind: "passkey" } | { kind: "external"; token: string };
 
 /** The members of an operation's request that carry `confirmation`; a passkey opens the browser's prompt first. */
 export async function confirmationBody(
@@ -60,7 +61,15 @@ export function unlinkIdentityMutation(api: Api) {
 export function beginLinkMutation(api: Api) {
   return {
     mutationKey: ["post", "/linked_identities"] as const,
-    mutationFn: async ({ providerId, confirmation, returnTo }: { providerId: string; confirmation: Confirmation; returnTo: string }): Promise<URL> => {
+    mutationFn: async ({
+      providerId,
+      confirmation,
+      returnTo,
+    }: {
+      providerId: string;
+      confirmation: Confirmation;
+      returnTo: string;
+    }): Promise<URL> => {
       const body = { provider_id: providerId, return_to: returnTo, ...(await confirmationBody(api, confirmation)) };
       const { data, error } = await api.fetch.POST("/linked_identities", { body });
       if (data === undefined) throw new ApiError(error);
@@ -77,7 +86,15 @@ export function beginLinkMutation(api: Api) {
 export function beginExternalConfirmationMutation(api: Api) {
   return {
     mutationKey: ["post", "/linked_identities/confirmation"] as const,
-    mutationFn: async ({ providerId, operation, returnTo }: { providerId: string; operation: ConfirmedOperation; returnTo: string }): Promise<URL> => {
+    mutationFn: async ({
+      providerId,
+      operation,
+      returnTo,
+    }: {
+      providerId: string;
+      operation: ConfirmedOperation;
+      returnTo: string;
+    }): Promise<URL> => {
       const { data, error } = await api.fetch.POST("/linked_identities/confirmation", {
         body: { provider_id: providerId, operation, return_to: returnTo },
       });
@@ -95,7 +112,8 @@ export async function refreshLinkedIdentities(api: Api, queryClient: QueryClient
 }
 
 /** Why a link or a confirmation with a provider failed, as the fragment's `external_error` names it. */
-export type ExternalFailure = "rate_limited" | "unavailable" | "expired" | "denied" | "mismatch" | "linked_elsewhere" | "already_linked" | "failed";
+export type ExternalFailure =
+  "rate_limited" | "unavailable" | "expired" | "denied" | "mismatch" | "linked_elsewhere" | "already_linked" | "failed";
 
 const externalFailures: readonly ExternalFailure[] = [
   "rate_limited",

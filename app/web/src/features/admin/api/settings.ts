@@ -28,7 +28,10 @@ export const descriptionLimit = 20_000;
 export const thumbnailAltLimit = 1500;
 
 /** The texts of the server settings screen. */
-type SettingsTextKey = Extract<Schemas["InstanceTextKey"], "name" | "short_description" | "description" | "thumbnail_alt">;
+type SettingsTextKey = Extract<
+  Schemas["InstanceTextKey"],
+  "name" | "short_description" | "description" | "thumbnail_alt"
+>;
 
 /** A new value of a text; an empty `body` clears it. */
 export type InstanceTextChange = { key: SettingsTextKey; body: string };
@@ -43,7 +46,10 @@ export function setInstanceTextsMutation(api: Api) {
     mutationFn: (changes: readonly InstanceTextChange[]): Promise<InstanceText[]> =>
       Promise.all(
         changes.map(async ({ key, body }) => {
-          const { data, error } = await api.fetch.PUT("/admin/instance_texts/{key}", { params: { path: { key } }, body: { body } });
+          const { data, error } = await api.fetch.PUT("/admin/instance_texts/{key}", {
+            params: { path: { key } },
+            body: { body },
+          });
           // The middleware throws an ApiError for every error status; this narrows the type.
           if (data === undefined) throw new ApiError(error);
           return data;
@@ -86,7 +92,11 @@ export function updateInstanceSettingsMutation(api: Api) {
  * registration mode and the timelines that the navigation offers) and the audit log, fetched again and awaited
  * while shown.
  */
-export async function cacheSavedSettings(queryClient: QueryClient, api: Api, settings: InstanceSettingList): Promise<void> {
+export async function cacheSavedSettings(
+  queryClient: QueryClient,
+  api: Api,
+  settings: InstanceSettingList,
+): Promise<void> {
   queryClient.setQueryData(instanceSettingsQueryOptions(api).queryKey, settings);
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/instance"] }),

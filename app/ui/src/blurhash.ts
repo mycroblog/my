@@ -46,7 +46,9 @@ function components(hash: string, punch: number): { colors: Linear[]; columns: n
   const maximum = (base83(hash.charAt(1)) + 1) / 166;
   const average = base83(hash.slice(2, 6));
   if (Number.isNaN(maximum) || Number.isNaN(average)) return null;
-  const colors: Linear[] = [[toLinear(Math.floor(average / 65536)), toLinear(Math.floor(average / 256) % 256), toLinear(average % 256)]];
+  const colors: Linear[] = [
+    [toLinear(Math.floor(average / 65536)), toLinear(Math.floor(average / 256) % 256), toLinear(average % 256)],
+  ];
   for (let i = 1; i < columns * rows; i++) {
     const value = base83(hash.slice(4 + i * 2, 6 + i * 2));
     if (Number.isNaN(value)) return null;
@@ -61,7 +63,12 @@ function components(hash: string, punch: number): { colors: Linear[]; columns: n
  * The pixels of `hash` at `width` × `height`, as RGBA bytes for an `ImageData`; null when `hash` is not a
  * blurhash. `punch` above 1 strengthens the contrast of the variations.
  */
-export function decodeBlurhash(hash: string, width: number, height: number, punch = 1): Uint8ClampedArray<ArrayBuffer> | null {
+export function decodeBlurhash(
+  hash: string,
+  width: number,
+  height: number,
+  punch = 1,
+): Uint8ClampedArray<ArrayBuffer> | null {
   const decoded = components(hash, punch);
   if (decoded === null) return null;
   const { colors, columns } = decoded;

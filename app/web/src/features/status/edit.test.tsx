@@ -128,7 +128,10 @@ describe("editing a post", () => {
     });
     // The post changes where it is, and says it was edited, with a link to its history.
     const article = within(feed).getByRole("article");
-    expect(within(article).getByRole("link", { name: "Edited" })).toHaveAttribute("href", `/@alice/status/${ownId}/history`);
+    expect(within(article).getByRole("link", { name: "Edited" })).toHaveAttribute(
+      "href",
+      `/@alice/status/${ownId}/history`,
+    );
     expect(within(article).getByText("Dogs")).toBeInTheDocument();
   });
 
@@ -171,7 +174,9 @@ describe("editing a post", () => {
     serveOwnPost();
     let failures = 1;
     server.use(
-      http.get(`${apiBase}/statuses/:id/source`, () => (failures-- > 0 ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json(source))),
+      http.get(`${apiBase}/statuses/:id/source`, () =>
+        failures-- > 0 ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json(source),
+      ),
     );
     const { user } = await renderApp({ path: "/local" });
 
@@ -199,7 +204,12 @@ describe("editing a post", () => {
     serveOwnPost();
     const sent: EditStatusRequest[] = [];
     server.use(
-      http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, limits: { ...instanceFixture.limits, require_media_description: true } })),
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          limits: { ...instanceFixture.limits, require_media_description: true },
+        }),
+      ),
       http.put(`${apiBase}/statuses/:id`, async ({ request }) => {
         sent.push((await request.json()) as EditStatusRequest);
         return HttpResponse.json({ ...own, edited_at: "2026-10-16T12:00:00Z" });
@@ -230,9 +240,30 @@ describe("editing a post", () => {
 describe("a post's edit history", () => {
   const edited: Status = { ...own, content: "<p>Third</p>", spoiler_text: "Dogs", edited_at: "2026-10-16T11:00:00Z" };
   const revisions: StatusEdit[] = [
-    { content: "<p>First</p>", spoiler_text: "", sensitive: false, created_at: "2026-10-16T09:00:00Z", media_attachments: [], emojis: [] },
-    { content: "<p>Second</p>", spoiler_text: "", sensitive: false, created_at: "2026-10-16T10:00:00Z", media_attachments: [], emojis: [] },
-    { content: "<p>Third</p>", spoiler_text: "Dogs", sensitive: false, created_at: "2026-10-16T11:00:00Z", media_attachments: [], emojis: [] },
+    {
+      content: "<p>First</p>",
+      spoiler_text: "",
+      sensitive: false,
+      created_at: "2026-10-16T09:00:00Z",
+      media_attachments: [],
+      emojis: [],
+    },
+    {
+      content: "<p>Second</p>",
+      spoiler_text: "",
+      sensitive: false,
+      created_at: "2026-10-16T10:00:00Z",
+      media_attachments: [],
+      emojis: [],
+    },
+    {
+      content: "<p>Third</p>",
+      spoiler_text: "Dogs",
+      sensitive: false,
+      created_at: "2026-10-16T11:00:00Z",
+      media_attachments: [],
+      emojis: [],
+    },
   ];
 
   test("is where the mark of an edited post leads, and lists the revisions newest first", async () => {
@@ -266,7 +297,9 @@ describe("a post's edit history", () => {
   });
 
   test("says when the post is not found", async () => {
-    server.use(http.get(`${apiBase}/statuses/:id/history`, () => problem(404, "/api/v1/problems/not-found", "Not Found")));
+    server.use(
+      http.get(`${apiBase}/statuses/:id/history`, () => problem(404, "/api/v1/problems/not-found", "Not Found")),
+    );
     await renderApp({ path: `/@alice/status/${ownId}/history` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Post not found" })).toBeInTheDocument();
@@ -285,7 +318,10 @@ describe("the emoji picker of the edit dialog", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Add emoji" }));
     const picker = await screen.findByRole("dialog", { name: "Emoji" });
-    await user.type(await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 }), "thumbs up");
+    await user.type(
+      await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 }),
+      "thumbs up",
+    );
     await user.click(within(picker).getByRole("gridcell", { name: "thumbs up" }));
 
     await waitFor(() => {

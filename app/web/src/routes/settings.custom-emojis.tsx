@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
-import { OwnCustomEmojis, ownCustomEmojiRequestsQueryOptions, ownCustomEmojisQueryOptions } from "../features/custom-emojis";
+import {
+  OwnCustomEmojis,
+  ownCustomEmojiRequestsQueryOptions,
+  ownCustomEmojisQueryOptions,
+} from "../features/custom-emojis";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { loadWithPermission } from "./-admin/adminRoute";

@@ -35,10 +35,15 @@ function nameOf(blob: Blob, name: string | undefined, fallback: string): string 
  * again after a 401 like any other request; it is not retried after a 429 or 503, as POST /media takes no
  * Idempotency-Key.
  */
-export async function uploadMedia(api: Api, input: MediaUploadInput, init?: { signal?: AbortSignal }): Promise<MediaAttachment> {
+export async function uploadMedia(
+  api: Api,
+  input: MediaUploadInput,
+  init?: { signal?: AbortSignal },
+): Promise<MediaAttachment> {
   const form = new FormData();
   form.append("file", input.file, nameOf(input.file, input.fileName, "file"));
-  if (input.thumbnail !== undefined) form.append("thumbnail", input.thumbnail, nameOf(input.thumbnail, input.thumbnailName, "thumbnail"));
+  if (input.thumbnail !== undefined)
+    form.append("thumbnail", input.thumbnail, nameOf(input.thumbnail, input.thumbnailName, "thumbnail"));
   if (input.description !== undefined && input.description !== "") form.append("description", input.description);
   if (input.purpose !== undefined) form.append("purpose", input.purpose);
   const { data } = await api.POST("/media", {

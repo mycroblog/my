@@ -47,7 +47,9 @@ export function AppLayout() {
   const medium = useMediaQuery(mediumQuery);
   // Only pages with a feed float the new-post button (timelines and profiles: their routes' static data), below md
   // (ADR-0039); from md the rail has the button.
-  const pageWantsButton = useMatches({ select: (matches) => matches.some((match) => match.staticData.composeButton === true) });
+  const pageWantsButton = useMatches({
+    select: (matches) => matches.some((match) => match.staticData.composeButton === true),
+  });
   const wideMain = useMatches({ select: (matches) => matches.some((match) => match.staticData.wideMain === true) });
   const signedOut = useSignedOut();
   const signedIn = useViewer().status === "signed-in";

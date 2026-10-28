@@ -12,10 +12,9 @@ import { Link } from "./Link";
 
 const appShell = tv({
   slots: {
-    base: [
-      "min-h-svh px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]",
-    ],
-    skipLink: "sr-only z-20 rounded-md bg-surface-raised px-3 py-2 shadow-md focus:not-sr-only focus:fixed focus:inset-s-2 focus:top-2",
+    base: ["min-h-svh px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]"],
+    skipLink:
+      "sr-only z-20 rounded-md bg-surface-raised px-3 py-2 shadow-md focus:not-sr-only focus:fixed focus:inset-s-2 focus:top-2",
     // The end padding keeps the last item of a list clear of what floats over it (web-client/16-look-states-and-wording.md G4): below md the tab
     // bar (min-h-16 and its border; min-h-12 on short screens) and, while the floating button shows (data-compose-fab),
     // the button (3rem) above it; from md the button in the corner; from xl nothing. Each gap is 1rem (0.5rem on short
@@ -39,7 +38,9 @@ const appShell = tv({
     // The column's width: `narrow` for reading, `wide` for a page with something beside its text (the signed-out landing).
     width: { narrow: { main: "max-w-2xl" }, wide: { main: "max-w-5xl" } },
   },
-  compoundVariants: [{ navigationPlacement: "side", withAside: true, class: { base: "xl:grid-cols-[auto_minmax(0,1fr)_24rem]" } }],
+  compoundVariants: [
+    { navigationPlacement: "side", withAside: true, class: { base: "xl:grid-cols-[auto_minmax(0,1fr)_24rem]" } },
+  ],
   defaultVariants: { navigationPlacement: "side", width: "narrow" },
 });
 
@@ -76,7 +77,18 @@ export type AppShellProps = {
  * The app's frame: the skip link, the navigation, `main` and the third column or the floating slot. Render the
  * connection bar (`OfflineBanner`) before it, since it pads for the top safe-area inset itself.
  */
-export function AppShell({ navigation, children, skipLinkLabel, mainId = "main", mainRef, aside, floating, floatingVisible = false, navigationPlacement = "side", width = "narrow" }: AppShellProps) {
+export function AppShell({
+  navigation,
+  children,
+  skipLinkLabel,
+  mainId = "main",
+  mainRef,
+  aside,
+  floating,
+  floatingVisible = false,
+  navigationPlacement = "side",
+  width = "narrow",
+}: AppShellProps) {
   const slots = appShell({ navigationPlacement, width, withAside: aside !== undefined });
   return (
     <div className={slots.base()}>
@@ -85,7 +97,13 @@ export function AppShell({ navigation, children, skipLinkLabel, mainId = "main",
         {skipLinkLabel}
       </Link>
       {navigation}
-      <main ref={mainRef} id={mainId} tabIndex={-1} data-compose-fab={floatingVisible ? "" : undefined} className={slots.main()}>
+      <main
+        ref={mainRef}
+        id={mainId}
+        tabIndex={-1}
+        data-compose-fab={floatingVisible ? "" : undefined}
+        className={slots.main()}
+      >
         {children}
       </main>
       {aside !== undefined && <div className={slots.aside()}>{aside}</div>}

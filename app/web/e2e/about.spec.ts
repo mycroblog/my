@@ -29,7 +29,11 @@ const domainActions: DomainAction[] = [
 const statusPageUrl = "https://status.my.example/";
 
 /** Plays the instance and its moderated domains (or the status that the visibility setting answers) for a visitor without a session. */
-async function serveInstance(page: Page, origin: string, domains: { status: 200 } | { status: 401 | 404 }): Promise<void> {
+async function serveInstance(
+  page: Page,
+  origin: string,
+  domains: { status: 200 } | { status: 401 | 404 },
+): Promise<void> {
   const instance: Instance = {
     domain: "my.example",
     name: "my example",
@@ -65,7 +69,11 @@ async function serveInstance(page: Page, origin: string, domains: { status: 200 
       : route.fulfill({
           status: domains.status,
           contentType: "application/problem+json",
-          json: { type: domains.status === 401 ? "/api/v1/problems/unauthenticated" : "about:blank", title: "Error", status: domains.status },
+          json: {
+            type: domains.status === 401 ? "/api/v1/problems/unauthenticated" : "about:blank",
+            title: "Error",
+            status: domains.status,
+          },
         }),
   );
 }
@@ -77,7 +85,9 @@ test.describe("the information page", () => {
     await expect(page.getByRole("main").locator("li", { hasText: "spam.example" })).toBeVisible();
   });
 
-  test("tells everyone about the server, its rules and documents, the servers it moderates, and its source code", async ({ page }) => {
+  test("tells everyone about the server, its rules and documents, the servers it moderates, and its source code", async ({
+    page,
+  }) => {
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toContainText("my example");
     await expect(main).toMatchAriaSnapshot(`
@@ -163,7 +173,11 @@ test.describe("the information page", () => {
   });
 });
 
-test("the information page of a server that lists the servers it moderates to nobody", async ({ page, baseURL, makeAxeBuilder }) => {
+test("the information page of a server that lists the servers it moderates to nobody", async ({
+  page,
+  baseURL,
+  makeAxeBuilder,
+}) => {
   await serveInstance(page, new URL(baseURL ?? "").origin, { status: 404 });
   await page.goto("/about");
   const main = page.getByRole("main");
@@ -175,7 +189,11 @@ test("the information page of a server that lists the servers it moderates to no
   await expectNoHorizontalScroll(page);
 });
 
-test("the information page of a server that lists the servers it moderates to its users only", async ({ page, baseURL, makeAxeBuilder }) => {
+test("the information page of a server that lists the servers it moderates to its users only", async ({
+  page,
+  baseURL,
+  makeAxeBuilder,
+}) => {
   await serveInstance(page, new URL(baseURL ?? "").origin, { status: 401 });
   await page.goto("/about");
   const main = page.getByRole("main");

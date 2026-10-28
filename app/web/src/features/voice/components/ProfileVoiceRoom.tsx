@@ -28,7 +28,12 @@ export function ProfileVoiceRoom({ accountId, name }: ProfileVoiceRoomProps) {
     // Inset like the profile's other notes under its header.
     <Box paddingX="4">
       <Callout>
-        <p>{intl.formatMessage({ id: room.role === "host" ? "client:voice.profile.host" : "client:voice.profile.speaker" }, { name, room: link })}</p>
+        <p>
+          {intl.formatMessage(
+            { id: room.role === "host" ? "client:voice.profile.host" : "client:voice.profile.speaker" },
+            { name, room: link },
+          )}
+        </p>
         <p>{t("client:voice.room.participants_count", { count: room.participants_count })}</p>
       </Callout>
     </Box>

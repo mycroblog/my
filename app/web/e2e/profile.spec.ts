@@ -6,7 +6,16 @@
 // role and position.
 import type { Page } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, expectTabWhollyVisible, imageVariants, localeDir, servedImage, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  expectTabWhollyVisible,
+  imageVariants,
+  localeDir,
+  servedImage,
+  test,
+} from "./fixtures";
 
 type Account = components["schemas"]["Account"];
 type Relationship = components["schemas"]["Relationship"];
@@ -30,8 +39,12 @@ const alice: Account = {
 };
 
 /** Pictures that the fixture serves on the preview's origin (servedImage), so that no request leaves it. */
-const avatar = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`);
-const header = servedImage(`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100"><rect width="300" height="100" fill="#4f6d8f"/></svg>')}`);
+const avatar = servedImage(
+  `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#8f4f6d"/></svg>')}`,
+);
+const header = servedImage(
+  `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100"><rect width="300" height="100" fill="#4f6d8f"/></svg>')}`,
+);
 
 /** A profile that tests the layout: a long name, a long unbroken link, fields in two scripts, and images. */
 const bob: Account = {
@@ -103,14 +116,20 @@ async function signedInServer(page: Page) {
   const changes: string[] = [];
   let relationship = none;
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
   await page.route("**/api/v1/notifications/marker", (route) => route.fulfill(json({ unread_count: 0 })));
   await page.route("**/api/v1/accounts/lookup*", (route) => {
     const acct = new URL(route.request().url()).searchParams.get("acct");
     return acct === bob.acct
       ? route.fulfill(json(bob))
-      : route.fulfill({ status: 404, contentType: "application/problem+json", body: JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }) });
+      : route.fulfill({
+          status: 404,
+          contentType: "application/problem+json",
+          body: JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }),
+        });
   });
   await page.route("**/api/v1/accounts/relationships*", (route) => route.fulfill(json([relationship])));
   await page.route(`**/api/v1/accounts/${bob.id}/statuses*`, (route) =>
@@ -177,7 +196,9 @@ test.describe("a profile", () => {
     for (const [index, src] of [header, avatar].entries()) {
       const image = images.nth(index);
       await expect(image).toHaveAttribute("src", src);
-      await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+      await expect
+        .poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+        .toBe(true);
     }
   });
 
@@ -218,7 +239,10 @@ test.describe("a profile", () => {
     `);
   });
 
-  test("sends a follow request and withdraws it after asking, with the focus kept on the button", async ({ page, makeAxeBuilder }) => {
+  test("sends a follow request and withdraws it after asking, with the focus kept on the button", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const follow = relationshipButtons(page).first();
     const request = await follow.textContent();
     await follow.click();
@@ -291,7 +315,10 @@ test.describe("the followers of an account", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("line every name up with the page's start, whatever the direction of the name (G9)", async ({ page, locale }) => {
+  test("line every name up with the page's start, whatever the direction of the name (G9)", async ({
+    page,
+    locale,
+  }) => {
     const names = page.getByRole("main").getByRole("list").getByRole("link").locator('span[dir="auto"]');
     await expect(names).toHaveCount(3);
     const pageDir = localeDir(locale ?? "en");

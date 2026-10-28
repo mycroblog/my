@@ -4,7 +4,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { AppNav, AppNavAccount, AppNavAction, AppNavBrand, AppNavItem, AppNavMenu, AppNavMenuLink, AppNavMenuList, AppNavMenuSection, type AppNavBadge } from "./AppNavigation";
+import {
+  AppNav,
+  AppNavAccount,
+  AppNavAction,
+  AppNavBrand,
+  AppNavItem,
+  AppNavMenu,
+  AppNavMenuLink,
+  AppNavMenuList,
+  AppNavMenuSection,
+  type AppNavBadge,
+} from "./AppNavigation";
 import { AppShell, AsidePanel, ShellDock } from "./AppShell";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
@@ -29,7 +40,16 @@ import { atViewport, shellParameters } from "./storyViewports";
 import { Switch } from "./Switch";
 import { Hint, InlineError, Text } from "./Text";
 
-type Labels = { home: string; local: string; federated: string; notifications: string; search: string; profile: string; bookmarks: string; settings: string };
+type Labels = {
+  home: string;
+  local: string;
+  federated: string;
+  notifications: string;
+  search: string;
+  profile: string;
+  bookmarks: string;
+  settings: string;
+};
 
 const labels: Labels = {
   home: "Home",
@@ -86,7 +106,12 @@ type SampleNavProps = {
 };
 
 /** The navigation as the app builds it: five items in the tab bar, the rest in the rail and the menu's sheet. */
-function SampleNav({ labels: l = labels, serverName = "my example", accountName = "Alice Example", menuOpen = false }: SampleNavProps) {
+function SampleNav({
+  labels: l = labels,
+  serverName = "my example",
+  accountName = "Alice Example",
+  menuOpen = false,
+}: SampleNavProps) {
   const [isOpen, setIsOpen] = useState(menuOpen);
   return (
     <AppNav
@@ -170,7 +195,9 @@ function SamplePageInCall({ failed = false }: { failed?: boolean }) {
             </Link>
           }
           status="Connected"
-          notice={failed ? <InlineError alert>No microphone was found. Connect one, then try again.</InlineError> : undefined}
+          notice={
+            failed ? <InlineError alert>No microphone was found. Connect one, then try again.</InlineError> : undefined
+          }
         >
           <Switch defaultSelected>Microphone</Switch>
           <Button variant="danger">Leave</Button>
@@ -266,7 +293,9 @@ export const ShortScreenInCall: Story = {
     await expect(getComputedStyle(dock).position).toBe("static");
     const nav = canvas.getByRole("navigation", { name: "Main" });
     const fab = canvas.getByRole("button", { name: "New post" });
-    await expect(nav.getBoundingClientRect().height + fab.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight / 2);
+    await expect(nav.getBoundingClientRect().height + fab.getBoundingClientRect().height).toBeLessThanOrEqual(
+      window.innerHeight / 2,
+    );
   },
 };
 
@@ -312,7 +341,9 @@ export const Laptop: Story = {
   play: async ({ canvas }) => {
     const nav = canvas.getByRole("navigation", { name: "Main" });
     await expect(within(nav).getByRole("link", { name: "my example" })).toBeVisible();
-    await expect(within(nav).getByRole("link", { name: "Alice Example @alice" })).toHaveAccessibleDescription("Your profile");
+    await expect(within(nav).getByRole("link", { name: "Alice Example @alice" })).toHaveAccessibleDescription(
+      "Your profile",
+    );
   },
 };
 
@@ -328,13 +359,29 @@ export const Desktop: Story = {
 /** Long labels, a long server name and a long display name: labels wrap, names wrap or are cut to one line. */
 export const LongNamesPhone: Story = {
   globals: atViewport("phone"),
-  args: { navigation: <SampleNav labels={longLabels} serverName="Die außerordentlich gemütliche Gemeinschaftsinstanz" accountName="Alexandra Konstantinopoulou-Wolkenstein" /> },
+  args: {
+    navigation: (
+      <SampleNav
+        labels={longLabels}
+        serverName="Die außerordentlich gemütliche Gemeinschaftsinstanz"
+        accountName="Alexandra Konstantinopoulou-Wolkenstein"
+      />
+    ),
+  },
 };
 
 /** The same long names in the sidebar. */
 export const LongNamesLaptop: Story = {
   globals: atViewport("laptop"),
-  args: { navigation: <SampleNav labels={longLabels} serverName="Die außerordentlich gemütliche Gemeinschaftsinstanz" accountName="Alexandra Konstantinopoulou-Wolkenstein" /> },
+  args: {
+    navigation: (
+      <SampleNav
+        labels={longLabels}
+        serverName="Die außerordentlich gemütliche Gemeinschaftsinstanz"
+        accountName="Alexandra Konstantinopoulou-Wolkenstein"
+      />
+    ),
+  },
 };
 
 /** The skip link, the page's first focusable element, shows while it has focus. */

@@ -46,7 +46,12 @@ const description = "Moderation chat";
 const name = `⁨${description}⁩`;
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in administrator with no webhook at first. Returns what was sent. */
@@ -54,12 +59,20 @@ async function administratorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   let webhooks: Schemas["AdminWebhook"][] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -67,7 +80,8 @@ async function administratorServer(page: Page) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -75,9 +89,17 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: webhooks });
     if (key === "POST /admin/webhooks") {
@@ -114,7 +136,10 @@ async function administratorServer(page: Page) {
 }
 
 test.describe("webhooks", () => {
-  test("sets up a webhook, shows its secret once, disables, enables and deletes it", async ({ page, makeAxeBuilder }) => {
+  test("sets up a webhook, shows its secret once, disables, enables and deletes it", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent = await administratorServer(page);
     await page.goto("/admin/webhooks");
     const main = page.getByRole("main");
@@ -123,12 +148,16 @@ test.describe("webhooks", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form.getByRole("textbox", { name: message("admin.webhooks.url"), exact: true }).fill("https://hooks.example/in");
+    await form
+      .getByRole("textbox", { name: message("admin.webhooks.url"), exact: true })
+      .fill("https://hooks.example/in");
     await form.getByRole("textbox", { name: message("admin.webhooks.description"), exact: true }).fill(description);
     // The checkbox is visually hidden behind its box; its label is what a pointer presses.
     const events = form.getByRole("group", { name: message("admin.webhooks.events"), exact: true });
     await events.getByText(message("admin.webhooks.event.report_created"), { exact: true }).click();
-    await expect(events.getByRole("checkbox", { name: message("admin.webhooks.event.report_created"), exact: true })).toBeChecked();
+    await expect(
+      events.getByRole("checkbox", { name: message("admin.webhooks.event.report_created"), exact: true }),
+    ).toBeChecked();
     await form.getByRole("button", { name: message("admin.webhooks.submit"), exact: true }).click();
 
     await expect(form.getByText(secret, { exact: true })).toBeVisible();
@@ -139,16 +168,22 @@ test.describe("webhooks", () => {
     await expectNoHorizontalScroll(page);
 
     await list.getByRole("button", { name: message("admin.webhooks.disable_webhook", name), exact: true }).click();
-    await expect(list.getByRole("button", { name: message("admin.webhooks.enable_webhook", name), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("button", { name: message("admin.webhooks.enable_webhook", name), exact: true }),
+    ).toBeVisible();
     await list.getByRole("button", { name: message("admin.webhooks.enable_webhook", name), exact: true }).click();
-    await expect(list.getByRole("button", { name: message("admin.webhooks.disable_webhook", name), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("button", { name: message("admin.webhooks.disable_webhook", name), exact: true }),
+    ).toBeVisible();
 
     await list.getByRole("button", { name: message("admin.webhooks.delete_webhook", name), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.webhooks.delete"), exact: true }).click();
-    await expect(list.getByRole("heading", { level: 3, name: message("admin.webhooks.empty"), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.webhooks.empty"), exact: true }),
+    ).toBeVisible();
     expect(sent).toEqual(["create https://hooks.example/in report.created", "disable", "enable", "delete"]);
   });
 });

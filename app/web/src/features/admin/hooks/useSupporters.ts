@@ -61,7 +61,11 @@ export function useSupporterProgram() {
     },
     onSuccess: async (saved: SupporterProgram) => {
       await refreshSupporters(api, queryClient);
-      const message = t(saved.enabled ? "client:admin.supporters.program.enabled_done" : "client:admin.supporters.program.disabled_done");
+      const message = t(
+        saved.enabled
+          ? "client:admin.supporters.program.enabled_done"
+          : "client:admin.supporters.program.disabled_done",
+      );
       setStatus(message);
       announce(message);
     },
@@ -113,7 +117,9 @@ export function useRunPaymentReconcile() {
     onError: (failure) => {
       const tooSoon = failure instanceof ApiError && failure.status === 429;
       setResult({
-        error: tooSoon ? t("client:admin.supporters.payment.reconcile.too_soon") : t("client:admin.supporters.payment.reconcile.failed", { reason: errorMessage(failure) }),
+        error: tooSoon
+          ? t("client:admin.supporters.payment.reconcile.too_soon")
+          : t("client:admin.supporters.payment.reconcile.failed", { reason: errorMessage(failure) }),
       });
     },
   });
@@ -136,7 +142,18 @@ export function useSupporterPlans(): { active: SupporterPlan[]; retired: Support
 }
 
 /** The fields of a plan's form that a refusal can be about. */
-type PlanField = "role" | "name" | "description" | "amount" | "currency" | "discount" | "emojiLimit" | "rank" | "visibility" | "rolePosition" | "form";
+type PlanField =
+  | "role"
+  | "name"
+  | "description"
+  | "amount"
+  | "currency"
+  | "discount"
+  | "emojiLimit"
+  | "rank"
+  | "visibility"
+  | "rolePosition"
+  | "form";
 
 /** Why a plan cannot be saved, next to its field. */
 export type PlanFieldError = { field: PlanField; message: string };
@@ -224,18 +241,30 @@ const currencyPattern = /^[A-Z]{3}$/u;
 
 /** Checks the fields of a draft that the form can check before sending; undefined when it can be sent. */
 function checkDraft(draft: PlanDraft, t: Translate, isNew: boolean): PlanFieldError | undefined {
-  if (isNew && draft.role.trim() === "") return { field: "role", message: t("client:admin.supporters.plan.role.required") };
+  if (isNew && draft.role.trim() === "")
+    return { field: "role", message: t("client:admin.supporters.plan.role.required") };
   const name = draft.name.trim();
   if (name === "" || name.length > supporterPlanNameLimit) {
-    return { field: "name", message: t("client:admin.supporters.plan.name.invalid", { max: String(supporterPlanNameLimit) }) };
+    return {
+      field: "name",
+      message: t("client:admin.supporters.plan.name.invalid", { max: String(supporterPlanNameLimit) }),
+    };
   }
-  if (!amountPattern.test(draft.amount.trim())) return { field: "amount", message: t("client:admin.supporters.plan.amount.invalid") };
-  if (isNew && !currencyPattern.test(draft.currency.trim())) return { field: "currency", message: t("client:admin.supporters.plan.currency.invalid") };
+  if (!amountPattern.test(draft.amount.trim()))
+    return { field: "amount", message: t("client:admin.supporters.plan.amount.invalid") };
+  if (isNew && !currencyPattern.test(draft.currency.trim()))
+    return { field: "currency", message: t("client:admin.supporters.plan.currency.invalid") };
   if (parseCount(draft.discount, maxAnnualDiscount) === undefined) {
-    return { field: "discount", message: t("client:admin.supporters.plan.number.invalid", { max: String(maxAnnualDiscount) }) };
+    return {
+      field: "discount",
+      message: t("client:admin.supporters.plan.number.invalid", { max: String(maxAnnualDiscount) }),
+    };
   }
   if (parseCount(draft.emojiLimit, maxEmojiLimit) === undefined) {
-    return { field: "emojiLimit", message: t("client:admin.supporters.plan.number.invalid", { max: String(maxEmojiLimit) }) };
+    return {
+      field: "emojiLimit",
+      message: t("client:admin.supporters.plan.number.invalid", { max: String(maxEmojiLimit) }),
+    };
   }
   if (parseCount(draft.rank, maxPlanRank) === undefined) {
     return { field: "rank", message: t("client:admin.supporters.plan.number.invalid", { max: String(maxPlanRank) }) };
@@ -411,7 +440,9 @@ export function useSubscriptionActions(): SubscriptionActions {
         return false;
       }
       await refreshSupporters(api, queryClient);
-      const message = t("client:admin.supporters.subscription.canceled", { plan: planName({ name: subscription.plan_name }) });
+      const message = t("client:admin.supporters.subscription.canceled", {
+        plan: planName({ name: subscription.plan_name }),
+      });
       setStatus(message);
       announce(message);
       return true;

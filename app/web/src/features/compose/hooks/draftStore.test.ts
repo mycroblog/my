@@ -23,7 +23,9 @@ describe("DraftStore", () => {
 
     const next = new DraftStore(key).getSnapshot();
     expect(next.draft.text).toBe("Draft");
-    expect(next.draft.attachments).toEqual([{ key: "a", mediaId: "media-1", description: "A cat", previewUrl: null, error: null }]);
+    expect(next.draft.attachments).toEqual([
+      { key: "a", mediaId: "media-1", description: "A cat", previewUrl: null, error: null },
+    ]);
     expect(new DraftStore(composeKey("account-2")).getSnapshot().draft.text).toBe("");
   });
 
@@ -34,7 +36,13 @@ describe("DraftStore", () => {
 
     const { draft, outbox } = store.getSnapshot();
     expect(draft).toMatchObject({ text: "", visibility: "private", language: "ja" });
-    expect(outbox).toEqual([{ idempotencyKey: "key-1", body, draft: expect.objectContaining({ text: "Hi", idempotencyKey: "key-1" }) as unknown }]);
+    expect(outbox).toEqual([
+      {
+        idempotencyKey: "key-1",
+        body,
+        draft: expect.objectContaining({ text: "Hi", idempotencyKey: "key-1" }) as unknown,
+      },
+    ]);
     expect(new DraftStore(key).getSnapshot().outbox).toHaveLength(1);
   });
 
@@ -49,7 +57,11 @@ describe("DraftStore", () => {
 
     store.edit({ text: "" });
     expect(store.restore("key-1", "failed")).toBe(true);
-    expect(store.getSnapshot()).toMatchObject({ draft: { text: "Hi", idempotencyKey: "key-1" }, outbox: [], error: "failed" });
+    expect(store.getSnapshot()).toMatchObject({
+      draft: { text: "Hi", idempotencyKey: "key-1" },
+      outbox: [],
+      error: "failed",
+    });
 
     store.edit({ text: "Hi!" });
     expect(store.getSnapshot()).toMatchObject({ draft: { idempotencyKey: null }, error: null });

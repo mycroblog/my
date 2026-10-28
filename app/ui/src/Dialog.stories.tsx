@@ -25,9 +25,7 @@ const meta = {
       <div className="flex flex-col gap-4">
         <p className="text-fg-muted">Your display name and bio are shown on your profile and next to your posts.</p>
         <div className="flex flex-wrap justify-end gap-2">
-          <Button onPress={close}>
-            Cancel
-          </Button>
+          <Button onPress={close}>Cancel</Button>
           <Button variant="primary" onPress={close}>
             Save
           </Button>
@@ -108,9 +106,7 @@ export const AlertDialog: Story = {
       <div className="flex flex-col gap-4">
         <p>This cannot be undone. Replies to the post stay, without it.</p>
         <div className="flex flex-wrap justify-end gap-2">
-          <Button onPress={close}>
-            Cancel
-          </Button>
+          <Button onPress={close}>Cancel</Button>
           <Button variant="danger" onPress={close}>
             Delete
           </Button>
@@ -142,8 +138,8 @@ export const LongContent: Story = {
       <div className="flex flex-col gap-3">
         {Array.from({ length: 12 }, (_, i) => `Clause ${String(i + 1)}`).map((clause) => (
           <p key={clause}>
-            {clause}: the instance is run by volunteers, who may remove content that breaks its rules and may stop the service at any
-            time.
+            {clause}: the instance is run by volunteers, who may remove content that breaks its rules and may stop the
+            service at any time.
           </p>
         ))}
         <div className="flex justify-end">

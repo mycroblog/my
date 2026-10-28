@@ -87,7 +87,12 @@ export function parseOrigin(server: string): string {
   } catch {
     throw new Error(`mykit: server ${JSON.stringify(server)} is not a URL`);
   }
-  if ((u.protocol !== "http:" && u.protocol !== "https:") || (u.pathname !== "/" && u.pathname !== "") || u.search !== "" || u.hash !== "") {
+  if (
+    (u.protocol !== "http:" && u.protocol !== "https:") ||
+    (u.pathname !== "/" && u.pathname !== "") ||
+    u.search !== "" ||
+    u.hash !== ""
+  ) {
     throw new Error(`mykit: server ${JSON.stringify(server)} is not an origin such as https://example.com`);
   }
   return u.origin;

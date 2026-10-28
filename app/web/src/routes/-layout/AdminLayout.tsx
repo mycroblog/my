@@ -8,7 +8,13 @@ import { AdminNavBack, AdminNavSection, AdminShell, BrandMark, RailItem } from "
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { type ReactNode, type Ref, useEffect, useState } from "react";
 import { adminPages } from "../../features/admin";
-import { moderationPages, type StaffPage, type StaffPageBadge, useModerationBadges, useShownStaffPages } from "../../features/moderation";
+import {
+  moderationPages,
+  type StaffPage,
+  type StaffPageBadge,
+  useModerationBadges,
+  useShownStaffPages,
+} from "../../features/moderation";
 import { useT } from "../../lib/i18n";
 import { useInstanceName } from "../../lib/instanceName";
 
@@ -39,7 +45,13 @@ function Area({ heading, overview, pages, pathname, badgeOf }: AreaProps) {
   return (
     <AdminNavSection heading={heading}>
       <li>
-        <RailItem form="section" href={overview.href} icon={null} label={overview.label} current={pathname.replace(/(.)\/$/, "$1") === overview.href} />
+        <RailItem
+          form="section"
+          href={overview.href}
+          icon={null}
+          label={overview.label}
+          current={pathname.replace(/(.)\/$/, "$1") === overview.href}
+        />
       </li>
       {shown.map((page) => {
         const label = t(page.label);
@@ -52,7 +64,10 @@ function Area({ heading, overview, pages, pathname, badgeOf }: AreaProps) {
               icon={null}
               label={label}
               current={isUnder(pathname, page.href)}
-              {...(count !== null && count.count > 0 && { badge: { count: count.count, label: count.label, name: `${label} ${count.label}` } })}
+              {...(count !== null &&
+                count.count > 0 && {
+                  badge: { count: count.count, label: count.label, name: `${label} ${count.label}` },
+                })}
             />
           </li>
         );

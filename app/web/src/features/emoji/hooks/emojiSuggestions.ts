@@ -4,7 +4,13 @@
 // emoji (matched by their CLDR names and keywords in the locale shown and in `en`), ranked as the picker's search ranks
 // them (prefix before substring), with the emoji used often on this browser first, at most `maxEmojiSuggestions`.
 // A Unicode emoji goes in as itself, in the skin tone chosen in the picker (ADR-0091 §3); a custom emoji as `:shortcode:`.
-import { type PickerCustomEmoji, type PickerEmoji, type PickerUnicodeEmoji, searchEmojis, skinToneVariant } from "@my/ui";
+import {
+  type PickerCustomEmoji,
+  type PickerEmoji,
+  type PickerUnicodeEmoji,
+  searchEmojis,
+  skinToneVariant,
+} from "@my/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { useLocale } from "../../../lib/i18n";
@@ -50,7 +56,9 @@ function rankEmojiSuggestions(
 ): PickerEmoji[] {
   const found = searchEmojis([...custom, ...unicode], query);
   const usage = new Map(frequent.map((key, index) => [key, index]));
-  const often = found.filter((emoji) => usage.has(keyOf(emoji))).toSorted((a, b) => (usage.get(keyOf(a)) ?? 0) - (usage.get(keyOf(b)) ?? 0));
+  const often = found
+    .filter((emoji) => usage.has(keyOf(emoji)))
+    .toSorted((a, b) => (usage.get(keyOf(a)) ?? 0) - (usage.get(keyOf(b)) ?? 0));
   const rest = found.filter((emoji) => !usage.has(keyOf(emoji)));
   return [...often, ...rest].slice(0, maxEmojiSuggestions);
 }
@@ -70,7 +78,12 @@ export function useEmojiSuggestions(): (query: string) => Promise<EmojiSuggestio
     const unicode = await loadUnicodeEmojiSet(locale).then(allUnicode, () => []);
     return rankEmojiSuggestions(query, custom, unicode, frequent).map((emoji): EmojiSuggestion =>
       "unicode" in emoji
-        ? { kind: "unicode", key: emoji.unicode, value: skinToneVariant(emoji, skinTone)?.unicode ?? emoji.unicode, emoji }
+        ? {
+            kind: "unicode",
+            key: emoji.unicode,
+            value: skinToneVariant(emoji, skinTone)?.unicode ?? emoji.unicode,
+            emoji,
+          }
         : { kind: "custom", key: customEmojiKey(emoji.shortcode), value: customEmojiKey(emoji.shortcode), emoji },
     );
   };

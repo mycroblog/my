@@ -35,7 +35,14 @@ export const runtimeDir = join(import.meta.dir, "runtime");
 /** Pseudo-locale -> FormatJS pseudo-locale transform. ar-XB uses FormatJS's RTL "en-XB". */
 const PSEUDO_TRANSFORMS = { "en-XA": "en-XA", "ar-XB": "en-XB" } as const;
 
-export type Message = { ns: string; key: string; id: string; source: string; description: string; args: [string, ArgType][] };
+export type Message = {
+  ns: string;
+  key: string;
+  id: string;
+  source: string;
+  description: string;
+  args: [string, ArgType][];
+};
 
 /** Parses every source-locale message; throws on ICU errors (check.ts reports them first). */
 export function sourceMessages(catalog: Catalog): Message[] {
@@ -43,7 +50,14 @@ export function sourceMessages(catalog: Catalog): Message[] {
   for (const [ns, entries] of Object.entries(catalog[SOURCE] ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
     for (const [key, entry] of Object.entries(entries).sort(([a], [b]) => a.localeCompare(b))) {
       const args = [...extractArgs(parseMessage(entry.defaultMessage))].sort(([a], [b]) => a.localeCompare(b));
-      messages.push({ ns, key, id: `${ns}:${key}`, source: entry.defaultMessage, description: entry.description ?? "", args });
+      messages.push({
+        ns,
+        key,
+        id: `${ns}:${key}`,
+        source: entry.defaultMessage,
+        description: entry.description ?? "",
+        args,
+      });
     }
   }
   return messages;
@@ -54,7 +68,9 @@ export const pseudoPart = (ns: string): Part => (isClientNamespace(ns) ? "ts" : 
 
 async function pseudoCatalogs(catalog: Catalog, part: Part): Promise<Catalog> {
   const out: Catalog = {};
-  for (const ns of Object.keys(catalog[SOURCE]).filter((ns) => pseudoPart(ns) === part).sort()) {
+  for (const ns of Object.keys(catalog[SOURCE])
+    .filter((ns) => pseudoPart(ns) === part)
+    .sort()) {
     const files = [...new Set(Object.keys(catalog[SOURCE][ns]).map((key) => catalogFile(SOURCE, ns, key)))];
     for (const [locale, transform] of Object.entries(PSEUDO_TRANSFORMS)) {
       // FormatJS pseudo-localizes the parsed AST, so arguments, `#` and plural keywords
@@ -64,7 +80,10 @@ async function pseudoCatalogs(catalog: Catalog, part: Part): Promise<Catalog> {
       );
       const entries: Namespace = {};
       for (const key of Object.keys(catalog[SOURCE][ns]).sort()) {
-        entries[key] = { defaultMessage: printAST(compiled[key]), description: "Generated from en by tools/i18n; do not edit." };
+        entries[key] = {
+          defaultMessage: printAST(compiled[key]),
+          description: "Generated from en by tools/i18n; do not edit.",
+        };
       }
       (out[locale] ??= {})[ns] = entries;
     }
@@ -80,7 +99,9 @@ export const goName = (id: string): string =>
     .map((w) => w[0].toUpperCase() + w.slice(1))
     .join("");
 const GO_KEYWORDS = new Set(
-  "break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var".split(" "),
+  "break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var".split(
+    " ",
+  ),
 );
 const goParam = (name: string) => {
   const n = goName(name);
@@ -131,7 +152,9 @@ function goAccessors(messages: Message[]): string {
     ...server.flatMap(({ id, source, description, args }) => {
       const name = goName(id);
       const params = args.map(([n, t]) => `${goParam(n)} ${goType(t)}`).join(", ");
-      const values = args.length ? `map[string]any{${args.map(([n]) => `${JSON.stringify(n)}: ${goParam(n)}`).join(", ")}}` : "nil";
+      const values = args.length
+        ? `map[string]any{${args.map(([n]) => `${JSON.stringify(n)}: ${goParam(n)}`).join(", ")}}`
+        : "nil";
       return [
         `// ${name} formats ${JSON.stringify(id)}.${description ? ` ${comment(description)}` : ""}`,
         "//",

@@ -9,7 +9,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { useViewer } from "../../session";
-import { type VoiceRoom, type VoiceRoomSummary, voiceRoomQueryOptions, voiceRoomSummaryQueryOptions } from "../api/voice";
+import {
+  type VoiceRoom,
+  type VoiceRoomSummary,
+  voiceRoomQueryOptions,
+  voiceRoomSummaryQueryOptions,
+} from "../api/voice";
 
 /** The page of a room as it shows now. */
 export type VoiceRoomPage =
@@ -41,7 +46,12 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
   const room = useQuery({ ...voiceRoomQueryOptions(api, id), enabled: signedIn, retry: false, retryOnMount: false });
   // The summary is read when the room is not there for the user: signed out, or a 404 of the room.
   const needsSummary = session === "signed-out" || (signedIn && isNotFound(room.error));
-  const summary = useQuery({ ...voiceRoomSummaryQueryOptions(api, id), enabled: needsSummary, retry: false, retryOnMount: false });
+  const summary = useQuery({
+    ...voiceRoomSummaryQueryOptions(api, id),
+    enabled: needsSummary,
+    retry: false,
+    retryOnMount: false,
+  });
   if (session === "unknown") return { status: "loading" };
   // A refetch that finds the room gone (it ended while the page showed it) keeps the room's last data in the cache; the
   // 404 wins, so that the page says the room ended instead of offering to join it.
@@ -53,9 +63,19 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
       isHost: room.data.host.id === viewerId,
     };
   }
-  const failed = signedIn && room.error !== null && !isNotFound(room.error) ? room : summary.error !== null && !isNotFound(summary.error) ? summary : undefined;
+  const failed =
+    signedIn && room.error !== null && !isNotFound(room.error)
+      ? room
+      : summary.error !== null && !isNotFound(summary.error)
+        ? summary
+        : undefined;
   if (failed !== undefined) {
-    return { status: "error", reason: errorMessage(failed.error), retry: () => void failed.refetch(), isRetrying: failed.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(failed.error),
+      retry: () => void failed.refetch(),
+      isRetrying: failed.isFetching,
+    };
   }
   if (isNotFound(summary.error)) return { status: "not-found" };
   if (summary.data !== undefined) {

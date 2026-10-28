@@ -13,7 +13,12 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type FederationMode, federationModes, federationReachOf } from "../../../lib/federation";
 import { useLocale, useT } from "../../../lib/i18n";
-import { cacheSavedSettings, type InstanceSettingKey, instanceSettingsQueryOptions, updateInstanceSettingsMutation } from "../api/settings";
+import {
+  cacheSavedSettings,
+  type InstanceSettingKey,
+  instanceSettingsQueryOptions,
+  updateInstanceSettingsMutation,
+} from "../api/settings";
 import { languageName, selectableLocales } from "./languages";
 
 /** The settings of the form, in the order of its sections. */
@@ -101,7 +106,9 @@ export function useServerPolicies() {
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
   // A number of days is sent without the spaces around it.
   const sentValue = (key: PolicyKey) => (key === "retention_voice_participants" ? valueOf(key).trim() : valueOf(key));
-  const changes = Object.fromEntries(policyKeys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]));
+  const changes = Object.fromEntries(
+    policyKeys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]),
+  );
 
   const save = useMutation({
     ...updateInstanceSettingsMutation(api),
@@ -130,12 +137,23 @@ export function useServerPolicies() {
   const retentionDays = /^\d+$/u.test(retentionText) ? Number(retentionText) : Number.NaN;
   // Only what the operator typed is checked: the saved value is the server's.
   const retentionError =
-    drafts.retention_voice_participants === undefined || (retentionDays >= retentionBounds.min && retentionDays <= retentionBounds.max)
+    drafts.retention_voice_participants === undefined ||
+    (retentionDays >= retentionBounds.min && retentionDays <= retentionBounds.max)
       ? undefined
-      : t("client:admin.settings.voice.retention.invalid", { min: String(retentionBounds.min), max: String(retentionBounds.max) });
-  const ttlChoices = [...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])])].toSorted((a, b) => a - b);
-  const localeChoices = [...new Set([...selectableLocales(), savedValue("default_locale")])].filter((locale) => locale !== "");
-  const narrowing = federationNarrowing(federationModeOf(savedValue("federation_mode")), federationModeOf(valueOf("federation_mode")));
+      : t("client:admin.settings.voice.retention.invalid", {
+          min: String(retentionBounds.min),
+          max: String(retentionBounds.max),
+        });
+  const ttlChoices = [
+    ...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])]),
+  ].toSorted((a, b) => a - b);
+  const localeChoices = [...new Set([...selectableLocales(), savedValue("default_locale")])].filter(
+    (locale) => locale !== "",
+  );
+  const narrowing = federationNarrowing(
+    federationModeOf(savedValue("federation_mode")),
+    federationModeOf(valueOf("federation_mode")),
+  );
 
   return {
     /** The value of a setting in the form: the draft, else what is saved. */
@@ -145,9 +163,15 @@ export function useServerPolicies() {
       setDrafts({ ...drafts, [key]: value });
     },
     /** The languages people may pick as the default one, named in the app's language. */
-    localeChoices: localeChoices.map((locale): PolicyChoice => ({ value: locale, label: languageName(locale, displayLocale) })),
+    localeChoices: localeChoices.map((locale): PolicyChoice => ({
+      value: locale,
+      label: languageName(locale, displayLocale),
+    })),
     /** The lengths of time remote media may be kept, with the saved one when it is not among them. */
-    cacheTtlChoices: ttlChoices.map((seconds): PolicyChoice => ({ value: String(seconds), label: durationLabel(seconds) })),
+    cacheTtlChoices: ttlChoices.map((seconds): PolicyChoice => ({
+      value: String(seconds),
+      label: durationLabel(seconds),
+    })),
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       // The field under the error says what to fix; nothing is sent until it holds a number of days in bounds.

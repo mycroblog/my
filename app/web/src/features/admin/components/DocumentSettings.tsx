@@ -4,7 +4,17 @@
 // form of its own (an `h2` section) with a Markdown text area, when it was saved, and a link to its page. Each
 // is one text, written in any language, that every language shows. Removing a saved text asks first (the APG alert
 // dialog pattern, web-client/16-look-states-and-wording.md G22).
-import { Button, ConfirmDialog, DescriptionItem, DescriptionList, Hint, InlineError, Stack, StatusMessage, TextArea } from "@my/ui";
+import {
+  Button,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  TextArea,
+} from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { DocumentLink } from "../../documents";
 import { useUnsavedChangesGuard } from "../../settings";
@@ -64,13 +74,20 @@ type DocumentFormProps = {
 function DocumentForm({ editor, viewLabel, confirmTitle }: DocumentFormProps) {
   const t = useT();
   const formatRemaining = (remaining: number) =>
-    remaining < 0 ? t("client:admin.documents.characters_over", { count: -remaining }) : t("client:admin.documents.characters_left", { count: remaining });
-  const failed = editor.error === undefined ? undefined : t("client:admin.documents.save_failed", { reason: editor.error });
+    remaining < 0
+      ? t("client:admin.documents.characters_over", { count: -remaining })
+      : t("client:admin.documents.characters_left", { count: remaining });
+  const failed =
+    editor.error === undefined ? undefined : t("client:admin.documents.save_failed", { reason: editor.error });
   return (
     <>
       <DescriptionList>
         <DescriptionItem term={t("client:admin.documents.saved_at")}>
-          {editor.savedAt === undefined ? t("client:admin.documents.saved_at.never") : <DateTime value={editor.savedAt} />}
+          {editor.savedAt === undefined ? (
+            t("client:admin.documents.saved_at.never")
+          ) : (
+            <DateTime value={editor.savedAt} />
+          )}
         </DescriptionItem>
       </DescriptionList>
       {editor.pageUrl !== undefined && (

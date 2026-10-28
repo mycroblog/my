@@ -35,7 +35,9 @@ const searchSchema = z.object({
  */
 export const Route = createFileRoute("/admin/custom-emojis")({
   validateSearch: searchSchema,
-  loaderDeps: ({ search }): { tab: CustomEmojiTab; requestState: CustomEmojiRequestState; filter: CustomEmojiFilter } => ({
+  loaderDeps: ({
+    search,
+  }): { tab: CustomEmojiTab; requestState: CustomEmojiRequestState; filter: CustomEmojiFilter } => ({
     tab: search.tab ?? "emoji",
     requestState: search.state ?? "pending",
     filter: {
@@ -49,8 +51,14 @@ export const Route = createFileRoute("/admin/custom-emojis")({
   loader: ({ context, deps }) =>
     loadWithPermission(context, "manage_custom_emojis", () =>
       deps.tab === "requests"
-        ? context.queryClient.infiniteQuery({ ...adminCustomEmojiRequestsQueryOptions(context.api, deps.requestState), staleTime: Infinity })
-        : context.queryClient.infiniteQuery({ ...adminCustomEmojisQueryOptions(context.api, deps.filter), staleTime: Infinity }),
+        ? context.queryClient.infiniteQuery({
+            ...adminCustomEmojiRequestsQueryOptions(context.api, deps.requestState),
+            staleTime: Infinity,
+          })
+        : context.queryClient.infiniteQuery({
+            ...adminCustomEmojisQueryOptions(context.api, deps.filter),
+            staleTime: Infinity,
+          }),
     ),
   component: CustomEmojisPage,
   errorComponent: CustomEmojisError,
@@ -61,7 +69,13 @@ function CustomEmojisPage() {
   const { tab, requestState, filter } = Route.useLoaderDeps();
   const navigate = Route.useNavigate();
   const changeFilter = (next: CustomEmojiFilter) => {
-    void navigate({ search: { origin: next.origin === "remote" ? "remote" : undefined, shortcode: next.shortcode, domain: next.domain } });
+    void navigate({
+      search: {
+        origin: next.origin === "remote" ? "remote" : undefined,
+        shortcode: next.shortcode,
+        domain: next.domain,
+      },
+    });
   };
   return (
     <>

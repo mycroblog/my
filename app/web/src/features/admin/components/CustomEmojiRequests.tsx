@@ -5,14 +5,45 @@
 // pending one is approved at once, or rejected after an alert dialog with an optional reason that the requester
 // sees. What a decision did stays above the list in a StatusMessage, and a failure (a request that cannot be decided
 // says why) stays there too (role="alert").
-import { Button, Cluster, ConfirmDialog, DialogTrigger, EmojiTile, EmptyState, Hint, InlineError, Link, ListToolbar, ReasonField, Select, SelectItem, Stack, StatusMessage, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text } from "@my/ui";
+import {
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DialogTrigger,
+  EmojiTile,
+  EmptyState,
+  Hint,
+  InlineError,
+  Link,
+  ListToolbar,
+  ReasonField,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { profilePath } from "../../../lib/paths";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { DateTime, RecordTable } from "../../moderation";
-import { type AdminCustomEmojiRequest, type CustomEmojiRequestState, customEmojiRequestStates, rejectReasonLimit } from "../api/customEmojiRequests";
-import { type CustomEmojiRequestActions, requestInText, useAdminCustomEmojiRequests, useCustomEmojiRequestActions } from "../hooks/useCustomEmojiRequests";
+import {
+  type AdminCustomEmojiRequest,
+  type CustomEmojiRequestState,
+  customEmojiRequestStates,
+  rejectReasonLimit,
+} from "../api/customEmojiRequests";
+import {
+  type CustomEmojiRequestActions,
+  requestInText,
+  useAdminCustomEmojiRequests,
+  useCustomEmojiRequestActions,
+} from "../hooks/useCustomEmojiRequests";
 
 /** The name of each state of a request, shared with the user's page of their requests. */
 export const requestStateLabels: Readonly<Record<CustomEmojiRequestState, ClientMessageKey>> = {
@@ -124,7 +155,13 @@ function RequestRow({ request, actions }: { request: AdminCustomEmojiRequest; ac
       <TableRowHeader wrap="anywhere">
         <Cluster gap="3" align="center" wrap={false}>
           {/* The name of the emoji; the image beside it shows what was requested. */}
-          <EmojiTile emoji={request.url !== undefined && request.static_url !== undefined ? { shortcode: request.shortcode, url: request.url, static_url: request.static_url } : undefined} />
+          <EmojiTile
+            emoji={
+              request.url !== undefined && request.static_url !== undefined
+                ? { shortcode: request.shortcode, url: request.url, static_url: request.static_url }
+                : undefined
+            }
+          />
           <Stack gap="1">
             <Text weight="semibold" mono wrap="anywhere" dir="ltr">
               {heading}
@@ -153,7 +190,13 @@ function RequestRow({ request, actions }: { request: AdminCustomEmojiRequest; ac
           )}
         </Stack>
       </TableCell>
-      <TableCell wrap="anywhere">{requester === undefined ? t("client:admin.custom_emoji_requests.requester.deleted") : <AccountLink acct={requester.acct} />}</TableCell>
+      <TableCell wrap="anywhere">
+        {requester === undefined ? (
+          t("client:admin.custom_emoji_requests.requester.deleted")
+        ) : (
+          <AccountLink acct={requester.acct} />
+        )}
+      </TableCell>
       <TableCell>
         <DateTime value={request.created_at} />
       </TableCell>
@@ -190,7 +233,15 @@ export function AccountLink({ acct }: { acct: string }) {
 }
 
 /** Rejecting a request, after an alert dialog with an optional reason that the requester sees. */
-function RejectRequest({ request, actions, isPending }: { request: AdminCustomEmojiRequest; actions: CustomEmojiRequestActions; isPending: boolean }) {
+function RejectRequest({
+  request,
+  actions,
+  isPending,
+}: {
+  request: AdminCustomEmojiRequest;
+  actions: CustomEmojiRequestActions;
+  isPending: boolean;
+}) {
   const t = useT();
   const name = requestInText(request);
   const [reason, setReason] = useState("");
@@ -198,7 +249,12 @@ function RejectRequest({ request, actions, isPending }: { request: AdminCustomEm
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger" isDisabled={isPending} aria-label={t("client:admin.custom_emoji_requests.reject_request", { emoji: name })}>
+      <Button
+        size="sm"
+        variant="danger"
+        isDisabled={isPending}
+        aria-label={t("client:admin.custom_emoji_requests.reject_request", { emoji: name })}
+      >
         {t("client:admin.custom_emoji_requests.reject")}
       </Button>
       <ConfirmDialog
@@ -207,7 +263,10 @@ function RejectRequest({ request, actions, isPending }: { request: AdminCustomEm
         confirmLabel={t("client:admin.custom_emoji_requests.reject")}
         cancelLabel={t("client:admin.custom_emoji_requests.cancel")}
         isPending={isRejecting}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.custom_emoji_requests.decide_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.custom_emoji_requests.decide_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsRejecting(true);
           setFailed(false);
@@ -225,7 +284,9 @@ function RejectRequest({ request, actions, isPending }: { request: AdminCustomEm
           onChange={setReason}
           characterLimit={rejectReasonLimit}
           formatRemaining={(remaining) =>
-            remaining < 0 ? t("client:admin.custom_emoji_requests.characters_over", { count: -remaining }) : t("client:admin.custom_emoji_requests.characters_left", { count: remaining })
+            remaining < 0
+              ? t("client:admin.custom_emoji_requests.characters_over", { count: -remaining })
+              : t("client:admin.custom_emoji_requests.characters_left", { count: remaining })
           }
           errorMessage={t("client:admin.custom_emoji_requests.reason.too_long", { max: String(rejectReasonLimit) })}
         />

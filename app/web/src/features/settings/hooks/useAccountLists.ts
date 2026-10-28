@@ -105,7 +105,10 @@ export function useBlocks(): { list: AccountList<Account>; unblock: AccountActio
   const api = useApi();
   const t = useT();
   const query = useSuspenseInfiniteQuery(blocksQueryOptions(api));
-  const unblock = useMutation({ ...accountActionMutation(api, "/accounts/{id}/unblock"), onSuccess: useCacheListChange("unblock") });
+  const unblock = useMutation({
+    ...accountActionMutation(api, "/accounts/{id}/unblock"),
+    onSuccess: useCacheListChange("unblock"),
+  });
   return {
     list: toList(query, (page) => page.accounts),
     unblock: useListAction({
@@ -124,7 +127,10 @@ export function useMutes(): { list: AccountList<MutedAccount>; unmute: AccountAc
   const api = useApi();
   const t = useT();
   const query = useSuspenseInfiniteQuery(mutesQueryOptions(api));
-  const unmute = useMutation({ ...accountActionMutation(api, "/accounts/{id}/unmute"), onSuccess: useCacheListChange("unmute") });
+  const unmute = useMutation({
+    ...accountActionMutation(api, "/accounts/{id}/unmute"),
+    onSuccess: useCacheListChange("unmute"),
+  });
   return {
     list: toList(query, (page) => page.mutes),
     unmute: useListAction({
@@ -144,8 +150,14 @@ export function useFollowRequests(): { list: AccountList<Account>; accept: Accou
   const t = useT();
   const query = useSuspenseInfiniteQuery(followRequestsQueryOptions(api));
   // The viewer has one more follower.
-  const accept = useMutation({ ...accountActionMutation(api, "/follow_requests/{id}/authorize"), onSuccess: useCacheListChange("accept") });
-  const reject = useMutation({ ...accountActionMutation(api, "/follow_requests/{id}/reject"), onSuccess: useCacheListChange("reject") });
+  const accept = useMutation({
+    ...accountActionMutation(api, "/follow_requests/{id}/authorize"),
+    onSuccess: useCacheListChange("accept"),
+  });
+  const reject = useMutation({
+    ...accountActionMutation(api, "/follow_requests/{id}/reject"),
+    onSuccess: useCacheListChange("reject"),
+  });
   return {
     list: toList(query, (page) => page.accounts),
     accept: useListAction({

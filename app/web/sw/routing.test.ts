@@ -48,7 +48,9 @@ describe("classify", () => {
 
   it("caches the emoji fonts of the build, which the precache leaves out", () => {
     const font = { destination: "font", mode: "cors" };
-    expect(classify(facts("/assets/noto-emoji-colrv1-smileys-emotion-B2x9Qa1c.woff2", font), origin)).toBe("emoji-font");
+    expect(classify(facts("/assets/noto-emoji-colrv1-smileys-emotion-B2x9Qa1c.woff2", font), origin)).toBe(
+      "emoji-font",
+    );
     expect(classify(facts("/assets/noto-emoji-svg-country-flags-Cq0_aZ3d.woff2", font), origin)).toBe("emoji-font");
     expect(classify(facts("/assets/index-B2x9Qa1c.woff2", font), origin)).toBe("network");
     expect(classify(facts("/media/noto-emoji-colrv1-x.woff2", font), origin)).toBe("network");
@@ -64,9 +66,9 @@ describe("classify", () => {
 
   it("leaves other origins and other methods to the browser", () => {
     expect(classify({ ...navigate("/"), url: "https://cdn.example/" }, origin)).toBe("network");
-    expect(classify(facts("/media/a.png", { destination: "image", url: "https://cdn.example/media/a.png" }), origin)).toBe(
-      "network",
-    );
+    expect(
+      classify(facts("/media/a.png", { destination: "image", url: "https://cdn.example/media/a.png" }), origin),
+    ).toBe("network");
     expect(classify(facts("/", { method: "POST", mode: "navigate" }), origin)).toBe("network");
   });
 });

@@ -129,7 +129,8 @@ export function useReactors(id: string, enabled: boolean): ReactorsState {
     loadMore: () => {
       if (!query.hasNextPage || query.isFetchingNextPage) return;
       void query.fetchNextPage().then((result) => {
-        if (result.isFetchNextPageError) announce(t("client:reaction.list.load_more_failed", { reason: errorMessage(result.error) }), "assertive");
+        if (result.isFetchNextPageError)
+          announce(t("client:reaction.list.load_more_failed", { reason: errorMessage(result.error) }), "assertive");
       });
     },
     loadMoreError: query.isFetchNextPageError ? errorMessage(query.error) : null,

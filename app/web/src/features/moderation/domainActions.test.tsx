@@ -37,7 +37,12 @@ const idn = domainActionFixture({
   expires_at: "2026-11-11T08:00:00Z",
 });
 const limit = domainActionFixture();
-const lifted = domainActionFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000a0", kind: "reject_media", state: "lifted", lifted_at: "2026-10-11T00:00:00Z" });
+const lifted = domainActionFixture({
+  id: "0192f0c4-7a8e-7000-8000-0000000000a0",
+  kind: "reject_media",
+  state: "lifted",
+  lifted_at: "2026-10-11T00:00:00Z",
+});
 
 /** Plays the domain actions of the server: a list that new actions join and lifts change; records the requests. */
 function domainActionsServer(initial: DomainAction[]) {
@@ -50,7 +55,11 @@ function domainActionsServer(initial: DomainAction[]) {
       const query = new URL(request.url).searchParams;
       lists.push(query.toString());
       const domain = query.get("domain");
-      const items = actions.filter((action) => (query.get("active") !== "true" || action.state === "active") && (domain === null || action.domain === domain));
+      const items = actions.filter(
+        (action) =>
+          (query.get("active") !== "true" || action.state === "active") &&
+          (domain === null || action.domain === domain),
+      );
       return HttpResponse.json({ items });
     }),
     http.post(`${apiBase}/admin/domain_actions`, async ({ request }) => {
@@ -91,7 +100,11 @@ describe("the list of domain actions", () => {
     const { user, router } = await renderApp({ path: "/moderation/domain-actions" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Domain actions" })).toBeInTheDocument();
-    expect(within(await screen.findByRole("table")).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["例え.jp (xn--r8jz45g.jp)", "spam.example"]);
+    expect(
+      within(await screen.findByRole("table"))
+        .getAllByRole("rowheader")
+        .map((header) => header.textContent),
+    ).toEqual(["例え.jp (xn--r8jz45g.jp)", "spam.example"]);
     const [row] = rows();
     if (row === undefined) throw new Error("no action is listed");
     const details = within(row);
@@ -102,7 +115,11 @@ describe("the list of domain actions", () => {
     expect(details.getByText("Partly hidden")).toBeInTheDocument();
     expect(details.getByText("Spam from every account.")).toBeInTheDocument();
     expect(details.getByText("Reported 12 times.")).toBeInTheDocument();
-    expect(details.getByRole("button", { name: `Lift Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")}, taken ${details.getByText(/^Oct 12, 2026/).textContent}` })).toBeInTheDocument();
+    expect(
+      details.getByRole("button", {
+        name: `Lift Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")}, taken ${details.getByText(/^Oct 12, 2026/).textContent}`,
+      }),
+    ).toBeInTheDocument();
 
     await showFilter(user, "All");
     await waitFor(() => {
@@ -135,7 +152,9 @@ describe("the list of domain actions", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Lift Limit for/ })).toHaveFocus();
     });
-    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(`Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`);
+    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(
+      `Suspend for ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`,
+    );
     expect(api.liftedIds).toEqual([idn.id]);
   });
 
@@ -155,7 +174,9 @@ describe("the list of domain actions", () => {
   test("after a lift, the other filter shows the action lifted at once, however slowly the lists come", async () => {
     domainActionsServer([idn, limit]);
     const { user } = await renderApp({ path: "/moderation/domain-actions?filter=all" });
-    expect(await within(await screen.findByRole("table")).findByRole("rowheader", { name: "spam.example" })).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("table")).findByRole("rowheader", { name: "spam.example" }),
+    ).toBeInTheDocument();
     await showFilter(user, "In effect");
     // The list of all actions, with lift buttons of its own, stays on screen while the list in effect loads, and the
     // pending page replaces both when that takes longer than defaultPendingMs: lift from the list of the actions in
@@ -183,7 +204,9 @@ describe("the list of domain actions", () => {
 
   test("an action that cannot be lifted stays, and the failure says why", async () => {
     domainActionsServer([limit]);
-    server.use(http.post(`${apiBase}/admin/domain_actions/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/domain_actions/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: "/moderation/domain-actions" });
 
     await user.click(await screen.findByRole("button", { name: /^Lift Limit for/ }));
@@ -207,9 +230,22 @@ describe("a new domain action", () => {
     await user.click(screen.getByRole("checkbox", { name: "Hide part of the domain in the public list" }));
     await user.click(screen.getByRole("button", { name: "Take action" }));
 
-    expect(await screen.findByText(`Limit is in effect for ${isolated("例え.jp (xn--r8jz45g.jp)")}.`)).toBeInTheDocument();
-    expect(api.created).toEqual([{ domain: "例え.jp", kind: "limit", obfuscate: true, public_comment: "Unmoderated spam.", private_note: "See report 12.", expires_in: 7 * 86_400 }]);
-    expect(await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" })).toBeInTheDocument();
+    expect(
+      await screen.findByText(`Limit is in effect for ${isolated("例え.jp (xn--r8jz45g.jp)")}.`),
+    ).toBeInTheDocument();
+    expect(api.created).toEqual([
+      {
+        domain: "例え.jp",
+        kind: "limit",
+        obfuscate: true,
+        public_comment: "Unmoderated spam.",
+        private_note: "See report 12.",
+        expires_in: 7 * 86_400,
+      },
+    ]);
+    expect(
+      await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
+    ).toBeInTheDocument();
     // The form is ready for the next action on the same domain.
     expect(screen.getByRole("textbox", { name: "Domain" })).toHaveValue("例え.jp");
     expect(screen.getByRole("radio", { name: "Limit" })).not.toBeChecked();
@@ -228,7 +264,9 @@ describe("a new domain action", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Show domain actions/ })).toHaveTextContent("In effect");
     });
-    expect(await within(screen.getByRole("table")).findByRole("rowheader", { name: "spam.example" })).toBeInTheDocument();
+    expect(
+      await within(screen.getByRole("table")).findByRole("rowheader", { name: "spam.example" }),
+    ).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Domain" }), "new.example");
     await user.click(screen.getByRole("radio", { name: "Limit" }));
     // From now on every list takes a while; the handler falls through to domainActionsServer's.
@@ -302,7 +340,9 @@ describe("a new domain action", () => {
     const dialog = await screen.findByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "Suspend" }));
 
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Could not take the action: Service Unavailable");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Could not take the action: Service Unavailable",
+    );
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 
@@ -322,7 +362,10 @@ describe("a new domain action", () => {
     await user.click(screen.getByRole("radio", { name: "Reject reports" }));
     await user.click(screen.getByRole("button", { name: "Take action" }));
 
-    expect(await screen.findByText("Could not take the action: domain: not a valid domain")).toHaveAttribute("role", "alert");
+    expect(await screen.findByText("Could not take the action: domain: not a valid domain")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(screen.getByRole("textbox", { name: "Domain" })).toHaveValue("not a domain");
     expect(screen.getByRole("radio", { name: "Reject reports" })).toBeChecked();
   });
@@ -330,7 +373,10 @@ describe("a new domain action", () => {
 
 describe("the way from a remote server", () => {
   test("a server's page links to its domain actions, which are listed and filled in the form", async () => {
-    const api = domainActionsServer([limit, domainActionFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000a3", domain: "other.example" })]);
+    const api = domainActionsServer([
+      limit,
+      domainActionFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000a3", domain: "other.example" }),
+    ]);
     const { user, router } = await renderApp({ path: "/moderation/instances/spam.example" });
 
     const link = await within(await screen.findByRole("main")).findByRole("link", { name: "Domain actions" });
@@ -341,7 +387,11 @@ describe("the way from a remote server", () => {
     expect(router.state.location.search).toEqual({ domain: "spam.example" });
     expect(screen.getByRole("textbox", { name: "Domain" })).toHaveValue("spam.example");
     expect(screen.getByText(`Showing the actions on ${isolated("spam.example")}.`)).toBeInTheDocument();
-    expect(within(screen.getByRole("table")).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["spam.example"]);
+    expect(
+      within(screen.getByRole("table"))
+        .getAllByRole("rowheader")
+        .map((header) => header.textContent),
+    ).toEqual(["spam.example"]);
 
     await user.click(screen.getByRole("link", { name: "Show every domain" }));
     // The list of one domain stays on screen, or the pending page replaces it, while the list of every domain loads.
@@ -355,7 +405,10 @@ describe("permissions", () => {
     await renderApp({ path: "/moderation" });
 
     const menu = await screen.findByRole("region", { name: "Moderation" });
-    expect(within(menu).getByRole("link", { name: "Domain actions" })).toHaveAttribute("href", "/moderation/domain-actions");
+    expect(within(menu).getByRole("link", { name: "Domain actions" })).toHaveAttribute(
+      "href",
+      "/moderation/domain-actions",
+    );
   });
 
   test("a user without manage_domains is told why, and nothing is asked of the server", async () => {

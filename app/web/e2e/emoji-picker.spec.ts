@@ -31,15 +31,31 @@ function message(key: string): string {
 }
 
 // Plain squares stand in for the emoji images, served on the page's origin, where the CSP takes images from.
-const orange = servedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==");
-const blue = servedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==");
+const orange = servedImage(
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==",
+);
+const blue = servedImage(
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==",
+);
 
 /** The emoji the server offers: two without a category, and a category with a long name. */
 const emojis = [
   { shortcode: "wave", url: orange, static_url: orange, aliases: ["hello"] },
   { shortcode: "thanks", url: blue, static_url: blue, aliases: [] },
-  { shortcode: "blobcat", url: blue, static_url: orange, category: "Blobs and other round creatures of the fediverse", aliases: [] },
-  { shortcode: "blobfox", url: orange, static_url: orange, category: "Blobs and other round creatures of the fediverse", aliases: ["fox"] },
+  {
+    shortcode: "blobcat",
+    url: blue,
+    static_url: orange,
+    category: "Blobs and other round creatures of the fediverse",
+    aliases: [],
+  },
+  {
+    shortcode: "blobfox",
+    url: orange,
+    static_url: orange,
+    category: "Blobs and other round creatures of the fediverse",
+    aliases: ["fox"],
+  },
 ];
 
 const account = {
@@ -66,13 +82,24 @@ async function serveApi(page: Page): Promise<void> {
     "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE",
   };
   const json = (route: Route, body: unknown, status = 200) =>
-    route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", headers: cors, body: JSON.stringify(body) });
+    route.fulfill({
+      status,
+      contentType: status < 400 ? "application/json" : "application/problem+json",
+      headers: cors,
+      body: JSON.stringify(body),
+    });
   await page.route(`${pageOrigin}/**`, (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     if (!path.startsWith("/api/") && !path.startsWith("/oauth/")) return route.fallback();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    if (path === "/oauth/token/refresh") return json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" });
+    if (path === "/oauth/token/refresh")
+      return json(route, {
+        access_token: "e2e-token",
+        token_type: "Bearer",
+        expires_in: 3600,
+        scope: "read write follow",
+      });
     if (path === "/api/v1/accounts/verify_credentials") {
       return json(route, {
         ...account,
@@ -85,10 +112,31 @@ async function serveApi(page: Page): Promise<void> {
       });
     }
     if (path === "/api/v1/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/api/v1/preferences") {
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", time_zone_chosen: true, default_visibility: "public", default_quote_policy: "public", default_post_language: "en", require_media_description: false, email_moderator_notifications: false, timeline_auto_insert: true, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        time_zone_chosen: true,
+        default_visibility: "public",
+        default_quote_policy: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        email_moderator_notifications: false,
+        timeline_auto_insert: true,
+        timeline_languages: [],
+      });
     }
     if (path === "/api/v1/custom_emojis") return json(route, { items: emojis });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
@@ -123,7 +171,11 @@ async function tabTo(page: Page, target: ReturnType<Page["getByRole"]>) {
 }
 
 test.describe("the emoji picker of the new-post form", () => {
-  test("has no axe violations and does not scroll horizontally while open", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("has no axe violations and does not scroll horizontally while open", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -141,7 +193,11 @@ test.describe("the emoji picker of the new-post form", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("stays inside a 320 px sheet, over it, without scrolling sideways", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("stays inside a 320 px sheet, over it, without scrolling sideways", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     await page.setViewportSize({ width: 320, height: 568 });
@@ -178,7 +234,10 @@ test.describe("the emoji picker of the new-post form", () => {
     await expect(text).toBeFocused();
   });
 
-  test("finds a custom emoji by another name and a Unicode emoji by its name in the locale", async ({ page, hasTouch }) => {
+  test("finds a custom emoji by another name and a Unicode emoji by its name in the locale", async ({
+    page,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -199,4 +258,3 @@ test.describe("the emoji picker of the new-post form", () => {
     await expect(text).toHaveValue("😀");
   });
 });
-

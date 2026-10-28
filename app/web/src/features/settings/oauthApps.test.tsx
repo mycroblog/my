@@ -26,7 +26,13 @@ const bot: Schemas["OAuthApp"] = {
   created_at: "2026-10-01T09:00:00Z",
 };
 
-const script: Schemas["OAuthApp"] = { ...bot, id: "019a0000-0000-7000-8000-0000000000b2", client_id: "my_ci_script", name: "Script", client_type: "public" };
+const script: Schemas["OAuthApp"] = {
+  ...bot,
+  id: "019a0000-0000-7000-8000-0000000000b2",
+  client_id: "my_ci_script",
+  name: "Script",
+  client_type: "public",
+};
 
 /** The server's apps of the viewer, which the operations change, with the requests they received. */
 function appServer(initial: Schemas["OAuthApp"][]) {
@@ -51,14 +57,24 @@ function appServer(initial: Schemas["OAuthApp"][]) {
         created_at: "2026-10-20T00:00:00Z",
       };
       items = [...items, app];
-      const answer: Schemas["OAuthAppCreated"] = body.client_type === "confidential" ? { app, client_secret: "my_cs_first" } : { app };
+      const answer: Schemas["OAuthAppCreated"] =
+        body.client_type === "confidential" ? { app, client_secret: "my_cs_first" } : { app };
       return HttpResponse.json(answer, { status: 201 });
     }),
     http.patch(`${apiBase}/oauth_apps/:id`, async ({ params, request }) => {
       const body = (await request.json()) as Schemas["UpdateOAuthAppRequest"];
       updated.push(body);
-      if (body.scope === "admin") return problem(422, "/api/v1/problems/validation", "The scope admin is not available to apps.");
-      items = items.map((app) => (app.id === params["id"] ? { ...app, ...(body.name !== undefined && { name: body.name }), ...(body.scope !== undefined && { scope: body.scope }) } : app));
+      if (body.scope === "admin")
+        return problem(422, "/api/v1/problems/validation", "The scope admin is not available to apps.");
+      items = items.map((app) =>
+        app.id === params["id"]
+          ? {
+              ...app,
+              ...(body.name !== undefined && { name: body.name }),
+              ...(body.scope !== undefined && { scope: body.scope }),
+            }
+          : app,
+      );
       return HttpResponse.json(items.find((app) => app.id === params["id"]));
     }),
     http.delete(`${apiBase}/oauth_apps/:id`, ({ params }) => {
@@ -72,8 +88,15 @@ function appServer(initial: Schemas["OAuthApp"][]) {
     http.post(`${apiBase}/oauth_apps/:id/tokens`, async ({ request }) => {
       const body = (await request.json()) as Schemas["IssueOAuthAppTokenRequest"];
       issued.push(body);
-      if (body.scope === "follow") return problem(422, "/api/v1/problems/validation", "The scope follow is beyond the app's.");
-      return HttpResponse.json({ access_token: "at-1", token_type: "Bearer", expires_in: 3600, refresh_token: "rt-1", scope: body.scope ?? "read write" });
+      if (body.scope === "follow")
+        return problem(422, "/api/v1/problems/validation", "The scope follow is beyond the app's.");
+      return HttpResponse.json({
+        access_token: "at-1",
+        token_type: "Bearer",
+        expires_in: 3600,
+        refresh_token: "rt-1",
+        scope: body.scope ?? "read write",
+      });
     }),
   );
   return { created, updated, issued, rotated };
@@ -94,7 +117,10 @@ describe("development settings", () => {
 
     const form = screen.getByRole("region", { name: "Register an app" });
     await user.type(within(form).getByRole("textbox", { name: "Name" }), " Morning bot ");
-    await user.type(within(form).getByRole("textbox", { name: /^Redirect URIs/ }), "http://127.0.0.1/callback{Enter}https://bot.example/cb");
+    await user.type(
+      within(form).getByRole("textbox", { name: /^Redirect URIs/ }),
+      "http://127.0.0.1/callback{Enter}https://bot.example/cb",
+    );
     await user.click(within(form).getByRole("radio", { name: /^Confidential/ }));
     await user.click(within(form).getByRole("button", { name: "Register app" }));
 
@@ -125,11 +151,17 @@ describe("development settings", () => {
     const { user } = await renderApp({ path: "/settings/apps" });
     const form = await screen.findByRole("region", { name: "Register an app" });
 
-    server.use(http.post(`${apiBase}/oauth_apps`, () => problem(409, "/api/v1/problems/too-many-oauth-apps", "You have as many apps as allowed.")));
+    server.use(
+      http.post(`${apiBase}/oauth_apps`, () =>
+        problem(409, "/api/v1/problems/too-many-oauth-apps", "You have as many apps as allowed."),
+      ),
+    );
     await user.type(within(form).getByRole("textbox", { name: "Name" }), "Script");
     await user.type(within(form).getByRole("textbox", { name: /^Redirect URIs/ }), "http://127.0.0.1/cb");
     await user.click(within(form).getByRole("button", { name: "Register app" }));
-    expect(await within(form).findByRole("alert")).toHaveTextContent("The app was not registered: You have as many apps as allowed.");
+    expect(await within(form).findByRole("alert")).toHaveTextContent(
+      "The app was not registered: You have as many apps as allowed.",
+    );
     expect(screen.queryByRole("region", { name: /^Client secret/ })).not.toBeInTheDocument();
     expect(api.created).toEqual([]);
   });
@@ -158,7 +190,9 @@ describe("development settings", () => {
     await user.clear(scope);
     await user.type(scope, "admin");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("The app was not saved: The scope admin is not available to apps.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "The app was not saved: The scope admin is not available to apps.",
+    );
 
     await user.clear(scope);
     await user.type(scope, "read");
@@ -167,7 +201,12 @@ describe("development settings", () => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Evening bot")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(api.updated.at(-1)).toEqual({ name: "Evening bot", website: "", redirect_uris: ["http://127.0.0.1/callback"], scope: "read" });
+    expect(api.updated.at(-1)).toEqual({
+      name: "Evening bot",
+      website: "",
+      redirect_uris: ["http://127.0.0.1/callback"],
+      scope: "read",
+    });
   });
 
   test("gives a confidential app a new secret after a confirmation, and has no such button for a public app", async () => {
@@ -199,7 +238,9 @@ describe("development settings", () => {
 
   test("keeps an app when deleting fails", async () => {
     appServer([bot]);
-    server.use(http.delete(`${apiBase}/oauth_apps/:id`, () => problem(404, "/api/v1/problems/not-found", "No such app.")));
+    server.use(
+      http.delete(`${apiBase}/oauth_apps/:id`, () => problem(404, "/api/v1/problems/not-found", "No such app.")),
+    );
     const { user } = await renderApp({ path: "/settings/apps" });
     await user.click(await screen.findByRole("button", { name: "Delete: Morning bot" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -218,7 +259,9 @@ describe("development settings", () => {
     await user.clear(scope);
     await user.type(scope, "follow");
     await user.click(within(dialog).getByRole("button", { name: "Issue token" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("The token was not issued: The scope follow is beyond the app's.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "The token was not issued: The scope follow is beyond the app's.",
+    );
 
     await user.clear(scope);
     await user.type(scope, "read");

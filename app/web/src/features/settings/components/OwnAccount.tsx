@@ -83,7 +83,12 @@ function ExportsView({ exports }: { exports: DataExports }) {
         </InlineError>
       )}
       <div>
-        <Button variant="primary" onPress={exports.request} isPending={exports.isRequesting} isDisabled={!exports.canRequest}>
+        <Button
+          variant="primary"
+          onPress={exports.request}
+          isPending={exports.isRequesting}
+          isDisabled={!exports.canRequest}
+        >
           {t("client:settings.account.export.request")}
         </Button>
       </div>
@@ -120,7 +125,11 @@ function ExportRow({ item, exports }: { item: DataExport; exports: DataExports }
         )}
         {item.file_size !== undefined && (
           <DescriptionItem term={t("client:settings.account.export.size")}>
-            {intl.formatNumber(item.file_size / 1_000_000, { style: "unit", unit: "megabyte", maximumFractionDigits: 1 })}
+            {intl.formatNumber(item.file_size / 1_000_000, {
+              style: "unit",
+              unit: "megabyte",
+              maximumFractionDigits: 1,
+            })}
           </DescriptionItem>
         )}
       </DescriptionList>

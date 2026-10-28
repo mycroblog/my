@@ -24,7 +24,9 @@ export function SectionHeader({ children, actions }: SectionHeaderProps) {
   return (
     <div className={styles.root()}>
       {children}
-      {actions !== undefined && actions !== null && actions !== false && <div className={styles.actions()}>{actions}</div>}
+      {actions !== undefined && actions !== null && actions !== false && (
+        <div className={styles.actions()}>{actions}</div>
+      )}
     </div>
   );
 }

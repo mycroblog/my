@@ -41,7 +41,9 @@ export function readRuntimeConfig(doc: Document): RuntimeConfig {
   }
   const result = runtimeConfigSchema.safeParse(json);
   if (!result.success) {
-    throw new RuntimeConfigError(`the runtime config is invalid: ${z.prettifyError(result.error)}`, { cause: result.error });
+    throw new RuntimeConfigError(`the runtime config is invalid: ${z.prettifyError(result.error)}`, {
+      cause: result.error,
+    });
   }
   return result.data;
 }

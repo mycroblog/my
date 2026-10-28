@@ -3,7 +3,19 @@
 // newest first, in the admin mode's list form: a toolbar with the state filter (kept in the URL by the route,
 // web-client/README.md S3), a table of one page, and previous / next. Each row's first cell links to the report's page,
 // where it is handled.
-import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text } from "@my/ui";
+import {
+  EmptyState,
+  Link,
+  ListToolbar,
+  Select,
+  SelectItem,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+} from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type Report, type ReportFilter, reportFilters } from "../api/reports";
 import { handleOf, isolate, reportCategoryLabels, reportOutcomeLabels, useReports } from "../hooks/useReports";
@@ -67,7 +79,11 @@ function ReportList({ filter }: { filter: ReportFilter }) {
   const empty = resolved ? (
     <EmptyState headingLevel={2} heading={t("client:admin.reports.empty.resolved")} />
   ) : (
-    <EmptyState headingLevel={2} heading={t("client:admin.reports.empty.open")} description={t("client:admin.reports.empty.open.description")} />
+    <EmptyState
+      headingLevel={2}
+      heading={t("client:admin.reports.empty.open")}
+      description={t("client:admin.reports.empty.open.description")}
+    />
   );
   return (
     <RecordTable
@@ -80,8 +96,12 @@ function ReportList({ filter }: { filter: ReportFilter }) {
           <TableColumnHeader>{t("client:admin.reports.column.report")}</TableColumnHeader>
           <TableColumnHeader>{t("client:admin.report.category")}</TableColumnHeader>
           <TableColumnHeader>{t("client:admin.report.reporter")}</TableColumnHeader>
-          <TableColumnHeader>{t(resolved ? "client:admin.report.outcome" : "client:admin.report.assignee")}</TableColumnHeader>
-          <TableColumnHeader>{t(resolved ? "client:admin.report.resolved_at" : "client:admin.report.filed_at")}</TableColumnHeader>
+          <TableColumnHeader>
+            {t(resolved ? "client:admin.report.outcome" : "client:admin.report.assignee")}
+          </TableColumnHeader>
+          <TableColumnHeader>
+            {t(resolved ? "client:admin.report.resolved_at" : "client:admin.report.filed_at")}
+          </TableColumnHeader>
         </>
       }
     >

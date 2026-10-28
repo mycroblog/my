@@ -43,20 +43,41 @@ const operator = {
 const longDomain = "a-very-long-subdomain-of-a-remote-server-for-testing.social.example";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the admin API of a signed-in operator; returns the jobs run again and the servers marked available. */
 async function operatorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
-  let paused: Record<string, unknown> = { domain: longDomain, state: "unavailable", since: "2026-10-10T08:00:00Z", failure_days: 7, last_failure_day: "2026-10-10" };
-  let events = [{ id: "0192f0c4-7a8e-7000-8000-0000000000e1", kind: "marked_unavailable", reason: "failure_days", occurred_at: "2026-10-10T08:00:00Z" }];
+  let paused: Record<string, unknown> = {
+    domain: longDomain,
+    state: "unavailable",
+    since: "2026-10-10T08:00:00Z",
+    failure_days: 7,
+    last_failure_day: "2026-10-10",
+  };
+  let events = [
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+      kind: "marked_unavailable",
+      reason: "failure_days",
+      occurred_at: "2026-10-10T08:00:00Z",
+    },
+  ];
   let dead = [
     {
       id: "0192f0c4-7a8e-7000-8000-0000000000d1",
       type: "federation.deliver",
       state: "dead",
-      payload: JSON.stringify({ delivery_id: "0192f0c4-7a8e-7000-8000-0000000000aa", inbox: `https://${longDomain}/users/someone-with-a-long-name/inbox` }),
+      payload: JSON.stringify({
+        delivery_id: "0192f0c4-7a8e-7000-8000-0000000000aa",
+        inbox: `https://${longDomain}/users/someone-with-a-long-name/inbox`,
+      }),
       idempotency_key: "deliver:0192f0c4-7a8e-7000-8000-0000000000aa",
       attempts: 9,
       last_error: "502 Bad Gateway",
@@ -99,28 +120,66 @@ async function operatorServer(page: Page) {
     },
   ];
   const actions: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, operator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/instances") {
-      return json(route, { items: [paused, { domain: "flaky.example", state: "available", failure_days: 2, last_failure_day: "2026-10-16" }] });
+      return json(route, {
+        items: [
+          paused,
+          { domain: "flaky.example", state: "available", failure_days: 2, last_failure_day: "2026-10-16" },
+        ],
+      });
     }
     if (key === `GET /admin/instances/${longDomain}`) return json(route, paused);
     if (key === `GET /admin/instances/${longDomain}/availability_events`) return json(route, { items: events });
     if (key === `POST /admin/instances/${longDomain}/mark_available`) {
       actions.push(key);
       paused = { domain: longDomain, state: "available", since: "2026-10-17T00:00:00Z", failure_days: 0 };
-      events = [{ id: "0192f0c4-7a8e-7000-8000-0000000000e2", kind: "marked_available", reason: "operator", occurred_at: "2026-10-17T00:00:00Z" }, ...events];
+      events = [
+        {
+          id: "0192f0c4-7a8e-7000-8000-0000000000e2",
+          kind: "marked_available",
+          reason: "operator",
+          occurred_at: "2026-10-17T00:00:00Z",
+        },
+        ...events,
+      ];
       return json(route, paused);
     }
     if (key === "GET /admin/queue") {
@@ -134,7 +193,8 @@ async function operatorServer(page: Page) {
         oldest_ready_at: "2026-10-17T09:30:00Z",
       });
     }
-    if (key === "GET /admin/jobs") return json(route, { items: new URL(request.url()).searchParams.get("state") === "dead" ? dead : pending });
+    if (key === "GET /admin/jobs")
+      return json(route, { items: new URL(request.url()).searchParams.get("state") === "dead" ? dead : pending });
     if (/^GET \/admin\/jobs\/[^/]+\/attempts$/.test(key)) return json(route, { items: attempts });
     const retry = /^POST \/admin\/jobs\/([^/]+)\/retry$/.exec(key);
     if (retry) {
@@ -147,7 +207,13 @@ async function operatorServer(page: Page) {
   return actions;
 }
 
-const pages = ["/settings", "/moderation/instances", `/moderation/instances/${longDomain}`, "/admin/jobs", "/admin/jobs?state=dead"] as const;
+const pages = [
+  "/settings",
+  "/moderation/instances",
+  `/moderation/instances/${longDomain}`,
+  "/admin/jobs",
+  "/admin/jobs?state=dead",
+] as const;
 
 for (const path of pages) {
   test.describe(`page ${path}`, () => {
@@ -156,7 +222,9 @@ for (const path of pages) {
       await page.goto(path);
       await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
       // A list shows a table, a page of sections its headings.
-      await expect(page.getByRole("main").getByRole("heading", { level: 2 }).or(page.getByRole("main").getByRole("table")).first()).toBeVisible();
+      await expect(
+        page.getByRole("main").getByRole("heading", { level: 2 }).or(page.getByRole("main").getByRole("table")).first(),
+      ).toBeVisible();
     });
 
     test("has no axe violations", async ({ makeAxeBuilder }) => {
@@ -170,7 +238,10 @@ for (const path of pages) {
 }
 
 test.describe("remote servers", () => {
-  test("lists the servers, opens one with its history, and resumes deliveries to it", async ({ page, makeAxeBuilder }) => {
+  test("lists the servers, opens one with its history, and resumes deliveries to it", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const actions = await operatorServer(page);
     await page.goto("/moderation/instances");
     const main = page.getByRole("main");
@@ -187,7 +258,9 @@ test.describe("remote servers", () => {
     const resume = main.getByRole("button", { name: message("admin.instance.mark_available"), exact: true });
     await resume.click();
     await expect(resume).toBeHidden();
-    await expect(main.getByRole("table", { name: message("admin.instance.history.title"), exact: true }).getByRole("rowheader")).toHaveCount(2);
+    await expect(
+      main.getByRole("table", { name: message("admin.instance.history.title"), exact: true }).getByRole("rowheader"),
+    ).toHaveCount(2);
     expect(actions).toEqual([`POST /admin/instances/${longDomain}/mark_available`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -199,10 +272,15 @@ test.describe("queue dashboard", () => {
     await operatorServer(page);
     await page.goto("/admin/jobs");
     const panel = page.getByRole("main").getByRole("tabpanel");
-    const job = panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: "federation.deliver" }) });
+    const job = panel
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { level: 3, name: "federation.deliver" }) });
     await expect(job).toBeVisible();
 
-    const history = job.getByRole("button", { name: message("admin.jobs.history.toggle_job").replace("{type}", "federation.deliver"), exact: true });
+    const history = job.getByRole("button", {
+      name: message("admin.jobs.history.toggle_job").replace("{type}", "federation.deliver"),
+      exact: true,
+    });
     await expect(history).toHaveAttribute("aria-expanded", "false");
     await history.click();
     await expect(history).toHaveAttribute("aria-expanded", "true");
@@ -211,7 +289,10 @@ test.describe("queue dashboard", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("runs a failed job again: it leaves the list and focus moves to the next job", async ({ page, makeAxeBuilder }) => {
+  test("runs a failed job again: it leaves the list and focus moves to the next job", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const actions = await operatorServer(page);
     await page.goto("/admin/jobs?state=dead");
     const panel = page.getByRole("main").getByRole("tabpanel");
@@ -227,7 +308,8 @@ test.describe("queue dashboard", () => {
           - button
     `);
 
-    const row = (type: string) => panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: type }) });
+    const row = (type: string) =>
+      panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: type }) });
     await row("federation.deliver").getByRole("button").first().click();
     await expect(panel.getByRole("heading", { level: 3, name: "federation.deliver" })).toBeHidden();
     await expect(row("kv.cleanup").getByRole("button").first()).toBeFocused();

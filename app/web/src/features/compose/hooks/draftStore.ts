@@ -76,7 +76,11 @@ const emptyDraft: Draft = {
 /** Whether the draft has nothing the user would miss. */
 export function isEmptyDraft(draft: Draft): boolean {
   return (
-    draft.text.trim() === "" && draft.spoilerText.trim() === "" && draft.attachments.length === 0 && draft.poll === null && draft.replyToId === null &&
+    draft.text.trim() === "" &&
+    draft.spoilerText.trim() === "" &&
+    draft.attachments.length === 0 &&
+    draft.poll === null &&
+    draft.replyToId === null &&
     draft.quoteId === null
   );
 }
@@ -85,9 +89,14 @@ export function isEmptyDraft(draft: Draft): boolean {
 function savedState(state: ComposeState) {
   const savedDraft = (draft: Draft): Draft => ({
     ...draft,
-    attachments: draft.attachments.filter((a) => a.mediaId !== null).map((a) => ({ ...a, previewUrl: null, error: null })),
+    attachments: draft.attachments
+      .filter((a) => a.mediaId !== null)
+      .map((a) => ({ ...a, previewUrl: null, error: null })),
   });
-  return { draft: savedDraft(state.draft), outbox: state.outbox.map((item) => ({ ...item, draft: savedDraft(item.draft) })) };
+  return {
+    draft: savedDraft(state.draft),
+    outbox: state.outbox.map((item) => ({ ...item, draft: savedDraft(item.draft) })),
+  };
 }
 
 /** Reads a saved state; anything unreadable starts empty. */
@@ -95,7 +104,11 @@ function loadState(key: StorageKey<StoredCompose | null>): ComposeState {
   const saved = key.read();
   if (saved === null) return { draft: emptyDraft, outbox: [], error: null };
   // The saved state is what savedState wrote: lib/storage checks its shape, and the fields of the draft fill in from the empty one.
-  return { draft: { ...emptyDraft, ...(saved.draft as Partial<Draft>) }, outbox: saved.outbox as unknown as OutboxItem[], error: null };
+  return {
+    draft: { ...emptyDraft, ...(saved.draft as Partial<Draft>) },
+    outbox: saved.outbox as unknown as OutboxItem[],
+    error: null,
+  };
 }
 
 /**

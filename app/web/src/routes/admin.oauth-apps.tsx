@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
-import { hostDenialsQueryOptions, OAuthAppSettings, type OAuthAppTab, type OAuthClientFilter, oauthClientsQueryOptions } from "../features/admin";
+import {
+  hostDenialsQueryOptions,
+  OAuthAppSettings,
+  type OAuthAppTab,
+  type OAuthClientFilter,
+  oauthClientsQueryOptions,
+} from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -32,7 +38,10 @@ export const Route = createFileRoute("/admin/oauth-apps")({
     loadWithPermission(context, "manage_oauth_apps", () =>
       deps.tab === "hosts"
         ? context.queryClient.infiniteQuery({ ...hostDenialsQueryOptions(context.api), staleTime: Infinity })
-        : context.queryClient.infiniteQuery({ ...oauthClientsQueryOptions(context.api, deps.filter), staleTime: Infinity }),
+        : context.queryClient.infiniteQuery({
+            ...oauthClientsQueryOptions(context.api, deps.filter),
+            staleTime: Infinity,
+          }),
     ),
   component: OAuthAppsPage,
   errorComponent: OAuthAppsError,

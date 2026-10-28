@@ -29,7 +29,11 @@ export function ownActionsQueryOptions(api: Api, scope: ActionScope) {
   return infiniteQueryOptions({
     queryKey: ["get", "/moderation/actions", "pages", scope] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const query = { limit: pageSize, ...(pageParam === undefined ? {} : { cursor: pageParam }), ...(scope === "active" ? { active: true } : {}) };
+      const query = {
+        limit: pageSize,
+        ...(pageParam === undefined ? {} : { cursor: pageParam }),
+        ...(scope === "active" ? { active: true } : {}),
+      };
       const { data, error } = await api.fetch.GET("/moderation/actions", { params: { query }, signal });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
@@ -56,7 +60,10 @@ export function appealActionMutation(api: Api) {
   return {
     mutationKey: ["post", "/moderation/actions/{id}/appeal"] as const,
     mutationFn: async ({ actionId, text }: AppealAction): Promise<ModerationAction> => {
-      const { data, error } = await api.fetch.POST("/moderation/actions/{id}/appeal", { params: { path: { id: actionId } }, body: { text } });
+      const { data, error } = await api.fetch.POST("/moderation/actions/{id}/appeal", {
+        params: { path: { id: actionId } },
+        body: { text },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -67,7 +74,13 @@ export function appealActionMutation(api: Api) {
 /** Replaces the action of `action.id` in the pages of a list of actions. */
 function replaceAction(data: InfiniteData<{ items: ModerationAction[] }> | undefined, action: ModerationAction) {
   if (data === undefined) return data;
-  return { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === action.id ? action : item)) })) };
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      items: page.items.map((item) => (item.id === action.id ? action : item)),
+    })),
+  };
 }
 
 /**
@@ -93,7 +106,11 @@ export function refreshOwnActions(queryClient: QueryClient): Promise<void> {
  * The problem types of an appeal that the action's own state explains (it has an appeal already, its window
  * closed, or its account is gone): after one, the list is stale, and reading it again takes the form away.
  */
-const staleAppealProblems = new Set(["/api/v1/problems/already-appealed", "/api/v1/problems/appeal-window-closed", "/api/v1/problems/not-appealable"]);
+const staleAppealProblems = new Set([
+  "/api/v1/problems/already-appealed",
+  "/api/v1/problems/appeal-window-closed",
+  "/api/v1/problems/not-appealable",
+]);
 
 /** Whether an appeal failed because the action can no longer be appealed. */
 export function isStaleAppealError(error: unknown): boolean {

@@ -5,16 +5,42 @@
 // changed afterwards, so both ask first in an alert dialog (ConfirmDialog, NFR-MOD-7) that takes an optional
 // note for the moderators. A decided registration leaves the list, focus moves to the next one's buttons
 // (lib/useFocusAfterRemoval), and the result stays above the list in a StatusMessage (role="status").
-import { Box, Button, Cluster, ConfirmDialog, EmptyState, ReasonField, Stack, StatusMessage, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, VisuallyHidden } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  EmptyState,
+  ReasonField,
+  Stack,
+  StatusMessage,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  VisuallyHidden,
+} from "@my/ui";
 import { useRef } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { type Registration, type RegistrationDecision, registrationNoteLimit } from "../api/registrations";
-import { applicantInText, type RegistrationReview, useRegistrationReview, useRegistrations } from "../hooks/useRegistrations";
+import {
+  applicantInText,
+  type RegistrationReview,
+  useRegistrationReview,
+  useRegistrations,
+} from "../hooks/useRegistrations";
 import { DateTime, RecordTable, RequirePermission } from "./parts";
 
 /** The texts of a decision's button and confirmation, about `applicant`. */
-type DecisionTexts = { action: string; actionOf: string; title: string; description: string; tone: "primary" | "danger" };
+type DecisionTexts = {
+  action: string;
+  actionOf: string;
+  title: string;
+  description: string;
+  tone: "primary" | "danger";
+};
 
 function decisionTexts(t: Translate, decision: RegistrationDecision, applicant: string): DecisionTexts {
   if (decision === "approve") {
@@ -62,7 +88,13 @@ function Registrations() {
           list={list}
           caption={t("client:admin.registrations.title")}
           getId={(registration) => registration.user_id}
-          empty={<EmptyState headingLevel={2} heading={t("client:admin.registrations.empty")} description={t("client:admin.registrations.empty.description")} />}
+          empty={
+            <EmptyState
+              headingLevel={2}
+              heading={t("client:admin.registrations.empty")}
+              description={t("client:admin.registrations.empty.description")}
+            />
+          }
           head={
             <>
               <TableColumnHeader>{t("client:admin.registrations.column.applicant")}</TableColumnHeader>
@@ -107,8 +139,16 @@ function RegistrationRow({ registration, review }: { registration: Registration;
           )}
         </Stack>
       </TableRowHeader>
-      <TableCell>{registration.email_verified ? t("client:admin.registrations.email_verified.yes") : t("client:admin.registrations.email_verified.no")}</TableCell>
-      <TableCell>{registration.invite_id === undefined ? t("client:admin.registrations.invite.none") : t("client:admin.registrations.invite.used")}</TableCell>
+      <TableCell>
+        {registration.email_verified
+          ? t("client:admin.registrations.email_verified.yes")
+          : t("client:admin.registrations.email_verified.no")}
+      </TableCell>
+      <TableCell>
+        {registration.invite_id === undefined
+          ? t("client:admin.registrations.invite.none")
+          : t("client:admin.registrations.invite.used")}
+      </TableCell>
       <TableCell>
         <DateTime value={registration.submitted_at} />
       </TableCell>
@@ -150,7 +190,11 @@ function DecisionDialog({ review }: { review: RegistrationReview }) {
   const t = useT();
   const { confirmation } = review;
   // The last confirmation stays while the dialog fades out; before the first one the dialog is closed and empty.
-  const texts = decisionTexts(t, confirmation?.decision ?? "approve", confirmation === null ? "" : applicantInText(t, confirmation.registration));
+  const texts = decisionTexts(
+    t,
+    confirmation?.decision ?? "approve",
+    confirmation === null ? "" : applicantInText(t, confirmation.registration),
+  );
   return (
     <ConfirmDialog
       isOpen={review.isOpen}
@@ -166,7 +210,9 @@ function DecisionDialog({ review }: { review: RegistrationReview }) {
         review.confirm();
       }}
       isPending={review.isPending}
-      {...(review.error === undefined ? {} : { errorMessage: t("client:admin.registrations.decide_failed", { reason: review.error }) })}
+      {...(review.error === undefined
+        ? {}
+        : { errorMessage: t("client:admin.registrations.decide_failed", { reason: review.error }) })}
     >
       <ReasonField
         label={t("client:admin.registrations.note")}
@@ -175,7 +221,9 @@ function DecisionDialog({ review }: { review: RegistrationReview }) {
         onChange={review.changeNote}
         characterLimit={registrationNoteLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.registrations.characters_over", { count: -remaining }) : t("client:admin.registrations.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.registrations.characters_over", { count: -remaining })
+            : t("client:admin.registrations.characters_left", { count: remaining })
         }
         errorMessage={t("client:admin.registrations.note.too_long", { max: registrationNoteLimit })}
       />

@@ -17,7 +17,13 @@ export type AdminCustomEmojiRequest = Schemas["AdminCustomEmojiRequest"];
 export type CustomEmojiRequestState = Schemas["CustomEmojiRequestState"];
 
 /** The states of a request, in the order of the filter: the pending ones, which await a decision, first. */
-export const customEmojiRequestStates = ["pending", "approved", "rejected", "withdrawn", "lapsed"] as const satisfies readonly CustomEmojiRequestState[];
+export const customEmojiRequestStates = [
+  "pending",
+  "approved",
+  "rejected",
+  "withdrawn",
+  "lapsed",
+] as const satisfies readonly CustomEmojiRequestState[];
 
 /** The longest reason of a rejection (RejectCustomEmojiRequestRequest). */
 export const rejectReasonLimit = 500;
@@ -27,7 +33,10 @@ export function adminCustomEmojiRequestsQueryOptions(api: Api, state: CustomEmoj
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/custom_emoji_requests", { state }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/custom_emoji_requests", { params: { query: { state, ...pageQuery(pageParam) } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/custom_emoji_requests", {
+        params: { query: { state, ...pageQuery(pageParam) } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -42,7 +51,9 @@ export function approveCustomEmojiRequestMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/custom_emoji_requests/{id}/approve"] as const,
     mutationFn: async (id: string): Promise<AdminCustomEmojiRequest> => {
-      const { data, error } = await api.fetch.POST("/admin/custom_emoji_requests/{id}/approve", { params: { path: { id } } });
+      const { data, error } = await api.fetch.POST("/admin/custom_emoji_requests/{id}/approve", {
+        params: { path: { id } },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -54,7 +65,10 @@ export function rejectCustomEmojiRequestMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/custom_emoji_requests/{id}/reject"] as const,
     mutationFn: async ({ id, reason }: { id: string; reason: string }): Promise<AdminCustomEmojiRequest> => {
-      const { data, error } = await api.fetch.POST("/admin/custom_emoji_requests/{id}/reject", { params: { path: { id } }, body: reason === "" ? {} : { reason } });
+      const { data, error } = await api.fetch.POST("/admin/custom_emoji_requests/{id}/reject", {
+        params: { path: { id } },
+        body: reason === "" ? {} : { reason },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -67,13 +81,26 @@ type RequestPages = InfiniteData<{ items: AdminCustomEmojiRequest[]; next_cursor
  * A decided request: it leaves the cached pending list at once, and the lists of the other states gain it, so they
  * are fetched again with the audit log; an approval also changes the emoji and the picker's emoji.
  */
-export async function cacheDecidedCustomEmojiRequest(queryClient: QueryClient, request: AdminCustomEmojiRequest): Promise<void> {
-  queryClient.setQueriesData<RequestPages>({ queryKey: ["get", "/admin/custom_emoji_requests", { state: "pending" }] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== request.id) })) },
+export async function cacheDecidedCustomEmojiRequest(
+  queryClient: QueryClient,
+  request: AdminCustomEmojiRequest,
+): Promise<void> {
+  queryClient.setQueriesData<RequestPages>(
+    { queryKey: ["get", "/admin/custom_emoji_requests", { state: "pending" }] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== request.id) })),
+      },
   );
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emoji_requests"], predicate: (query) => !isPendingList(query.queryKey) }),
-    request.state === "approved" ? queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emojis"] }) : undefined,
+    queryClient.invalidateQueries({
+      queryKey: ["get", "/admin/custom_emoji_requests"],
+      predicate: (query) => !isPendingList(query.queryKey),
+    }),
+    request.state === "approved"
+      ? queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emojis"] })
+      : undefined,
     request.state === "approved" ? queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis"] }) : undefined,
     refreshAuditLog(queryClient),
   ]);

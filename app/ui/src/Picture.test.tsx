@@ -27,7 +27,9 @@ describe("Picture", () => {
   });
 
   it("loads the first rendition when a width is unknown, as for a remote file", () => {
-    const sources: ImageSources = { still: [{ url: "/proxy/small" }, { url: "/proxy/full", width: 640 }, { url: "/proxy/full", width: 640 }] };
+    const sources: ImageSources = {
+      still: [{ url: "/proxy/small" }, { url: "/proxy/full", width: 640 }, { url: "/proxy/full", width: 640 }],
+    };
     render(<Picture sources={sources} sizes="48px" alt="" />);
     const img = screen.getByRole("presentation");
     expect(img).toHaveAttribute("src", "/proxy/small");

@@ -34,7 +34,9 @@ describe("the webhooks screen", () => {
     let sent: Schemas["CreateWebhookRequest"] | undefined;
     let created = false;
     server.use(
-      http.get(`${apiBase}/admin/webhooks`, () => HttpResponse.json({ items: created ? [webhookFixture(webhookId, sent)] : [] })),
+      http.get(`${apiBase}/admin/webhooks`, () =>
+        HttpResponse.json({ items: created ? [webhookFixture(webhookId, sent)] : [] }),
+      ),
       http.post(`${apiBase}/admin/webhooks`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateWebhookRequest"];
         created = true;
@@ -54,7 +56,11 @@ describe("the webhooks screen", () => {
     expect(await within(form).findByText(webhookSecret)).toBeInTheDocument();
     expect(within(form).getByText(/it is not shown again/)).toBeInTheDocument();
     expect(within(form).getByRole("status")).toHaveTextContent("is set up.");
-    expect(sent).toEqual({ url: "https://hooks.example/in", description: "Chat", events: ["report.created", "report.resolved"] });
+    expect(sent).toEqual({
+      url: "https://hooks.example/in",
+      description: "Chat",
+      events: ["report.created", "report.resolved"],
+    });
     expect(within(form).getByRole("textbox", { name: "URL" })).toHaveValue("");
     const list = screen.getByRole("region", { name: "Webhooks of this server" });
     expect(await within(list).findByRole("rowheader", { name: /^Chat/u })).toBeInTheDocument();
@@ -83,7 +89,9 @@ describe("the webhooks screen", () => {
     await user.click(within(form).getByRole("button", { name: "Set up" }));
 
     const events = within(form).getByRole("group", { name: "Events" });
-    expect(await within(events).findByRole("alert")).toHaveTextContent(/^You need the permissions of every event you choose\./);
+    expect(await within(events).findByRole("alert")).toHaveTextContent(
+      /^You need the permissions of every event you choose\./,
+    );
     expect(within(events).getByText("Missing permissions: ⁦manage_accounts⁩")).toBeInTheDocument();
     expect(within(form).getByRole("textbox", { name: "URL" })).toHaveValue("https://hooks.example/in");
   });
@@ -96,7 +104,9 @@ describe("the webhooks screen", () => {
     });
     let enabled = false;
     server.use(
-      http.get(`${apiBase}/admin/webhooks`, () => HttpResponse.json({ items: [enabled ? webhookFixture(webhookId) : failing] })),
+      http.get(`${apiBase}/admin/webhooks`, () =>
+        HttpResponse.json({ items: [enabled ? webhookFixture(webhookId) : failing] }),
+      ),
       http.post(`${apiBase}/admin/webhooks/:id/enable`, () => {
         enabled = true;
         return HttpResponse.json(webhookFixture(webhookId));
@@ -142,13 +152,19 @@ describe("the webhooks screen", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
-    expect(change).toEqual({ url: "https://hooks.example/in", description: "Chat", events: ["report.created", "status.created"] });
+    expect(change).toEqual({
+      url: "https://hooks.example/in",
+      description: "Chat",
+      events: ["report.created", "status.created"],
+    });
   });
 
   test("deletes a webhook after asking", async () => {
     let deleted = "";
     server.use(
-      http.get(`${apiBase}/admin/webhooks`, () => HttpResponse.json({ items: deleted === "" ? [webhookFixture(webhookId)] : [] })),
+      http.get(`${apiBase}/admin/webhooks`, () =>
+        HttpResponse.json({ items: deleted === "" ? [webhookFixture(webhookId)] : [] }),
+      ),
       http.delete(`${apiBase}/admin/webhooks/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });
@@ -190,7 +206,9 @@ describe("the page of a webhook", () => {
     expect(within(deliveries).getByRole("rowheader", { name: /^A report is filed/u })).toBeInTheDocument();
     expect(within(deliveries).getByText("Failing")).toBeInTheDocument();
     expect(within(deliveries).getByText("HTTP 503")).toBeInTheDocument();
-    await user.click(within(deliveries).getByRole("button", { name: `Send A report is filed ${failing.message_id} again` }));
+    await user.click(
+      within(deliveries).getByRole("button", { name: `Send A report is filed ${failing.message_id} again` }),
+    );
 
     expect(await within(deliveries).findByRole("status")).toHaveTextContent("The delivery is on its way again.");
     expect(redelivered).toBe("2");

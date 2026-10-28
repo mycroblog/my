@@ -49,10 +49,16 @@ function newKey(): string {
 }
 
 /** The status of an attachment from its draft and its media query. */
-function attachmentStatus(attachment: AttachmentDraft, media: MediaAttachment | undefined, queryError: unknown, failedProcessing: string): AttachmentStatus {
+function attachmentStatus(
+  attachment: AttachmentDraft,
+  media: MediaAttachment | undefined,
+  queryError: unknown,
+  failedProcessing: string,
+): AttachmentStatus {
   if (attachment.error !== null) return { status: "failed", message: attachment.error };
   if (attachment.mediaId === null) return { status: "uploading" };
-  if (media === undefined) return queryError === null ? { status: "processing" } : { status: "failed", message: errorMessage(queryError) };
+  if (media === undefined)
+    return queryError === null ? { status: "processing" } : { status: "failed", message: errorMessage(queryError) };
   if (media.state === "failed") return { status: "failed", message: failedProcessing };
   return { status: media.state === "ready" ? "ready" : "processing" };
 }
@@ -79,13 +85,28 @@ export function useAttachments(store: DraftStore, attachments: readonly Attachme
 
   const items: AttachmentView[] = attachments.map((attachment, index) => {
     const result = attachment.mediaId === null ? undefined : byId.get(attachment.mediaId);
-    const status = attachmentStatus(attachment, result?.data, result?.error ?? null, t("client:compose.media.failed_processing"));
-    return { ...attachment, ...status, position: index + 1, src: attachment.previewUrl ?? result?.data?.variants?.small.url ?? null };
+    const status = attachmentStatus(
+      attachment,
+      result?.data,
+      result?.error ?? null,
+      t("client:compose.media.failed_processing"),
+    );
+    return {
+      ...attachment,
+      ...status,
+      position: index + 1,
+      src: attachment.previewUrl ?? result?.data?.variants?.small.url ?? null,
+    };
   });
 
   const start = (file: File) => {
     const key = newKey();
-    store.edit({ attachments: [...store.getSnapshot().draft.attachments, { key, mediaId: null, description: "", previewUrl: null, error: null }] });
+    store.edit({
+      attachments: [
+        ...store.getSnapshot().draft.attachments,
+        { key, mediaId: null, description: "", previewUrl: null, error: null },
+      ],
+    });
     void (async () => {
       try {
         const prepared = await prepareMedia(file);

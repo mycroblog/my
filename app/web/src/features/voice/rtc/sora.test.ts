@@ -17,7 +17,9 @@ const fake = vi.hoisted(() => {
     static all: FakeSoraConnection[] = [];
     static failNext = false;
     readonly listeners = new Map<string, Listener>();
-    readonly connect = vi.fn((_stream?: unknown) => (FakeSoraConnection.failNext ? Promise.reject(new Error("refused")) : Promise.resolve()));
+    readonly connect = vi.fn((_stream?: unknown) =>
+      FakeSoraConnection.failNext ? Promise.reject(new Error("refused")) : Promise.resolve(),
+    );
     readonly disconnect = vi.fn(() => {
       // The SDK calls the disconnect callback for a disconnect of its own too.
       this.listeners.get("disconnect")?.({ type: "normal", title: "DISCONNECT" });
@@ -58,8 +60,10 @@ const fake = vi.hoisted(() => {
   }
 
   const connection = (urls: string[]) => ({
-    sendrecv: (channel: string, metadata: unknown, options: unknown) => new FakeSoraConnection(urls, "sendrecv", channel, metadata, options),
-    recvonly: (channel: string, metadata: unknown, options: unknown) => new FakeSoraConnection(urls, "recvonly", channel, metadata, options),
+    sendrecv: (channel: string, metadata: unknown, options: unknown) =>
+      new FakeSoraConnection(urls, "sendrecv", channel, metadata, options),
+    recvonly: (channel: string, metadata: unknown, options: unknown) =>
+      new FakeSoraConnection(urls, "recvonly", channel, metadata, options),
   });
 
   return { FakeSoraConnection, connection };
@@ -145,7 +149,11 @@ beforeEach(() => {
     kind: "sora",
     url: "wss://sora1.example/signaling",
     token: "join-1",
-    options: { channel_id: "room1", role: "recvonly", signaling_urls: "wss://sora1.example/signaling,wss://sora2.example/signaling" },
+    options: {
+      channel_id: "room1",
+      role: "recvonly",
+      signaling_urls: "wss://sora1.example/signaling,wss://sora2.example/signaling",
+    },
     iceServers: [],
     relayOnly: false,
     expiresAt: Date.now() + 60_000,

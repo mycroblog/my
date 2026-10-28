@@ -3,7 +3,17 @@
 // the call, the raised hands with Allow and Dismiss for each (below xl, the dock's Hands button opens the same list);
 // and "About the room": its host, who sees and joins it, and who speaks without asking, with the host's button to
 // the room's settings. Each block is an `aside` named by its heading.
-import { AccountItem, AsidePanel, Button, Cluster, DescriptionItem, DescriptionList, Hint, InlineError, Stack } from "@my/ui";
+import {
+  AccountItem,
+  AsidePanel,
+  Button,
+  Cluster,
+  DescriptionItem,
+  DescriptionList,
+  Hint,
+  InlineError,
+  Stack,
+} from "@my/ui";
 import { useState } from "react";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
@@ -50,7 +60,8 @@ export function RaisedHandList({ hands, self, moderation }: RaisedHandListProps)
       {hands.map((participant) => {
         const operations = participantOperations(self, participant);
         const name = participantName(participant);
-        const pending = moderation.pending?.accountId === participant.account.id ? moderation.pending.operation : undefined;
+        const pending =
+          moderation.pending?.accountId === participant.account.id ? moderation.pending.operation : undefined;
         return (
           <li key={participant.account.id}>
             <AccountItem
@@ -116,7 +127,9 @@ function RoomAside({ room, isHost }: { room: VoiceRoom; isHost: boolean }) {
           <DescriptionItem term={t("client:voice.room.hosted_by")}>
             <AccountLink account={room.host} />
           </DescriptionItem>
-          <DescriptionItem term={t("client:voice.form.visibility")}>{t(visibilityLabels[room.visibility])}</DescriptionItem>
+          <DescriptionItem term={t("client:voice.form.visibility")}>
+            {t(visibilityLabels[room.visibility])}
+          </DescriptionItem>
           <DescriptionItem term={t("client:voice.form.speakers")}>{t(speakerLabels[room.speakers])}</DescriptionItem>
         </DescriptionList>
         {isHost && <SettingsButton room={room} />}

@@ -119,92 +119,94 @@ function NewDomainActionForm({ initialDomain }: { initialDomain: string }) {
   const form = useDomainActionForm(initialDomain);
   const { draft } = form;
   const formatRemaining = (remaining: number) =>
-    remaining < 0 ? t("client:admin.domain_actions.characters_over", { count: -remaining }) : t("client:admin.domain_actions.characters_left", { count: remaining });
+    remaining < 0
+      ? t("client:admin.domain_actions.characters_over", { count: -remaining })
+      : t("client:admin.domain_actions.characters_left", { count: remaining });
   const tooLong = t("client:admin.domain_actions.too_long", { max: domainActionTextLimit });
   return (
     <>
       <Stack as="form" onSubmit={form.submit} gap="6">
-      <TextField
-        label={t("client:admin.domain_actions.domain")}
-        description={t("client:admin.domain_actions.domain.description")}
-        value={draft.domain}
-        onChange={(domain) => {
-          form.change({ domain });
-        }}
-        isRequired
-        maxLength={253}
-        autoComplete="off"
-        errorMessage={t("client:admin.domain_actions.domain.required")}
-      />
-      <RadioGroup
-        label={t("client:admin.domain_actions.kind")}
-        value={draft.kind}
-        onChange={(kind) => {
-          const chosen = domainActionKinds.find((item) => item === kind);
-          if (chosen !== undefined) form.change({ kind: chosen });
-        }}
-        isRequired
-        errorMessage={t("client:admin.domain_actions.kind.required")}
-      >
-        {domainActionKinds.map((kind) => (
-          <Radio key={kind} value={kind} description={t(kindDescriptions[kind])}>
-            {t(domainActionKindLabels[kind])}
-          </Radio>
-        ))}
-      </RadioGroup>
-      <DurationSelect
-        label={t("client:admin.domain_actions.duration")}
-        description={t("client:admin.domain_actions.duration.description")}
-        durations={durations}
-        formatDuration={(seconds) => t("client:admin.domain_actions.duration.days", { count: seconds / day })}
-        indefiniteLabel={t("client:admin.domain_actions.duration.indefinite")}
-        value={draft.expiresIn}
-        onChange={(expiresIn) => {
-          form.change({ expiresIn });
-        }}
-      />
-      <ReasonField
-        label={t("client:admin.domain_actions.public_comment")}
-        description={t("client:admin.domain_actions.public_comment.description")}
-        value={draft.publicComment}
-        onChange={(publicComment) => {
-          form.change({ publicComment });
-        }}
-        characterLimit={domainActionTextLimit}
-        formatRemaining={formatRemaining}
-        errorMessage={tooLong}
-      />
-      <ReasonField
-        label={t("client:admin.domain_actions.private_note")}
-        description={t("client:admin.domain_actions.private_note.description")}
-        value={draft.privateNote}
-        onChange={(privateNote) => {
-          form.change({ privateNote });
-        }}
-        characterLimit={domainActionTextLimit}
-        formatRemaining={formatRemaining}
-        errorMessage={tooLong}
-      />
-      <Checkbox
-        isSelected={draft.obfuscate}
-        onChange={(obfuscate) => {
-          form.change({ obfuscate });
-        }}
-        description={t("client:admin.domain_actions.obfuscate.description")}
-      >
-        {t("client:admin.domain_actions.obfuscate")}
-      </Checkbox>
-      {form.confirmation === null && form.error !== undefined && (
-        <InlineError alert size="inherit">
-          {t("client:admin.domain_actions.issue_failed", { reason: form.error })}
-        </InlineError>
-      )}
-      <Box>
-        <Button type="submit" variant="primary" isPending={form.isPending && form.confirmation === null}>
-          {t("client:admin.domain_actions.submit")}
-        </Button>
-      </Box>
-      <StatusMessage>{form.status}</StatusMessage>
+        <TextField
+          label={t("client:admin.domain_actions.domain")}
+          description={t("client:admin.domain_actions.domain.description")}
+          value={draft.domain}
+          onChange={(domain) => {
+            form.change({ domain });
+          }}
+          isRequired
+          maxLength={253}
+          autoComplete="off"
+          errorMessage={t("client:admin.domain_actions.domain.required")}
+        />
+        <RadioGroup
+          label={t("client:admin.domain_actions.kind")}
+          value={draft.kind}
+          onChange={(kind) => {
+            const chosen = domainActionKinds.find((item) => item === kind);
+            if (chosen !== undefined) form.change({ kind: chosen });
+          }}
+          isRequired
+          errorMessage={t("client:admin.domain_actions.kind.required")}
+        >
+          {domainActionKinds.map((kind) => (
+            <Radio key={kind} value={kind} description={t(kindDescriptions[kind])}>
+              {t(domainActionKindLabels[kind])}
+            </Radio>
+          ))}
+        </RadioGroup>
+        <DurationSelect
+          label={t("client:admin.domain_actions.duration")}
+          description={t("client:admin.domain_actions.duration.description")}
+          durations={durations}
+          formatDuration={(seconds) => t("client:admin.domain_actions.duration.days", { count: seconds / day })}
+          indefiniteLabel={t("client:admin.domain_actions.duration.indefinite")}
+          value={draft.expiresIn}
+          onChange={(expiresIn) => {
+            form.change({ expiresIn });
+          }}
+        />
+        <ReasonField
+          label={t("client:admin.domain_actions.public_comment")}
+          description={t("client:admin.domain_actions.public_comment.description")}
+          value={draft.publicComment}
+          onChange={(publicComment) => {
+            form.change({ publicComment });
+          }}
+          characterLimit={domainActionTextLimit}
+          formatRemaining={formatRemaining}
+          errorMessage={tooLong}
+        />
+        <ReasonField
+          label={t("client:admin.domain_actions.private_note")}
+          description={t("client:admin.domain_actions.private_note.description")}
+          value={draft.privateNote}
+          onChange={(privateNote) => {
+            form.change({ privateNote });
+          }}
+          characterLimit={domainActionTextLimit}
+          formatRemaining={formatRemaining}
+          errorMessage={tooLong}
+        />
+        <Checkbox
+          isSelected={draft.obfuscate}
+          onChange={(obfuscate) => {
+            form.change({ obfuscate });
+          }}
+          description={t("client:admin.domain_actions.obfuscate.description")}
+        >
+          {t("client:admin.domain_actions.obfuscate")}
+        </Checkbox>
+        {form.confirmation === null && form.error !== undefined && (
+          <InlineError alert size="inherit">
+            {t("client:admin.domain_actions.issue_failed", { reason: form.error })}
+          </InlineError>
+        )}
+        <Box>
+          <Button type="submit" variant="primary" isPending={form.isPending && form.confirmation === null}>
+            {t("client:admin.domain_actions.submit")}
+          </Button>
+        </Box>
+        <StatusMessage>{form.status}</StatusMessage>
       </Stack>
       {/* Outside the form: React sends the dialog's own submit event up its component tree, through a portal too. */}
       <ConfirmDialog
@@ -212,7 +214,9 @@ function NewDomainActionForm({ initialDomain }: { initialDomain: string }) {
         onOpenChange={(isOpen) => {
           if (!isOpen) form.confirmation?.cancel();
         }}
-        title={t("client:admin.domain_actions.confirm_suspend.title", { domain: domainInText(t, form.confirmation?.domain ?? draft.domain) })}
+        title={t("client:admin.domain_actions.confirm_suspend.title", {
+          domain: domainInText(t, form.confirmation?.domain ?? draft.domain),
+        })}
         description={t("client:admin.domain_actions.confirm_suspend.description")}
         confirmLabel={t("client:admin.domain_actions.confirm_suspend.confirm")}
         cancelLabel={t("client:admin.domain_actions.confirm_suspend.cancel")}
@@ -220,7 +224,9 @@ function NewDomainActionForm({ initialDomain }: { initialDomain: string }) {
           form.confirmation?.confirm();
         }}
         isPending={form.isPending}
-        {...(form.confirmation !== null && form.error !== undefined ? { errorMessage: t("client:admin.domain_actions.issue_failed", { reason: form.error }) } : {})}
+        {...(form.confirmation !== null && form.error !== undefined
+          ? { errorMessage: t("client:admin.domain_actions.issue_failed", { reason: form.error }) }
+          : {})}
       />
     </>
   );
@@ -234,7 +240,9 @@ function DomainActionTabs({ filter, domain, onFilterChange, everyDomainHref }: D
       <Heading level={2}>{t("client:admin.domain_actions.list.title")}</Heading>
       {domain !== undefined && (
         <Cluster as="p" align="baseline" gap="2" rowGap="0">
-          <Text wrap="anywhere">{t("client:admin.domain_actions.list.of_domain", { domain: domainInText(t, domain) })}</Text>
+          <Text wrap="anywhere">
+            {t("client:admin.domain_actions.list.of_domain", { domain: domainInText(t, domain) })}
+          </Text>
           <Link href={everyDomainHref} variant="standalone">
             {t("client:admin.domain_actions.list.every_domain")}
           </Link>
@@ -263,14 +271,23 @@ function DomainActionTabs({ filter, domain, onFilterChange, everyDomainHref }: D
         filter={filter}
         domain={domain}
         onLifted={(action) => {
-          setStatus(t("client:admin.domain_actions.lifted", { kind: t(domainActionKindLabels[action.kind]), domain: domainInText(t, action.domain) }));
+          setStatus(
+            t("client:admin.domain_actions.lifted", {
+              kind: t(domainActionKindLabels[action.kind]),
+              domain: domainInText(t, action.domain),
+            }),
+          );
         }}
       />
     </Stack>
   );
 }
 
-type DomainActionListProps = { filter: DomainActionFilter; domain: string | undefined; onLifted: (action: DomainAction) => void };
+type DomainActionListProps = {
+  filter: DomainActionFilter;
+  domain: string | undefined;
+  onLifted: (action: DomainAction) => void;
+};
 
 function DomainActionList({ filter, domain, onLifted }: DomainActionListProps) {
   const t = useT();
@@ -289,7 +306,11 @@ function DomainActionList({ filter, domain, onLifted }: DomainActionListProps) {
   });
   const empty =
     filter === "active" ? (
-      <EmptyState headingLevel={3} heading={t("client:admin.domain_actions.empty.active")} description={t("client:admin.domain_actions.empty.active.description")} />
+      <EmptyState
+        headingLevel={3}
+        heading={t("client:admin.domain_actions.empty.active")}
+        description={t("client:admin.domain_actions.empty.active.description")}
+      />
     ) : (
       <EmptyState headingLevel={3} heading={t("client:admin.domain_actions.empty.all")} />
     );
@@ -332,12 +353,20 @@ function DomainActionRow({ action, lift }: { action: DomainAction; lift: LiftDom
       </TableRowHeader>
       <TableCell>{kind}</TableCell>
       <TableCell>
-        <Text {...(action.state === "active" ? { weight: "semibold" as const } : {})}>{t(stateLabels[action.state])}</Text>
+        <Text {...(action.state === "active" ? { weight: "semibold" as const } : {})}>
+          {t(stateLabels[action.state])}
+        </Text>
       </TableCell>
       <TableCell>
         <DateTime value={action.issued_at} />
       </TableCell>
-      <TableCell>{action.expires_at === undefined ? t("client:admin.domain_actions.duration.indefinite") : <DateTime value={action.expires_at} />}</TableCell>
+      <TableCell>
+        {action.expires_at === undefined ? (
+          t("client:admin.domain_actions.duration.indefinite")
+        ) : (
+          <DateTime value={action.expires_at} />
+        )}
+      </TableCell>
       <TableCell wrap="anywhere">
         <DescriptionList>
           {action.lifted_at !== undefined && (
@@ -346,7 +375,9 @@ function DomainActionRow({ action, lift }: { action: DomainAction; lift: LiftDom
             </DescriptionItem>
           )}
           <DescriptionItem term={t("client:admin.domain_actions.obfuscate.term")}>
-            {action.obfuscate ? t("client:admin.domain_actions.obfuscate.yes") : t("client:admin.domain_actions.obfuscate.no")}
+            {action.obfuscate
+              ? t("client:admin.domain_actions.obfuscate.yes")
+              : t("client:admin.domain_actions.obfuscate.no")}
           </DescriptionItem>
           {action.public_comment !== undefined && (
             <DescriptionItem term={t("client:admin.domain_actions.public_comment")}>

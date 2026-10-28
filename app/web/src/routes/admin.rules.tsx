@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/rules")({
   staticData: { title: "client:admin.rules.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_rules", () => context.queryClient.query({ ...rulesQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_rules", () =>
+      context.queryClient.query({ ...rulesQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: RulesPage,
   errorComponent: RulesError,
 });

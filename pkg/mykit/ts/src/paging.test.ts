@@ -36,7 +36,12 @@ describe("all", () => {
     const f = timeline();
     const api = createClient({ server, fetch: f.fetch });
     const ids: string[] = [];
-    for await (const status of all(async (cursor) => (await api.GET("/timelines/home", { params: { query: cursor === undefined ? {} : { cursor } } })).data ?? { items: [] })) {
+    for await (const status of all(
+      async (cursor) =>
+        (await api.GET("/timelines/home", { params: { query: cursor === undefined ? {} : { cursor } } })).data ?? {
+          items: [],
+        },
+    )) {
       ids.push(status.id);
       if (ids.length === 3) break;
     }
@@ -45,7 +50,9 @@ describe("all", () => {
   });
 
   test("an empty next_cursor ends it, and the first error rejects", async () => {
-    const pages = all((cursor) => Promise.resolve(cursor === undefined ? { items: [1], next_cursor: "" } : { items: [2] }));
+    const pages = all((cursor) =>
+      Promise.resolve(cursor === undefined ? { items: [1], next_cursor: "" } : { items: [2] }),
+    );
     const seen: number[] = [];
     for await (const n of pages) seen.push(n);
     expect(seen).toEqual([1]);

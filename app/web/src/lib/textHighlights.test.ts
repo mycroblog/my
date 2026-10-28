@@ -20,7 +20,9 @@ describe("textHighlights", () => {
   const shortcodes = new Set(["blobcat"]);
 
   test("marks only the shortcodes of the local custom emoji", () => {
-    expect(textHighlights(":blobcat: :unknown:", { tokens: "all", shortcodes })).toEqual([{ kind: "shortcode", start: 0, end: 9 }]);
+    expect(textHighlights(":blobcat: :unknown:", { tokens: "all", shortcodes })).toEqual([
+      { kind: "shortcode", start: 0, end: 9 },
+    ]);
   });
 
   test("marks only shortcodes in a field whose links the server does not read", () => {
@@ -31,9 +33,13 @@ describe("textHighlights", () => {
 
   test("marks the text after the limit, counted in code points", () => {
     // 🐱 is two UTF-16 units and one code point, as the server counts it.
-    expect(textHighlights("🐱🐱abc", { tokens: "all", shortcodes, limit: 3 })).toEqual([{ kind: "over", start: 5, end: 7 }]);
+    expect(textHighlights("🐱🐱abc", { tokens: "all", shortcodes, limit: 3 })).toEqual([
+      { kind: "over", start: 5, end: 7 },
+    ]);
     expect(textHighlights("abc", { tokens: "all", shortcodes, limit: 3 })).toEqual([]);
-    expect(textHighlights("ab", { tokens: "all", shortcodes, limit: -2 })).toEqual([{ kind: "over", start: 0, end: 2 }]);
+    expect(textHighlights("ab", { tokens: "all", shortcodes, limit: -2 })).toEqual([
+      { kind: "over", start: 0, end: 2 },
+    ]);
   });
 
   test("lets the text over the limit overlap a token", () => {

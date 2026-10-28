@@ -3,7 +3,14 @@ import { describe, expect, test } from "vitest";
 import { viewerFixture, viewerStatusFixture } from "../../../test/fixtures";
 import type { PostingLimits } from "../api/compose";
 import { fitWithin } from "./prepareImage";
-import { countCharacters, defaultVisibility, domainMentions, narrower, postedVisibility, replyMentions } from "./policy";
+import {
+  countCharacters,
+  defaultVisibility,
+  domainMentions,
+  narrower,
+  postedVisibility,
+  replyMentions,
+} from "./policy";
 
 describe("narrower", () => {
   test.each([
@@ -63,10 +70,9 @@ describe("postedVisibility", () => {
 
 describe("domainMentions", () => {
   test("finds the mentions with a domain, lowercase and once each", () => {
-    expect(domainMentions("Hi @Carol@Remote.Example, @bob and @carol@remote.example. Also @dave@other.example.")).toEqual([
-      "carol@remote.example",
-      "dave@other.example",
-    ]);
+    expect(
+      domainMentions("Hi @Carol@Remote.Example, @bob and @carol@remote.example. Also @dave@other.example."),
+    ).toEqual(["carol@remote.example", "dave@other.example"]);
   });
 
   test("skips e-mail addresses and URLs, as the server does", () => {

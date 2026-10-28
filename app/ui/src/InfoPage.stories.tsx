@@ -20,7 +20,9 @@ const meta = {
         <Heading level={2} id={`info-${title}`}>
           {title}
         </Heading>
-        <Text as="p">A reading column of about 680px. Long texts wrap and never need horizontal scroll, even at 320px.</Text>
+        <Text as="p">
+          A reading column of about 680px. Long texts wrap and never need horizontal scroll, even at 320px.
+        </Text>
         <Text as="p">The table of contents follows the headings of the column and marks the section being read.</Text>
       </Stack>
     )),
@@ -34,4 +36,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /** `placement="beside"`: where the margin is free, the contents stand sticky beside the column. */
-export const Beside: Story = { args: { placement: "beside" }, parameters: { viewport: { defaultViewport: "desktop" } } };
+export const Beside: Story = {
+  args: { placement: "beside" },
+  parameters: { viewport: { defaultViewport: "desktop" } },
+};

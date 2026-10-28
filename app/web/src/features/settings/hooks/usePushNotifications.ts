@@ -24,7 +24,14 @@ type PushAlertGroup = { id: string; label: ClientMessageKey; types: readonly Not
  * admin_webhook_disabled for manage_webhooks, admin_custom_emoji_request for manage_custom_emojis,
  * admin_service_closure_due for manage_service_closure, and admin_error_group for manage_errors).
  */
-const moderatorPermissions: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_webhooks", "manage_custom_emojis", "manage_service_closure", "manage_errors"];
+const moderatorPermissions: readonly Permission[] = [
+  "manage_reports",
+  "manage_accounts",
+  "manage_webhooks",
+  "manage_custom_emojis",
+  "manage_service_closure",
+  "manage_errors",
+];
 
 /** The kinds that every user chooses from, in the order of the notifications' filter. */
 const userGroups: readonly PushAlertGroup[] = [
@@ -41,7 +48,13 @@ const userGroups: readonly PushAlertGroup[] = [
   {
     id: "moderation",
     label: "client:settings.push.type.moderation",
-    types: ["moderation_notice", "appeal_decided", "report_resolved", "relationships_severed", "custom_emoji_request_decided"],
+    types: [
+      "moderation_notice",
+      "appeal_decided",
+      "report_resolved",
+      "relationships_severed",
+      "custom_emoji_request_decided",
+    ],
   },
 ];
 
@@ -52,14 +65,28 @@ const userGroups: readonly PushAlertGroup[] = [
 const supporterGroup: PushAlertGroup = {
   id: "supporter",
   label: "client:settings.push.type.supporter",
-  types: ["supporter_payment_failed", "supporter_subscription_ended", "supporter_plan_retired", "supporter_service_closure"],
+  types: [
+    "supporter_payment_failed",
+    "supporter_subscription_ended",
+    "supporter_plan_retired",
+    "supporter_service_closure",
+  ],
 };
 
 /** The moderator notifications, offered to a viewer whose roles get them. */
 const moderatorGroup: PushAlertGroup = {
   id: "admin",
   label: "client:settings.push.type.admin",
-  types: ["admin_report", "admin_sign_up", "admin_appeal", "admin_webhook_disabled", "admin_custom_emoji_request", "admin_account_moved", "admin_service_closure_due", "admin_error_group"],
+  types: [
+    "admin_report",
+    "admin_sign_up",
+    "admin_appeal",
+    "admin_webhook_disabled",
+    "admin_custom_emoji_request",
+    "admin_account_moved",
+    "admin_service_closure_due",
+    "admin_error_group",
+  ],
 };
 
 /** What the preferences show of Web Push on this device. */
@@ -125,7 +152,11 @@ async function browserSubscription(container: ServiceWorkerContainer, serverKey:
 /** The request that registers `subscription` for `alerts`. */
 function subscriptionRequest(subscription: PushSubscription, alerts: readonly NotificationType[]) {
   const json = subscription.toJSON();
-  return { endpoint: subscription.endpoint, keys: { p256dh: json.keys?.["p256dh"] ?? "", auth: json.keys?.["auth"] ?? "" }, alerts: [...alerts] };
+  return {
+    endpoint: subscription.endpoint,
+    keys: { p256dh: json.keys?.["p256dh"] ?? "", auth: json.keys?.["auth"] ?? "" },
+    alerts: [...alerts],
+  };
 }
 
 /** A change of Web Push: turning it on with the types, changing the types, or turning it off. */
@@ -146,7 +177,10 @@ export function usePushNotifications(): PushNotifications {
   const account = useSuspenseQuery(credentialsQueryOptions(api));
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const serverKey = instance.data?.push_server_key;
-  const subscription = useQuery({ ...pushSubscriptionQueryOptions(api), enabled: serverKey !== undefined && browser !== null });
+  const subscription = useQuery({
+    ...pushSubscriptionQueryOptions(api),
+    enabled: serverKey !== undefined && browser !== null,
+  });
   const mutation = useMutation({
     mutationKey: ["put", "/push/subscription"] as const,
     mutationFn: async (change: PushChange): Promise<PushSubscriptionInfo | null> => {
@@ -174,7 +208,9 @@ export function usePushNotifications(): PushNotifications {
   if (subscription.isPending) return { status: "hidden" };
 
   const everyone = isTauriApp() ? userGroups : [...userGroups, supporterGroup];
-  const groups = account.data.permissions.some((p) => moderatorPermissions.includes(p)) ? [...everyone, moderatorGroup] : everyone;
+  const groups = account.data.permissions.some((p) => moderatorPermissions.includes(p))
+    ? [...everyone, moderatorGroup]
+    : everyone;
   const offered = groups.flatMap((group) => group.types);
   const saved = subscription.data ?? null;
   const pending = mutation.isPending ? mutation.variables : undefined;
@@ -197,7 +233,9 @@ export function usePushNotifications(): PushNotifications {
       mutation.mutate(on ? { enabled: true, alerts: offered, ask: true } : { enabled: false });
     },
     setGroup: (group, selected) => {
-      const next = selected ? [...new Set([...alerts, ...group.types])] : alerts.filter((type) => !group.types.includes(type));
+      const next = selected
+        ? [...new Set([...alerts, ...group.types])]
+        : alerts.filter((type) => !group.types.includes(type));
       mutation.mutate({ enabled: true, alerts: next, ask: false });
     },
     isPending: mutation.isPending,

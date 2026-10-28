@@ -57,16 +57,24 @@ describe("a move without a write", () => {
         return createAppRouter(options);
       },
     });
-    expect(await within(await screen.findByRole("feed", { name: "Home" }, { timeout: latency * 3 })).findByText("Cached and current")).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("feed", { name: "Home" }, { timeout: latency * 3 })).findByText(
+        "Cached and current",
+      ),
+    ).toBeInTheDocument();
     await user.click(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Profile" }));
-    expect(await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 3 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 3 }),
+    ).toBeInTheDocument();
     const asked = requests.length;
 
     history?.back();
     expect(await screen.findByRole("heading", { level: 1, name: "Home" }, fromCache)).toBeInTheDocument();
     expect(within(screen.getByRole("feed", { name: "Home" })).getByText("Cached and current")).toBeInTheDocument();
     history?.forward();
-    expect(await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, fromCache)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, fromCache),
+    ).toBeInTheDocument();
     expect(within(screen.getByRole("feed", { name: "Posts" })).getByText("Cached and current")).toBeInTheDocument();
     expect(requests.slice(asked)).toEqual([]);
   });
@@ -74,10 +82,20 @@ describe("a move without a write", () => {
   test("a profile's tab seen before shows from the cache at once, without asking the server again", async () => {
     const requests = slowListsServer();
     const { user } = await renderApp({ path: "/profile" });
-    expect(await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 3 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 3 }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Posts and replies" }));
-    expect(await screen.findByRole("tab", { name: "Posts and replies", selected: true }, { timeout: latency * 3 })).toBeInTheDocument();
-    expect(await within(screen.getByRole("feed", { name: "Posts and replies" })).findByText("Cached and current", {}, { timeout: latency * 3 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("tab", { name: "Posts and replies", selected: true }, { timeout: latency * 3 }),
+    ).toBeInTheDocument();
+    expect(
+      await within(screen.getByRole("feed", { name: "Posts and replies" })).findByText(
+        "Cached and current",
+        {},
+        { timeout: latency * 3 },
+      ),
+    ).toBeInTheDocument();
     const asked = requests.length;
 
     await user.click(screen.getByRole("tab", { name: "Posts" }));
@@ -104,7 +122,11 @@ describe("a move after the clock went back", () => {
       }),
     );
     const { router, queryClient } = await renderApp({ path: "/home" });
-    expect(await within(await screen.findByRole("feed", { name: "Home" }, { timeout: latency * 3 })).findByText("Before the write")).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("feed", { name: "Home" }, { timeout: latency * 3 })).findByText(
+        "Before the write",
+      ),
+    ).toBeInTheDocument();
     await act(() => router.navigate({ href: "/local" }));
     expect(await screen.findByRole("feed", { name: "Local timeline" })).toBeInTheDocument();
 

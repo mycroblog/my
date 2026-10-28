@@ -35,7 +35,14 @@ const alice: Status["account"] = {
   bot: false,
   created_at: "2026-10-01T00:00:00Z",
 };
-const bob: Status["account"] = { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob", url: "https://my.example/@bob" };
+const bob: Status["account"] = {
+  ...alice,
+  id: "0192f0c4-7a8e-7000-8000-000000000002",
+  username: "bob",
+  acct: "bob",
+  display_name: "Bob",
+  url: "https://my.example/@bob",
+};
 
 function status(n: number, content: string): Status {
   const id = `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`;
@@ -69,20 +76,48 @@ function status(n: number, content: string): Status {
  * the list the server answers.
  */
 async function serveApi(page: Page): Promise<void> {
-  const bookmarks = new Map([status(1, "<p>The trail map for the weekend walk.</p>"), status(2, "<p>A recipe worth keeping.</p>")].map((s) => [s.id, s]));
+  const bookmarks = new Map(
+    [status(1, "<p>The trail map for the weekend walk.</p>"), status(2, "<p>A recipe worth keeping.</p>")].map((s) => [
+      s.id,
+      s,
+    ]),
+  );
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
@@ -109,7 +144,10 @@ test.describe("the bookmarks", () => {
     await expect(page.getByRole("feed").getByRole("article")).toHaveCount(2);
   });
 
-  test("lists the bookmarked posts in a feed named by the page, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
+  test("lists the bookmarked posts in a feed named by the page, axe-clean and without horizontal scroll", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading [level=1]
       - feed:
@@ -124,7 +162,11 @@ test.describe("the bookmarks", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("drops the posts whose bookmark is removed once opened again, then says the list is empty", async ({ page, hasTouch, makeAxeBuilder }) => {
+  test("drops the posts whose bookmark is removed once opened again, then says the list is empty", async ({
+    page,
+    hasTouch,
+    makeAxeBuilder,
+  }) => {
     for (const article of await page.getByRole("feed").getByRole("article").all()) {
       const toggle = article.getByRole("button", { name: message("status.action.bookmark") });
       await toggle.focus();
@@ -136,7 +178,9 @@ test.describe("the bookmarks", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
     await openFromNavigation(page, "/bookmarks", hasTouch);
 
-    await expect(page.getByRole("heading", { level: 2, name: message("timeline.empty.bookmarks.heading") })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: message("timeline.empty.bookmarks.heading") }),
+    ).toBeVisible();
     await expect(page.getByRole("feed")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

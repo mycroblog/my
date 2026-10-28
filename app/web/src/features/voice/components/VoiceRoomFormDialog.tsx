@@ -2,9 +2,27 @@
 // The dialog of a room's settings (ADR-0100 §3, §9): starting a room from the list page, or the host changing its
 // settings from the room's page. Closing it drops the draft, so the scrim does not close it (web-client/README.md
 // Y11). The fields mount with the dialog's content, so every opening starts from the room as it is.
-import { Button, Dialog, DialogActions, InlineError, Radio, RadioGroup, Stack, Switch, TextArea, TextField } from "@my/ui";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  InlineError,
+  Radio,
+  RadioGroup,
+  Stack,
+  Switch,
+  TextArea,
+  TextField,
+} from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { type VoiceRoom, voiceRoomLimits, type VoiceRoomSpeakers, voiceRoomSpeakers, type VoiceRoomVisibility, voiceRoomVisibilities } from "../api/voice";
+import {
+  type VoiceRoom,
+  voiceRoomLimits,
+  type VoiceRoomSpeakers,
+  voiceRoomSpeakers,
+  type VoiceRoomVisibility,
+  voiceRoomVisibilities,
+} from "../api/voice";
 import { type VoiceRoomFieldError, useVoiceRoomForm } from "../hooks/useVoiceRoomForm";
 
 /** The label of each visibility. */
@@ -54,7 +72,9 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
   const form = useVoiceRoomForm({ ...(room !== undefined && { room }), onDone: close });
   const { draft, change } = form;
   const formatRemaining = (remaining: number) =>
-    remaining < 0 ? t("client:voice.form.characters_over", { count: -remaining }) : t("client:voice.form.characters_left", { count: remaining });
+    remaining < 0
+      ? t("client:voice.form.characters_over", { count: -remaining })
+      : t("client:voice.form.characters_left", { count: remaining });
   return (
     <Stack as="form" gap="4" onSubmit={form.submit} noValidate>
       <TextField
@@ -129,7 +149,9 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
             onChange={(post) => {
               change({ post });
             }}
-            description={t(draft.visibility === "local" ? "client:voice.form.post.local" : "client:voice.form.post.followers")}
+            description={t(
+              draft.visibility === "local" ? "client:voice.form.post.local" : "client:voice.form.post.followers",
+            )}
           >
             {t("client:voice.form.post")}
           </Switch>
@@ -148,7 +170,9 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
       )}
       {form.error !== undefined && (
         <InlineError size="inherit" alert>
-          {t(form.mode === "new" ? "client:voice.form.start_failed" : "client:voice.form.save_failed", { reason: form.error })}
+          {t(form.mode === "new" ? "client:voice.form.start_failed" : "client:voice.form.save_failed", {
+            reason: form.error,
+          })}
         </InlineError>
       )}
       <DialogActions>

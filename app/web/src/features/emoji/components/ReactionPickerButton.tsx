@@ -21,7 +21,11 @@ export type ReactionPickerButtonProps = {
  * Shift is held (one reaction per post, ADR-0052 §1). The button is named by aria-label and shows the same words as a
  * tooltip (web-client/16-look-states-and-wording.md G12).
  */
-export function ReactionPickerButton({ onSelect, isDisabled = false, appearance = "toolbar" }: ReactionPickerButtonProps) {
+export function ReactionPickerButton({
+  onSelect,
+  isDisabled = false,
+  appearance = "toolbar",
+}: ReactionPickerButtonProps) {
   const t = useT();
   const picker = useReactionPicker();
   const name = t("client:reaction.picker.button");
@@ -35,11 +39,21 @@ export function ReactionPickerButton({ onSelect, isDisabled = false, appearance 
         // The dock's control shows its own tooltip.
         <CallDockButton label={name} icon={<EmojiIcon />} isDisabled={isDisabled} />
       ) : (
-        <Button variant="subtle" size="toolbar" aria-label={name} isDisabled={isDisabled} onHoverStart={picker.preload} onFocus={picker.preload}>
+        <Button
+          variant="subtle"
+          size="toolbar"
+          aria-label={name}
+          isDisabled={isDisabled}
+          onHoverStart={picker.preload}
+          onFocus={picker.preload}
+        >
           <EmojiIcon />
         </Button>
       )}
-      <Popover aria-label={t("client:reaction.picker.title")} placement={appearance === "dock" ? "top" : "bottom start"}>
+      <Popover
+        aria-label={t("client:reaction.picker.title")}
+        placement={appearance === "dock" ? "top" : "bottom start"}
+      >
         {({ close }) => (
           <EmojiPickerPanel
             picker={picker}

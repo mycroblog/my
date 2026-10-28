@@ -20,14 +20,14 @@ export type UnicodeGroupId = UnicodeEmojiData["groups"][number]["id"];
 type UnicodeEmojiGroup = { id: UnicodeGroupId; emojis: readonly PickerUnicodeEmoji[] };
 
 /** Every Unicode emoji of the picker, by group, and by the emoji without its skin tone. */
-export type UnicodeEmojiSet = { groups: readonly UnicodeEmojiGroup[]; byEmoji: ReadonlyMap<string, PickerUnicodeEmoji> };
+export type UnicodeEmojiSet = {
+  groups: readonly UnicodeEmojiGroup[];
+  byEmoji: ReadonlyMap<string, PickerUnicodeEmoji>;
+};
 
 /** The loading of the Unicode emoji of a locale: not asked for yet (`idle`), on its way, done, or failed. */
 export type UnicodeEmojiState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "ready"; emoji: UnicodeEmojiSet }
-  | { status: "error" };
+  { status: "idle" } | { status: "loading" } | { status: "ready"; emoji: UnicodeEmojiSet } | { status: "error" };
 
 const idle: UnicodeEmojiState = { status: "idle" };
 const loading: UnicodeEmojiState = { status: "loading" };
@@ -45,7 +45,11 @@ function setState(locale: UnicodeEmojiLocale, state: UnicodeEmojiState): void {
  * The emoji of `data` named in `locale`. The search finds an emoji by its name and keywords in the locale and, in
  * another locale than `en`, by its `en` name and keywords too (ADR-0091 §3), so the `en` ones join its keywords.
  */
-function buildSet(data: UnicodeEmojiData, names: UnicodeEmojiNames, en: UnicodeEmojiNames | undefined): UnicodeEmojiSet {
+function buildSet(
+  data: UnicodeEmojiData,
+  names: UnicodeEmojiNames,
+  en: UnicodeEmojiNames | undefined,
+): UnicodeEmojiSet {
   const byEmoji = new Map<string, PickerUnicodeEmoji>();
   const groups = data.groups.map((group) => ({
     id: group.id,
@@ -56,7 +60,9 @@ function buildSet(data: UnicodeEmojiData, names: UnicodeEmojiNames, en: UnicodeE
         unicode,
         name,
         keywords: english === undefined ? keywords : [...keywords, english[0], ...english[1]],
-        ...(skins === undefined ? {} : { skins: skins.map(([variant]) => ({ unicode: variant, name: names.skins[variant] ?? name })) }),
+        ...(skins === undefined
+          ? {}
+          : { skins: skins.map(([variant]) => ({ unicode: variant, name: names.skins[variant] ?? name })) }),
       };
       byEmoji.set(unicode, emoji);
       return emoji;

@@ -17,7 +17,9 @@ export function isAnnounced(closure: Closure | undefined): closure is Closure & 
 }
 
 /** Whether the server has closed: users only sign in and take their data away. */
-export function hasClosed(closure: Closure | undefined): closure is Closure & { state: "closed" | "delivery_completed" } {
+export function hasClosed(
+  closure: Closure | undefined,
+): closure is Closure & { state: "closed" | "delivery_completed" } {
   return closure?.state === "closed" || closure?.state === "delivery_completed";
 }
 

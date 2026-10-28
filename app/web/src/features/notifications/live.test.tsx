@@ -62,6 +62,8 @@ describe("a notification from the stream", () => {
     marker = { ...marker, unread_count: 3 };
     streams.current().close();
 
-    expect(await screen.findByRole("link", { name: "Notifications, 3 unread" }, { timeout: 3_000 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Notifications, 3 unread" }, { timeout: 3_000 }),
+    ).toBeInTheDocument();
   });
 });

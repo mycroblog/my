@@ -31,7 +31,8 @@ export const Route = createFileRoute("/@{$acct}")({
         staleTime: Infinity,
       }),
       // The posts tab starts with the account's pinned posts (FR-403).
-      tab === "posts" && context.queryClient.query({ ...pinnedStatusesQueryOptions(context.api, account.id), staleTime: Infinity }),
+      tab === "posts" &&
+        context.queryClient.query({ ...pinnedStatusesQueryOptions(context.api, account.id), staleTime: Infinity }),
     ]);
   },
   component: ProfilePage,

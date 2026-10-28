@@ -5,18 +5,39 @@ import { type CustomEmojiImage, type ImageSources, sanitizedHtmlText, serverSani
 import { useIntl } from "react-intl";
 import type { ClientMessageKey } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
-import { accountStatusPath, adminErrorGroupPath, adminErrorsPath, moderationAppealPath, moderationReportPath, followListPath, profilePath } from "../../../lib/paths";
+import {
+  accountStatusPath,
+  adminErrorGroupPath,
+  adminErrorsPath,
+  moderationAppealPath,
+  moderationReportPath,
+  followListPath,
+  profilePath,
+} from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useViewer } from "../../session";
 import { statusPath } from "../../status";
-import type { ModerationAction, Notification, NotificationAccount, NotificationStatus, NotificationType, SupporterEndReason } from "../api/notifications";
+import type {
+  ModerationAction,
+  Notification,
+  NotificationAccount,
+  NotificationStatus,
+  NotificationType,
+  SupporterEndReason,
+} from "../api/notifications";
 import type { NotificationGroup } from "./groupNotifications";
 import { imageSources } from "../../../lib/images";
 import { isTauriApp } from "../../../lib/platform";
 
 /** An account in a row: its name in the UI (the username when it has no display name), profile page, and avatar URL. */
 /** An account a row names: its display name with the custom emoji of its profile, its profile page, and its avatar. */
-export type NotificationActor = { id: string; name: string; emojis: readonly CustomEmojiImage[]; href: string; avatar: ImageSources | undefined };
+export type NotificationActor = {
+  id: string;
+  name: string;
+  emojis: readonly CustomEmojiImage[];
+  href: string;
+  avatar: ImageSources | undefined;
+};
 
 /** A link from a row to the page where the user follows up what it tells. */
 type NotificationLink = { href: string; label: ClientMessageKey };
@@ -195,10 +216,16 @@ function supporterOf(notification: Notification, formatDate: (value: string) => 
   switch (notification.type) {
     case "supporter_payment_failed": {
       const ends = subscription.state === "past_due" ? subscription.grace_ends_at : undefined;
-      return { plan, detail: ends === undefined ? null : { kind: "grace", date: { dateTime: ends, text: formatDate(ends) } } };
+      return {
+        plan,
+        detail: ends === undefined ? null : { kind: "grace", date: { dateTime: ends, text: formatDate(ends) } },
+      };
     }
     case "supporter_subscription_ended":
-      return { plan, detail: subscription.end_reason === undefined ? null : { kind: "ended", reason: subscription.end_reason } };
+      return {
+        plan,
+        detail: subscription.end_reason === undefined ? null : { kind: "ended", reason: subscription.end_reason },
+      };
     case "supporter_plan_retired":
       return { plan, detail: { kind: "retired" } };
     case "supporter_service_closure":
@@ -209,7 +236,9 @@ function supporterOf(notification: Notification, formatDate: (value: string) => 
 }
 
 /** The sentences of what became of the user's follow when an account they followed moved. */
-const moveOutcomeSentences: Readonly<Record<NonNullable<NonNullable<Notification["account_move"]>["outcome"]>, MoveOutcomeKey>> = {
+const moveOutcomeSentences: Readonly<
+  Record<NonNullable<NonNullable<Notification["account_move"]>["outcome"]>, MoveOutcomeKey>
+> = {
   followed: "client:notifications.account_moved.followed",
   requested: "client:notifications.account_moved.requested",
   blocking: "client:notifications.account_moved.blocking",
@@ -230,24 +259,47 @@ function moveOf(notification: Notification): MoveNoticeView | null {
 
 /** The sentences of the custom emoji requests, by what happened to the request and its kind. */
 const emojiRequestSentences = {
-  submitted: { create: "client:notifications.custom_emoji_request.submitted.create", image: "client:notifications.custom_emoji_request.submitted.image" },
-  approved: { create: "client:notifications.custom_emoji_request.approved.create", image: "client:notifications.custom_emoji_request.approved.image" },
-  rejected: { create: "client:notifications.custom_emoji_request.rejected.create", image: "client:notifications.custom_emoji_request.rejected.image" },
+  submitted: {
+    create: "client:notifications.custom_emoji_request.submitted.create",
+    image: "client:notifications.custom_emoji_request.submitted.image",
+  },
+  approved: {
+    create: "client:notifications.custom_emoji_request.approved.create",
+    image: "client:notifications.custom_emoji_request.approved.image",
+  },
+  rejected: {
+    create: "client:notifications.custom_emoji_request.rejected.create",
+    image: "client:notifications.custom_emoji_request.rejected.image",
+  },
 } as const satisfies Record<string, Record<"create" | "image", ClientMessageKey>>;
 
 /**
  * The sentence and the emoji of a custom emoji request's notification; without its request (or for a decision in
  * another state), no sentence, so that the row says the type's sentence without the emoji.
  */
-function emojiRequestOf(notification: Notification): Pick<NotificationView, "emojiRequest"> & { sentence: ClientMessageKey | null } {
+function emojiRequestOf(
+  notification: Notification,
+): Pick<NotificationView, "emojiRequest"> & { sentence: ClientMessageKey | null } {
   const request = notification.custom_emoji_request;
-  if (request === undefined || (notification.type !== "admin_custom_emoji_request" && notification.type !== "custom_emoji_request_decided")) {
+  if (
+    request === undefined ||
+    (notification.type !== "admin_custom_emoji_request" && notification.type !== "custom_emoji_request_decided")
+  ) {
     return { sentence: null, emojiRequest: null };
   }
-  const outcome = notification.type === "admin_custom_emoji_request" ? "submitted" : request.state === "approved" || request.state === "rejected" ? request.state : null;
+  const outcome =
+    notification.type === "admin_custom_emoji_request"
+      ? "submitted"
+      : request.state === "approved" || request.state === "rejected"
+        ? request.state
+        : null;
   if (outcome === null) return { sentence: null, emojiRequest: null };
-  const reason = request.state === "rejected" && request.reason !== undefined && request.reason !== "" ? request.reason : null;
-  return { sentence: emojiRequestSentences[outcome][request.kind], emojiRequest: { emoji: `:${request.shortcode}:`, reason } };
+  const reason =
+    request.state === "rejected" && request.reason !== undefined && request.reason !== "" ? request.reason : null;
+  return {
+    sentence: emojiRequestSentences[outcome][request.kind],
+    emojiRequest: { emoji: `:${request.shortcode}:`, reason },
+  };
 }
 
 /** The sentences of a group of the types that rows group (groupNotifications). */
@@ -257,7 +309,13 @@ const groupSentences: Readonly<Partial<Record<NotificationType, ClientMessageKey
 };
 
 function actorOf(account: NotificationAccount): NotificationActor {
-  return { id: account.id, name: account.display_name || account.username, emojis: account.emojis, href: profilePath(account.acct), avatar: imageSources(account.avatar) };
+  return {
+    id: account.id,
+    name: account.display_name || account.username,
+    emojis: account.emojis,
+    href: profilePath(account.acct),
+    avatar: imageSources(account.avatar),
+  };
 }
 
 function postOf(status: NotificationStatus): NonNullable<NotificationView["post"]> {
@@ -282,7 +340,10 @@ function severanceOf(notification: Notification): Pick<NotificationView, "senten
   if (severance === undefined) return fallback;
   const counts = { followers: severance.followers_lost, following: severance.following_lost };
   if (severance.kind === "domain_suspension") {
-    return { sentence: "client:notifications.severed.domain", severance: { domain: severance.domain ?? "", ...counts } };
+    return {
+      sentence: "client:notifications.severed.domain",
+      severance: { domain: severance.domain ?? "", ...counts },
+    };
   }
   if (notification.account === undefined) return fallback;
   return { sentence: "client:notifications.severed.account", severance: { domain: null, ...counts } };
@@ -304,11 +365,16 @@ function noticeOf(action: ModerationAction, formatDate: (value: string) => strin
     decision:
       appeal === undefined || appeal.state === "pending"
         ? null
-        : { sentence: decisionSentences[appeal.state], reason: appeal.decision_reason === undefined || appeal.decision_reason === "" ? null : appeal.decision_reason },
+        : {
+            sentence: decisionSentences[appeal.state],
+            reason:
+              appeal.decision_reason === undefined || appeal.decision_reason === "" ? null : appeal.decision_reason,
+          },
     kind: action.kind_label,
     category: action.reason_category_label,
     reason: action.public_reason === undefined || action.public_reason === "" ? null : action.public_reason,
-    until: action.expires_at === undefined ? null : { dateTime: action.expires_at, text: formatDate(action.expires_at) },
+    until:
+      action.expires_at === undefined ? null : { dateTime: action.expires_at, text: formatDate(action.expires_at) },
   };
 }
 
@@ -319,9 +385,13 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     case "appeal_decided":
       return [{ href: accountStatusPath, label: "client:notifications.link.account_status" }];
     case "admin_appeal":
-      return notification.appeal_id === undefined ? [] : [{ href: moderationAppealPath(notification.appeal_id), label: "client:notifications.link.appeal" }];
+      return notification.appeal_id === undefined
+        ? []
+        : [{ href: moderationAppealPath(notification.appeal_id), label: "client:notifications.link.appeal" }];
     case "admin_report":
-      return notification.report_id === undefined ? [] : [{ href: moderationReportPath(notification.report_id), label: "client:notifications.link.report" }];
+      return notification.report_id === undefined
+        ? []
+        : [{ href: moderationReportPath(notification.report_id), label: "client:notifications.link.report" }];
     case "admin_sign_up":
       return [{ href: "/moderation/registrations", label: "client:notifications.link.registrations" }];
     case "admin_webhook_disabled":
@@ -339,7 +409,9 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/settings/custom-emojis", label: "client:notifications.link.own_custom_emojis" }];
     // The Tauri app shows no way to subscribe or to pay, and no link to the supporter page (ADR-0072 §14).
     case "supporter_payment_failed":
-      return isTauriApp() ? [] : [{ href: "/settings/supporter", label: "client:notifications.link.supporter_payment" }];
+      return isTauriApp()
+        ? []
+        : [{ href: "/settings/supporter", label: "client:notifications.link.supporter_payment" }];
     case "supporter_subscription_ended":
     case "supporter_plan_retired":
     case "supporter_service_closure":
@@ -347,7 +419,9 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     // The page of the room, which says when it ended (ADR-0100 §9).
     case "voice_room_started":
     case "voice_room_invited":
-      return notification.voice_room_id === undefined ? [] : [{ href: `/voice/${notification.voice_room_id}`, label: "client:notifications.link.voice_room" }];
+      return notification.voice_room_id === undefined
+        ? []
+        : [{ href: `/voice/${notification.voice_room_id}`, label: "client:notifications.link.voice_room" }];
     case "relationships_severed":
       return ownAcct === null
         ? []
@@ -386,7 +460,10 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
   }
   const groupSentence = groupSentences[notification.type];
   const target = notification.type === "report_resolved" ? notification.report?.target_account : undefined;
-  const action = notification.type === "moderation_notice" || notification.type === "appeal_decided" ? notification.moderation_action : undefined;
+  const action =
+    notification.type === "moderation_notice" || notification.type === "appeal_decided"
+      ? notification.moderation_action
+      : undefined;
   const formatDate = (value: string) => intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" });
   return {
     sentence:

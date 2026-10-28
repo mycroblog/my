@@ -90,7 +90,10 @@ function isTokenResponse(value: unknown): value is TokenResponse {
  * The access token of `response`, or null when the server refused the grant (a 4xx). Throws a MaintenanceError for the
  * maintenance problem (after reporting it to `maintenance`) and a NetworkError for any other failure.
  */
-async function readTokenResponse(response: Response, maintenance: Pick<Maintenance, "report"> | undefined): Promise<string | null> {
+async function readTokenResponse(
+  response: Response,
+  maintenance: Pick<Maintenance, "report"> | undefined,
+): Promise<string | null> {
   if (response.status >= 400 && response.status < 500) return null;
   const underMaintenance = await maintenanceFromResponse(response);
   if (underMaintenance !== null) {
@@ -138,7 +141,9 @@ export class Session implements TokenSource {
     this.#maintenance = maintenance;
     const navigatorLocks = typeof navigator === "undefined" ? undefined : (navigator.locks as LockManager | undefined);
     this.#locks = locks ?? navigatorLocks ?? localLocks();
-    const open = openChannel ?? (typeof BroadcastChannel === "undefined" ? undefined : (name: string) => new BroadcastChannel(name));
+    const open =
+      openChannel ??
+      (typeof BroadcastChannel === "undefined" ? undefined : (name: string) => new BroadcastChannel(name));
     this.#channel = open === undefined ? null : open(sessionChannelName);
     this.#channel?.addEventListener("message", this.#onMessage);
   }
@@ -274,12 +279,26 @@ export class Session implements TokenSource {
     return this.#locks.request(refreshLockName, () => this.#exchangeCodeNow(code));
   }
 
-  async #exchangeCodeNow({ code, redirectUri, codeVerifier }: { code: string; redirectUri: string; codeVerifier: string }): Promise<boolean> {
+  async #exchangeCodeNow({
+    code,
+    redirectUri,
+    codeVerifier,
+  }: {
+    code: string;
+    redirectUri: string;
+    codeVerifier: string;
+  }): Promise<boolean> {
     let response: Response;
     try {
       response = await fetch(new URL(paths.token, this.#apiOrigin), {
         method: "POST",
-        body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: redirectUri, client_id: webClientId, code_verifier: codeVerifier }),
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code,
+          redirect_uri: redirectUri,
+          client_id: webClientId,
+          code_verifier: codeVerifier,
+        }),
         credentials: "include",
         cache: "no-store",
       });

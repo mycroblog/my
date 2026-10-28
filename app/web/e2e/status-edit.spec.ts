@@ -40,9 +40,17 @@ const alice: Status["account"] = {
 const postId = "0192f0c4-7a8e-7000-8000-0000000000e1";
 const hourAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60_000).toISOString();
 
-const original: StatusEdit = { content: "<p>The walk starts at nine.</p>", spoiler_text: "", sensitive: false, created_at: hourAgo(3), media_attachments: [], emojis: [] };
+const original: StatusEdit = {
+  content: "<p>The walk starts at nine.</p>",
+  spoiler_text: "",
+  sensitive: false,
+  created_at: hourAgo(3),
+  media_attachments: [],
+  emojis: [],
+};
 const latest: StatusEdit = {
-  content: "<p>The walk starts at ten, at the bridge: https://example.com/a/very/long/path/that/must/wrap/somewhere/before/it/scrolls/the/page/sideways</p>",
+  content:
+    "<p>The walk starts at ten, at the bridge: https://example.com/a/very/long/path/that/must/wrap/somewhere/before/it/scrolls/the/page/sideways</p>",
   spoiler_text: "Plans",
   sensitive: false,
   created_at: hourAgo(2),
@@ -80,32 +88,67 @@ const post: Status = {
 /** Answers the client API as Alice's session, with her edited post; an edit answers the post with the new text. */
 async function serveApi(page: Page): Promise<void> {
   let current = post;
-  const json = (route: Route, body: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+  const json = (route: Route, body: unknown) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
     if (path === `/statuses/${postId}/context`) return json(route, { ancestors: [], descendants: [] });
     if (path === `/statuses/${postId}/history`) return json(route, { items: revisions });
-    if (path === `/statuses/${postId}/source`) return json(route, { id: postId, text: "The walk starts at ten, at the bridge.", spoiler_text: "Plans", language: "en" });
+    if (path === `/statuses/${postId}/source`)
+      return json(route, {
+        id: postId,
+        text: "The walk starts at ten, at the bridge.",
+        spoiler_text: "Plans",
+        language: "en",
+      });
     if (path === `/statuses/${postId}`) {
       if (request.method() === "PUT") {
         const body = request.postDataJSON() as { text: string; spoiler_text?: string };
-        current = { ...current, content: `<p>${body.text}</p>`, spoiler_text: body.spoiler_text ?? "", edited_at: new Date().toISOString() };
+        current = {
+          ...current,
+          content: `<p>${body.text}</p>`,
+          spoiler_text: body.spoiler_text ?? "",
+          edited_at: new Date().toISOString(),
+        };
       }
       return json(route, current);
     }
-    return route.fulfill({ status: 404, contentType: "application/problem+json", body: JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }) });
+    return route.fulfill({
+      status: 404,
+      contentType: "application/problem+json",
+      body: JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }),
+    });
   });
 }
 
@@ -165,7 +208,9 @@ test("the viewer edits their post in a dialog, and the post shows the edit", asy
   await dialog.getByRole("button", { name: message("status.edit.save") }).click();
 
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("status.edit.done"))).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("status.edit.done")),
+  ).toBeVisible();
   await expect(article.getByText("The walk starts at eleven.")).toBeVisible();
   await expect(article.getByRole("link", { name: message("status.edited") })).toBeVisible();
 });

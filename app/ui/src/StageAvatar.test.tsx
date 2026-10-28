@@ -24,11 +24,19 @@ describe("StageAvatar", () => {
   it("says each state in words as well as drawing it", () => {
     render(
       <StageGrid aria-label="Speakers">
-        <StageAvatar name="Haruka" speaking muted handRaised reaction={{ content: "❤️", label: "Reacted with ❤️" }} labels={labels} />
+        <StageAvatar
+          name="Haruka"
+          speaking
+          muted
+          handRaised
+          reaction={{ content: "❤️", label: "Reacted with ❤️" }}
+          labels={labels}
+        />
       </StageGrid>,
     );
     const item = screen.getByRole("listitem");
-    for (const text of ["Talking", "Microphone off", "Hand raised", "Reacted with ❤️"]) expect(within(item).getByText(text)).toBeInTheDocument();
+    for (const text of ["Talking", "Microphone off", "Hand raised", "Reacted with ❤️"])
+      expect(within(item).getByText(text)).toBeInTheDocument();
     // The drawn reaction is hidden; its label is read instead.
     expect(within(item).getByText("❤️")).toHaveAttribute("aria-hidden", "true");
   });

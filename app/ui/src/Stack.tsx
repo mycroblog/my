@@ -4,7 +4,15 @@
 // screen keeps its sections, lists and forms without a wrapper and without classes of its own.
 import { createElement } from "react";
 import { tv } from "tailwind-variants";
-import { flex, type FlexLayoutProps, gaps, type LayoutElement, type PolymorphicProps, type Space, splitBox } from "./layout";
+import {
+  flex,
+  type FlexLayoutProps,
+  gaps,
+  type LayoutElement,
+  type PolymorphicProps,
+  type Space,
+  splitBox,
+} from "./layout";
 
 const stack = tv({
   extend: flex,
@@ -12,7 +20,12 @@ const stack = tv({
   variants: {
     gap: gaps,
     divided: { true: "divide-y divide-border" },
-    marker: { disc: "list-disc ps-6", decimal: "list-decimal ps-6", discInside: "list-inside list-disc", decimalInside: "list-inside list-decimal" },
+    marker: {
+      disc: "list-disc ps-6",
+      decimal: "list-decimal ps-6",
+      discInside: "list-inside list-disc",
+      decimalInside: "list-inside list-decimal",
+    },
     rowAt: { sm: "@sm:flex-row @sm:items-center", md: "@md:flex-row @md:items-center" },
   },
 });
@@ -33,5 +46,8 @@ export type StackProps<E extends LayoutElement = "div"> = PolymorphicProps<E, St
 /** Children one above another (`flex flex-col`). */
 export function Stack<E extends LayoutElement = "div">(props: StackProps<E>) {
   const [boxProps, { as, align, justify, gap, divided, marker, rowAt, ...rest }] = splitBox(props);
-  return createElement(as ?? "div", { ...rest, className: stack({ ...boxProps, align, justify, gap, divided, marker, rowAt }) });
+  return createElement(as ?? "div", {
+    ...rest,
+    className: stack({ ...boxProps, align, justify, gap, divided, marker, rowAt }),
+  });
 }

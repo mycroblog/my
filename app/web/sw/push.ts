@@ -50,13 +50,19 @@ export function notificationFor(text: string | null, origin: string): ShownNotif
   }
   return {
     title: payload.title,
-    options: { tag: payload.notification_id, lang: payload.lang, dir: "auto", data: { url: targetURL(payload.path, origin) } },
+    options: {
+      tag: payload.notification_id,
+      lang: payload.lang,
+      dir: "auto",
+      data: { url: targetURL(payload.path, origin) },
+    },
   };
 }
 
 /** The page that tapping a shown notification opens: the URL in its data, if it is the worker's origin's. */
 export function clickedURL(data: unknown, origin: string): string {
-  const url = typeof data === "object" && data !== null && "url" in data && typeof data.url === "string" ? data.url : "";
+  const url =
+    typeof data === "object" && data !== null && "url" in data && typeof data.url === "string" ? data.url : "";
   try {
     const parsed = new URL(url);
     if (parsed.origin === origin) return parsed.href;

@@ -27,7 +27,11 @@ export function FollowListSkeleton({ acct, list, renderHeading }: FollowListSkel
   const handle = isolate(`@${acct}`);
   return (
     <Stack gap="4">
-      {renderHeading(list === "followers" ? t("client:profile.followers.title", { name: handle }) : t("client:profile.following.title", { name: handle }))}
+      {renderHeading(
+        list === "followers"
+          ? t("client:profile.followers.title", { name: handle })
+          : t("client:profile.following.title", { name: handle }),
+      )}
       <div aria-busy="true">
         <VisuallyHidden>{t("client:profile.list.loading")}</VisuallyHidden>
         {/* The rows are divided as the list's rows are (FollowListView). */}

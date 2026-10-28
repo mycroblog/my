@@ -25,7 +25,9 @@ mkdirSync(env["MY_BLOB_FS_DIR"] ?? "", { recursive: true });
 // The schema files are plain SQL, executed in name order as Atlas does in production (ADR-0023, ADR-0082).
 const schemaDir = join(root, "schema/sqlite");
 const db = new DatabaseSync(database);
-for (const name of readdirSync(schemaDir).filter((n) => n.endsWith(".sql")).toSorted()) {
+for (const name of readdirSync(schemaDir)
+  .filter((n) => n.endsWith(".sql"))
+  .toSorted()) {
   db.exec(readFileSync(join(schemaDir, name), "utf8"));
 }
 db.close();

@@ -19,7 +19,9 @@ export const Route = createFileRoute("/moderation/instances")({
   loaderDeps: ({ search: { state } }): { filter: InstanceFilter } => ({ filter: state ?? "all" }),
   beforeLoad: requireSignIn,
   loader: ({ context, deps: { filter } }) =>
-    loadWithPermission(context, "manage_domains", () => context.queryClient.infiniteQuery({ ...instancesQueryOptions(context.api, filter), staleTime: Infinity })),
+    loadWithPermission(context, "manage_domains", () =>
+      context.queryClient.infiniteQuery({ ...instancesQueryOptions(context.api, filter), staleTime: Infinity }),
+    ),
   component: InstancesPage,
   errorComponent: InstancesError,
 });

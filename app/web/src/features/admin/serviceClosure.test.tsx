@@ -62,7 +62,15 @@ function closureServer(initial: Closure) {
     }),
     http.post(`${apiBase}/admin/closure/close`, async ({ request }) => {
       await record(request);
-      closure = { ...closure, state: "closed", progress: { accounts: 0, fanouts_pending: 12, deliveries: { pending: 0, succeeded: 0, permanent_failure: 0, skipped: 0, dead: 0 } } };
+      closure = {
+        ...closure,
+        state: "closed",
+        progress: {
+          accounts: 0,
+          fanouts_pending: 12,
+          deliveries: { pending: 0, succeeded: 0, permanent_failure: 0, skipped: 0, dead: 0 },
+        },
+      };
       return HttpResponse.json(closure);
     }),
   );
@@ -109,8 +117,12 @@ describe("the service closure screen", () => {
     const section = await screen.findByRole("region", { name: "Close the server" });
 
     expect(within(section).getByText("About 4,080 (12 accounts, 340 inboxes)")).toBeInTheDocument();
-    expect(within(section).getByText("Let the migrations end before closing; the closure sends its Deletes after them.")).toBeInTheDocument();
-    expect(within(section).getByText("Closing cancels these subscriptions at once, without a refund.")).toBeInTheDocument();
+    expect(
+      within(section).getByText("Let the migrations end before closing; the closure sends its Deletes after them."),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText("Closing cancels these subscriptions at once, without a refund."),
+    ).toBeInTheDocument();
     expect(within(section).getByText(/Export their records with the CLI/u)).toBeInTheDocument();
 
     await user.click(within(section).getByRole("button", { name: "Close the server" }));
@@ -169,7 +181,11 @@ describe("the service closure screen", () => {
       closes_at: pastDate,
       export_until: farDate,
       short_notice: false,
-      progress: { accounts: 12, fanouts_pending: 1, deliveries: { pending: 300, succeeded: 3000, permanent_failure: 20, skipped: 5, dead: 2 } },
+      progress: {
+        accounts: 12,
+        fanouts_pending: 1,
+        deliveries: { pending: 300, succeeded: 3000, permanent_failure: 20, skipped: 5, dead: 2 },
+      },
     });
     await renderApp({ path: "/admin/closure" });
     const progress = await screen.findByRole("region", { name: "Progress of the deliveries" });

@@ -19,7 +19,9 @@ export const Route = createFileRoute("/about")({
     // once (web-client/README.md S7).
     await Promise.all([
       queryClient.query({ ...instanceQueryOptions(api), staleTime: Infinity }).catch(() => undefined),
-      queryClient.infiniteQuery({ ...publicDomainActionsQueryOptions(api), staleTime: Infinity }).catch(() => undefined),
+      queryClient
+        .infiniteQuery({ ...publicDomainActionsQueryOptions(api), staleTime: Infinity })
+        .catch(() => undefined),
     ]);
   },
   component: AboutPage,

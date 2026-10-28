@@ -83,7 +83,10 @@ export async function uploadMedia(api: Api, file: File, poster: Blob | null = nu
  * response returns the status already posted instead of posting it twice.
  */
 export async function createStatus(api: Api, body: CreateStatusRequest, idempotencyKey: string): Promise<Status> {
-  const { data } = await api.fetch.POST("/statuses", { params: { header: { "Idempotency-Key": idempotencyKey } }, body });
+  const { data } = await api.fetch.POST("/statuses", {
+    params: { header: { "Idempotency-Key": idempotencyKey } },
+    body,
+  });
   if (data === undefined) throw new Error("POST /statuses answered without a body");
   return data;
 }
@@ -99,7 +102,9 @@ export async function cachePostedStatus(api: Api, queryClient: QueryClient, stat
   const parentId = status.in_reply_to_id;
   await Promise.all([
     queryClient.invalidateQueries({ predicate: (query) => isPostListQuery(query.queryKey) }),
-    parentId === undefined ? undefined : queryClient.invalidateQueries({ queryKey: statusQueryOptions(api, parentId).queryKey, exact: true }),
+    parentId === undefined
+      ? undefined
+      : queryClient.invalidateQueries({ queryKey: statusQueryOptions(api, parentId).queryKey, exact: true }),
   ]);
 }
 
@@ -119,7 +124,12 @@ export function credentialsQueryOptions(api: Api) {
  * ADR-0076, when the server refuses to resolve), only an account the instance knows is found.
  */
 export function lookupAccountQueryOptions(api: Api, acct: string, resolve: boolean) {
-  return api.query.queryOptions("get", "/accounts/lookup", { params: { query: resolve ? { acct, resolve: true } : { acct } } }, { retry: false });
+  return api.query.queryOptions(
+    "get",
+    "/accounts/lookup",
+    { params: { query: resolve ? { acct, resolve: true } : { acct } } },
+    { retry: false },
+  );
 }
 
 /** The viewer's relationships with the accounts `ids` (at most `maxRelationshipIds`). */

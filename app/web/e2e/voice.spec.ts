@@ -43,7 +43,14 @@ const alice: Schemas["Account"] = {
   bot: false,
   created_at: "2026-10-01T00:00:00Z",
 };
-const bob: Schemas["Account"] = { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob", url: "https://my.example/@bob" };
+const bob: Schemas["Account"] = {
+  ...alice,
+  id: "0192f0c4-7a8e-7000-8000-000000000002",
+  username: "bob",
+  acct: "bob",
+  display_name: "Bob",
+  url: "https://my.example/@bob",
+};
 
 /** Alice as the server knows her: a member who may open rooms. */
 const credentials: Schemas["CredentialAccount"] = {
@@ -91,7 +98,20 @@ const room: Schemas["VoiceRoom"] = {
   participants_count: 2,
   participants: [
     { account: bob, role: "speaker", host: true, cohost: false, hand_raised: false, blocked: false },
-    { account: { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol", display_name: "Carol" }, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false },
+    {
+      account: {
+        ...alice,
+        id: "0192f0c4-7a8e-7000-8000-000000000003",
+        username: "carol",
+        acct: "carol",
+        display_name: "Carol",
+      },
+      role: "listener",
+      host: false,
+      cohost: false,
+      hand_raised: false,
+      blocked: false,
+    },
   ],
 };
 
@@ -101,11 +121,20 @@ const notFound: Schemas["Problem"] = { type: "about:blank", title: "Not Found", 
 const joined: Schemas["VoiceRoom"] = {
   ...room,
   participants_count: 3,
-  participants: [...room.participants, { account: alice, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false }],
+  participants: [
+    ...room.participants,
+    { account: alice, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false },
+  ],
 };
 
 /** The grant of a P2P room, without TURN. */
-const grant: Schemas["VoiceGrant"] = { kind: "p2p", options: {}, ice_servers: [], relay_only: false, expires_at: "2099-01-01T00:00:00Z" };
+const grant: Schemas["VoiceGrant"] = {
+  kind: "p2p",
+  options: {},
+  ice_servers: [],
+  relay_only: false,
+  expires_at: "2099-01-01T00:00:00Z",
+};
 
 /**
  * Answers the client API as Alice's session on a server with voice chat on and one open room; signed out without
@@ -114,19 +143,33 @@ const grant: Schemas["VoiceGrant"] = { kind: "p2p", options: {}, ice_servers: []
 async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promise<void> {
   let current = room;
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
   await page.route("**/oauth/token/refresh", (route) =>
-    signedIn ? json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }) : json(route, { error: "invalid_grant" }, 400),
+    signedIn
+      ? json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })
+      : json(route, { error: "invalid_grant" }, 400),
   );
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/v1", "");
     if (path === "/instance") return json(route, instance);
-    if (path === `/voice/rooms/${roomId}/summary`) return json(route, { id: roomId, state: "open", name: room.name, description: room.description, host: bob });
+    if (path === `/voice/rooms/${roomId}/summary`)
+      return json(route, { id: roomId, state: "open", name: room.name, description: room.description, host: bob });
     if (!signedIn) return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     if (path === "/accounts/verify_credentials") return json(route, credentials);
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
@@ -143,14 +186,34 @@ async function serveApi(page: Page, { signedIn }: { signedIn: boolean }): Promis
     }
     if (path === `/voice/rooms/${roomId}/stream`) {
       // The whole stream at once: the client opens it again after it ends, and the first `state` catches it up.
-      const state = { ...current, participants: current.participants.map((p) => ({ ...p, session: p.account.id === alice.id ? "s1" : `s-${p.account.username}` })) };
-      return route.fulfill({ status: 200, contentType: "text/event-stream", body: `: connected\n\nevent: state\ndata: ${JSON.stringify(state)}\n\n` });
+      const state = {
+        ...current,
+        participants: current.participants.map((p) => ({
+          ...p,
+          session: p.account.id === alice.id ? "s1" : `s-${p.account.username}`,
+        })),
+      };
+      return route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: `: connected\n\nevent: state\ndata: ${JSON.stringify(state)}\n\n`,
+      });
     }
     if (path === `/voice/rooms/${roomId}/hand` && method === "POST") {
-      current = { ...current, participants: current.participants.map((p) => (p.account.id === alice.id ? { ...p, hand_raised: true } : p)) };
+      current = {
+        ...current,
+        participants: current.participants.map((p) => (p.account.id === alice.id ? { ...p, hand_raised: true } : p)),
+      };
       return json(route, current);
     }
-    if ([`/voice/rooms/${roomId}/heartbeat`, `/voice/rooms/${roomId}/signals`, `/voice/rooms/${roomId}/mic`, `/voice/rooms/${roomId}/reactions`].includes(path)) {
+    if (
+      [
+        `/voice/rooms/${roomId}/heartbeat`,
+        `/voice/rooms/${roomId}/signals`,
+        `/voice/rooms/${roomId}/mic`,
+        `/voice/rooms/${roomId}/reactions`,
+      ].includes(path)
+    ) {
       return route.fulfill({ status: 204 });
     }
     return json(route, notFound, 404);
@@ -176,7 +239,10 @@ test.describe("the voice chat pages", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("opens the dialog that starts a room, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
+  test("opens the dialog that starts a room, axe-clean and without horizontal scroll", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.getByRole("button", { name: message("voice.start") }).click();
     const dialog = page.getByRole("dialog", { name: message("voice.form.new_title") });
     await expect(dialog.getByRole("textbox", { name: message("voice.form.name") })).toBeFocused();
@@ -191,8 +257,12 @@ test.describe("the voice chat pages", () => {
     await expect(page.getByText(message("voice.room.live"), { exact: true })).toBeVisible();
     await expect(page.getByText(message("voice.room.listed_notice"))).toBeVisible();
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
-    await expect(page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem")).toHaveCount(1);
-    await expect(page.getByRole("list", { name: counted("voice.stage.listeners", 1) }).getByRole("listitem")).toHaveCount(1);
+    await expect(
+      page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("list", { name: counted("voice.stage.listeners", 1) }).getByRole("listitem"),
+    ).toHaveCount(1);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -206,13 +276,19 @@ test.describe("the call of a room", () => {
     await page.getByRole("button", { name: message("voice.room.join") }).click();
   });
 
-  test("joins and shows the dock, clear of the tab bar, and everyone on the stage, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
+  test("joins and shows the dock, clear of the tab bar, and everyone on the stage, axe-clean and without horizontal scroll", async ({
+    page,
+    hasTouch,
+    makeAxeBuilder,
+  }) => {
     const dock = page.getByRole("toolbar", { name: message("voice.dock.label") });
     await expect(dock.getByRole("button", { name: message("voice.call.raise_hand") })).toBeVisible();
     await expect(dock.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     // A listener has no microphone.
     await expect(dock.getByRole("button", { name: message("voice.call.microphone") })).toHaveCount(0);
-    await expect(page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem")).toHaveCount(1);
+    await expect(
+      page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem"),
+    ).toHaveCount(1);
     const listeners = page.getByRole("list", { name: counted("voice.stage.listeners", 2) });
     await expect(listeners.getByRole("listitem")).toHaveCount(2);
     await expect(listeners.getByText(message("voice.participant.you"))).toBeVisible();
@@ -232,14 +308,26 @@ test.describe("the call of a room", () => {
     const dock = page.getByRole("toolbar", { name: message("voice.dock.label") });
     await dock.getByRole("button", { name: message("voice.call.raise_hand") }).click();
     await expect(dock.getByRole("button", { name: message("voice.call.raise_hand"), pressed: true })).toBeVisible();
-    await expect(page.getByRole("list", { name: counted("voice.stage.listeners", 2) }).getByText(message("voice.participant.hand_raised"))).toBeAttached();
+    await expect(
+      page
+        .getByRole("list", { name: counted("voice.stage.listeners", 2) })
+        .getByText(message("voice.participant.hand_raised")),
+    ).toBeAttached();
     await expectNoAxeViolations(makeAxeBuilder);
     await dock.getByRole("button", { name: message("voice.call.leave") }).click();
     await expect(page.getByRole("button", { name: message("voice.room.join") })).toBeVisible();
   });
 
-  test("goes on across pages with the mini-player, clear of the tab bar, axe-clean and without horizontal scroll", async ({ page, hasTouch, makeAxeBuilder }) => {
-    await expect(page.getByRole("toolbar", { name: message("voice.dock.label") }).getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
+  test("goes on across pages with the mini-player, clear of the tab bar, axe-clean and without horizontal scroll", async ({
+    page,
+    hasTouch,
+    makeAxeBuilder,
+  }) => {
+    await expect(
+      page
+        .getByRole("toolbar", { name: message("voice.dock.label") })
+        .getByRole("button", { name: message("voice.call.leave") }),
+    ).toBeVisible();
     await openFromNavigation(page, "/home", hasTouch);
     const bar = page.getByRole("region", { name: message("voice.bar.label"), exact: true });
     await expect(bar.getByRole("link", { name: room.name })).toBeVisible();

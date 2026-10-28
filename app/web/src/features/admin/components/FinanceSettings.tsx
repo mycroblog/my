@@ -10,7 +10,35 @@
 // in the URL (web-client/README.md S3). Amounts and dates are formatted with Intl (ADR-0067 §10); names, providers and
 // memos are the operator's words, shown with dir="auto". What a change did stays in a StatusMessage above the list;
 // a failure stays there too (role="alert", web-client/README.md E2).
-import { Box, Button, Card, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Dialog, DialogTrigger, EmptyState, Heading, Hint, InlineError, Link, Radio, RadioGroup, Select, SelectItem, Stack, StatusMessage, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, TextArea, TextField } from "@my/ui";
+import {
+  Box,
+  Button,
+  Card,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  DialogTrigger,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Link,
+  Radio,
+  RadioGroup,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  TextArea,
+  TextField,
+} from "@my/ui";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
@@ -31,7 +59,14 @@ import {
   useFormatTotals,
   utcDate,
 } from "../../costs";
-import { DateTime, DetailSection, RecordList, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
+import {
+  DateTime,
+  DetailSection,
+  RecordList,
+  RecordTable,
+  RequirePermission,
+  useHasPermission,
+} from "../../moderation";
 import { instanceQueryOptions } from "../api/documents";
 import {
   type BillingImport,
@@ -180,7 +215,15 @@ function Publication() {
  * `finance_viewer_*`, ADR-0070 §5), read from GET /finance/cost_totals with the totals of the screen. They are server
  * settings (manage_settings) too, changed through the link above.
  */
-function ViewerSettings({ granularity, basis, today }: { granularity: CostGranularity; basis: CostBasis; today: string }) {
+function ViewerSettings({
+  granularity,
+  basis,
+  today,
+}: {
+  granularity: CostGranularity;
+  basis: CostBasis;
+  today: string;
+}) {
   const t = useT();
   const api = useApi();
   const { data } = useQuery({ ...financeCostTotalsQueryOptions(api, granularity, basis, today), ...shellQueryReader });
@@ -286,7 +329,9 @@ function LabelFields({
         rows={3}
         characterLimit={costMemoLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.settings.characters_over", { count: -remaining })
+            : t("client:admin.settings.characters_left", { count: remaining })
         }
         {...(errors.memo !== undefined && { isInvalid: true, errorMessage: errors.memo })}
       />
@@ -342,11 +387,7 @@ function NewCostItemForm() {
   const { draft, errors } = form;
   return (
     <Stack as="form" gap="6" onSubmit={form.submit} noValidate>
-      <LabelFields
-        label={draft}
-        onChange={form.change}
-        errors={errors}
-      />
+      <LabelFields label={draft} onChange={form.change} errors={errors} />
       <RadioGroup
         label={t("client:admin.finance.schedule")}
         description={t("client:admin.finance.schedule.description")}
@@ -378,7 +419,11 @@ function NewCostItemForm() {
       <TextField
         type="date"
         label={t(draft.schedule === "once" ? "client:admin.finance.paid_on" : "client:admin.finance.starts_on")}
-        description={t(draft.schedule === "once" ? "client:admin.finance.paid_on.description" : "client:admin.finance.starts_on.description")}
+        description={t(
+          draft.schedule === "once"
+            ? "client:admin.finance.paid_on.description"
+            : "client:admin.finance.starts_on.description",
+        )}
         value={draft.startsOn}
         onChange={(startsOn) => {
           form.change({ startsOn });
@@ -443,7 +488,13 @@ function CostItemList({ today }: { today: string }) {
         list={list}
         getId={(item) => item.id}
         listRef={listRef}
-        empty={<EmptyState headingLevel={3} heading={t("client:admin.finance.empty")} description={t("client:admin.finance.empty.description")} />}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.finance.empty")}
+            description={t("client:admin.finance.empty.description")}
+          />
+        }
       >
         {(item) => <CostItemRow item={item} today={today} actions={actions} />}
       </RecordList>
@@ -486,7 +537,9 @@ function CostItemRow({ item, today, actions }: { item: CostItem; today: string; 
         </DescriptionItem>
         <DescriptionItem term={t("client:costs.category")}>{t(categoryLabels[item.category])}</DescriptionItem>
         <DescriptionItem term={t("client:admin.finance.schedule")}>{scheduleText(item)}</DescriptionItem>
-        <DescriptionItem term={t(item.schedule === "once" ? "client:admin.finance.paid_on" : "client:admin.finance.starts_on")}>
+        <DescriptionItem
+          term={t(item.schedule === "once" ? "client:admin.finance.paid_on" : "client:admin.finance.starts_on")}
+        >
           {formatDay(item.starts_on)}
         </DescriptionItem>
         {item.schedule !== "once" && (
@@ -504,7 +557,10 @@ function CostItemRow({ item, today, actions }: { item: CostItem; today: string; 
             <Stack as="ul">
               {item.prices.map((revision) => (
                 <Text as="li" numeric key={`${revision.effective_on} ${revision.revised_at}`}>
-                  {t("client:admin.finance.price_from", { date: formatDay(revision.effective_on), amount: format(revision.price) })}
+                  {t("client:admin.finance.price_from", {
+                    date: formatDay(revision.effective_on),
+                    amount: format(revision.price),
+                  })}
                 </Text>
               ))}
             </Stack>
@@ -549,7 +605,9 @@ function DialogForm({
   const [isSaving, setIsSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
-    <Stack as="form" gap="4"
+    <Stack
+      as="form"
+      gap="4"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -563,7 +621,8 @@ function DialogForm({
           if (saved) close();
           else setFailed(true);
         });
-      }}>
+      }}
+    >
       {children}
       {failed && actions.error !== undefined && (
         <InlineError size="inherit" alert>
@@ -587,7 +646,12 @@ function EditLabel({ item, actions }: ItemActionProps) {
       <Button size="sm" aria-label={t("client:admin.finance.edit_one", { name: item.name })}>
         {t("client:admin.finance.edit")}
       </Button>
-      <Dialog title={t("client:admin.finance.edit.title")} closeLabel={t("client:admin.finance.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.finance.edit.title")}
+        closeLabel={t("client:admin.finance.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditLabelForm item={item} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -595,7 +659,12 @@ function EditLabel({ item, actions }: ItemActionProps) {
 }
 
 function EditLabelForm({ item, actions, close }: ItemActionProps & { close: () => void }) {
-  const [label, setLabel] = useState<LabelDraft>({ name: item.name, provider: item.provider, category: item.category, memo: item.memo });
+  const [label, setLabel] = useState<LabelDraft>({
+    name: item.name,
+    provider: item.provider,
+    category: item.category,
+    memo: item.memo,
+  });
   const [submitted, setSubmitted] = useState(false);
   const errors = submitted ? actions.labelErrors(label) : {};
   return (
@@ -627,7 +696,12 @@ function RevisePrice({ item, actions }: ItemActionProps) {
       <Button size="sm" aria-label={t("client:admin.finance.revise_one", { name: item.name })}>
         {t("client:admin.finance.revise")}
       </Button>
-      <Dialog title={t("client:admin.finance.revise.title", { name: item.name })} closeLabel={t("client:admin.finance.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.finance.revise.title", { name: item.name })}
+        closeLabel={t("client:admin.finance.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <RevisePriceForm item={item} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -653,7 +727,8 @@ function RevisePriceForm({ item, actions, close }: ItemActionProps & { close: ()
       actions={actions}
       save={() => {
         setSubmitted(true);
-        if (dateError(effectiveOn) !== undefined || Object.keys(actions.priceErrors(price)).length > 0) return undefined;
+        if (dateError(effectiveOn) !== undefined || Object.keys(actions.priceErrors(price)).length > 0)
+          return undefined;
         return actions.revise(item, effectiveOn, price);
       }}
     >
@@ -685,7 +760,12 @@ function SetEnd({ item, actions }: ItemActionProps) {
       <Button size="sm" aria-label={t("client:admin.finance.end_one", { name: item.name })}>
         {t("client:admin.finance.end")}
       </Button>
-      <Dialog title={t("client:admin.finance.end.title", { name: item.name })} closeLabel={t("client:admin.finance.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.finance.end.title", { name: item.name })}
+        closeLabel={t("client:admin.finance.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <SetEndForm item={item} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -696,7 +776,8 @@ function SetEndForm({ item, actions, close }: ItemActionProps & { close: () => v
   const t = useT();
   const [endsOn, setEndsOn] = useState(item.ends_on ?? "");
   const [submitted, setSubmitted] = useState(false);
-  const error = (value: string) => (value !== "" && value < item.starts_on ? t("client:admin.finance.ends_on.before_start") : undefined);
+  const error = (value: string) =>
+    value !== "" && value < item.starts_on ? t("client:admin.finance.ends_on.before_start") : undefined;
   const endError = submitted ? error(endsOn) : undefined;
   return (
     <DialogForm
@@ -737,7 +818,10 @@ function CancelItem({ item, actions }: ItemActionProps) {
         confirmLabel={t("client:admin.finance.cancel_item")}
         cancelLabel={t("client:admin.finance.cancel_dialog")}
         isPending={isCanceling}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.finance.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.finance.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsCanceling(true);
           setFailed(false);
@@ -757,7 +841,13 @@ function BillingImports() {
   const sources = useBillingImports();
   const run = useRunBillingImport();
   if (sources.length === 0) {
-    return <EmptyState headingLevel={3} heading={t("client:admin.finance.imports.none")} description={t("client:admin.finance.imports.none.description")} />;
+    return (
+      <EmptyState
+        headingLevel={3}
+        heading={t("client:admin.finance.imports.none")}
+        description={t("client:admin.finance.imports.none.description")}
+      />
+    );
   }
   return (
     <Stack gap="3">
@@ -778,12 +868,22 @@ function BillingImports() {
   );
 }
 
-function BillingImportRow({ source, isPending, onRun }: { source: BillingImport; isPending: boolean; onRun: (source: BillingImport) => void }) {
+function BillingImportRow({
+  source,
+  isPending,
+  onRun,
+}: {
+  source: BillingImport;
+  isPending: boolean;
+  onRun: (source: BillingImport) => void;
+}) {
   const t = useT();
   const intl = useIntl();
   const formatTotals = useFormatTotals();
   const count = (used: number, max: number | undefined) =>
-    max === undefined ? intl.formatNumber(used) : t("client:admin.finance.imports.used_of", { used: intl.formatNumber(used), max: intl.formatNumber(max) });
+    max === undefined
+      ? intl.formatNumber(used)
+      : t("client:admin.finance.imports.used_of", { used: intl.formatNumber(used), max: intl.formatNumber(max) });
   return (
     <Stack gap="3">
       <Heading level={3}>{source.provider}</Heading>
@@ -791,7 +891,11 @@ function BillingImportRow({ source, isPending, onRun }: { source: BillingImport;
       <DescriptionList>
         <DescriptionItem term={t("client:admin.finance.imports.time_zone")}>{source.time_zone}</DescriptionItem>
         <DescriptionItem term={t("client:admin.finance.imports.last_success")}>
-          {source.last_success_at === undefined ? t("client:admin.finance.imports.never") : <DateTime value={source.last_success_at} />}
+          {source.last_success_at === undefined ? (
+            t("client:admin.finance.imports.never")
+          ) : (
+            <DateTime value={source.last_success_at} />
+          )}
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.finance.imports.last_run")}>
           {source.last_run === undefined ? (
@@ -803,11 +907,20 @@ function BillingImportRow({ source, isPending, onRun }: { source: BillingImport;
             </Stack>
           )}
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.finance.imports.requests_today")}>{count(source.requests_today, source.max_requests_per_day)}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.finance.imports.requests_month")}>{count(source.requests_this_month, source.max_requests_per_month)}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.finance.imports.requests_today")}>
+          {count(source.requests_today, source.max_requests_per_day)}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:admin.finance.imports.requests_month")}>
+          {count(source.requests_this_month, source.max_requests_per_month)}
+        </DescriptionItem>
         {source.method === "bigquery" && (
           <DescriptionItem term={t("client:admin.finance.imports.bytes")}>
-            {intl.formatNumber(source.bytes_billed_this_month, { style: "unit", unit: "byte", notation: "compact", unitDisplay: "narrow" })}
+            {intl.formatNumber(source.bytes_billed_this_month, {
+              style: "unit",
+              unit: "byte",
+              notation: "compact",
+              unitDisplay: "narrow",
+            })}
           </DescriptionItem>
         )}
       </DescriptionList>
@@ -815,7 +928,9 @@ function BillingImportRow({ source, isPending, onRun }: { source: BillingImport;
         <Stack as="ul" gap="1" aria-label={t("client:admin.finance.imports.months", { provider: source.provider })}>
           {source.months.map((month) => (
             <Cluster as="li" gap="2" rowGap="0" key={month.month}>
-              <span>{intl.formatDate(utcDate(`${month.month}-01`), { year: "numeric", month: "long", timeZone: "UTC" })}</span>
+              <span>
+                {intl.formatDate(utcDate(`${month.month}-01`), { year: "numeric", month: "long", timeZone: "UTC" })}
+              </span>
               <Text tone="muted">{t(monthKindLabels[month.kind])}</Text>
               <Text numeric>{formatTotals(month.totals)}</Text>
             </Cluster>
@@ -844,13 +959,22 @@ function BillingImportRow({ source, isPending, onRun }: { source: BillingImport;
  * (applied together, since a date field changes while it is typed). Only this screen shows them; the payment provider
  * records them, and nothing here changes them.
  */
-function IncomeMovements({ filter, onFilterChange }: { filter: IncomeMovementFilter; onFilterChange: (filter: IncomeMovementFilter) => void }) {
+function IncomeMovements({
+  filter,
+  onFilterChange,
+}: {
+  filter: IncomeMovementFilter;
+  onFilterChange: (filter: IncomeMovementFilter) => void;
+}) {
   const t = useT();
   const list = useIncomeMovements(filter);
   const dates = useMovementDates(filter, onFilterChange);
   const filtersRef = useRef<HTMLDivElement>(null);
   const filtered = filter.kind !== undefined || filter.from !== undefined || filter.to !== undefined;
-  const kinds = [{ id: anyKind, name: t("client:admin.finance.movements.filter.any_kind") }, ...incomeKinds.map((kind) => ({ id: kind, name: t(incomeKindLabels[kind]) }))];
+  const kinds = [
+    { id: anyKind, name: t("client:admin.finance.movements.filter.any_kind") },
+    ...incomeKinds.map((kind) => ({ id: kind, name: t(incomeKindLabels[kind]) })),
+  ];
   const clear = () => {
     // The pressed button goes away with the filters: focus moves to their first control, which stays.
     filtersRef.current?.querySelector<HTMLElement>("button")?.focus();
@@ -881,27 +1005,25 @@ function IncomeMovements({ filter, onFilterChange }: { filter: IncomeMovementFil
         </Select>
         <Stack as="form" gap="4" align="start" onSubmit={dates.submit} noValidate>
           <Cluster gap="4" align="start">
-          <TextField
-            type="date"
-            label={t("client:admin.finance.movements.filter.from")}
-            value={dates.draft.from}
-            onChange={(from) => {
-              dates.change({ from });
-            }}
-          />
-          <TextField
-            type="date"
-            label={t("client:admin.finance.movements.filter.to")}
-            value={dates.draft.to}
-            onChange={(to) => {
-              dates.change({ to });
-            }}
-            {...(dates.toError !== undefined && { isInvalid: true, errorMessage: dates.toError })}
-          />
+            <TextField
+              type="date"
+              label={t("client:admin.finance.movements.filter.from")}
+              value={dates.draft.from}
+              onChange={(from) => {
+                dates.change({ from });
+              }}
+            />
+            <TextField
+              type="date"
+              label={t("client:admin.finance.movements.filter.to")}
+              value={dates.draft.to}
+              onChange={(to) => {
+                dates.change({ to });
+              }}
+              {...(dates.toError !== undefined && { isInvalid: true, errorMessage: dates.toError })}
+            />
           </Cluster>
-          <Button type="submit">
-            {t("client:admin.finance.movements.filter.apply")}
-          </Button>
+          <Button type="submit">{t("client:admin.finance.movements.filter.apply")}</Button>
         </Stack>
         {filtered && <div>{clearButton}</div>}
       </Stack>
@@ -930,7 +1052,11 @@ function IncomeMovements({ filter, onFilterChange }: { filter: IncomeMovementFil
               action={clearButton}
             />
           ) : (
-            <EmptyState headingLevel={3} heading={t("client:admin.finance.movements.empty")} description={t("client:admin.finance.movements.empty.description")} />
+            <EmptyState
+              headingLevel={3}
+              heading={t("client:admin.finance.movements.empty")}
+              description={t("client:admin.finance.movements.empty.description")}
+            />
           )
         }
       >
@@ -949,7 +1075,11 @@ function Subscriber({ movement }: { movement: IncomeMovement }) {
   const t = useT();
   const mayOpenAccount = useHasPermission("manage_accounts");
   if (movement.account_id === undefined || movement.username === undefined) {
-    return t(movement.subscription_id === undefined ? "client:admin.finance.movements.no_subscriber" : "client:admin.finance.movements.deleted_account");
+    return t(
+      movement.subscription_id === undefined
+        ? "client:admin.finance.movements.no_subscriber"
+        : "client:admin.finance.movements.deleted_account",
+    );
   }
   const handle = `@${movement.username}`;
   return mayOpenAccount ? (
@@ -981,7 +1111,10 @@ function IncomeMovementRow({ movement }: { movement: IncomeMovement }) {
                 {t("client:admin.finance.movements.covers")}
               </Text>
               <Text size="sm" tone="muted">
-                {intl.formatDateTimeRange(utcDate(movement.covers_starts_on), utcDate(movement.covers_ends_on), { dateStyle: "medium", timeZone: "UTC" })}
+                {intl.formatDateTimeRange(utcDate(movement.covers_starts_on), utcDate(movement.covers_ends_on), {
+                  dateStyle: "medium",
+                  timeZone: "UTC",
+                })}
               </Text>
             </Cluster>
           )}

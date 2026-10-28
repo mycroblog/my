@@ -31,10 +31,15 @@ const handle = `⁨@bob⁩`;
 function rolesServer(held: Role[], own: Role[] = [adminRoleFixture]) {
   let bobRoles = held;
   const changes: string[] = [];
-  const answer = () => HttpResponse.json({ items: rolesFixture.filter((role) => bobRoles.some((other) => other.id === role.id)) });
+  const answer = () =>
+    HttpResponse.json({ items: rolesFixture.filter((role) => bobRoles.some((other) => other.id === role.id)) });
   server.use(
-    http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(adminAccountDetailFixture(otherAccountFixture, { roles: bobRoles.map((role) => role.key) }))),
-    http.get(`${apiBase}/admin/accounts/:id/roles`, ({ params }) => (params["id"] === viewerFixture.id ? HttpResponse.json({ items: own }) : answer())),
+    http.get(`${apiBase}/admin/accounts/:id`, () =>
+      HttpResponse.json(adminAccountDetailFixture(otherAccountFixture, { roles: bobRoles.map((role) => role.key) })),
+    ),
+    http.get(`${apiBase}/admin/accounts/:id/roles`, ({ params }) =>
+      params["id"] === viewerFixture.id ? HttpResponse.json({ items: own }) : answer(),
+    ),
     http.put(`${apiBase}/admin/accounts/:id/roles/:role`, ({ params }) => {
       changes.push(`PUT ${String(params["role"])}`);
       bobRoles = [...bobRoles, ...rolesFixture.filter((role) => role.key === params["role"])];
@@ -96,9 +101,13 @@ describe("an account's roles", () => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
     expect(changes).toEqual(["PUT moderator"]);
-    expect(within(roles).getByRole("status")).toHaveTextContent(`${ltr("moderator")} is granted to ${handle}. The audit log records the change.`);
+    expect(within(roles).getByRole("status")).toHaveTextContent(
+      `${ltr("moderator")} is granted to ${handle}. The audit log records the change.`,
+    );
     expect(within(roleRow(roles, "moderator")).getByText("Has the role")).toBeInTheDocument();
-    expect(within(roleRow(roles, "moderator")).getByRole("button", { name: `Revoke ${ltr("moderator")}` })).toBeInTheDocument();
+    expect(
+      within(roleRow(roles, "moderator")).getByRole("button", { name: `Revoke ${ltr("moderator")}` }),
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(within(roles).getByRole("heading", { level: 2, name: "Roles" })).toHaveFocus();
     });
@@ -143,7 +152,9 @@ describe("an account's roles", () => {
       }),
     );
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Grant" }));
-    expect(await within(roles).findByText(`${ltr("moderator")} is granted to ${handle}. The audit log records the change.`)).toBeInTheDocument();
+    expect(
+      await within(roles).findByText(`${ltr("moderator")} is granted to ${handle}. The audit log records the change.`),
+    ).toBeInTheDocument();
     expect(changes).toEqual(["PUT moderator"]);
 
     await router.navigate({ to: "/moderation/audit-log" });
@@ -157,7 +168,9 @@ describe("an account's roles", () => {
 
     const revoke = within(roleRow(roles, "moderator")).getByRole("button", { name: `Revoke ${ltr("moderator")}` });
     await user.click(revoke);
-    expect(await screen.findByRole("alertdialog", { name: `Revoke ${ltr("moderator")} from ${handle}?` })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("alertdialog", { name: `Revoke ${ltr("moderator")} from ${handle}?` }),
+    ).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -171,7 +184,11 @@ describe("an account's roles", () => {
     const dialog = await screen.findByRole("alertdialog", { name: `Revoke ${ltr("moderator")} from ${handle}?` });
     await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
 
-    expect(await within(roles).findByText(`${ltr("moderator")} is revoked from ${handle}. The audit log records the change.`)).toBeInTheDocument();
+    expect(
+      await within(roles).findByText(
+        `${ltr("moderator")} is revoked from ${handle}. The audit log records the change.`,
+      ),
+    ).toBeInTheDocument();
     expect(changes).toEqual(["DELETE moderator"]);
     expect(within(roleRow(roles, "moderator")).getByText("Does not have the role")).toBeInTheDocument();
     await waitFor(() => {
@@ -185,23 +202,46 @@ describe("an account's roles", () => {
 
     const admin = within(roleRow(roles, "admin"));
     expect(admin.queryByRole("button")).not.toBeInTheDocument();
-    expect(admin.getByText(`This role is above your highest role, ${ltr("moderator")}, so you cannot grant or revoke it.`)).toBeInTheDocument();
-    expect(within(roleRow(roles, "moderator")).getByRole("button", { name: `Grant ${ltr("moderator")}` })).toBeInTheDocument();
+    expect(
+      admin.getByText(`This role is above your highest role, ${ltr("moderator")}, so you cannot grant or revoke it.`),
+    ).toBeInTheDocument();
+    expect(
+      within(roleRow(roles, "moderator")).getByRole("button", { name: `Grant ${ltr("moderator")}` }),
+    ).toBeInTheDocument();
   });
 
   test("a role with a permission the viewer lacks has no grant button, and says which", async () => {
-    const lead: Role = { id: "0192f0c4-7a8e-7000-8000-000000000a09", key: "lead", position: 50, permissions: ["manage_reports", "manage_webhooks"] };
-    const reporter: Role = { ...moderatorRoleFixture, id: "0192f0c4-7a8e-7000-8000-000000000a08", key: "reporter", position: 200, permissions: ["manage_reports"] };
+    const lead: Role = {
+      id: "0192f0c4-7a8e-7000-8000-000000000a09",
+      key: "lead",
+      position: 50,
+      permissions: ["manage_reports", "manage_webhooks"],
+    };
+    const reporter: Role = {
+      ...moderatorRoleFixture,
+      id: "0192f0c4-7a8e-7000-8000-000000000a08",
+      key: "reporter",
+      position: 200,
+      permissions: ["manage_reports"],
+    };
     rolesServer([], [reporter]);
-    server.use(http.get(`${apiBase}/admin/roles`, () => HttpResponse.json({ items: [adminRoleFixture, reporter, moderatorRoleFixture, lead] })));
+    server.use(
+      http.get(`${apiBase}/admin/roles`, () =>
+        HttpResponse.json({ items: [adminRoleFixture, reporter, moderatorRoleFixture, lead] }),
+      ),
+    );
     const { roles } = await openRoles();
 
     const row = within(roleRow(roles, "lead"));
     expect(row.queryByRole("button")).not.toBeInTheDocument();
-    expect(row.getByText("You cannot grant this role: it needs permissions you do not have (manage_webhooks).")).toBeInTheDocument();
+    expect(
+      row.getByText("You cannot grant this role: it needs permissions you do not have (manage_webhooks)."),
+    ).toBeInTheDocument();
     // moderator also needs manage_accounts and view_audit.
     expect(within(roleRow(roles, "moderator")).queryByRole("button")).not.toBeInTheDocument();
-    expect(within(roleRow(roles, "reporter")).getByRole("button", { name: `Grant ${ltr("reporter")}` })).toBeInTheDocument();
+    expect(
+      within(roleRow(roles, "reporter")).getByRole("button", { name: `Grant ${ltr("reporter")}` }),
+    ).toBeInTheDocument();
   });
 
   test("a change the server refuses for a role above the viewer's stays in the confirmation with the reason", async () => {
@@ -241,11 +281,17 @@ describe("an account's roles", () => {
   test("a failure to load the roles stays in the region with a retry", async () => {
     rolesServer([]);
     let failing = true;
-    server.use(http.get(`${apiBase}/admin/roles`, () => (failing ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json({ items: rolesFixture }))));
+    server.use(
+      http.get(`${apiBase}/admin/roles`, () =>
+        failing ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json({ items: rolesFixture }),
+      ),
+    );
     const { user } = await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}` });
 
     const roles = await screen.findByRole("region", { name: "Roles" });
-    expect(await within(roles).findByRole("heading", { level: 3, name: "The roles could not be loaded" })).toBeInTheDocument();
+    expect(
+      await within(roles).findByRole("heading", { level: 3, name: "The roles could not be loaded" }),
+    ).toBeInTheDocument();
     failing = false;
     await user.click(within(roles).getByRole("button", { name: "Try again" }));
     expect(await within(roles).findByRole("heading", { level: 3, name: "admin" })).toBeInTheDocument();

@@ -59,7 +59,9 @@ export function RouteError({ error: pageError, reset, heading }: RouteErrorProps
     // The queries that failed with this error load again first, in place: until it is known whether the page
     // can load, the error and focus on its button stay, and a retry that fails again is the user's result.
     const failed = queryClient.getQueryCache().findAll({ predicate: (query) => query.state.error === error });
-    await Promise.all(failed.map((query) => queryClient.refetchQueries({ queryKey: query.queryKey, exact: true, type: "all" })));
+    await Promise.all(
+      failed.map((query) => queryClient.refetchQueries({ queryKey: query.queryKey, exact: true, type: "all" })),
+    );
     const again = failed.find((query) => query.state.status === "error");
     if (again !== undefined) {
       setRetryError({ error: again.state.error });
@@ -77,9 +79,12 @@ export function RouteError({ error: pageError, reset, heading }: RouteErrorProps
     document.querySelector<HTMLElement>("main h1")?.focus();
   };
   // A page that failed for the network loads again by itself when the app is back online (web-client/16-look-states-and-wording.md G17).
-  useOnReconnect(() => {
-    void retry();
-  }, kind === "network" && !isRetrying);
+  useOnReconnect(
+    () => {
+      void retry();
+    },
+    kind === "network" && !isRetrying,
+  );
 
   return (
     <>

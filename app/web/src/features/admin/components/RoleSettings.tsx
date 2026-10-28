@@ -6,12 +6,43 @@
 // built-in role, and never one that someone holds). A role above the viewer's says why it has no buttons.
 // Roles are granted on an account's admin page. What a change did stays above the list in a StatusMessage; a refusal
 // stays in the form or the dialog.
-import { type BadgeColor, badgeColors, Button, Checkbox, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Dialog, DialogTrigger, Grid, Heading, Hint, InlineError, Link, Radio, RadioGroup, RoleBadge, SectionHeader, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import {
+  type BadgeColor,
+  badgeColors,
+  Button,
+  Checkbox,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  DialogTrigger,
+  Grid,
+  Heading,
+  Hint,
+  InlineError,
+  Link,
+  Radio,
+  RadioGroup,
+  RoleBadge,
+  SectionHeader,
+  Stack,
+  StatusMessage,
+  Text,
+  TextField,
+} from "@my/ui";
 import { type SubmitEvent, useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { DetailSection, type Permission, RecordList, RequirePermission } from "../../moderation";
-import { adminRoleKey, type AdminRole, badgeLabelLimit, moderatorRoleKey, permissionCategories, roleKeyLimit } from "../api/roles";
+import {
+  adminRoleKey,
+  type AdminRole,
+  badgeLabelLimit,
+  moderatorRoleKey,
+  permissionCategories,
+  roleKeyLimit,
+} from "../api/roles";
 import {
   type BadgeDraft,
   draftOfBadge,
@@ -168,9 +199,7 @@ function RoleFields({ draft, change, error, rights, autoFocus = false }: RoleFie
         autoFocus={autoFocus}
         {...(error?.field === "position" ? { isInvalid: true, errorMessage: error.message } : {})}
       />
-      <Hint id={hintId}>
-        {t("client:admin.roles.permissions.description")}
-      </Hint>
+      <Hint id={hintId}>{t("client:admin.roles.permissions.description")}</Hint>
       {permissionCategories.map(({ category, permissions }) => (
         <PermissionGroup
           key={category}
@@ -185,7 +214,9 @@ function RoleFields({ draft, change, error, rights, autoFocus = false }: RoleFie
       {error?.field === "permissions" && (
         <Stack gap="1" tone="danger" textSize="sm" id={errorId} role="alert">
           <p>{error.message}</p>
-          {error.missing.length > 0 && <p>{t("client:admin.roles.missing_permissions", { permissions: `⁦${error.missing.join(", ")}⁩` })}</p>}
+          {error.missing.length > 0 && (
+            <p>{t("client:admin.roles.missing_permissions", { permissions: `⁦${error.missing.join(", ")}⁩` })}</p>
+          )}
         </Stack>
       )}
       {error?.field === "form" && (
@@ -253,8 +284,12 @@ function RoleList({ rows, rights }: { rows: RoleRow[]; rights: RoleRights }) {
 
 /** The permissions of a role in one area, as a sentence. */
 function permissionNames(role: AdminRole, permissions: readonly Permission[], t: ReturnType<typeof useT>): string {
-  const names = permissions.filter((permission) => role.permissions.includes(permission)).map((permission) => t(permissionLabels[permission]));
-  return names.length === 0 ? t("client:admin.roles.permissions.none") : names.join(t("client:admin.roles.permissions.separator"));
+  const names = permissions
+    .filter((permission) => role.permissions.includes(permission))
+    .map((permission) => t(permissionLabels[permission]));
+  return names.length === 0
+    ? t("client:admin.roles.permissions.none")
+    : names.join(t("client:admin.roles.permissions.separator"));
 }
 
 function RoleItem({ row, rights, actions }: { row: RoleRow; rights: RoleRights; actions: RoleActions }) {
@@ -315,14 +350,29 @@ function EditRole({ role, rights, actions }: { role: AdminRole; rights: RoleRigh
       <Button size="sm" aria-label={t("client:admin.roles.edit_role", { role: key })}>
         {t("client:admin.roles.edit")}
       </Button>
-      <Dialog title={t("client:admin.roles.edit.title", { role: key })} closeLabel={t("client:admin.roles.edit.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.roles.edit.title", { role: key })}
+        closeLabel={t("client:admin.roles.edit.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditRoleForm role={role} rights={rights} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
   );
 }
 
-function EditRoleForm({ role, rights, actions, close }: { role: AdminRole; rights: RoleRights; actions: RoleActions; close: () => void }) {
+function EditRoleForm({
+  role,
+  rights,
+  actions,
+  close,
+}: {
+  role: AdminRole;
+  rights: RoleRights;
+  actions: RoleActions;
+  close: () => void;
+}) {
   const t = useT();
   const [draft, setDraft] = useState<RoleDraft>(() => draftOfRole(role));
   const [isSaving, setIsSaving] = useState(false);
@@ -367,7 +417,12 @@ function EditBadge({ role, actions }: { role: AdminRole; actions: RoleActions })
       <Button size="sm" aria-label={t("client:admin.roles.badge.edit_role", { role: key })}>
         {t("client:admin.roles.badge.edit")}
       </Button>
-      <Dialog title={t("client:admin.roles.badge.edit.title", { role: key })} closeLabel={t("client:admin.roles.edit.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:admin.roles.badge.edit.title", { role: key })}
+        closeLabel={t("client:admin.roles.edit.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditBadgeForm role={role} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
@@ -390,12 +445,16 @@ function EditBadgeForm({ role, actions, close }: { role: AdminRole; actions: Rol
   };
   const sample = draft.label.trim();
   return (
-    <Stack as="form" container gap="4"
+    <Stack
+      as="form"
+      container
+      gap="4"
       onSubmit={(event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         send(draft);
       }}
-      noValidate>
+      noValidate
+    >
       <Hint>{t("client:admin.roles.badge.description")}</Hint>
       <TextField
         label={t("client:admin.roles.badge.label")}
@@ -426,7 +485,9 @@ function EditBadgeForm({ role, actions, close }: { role: AdminRole; actions: Rol
         ))}
       </RadioGroup>
       <Stack gap="1" align="start">
-        <Text size="sm" tone="fg" weight="medium">{t("client:admin.roles.badge.sample")}</Text>
+        <Text size="sm" tone="fg" weight="medium">
+          {t("client:admin.roles.badge.sample")}
+        </Text>
         {sample === "" ? (
           <Hint as="span">{t("client:admin.roles.badge.sample.empty")}</Hint>
         ) : (

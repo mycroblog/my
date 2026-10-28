@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/theme")({
   staticData: { title: "client:admin.theme.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_settings", () => context.queryClient.query({ ...themeQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_settings", () =>
+      context.queryClient.query({ ...themeQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: ThemePage,
   errorComponent: ThemeError,
 });

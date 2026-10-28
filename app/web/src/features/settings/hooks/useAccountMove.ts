@@ -13,7 +13,13 @@ import { useT } from "../../../lib/i18n";
 import { isolate } from "../../profile";
 import { viewerQueryOptions } from "../../session";
 import { confirmationFailure } from "../api/password";
-import { cancelMoveMutation, lookupMoveTarget, type MoveTarget, moveAccountMutation, refreshAfterMove } from "../api/move";
+import {
+  cancelMoveMutation,
+  lookupMoveTarget,
+  type MoveTarget,
+  moveAccountMutation,
+  refreshAfterMove,
+} from "../api/move";
 import { confirmationErrorMessage } from "./passkeyConfirmation";
 import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 import { useHasPassword } from "./usePasswordChange";
@@ -108,7 +114,9 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
       lookup.mutate(value);
     },
     isLookingUp: lookup.isPending,
-    lookupError: lookup.isError ? t("client:account_move.move.lookup_failed", { reason: errorMessage(lookup.error) }) : undefined,
+    lookupError: lookup.isError
+      ? t("client:account_move.move.lookup_failed", { reason: errorMessage(lookup.error) })
+      : undefined,
     target,
     targetHandle,
     hasPassword,
@@ -136,7 +144,9 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
         ? undefined
         : failure === "wrong-password"
           ? t("client:account_move.move.wrong_password")
-          : confirmationErrorMessage(t, failure, move.error, (reason) => t("client:account_move.move.failed", { reason })),
+          : confirmationErrorMessage(t, failure, move.error, (reason) =>
+              t("client:account_move.move.failed", { reason }),
+            ),
   };
 }
 

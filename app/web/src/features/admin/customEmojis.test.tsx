@@ -59,7 +59,9 @@ describe("the custom emoji screen", () => {
     server.use(
       http.post(`${apiBase}/admin/custom_emojis`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateCustomEmojiRequest"];
-        return HttpResponse.json(adminCustomEmojiFixture("e1", sent.shortcode, { category: "Blobs", aliases: ["cat"] }));
+        return HttpResponse.json(
+          adminCustomEmojiFixture("e1", sent.shortcode, { category: "Blobs", aliases: ["cat"] }),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
@@ -78,7 +80,13 @@ describe("the custom emoji screen", () => {
 
     expect(await within(form).findByText(/is registered\./)).toBeInTheDocument();
     expect(purposes).toEqual(["emoji"]);
-    expect(sent).toEqual({ shortcode: "blobcat", media_id: uploadedId, category: "Blobs", aliases: ["cat", "kitty"], visible_in_picker: true });
+    expect(sent).toEqual({
+      shortcode: "blobcat",
+      media_id: uploadedId,
+      category: "Blobs",
+      aliases: ["cat", "kitty"],
+      visible_in_picker: true,
+    });
     expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("");
   });
 
@@ -87,7 +95,13 @@ describe("the custom emoji screen", () => {
     server.use(
       http.post(`${apiBase}/admin/custom_emojis`, () =>
         HttpResponse.json(
-          { type: "/api/v1/problems/invalid-custom-emoji", title: "The custom emoji cannot be saved.", status: 422, detail: "A custom emoji of this server already has this shortcode.", reason: "shortcode_taken" },
+          {
+            type: "/api/v1/problems/invalid-custom-emoji",
+            title: "The custom emoji cannot be saved.",
+            status: 422,
+            detail: "A custom emoji of this server already has this shortcode.",
+            reason: "shortcode_taken",
+          },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
         ),
       ),
@@ -98,14 +112,18 @@ describe("the custom emoji screen", () => {
     await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
     await user.click(within(form).getByRole("button", { name: "Register" }));
 
-    expect(await within(form).findByRole("alert")).toHaveTextContent("Could not register the custom emoji: A custom emoji of this server already has this shortcode.");
+    expect(await within(form).findByRole("alert")).toHaveTextContent(
+      "Could not register the custom emoji: A custom emoji of this server already has this shortcode.",
+    );
     expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("blobcat");
   });
 
   test("changes the settings of an emoji in a dialog", async () => {
     let change: Schemas["UpdateCustomEmojiRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/custom_emojis`, () => HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat")] })),
+      http.get(`${apiBase}/admin/custom_emojis`, () =>
+        HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat")] }),
+      ),
       http.patch(`${apiBase}/admin/custom_emojis/:id`, async ({ request }) => {
         change = (await request.json()) as Schemas["UpdateCustomEmojiRequest"];
         return HttpResponse.json(adminCustomEmojiFixture("e1", "blobcat", { ...change, category: "Blobs" }));
@@ -130,7 +148,11 @@ describe("the custom emoji screen", () => {
   test("deletes an emoji after asking, and moves focus on", async () => {
     let deleted = "";
     server.use(
-      http.get(`${apiBase}/admin/custom_emojis`, () => HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat"), adminCustomEmojiFixture("e2", "blobfox")] })),
+      http.get(`${apiBase}/admin/custom_emojis`, () =>
+        HttpResponse.json({
+          items: [adminCustomEmojiFixture("e1", "blobcat"), adminCustomEmojiFixture("e2", "blobfox")],
+        }),
+      ),
       http.delete(`${apiBase}/admin/custom_emojis/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });
@@ -157,7 +179,11 @@ describe("the custom emoji screen", () => {
   });
 
   test("disables an emoji of another server", async () => {
-    const remote = adminCustomEmojiFixture("e3", "partyparrot", { local: false, domain: "remote.example", uri: "https://remote.example/emojis/1" });
+    const remote = adminCustomEmojiFixture("e3", "partyparrot", {
+      local: false,
+      domain: "remote.example",
+      uri: "https://remote.example/emojis/1",
+    });
     server.use(
       http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
         HttpResponse.json({ items: new URL(request.url).searchParams.get("local") === "false" ? [remote] : [] }),
@@ -172,7 +198,11 @@ describe("the custom emoji screen", () => {
   });
 
   test("copies an emoji of another server under a new shortcode, and keeps a refusal in the dialog", async () => {
-    const remote = adminCustomEmojiFixture("e3", "party-parrot", { local: false, domain: "remote.example", uri: "https://remote.example/emojis/1" });
+    const remote = adminCustomEmojiFixture("e3", "party-parrot", {
+      local: false,
+      domain: "remote.example",
+      uri: "https://remote.example/emojis/1",
+    });
     const sent: { id: string; body: Schemas["CopyCustomEmojiRequest"] }[] = [];
     server.use(
       http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
@@ -183,7 +213,13 @@ describe("the custom emoji screen", () => {
         sent.push({ id: String(params["id"]), body });
         if (sent.length === 1) {
           return HttpResponse.json(
-            { type: "/api/v1/problems/invalid-custom-emoji", title: "The custom emoji cannot be saved.", status: 422, detail: "A custom emoji of this server already has this shortcode.", reason: "shortcode_taken" },
+            {
+              type: "/api/v1/problems/invalid-custom-emoji",
+              title: "The custom emoji cannot be saved.",
+              status: 422,
+              detail: "A custom emoji of this server already has this shortcode.",
+              reason: "shortcode_taken",
+            },
             { status: 422, headers: { "Content-Type": "application/problem+json" } },
           );
         }
@@ -191,14 +227,18 @@ describe("the custom emoji screen", () => {
       }),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis?origin=remote" });
-    await user.click(await screen.findByRole("button", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" }),
+    );
     const dialog = await screen.findByRole("dialog", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" });
     // The remote shortcode breaks the rules of a local one, so a new one is asked for.
     const shortcode = within(dialog).getByRole("textbox", { name: "Shortcode" });
     expect(shortcode).toHaveValue("");
     await user.type(shortcode, "parrot");
     await user.click(within(dialog).getByRole("button", { name: "Copy" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("A custom emoji of this server already has this shortcode.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "A custom emoji of this server already has this shortcode.",
+    );
 
     await user.clear(shortcode);
     await user.type(shortcode, "party_parrot");
@@ -215,7 +255,11 @@ describe("the custom emoji screen", () => {
   });
 
   test("shows a failure to list the emoji as the screen's error", async () => {
-    server.use(http.get(`${apiBase}/admin/custom_emojis`, () => problem(403, "/api/v1/problems/missing-permission", "Forbidden")));
+    server.use(
+      http.get(`${apiBase}/admin/custom_emojis`, () =>
+        problem(403, "/api/v1/problems/missing-permission", "Forbidden"),
+      ),
+    );
     await renderApp({ path: "/admin/custom-emojis" });
 
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();

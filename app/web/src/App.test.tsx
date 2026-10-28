@@ -51,7 +51,9 @@ describe("app shell", () => {
     const { user } = await renderApp({ path: "/local" });
     await screen.findByRole("heading", { level: 1, name: "Local timeline" });
 
-    within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Settings" }).focus();
+    within(screen.getByRole("navigation", { name: "Main" }))
+      .getByRole("link", { name: "Settings" })
+      .focus();
     await user.keyboard("{Enter}");
 
     const heading = await screen.findByRole("heading", { level: 1, name: "Settings" });

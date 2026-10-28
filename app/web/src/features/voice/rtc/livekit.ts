@@ -22,7 +22,11 @@ import type { VoiceConnection, VoiceConnectionOptions, VoiceGrant, VoiceRoster }
 type Sdk = typeof LiveKit;
 
 /** The microphone's processing (ADR-0101 §7), as LiveKit captures it. */
-const audioCapture: LiveKit.AudioCaptureOptions = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+const audioCapture: LiveKit.AudioCaptureOptions = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+};
 
 class LiveKitConnection implements VoiceConnection {
   readonly #options: VoiceConnectionOptions;
@@ -69,7 +73,12 @@ class LiveKitConnection implements VoiceConnection {
       return null;
     }
     if (this.#closed || attempt !== this.#attempt) return null;
-    const room = new sdk.Room({ adaptiveStream: false, dynacast: false, audioCaptureDefaults: audioCapture, stopLocalTrackOnUnpublish: true });
+    const room = new sdk.Room({
+      adaptiveStream: false,
+      dynacast: false,
+      audioCaptureDefaults: audioCapture,
+      stopLocalTrackOnUnpublish: true,
+    });
     room
       .on(sdk.RoomEvent.TrackSubscribed, (track, publication, participant) => {
         if (room !== this.#room || track.kind !== sdk.Track.Kind.Audio) return;
@@ -122,7 +131,11 @@ class LiveKitConnection implements VoiceConnection {
   #reportTalking(): void {
     const speakers = new Set(this.#roster.members.filter((member) => member.speaker).map((member) => member.session));
     const self = this.#options.session;
-    const talking = new Set(this.#activeSpeakers.filter((identity) => (identity === self ? this.#micOn && this.#roster.speaker : speakers.has(identity))));
+    const talking = new Set(
+      this.#activeSpeakers.filter((identity) =>
+        identity === self ? this.#micOn && this.#roster.speaker : speakers.has(identity),
+      ),
+    );
     if (sameSessions(talking, this.#talking)) return;
     this.#talking = talking;
     this.#options.events.onTalking?.(talking);
@@ -156,7 +169,10 @@ class LiveKitConnection implements VoiceConnection {
 
   /** Publishes the microphone once LiveKit lets the session publish it. */
   async #publish(room: LiveKit.Room): Promise<void> {
-    await this.#waiters.wait(() => this.#closed || room.localParticipant.permissions?.canPublish === true, "LiveKit did not let the session publish");
+    await this.#waiters.wait(
+      () => this.#closed || room.localParticipant.permissions?.canPublish === true,
+      "LiveKit did not let the session publish",
+    );
     if (!this.#mayStillSpeak(room)) return;
     await room.localParticipant.setMicrophoneEnabled(true);
   }

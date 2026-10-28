@@ -33,7 +33,8 @@ function prefersReducedMotion(): boolean {
  */
 export function useHomeNewPosts(feedRef: RefObject<HTMLElement | null>, headingId: string): HomeNewPosts {
   const api = useApi();
-  const autoInsert = useQuery({ ...preferencesQueryOptions(api), ...shellQueryReader }).data?.timeline_auto_insert === true;
+  const autoInsert =
+    useQuery({ ...preferencesQueryOptions(api), ...shellQueryReader }).data?.timeline_auto_insert === true;
   const { count: waiting, gap, show } = useNewHomeStatuses();
   const paused = useReaderInFeed(feedRef);
   const [atTop, setAtTop] = useState(true);

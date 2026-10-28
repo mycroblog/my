@@ -68,7 +68,8 @@ export async function problemFromResponse(response: Response): Promise<ProblemEr
   if (isJSON(response.headers.get("Content-Type"))) {
     try {
       const parsed: unknown = JSON.parse(await response.text());
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) doc = parsed as Record<string, unknown>;
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed))
+        doc = parsed as Record<string, unknown>;
     } catch {
       // Not JSON after all: the fallback below.
     }

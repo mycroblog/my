@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { composeRenderProps, ToggleButton as RACToggleButton, type ToggleButtonProps as RACToggleButtonProps } from "react-aria-components";
+import {
+  composeRenderProps,
+  ToggleButton as RACToggleButton,
+  type ToggleButtonProps as RACToggleButtonProps,
+} from "react-aria-components";
 import { tv, type VariantProps } from "tailwind-variants";
 
 const toggleButton = tv({
@@ -32,5 +36,10 @@ export type ToggleButtonProps = RACToggleButtonProps & VariantProps<typeof toggl
  * `isSelected` / `onChange`.
  */
 export function ToggleButton({ tone, outlined, className, ...props }: ToggleButtonProps) {
-  return <RACToggleButton {...props} className={composeRenderProps(className, (className) => toggleButton({ tone, outlined, className }))} />;
+  return (
+    <RACToggleButton
+      {...props}
+      className={composeRenderProps(className, (className) => toggleButton({ tone, outlined, className }))}
+    />
+  );
 }

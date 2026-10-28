@@ -14,7 +14,9 @@ const meta = {
     summaryLang: "en",
     toggleLabel: "Show content",
     onExpandedChange: fn(),
-    children: <PostContent html={serverSanitizedHtml('<p>The butler did it. <a href="#details">Details</a></p>')} lang="en" />,
+    children: (
+      <PostContent html={serverSanitizedHtml('<p>The butler did it. <a href="#details">Details</a></p>')} lang="en" />
+    ),
   },
 } satisfies Meta<typeof ContentWarning>;
 
@@ -57,5 +59,11 @@ export const RightToLeftWarning: Story = {
 
 /** In a right-to-left page the icon, the text and the button swap sides. */
 export const RightToLeftPage: Story = {
-  args: { dir: "rtl", summary: "تحذير: حرق لأحداث الحلقة الأخيرة", summaryLang: "ar", toggleLabel: "عرض المحتوى", defaultExpanded: true },
+  args: {
+    dir: "rtl",
+    summary: "تحذير: حرق لأحداث الحلقة الأخيرة",
+    summaryLang: "ar",
+    toggleLabel: "عرض المحتوى",
+    defaultExpanded: true,
+  },
 };

@@ -11,7 +11,12 @@ const createStatusBody = { text: "hello", visibility: "public" as const };
 describe("requests", () => {
   test("go to the client API with the token, Accept-Language, and the server's origin", async () => {
     const f = fakeFetch(() => json(200, statusPage(["1"])));
-    const api = createClient({ server: `${server}/`, fetch: f.fetch, tokenSource: staticToken("t1"), acceptLanguage: "ja" });
+    const api = createClient({
+      server: `${server}/`,
+      fetch: f.fetch,
+      tokenSource: staticToken("t1"),
+      acceptLanguage: "ja",
+    });
     const { data } = await api.GET("/timelines/home", { params: { query: { limit: 5 } } });
     expect(data?.items).toHaveLength(1);
     const [sent] = f.requests;
@@ -41,7 +46,9 @@ describe("requests", () => {
 
 describe("errors", () => {
   test("an error answer rejects with its problem, extensions included", async () => {
-    const f = fakeFetch(() => problem(422, "/api/v1/problems/media-rejected", { detail: "too large", reason: "size" }, { "Retry-After": "3" }));
+    const f = fakeFetch(() =>
+      problem(422, "/api/v1/problems/media-rejected", { detail: "too large", reason: "size" }, { "Retry-After": "3" }),
+    );
     const api = createClient({ server, fetch: f.fetch });
     const error: unknown = await api.POST("/statuses", { body: createStatusBody }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ProblemError);
@@ -52,11 +59,20 @@ describe("errors", () => {
     expect(p.detail).toBe("too large");
     expect(p.problem["reason"]).toBe("size");
     expect(p.headers.get("Retry-After")).toBe("3");
-    expect(p.message).toBe("mykit: 422 /api/v1/problems/media-rejected: title of /api/v1/problems/media-rejected: too large");
+    expect(p.message).toBe(
+      "mykit: 422 /api/v1/problems/media-rejected: title of /api/v1/problems/media-rejected: too large",
+    );
   });
 
   test("an answer that is no problem document becomes about:blank with its status", async () => {
-    const f = fakeFetch(() => new Response("<html>bad gateway</html>", { status: 502, statusText: "Bad Gateway", headers: { "Content-Type": "text/html" } }));
+    const f = fakeFetch(
+      () =>
+        new Response("<html>bad gateway</html>", {
+          status: 502,
+          statusText: "Bad Gateway",
+          headers: { "Content-Type": "text/html" },
+        }),
+    );
     const api = createClient({ server, fetch: f.fetch });
     const error: unknown = await api.GET("/timelines/home").catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ProblemError);
@@ -84,7 +100,9 @@ describe("errors", () => {
     const aborting = createClient({ server, fetch: (r) => Promise.reject(r.signal.reason as Error) });
     const controller = new AbortController();
     controller.abort();
-    const aborted: unknown = await aborting.GET("/timelines/home", { signal: controller.signal }).catch((e: unknown) => e);
+    const aborted: unknown = await aborting
+      .GET("/timelines/home", { signal: controller.signal })
+      .catch((e: unknown) => e);
     expect(aborted).toBeInstanceOf(DOMException);
     expect((aborted as DOMException).name).toBe("AbortError");
   });
@@ -107,7 +125,11 @@ function countingSource(): TokenSource & { refreshes: string[] } {
 
 describe("refresh after a 401", () => {
   test("refreshes once and sends the request again with the new token and the same body", async () => {
-    const f = fakeFetch((r) => (r.headers.get("Authorization") === "Bearer t2" ? json(200, { id: "s1" }) : problem(401, "/api/v1/problems/invalid-token")));
+    const f = fakeFetch((r) =>
+      r.headers.get("Authorization") === "Bearer t2"
+        ? json(200, { id: "s1" })
+        : problem(401, "/api/v1/problems/invalid-token"),
+    );
     const tokens = countingSource();
     const api = createClient({ server, fetch: f.fetch, tokenSource: tokens });
     const { data } = await api.POST("/statuses", { body: createStatusBody });
@@ -165,7 +187,11 @@ describe("refresh after a 401", () => {
 describe("retries after 429 and 503", () => {
   test("a GET waits for Retry-After and is sent again", async () => {
     let n = 0;
-    const f = fakeFetch(() => (++n === 1 ? problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "2" }) : json(200, statusPage(["1"]))));
+    const f = fakeFetch(() =>
+      ++n === 1
+        ? problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "2" })
+        : json(200, statusPage(["1"])),
+    );
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     const { data } = await api.GET("/timelines/home");
@@ -177,7 +203,9 @@ describe("retries after 429 and 503", () => {
   test("Retry-After as an HTTP date", async () => {
     let n = 0;
     const at = new Date(Date.now() + 5000).toUTCString();
-    const f = fakeFetch(() => (++n === 1 ? problem(503, "about:blank", {}, { "Retry-After": at }) : json(200, statusPage([]))));
+    const f = fakeFetch(() =>
+      ++n === 1 ? problem(503, "about:blank", {}, { "Retry-After": at }) : json(200, statusPage([])),
+    );
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     await api.GET("/timelines/home");
@@ -190,7 +218,9 @@ describe("retries after 429 and 503", () => {
     const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
-    const error = (await api.POST("/accounts/{id}/follow", { params: { path: { id: "a1" } } }).catch((e: unknown) => e)) as ProblemError;
+    const error = (await api
+      .POST("/accounts/{id}/follow", { params: { path: { id: "a1" } } })
+      .catch((e: unknown) => e)) as ProblemError;
     expect(error.status).toBe(429);
     expect(f.requests).toHaveLength(1);
     expect(f.requests[0]?.request.headers.has("Idempotency-Key")).toBe(false);
@@ -199,7 +229,9 @@ describe("retries after 429 and 503", () => {
 
   test("a POST with the automatic Idempotency-Key is retried with the same key", async () => {
     let n = 0;
-    const f = fakeFetch(() => (++n === 1 ? problem(503, "about:blank", {}, { "Retry-After": "1" }) : json(200, { id: "s1" })));
+    const f = fakeFetch(() =>
+      ++n === 1 ? problem(503, "about:blank", {}, { "Retry-After": "1" }) : json(200, { id: "s1" }),
+    );
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     await api.POST("/statuses", { body: createStatusBody });

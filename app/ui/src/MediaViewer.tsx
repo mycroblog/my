@@ -5,7 +5,14 @@
 // buttons sit over it; its description is laid over it on demand, and the buttons and the arrow keys step to the
 // picture before and after it.
 import { useEffect, useEffectEvent, useId, useState } from "react";
-import { Button as AriaButton, Dialog as AriaDialog, Heading, Modal, ModalOverlay, useLocale } from "react-aria-components";
+import {
+  Button as AriaButton,
+  Dialog as AriaDialog,
+  Heading,
+  Modal,
+  ModalOverlay,
+  useLocale,
+} from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
 import { AltTextIcon, CloseIcon, NextIcon, PreviousIcon } from "./Icons";
@@ -34,7 +41,8 @@ const mediaViewer = tv({
     ],
     close: "inset-e-2.5 top-2.5 bg-toast text-toast-fg",
     // Turns light while the description is shown, so that it stands out from the dark ground it sits on.
-    altToggle: "inset-e-2.5 bottom-2.5 bg-toast text-toast-fg data-[expanded=true]:bg-toast-fg data-[expanded=true]:text-toast",
+    altToggle:
+      "inset-e-2.5 bottom-2.5 bg-toast text-toast-fg data-[expanded=true]:bg-toast-fg data-[expanded=true]:text-toast",
     // Over the whole picture; the room at the end is the toggle's.
     alt: "absolute inset-0 z-10 m-0 overflow-y-auto overscroll-contain bg-alt-overlay px-6 py-10 pe-10 text-base/8 wrap-break-word whitespace-pre-line text-toast-fg",
     nav: "flex items-center gap-3",
@@ -207,7 +215,15 @@ function ViewerContent({ items, index, onIndexChange, labels, noDescriptionLabel
 }
 
 /** A modal viewer of pictures at their original size (controlled: `index`, `isOpen`). */
-export function MediaViewer({ items, index, isOpen, onIndexChange, onOpenChange, labels, noDescriptionLabel }: MediaViewerProps) {
+export function MediaViewer({
+  items,
+  index,
+  isOpen,
+  onIndexChange,
+  onOpenChange,
+  labels,
+  noDescriptionLabel,
+}: MediaViewerProps) {
   const styles = mediaViewer();
   return (
     <ModalOverlay isOpen={isOpen} onOpenChange={onOpenChange} isDismissable className={styles.overlay()}>
@@ -216,7 +232,13 @@ export function MediaViewer({ items, index, isOpen, onIndexChange, onOpenChange,
           <Heading slot="title" className="sr-only">
             {labels.title(index + 1, items.length)}
           </Heading>
-          <ViewerContent items={items} index={index} onIndexChange={onIndexChange} labels={labels} noDescriptionLabel={noDescriptionLabel} />
+          <ViewerContent
+            items={items}
+            index={index}
+            onIndexChange={onIndexChange}
+            labels={labels}
+            noDescriptionLabel={noDescriptionLabel}
+          />
         </AriaDialog>
       </Modal>
     </ModalOverlay>

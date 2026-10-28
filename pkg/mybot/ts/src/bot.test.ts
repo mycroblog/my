@@ -61,7 +61,10 @@ describe("receiving", () => {
 
   test("the catch-up stops at the position and at the age limit", async () => {
     const f = new FakeServer();
-    const old: Notification = { ...mention(5, account(1, "alice"), "old"), created_at: new Date(Date.now() - 48 * 3600_000).toISOString() };
+    const old: Notification = {
+      ...mention(5, account(1, "alice"), "old"),
+      created_at: new Date(Date.now() - 48 * 3600_000).toISOString(),
+    };
     f.add(old);
     f.add(mention(6, account(1, "alice"), "before the position"));
     f.add(mention(7, account(1, "alice"), "at the position"));
@@ -139,7 +142,12 @@ test("a reply sends the same Idempotency-Key when its notification is handled ag
     await eventually("the mention processed", () => processed(options.store, n.id));
     await stop();
   }
-  expect(f.posts.map((p) => p.key)).toEqual([`mybot:reply:${n.id}:1`, `mybot:reply:${n.id}:2`, `mybot:reply:${n.id}:1`, `mybot:reply:${n.id}:2`]);
+  expect(f.posts.map((p) => p.key)).toEqual([
+    `mybot:reply:${n.id}:1`,
+    `mybot:reply:${n.id}:2`,
+    `mybot:reply:${n.id}:1`,
+    `mybot:reply:${n.id}:2`,
+  ]);
 });
 
 describe("manners", () => {
@@ -258,7 +266,9 @@ test("missing scopes stop the bot", async () => {
   f.scope = "read:accounts read:notifications follow";
   f.tokens.set("rt1", "rt2");
   const { tokenSource: _, ...options } = f.options({ setBotFlag: true });
-  const error: unknown = await new Bot({ ...options, oauth: { clientId: "client" }, refreshToken: "rt1" }).run().catch((e: unknown) => e);
+  const error: unknown = await new Bot({ ...options, oauth: { clientId: "client" }, refreshToken: "rt1" })
+    .run()
+    .catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ScopeError);
   expect((error as ScopeError).missing).toEqual(["read:statuses", "write:statuses", "write:accounts"]);
 });
@@ -283,7 +293,9 @@ test("routing", async () => {
   bot.onFollow(record("follow"));
   bot.onNotification(record("notification"));
   const stop = start(bot);
-  await eventually("every notification processed", () => processed(options.store, id(10), id(11), id(12), id(13), id(14)));
+  await eventually("every notification processed", () =>
+    processed(options.store, id(10), id(11), id(12), id(13), id(14)),
+  );
   await stop();
   expect(Object.fromEntries(got)).toEqual({
     [id(10)]: "command:ping:now please",

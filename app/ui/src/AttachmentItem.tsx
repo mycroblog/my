@@ -8,7 +8,8 @@ import { Stack } from "./Stack";
 const attachmentItem = tv({
   slots: {
     root: "flex flex-col gap-2 rounded-lg border border-border p-2 @md:flex-row",
-    preview: "relative grid aspect-video w-full shrink-0 place-items-center overflow-hidden rounded-md bg-surface-sunken @md:w-40",
+    preview:
+      "relative grid aspect-video w-full shrink-0 place-items-center overflow-hidden rounded-md bg-surface-sunken @md:w-40",
     image: "size-full object-cover",
     progress: "absolute inset-x-0 bottom-0 flex items-center gap-2 bg-surface-raised px-2 py-1 text-sm",
   },

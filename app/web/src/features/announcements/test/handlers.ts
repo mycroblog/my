@@ -6,7 +6,10 @@ import type { Schemas } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
 
 /** An announcement as GET /announcements answers it, published at 2026-10-21T00:00:00Z and unread, with `overrides`. */
-export function announcementFixture(id: string, overrides: Partial<Schemas["Announcement"]> = {}): Schemas["Announcement"] {
+export function announcementFixture(
+  id: string,
+  overrides: Partial<Schemas["Announcement"]> = {},
+): Schemas["Announcement"] {
   return {
     id,
     content: "<p>Maintenance on Sunday.</p>",

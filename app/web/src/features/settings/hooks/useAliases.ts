@@ -9,7 +9,14 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { isolate } from "../../profile";
-import { type AccountAlias, addAliasMutation, aliasesQueryOptions, cacheAliases, maxAliases, removeAliasMutation } from "../api/aliases";
+import {
+  type AccountAlias,
+  addAliasMutation,
+  aliasesQueryOptions,
+  cacheAliases,
+  maxAliases,
+  removeAliasMutation,
+} from "../api/aliases";
 
 /** What an alias is called in a sentence: its handle, or its address when the instance does not know the handle. */
 export function aliasName(alias: AccountAlias): string {
@@ -82,7 +89,9 @@ export function useAddAliasForm(): AddAliasForm {
       // The alias the user added is the newest, and the list is oldest first.
       const added = list.aliases.at(-1);
       setAcct("");
-      setStatus(added === undefined ? undefined : t("client:account_move.aliases.added", { name: isolate(aliasName(added)) }));
+      setStatus(
+        added === undefined ? undefined : t("client:account_move.aliases.added", { name: isolate(aliasName(added)) }),
+      );
     },
   });
   return {

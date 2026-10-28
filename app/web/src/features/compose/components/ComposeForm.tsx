@@ -60,7 +60,9 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
     <Stack gap="4" container>
       <Stack as="form" aria-labelledby={labelledBy} onSubmit={onSubmit} gap="3">
         {form.replyTo.status !== "none" && <ReplyContext replyTo={form.replyTo} onCancel={form.cancelReply} />}
-        {form.quoteOf.status !== "none" && <ReplyContext kind="quote" replyTo={form.quoteOf} onCancel={form.cancelQuote} />}
+        {form.quoteOf.status !== "none" && (
+          <ReplyContext kind="quote" replyTo={form.quoteOf} onCancel={form.cancelQuote} />
+        )}
         {draft.hasWarning && (
           <CompletionTextField
             completes="emoji"
@@ -104,9 +106,7 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           isDescriptionRequired={form.isDescriptionRequired}
         />
         {form.poll.draft !== null && <PollEditor poll={form.poll} draft={form.poll.draft} />}
-        {attachments.items.length > 0 && (
-          <Hint>{t("client:compose.media.hint", { max: maxAttachments })}</Hint>
-        )}
+        {attachments.items.length > 0 && <Hint>{t("client:compose.media.hint", { max: maxAttachments })}</Hint>}
         {attachments.items.length > 0 && (
           <Checkbox
             isSelected={draft.sensitive}
@@ -121,7 +121,9 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           <Text as="p" size="sm" tone="warning">
             {t("client:compose.mention.unreached", {
               count: form.unreachedMentions.length,
-              accounts: new Intl.ListFormat(locale, { type: "conjunction" }).format(form.unreachedMentions.map((acct) => `@${acct}`)),
+              accounts: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+                form.unreachedMentions.map((acct) => `@${acct}`),
+              ),
             })}
           </Text>
         )}
@@ -141,7 +143,13 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           </Box>
         </Cluster>
       </Stack>
-      <Outbox items={form.outbox} onRetry={form.retry} onEdit={form.editOutbox} canEdit={form.canEditOutbox} onDiscard={form.discard} />
+      <Outbox
+        items={form.outbox}
+        onRetry={form.retry}
+        onEdit={form.editOutbox}
+        canEdit={form.canEditOutbox}
+        onDiscard={form.discard}
+      />
       <Dialog
         role="alertdialog"
         closeLabel={null}

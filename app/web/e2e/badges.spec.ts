@@ -67,7 +67,9 @@ const post: Status = {
 
 async function signedInServer(page: Page) {
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
   await page.route("**/api/v1/notifications/marker", (route) => route.fulfill(json({ unread_count: 0 })));
   await page.route("**/api/v1/accounts/lookup*", (route) => route.fulfill(json(bob)));
@@ -90,7 +92,9 @@ async function signedInServer(page: Page) {
     ),
   );
   await page.route(`**/api/v1/accounts/${bob.id}/statuses*`, (route) =>
-    new URL(route.request().url()).searchParams.get("pinned") === "true" ? route.fulfill(json({ items: [] })) : route.fulfill(json({ items: [post] })),
+    new URL(route.request().url()).searchParams.get("pinned") === "true"
+      ? route.fulfill(json({ items: [] }))
+      : route.fulfill(json({ items: [post] })),
   );
 }
 

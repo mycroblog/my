@@ -5,11 +5,32 @@
 // it with an optional reason for the moderators, after an alert dialog (ConfirmDialog). The participants' records
 // stay only for a while after the room ends, which the section says. Names and descriptions were written by the
 // host, in any language (web-client/README.md Y10).
-import { Box, Button, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Heading, Hint, ReasonField, Stack, StatusMessage, Tag, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Heading,
+  Hint,
+  ReasonField,
+  Stack,
+  StatusMessage,
+  Tag,
+  Text,
+} from "@my/ui";
 import { type ReactNode, useId, useRef } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { speakerLabels, visibilityLabels, voiceEndReasonLabel } from "../../voice";
-import { type ReportDetail, type ReportVoiceRoom as Room, type VoiceRoomBan, type VoiceRoomParticipation, type VoiceRoomRevision, voiceRoomEndReasonLimit } from "../api/reports";
+import {
+  type ReportDetail,
+  type ReportVoiceRoom as Room,
+  type VoiceRoomBan,
+  type VoiceRoomParticipation,
+  type VoiceRoomRevision,
+  voiceRoomEndReasonLimit,
+} from "../api/reports";
 import { type EndVoiceRoom, useEndVoiceRoom } from "../hooks/useEndVoiceRoom";
 import { DateTime, DetailSection, useFocusAfterChange } from "./parts";
 import { AccountByIdLabel, AssigneeName } from "./reportParts";
@@ -58,7 +79,9 @@ function RoomState({ room }: { room: Room }) {
     <>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.report.voice.state")}>
-          <Text weight="semibold">{isOpen ? t("client:admin.report.voice.state.open") : t("client:admin.report.voice.state.ended")}</Text>
+          <Text weight="semibold">
+            {isOpen ? t("client:admin.report.voice.state.open") : t("client:admin.report.voice.state.ended")}
+          </Text>
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.report.voice.opened_at")}>
           <DateTime value={room.opened_at} />
@@ -68,7 +91,9 @@ function RoomState({ room }: { room: Room }) {
             <DescriptionItem term={t("client:admin.report.voice.ended_at")}>
               <DateTime value={room.ended_at} />
             </DescriptionItem>
-            <DescriptionItem term={t("client:admin.report.voice.end_reason")}>{t(voiceEndReasonLabel(room.end_reason))}</DescriptionItem>
+            <DescriptionItem term={t("client:admin.report.voice.end_reason")}>
+              {t(voiceEndReasonLabel(room.end_reason))}
+            </DescriptionItem>
             {room.ended_by_account_id !== undefined && (
               <DescriptionItem term={t("client:admin.report.voice.ended_by")}>
                 <AssigneeName id={room.ended_by_account_id} />
@@ -111,7 +136,9 @@ function EndRoom({ end }: { end: EndVoiceRoom }) {
         cancelLabel={t("client:admin.report.voice.end.cancel")}
         onConfirm={end.confirm}
         isPending={end.isPending}
-        {...(end.error === undefined ? {} : { errorMessage: t("client:admin.report.voice.end.failed", { reason: end.error }) })}
+        {...(end.error === undefined
+          ? {}
+          : { errorMessage: t("client:admin.report.voice.end.failed", { reason: end.error }) })}
       >
         <ReasonField
           label={t("client:admin.report.voice.end.note_field")}
@@ -120,9 +147,13 @@ function EndRoom({ end }: { end: EndVoiceRoom }) {
           onChange={end.changeReason}
           characterLimit={voiceRoomEndReasonLimit}
           formatRemaining={(remaining) =>
-            remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining })
+            remaining < 0
+              ? t("client:admin.account_actions.characters_over", { count: -remaining })
+              : t("client:admin.account_actions.characters_left", { count: remaining })
           }
-          errorMessage={t("client:admin.report.voice.end.note_field.too_long", { max: String(voiceRoomEndReasonLimit) })}
+          errorMessage={t("client:admin.report.voice.end.note_field.too_long", {
+            max: String(voiceRoomEndReasonLimit),
+          })}
         />
       </ConfirmDialog>
     </Stack>
@@ -177,8 +208,12 @@ function Revisions({ revisions, reportedId }: { revisions: readonly VoiceRoomRev
                   </Cluster>
                 )}
               </DescriptionItem>
-              <DescriptionItem term={t("client:admin.report.voice.revision.visibility")}>{t(visibilityLabels[revision.visibility])}</DescriptionItem>
-              <DescriptionItem term={t("client:admin.report.voice.revision.speakers")}>{t(speakerLabels[revision.speakers])}</DescriptionItem>
+              <DescriptionItem term={t("client:admin.report.voice.revision.visibility")}>
+                {t(visibilityLabels[revision.visibility])}
+              </DescriptionItem>
+              <DescriptionItem term={t("client:admin.report.voice.revision.speakers")}>
+                {t(speakerLabels[revision.speakers])}
+              </DescriptionItem>
               <DescriptionItem term={t("client:admin.report.voice.revision.by")}>
                 <AccountByIdLabel id={revision.revised_by_account_id} />
               </DescriptionItem>
@@ -221,11 +256,17 @@ function Participations({ participations }: { participations: readonly VoiceRoom
                   <DateTime value={participation.joined_at} />
                 </DescriptionItem>
                 <DescriptionItem term={t("client:admin.report.voice.left_at")}>
-                  {participation.left_at === undefined ? t("client:admin.report.voice.still_in") : <DateTime value={participation.left_at} />}
+                  {participation.left_at === undefined ? (
+                    t("client:admin.report.voice.still_in")
+                  ) : (
+                    <DateTime value={participation.left_at} />
+                  )}
                 </DescriptionItem>
                 {participation.left_at !== undefined && (
                   <DescriptionItem term={t("client:admin.report.voice.leave_reason")}>
-                    {t(leaveReasons[participation.leave_reason ?? ""] ?? "client:admin.report.voice.leave_reason.other")}
+                    {t(
+                      leaveReasons[participation.leave_reason ?? ""] ?? "client:admin.report.voice.leave_reason.other",
+                    )}
                   </DescriptionItem>
                 )}
               </DescriptionList>

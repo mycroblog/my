@@ -41,7 +41,9 @@ export const WithAside: Story = {
 };
 
 /** Registration needs approval: a note says so under the ways in. */
-export const WithNote: Story = { args: { note: <Hint>Moderators review each new account before it can be used.</Hint> } };
+export const WithNote: Story = {
+  args: { note: <Hint>Moderators review each new account before it can be used.</Hint> },
+};
 
 /** No lead and no registration: only signing in. */
 export const Minimal: Story = {

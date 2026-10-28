@@ -32,7 +32,10 @@ export type LayoutElement =
  * The props of a component that renders the element `E` (`as`): its own props, then the element's attributes and ref
  * except `className` and `style`, so that the look stays in the kit.
  */
-export type PolymorphicProps<E extends ElementType, Own> = Own & { as?: E } & Omit<ComponentPropsWithRef<E>, keyof Own | "as" | "className" | "style">;
+export type PolymorphicProps<E extends ElementType, Own> = Own & { as?: E } & Omit<
+    ComponentPropsWithRef<E>,
+    keyof Own | "as" | "className" | "style"
+  >;
 
 /** Props shared by `Stack` and `Cluster`. */
 export type FlexLayoutProps = {
@@ -260,7 +263,27 @@ export function splitBox<P extends BoxProps>({
   textSize,
   ...rest
 }: P) {
-  return [{ container, width, shrink, grow, fullRow, self, padding, paddingX, paddingY, paddingTop, paddingBottom, marginTop, marginStart, border, background, pushEnd, tone, textSize }, rest] as const;
+  return [
+    {
+      container,
+      width,
+      shrink,
+      grow,
+      fullRow,
+      self,
+      padding,
+      paddingX,
+      paddingY,
+      paddingTop,
+      paddingBottom,
+      marginTop,
+      marginStart,
+      border,
+      background,
+      pushEnd,
+      tone,
+      textSize,
+    },
+    rest,
+  ] as const;
 }
-
-

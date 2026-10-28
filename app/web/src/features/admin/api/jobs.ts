@@ -56,7 +56,10 @@ export function jobAttemptsQueryOptions(api: Api, id: string) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/jobs/{id}/attempts", { id }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/jobs/{id}/attempts", { params: { path: { id }, query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/jobs/{id}/attempts", {
+        params: { path: { id }, query: pageQuery(pageParam) },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -82,8 +85,18 @@ export function retryJobMutation(api: Api) {
  */
 export function cacheRetriedJob(api: Api, queryClient: QueryClient, id: string): Job | undefined {
   const listKey = jobsQueryOptions(api, "dead").queryKey;
-  const job = queryClient.getQueryData(listKey)?.pages.flatMap((page) => page.items).find((item) => item.id === id);
-  queryClient.setQueryData(listKey, (data) => data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })) });
+  const job = queryClient
+    .getQueryData(listKey)
+    ?.pages.flatMap((page) => page.items)
+    .find((item) => item.id === id);
+  queryClient.setQueryData(
+    listKey,
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })),
+      },
+  );
   void queryClient.invalidateQueries({ queryKey: jobQueueQueryOptions(api).queryKey });
   void queryClient.invalidateQueries({
     predicate: (query) => query.queryKey[1] === "/admin/jobs" && !isDeadList(query.queryKey[2]),

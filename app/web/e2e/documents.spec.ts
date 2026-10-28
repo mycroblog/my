@@ -31,7 +31,10 @@ test.describe("the registration page on the server", () => {
 test.describe("the pages of the documents on the server", () => {
   test.use({ baseURL: serverURL });
 
-  test("the terms of service are an information page with a table of contents, without axe violations or scrolling sideways", async ({ page, makeAxeBuilder }) => {
+  test("the terms of service are an information page with a table of contents, without axe violations or scrolling sideways", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.goto("/about/terms");
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
@@ -43,7 +46,9 @@ test.describe("the pages of the documents on the server", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("the privacy policy is one too, and the commerce disclosures, which the server does not have, are a not-found page", async ({ page }) => {
+  test("the privacy policy is one too, and the commerce disclosures, which the server does not have, are a not-found page", async ({
+    page,
+  }) => {
     await page.goto("/about/privacy");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     const missing = await page.goto("/about/commerce");
@@ -56,7 +61,12 @@ test.describe("the pages of the documents on the server", () => {
 });
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** The administrator's account, as GET /accounts/verify_credentials answers, with manage_settings. */
@@ -90,11 +100,19 @@ async function administratorServer(page: Page, origin: string) {
   const locale = test.info().project.use.locale ?? "en";
   let texts = [{ key: "terms", body: "# Accounts\n\nBe kind.", revised_at: "2026-10-12T08:00:00Z" }];
   const saves: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -102,7 +120,8 @@ async function administratorServer(page: Page, origin: string) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "open" }, federation: { mode: "both" },
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         sends_email: true,
@@ -115,7 +134,14 @@ async function administratorServer(page: Page, origin: string) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, {});
     if (key === "GET /admin/instance_texts") return json(route, { items: texts });
@@ -134,7 +160,11 @@ async function administratorServer(page: Page, origin: string) {
 }
 
 test.describe("the terms and policies screen", () => {
-  test("writes the privacy policy with the keyboard, without axe violations or scrolling sideways", async ({ page, baseURL, makeAxeBuilder }) => {
+  test("writes the privacy policy with the keyboard, without axe violations or scrolling sideways", async ({
+    page,
+    baseURL,
+    makeAxeBuilder,
+  }) => {
     const saves = await administratorServer(page, new URL(baseURL ?? "").origin);
     await page.goto("/admin/documents");
     const main = page.getByRole("main");

@@ -3,7 +3,18 @@
 // with the state filter, kept in the URL by the route (web-client/README.md S3), and one page of the servers of the
 // selected filter at a time, previous / next, each with its state, since when, and its failures, linking to
 // the server's page with the reasons.
-import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader } from "@my/ui";
+import {
+  EmptyState,
+  Link,
+  ListToolbar,
+  Select,
+  SelectItem,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+} from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type InstanceFilter, instanceFilters, type InstanceHealth } from "../api/staff";
 import { useInstances } from "../hooks/useInstances";
@@ -73,7 +84,13 @@ function Instances({ filter }: { filter: InstanceFilter }) {
       list={list}
       caption={t(filterLabels[filter])}
       getId={(health) => health.domain}
-      empty={<EmptyState headingLevel={2} heading={t("client:admin.instances.empty")} description={t("client:admin.instances.empty.description")} />}
+      empty={
+        <EmptyState
+          headingLevel={2}
+          heading={t("client:admin.instances.empty")}
+          description={t("client:admin.instances.empty.description")}
+        />
+      }
       head={
         <>
           <TableColumnHeader>{t("client:admin.instances.column.server")}</TableColumnHeader>
@@ -101,9 +118,17 @@ function InstanceRow({ health }: { health: InstanceHealth }) {
       <TableCell>
         <InstanceStateLabel state={health.state} />
       </TableCell>
-      <TableCell>{health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}</TableCell>
+      <TableCell>
+        {health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}
+      </TableCell>
       <TableCell numeric>{t("client:admin.instance.failure_days.value", { count: health.failure_days })}</TableCell>
-      <TableCell>{health.last_failure_day === undefined ? t("client:admin.instance.none") : <Day value={health.last_failure_day} />}</TableCell>
+      <TableCell>
+        {health.last_failure_day === undefined ? (
+          t("client:admin.instance.none")
+        ) : (
+          <Day value={health.last_failure_day} />
+        )}
+      </TableCell>
     </TableRow>
   );
 }

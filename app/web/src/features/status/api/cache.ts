@@ -69,7 +69,8 @@ export function likeSlotOf(status: Status): LikeSlot {
  */
 export function withLikeSlot(status: Status, slot: LikeSlot): Status {
   const current = likeSlotOf(status);
-  const sameReaction = current.kind === "reaction" && slot.kind === "reaction" && current.emoji.name === slot.emoji.name;
+  const sameReaction =
+    current.kind === "reaction" && slot.kind === "reaction" && current.emoji.name === slot.emoji.name;
   if (current.kind === slot.kind && (slot.kind !== "reaction" || sameReaction)) return status;
   let next = withRelation(status, "favourite", slot.kind === "favourite");
   const reactions = next.reactions.flatMap((reaction) => {
@@ -95,7 +96,13 @@ export function withLikeSlotFrom(status: Status, from: Status): Status {
 function isStatus(value: unknown): value is Status {
   if (typeof value !== "object" || value === null) return false;
   const { id, uri, content, account, media_attachments } = value as Record<string, unknown>;
-  return typeof id === "string" && typeof uri === "string" && typeof content === "string" && typeof account === "object" && Array.isArray(media_attachments);
+  return (
+    typeof id === "string" &&
+    typeof uri === "string" &&
+    typeof content === "string" &&
+    typeof account === "object" &&
+    Array.isArray(media_attachments)
+  );
 }
 
 /** Applies `update` to a status and to the post it boosts; a boost of a dropped post is dropped too. */
@@ -147,11 +154,14 @@ function updateList(list: readonly unknown[], update: StatusUpdate): readonly un
 /** Applies `update` to every status in every cached answer of the API. */
 export function updateCachedStatuses(queryClient: QueryClient, update: StatusUpdate): void {
   // The API's keys start with the method (openapi-react-query's `[method, path, init]`); reads are "get".
-  queryClient.setQueriesData({ predicate: (query) => query.queryKey[0] === "get" && query.state.data !== undefined }, (data: unknown) => {
-    const next = updateStatuses(data, update);
-    // undefined leaves the query as it is.
-    return next === data ? undefined : next;
-  });
+  queryClient.setQueriesData(
+    { predicate: (query) => query.queryKey[0] === "get" && query.state.data !== undefined },
+    (data: unknown) => {
+      const next = updateStatuses(data, update);
+      // undefined leaves the query as it is.
+      return next === data ? undefined : next;
+    },
+  );
 }
 
 /** An update that applies `change` to post `id` wherever it is. */

@@ -25,6 +25,13 @@ export function FollowListError({ list, ...props }: FollowListErrorProps) {
   const t = useT();
   const name = isolate(useHandle());
   return (
-    <RouteError {...props} heading={list === "followers" ? t("client:profile.followers.title", { name }) : t("client:profile.following.title", { name })} />
+    <RouteError
+      {...props}
+      heading={
+        list === "followers"
+          ? t("client:profile.followers.title", { name })
+          : t("client:profile.following.title", { name })
+      }
+    />
   );
 }

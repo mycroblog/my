@@ -19,5 +19,12 @@ export function ServerNameLink({ size }: ServerNameLinkProps) {
   const t = useT();
   const instanceName = useInstanceName();
   const atRoot = useLocation({ select: (location) => location.pathname === "/" });
-  return <ServerNameLinkView name={instanceName} description={t("client:shell.nav.landing")} current={atRoot} {...(size !== undefined && { size })} />;
+  return (
+    <ServerNameLinkView
+      name={instanceName}
+      description={t("client:shell.nav.landing")}
+      current={atRoot}
+      {...(size !== undefined && { size })}
+    />
+  );
 }

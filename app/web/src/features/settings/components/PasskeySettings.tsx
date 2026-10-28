@@ -6,7 +6,20 @@
 // cannot create passkeys gets a note instead of the form. What adding did stays on the page in a StatusMessage
 // (role="status"); removing is announced and moves focus to the next row. A wrong password is the password field's
 // error and any other failure an alert next to the form (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).
-import { Box, Button, Cluster, ConfirmDialog, EmptyState, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextField,
+} from "@my/ui";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -48,13 +61,20 @@ function AddPasskeyForm() {
   const form = usePasskeyForm();
   if (!form.isSupported) return <p>{t("client:settings.passkeys.unsupported")}</p>;
   // A user with neither a password nor a passkey signs in again at a linked provider first.
-  if (form.external.isPreferred && form.external.confirmed === undefined) return <ExternalConfirmationChoice confirmation={form.external} />;
+  if (form.external.isPreferred && form.external.confirmed === undefined)
+    return <ExternalConfirmationChoice confirmation={form.external} />;
   return (
     <Stack as="form" onSubmit={form.submit} align="start" gap="4">
       {form.external.isPreferred ? (
         <ExternalConfirmationChoice confirmation={form.external} />
       ) : (
-        <Hint>{t(form.hasPassword ? "client:settings.passkeys.add.description" : "client:settings.passkeys.add.description_passkey")}</Hint>
+        <Hint>
+          {t(
+            form.hasPassword
+              ? "client:settings.passkeys.add.description"
+              : "client:settings.passkeys.add.description_passkey",
+          )}
+        </Hint>
       )}
       <Box width="sm">
         <TextField

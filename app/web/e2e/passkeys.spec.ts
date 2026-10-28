@@ -51,7 +51,9 @@ async function addAuthenticator(page: Page): Promise<{ cdp: CDPSession; authenti
 async function signInToApp(page: Page, user: { email: string; password: string }): Promise<void> {
   await page.goto("/login");
   const authorized = page.waitForRequest(
-    (request) => new URL(request.url()).pathname.startsWith("/api/") && request.headers()["authorization"]?.startsWith("Bearer ") === true,
+    (request) =>
+      new URL(request.url()).pathname.startsWith("/api/") &&
+      request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
   await page.getByRole("main").getByRole("button").click();
   await page.locator('input[type="email"][autocomplete="username"]').fill(user.email);
@@ -60,14 +62,20 @@ async function signInToApp(page: Page, user: { email: string; password: string }
   const authorization = (await authorized).headers()["authorization"] ?? "";
   await expect(page).toHaveURL(`${serverURL}/home`);
   const locale = test.info().project.use.locale ?? "en";
-  const preferences = await page.request.patch(`${serverURL}/api/v1/preferences`, { headers: { Authorization: authorization }, data: { locale } });
+  const preferences = await page.request.patch(`${serverURL}/api/v1/preferences`, {
+    headers: { Authorization: authorization },
+    data: { locale },
+  });
   expect(preferences.ok(), `PATCH /api/v1/preferences: ${String(preferences.status())}`).toBe(true);
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", locale);
 }
 
 test.describe("passkeys", () => {
-  test.skip(!ownsServer, "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
 
   test("adds a passkey in the settings and signs in with it", async ({ page, makeAxeBuilder }) => {
     const username = `e2e_passkey_${randomBytes(4).toString("hex")}`;
@@ -86,7 +94,9 @@ test.describe("passkeys", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
     await form.getByRole("button", { name: message("client", "settings.passkeys.add.submit"), exact: true }).click();
-    await expect(main.getByText(message("client", "settings.passkeys.added", { name: "E2E authenticator" }))).toBeVisible();
+    await expect(
+      main.getByText(message("client", "settings.passkeys.added", { name: "E2E authenticator" })),
+    ).toBeVisible();
     const list = main.getByRole("region", { name: message("client", "settings.passkeys.list.title") });
     await expect(list.getByText("E2E authenticator", { exact: true })).toBeVisible();
     const { credentials } = await cdp.send("WebAuthn.getCredentials", { authenticatorId });
@@ -97,7 +107,9 @@ test.describe("passkeys", () => {
     // Signed out, the server's sign-in page signs in with the passkey alone.
     await page.context().clearCookies();
     await page.goto("/auth/sign_in");
-    const passkeyButton = page.getByRole("main").getByRole("button", { name: message("server", "auth.sign_in.passkey"), exact: true });
+    const passkeyButton = page
+      .getByRole("main")
+      .getByRole("button", { name: message("server", "auth.sign_in.passkey"), exact: true });
     await expect(passkeyButton).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -127,10 +139,14 @@ test.describe("passkeys", () => {
     // The password page removes the password once the passkey confirms it.
     await page.goto("/settings/password");
     const removal = main.getByRole("region", { name: message("client", "settings.password.remove.title") });
-    await removal.getByRole("button", { name: message("client", "settings.password.remove.open"), exact: true }).click();
+    await removal
+      .getByRole("button", { name: message("client", "settings.password.remove.open"), exact: true })
+      .click();
     const dialog = page.getByRole("alertdialog", { name: message("client", "settings.password.remove.confirm.title") });
     await expectNoAxeViolations(makeAxeBuilder);
-    await dialog.getByRole("button", { name: message("client", "settings.password.remove.confirm"), exact: true }).click();
+    await dialog
+      .getByRole("button", { name: message("client", "settings.password.remove.confirm"), exact: true })
+      .click();
     await expect(main.getByText(message("client", "settings.password.removed"))).toBeVisible();
     await expect(main.getByRole("region", { name: message("client", "settings.password.set.title") })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
@@ -142,7 +158,9 @@ test.describe("passkeys", () => {
     await list.getByRole("button").click();
     const confirm = page.getByRole("alertdialog");
     await confirm.getByRole("button", { name: message("client", "settings.passkeys.remove"), exact: true }).click();
-    await expect(confirm.getByText(message("server", "errors.passkey.last_sign_in_method"), { exact: false })).toBeVisible();
+    await expect(
+      confirm.getByText(message("server", "errors.passkey.last_sign_in_method"), { exact: false }),
+    ).toBeVisible();
 
     // Signed out, the password no longer signs in; the passkey does. A failed sign-in counts towards the limit of
     // the address (identity.LoginIPLimit, 5 a minute) that every project shares, which would then turn away the
@@ -155,7 +173,10 @@ test.describe("passkeys", () => {
       await page.locator('main button[type="submit"]').first().click();
       await expect(page.getByText(message("server", "auth.sign_in.failed"))).toBeVisible();
     }
-    await page.getByRole("main").getByRole("button", { name: message("server", "auth.sign_in.passkey"), exact: true }).click();
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: message("server", "auth.sign_in.passkey"), exact: true })
+      .click();
     await expect(page).toHaveURL(`${serverURL}/`);
   });
 });

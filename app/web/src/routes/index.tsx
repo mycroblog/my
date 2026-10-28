@@ -30,9 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
-  return (
-    <Landing heading={<LandingHeading />} />
-  );
+  return <Landing heading={<LandingHeading />} />;
 }
 
 /** The page's heading, which welcomes the reader to the instance by its name. */

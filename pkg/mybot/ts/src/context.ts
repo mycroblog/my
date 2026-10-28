@@ -211,9 +211,11 @@ export class Context {
   /** The logger of the bot, with the event's attributes. */
   get logger(): Logger {
     const { logger } = this[internal].runtime;
-    if (this.notification !== undefined) return withAttributes(logger, { notification: this.notification.id, type: this.notification.type });
+    if (this.notification !== undefined)
+      return withAttributes(logger, { notification: this.notification.id, type: this.notification.type });
     if (this.status !== undefined) return withAttributes(logger, { status: this.status.id });
-    if (this.job !== "") return withAttributes(logger, { job: this.job, scheduledAt: new Date(this.scheduledAt ?? 0).toISOString() });
+    if (this.job !== "")
+      return withAttributes(logger, { job: this.job, scheduledAt: new Date(this.scheduledAt ?? 0).toISOString() });
     return logger;
   }
 
@@ -230,7 +232,8 @@ export class Context {
     const { runtime } = state;
     state.replies++;
     const key = replyIdempotencyKey(state.source, state.replies);
-    const body = this.account !== undefined && this.account.id !== runtime.me.id ? `@${this.account.acct} ${text}` : text;
+    const body =
+      this.account !== undefined && this.account.id !== runtime.me.id ? `@${this.account.acct} ${text}` : text;
     const limited = runtime.replyLimits !== null && this.account !== undefined;
     const at = runtime.now();
     if (limited && !runtime.replies.take(state.sender, at)) throw new ReplyLimitError();
@@ -255,7 +258,11 @@ export class Context {
   async react(emoji: string): Promise<void> {
     if (this.status === undefined) throw new NoStatusError();
     await this.#waitBudget("write");
-    await this.api.PUT("/statuses/{id}/reaction", { params: { path: { id: this.status.id } }, body: { emoji }, signal: this.signal });
+    await this.api.PUT("/statuses/{id}/reaction", {
+      params: { path: { id: this.status.id } },
+      body: { emoji },
+      signal: this.signal,
+    });
   }
 
   /** Favourites status. A second favourite changes nothing. It waits for the send budget. */
@@ -269,7 +276,11 @@ export class Context {
   async follow(): Promise<void> {
     if (this.account === undefined) throw new NoAccountError();
     await this.#waitBudget("write");
-    await this.api.POST("/accounts/{id}/follow", { params: { path: { id: this.account.id } }, body: {}, signal: this.signal });
+    await this.api.POST("/accounts/{id}/follow", {
+      params: { path: { id: this.account.id } },
+      body: {},
+      signal: this.signal,
+    });
   }
 
   /**
@@ -303,7 +314,9 @@ export class Context {
     const { runtime } = state;
     const wait = runtime.budget.reserve(kind, runtime.now(), runtime.maxSendWait);
     if (wait === null) {
-      this.logger.warn("mybot: dropped a write that would wait too long for the send budget", { maxWait: runtime.maxSendWait });
+      this.logger.warn("mybot: dropped a write that would wait too long for the send budget", {
+        maxWait: runtime.maxSendWait,
+      });
       throw new BudgetExceededError();
     }
     if (wait > 0) await runtime.sleep(wait, this.signal);

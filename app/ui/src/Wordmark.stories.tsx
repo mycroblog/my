@@ -76,10 +76,7 @@ export const WithServerName: Story = {
 export const LongServerName: Story = {
   render: () => (
     <div className="w-64">
-      <BrandMark
-        wordmarkName="my"
-        instanceName="The Extraordinarily Long Name of a Community Server for Friends"
-      />
+      <BrandMark wordmarkName="my" instanceName="The Extraordinarily Long Name of a Community Server for Friends" />
     </div>
   ),
   play: async ({ canvas, canvasElement }) => {

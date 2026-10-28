@@ -79,7 +79,12 @@ function appealOf(overrides: Partial<Appeal>): Appeal {
 }
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /**
@@ -91,22 +96,50 @@ const slowListMs = 1500;
 /** Plays the admin API of a signed-in moderator; returns the decisions taken. */
 async function moderatorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
-  let appeals: Appeal[] = [appealOf({}), appealOf({ id: otherAppealId, text: arabicText, submitted_at: "2026-10-16T08:00:00Z" })];
+  let appeals: Appeal[] = [
+    appealOf({}),
+    appealOf({ id: otherAppealId, text: arabicText, submitted_at: "2026-10-16T08:00:00Z" }),
+  ];
   const decisions: string[] = [];
   let slowLists = false;
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === `GET /accounts/${appellant.id}`) return json(route, appellant);
     if (key === "GET /admin/appeals") {
@@ -117,7 +150,9 @@ async function moderatorServer(page: Page) {
     const one = /^GET \/admin\/appeals\/([^/]+)$/.exec(key);
     if (one) {
       const appeal = appeals.find((item) => item.id === one[1]);
-      return appeal === undefined ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404) : json(route, appeal);
+      return appeal === undefined
+        ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404)
+        : json(route, appeal);
     }
     const decide = /^POST \/admin\/appeals\/([^/]+)\/(uphold|overturn)$/.exec(key);
     if (decide) {
@@ -134,11 +169,15 @@ async function moderatorServer(page: Page) {
               decided_at: decidedAt,
               decided_by_account_id: moderator.id,
               ...(body.public_reason === undefined ? {} : { decision_reason: body.public_reason }),
-              action: decision === "overturn" ? { ...appeal.action, state: "lifted", lifted_at: decidedAt } : appeal.action,
+              action:
+                decision === "overturn" ? { ...appeal.action, state: "lifted", lifted_at: decidedAt } : appeal.action,
             },
       );
       slowLists = true;
-      return json(route, appeals.find((appeal) => appeal.id === id));
+      return json(
+        route,
+        appeals.find((appeal) => appeal.id === id),
+      );
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -162,7 +201,10 @@ test.describe("page /moderation/appeals", () => {
 });
 
 test.describe("appeals", () => {
-  test("opens an appeal from the list by keyboard and overturns it after confirming, which lifts its action", async ({ page, makeAxeBuilder }) => {
+  test("opens an appeal from the list by keyboard and overturns it after confirming, which lifts its action", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const decisions = await moderatorServer(page);
     await page.goto("/moderation/appeals");
     const main = page.getByRole("main");
