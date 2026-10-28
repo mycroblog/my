@@ -36,7 +36,7 @@ const supporterBadgeId = "0192f0c4-7a8e-7000-8000-0000000000b1";
 const bob = { ...viewer, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob@remote.example", display_name: "Bob" };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
 }
 
 /**
@@ -113,6 +113,8 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
   };
   const changes: unknown[] = [];
   await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
+  // The provider's sign-in page; the test sends the browser back from it.
+  await page.route("**/auth/external/*/start*", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Lab ID</title>" }));
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
@@ -224,9 +226,10 @@ async function signedInServer(page: Page, locale: string, { permissions = [], se
       case "POST /linked_identities": {
         const body = request.postDataJSON() as { provider_id: string; password?: string; return_to?: string };
         changes.push({ link: body });
-        // The provider's round trip: back to the page with the account linked.
-        const back = new URL(`${body.return_to ?? "/settings/linked-accounts"}#linked=${body.provider_id}&provider=${body.provider_id}`, request.url());
-        return json(route, { start_url: back.href, expires_at: "2026-10-21T09:40:00Z" });
+        // The start of the provider's round trip, at the provider's sign-in page that the route above plays.
+        const start = new URL(`/auth/external/${body.provider_id}/start`, request.url());
+        start.searchParams.set("return_to", body.return_to ?? "/settings/linked-accounts");
+        return json(route, { start_url: start.href, expires_at: "2026-10-21T09:40:00Z" });
       }
       case `DELETE /linked_identities/${linkedIdentities.items[0]?.id ?? ""}`:
         return json(route, { type: "/api/v1/problems/last-sign-in-method", title: "This is your last way to sign in.", status: 409 }, 409);
@@ -321,6 +324,9 @@ test("linking an account confirms with the password and comes back linked; unlin
   await dialog.locator('input[type="password"][autocomplete="current-password"]').fill("correct horse");
   await expectNoAxeViolations(makeAxeBuilder);
   await dialog.getByRole("button", { name: message("settings.linked_accounts.link.continue"), exact: true }).click();
+  // The provider sends the browser back with the account linked, and the page opens again with the outcome.
+  await page.waitForURL(/\/auth\/external\/0192f0c4-7a8e-7000-8000-000000000dd2\/start\?return_to=%2Fsettings%2Flinked-accounts$/);
+  await page.goto("/settings/linked-accounts#linked=0192f0c4-7a8e-7000-8000-000000000dd2&provider=0192f0c4-7a8e-7000-8000-000000000dd2");
   await expect(main.getByRole("status")).toHaveText(message("settings.linked_accounts.linked").replace("{provider}", "Lab ID"));
   // The outcome leaves the address, so that a reload does not show it again.
   await expect(page).toHaveURL(/\/settings\/linked-accounts$/);
