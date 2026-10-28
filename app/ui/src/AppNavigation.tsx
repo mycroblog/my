@@ -34,12 +34,12 @@ const appNav = tv({
       side: {
         base: [
           "fixed inset-x-0 bottom-0 border-t border-border pb-[env(safe-area-inset-bottom)]",
-          "md:sticky md:top-0 md:bottom-auto md:flex md:h-svh md:flex-col md:overflow-y-auto md:border-t-0 md:border-e md:bg-surface md:px-0 md:pb-0 lg:w-60",
+          "md:sticky md:top-under-bar md:bottom-auto md:flex md:h-svh-under-bar md:flex-col md:overflow-y-auto md:border-t-0 md:border-e md:bg-surface md:px-0 md:pb-0 lg:w-60",
         ],
         list: "md:flex-col md:gap-1 md:p-2",
       },
       top: {
-        base: "sticky top-0 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-2",
+        base: "sticky top-under-bar flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-2",
         header: "mx-0 block p-0",
         list: "flex-wrap items-center gap-1",
       },

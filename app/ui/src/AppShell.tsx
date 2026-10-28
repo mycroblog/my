@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page of the app (ADR-0026, web-client/09-app-shell.md §9). Mobile first (D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column. Heights use svh (D5) and
-// every edge that touches the screen adds its safe-area inset. It answers to the viewport, not to a container: the
+// every edge that touches the screen adds its safe-area inset. The offline bar before the shell (OfflineBanner) shares
+// the screen with it: the shell's heights are the screen's under the bar and what sticks to the top starts under it
+// (the *-under-bar utilities of theme.css), so that a short page does not scroll by the bar's height. It answers to the viewport, not to a container: the
 // shell is the one place where viewport breakpoints belong (D2), since what it lays out is the screen itself (the tab
 // bar is fixed to the screen's bottom edge, the rail and the third column are as tall as the screen). Its stories set
 // the story's viewport instead of the frame's width (storyViewports.ts).
@@ -12,7 +14,9 @@ import { Link } from "./Link";
 
 const appShell = tv({
   slots: {
-    base: ["min-h-svh px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]"],
+    base: [
+      "min-h-svh-under-bar px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]",
+    ],
     skipLink:
       "sr-only z-20 rounded-md bg-surface-raised px-3 py-2 shadow-md focus:not-sr-only focus:fixed focus:inset-s-2 focus:top-2",
     // The end padding keeps the last item of a list clear of what floats over it (web-client/16-look-states-and-wording.md G4): below md the tab
@@ -25,7 +29,7 @@ const appShell = tv({
       "data-compose-fab:pb-[calc(9rem+env(safe-area-inset-bottom))] data-compose-fab:short:pb-[calc(7rem+env(safe-area-inset-bottom))]",
       "data-compose-fab:md:pb-[calc(5.5rem+env(safe-area-inset-bottom))] data-compose-fab:xl:pb-6",
     ],
-    aside: "sticky top-0 flex h-svh flex-col gap-6 overflow-y-auto border-s border-border p-6",
+    aside: "sticky top-under-bar flex h-svh-under-bar flex-col gap-6 overflow-y-auto border-s border-border p-6",
     floating: [
       "fixed inset-e-[max(1rem,env(safe-area-inset-right))] bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10",
       "short:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-[max(1.5rem,env(safe-area-inset-bottom))]",
@@ -75,7 +79,8 @@ export type AppShellProps = {
 
 /**
  * The app's frame: the skip link, the navigation, `main` and the third column or the floating slot. Render the
- * connection bar (`OfflineBanner`) before it, since it pads for the top safe-area inset itself.
+ * connection bar (`OfflineBanner`) before it, since it pads for the top safe-area inset itself; the shell takes the
+ * screen's height under the bar.
  */
 export function AppShell({
   navigation,

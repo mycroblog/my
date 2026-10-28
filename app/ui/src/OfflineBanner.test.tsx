@@ -36,4 +36,12 @@ describe("OfflineBanner", () => {
     // After the message in the document's order.
     expect(status.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it("writes its height to --offline-bar-block-size while it is mounted, for the shell's heights", () => {
+    const { unmount } = render(<OfflineBanner isOffline>You're offline.</OfflineBanner>);
+    // jsdom lays nothing out, so the height is 0; the story tests check the layout in a browser.
+    expect(document.documentElement.style.getPropertyValue("--offline-bar-block-size")).toBe("0px");
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--offline-bar-block-size")).toBe("");
+  });
 });

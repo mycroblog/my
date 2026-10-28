@@ -13,14 +13,14 @@ import { Link } from "./Link";
 
 const adminShell = tv({
   slots: {
-    base: "min-h-svh px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] md:grid md:grid-cols-[15rem_minmax(0,1fr)]",
+    base: "min-h-svh-under-bar px-[max(env(safe-area-inset-left),env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] md:grid md:grid-cols-[15rem_minmax(0,1fr)]",
     skipLink:
       "sr-only z-20 rounded-md bg-surface-raised px-3 py-2 shadow-md focus:not-sr-only focus:fixed focus:inset-s-2 focus:top-2",
     // The menu beside the page (from md): sticky, as tall as the screen, on the raised surface.
-    side: "hidden border-e border-border bg-surface-raised md:sticky md:top-0 md:block md:h-svh md:overflow-y-auto",
+    side: "hidden border-e border-border bg-surface-raised md:sticky md:top-under-bar md:block md:h-svh-under-bar md:overflow-y-auto",
     // Below md: the bar with the menu button and the name of the mode.
     topBar:
-      "sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-border bg-surface-raised px-3 md:hidden",
+      "sticky top-under-bar z-10 flex min-h-14 items-center gap-2 border-b border-border bg-surface-raised px-3 md:hidden",
     topTitle: "min-w-0 truncate text-base font-extrabold",
     main: "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom))] md:px-8",
     menu: "flex flex-col gap-1 p-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",

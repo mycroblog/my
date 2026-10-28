@@ -16,7 +16,7 @@ import {
   AppNavMenuSection,
   type AppNavBadge,
 } from "./AppNavigation";
-import { AppShell, AsidePanel, ShellDock } from "./AppShell";
+import { AppShell, type AppShellProps, AsidePanel, ShellDock } from "./AppShell";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { CallBar } from "./CallBar";
@@ -34,6 +34,7 @@ import {
   SettingsIcon,
 } from "./Icons";
 import { Link } from "./Link";
+import { OfflineBanner } from "./OfflineBanner";
 import { PageHeading } from "./PageHeading";
 import { ServerNameLink } from "./ServerNameLink";
 import { atViewport, shellParameters } from "./storyViewports";
@@ -417,4 +418,95 @@ export const SignedOutTablet: Story = {
 export const SignedOutPhone: Story = {
   globals: atViewport("phone"),
   args: { navigation: <SignedOutNav />, navigationPlacement: "top" },
+};
+
+/** The app's offline bar before the shell, as the app's layout renders it. */
+function ShellWithOfflineBar(props: AppShellProps) {
+  return (
+    <>
+      <OfflineBanner isOffline>You're offline. Posts you send are kept and sent when you're back online.</OfflineBanner>
+      <AppShell {...props} />
+    </>
+  );
+}
+
+/**
+ * The offline bar and the shell share the screen's height: a page shorter than the screen does not scroll, and each
+ * column that sticks (the rail, the third column, the signed-out top bar) starts under the bar; the rail and the third
+ * column end at the screen's bottom edge.
+ */
+async function expectShellFitsUnderBar(bar: HTMLElement, columns: HTMLElement[], tallColumns: HTMLElement[]) {
+  const root = document.documentElement;
+  await waitFor(() => expect(root.scrollHeight).toBeLessThanOrEqual(root.clientHeight));
+  const barBottom = bar.getBoundingClientRect().bottom;
+  await expect(barBottom).toBeGreaterThan(0);
+  for (const column of columns) {
+    await expect(column.getBoundingClientRect().top).toBeGreaterThanOrEqual(barBottom - 0.5);
+  }
+  for (const column of tallColumns) {
+    await expect(column.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0);
+  }
+}
+
+/** The offline bar and the bar's region, the parent of its live region. */
+function offlineBar(canvas: { getByRole: (role: "status") => HTMLElement }) {
+  const region = canvas.getByRole("status").parentElement;
+  if (region === null) throw new Error("no offline bar");
+  return region;
+}
+
+/** Offline on a phone: the bar on the top edge, the tab bar on the bottom edge, and nothing to scroll. */
+export const OfflinePhone: Story = {
+  globals: atViewport("phone"),
+  render: (args) => <ShellWithOfflineBar {...args} />,
+  play: async ({ canvas }) => {
+    await expectShellFitsUnderBar(offlineBar(canvas), [], []);
+  },
+};
+
+/** Offline on a tablet: the rail starts under the bar and ends at the bottom edge. */
+export const OfflineTablet: Story = {
+  globals: atViewport("tablet"),
+  render: (args) => <ShellWithOfflineBar {...args} />,
+  play: async ({ canvas }) => {
+    const rail = canvas.getByRole("navigation", { name: "Main" });
+    await expectShellFitsUnderBar(offlineBar(canvas), [rail], [rail]);
+  },
+};
+
+/** Offline on a desktop: the rail and the third column start under the bar and end at the bottom edge. */
+export const OfflineDesktop: Story = {
+  globals: atViewport("desktop"),
+  args: { aside },
+  render: (args) => <ShellWithOfflineBar {...args} />,
+  play: async ({ canvas }) => {
+    const rail = canvas.getByRole("navigation", { name: "Main" });
+    const column = canvas.getByRole("complementary", { name: "About this server" }).parentElement;
+    if (column === null) throw new Error("no third column");
+    await expectShellFitsUnderBar(offlineBar(canvas), [rail, column], [rail, column]);
+  },
+};
+
+/** Offline and signed out: the top bar sticks under the offline bar, not behind it. */
+export const OfflineSignedOutTablet: Story = {
+  globals: atViewport("tablet"),
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top" },
+  render: (args) => <ShellWithOfflineBar {...args} />,
+  play: async ({ canvas }) => {
+    await expectShellFitsUnderBar(offlineBar(canvas), [canvas.getByRole("navigation", { name: "Main" })], []);
+  },
+};
+
+/**
+ * Offline on a short screen (320 × 225 at 400% zoom): the bar does not stick but scrolls away with the page, so that
+ * what is fixed (the tab bar) stays within half the screen's height.
+ */
+export const OfflineShortScreen: Story = {
+  globals: atViewport("zoomed"),
+  render: (args) => <ShellWithOfflineBar {...args} />,
+  play: async ({ canvas }) => {
+    await expect(getComputedStyle(offlineBar(canvas)).position).toBe("static");
+    const nav = canvas.getByRole("navigation", { name: "Main" });
+    await expect(nav.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight / 2);
+  },
 };

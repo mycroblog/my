@@ -356,6 +356,24 @@
    the other elements fixed to the bottom edge that must stand clear of it (web-client/16-look-states-and-wording.md G4). */
 @custom-variant with-compose-fab (:root:has([data-compose-fab]) &);
 
+/* The screen under the offline bar, for the shell (AppShell, AppNavigation, AdminShell): the bar sticks to the top edge
+   before the shell and writes its height to --offline-bar-block-size (0 while online, unset where there is no bar),
+   so the shell's heights that are the screen's take it off, and what sticks to the top starts under it; the bar and
+   the shell share the screen instead of adding up to more than it. On a short screen the bar does not stick but
+   scrolls away (OfflineBanner), so what sticks there sticks to the top edge itself. */
+@utility min-h-svh-under-bar {
+  min-block-size: calc(100svh - var(--offline-bar-block-size, 0px));
+}
+@utility h-svh-under-bar {
+  block-size: calc(100svh - var(--offline-bar-block-size, 0px));
+}
+@utility top-under-bar {
+  inset-block-start: var(--offline-bar-block-size, 0px);
+  @media (width < 48rem) and (height <= 32rem) {
+    inset-block-start: 0;
+  }
+}
+
 /* A visible focus indicator. Use it as `focus-visible:focus-ring` (or `data-focus-visible:focus-ring`
    on React Aria Components); an outline survives forced-colors mode, unlike a box-shadow. */
 @utility focus-ring {
