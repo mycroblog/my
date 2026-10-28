@@ -16,6 +16,7 @@ import {
   localeDir,
   openFromNavigation,
   test,
+  newPostButton,
 } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
@@ -98,13 +99,16 @@ async function slowDown(page: Page): Promise<void> {
   });
 }
 
-/** Posts `text` from the new-post sheet, opened by the navigation's button, and waits until it is done. */
-async function post(page: Page, text: string): Promise<void> {
-  await page.getByRole("button", { name: message("compose.open") }).click();
+/**
+ * Posts `text` from the new-post sheet, opened by the navigation's button, and waits until it is done: until the
+ * toast says `notice` (`compose.posted.first` after the account's first post, `compose.posted` after the others).
+ */
+async function post(page: Page, text: string, notice = "compose.posted"): Promise<void> {
+  await newPostButton(page, message("compose.open")).click();
   const form = page.getByRole("form", { name: message("compose.title") });
   await form.getByRole("textbox", { name: message("compose.text.label") }).fill(text);
   // The toast of an earlier post would pass for this one's: it goes after 5 s, unless the pointer is over it.
-  const posted = page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted"));
+  const posted = page.getByRole("region", { name: message("shell.toast.region") }).getByText(message(notice));
   await page.mouse.move(0, 0);
   await expect(posted).toHaveCount(0, { timeout: 15_000 });
   await form.getByRole("button", { name: message("compose.submit") }).click();
@@ -142,7 +146,7 @@ test("a new post is on the profile from the moment it opens again", async ({ pag
 
   // The profile has a post, and its list is cached.
   const first = `first ${username}`;
-  await post(page, first);
+  await post(page, first, "compose.posted.first");
   await openFromNavigation(page, "/profile", touch);
   await expect(pageHeading(page)).toHaveText(username);
   await expect(page.getByRole("feed").getByRole("article").filter({ hasText: first })).toBeVisible();

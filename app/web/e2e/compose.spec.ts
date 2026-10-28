@@ -7,7 +7,7 @@
 // project's catalog, so the spec finds the same elements in every locale.
 import type { Page, Route } from "@playwright/test";
 import { createIntl } from "react-intl";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { expect, expectNoAxeViolations, expectNoHorizontalScroll, newPostButton, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The client message `key` in the project's locale, with its `{name}` arguments replaced. */
@@ -207,7 +207,7 @@ async function serveApi(page: Page): Promise<Posted[]> {
 
 /** Opens the form from the navigation's button (the tab bar's or the rail's) and returns the form. */
 async function openForm(page: Page, hasTouch: boolean) {
-  const open = page.getByRole("button", { name: message("compose.open") });
+  const open = newPostButton(page, message("compose.open"));
   if (hasTouch) await open.tap();
   else await open.click();
   await expect(page.getByRole("dialog", { name: message("compose.title") })).toBeVisible();
@@ -309,6 +309,9 @@ test.describe("the new-post form", () => {
     hasTouch,
   }) => {
     await serveApi(page);
+    // Without motion the sheet does not fade in (motion-safe:), so axe never samples its text against a background
+    // still in the middle of its transition, which it can under load.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const form = await openForm(page, hasTouch);
     const text = form.getByRole("textbox", { name: message("compose.text.label") });
@@ -536,7 +539,7 @@ test.describe("the floating new-post button (web-client/16-look-states-and-wordi
 
   test("leaves the actions of the timeline's last post uncovered at the end of the page", async ({ page }) => {
     await page.goto("/home");
-    const fab = page.getByRole("button", { name: message("compose.open") });
+    const fab = newPostButton(page, message("compose.open"));
     await expect(fab).toMatchAriaSnapshot(`- button "${message("compose.open")}"`);
     const last = page.getByRole("article").last();
     await expect(last).toBeVisible();
@@ -559,7 +562,7 @@ test.describe("the floating new-post button (web-client/16-look-states-and-wordi
   test("and the tab bar take at most half of a 320 × 225 viewport (400% zoom)", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 225 });
     await page.goto("/home");
-    const fab = page.getByRole("button", { name: message("compose.open") });
+    const fab = newPostButton(page, message("compose.open"));
     await expect(fab).toBeVisible();
     await expectNoHorizontalScroll(page);
 
@@ -575,7 +578,7 @@ test.describe("the floating new-post button (web-client/16-look-states-and-wordi
   }) => {
     await page.setViewportSize({ width: 320, height: 225 });
     await page.goto("/home");
-    const fab = page.getByRole("button", { name: message("compose.open") });
+    const fab = newPostButton(page, message("compose.open"));
     await expect(page.getByRole("article").last()).toBeVisible();
     await context.setOffline(true);
     const bar = page.getByRole("status").filter({ hasText: message("shell.offline") });
@@ -600,7 +603,7 @@ test.describe("the floating new-post button (web-client/16-look-states-and-wordi
 
   test("gets focus back when the sheet it opened from the keyboard closes", async ({ page }) => {
     await page.goto("/home");
-    const fab = page.getByRole("button", { name: message("compose.open") });
+    const fab = newPostButton(page, message("compose.open"));
     await fab.focus();
     await page.keyboard.press("Enter");
     const sheet = page.getByRole("dialog", { name: message("compose.title") });
@@ -616,7 +619,7 @@ test.describe("the floating new-post button (web-client/16-look-states-and-wordi
     test(`is not on ${path}, which has no feed`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByRole("button", { name: message("compose.open") })).toHaveCount(0);
+      await expect(newPostButton(page, message("compose.open"))).toHaveCount(0);
     });
   }
 });
@@ -635,7 +638,7 @@ test.describe("the rail's new-post button", () => {
           .getByRole("button", { name: message("compose.open") }),
       ).toBeVisible();
     }
-    await page.getByRole("button", { name: message("compose.open") }).click();
+    await newPostButton(page, message("compose.open")).click();
     await expect(page.getByRole("dialog", { name: message("compose.title") })).toBeVisible();
   });
 });

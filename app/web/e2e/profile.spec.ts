@@ -16,6 +16,7 @@ import {
   servedImage,
   test,
 } from "./fixtures";
+import { readCatalog } from "./catalog.ts";
 
 type Account = components["schemas"]["Account"];
 type Relationship = components["schemas"]["Relationship"];
@@ -165,13 +166,26 @@ const profile = `/@${bob.acct}`;
 // or the confirmation in the middle of changing its colors or fading in, which it can under load.
 test.use({ reducedMotion: "reduce" });
 
+/** The client message `key` in the project's locale. */
+function message(key: string): string {
+  const locale = test.info().project.use.locale ?? "en";
+  const text = readCatalog(locale)[key]?.defaultMessage;
+  if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
+  return text;
+}
+
 /**
- * The relationship buttons: the follow button, then the menu button. They are the only buttons of the
- * profile's header and appear once the relationship has loaded; until then the first buttons of the main
- * landmark are the actions of the posts below, so a search of the whole landmark could find a post's.
+ * The relationship buttons: the follow button, then the menu button. They are the buttons of the profile's header
+ * besides the back button before the heading, and appear once the relationship has loaded; until then the first
+ * buttons of the main landmark are the actions of the posts below, so a search of the whole landmark could find a post's.
  */
 function relationshipButtons(page: Page) {
-  return page.getByRole("main").locator("header").first().getByRole("button");
+  return page
+    .getByRole("main")
+    .locator("header")
+    .first()
+    .getByRole("button")
+    .and(page.locator(`:not([aria-label="${message("shell.back")}"])`));
 }
 
 test.describe("a profile", () => {
@@ -206,6 +220,7 @@ test.describe("a profile", () => {
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - button
       - button
+      - button "${message("shell.back")}"
       - heading /Bartholomew/ [level=1]
       - paragraph: "@bartholomew_montgomery"
       - list:

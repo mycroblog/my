@@ -257,6 +257,15 @@ export async function openFromNavigation(page: Page, path: string, hasTouch: boo
 }
 
 /**
+ * The new-post button named `name` (`compose.open`) that the shell keeps outside `main`: the rail's button from md,
+ * the floating button below md. A button of the page with the same words, such as the first steps' "Write a post" on
+ * a new user's home (web-client/screens/home-first-run.md), is not it.
+ */
+export function newPostButton(page: Page, name: string): Locator {
+  return page.getByRole("button", { name }).and(page.locator(":not(main *)"));
+}
+
+/**
  * Asserts that the header of every post card in `feed` (its author and time) takes at most two lines: the
  * display name and the time, and the handle under them on a narrow card (web-client/16-look-states-and-wording.md G7). A line is the
  * line height of the display name, the header's largest text; a pixel of slack covers fractional layout.
