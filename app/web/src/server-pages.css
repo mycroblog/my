@@ -179,6 +179,21 @@
     @apply flex flex-col gap-1 rounded-md bg-surface-sunken px-4 py-3;
   }
 
+  /* An action's name and its state's badge: the shape of the app's StatusBadge (the account status page says the
+     same in the same order, web-client/screens/account-status.md). */
+  .action-title {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center rounded-full bg-surface-raised px-2 py-0.5 text-xs font-semibold text-fg wrap-anywhere;
+    @apply forced-colors:border forced-colors:border-[CanvasText];
+  }
+
+  .status-badge-warning {
+    @apply bg-warning-bg text-warning;
+  }
+
   /* An action's appeal, or the form that appeals it, under the action. */
   .appeal,
   .appeal-form {

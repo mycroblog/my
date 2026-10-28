@@ -1041,6 +1041,13 @@ func (l *Localizer) ServerAuthStatusPageLink() string {
 	return l.format("server:auth.status_page.link", nil)
 }
 
+// ServerAuthStatusActionActive formats "server:auth.status.action_active". Badge next to a moderation action on the user's account that is in effect, on the status page of a signed-in user whose account is restricted. The account status page of the app says the same.
+//
+//	en: In effect
+func (l *Localizer) ServerAuthStatusActionActive() string {
+	return l.format("server:auth.status.action_active", nil)
+}
+
 // ServerAuthStatusActionDeletesIn formats "server:auth.status.action_deletes_in". When a ban deletes the user's account, in place of its end, on the page of a signed-in user whose account is restricted. {days} is the time left, rounded up to whole days.
 //
 //	en: {days, plural, one {Your account will be deleted in # day} other {Your account will be deleted in # days}}
@@ -1120,9 +1127,16 @@ func (l *Localizer) ServerAuthStatusAppealState(state string) string {
 	return l.format("server:auth.status.appeal_state", map[string]any{"state": state})
 }
 
-// ServerAuthStatusAppealSubmit formats "server:auth.status.appeal_submit". Button that sends the user's appeal of a moderation action on their account.
+// ServerAuthStatusAppealStateLabel formats "server:auth.status.appeal_state_label". Badge with where the user's appeal of a moderation action stands, on the status page. {state} is pending, upheld (the action stays), or overturned (the action is lifted). The account status page of the app uses the same words.
 //
-//	en: Send the appeal
+//	en: {state, select, pending {Under review} upheld {Action kept} overturned {Action lifted} other {Appealed}}
+func (l *Localizer) ServerAuthStatusAppealStateLabel(state string) string {
+	return l.format("server:auth.status.appeal_state_label", map[string]any{"state": state})
+}
+
+// ServerAuthStatusAppealSubmit formats "server:auth.status.appeal_submit". Button that sends the user's appeal of a moderation action on their account. The account status page of the app says the same.
+//
+//	en: Send appeal
 func (l *Localizer) ServerAuthStatusAppealSubmit() string {
 	return l.format("server:auth.status.appeal_submit", nil)
 }

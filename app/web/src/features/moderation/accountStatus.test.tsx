@@ -136,7 +136,11 @@ describe("the account status", () => {
     expect(suspended.getByText("Oct 16, 2026, 9:30 AM")).toHaveAttribute("dateTime", "2026-10-16T09:30:00Z");
     expect(suspended.getByText("Nov 15, 2026, 9:30 AM")).toBeInTheDocument();
     expect(suspended.getByText("Repeated spam in replies.")).toHaveAttribute("dir", "auto");
-    expect(suspended.getByText("You can appeal this action until Apr 14, 2027, 9:30 AM.")).toBeInTheDocument();
+    // How long it lasts and how long it can be appealed, in the words of the server's status page; the days count from now.
+    expect(suspended.getByText(/^Ends in \d+ days?$/)).toBeInTheDocument();
+    expect(
+      suspended.getByText(/^You can appeal once, within \d+ days? \(until Apr 14, 2027, 9:30 AM\)\.$/),
+    ).toBeInTheDocument();
     expect(suspended.getByRole("button", { name: "Appeal the action of Oct 16, 2026, 9:30 AM" })).toBeInTheDocument();
 
     // An action on posts shows the posts, and says which one is gone; its window to appeal has closed.

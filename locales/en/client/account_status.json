@@ -63,10 +63,6 @@
     "defaultMessage": "You appealed “{kind}”. The moderators will tell you their decision in a notification.",
     "description": "Status shown after the user appealed a moderation action. {kind} is what the action does, as the server names it."
   },
-  "account_status.appeal.state": {
-    "defaultMessage": "State",
-    "description": "Term of the user's appeal of a moderation action: where it stands."
-  },
   "account_status.appeal.state.overturned": {
     "defaultMessage": "Action lifted",
     "description": "State of an appeal after which the moderators lifted the action."
@@ -112,8 +108,16 @@
     "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
   },
   "account_status.appeal.until": {
-    "defaultMessage": "You can appeal this action until {date}.",
-    "description": "Above the button that appeals a moderation action. {date} is a formatted date and time."
+    "defaultMessage": "{days, plural, one {You can appeal once, within # day (until {date}).} other {You can appeal once, within # days (until {date}).}}",
+    "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
+  },
+  "account_status.ends_in": {
+    "defaultMessage": "{days, plural, one {Ends in # day} other {Ends in # days}}",
+    "description": "Under a moderation action in effect on the user's account: when it ends. {days} is the time left, rounded up to whole days. The server's status page says the same."
+  },
+  "account_status.until_lifted": {
+    "defaultMessage": "Lasts until a moderator lifts it",
+    "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
   },
   "account_status.expires_at": {
     "defaultMessage": "Ends",
@@ -166,10 +170,6 @@
   "account_status.reason_category": {
     "defaultMessage": "Reason",
     "description": "Term of a moderation action on the user's account: the kind of reason the moderators gave."
-  },
-  "account_status.state": {
-    "defaultMessage": "State",
-    "description": "Term of a moderation action on the user's account: whether it is in effect."
   },
   "account_status.state.active": {
     "defaultMessage": "In effect",

@@ -126,12 +126,12 @@ func TestStatusOfARestrictedUser(t *testing.T) {
 	body := w.Body.String()
 	wantContains(t, body,
 		`<h1>アカウントは処分を受けています</h1>`,
-		`<strong>凍結（アプリを使えず、プロフィールと投稿が隠れる）</strong>`,
+		`<strong>凍結（アプリを使えず、プロフィールと投稿が隠れる）</strong> <span class="status-badge status-badge-warning">適用中</span>`,
 		`<p class="hint">理由：スパム</p>`,
 		`<p dir="auto">spam &lt;wave&gt;</p>`,
 		`<time datetime="`+ends.UTC().Format(time.RFC3339)+`">あと 3 日で終わります</time>`,
 		`<strong>ログインの停止</strong>`,
-		`<p class="hint">モデレーターが解除するまで続きます</p>`,
+		`<p>モデレーターが解除するまで続きます</p>`,
 		`action="/auth/sign_out"`,
 	)
 	wantLacks(t, body, "verify_email/resend", "承認待ち", "a warning")
@@ -176,7 +176,9 @@ func TestAppealFromTheStatusPage(t *testing.T) {
 		`<p id="appeal-`+action3+`-hint" class="hint">You can appeal once, within 2 days. Up to 2,000 characters.</p>`,
 		`<textarea id="appeal-`+action3+`" name="text" rows="4" required maxlength="2000" dir="auto" aria-describedby="appeal-`+action3+`-hint">`,
 		`<p class="hint">The time to appeal this action has passed.</p>`,
-		`<strong>A moderator reviewed your appeal and kept the action.</strong>`,
+		`<p><span class="status-badge">Action kept</span></p>`,
+		`<p>A moderator reviewed your appeal and kept the action.</p>`,
+		`<button class="button" type="submit">Send appeal</button>`,
 		`<p dir="auto">It was &lt;not&gt; me.</p>`,
 		`<p dir="auto">We checked the logs.</p>`,
 		`<p class="hint">This action cannot be appealed.</p>`,
@@ -194,7 +196,8 @@ func TestAppealFromTheStatusPage(t *testing.T) {
 	}
 	wantContains(t, w.Body.String(),
 		`<p class="notice" role="status">Your appeal was sent. A moderator will review it.</p>`,
-		`<strong>Your appeal is waiting for a moderator&#39;s review.</strong>`,
+		`<p><span class="status-badge">Under review</span></p>`,
+		`<p>Your appeal is waiting for a moderator&#39;s review.</p>`,
 	)
 	wantLacks(t, w.Body.String(), `action="/auth/appeal"`)
 }
