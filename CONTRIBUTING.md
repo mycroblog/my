@@ -25,16 +25,16 @@ Tasks run with [go-task](https://taskfile.dev/) and live in `Taskfile.yml` and `
 builds the version pinned in `tools/go.mod` into `bin/task` and runs it; never use a `task` from your PATH.
 `scripts/task.sh --list` lists the tasks, and [docs/reference/commands.md](docs/reference/commands.md) describes them.
 
-`scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the API, `app/ui`, `app/web`,
-Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`, `i18n:check`, `api:check`, `ui:check`,
-`web:check`, `docker:check`, `agentkit:check`, `mykit:check`). `CHECKS="go web"` runs some of them only.
-`TASK_CONCURRENCY` limits the parallelism; locally `scripts/task.sh` defaults it to half the CPUs.
+`scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the email layout (`app/mail`),
+the API, `app/ui`, `app/web`, Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`,
+`i18n:check`, `mail:check`, `api:check`, `ui:check`, `web:check`, `docker:check`, `agentkit:check`, `mykit:check`).
+`CHECKS="go web"` runs some of them only. `TASK_CONCURRENCY` limits the parallelism; locally `scripts/task.sh` defaults it to half the CPUs.
 `scripts/task.sh check:changed` runs only the contexts you changed and those that depend on them (compared with
 `BASE=origin/main`); CI decides the same way (`scripts/changed-contexts.sh`) which jobs to skip, and the required
 check `check` collects the results of the jobs ([CI](#ci)).
 
-The checks need no network once the Go modules and tools and the npm packages of `tools/i18n`, `tools/mail`, and
-`app/` have been downloaded the first time. They cover Markdown lint and the documentation rules, the ADR index, Go
+The checks need no network once the Go modules and tools and the npm packages of `tools/i18n` and `app/` have
+been downloaded the first time. They cover Markdown lint and the documentation rules, the ADR index, Go
 (`go vet`, golangci-lint, tests, the `CGO_ENABLED=0` build, dependency licenses, the sqlc output), the i18n catalogs,
 the client API spec and the code generated from it, the Go image of the `Dockerfile` against `.tool-versions`, and
 the web client (type checks, build, dependency licenses).
@@ -55,7 +55,7 @@ the web client (type checks, build, dependency licenses).
   `scripts/task.sh api:license-scope` (part of `api:check`) checks them. The MIT parts depend only on permissive
   licenses such as MIT, Apache-2.0, BSD, and ISC, never on GPL-family ones.
 - Every other dependency must have a license compatible with AGPL-3.0 (`GO_ALLOWED_LICENSES` in `Taskfile.yml`; the npm
-  packages of `tools/i18n`, `tools/mail`, and `app/` are checked against the same list). Explain in the pull request
+  packages of `tools/i18n` and `app/` are checked against the same list). Explain in the pull request
   why you need to add one.
 
 ### Tests that listen on ports
@@ -94,7 +94,7 @@ range WSL gave Linux, outgoing connections (`git`, `gh`, ...) time out.
 ## Formatting
 
 Go is formatted with `gofmt` (`scripts/task.sh go:fmt-check` checks it). The TypeScript and JavaScript of `app/`,
-`pkg/mykit/ts`, `pkg/mybot/ts`, `tools/i18n`, and `tools/mail` are formatted with `bun fmt`, the formatter built into
+`pkg/mykit/ts`, `pkg/mybot/ts`, and `tools/i18n` are formatted with `bun fmt`, the formatter built into
 the pinned Bun: run `scripts/task.sh web:fmt` before you commit them, and again after resolving a conflict in one of
 them. `scripts/task.sh web:fmt-check` fails when a file needs formatting; `check` and CI run it. Its options are in
 the `[fmt]` section of the root `bunfig.toml`, and `.prettierignore` lists the files it leaves alone (generated files

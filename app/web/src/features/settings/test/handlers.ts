@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the settings feature (web-client/README.md §7): the user's own profile, its badges, and
 // preferences, the automatic deletion of old posts, passkeys, the user's own OAuth apps, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
-// data, the CSV exports and imports, and deleting the account. Unblocking and unmuting are the account
+// data, the CSV exports and imports, deleting the account, and the user's own invites. Unblocking and unmuting are the account
 // actions of the profile feature's handlers.
 import { http, HttpResponse } from "msw";
 import { preferencesFixture, relationshipFixture, type Schemas, viewerFixture } from "../../../test/fixtures";
@@ -134,6 +134,9 @@ export function applyNotificationSettingChanges(
     ),
   };
 }
+
+/** The ID the default POST /invites handler gives a new invite. */
+const createdInviteId = "0192f0c4-7a8e-7000-8000-0000000009a1";
 
 export const handlers = [
   // operationIds listBadgeChoices, updateBadgeChoice: the viewer holds no role with a badge by default; the tests of
@@ -287,7 +290,70 @@ export const handlers = [
   http.post(`${apiBase}/imports`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(dataImportFixture(), { status: 202 })),
   ),
+  // operationIds listOwnInvites, createOwnInvite, revokeOwnInvite: no invites, and the viewer may not create one by
+  // default, so the settings do not list the page; the tests of the page answer `can_create` themselves.
+  http.get(`${apiBase}/invites`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(ownInvitePageFixture([], { can_create: false }))),
+  ),
+  http.post(`${apiBase}/invites`, async ({ request }) => {
+    const body = (await request.clone().json()) as Schemas["CreateOwnInviteRequest"];
+    return withViewer(request, () =>
+      HttpResponse.json(
+        ownInviteFixture(createdInviteId, "NEWINVITECODE234", {
+          max_uses: body.max_uses ?? 1,
+          expires_at: "2026-10-23T00:00:00Z",
+        }),
+      ),
+    );
+  }),
+  http.post(`${apiBase}/invites/:id/revoke`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(ownInviteFixture(String(params["id"]), "ABCDEFGHJKLMNPQR", { state: "revoked" })),
+    ),
+  ),
 ];
+
+/** An invite of the user's own with `code`, usable, for one sign-up within a week from 2026-10-16, with `overrides`. */
+export function ownInviteFixture(
+  id: string,
+  code: string,
+  overrides: Partial<Schemas["OwnInvite"]> = {},
+): Schemas["OwnInvite"] {
+  return {
+    id,
+    code,
+    url: `https://my.example/auth/sign_up?invite=${code}`,
+    max_uses: 1,
+    uses: 0,
+    state: "usable",
+    expires_at: "2026-10-23T00:00:00Z",
+    created_at: "2026-10-16T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/**
+ * A page of the user's invites: `items`, the defaults of the instance settings as the caps, and a usable count of the
+ * usable `items`; `overrides` replace the rest.
+ */
+export function ownInvitePageFixture(
+  items: Schemas["OwnInvite"][],
+  overrides: Partial<Omit<Schemas["OwnInvitePage"], "items">> = {},
+): Schemas["OwnInvitePage"] {
+  return {
+    items,
+    can_create: true,
+    usable: items.filter((invite) => invite.state === "usable").length,
+    limits: {
+      max_active: 5,
+      max_uses: 10,
+      max_expires_in: 30 * 86_400,
+      default_max_uses: 1,
+      default_expires_in: 7 * 86_400,
+    },
+    ...overrides,
+  };
+}
 
 /** An import of a CSV file; following, merged, and in progress unless `change` says otherwise. */
 export function dataImportFixture(change: Partial<Schemas["DataImport"]> = {}): Schemas["DataImport"] {

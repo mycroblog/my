@@ -14,7 +14,7 @@
 #   docs    Markdown lint, the documentation rules, the ADR numbers (docs:check)
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
-#   mail    tools/mail, the MJML layout of the HTML emails       (mail:check)
+#   mail    app/mail, the MJML layout of the HTML emails         (mail:check)
 #   api     the OpenAPI spec and the code generated from it      (api:check)
 #   ui      app/ui (@my/ui)                                      (ui:check, the story tests)
 #   web     app/web and the workspace-wide client checks         (web:check)
@@ -26,8 +26,8 @@
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
-# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; app/bun.lock: ui
-# and web), so a Dependabot pull request runs the jobs that use the dependency.
+# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; app/bun.lock: ui,
+# web, and mail), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
 ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit)
@@ -93,7 +93,7 @@ classify() {
       return
       ;;
     app/bun.lock | app/bunfig.toml | app/package.json)
-      select_contexts ui web
+      select_contexts ui web mail
       return
       ;;
     # The spec; its dependents (go, web) are added below.
@@ -101,14 +101,15 @@ classify() {
       select_contexts api
       return
       ;;
-    # The npm license check, which the web and mail contexts run on their own packages too.
+    # The npm license check, which the web context runs on the client workspace too.
     tools/i18n/src/licenses.ts)
-      select_contexts i18n web mail
+      select_contexts i18n web
       return
       ;;
-    # The email layout; the Go template it compiles to is the go context's (internal/*), checked by mail:gen-check.
-    tools/mail/*)
-      select_contexts mail
+    # The email layout, a package of the client workspace that Oxlint, knip, and bun fmt of the web context read too;
+    # the Go template it compiles to is the go context's (internal/*), checked by mail:gen-check.
+    app/mail/*)
+      select_contexts mail web
       return
       ;;
     # The catalogs and their tools: the Go accessors (go, added below as i18n's dependent) and the web client, which
@@ -205,7 +206,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    # mail:gen-check fails when the email layout compiled from tools/mail/frame.mjml, with the colors of the token list, is stale.
+    # mail:gen-check fails when the email layout compiled from app/mail/frame.mjml, with the colors of the token list, is stale.
     internal/app/kernel/mail_frame.gen.html | internal/domain/instance/theme_tokens.gen.go)
       select_contexts mail
       known=1

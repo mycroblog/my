@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The invites (FR-001, manage_invites): creating a code that lets people sign up while the registration mode is
-// `invite`, the list of codes with how they were used, copying a code's sign-up link, and revoking a code.
+// The invites (FR-001, manage_invites): creating a code that lets people sign up in every registration mode but
+// `closed` (ADR-0108 §4), the list of codes with how they were used, copying a code's sign-up link, and revoking a code.
 import { useToast } from "@my/ui";
 import {
   useMutation,

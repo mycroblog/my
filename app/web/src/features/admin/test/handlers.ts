@@ -287,6 +287,10 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "voice_room_starters", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
   { key: "voice_public_summary", kind: "bool", default: "false" },
   { key: "retention_voice_participants", kind: "int", default: "90", minimum: 30, maximum: 3650 },
+  { key: "invite_creators", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
+  { key: "member_invite_max_active", kind: "int", default: "5", minimum: 0, maximum: 100 },
+  { key: "member_invite_max_uses", kind: "int", default: "10", minimum: 1, maximum: 1000 },
+  { key: "member_invite_max_expires_in", kind: "int", default: "2592000", minimum: 3600, maximum: 31536000 },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */

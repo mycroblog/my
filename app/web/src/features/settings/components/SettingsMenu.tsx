@@ -5,12 +5,13 @@ import { useStatusPageUrl } from "../../../lib/statusPage";
 import { type Permission, useViewerPermissions } from "../../moderation";
 import { useSupporterEntry } from "../../supporters";
 import { useVoiceAvailable } from "../../voice";
+import { useOwnInvitesEntry } from "../hooks/useOwnInvites";
 
 /**
  * The pages of the settings, in the order of the menu; a page with a `permission` (a member permission, ADR-0070 §1)
  * is listed only for a viewer whose roles have it, and the page of the supporter plans only while the program is
- * enabled, outside the Tauri app (ADR-0072 §14), and the voice chat history only while the server has voice chat on
- * (ADR-0100 §13).
+ * enabled, outside the Tauri app (ADR-0072 §14), the voice chat history only while the server has voice chat on
+ * (ADR-0100 §13), and the user's invites only while they may create invites (ADR-0108 §5).
  */
 const pages: readonly {
   href: string;
@@ -18,6 +19,7 @@ const pages: readonly {
   permission?: Permission;
   supporters?: true;
   voice?: true;
+  invites?: true;
 }[] = [
   { href: "/settings/profile", label: "client:settings.profile.title" },
   { href: "/settings/preferences", label: "client:settings.preferences.title" },
@@ -35,6 +37,7 @@ const pages: readonly {
   { href: "/settings/aliases", label: "client:account_move.aliases.title" },
   { href: "/settings/move", label: "client:account_move.move.title" },
   { href: "/settings/custom-emojis", label: "client:custom_emojis.title", permission: "create_custom_emojis" },
+  { href: "/settings/invites", label: "client:settings.invites.title", invites: true },
   { href: "/settings/authorized-apps", label: "client:settings.authorized_apps.title" },
   { href: "/settings/apps", label: "client:settings.apps.title" },
   { href: "/settings/supporter", label: "client:supporter.title", supporters: true },
@@ -53,12 +56,14 @@ export function SettingsMenu({ pathname }: { pathname: string }) {
   const permissions = useViewerPermissions();
   const supporters = useSupporterEntry();
   const voice = useVoiceAvailable();
+  const invites = useOwnInvitesEntry();
   const statusPageUrl = useStatusPageUrl();
   const shown = pages.filter(
     (page) =>
       (page.permission === undefined || permissions.includes(page.permission)) &&
       (page.supporters === undefined || supporters) &&
-      (page.voice === undefined || voice),
+      (page.voice === undefined || voice) &&
+      (page.invites === undefined || invites),
   );
   return (
     <>

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the invites (FR-001, manage_invites): the codes that let people sign up while the
-// registration mode is `invite`, listed newest first with how they were used, created and revoked. The list
+// The queries and mutations of the invites (FR-001, manage_invites): the codes that let people sign up in every
+// registration mode but `closed` (ADR-0108 §4), the moderators' and the members' own, listed newest first with how they
+// were used and who created them, created and revoked. The list
 // follows the API's keyset pagination as a TanStack Query infinite query whose key ends with "pages"
 // (web-client/10-api-client-and-auth.md §10).
 import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";

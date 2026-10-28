@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
 // to reach its operators and its thumbnail (#663), then its policies (who may sign up, the default language, the
-// public timelines, whether images need a description, the federation, who may read the list of the domain
+// public timelines, who may create invites of their own and their caps (ADR-0108 §1, §2), whether images need a description, the federation, who may read the list of the domain
 // actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
 // the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
@@ -36,7 +36,12 @@ import { useVoiceAvailable } from "../../voice";
 import { thumbnailAltLimit } from "../api/settings";
 import { useServerContact } from "../hooks/useServerContact";
 import { type DescriptionField, descriptionLimits, useServerDescriptions } from "../hooks/useServerDescriptions";
-import { type FederationNarrowing, type PolicyKey, useServerPolicies } from "../hooks/useServerPolicies";
+import {
+  type FederationNarrowing,
+  type NumberPolicyKey,
+  type PolicyKey,
+  useServerPolicies,
+} from "../hooks/useServerPolicies";
 import { useServerSettings } from "../hooks/useServerSettings";
 
 export function ServerSettings() {
@@ -436,6 +441,18 @@ const choices = {
       description: "client:admin.settings.crawlers.ai.deny.description",
     },
   ],
+  invite_creators: [
+    {
+      value: "everyone",
+      label: "client:admin.settings.invites.creators.everyone",
+      description: "client:admin.settings.invites.creators.everyone.description",
+    },
+    {
+      value: "permitted",
+      label: "client:admin.settings.invites.creators.permitted",
+      description: "client:admin.settings.invites.creators.permitted.description",
+    },
+  ],
   voice_room_starters: [
     {
       value: "everyone",
@@ -508,6 +525,35 @@ function PolicyCheckbox({
   );
 }
 
+/** A setting typed as a whole number, with its bounds in the description and its error under the field. */
+function NumberPolicyField({
+  form,
+  setting,
+  label,
+  description,
+}: {
+  form: ReturnType<typeof useServerPolicies>;
+  setting: NumberPolicyKey;
+  label: string;
+  description: (range: { min: string; max: string }) => string;
+}) {
+  const field = form.numberField(setting);
+  return (
+    <TextField
+      label={label}
+      description={description({ min: String(field.min), max: String(field.max) })}
+      value={form.value(setting)}
+      onChange={(value) => {
+        form.change(setting, value);
+      }}
+      inputMode="numeric"
+      autoComplete="off"
+      // Only an invalid value sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
+      {...(field.error === undefined ? {} : { isInvalid: true, errorMessage: field.error })}
+    />
+  );
+}
+
 function PoliciesForm() {
   const t = useT();
   const form = useServerPolicies();
@@ -522,6 +568,37 @@ function PoliciesForm() {
           label={t("client:admin.settings.registration.mode")}
           description={t("client:admin.settings.registration.description")}
         />
+      </DetailSection>
+      <DetailSection title={t("client:admin.settings.invites.title")}>
+        <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
+        <PolicyRadios form={form} setting="invite_creators" label={t("client:admin.settings.invites.creators")} />
+        <NumberPolicyField
+          form={form}
+          setting="member_invite_max_active"
+          label={t("client:admin.settings.invites.max_active")}
+          description={(range) => t("client:admin.settings.invites.max_active.description", range)}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="member_invite_max_uses"
+          label={t("client:admin.settings.invites.max_uses")}
+          description={(range) => t("client:admin.settings.invites.max_uses.description", range)}
+        />
+        <Select
+          label={t("client:admin.settings.invites.max_expires_in")}
+          description={t("client:admin.settings.invites.max_expires_in.description")}
+          value={form.value("member_invite_max_expires_in")}
+          onChange={(key) => {
+            if (typeof key === "string") form.change("member_invite_max_expires_in", key);
+          }}
+          items={form.inviteExpiryChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
+        >
+          {(choice) => (
+            <SelectItem id={choice.id} textValue={choice.name}>
+              {choice.name}
+            </SelectItem>
+          )}
+        </Select>
       </DetailSection>
       <DetailSection title={t("client:admin.settings.oauth_apps.title")}>
         <Hint size="inherit">{t("client:admin.settings.oauth_apps.description")}</Hint>
@@ -698,22 +775,11 @@ function PoliciesForm() {
             label={t("client:admin.settings.voice.public_summary")}
             description={t("client:admin.settings.voice.public_summary.description")}
           />
-          <TextField
+          <NumberPolicyField
+            form={form}
+            setting="retention_voice_participants"
             label={t("client:admin.settings.voice.retention")}
-            description={t("client:admin.settings.voice.retention.description", {
-              min: String(form.voiceRetention.min),
-              max: String(form.voiceRetention.max),
-            })}
-            value={form.value("retention_voice_participants")}
-            onChange={(value) => {
-              form.change("retention_voice_participants", value);
-            }}
-            inputMode="numeric"
-            autoComplete="off"
-            // Only an invalid value sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
-            {...(form.voiceRetention.error === undefined
-              ? {}
-              : { isInvalid: true, errorMessage: form.voiceRetention.error })}
+            description={(range) => t("client:admin.settings.voice.retention.description", range)}
           />
         </DetailSection>
       )}

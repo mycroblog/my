@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An account's admin page below its heading (FR-714, FR-703, FR-713): the account with its state, registration
-// and roles; what its actions take away now; its email address and IP addresses, which a local account shows only
+// (with the invite it signed up with and who created it, ADR-0108 §5) and roles; what its actions take away now; its email address and IP addresses, which a local account shows only
 // when the moderator presses "show" (each time is recorded in the audit log, ADR-0038); whether its user has
 // two-factor authentication, with its removal, which asks first (recorded in the audit log); for manage_login_recovery,
 // issuing a password reset link for its user, which asks first, is recorded in the audit log, and shows the link
@@ -66,6 +66,7 @@ import { AccountRoles } from "./AccountRoles";
 import { AccountOrigin } from "./AccountSearch";
 import { DateTime, RecordList, RequirePermission, useFocusAfterChange } from "./parts";
 import { RefetchStatusesSection } from "./RefetchStatuses";
+import { InviteCreator, inviteCreatorKindLabels } from "./inviteParts";
 import { AccountLabel, AssigneeName } from "./reportParts";
 import { imageSources } from "../../../lib/images";
 
@@ -204,10 +205,17 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
               <DateTime value={registration.state_changed_at} />
             </DescriptionItem>
             <DescriptionItem term={t("client:admin.account.registration.invite")}>
-              {registration.invite_id === undefined
-                ? t("client:admin.account.registration.invite.none")
-                : t("client:admin.account.registration.invite.used")}
+              {registration.invite === undefined
+                ? registration.invite_id === undefined
+                  ? t("client:admin.account.registration.invite.none")
+                  : t("client:admin.account.registration.invite.used")
+                : t(inviteCreatorKindLabels[registration.invite.creator_kind])}
             </DescriptionItem>
+            {registration.invite !== undefined && (
+              <DescriptionItem term={t("client:admin.account.registration.invited_by")}>
+                <InviteCreator invite={registration.invite} linked />
+              </DescriptionItem>
+            )}
           </>
         )}
         {account.local && (

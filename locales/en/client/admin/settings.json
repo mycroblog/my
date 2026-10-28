@@ -556,8 +556,8 @@
     "description": "Registration mode approval."
   },
   "admin.settings.registration.approval.description": {
-    "defaultMessage": "Anyone may sign up with a reason; the account works once a moderator approves it.",
-    "description": "Description of the registration mode approval."
+    "defaultMessage": "Anyone may sign up with a reason; the account works once a moderator approves it. People who sign up with an invite are approved at once.",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
   },
   "admin.settings.registration.closed": {
     "defaultMessage": "Nobody",
@@ -770,5 +770,61 @@
   "admin.settings.voice.retention.invalid": {
     "defaultMessage": "Enter a whole number of days from {min} to {max}.",
     "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "Member invites",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "Members create invites of their own on their settings page. The limits apply only to their invites, not to the invites of the moderators, and lowering one does not change the invites that exist.",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "Who can create invites",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "Every signed-in user of this server who is not suspended or limited can create invites. While sign-ups need approval, the people they invite skip the review, so this lets every user approve new accounts.",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "Only people with the permission",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "Only people whose roles have the permission to create invites can create them.",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "Usable invites per person",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "How many usable invites one person may hold at once: {min} to {max}. 0 lets nobody create invites.",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "Sign-ups per invite",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "The most people who may sign up with one invite: {min} to {max}.",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "Enter a whole number from {min} to {max}.",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "Longest time an invite works",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "Members choose how long each invite works, up to this.",
+    "description": "Description of the choice of how long a member invite may work at most."
   }
 }

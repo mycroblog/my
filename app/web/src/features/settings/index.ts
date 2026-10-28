@@ -62,3 +62,6 @@ export { useUserDisplaySettings } from "./hooks/useUserDisplaySettings";
 export { acceptedImageTypes, type MediaAttachment, MediaProcessingError, uploadImage } from "./api/media";
 // Asking before leaving a form with unsaved changes (web-client/09-app-shell.md §9), which the admin screens' forms share.
 export { useUnsavedChangesGuard } from "./hooks/useUnsavedChangesGuard";
+// The user's own invites (FR-011, ADR-0108 §5).
+export { ownInvitesQueryOptions } from "./api/invites";
+export { OwnInvites } from "./components/OwnInvites";
