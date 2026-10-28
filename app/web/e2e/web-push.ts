@@ -21,7 +21,7 @@ import type { BrowserContext, CDPSession, Page } from "@playwright/test";
 import { mailpit, pushService } from "./server-cli.ts";
 
 /** A subscription that the fake issued, as PushSubscription.toJSON() shows it. */
-export type FakeSubscription = {
+type FakeSubscription = {
   endpoint: string;
   expirationTime: number | null;
   keys: { p256dh: string; auth: string };
@@ -70,7 +70,7 @@ function callFake(method: "GET" | "POST", path: string, body?: unknown): Promise
 }
 
 /** The fake's ID of a subscription: the last segment of its endpoint (`<origin>/push/<id>`). */
-export function subscriptionID(endpoint: string): string {
+function subscriptionID(endpoint: string): string {
   const id = /\/push\/([^/]+)$/.exec(new URL(endpoint).pathname)?.[1];
   if (id === undefined) throw new Error(`not an endpoint of the fake push service: ${endpoint}`);
   return id;
