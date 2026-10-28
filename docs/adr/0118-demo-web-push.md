@@ -1,6 +1,6 @@
 # ADR-0118: デモ環境の Web Push: 自前の fake のプッシュサービスと CDP での配達
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-28
 - Deciders: @rosylilly
 - Issue: #1720
@@ -30,7 +30,7 @@ ADR-0117 のデモ環境（筋書きのシード、試験用のビルドタグ `
 1. **A. デモ環境では Web Push を出さない**（今の ADR-0117 §3 のまま）。
 2. **B. 第三者の模擬サービス**: [marc1706/web-push-testing](https://github.com/marc1706/web-push-testing) を動かす。
    （[GoogleChrome/web-push-testing-service](https://github.com/GoogleChromeLabs/web-push-testing-service) は 2020-09 から更新がなく、アーカイブ済み。本物のブラウザを Selenium で動かす作りで、対象外とする。2026-10-28 に GitHub の API で確認）
-3. **C. 自前の fake のプッシュサービス**を `e2e_fakes` のビルドに置き、ブラウザの側は init script で購読を差し替え、配達は CDP で行う（推奨案）。
+3. **C. 自前の fake のプッシュサービス**を `e2e_fakes` のビルドに置き、ブラウザの側は init script で購読を差し替え、配達は CDP で行う。
 
 ブラウザの側（B・C に共通）:
 
@@ -44,13 +44,12 @@ SSRF ガード（B・C に共通）:
 
 ## Decision（決定）
 
-> Proposed の間は推奨案。決めるのは決定者。
-
-**推奨案: C・B1・G1。** ADR-0117 §3 の表の「Web Push」の行を本 ADR が置き換える（Accepted になるとき ADR-0117 の Status に注記する）。
+**C・B1・G1 を採る。** 決定者は、プッシュサービスを「自前の偽物」、SSRF ガードの例外を「開発用プロファイルに限る」、fake の置き場所を「e2e_fakes のサブコマンド」とした。
+ADR-0117 §3 の表の「Web Push」の行を本 ADR が置き換える（ADR-0117 の Status に注記した）。
 
 ### 1. fake のプッシュサービス（`e2e_fakes`）
 
-- `e2e_fakes` のビルドの `my` にだけ入るサブコマンド（仮名 `my dev push-service`）として置く。単一の binary（overview §6）を保ち、ADR-0117 §2 の 4 つの確かめ（実行時・静的な検査・コンテナ・リリース）にそのまま入れる。
+- `e2e_fakes` のビルドの `my` にだけ入るサブコマンド（`my dev push-service`）として置く。単一の binary（overview §6）を保ち、ADR-0117 §2 の 4 つの確かめ（実行時・静的な検査・コンテナ・リリース）にそのまま入れる。
   実行時は、`profile = development` の設定でなければ起動を拒む。
 - `localhost` の別のポートで **HTTPS** で待つ（endpoint を `https` に限る領域の規則を変えない）。証明書は Mailpit と同じ開発用の CA（`scripts/mailpit-cert.sh`）で作り、`my serve` は ADR-0117 §3 の `SSL_CERT_FILE` でそれを信頼する。
 - 振る舞い（状態はメモリにだけ置く）:
@@ -70,25 +69,43 @@ SSRF ガード（B・C に共通）:
 - **配達**: Node の側が fake の受け取った平文を読み、Playwright の `CDPSession`（`browserContext.newCDPSession(page)`、Chromium だけ）で
   `ServiceWorker.enable` の `ServiceWorker.workerRegistrationUpdated` から `registrationId` を得て、`ServiceWorker.deliverPushMessage({ origin, registrationId, data })` を送る。
   Service Worker は本物の `push` の処理で通知を出し、確かめは `registration.getNotifications()` で行う。
-  （2026-10-28 に `ChromeDevTools/devtools-protocol` の `browser_protocol.json` と playwright.dev の CDPSession で確認。ServiceWorker のドメインは experimental。headless の Chromium で `showNotification` と `getNotifications` が働くか、ページの target の CDPSession から ServiceWorker のドメインを使えるかは要検証）
+  （2026-10-28 に `ChromeDevTools/devtools-protocol` の `browser_protocol.json` と playwright.dev の CDPSession で確認。ServiceWorker のドメインは experimental）
 
 ### 3. SSRF ガード（G1）
 
-- `httpclient.Options` に、Webhook（ADR-0060）・外部 IdP（ADR-0106 §5）と同じ形の送信先の許可リストを Web Push の送信（`HTTPPurposeWebPush`）だけに足す。設定の鍵は仮名 `push_allowed_destinations`（`webhook_allowed_destinations` と同じ書式）。
-- 設定の検査は、`profile = development` でなければこの鍵を拒み、起動の時に警告のログを出す（`http_allow_private_networks` と同じ扱い）。ほかの用途（取得・配送・リンクのプレビュー・メディア）のガードは変わらない。
+- `httpclient.Options` に、Webhook（ADR-0060）・外部 IdP（ADR-0106 §5）と同じ形の送信先の許可リストを Web Push の送信（`HTTPPurposeWebPush`）だけに足す。設定の鍵は `push_allowed_destinations`（`webhook_allowed_destinations` と同じ書式）。
+- 設定の検査は、`profile = development` でなければこの鍵を拒み、起動の時に警告のログを出す（`http_allow_private_networks` と同じ扱い）。
+  ビルドタグでは限らない（`e2e_fakes` でないビルドでも、開発用のプロファイルなら使える）。鍵は fake を足すのではなく、送信先を開くだけだからである。ほかの用途（取得・配送・リンクのプレビュー・メディア）のガードは変わらない。
 - デモ環境の設定（ADR-0117 §3）は、`vapid_private_key` をその場で作り（`my config vapid-key`）、許可リストに fake のオリジンだけを書く。
 
 ### 4. 確かめられるようになること
 
 - **E2E**（ADR-0117 §4 の `demo` のサーバー）: 通知の設定で Web Push をオンにする → サーバーに購読ができる → 別の人物が API で返信する → fake が VAPID を検証して平文を受け取る → 配達して `getNotifications()` に返信の通知がある。
   種類をオフにした行の通知は届かないこと、fake が `410` を返すとサーバーが購読を消すことも確かめる。
-- **L4**: 「返信だけ Web Push で受け取る」のような、Web Push を設定する作業を測れる（今は Web Push の列が出ないので測れない）。成否はサーバーの購読の `alerts` と、作業の後に起こした通知が fake に届いたかで判定する。
-  **測れないこと**: エージェントは OS の通知もブラウザの許可の確認も見えない（スナップショットに出ない）。許可は先に与えるので許可の確認の分かりやすさは測らず、通知を押して開く作業（`notificationclick`）も L4 と E2E では通さない（CDP に通知を押す操作がない。要検証）。
+- **L4**: Web Push を設定する作業を 1 つ足す（今は Web Push の列が出ないので測れない）。作業は「この端末で Web Push をオンにする」で、
+  成否は、サーバーにその人物の購読があることと、作業の後にハーネスが別の人物の返信を起こし、その通知を fake が受け取って復号できたことで判定する。
+  **測れないこと**: エージェントは OS の通知もブラウザの許可の確認も見えない（スナップショットに出ない）。許可は先に与えるので許可の確認の分かりやすさは測らず、通知を押して開く作業（`notificationclick`）も L4 と E2E では通さない（CDP に通知を押す操作がない。2026-10-29 に `browser_protocol.json` で確認）。`notificationclick` は `app/web/sw/push.test.ts` の単体テストで確かめる。
   `getNotifications()` はハーネスの事後の確かめにだけ使う。
 - 本物の FCM・Mozilla autopush・Apple の push service との相互運用は確かめない（それは本番と手での確認の範囲に残る）。
 
-推奨を覆す条件: headless の Chromium で `deliverPushMessage` か `getNotifications` が働かない（要検証の結果）なら §2 の配達を外し、fake で受信と復号までを確かめる形に縮める。
-Web Push の利用が v0 で小さいと決定者が判断するなら A を採る。
+### 5. 実装の最初に確かめること
+
+headless の Chromium（Playwright の同梱版）で、ページの target の CDPSession から ServiceWorker のドメインを使え、`ServiceWorker.deliverPushMessage` が `push` の処理を起こし、`showNotification` と `getNotifications` が働くことは、文書に明記がない。
+E2E の issue の最初に確かめ、働かなければ §2 の配達を外し、fake が受け取って VAPID を検証し復号できたところまでを確かめる（L4 の判定はもともと fake の受信で行うので変わらない。E2E は fake の受信と復号を確かめるところで止める）。
+
+### 見直す条件
+
+- Chromium か Playwright の更新で CDP の配達が使えなくなり、代わりの方法がない場合（§5 の、fake の受信と復号までの形に縮める）。
+- 本物のブラウザの購読の振る舞い（鍵の変更・ブラウザの側の失効）の退行が、差し替えのせいで見逃される場合（B2 のフラグか、本物の push service での手での確認を足す）。
+- Web Push の利用が小さく、fake と差し替えの保守が見合わない場合（A に戻す）。
+
+### 6. 後続の作業
+
+1. fake のプッシュサービス（`my dev push-service`、HTTPS、VAPID の検証、RFC 8291 の復号、失効と読み出し）と、その証明書（#1722。#1716 の後）。
+2. SSRF ガードの Web Push の許可リスト `push_allowed_destinations` と、`profile = development` の検査（#1723）。
+3. `web:demo` と `demo` のサーバーで VAPID の鍵と fake を起動する（#1724。#1722・#1723・#1717 の後）。
+4. E2E のフィクスチャ（init script・`exposeBinding`・CDP の配達）と Web Push の spec。最初に §5 を確かめる（#1725。#1724 の後）。
+5. L4 の init page に同じ差し替えと配達を入れ、Web Push をオンにする作業を 1 つ足す（#1726。#1725・#1718 の後）。
 
 ## Consequences（影響）
 
@@ -97,12 +114,7 @@ Web Push の利用が v0 で小さいと決定者が判断するなら A を採�
 - 悪い影響: fake と init script の差し替えは保守の対象で、差し替えた `PushManager` はブラウザの本物の購読の振る舞い（鍵の変更、ブラウザの側の失効）を再現しない。
 - 悪い影響: 設定の鍵と `e2e_fakes` のコードが増える。§3 の許可リストは本番では使えないが、鍵の存在そのものは設定の説明（`docs/reference/configuration.md`）に載る。
 - 悪い影響: 配達は Chromium の CDP の experimental なドメインに頼る。Playwright・Chromium の更新で壊れうる。
-- 後続の作業（決定の後に Issue にする）:
-  1. fake のプッシュサービス（`e2e_fakes` のサブコマンド、HTTPS、VAPID の検証、RFC 8291 の復号、失効と読み出し）と、その証明書の作成。
-  2. SSRF ガードの Web Push の許可リストと、`profile = development` の検査、設定の説明。
-  3. `web:demo` と `app/web/e2e/server.ts` の `demo` のサーバーで VAPID の鍵と fake を起動し、ADR-0117 の Status に本 ADR の注記を足す。
-  4. E2E のフィクスチャ（init script・`exposeBinding`・CDP の配達）と Web Push の spec。
-  5. L4 の init page に同じ差し替えと配達を入れ、Web Push を設定する L1 の作業を足す。
+- 後続の作業: §6。
 
 ## Pros and Cons of the Options（詳細比較・任意）
 
@@ -117,6 +129,4 @@ Web Push の利用が v0 で小さいと決定者が判断するなら A を採�
 
 ## Open Questions / 要検証
 
-- headless の Chromium（Playwright の同梱版）で、`ServiceWorker.deliverPushMessage` が `push` の処理を起こし、`showNotification` と `getNotifications` が働くか。ページの target の CDPSession で ServiceWorker のドメインを使えるか。
-- 許可リストを `profile = development` に加えて `e2e_fakes` のビルドにも限るか（推奨案は profile だけ。`http_allow_private_networks` と揃える）。
-- L4 で Web Push の作業を何本足すか。
+なし（headless の Chromium での配達は §5 で、実装の最初に確かめる）。
