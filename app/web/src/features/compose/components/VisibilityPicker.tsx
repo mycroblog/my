@@ -2,20 +2,19 @@
 import {
   Box,
   Button,
-  EyeIcon,
   Popover,
   PopoverTrigger,
   Radio,
   RadioGroup,
   Tooltip,
   TooltipTrigger,
+  VisibilityIcon,
   VisuallyHidden,
 } from "@my/ui";
 import { useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import type { PostingLimits, Visibility } from "../api/compose";
-import { visibilities } from "../hooks/policy";
-import { visibilityDescription, visibilityLabel } from "../hooks/visibilityMessages";
+import { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "../hooks/visibilityMessages";
 
 export type VisibilityPickerProps = {
   value: Visibility;
@@ -25,12 +24,8 @@ export type VisibilityPickerProps = {
   isDisabled?: boolean;
 };
 
-function isVisibility(value: string): value is Visibility {
-  return (visibilities as readonly string[]).includes(value);
-}
-
 /**
- * The visibility of the post: a button of the form's tools that shows the current choice (named "Visibility:
+ * The visibility of the post: a button of the form's tools that shows the current choice with its icon (named "Visibility:
  * <choice>" and described by who can see it) and opens a popover with the five
  * visibilities as a radio group, each with who can see it (ADR-0017; WAI-ARIA APG radio group and dialog
  * patterns). Choosing does not close the popover, because the arrow keys choose as they move.
@@ -58,7 +53,7 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
           aria-describedby={descriptionId}
           isDisabled={isDisabled}
         >
-          <EyeIcon />
+          <VisibilityIcon visibility={value} />
           {t(visibilityLabel[value])}
         </Button>
         <Tooltip>{buttonLabel}</Tooltip>

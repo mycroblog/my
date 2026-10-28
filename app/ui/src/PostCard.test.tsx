@@ -8,16 +8,18 @@ import { PostCard, PostCardAuthor } from "./PostCard";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
 describe("PostCard", () => {
-  it("is an article labelled by its author and time and described by its content", () => {
+  it("is an article labelled by its author, time and visibility and described by its content", () => {
     render(
       <PostCard
         avatar={<Avatar name="Alice" decorative />}
         author="Alice @alice"
         time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+        visibility={{ level: "private", label: "Followers" }}
         content={<PostContent html={serverSanitizedHtml("<p>Hello</p>")} lang="en" />}
       />,
     );
-    const article = screen.getByRole("article", { name: "Alice @alice 2h" });
+    const article = screen.getByRole("article", { name: "Alice @alice 2h Followers" });
+    expect(screen.getByText("Followers")).toBeVisible();
     expect(article).toHaveAccessibleDescription("Hello");
     // Outside a feed it is a plain article: not focusable, no position.
     expect(article).not.toHaveAttribute("tabindex");
@@ -30,6 +32,7 @@ describe("PostCard", () => {
         context="Bob boosted"
         author="Alice @alice"
         time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+        visibility={null}
         content={<PostContent html={serverSanitizedHtml("<p>Hello</p>")} lang="en" />}
       />,
     );
@@ -44,6 +47,7 @@ describe("PostCard", () => {
         lineAbove
         author="Alice @alice"
         time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+        visibility={null}
         content={<PostContent html={serverSanitizedHtml("<p>Hello</p>")} lang="en" />}
         details="3 boosts"
       />,
@@ -64,6 +68,7 @@ function renderAnimatedPost(autoplay = false) {
         avatar={<Avatar sources={dance} name="Alice" decorative />}
         author="Alice @alice"
         time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+        visibility={null}
         content={
           <PostContent html={serverSanitizedHtml('<p>Hello <a href="https://example.com/">there</a></p>')} lang="en" />
         }

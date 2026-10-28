@@ -152,6 +152,8 @@ export {
   VoiceIcon,
   WarningIcon,
 } from "./Icons";
+export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
+export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
 
 // Timeline.
 export { ContentWarning, type ContentWarningProps } from "./ContentWarning";

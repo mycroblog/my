@@ -39,7 +39,10 @@ describe("the federated timeline", () => {
     const feed = await screen.findByRole("feed", { name: "Federated timeline" });
     expect(document.title).toBe("Federated timeline – my example");
     expect(within(feed).getAllByRole("article")).toHaveLength(2);
-    expect(within(feed).getByRole("article", { name: "Bob @bob 3 hr. ago" })).toHaveAttribute("aria-posinset", "1");
+    expect(within(feed).getByRole("article", { name: "Bob @bob 3 hr. ago Public" })).toHaveAttribute(
+      "aria-posinset",
+      "1",
+    );
     const remote = within(feed).getByRole("article", { name: /^Carol @carol@remote\.example/ });
     expect(remote).toHaveAttribute("aria-posinset", "2");
     expect(remote).toHaveAttribute("aria-setsize", "2");

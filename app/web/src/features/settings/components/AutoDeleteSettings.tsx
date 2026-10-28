@@ -16,8 +16,8 @@ import {
   Text,
 } from "@my/ui";
 import { useId } from "react";
+import { visibilities, visibilityLabel } from "../../compose";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import type { Visibility } from "../api/me";
 import { type AutoDeleteFlag, useAutoDeleteForm } from "../hooks/useAutoDeleteForm";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
@@ -28,15 +28,6 @@ const flags: readonly { id: AutoDeleteFlag; label: ClientMessageKey }[] = [
   { id: "keep_favourited", label: "client:settings.auto_delete.keep.favourited" },
   { id: "keep_media", label: "client:settings.auto_delete.keep.media" },
   { id: "keep_polls", label: "client:settings.auto_delete.keep.polls" },
-];
-
-/** The visibilities in the order of ADR-0017, widest first, with their label. */
-const visibilities: readonly { id: Visibility; label: ClientMessageKey }[] = [
-  { id: "public", label: "client:settings.visibility.public" },
-  { id: "local", label: "client:settings.visibility.local" },
-  { id: "unlisted", label: "client:settings.visibility.unlisted" },
-  { id: "private", label: "client:settings.visibility.private" },
-  { id: "direct", label: "client:settings.visibility.direct" },
 ];
 
 export function AutoDeleteSettings() {
@@ -104,14 +95,14 @@ export function AutoDeleteSettings() {
           <Hint id={visibilityId}>{t("client:settings.auto_delete.visibilities.description")}</Hint>
           <Grid as="ul" gap="6" rowGap="1">
             {visibilities.map((visibility) => (
-              <li key={visibility.id}>
+              <li key={visibility}>
                 <Checkbox
-                  isSelected={form.policy.keep_visibilities.includes(visibility.id)}
+                  isSelected={form.policy.keep_visibilities.includes(visibility)}
                   onChange={(selected) => {
-                    form.setKeepVisibility(visibility.id, selected);
+                    form.setKeepVisibility(visibility, selected);
                   }}
                 >
-                  {t(visibility.label)}
+                  {t(visibilityLabel[visibility])}
                 </Checkbox>
               </li>
             ))}
