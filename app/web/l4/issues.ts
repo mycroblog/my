@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Files the issues of an L4 run (report.ts) with `gh`: one open issue per screen, created with the label `area:web`
+// Files the issues of an L4 run (report.ts) with `gh`: one open issue per screen (tasks over the threshold or not completed; unavailable ones only in the summary), created with the label `area:web`
 // the first time and commented on by later runs (found by its exact title). `scripts/task.sh web:l4-issues` runs it;
 // --dry-run prints the issues instead.
 //
@@ -11,7 +11,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { issueBody, issueTitle, lostByScreen } from "./report.ts";
+import { issueBody, issueTitle, lostByScreen, skippedSummary, skippedTasks } from "./report.ts";
 import type { RunResult } from "./results.ts";
 
 const root = resolve(import.meta.dirname, "../../..");
@@ -39,7 +39,12 @@ if (result.dryRun) {
   console.log("l4-issues: the results are of a dry run; no task was measured.");
 }
 if (lost.size === 0) {
-  console.log(`l4-issues: no task over lostness ${String(result.threshold)}.`);
+  console.log(`l4-issues: no task over lostness ${String(result.threshold)} or not completed.`);
+}
+const skipped = skippedTasks(result);
+if (skipped.length > 0) {
+  console.log(`l4-issues: ${String(skipped.length)} task(s) not measured, no issue filed:`);
+  console.log(skippedSummary(skipped).join("\n"));
 }
 for (const tasks of lost.values()) {
   const [first] = tasks;

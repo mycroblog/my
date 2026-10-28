@@ -60,6 +60,8 @@ export type Transcript = {
   summary: string;
   /** How the session ended: the `subtype` of its result event (`success`, `error_max_turns`, ...). */
   ending: string;
+  /** The message of an API, authentication or transport error that ended the session (`is_error` of the result event). */
+  apiError: string | null;
   /** The cost of the session in US dollars, when the result event gives it. */
   costUSD: number | null;
 };
@@ -136,7 +138,7 @@ export function parseTranscript(output: string): Transcript {
   let refs = new Map<string, string>();
   let url = "";
   const path: Step[] = [];
-  const transcript: Transcript = { path, completed: false, summary: "", ending: "none", costUSD: null };
+  const transcript: Transcript = { path, completed: false, summary: "", ending: "none", apiError: null, costUSD: null };
   for (const line of output.split("\n")) {
     if (line.trim() === "") {
       continue;
@@ -183,6 +185,12 @@ export function parseTranscript(output: string): Transcript {
       const verdict = structuredVerdict(event);
       transcript.completed = transcript.ending === "success" && verdict.completed;
       transcript.summary = verdict.summary;
+      if (event["is_error"] === true && transcript.ending === "success") {
+        // Claude Code reports a failed API call (a 401 of the token exchange, say) as a successful session with is_error.
+        const message = typeof event["result"] === "string" ? event["result"] : verdict.summary;
+        transcript.apiError = message === "" ? "the session ended with an error" : message;
+        transcript.completed = false;
+      }
     }
   }
   return transcript;

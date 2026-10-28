@@ -100,6 +100,22 @@ describe("parseTranscript", () => {
     expect(parsed).toMatchObject({ completed: false, ending: "error_max_turns" });
   });
 
+  it("reports an API error of a session that ended with is_error as such, never as completed", () => {
+    const parsed = parseTranscript(
+      transcript([], {
+        subtype: "success",
+        is_error: true,
+        result: "API Error: 401 authentication_error",
+        structured_output: { completed: true, summary: "" },
+      }),
+    );
+    expect(parsed).toMatchObject({ completed: false, apiError: "API Error: 401 authentication_error" });
+  });
+
+  it("has no API error for a normal session", () => {
+    expect(parseTranscript(transcript([], { subtype: "success", is_error: false })).apiError).toBeNull();
+  });
+
   it("reads a verdict at the end of the result text", () => {
     const parsed = parseTranscript(
       transcript([], { subtype: "success", result: 'Done.\n{"completed": true, "summary": "ok"}' }),

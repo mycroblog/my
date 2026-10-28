@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, it } from "vitest";
-import { issueBody, issueTitle, lostByScreen } from "./report.ts";
+import { issueBody, issueTitle, lostByScreen, skippedSummary, skippedTasks } from "./report.ts";
 import type { RunResult, TaskResult } from "./results.ts";
 
 const base: TaskResult = {
@@ -45,6 +45,51 @@ describe("lostByScreen", () => {
     const lost = lostByScreen(result);
     expect([...lost.keys()]).toEqual(["badges"]);
     expect(lost.get("badges")?.map((task) => task.task)).toEqual(["バッジを出す"]);
+  });
+});
+
+describe("not completed and unavailable tasks", () => {
+  const supporters = { ...base, screen: "supporters", screenTitle: "サポーター" };
+  const mixed: RunResult = {
+    ...result,
+    tasks: [
+      { ...base, task: "ok", lostness: 0.1 },
+      { ...supporters, task: "支える", completed: false, ending: "gave up", lostness: 0.1 },
+      {
+        ...supporters,
+        task: "出来ない",
+        status: "unavailable",
+        completed: false,
+        lostness: null,
+        reason: "no supporter fixture",
+      },
+      { ...base, task: "落ちた", status: "error", completed: false, lostness: null },
+    ],
+  };
+
+  it("files a task that ended without completion even under the threshold", () => {
+    const lost = lostByScreen(mixed);
+    expect([...lost.keys()]).toEqual(["supporters"]);
+    expect(lost.get("supporters")?.map((task) => task.task)).toEqual(["支える"]);
+  });
+
+  it("marks it not completed with its path and shortest path", () => {
+    const [task] = lostByScreen(mixed).get("supporters") ?? [];
+    const body = issueBody(mixed, task === undefined ? [] : [task], "", "mycroblog/my");
+    expect(body).toContain("### 支える (not completed)");
+    expect(body).toContain("L1 shortest path: 2 step(s)");
+    expect(body).toContain("Path taken:");
+  });
+
+  it("leaves a completed task over the threshold unmarked", () => {
+    expect(issueBody(result, [base], "", "mycroblog/my")).not.toContain("(not completed)");
+  });
+
+  it("lists unavailable and failed tasks in the summary instead of issues", () => {
+    expect(skippedSummary(skippedTasks(mixed))).toEqual([
+      "- unavailable: supporters: 出来ない (no supporter fixture)",
+      "- error: badges: 落ちた",
+    ]);
   });
 });
 
