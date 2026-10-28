@@ -241,7 +241,8 @@ export async function expectTabWhollyVisible(tab: Locator): Promise<void> {
 /**
  * Opens the page at `path` from the main navigation as a user of the project's width does (ADR-0039): with the
  * item of the tab bar or the rail that links to it, or below md with the link in the menu's sheet for the items
- * that are not in the tab bar. Call it once the current page has rendered.
+ * that are not in the tab bar; signed out, below lg, with the item behind the top bar's Menu button (a disclosure,
+ * not a dialog). Call it once the current page has rendered.
  */
 export async function openFromNavigation(page: Page, path: string, hasTouch: boolean): Promise<void> {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click());
@@ -253,7 +254,7 @@ export async function openFromNavigation(page: Page, path: string, hasTouch: boo
     return;
   }
   await press(nav.getByRole("button"));
-  await press(page.getByRole("dialog").locator(`a[href="${path}"]`));
+  await press(page.getByRole("dialog").or(nav).locator(`a[href="${path}"]`).filter({ visible: true }));
 }
 
 /**

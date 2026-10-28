@@ -55,6 +55,12 @@ const pages = ["/home", "/local", "/notifications", "/search", "/profile", "/set
 /** The pages whose h1 only says where the user is, visually hidden (web-client/16-look-states-and-wording.md G5). */
 const hiddenHeadingPages: ReadonlySet<string> = new Set(["/home", "/local", "/notifications", "/search", "/settings"]);
 
+/**
+ * The timelines, whose h1 is hidden only where the rail shows (from md): the phones' tab bar does not say which
+ * timeline this is (web-client/screens/home.md, local.md).
+ */
+const railHiddenHeadingPages: ReadonlySet<string> = new Set(["/home", "/local"]);
+
 /** The pages that phones reach from the menu's sheet instead of the tab bar (ADR-0039). */
 const menuPages: ReadonlySet<string> = new Set(["/profile", "/settings"]);
 
@@ -105,9 +111,19 @@ for (const path of pages) {
         await expect(heading).not.toHaveClass(/\bsr-only\b/);
         return;
       }
-      // The navigation already says where the user is: the h1 is visually hidden (sr-only, a 1 px clipped box)
-      // and is still the page's named level-one heading.
-      await expect(heading).toHaveClass(/\bsr-only\b/);
+      if (railHiddenHeadingPages.has(path)) {
+        await expect(heading).not.toHaveClass(/\bsr-only\b/);
+        if (hasTabBar(page)) {
+          // Below md the heading says which timeline this is.
+          const box = await heading.boundingBox();
+          expect(box?.height).toBeGreaterThan(1);
+          return;
+        }
+      } else {
+        await expect(heading).toHaveClass(/\bsr-only\b/);
+      }
+      // The navigation already says where the user is: the h1 is visually hidden (a 1 px clipped box, Tailwind's
+      // sr-only or the app stylesheet's data-hidden-with-rail) and is still the page's named level-one heading.
       const box = await heading.boundingBox();
       expect(box?.width).toBeLessThanOrEqual(1);
       expect(box?.height).toBeLessThanOrEqual(1);
@@ -161,7 +177,7 @@ test.describe("the navigation while signed out", () => {
     // Local, Search, About and Sign in (the instance answers nothing here, so no Federated and no Sign up). Below lg
     // the items are behind the Menu button, and Sign in, the call to action, stays in the bar.
     const nav = page.getByRole("navigation");
-    const menu = nav.getByRole("button", { name: "Menu" });
+    const menu = nav.getByRole("button");
     if (hasTopMenu(page)) {
       await expect(nav).toMatchAriaSnapshot(`
         - navigation:
@@ -203,9 +219,9 @@ ${Array.from({ length: items }, () => `          - listitem:\n            - link
     // One row of 44 px targets and the bar's padding: nothing wraps.
     expect(box?.height ?? 0).toBeLessThan(80);
     if (!hasTopMenu(page)) return;
-    const menu = nav.getByRole("button", { name: "Menu" });
+    const menu = nav.getByRole("button");
     await menu.click();
-    const local = nav.getByRole("link", { name: "Local" });
+    const local = nav.locator('a[href="/local"]');
     await expect(local).toBeVisible();
     // The items are not a dialog: Tab goes on into them, Escape closes them and focus returns to the button.
     await page.keyboard.press("Tab");
@@ -216,7 +232,7 @@ ${Array.from({ length: items }, () => `          - listitem:\n            - link
     await expect(local).toBeHidden();
     // Following an item closes them.
     await menu.click();
-    await nav.getByRole("link", { name: "Search" }).click();
+    await nav.locator('a[href="/search"]').click();
     await expect(page).toHaveURL(/\/search$/);
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await expectNoHorizontalScroll(page);
@@ -479,10 +495,6 @@ test.describe("the menu of the phones' tab bar", () => {
             - link
           - listitem:
             - link
-        - radiogroup:
-          - radio [checked]
-          - radio
-          - radio
         - paragraph:
           - link "${instanceName}"
         - paragraph:

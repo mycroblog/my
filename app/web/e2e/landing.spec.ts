@@ -188,7 +188,8 @@ test.describe("the landing page", () => {
 
   test("moves from the calling card to the steps of joining, past the rules", async ({ page }) => {
     const main = page.getByRole("main");
-    await main.locator('a[href="#landing-join"]').click();
+    // The calling card's link comes first; the sticky progress line of the sections links the steps of joining too.
+    await main.locator('a[href="#landing-join"]').first().click();
     await expect(main.locator("#landing-join")).toBeFocused();
     await expect(main.locator("#landing-join")).toBeInViewport();
   });
