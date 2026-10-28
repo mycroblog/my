@@ -242,6 +242,7 @@ async function serveApi(page: Page) {
     if (key === "GET /admin/instance_texts")
       return json(route, { items: [{ key: "name", body: "my example", revised_at: "2026-10-16T00:00:00Z" }] });
     if (key === "GET /admin/settings") return json(route, voiceSettings);
+    if (key === "GET /admin/instance/brand") return json(route, {});
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
   return sent;

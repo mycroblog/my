@@ -254,6 +254,8 @@ test.describe("supporters", () => {
     ).toBeChecked();
     expect(sent).toContain("program true");
 
+    // The plans' add button opens the form in its place, a region named by the same words.
+    await plansRegion.getByRole("button", { name: message("admin.supporters.new.title"), exact: true }).click();
     const form = main.getByRole("region", { name: message("admin.supporters.new.title"), exact: true });
     await form.getByRole("textbox", { name: message("admin.supporters.plan.role"), exact: true }).fill("fan");
     await form.getByRole("textbox", { name: message("admin.supporters.plan.name"), exact: true }).fill("Fan");

@@ -755,6 +755,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/instance_texts") return json(route, { items: [documentText, instanceName] });
     if (key === "GET /admin/theme") return json(route, adminTheme);
     if (key === "GET /admin/settings") return json(route, instanceSettings);
+    if (key === "GET /admin/instance/brand") return json(route, {});
     if (key === "GET /admin/rules") return json(route, { items: [rule] });
     if (key === "GET /admin/invites") return json(route, { items: [invite] });
     if (key === "GET /admin/custom_emojis")

@@ -134,6 +134,7 @@ async function administratorServer(page: Page) {
       });
     }
     if (key === "GET /admin/settings") return json(route, instanceSettings(settings));
+    if (key === "GET /admin/instance/brand") return json(route, {});
     if (key === "PATCH /admin/settings") {
       const { values } = (request.postDataJSON() ?? {}) as { values: Record<string, string> };
       for (const [setting, value] of Object.entries(values)) {
