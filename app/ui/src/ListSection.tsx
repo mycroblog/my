@@ -45,6 +45,11 @@ export type ListSectionProps<T> = {
   title: ReactNode;
   /** A note on the whole list under the heading line (`Hint`), which also describes the region. */
   description?: ReactNode;
+  /**
+   * What narrows the list (a search, the filters), under the heading line and the adding panel and above the result:
+   * it belongs to the list, so it sits inside the region.
+   */
+  toolbar?: ReactNode;
   /** The items, in the order of the list. */
   items: readonly T[];
   /** A stable key of an item, also the row's `data-row-id` (for moving focus after a row goes away). */
@@ -71,6 +76,7 @@ export type ListSectionProps<T> = {
 export function ListSection<T>({
   title,
   description,
+  toolbar,
   items,
   itemKey,
   renderItem,
@@ -152,6 +158,7 @@ export function ListSection<T>({
           </Stack>
         </Box>
       )}
+      {toolbar}
       <div>
         <ActionResult result={result} />
       </div>

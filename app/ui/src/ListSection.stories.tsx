@@ -173,3 +173,22 @@ export const Unavailable: Story = {
 export const Failure: Story = {
   render: () => <Demo initial={twoDomains} result={{ tone: "danger", message: "Couldn't unmute spam.example." }} />,
 };
+
+/** A search that narrows the list, under the heading line and above the rows, inside the region. */
+export const WithToolbar: Story = {
+  render: () => (
+    <Demo
+      initial={twoDomains}
+      toolbar={
+        <Cluster as="form" gap="2" align="end" role="search" aria-label="Search the muted domains">
+          <TextField type="search" label="Domain" />
+          <Button type="submit">Search</Button>
+        </Cluster>
+      }
+    />
+  ),
+  play: async ({ canvas }) => {
+    const region = canvas.getByRole("region", { name: "Muted domains" });
+    await expect(region).toContainElement(canvas.getByRole("search", { name: "Search the muted domains" }));
+  },
+};
