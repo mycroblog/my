@@ -165,6 +165,7 @@ export class Server {
       posting: { visibilities: ["public", "local", "unlisted", "private", "direct"], visibility_ceiling: "public" },
       permissions: [],
       statuses_count: 0,
+      follow_requests_count: 0,
     };
   }
 

@@ -916,28 +916,42 @@ describe("blocks, mutes and follow requests", () => {
     expect(screen.getByRole("button", { name: "Unmute: Carol" })).toBeInTheDocument();
   });
 
-  test("accepting and rejecting follow requests", async () => {
+  test("accepting and rejecting follow requests, with their count in the menu", async () => {
     const answered: string[] = [];
+    let pending = [bob, carol];
+    const answer = (id: string) => {
+      pending = pending.filter((account) => account.id !== id);
+    };
     server.use(
-      http.get(`${apiBase}/follow_requests`, () => HttpResponse.json({ accounts: [bob, carol] })),
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({ ...viewerFixture, follow_requests_count: pending.length }),
+      ),
+      http.get(`${apiBase}/follow_requests`, () => HttpResponse.json({ accounts: pending })),
       http.post(`${apiBase}/follow_requests/:id/authorize`, ({ params }) => {
         answered.push(`accept ${String(params["id"])}`);
+        answer(String(params["id"]));
         return HttpResponse.json({ ...relationshipFixture(String(params["id"])), followed_by: true });
       }),
       http.post(`${apiBase}/follow_requests/:id/reject`, ({ params }) => {
         answered.push(`reject ${String(params["id"])}`);
+        answer(String(params["id"]));
         return HttpResponse.json(relationshipFixture(String(params["id"])));
       }),
     );
     const { user } = await renderApp({ path: "/settings/follow-requests" });
+    const menu = await screen.findByRole("navigation", { name: "Settings pages" });
+    expect(await within(menu).findByRole("link", { name: "Follow requests 2 waiting" })).toHaveTextContent("2");
 
     await user.click(await screen.findByRole("button", { name: "Accept: Bob" }));
     expect(await screen.findByText("Bob now follows you.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Accept: Carol" })).toHaveFocus();
+    expect(await within(menu).findByRole("link", { name: "Follow requests 1 waiting" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Reject: Carol" }));
 
     expect(await screen.findByRole("heading", { level: 2, name: "No follow requests" })).toBeInTheDocument();
     expect(answered).toEqual([`accept ${bob.id}`, `reject ${carol.id}`]);
+    // At zero the badge goes away.
+    expect(await within(menu).findByRole("link", { name: "Follow requests" })).not.toHaveTextContent(/\d/);
   });
 
   test("a failed action keeps the account and says why", async () => {

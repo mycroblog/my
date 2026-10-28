@@ -94,6 +94,8 @@ func (fakeGraph) Counters(_ context.Context, id string) (graph.Counters, error) 
 	return graph.Counters{AccountID: id, FollowersCount: 2, FollowingCount: 1}, nil
 }
 
+func (fakeGraph) FollowRequestCount(context.Context, string) (int64, error) { return 3, nil }
+
 // authEnv is a Server with fake tokens, accounts, and a rate limiter on a stopped clock.
 type authEnv struct {
 	h     http.Handler
