@@ -248,7 +248,7 @@ test.describe("the new-post form", () => {
     expect(posted).toEqual([]);
   });
 
-  test("exposes the text, then the tools with their current values, then the submit button", async ({
+  test("exposes the text, then the visibility and the other tools with their current values, then the submit button", async ({
     page,
     hasTouch,
   }) => {
@@ -260,12 +260,12 @@ test.describe("the new-post form", () => {
       - form:
         - ${ariaNode(`textbox ${JSON.stringify(message("compose.text.label"))}`)}
         - ${ariaNode(`button ${JSON.stringify(message("emoji.picker.button"))}`)}
+        - ${ariaNode(`button ${JSON.stringify(message("compose.visibility.button", { visibility: message("compose.visibility.public") }))}`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.media.add"))}`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.poll.toggle"))} [pressed=false]`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.warning.toggle"))} [pressed=false]`)}
-        - ${ariaNode(`button ${JSON.stringify(message("compose.visibility.button", { visibility: message("compose.visibility.public") }))}`)}
         - ${ariaNode(`button /${endingWith(message("compose.language.label"))}/`)}
-        - ${ariaNode(`button ${JSON.stringify(message("compose.submit"))} [disabled]`)}
+        - ${ariaNode(`button ${JSON.stringify(message("compose.submit"))}`)}
     `);
   });
 
@@ -289,15 +289,17 @@ test.describe("the new-post form", () => {
         - status
         - ${ariaNode(`button ${JSON.stringify(message("emoji.picker.button"))}`)}
         - status
+        - ${ariaNode(`button ${JSON.stringify(message("compose.visibility.button", { visibility: message("compose.visibility.public") }))}`)}
+        - text: /.+/
         - ${ariaNode(`button ${JSON.stringify(message("compose.media.add"))}`)}
         - text: /.+/
         - ${ariaNode(`button ${JSON.stringify(message("compose.poll.toggle"))} [pressed=false]`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.warning.toggle"))} [pressed=false]`)}
-        - ${ariaNode(`button ${JSON.stringify(message("compose.visibility.button", { visibility: message("compose.visibility.public") }))}`)}
-        - text: /.+/
         - ${ariaNode(`button /${endingWith(message("compose.quote_policy.label"))}/`)}
         - ${ariaNode(`button /${endingWith(message("compose.language.label"))}/`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.submit"))}`)}
+        - status
+        - alert
     `);
   });
 

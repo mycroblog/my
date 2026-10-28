@@ -46,8 +46,9 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
     <PopoverTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       {/* The tooltip says the control's name and value like the icon buttons' (G12) and stays closed while the popover is open. */}
       <TooltipTrigger isDisabled={isOpen}>
+        {/* Heavier than the other tools (secondary, not ghost): the visibility decides most about who sees the post. */}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="toolbar"
           aria-label={buttonLabel}
           aria-describedby={descriptionId}
