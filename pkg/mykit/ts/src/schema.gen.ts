@@ -9879,6 +9879,14 @@ export interface components {
              */
             statuses_count: number;
             /**
+             * Format: int64
+             * @description The number of follow requests that await the account's approval. Only the owner sees
+             *     it. Accepting or rejecting a request takes it out of the count. Like `followers_count`,
+             *     it also counts the requests of deactivated accounts, which `GET /follow_requests`
+             *     leaves out.
+             */
+            follow_requests_count: number;
+            /**
              * @description The permissions that the user's roles grant, which the admin operations need; empty
              *     for a user without roles. Clients show the admin screens by them; the server checks
              *     the permission of each admin operation regardless.

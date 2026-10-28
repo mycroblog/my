@@ -8,7 +8,8 @@ import { useT } from "../../../lib/i18n";
 
 /**
  * Returns `signOut`, which signs out in every tab (the session revokes the tokens; the app then drops the
- * cached queries and the Service Worker's caches) and opens the sign-in page, and whether it is running.
+ * cached queries and the Service Worker's caches) and opens the landing page (`/login` would sign in again at
+ * once), and whether it is running.
  */
 export function useSignOut(): { signOut: () => void; isPending: boolean } {
   const session = useSession();
@@ -26,7 +27,7 @@ export function useSignOut(): { signOut: () => void; isPending: boolean } {
       })
       .finally(() => {
         setIsPending(false);
-        void navigate({ to: "/login" });
+        void navigate({ to: "/" });
       });
   };
   return { signOut, isPending };

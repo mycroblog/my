@@ -337,6 +337,18 @@ linters:
             - github.com/mycroblog/my/internal/app/dbupgrade
             - github.com/mycroblog/my/internal/app/kernel
             - github.com/mycroblog/my/internal/app/uow
+        # app/rewrap re-wraps the stored sealed values under the current KEK (`my kek`, ADR-0019 §6)
+        # through a Store port and the sealed columns that the composition root takes from the
+        # modules; it owns no tables and depends only on kernel (Sealer) and uow.
+        app-rewrap:
+          list-mode: strict
+          files:
+            - "**/internal/app/rewrap/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app/rewrap
+            - github.com/mycroblog/my/internal/app/kernel
+            - github.com/mycroblog/my/internal/app/uow
         # app/stream holds the ports of the real-time updates (Publisher / Subscriber, Bus,
         # Sweeper), the in-process broker, and the cross-process Relay shared by the modules that
         # publish, the streaming endpoint, and the Bus adapters; it depends only on kernel (the
@@ -502,6 +514,18 @@ linters:
           deny:
             - pkg: github.com/mycroblog/my/internal/adapter/payment/fake
               desc: only internal/platform/adapters_payments_fake.go (build tag e2e_fakes) and tests import the fake payment provider
+        # The fake push service accepts any push message for its own subscriptions: besides the tests, only the test
+        # builds (build tag e2e_fakes) link it, through the one file of my dev push-service (ADR-0118 §1).
+        push-service-fake:
+          list-mode: lax
+          files:
+            - $all
+            - "!$test"
+            - "!**/internal/adapter/pushservice/fake/**"
+            - "!**/cmd/my/dev_push_service.go"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/pushservice/fake
+              desc: only cmd/my/dev_push_service.go (build tag e2e_fakes) and tests import the fake push service
         # The live interoperability scenarios are black-box clients of running servers (federation.md §12):
         # HTTP to the client APIs and a read of this server's database (pgx), nothing of this module.
         federation-live:

@@ -215,11 +215,11 @@ test.describe("the terms and policies screen", () => {
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
-  test("the sign-in page of the app links to both documents", async ({ page, baseURL }) => {
+  test("the footer of the app's signed-out pages links to the documents", async ({ page, baseURL }) => {
     await administratorServer(page, new URL(baseURL ?? "").origin);
     await page.route("**/oauth/token/refresh", (route) => json(route, { error: "invalid_grant" }, 400));
-    await page.goto("/login");
-    const links = page.getByRole("main").getByRole("navigation");
+    await page.goto("/search");
+    const links = page.getByRole("contentinfo").getByRole("navigation");
     await expect(links.getByRole("link")).toHaveCount(1);
     await expect(links.getByRole("link")).toHaveAttribute("href", "/about/terms");
     await expectNoHorizontalScroll(page);

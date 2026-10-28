@@ -378,6 +378,15 @@ func (r *GraphRepository) FindCounters(ctx context.Context, accountID string) (g
 	return graph.Counters(row), nil
 }
 
+// CountFollowers implements graph.Repository.
+func (r *GraphRepository) CountFollowers(ctx context.Context, followeeAccountID string, state graph.State) (int64, error) {
+	n, err := r.db.reader().CountFollowersInState(ctx, sqlitegen.CountFollowersInStateParams{AccountID: followeeAccountID, State: string(state)})
+	if err != nil {
+		return 0, wrap(err, "count followers")
+	}
+	return n, nil
+}
+
 // ListFollowers implements graph.Repository.
 func (r *GraphRepository) ListFollowers(ctx context.Context, followeeAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error) {
 	rows, err := r.db.reader().ListFollowersPage(ctx, sqlitegen.ListFollowersPageParams{

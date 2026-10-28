@@ -171,6 +171,10 @@
     "defaultMessage": "Follow requests",
     "description": "Heading and document title of the settings page with the follow requests awaiting approval."
   },
+  "settings.follow_requests.waiting": {
+    "defaultMessage": "{count, plural, one {# waiting} other {# waiting}}",
+    "description": "Badge of the settings menu's Follow requests item: how many follow requests await the user's approval. The item's name is its label followed by this."
+  },
   "settings.import_export.export.description": {
     "defaultMessage": "Download CSV files in the format Mastodon uses. Mastodon and other servers that read this format can import them.",
     "description": "Explains the CSV files the user can download, above the list of them."

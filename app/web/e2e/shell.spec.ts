@@ -63,6 +63,11 @@ function hasTabBar(page: Page): boolean {
   return (page.viewportSize()?.width ?? 0) < 768;
 }
 
+/** Whether the project's width puts the signed-out top bar's items behind its Menu button (below lg). */
+function hasTopMenu(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) < 1024;
+}
+
 /** The items of the navigation that the project's width shows; the others are hidden (display: none). */
 function shownItems(page: Page) {
   return page.getByRole("navigation").getByRole("listitem").filter({ visible: true });
@@ -129,28 +134,20 @@ for (const path of pages) {
 }
 
 // Signed out: vite preview has no OAuth endpoints, so no session resumes.
-test.describe("page /login", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-  });
-
-  test("has no axe violations", async ({ makeAxeBuilder }) => {
-    await expectNoAxeViolations(makeAxeBuilder);
-  });
-
-  test("does not scroll horizontally", async ({ page }) => {
-    await expectNoHorizontalScroll(page);
-  });
-
-  test("offers the one button to the server's sign-in screen", async ({ page }) => {
-    await expect(page.getByRole("main").getByRole("button")).toHaveCount(1);
-  });
-
-  test("marks the navigation's sign-in item as current", async ({ page }) => {
-    const current = page.locator('nav a[aria-current="page"]').filter({ visible: true });
-    await expect(current).toHaveCount(1);
-    await expect(current).toHaveAttribute("href", /^\/login/);
+test.describe("/login", () => {
+  test("is no page: it opens the server's sign-in screen at once, to come back to return_to", async ({ page }) => {
+    // vite preview has no authorization screen: answer it with an empty page, and keep the URL it was opened with.
+    const authorize = new Promise<URL>((resolve) => {
+      void page.route("**/oauth/authorize?*", async (route) => {
+        resolve(new URL(route.request().url()));
+        await route.fulfill({ status: 200, contentType: "text/html", body: "<title>Sign in</title>" });
+      });
+    });
+    await page.goto("/login?return_to=%2Ftags%2Fcats");
+    const url = await authorize;
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(new URL(url.searchParams.get("redirect_uri") ?? "").pathname).toBe("/login/callback");
   });
 });
 
@@ -161,20 +158,36 @@ test.describe("the navigation while signed out", () => {
   }) => {
     await page.goto("/local");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-    // Local, Search, About and Sign in, and on phones the Menu button (the instance answers nothing here, so no
-    // Federated and no Sign up).
-    const items = hasTabBar(page) ? ["link", "link", "link", "link", "button"] : ["link", "link", "link", "link"];
-    await expect(page.getByRole("navigation")).toMatchAriaSnapshot(`
+    // Local, Search, About and Sign in (the instance answers nothing here, so no Federated and no Sign up). Below lg
+    // the items are behind the Menu button, and Sign in, the call to action, stays in the bar.
+    const nav = page.getByRole("navigation");
+    const menu = nav.getByRole("button", { name: "Menu" });
+    if (hasTopMenu(page)) {
+      await expect(nav).toMatchAriaSnapshot(`
+        - navigation:
+          - paragraph:
+            - link
+          - link
+          - button [expanded=false]
+      `);
+      await expect(nav.getByRole("link").nth(1)).toHaveAttribute("href", "/login?return_to=%2Flocal");
+      await menu.click();
+      await expect(menu).toHaveAttribute("aria-expanded", "true");
+    } else {
+      await expect(menu).toBeHidden();
+    }
+    const items = hasTopMenu(page) ? 3 : 4;
+    await expect(nav).toMatchAriaSnapshot(`
       - navigation:
         - list:
           - /children: equal
-${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")}
+${Array.from({ length: items }, () => `          - listitem:\n            - link`).join("\n")}
     `);
     const links = shownItems(page).locator("a");
     await expect(links.nth(0)).toHaveAttribute("href", "/local");
     await expect(links.nth(1)).toHaveAttribute("href", "/search");
     await expect(links.nth(2)).toHaveAttribute("href", "/about");
-    await expect(links.nth(3)).toHaveAttribute("href", "/login?return_to=%2Flocal");
+    if (!hasTopMenu(page)) await expect(links.nth(3)).toHaveAttribute("href", "/login?return_to=%2Flocal");
     for (const path of ["/home", "/notifications", "/profile", "/bookmarks", "/settings"]) {
       await expect(page.getByRole("navigation").locator(`a[href="${path}"]`)).toHaveCount(0);
     }
@@ -182,11 +195,55 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
     await expectNoHorizontalScroll(page);
   });
 
-  test("sends a page that needs a session to sign in, which comes back to it", async ({ page }) => {
-    await page.goto("/notifications");
-    await expect(page).toHaveURL(/\/login\?/);
-    expect(new URL(page.url()).searchParams.get("return_to")).toBe("/notifications");
+  test("keeps the top bar to one row, with its items behind the Menu button below lg", async ({ page }) => {
+    await page.goto("/local");
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    const nav = page.getByRole("navigation");
+    const box = await nav.boundingBox();
+    // One row of 44 px targets and the bar's padding: nothing wraps.
+    expect(box?.height ?? 0).toBeLessThan(80);
+    if (!hasTopMenu(page)) return;
+    const menu = nav.getByRole("button", { name: "Menu" });
+    await menu.click();
+    const local = nav.getByRole("link", { name: "Local" });
+    await expect(local).toBeVisible();
+    // The items are not a dialog: Tab goes on into them, Escape closes them and focus returns to the button.
+    await page.keyboard.press("Tab");
+    await expect(local).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(menu).toBeFocused();
+    await expect(local).toBeHidden();
+    // Following an item closes them.
+    await menu.click();
+    await nav.getByRole("link", { name: "Search" }).click();
+    await expect(page).toHaveURL(/\/search$/);
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("ends the page with one footer and no column about the server, at every width", async ({ page }) => {
+    await page.goto("/local");
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+    const footer = page.getByRole("contentinfo");
+    await expect(footer).toHaveCount(1);
+    await expect(footer.locator('a[href="/about"]')).toBeVisible();
+    // The footer is the end of the page: nothing follows it, and nothing below the screen's height is blank.
+    const box = await footer.boundingBox();
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(height, 0);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("sends a page that needs a session to sign in, which comes back to it", async ({ page }) => {
+    // Through /login, which is no page, straight to the server's sign-in screen (vite preview has none: an empty one).
+    const authorize = page.waitForRequest((request) => new URL(request.url()).pathname === "/oauth/authorize");
+    await page.route("**/oauth/authorize?*", (route) =>
+      route.fulfill({ status: 200, contentType: "text/html", body: "<title>Sign in</title>" }),
+    );
+    await page.goto("/notifications");
+    await authorize;
   });
 });
 

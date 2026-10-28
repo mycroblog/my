@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Sourced by scripts/docker-smoke.sh and scripts/upgrade-test.sh, which define fail(). Needs curl, jq, openssl.
+# Sourced by scripts/docker-smoke.sh, scripts/upgrade-test.sh, and scripts/restore-drill.sh, which define fail(). Needs curl, jq, openssl.
 #
 # web_sign_in API_ORIGIN WEB_ORIGIN EMAIL PASSWORD prints an access token of the account, got without a browser as
 # the web client gets one: the OAuth 2.0 authorization code flow with PKCE through the authorization endpoint, the

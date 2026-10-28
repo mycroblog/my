@@ -7569,6 +7569,12 @@ type CredentialAccount struct {
 	// Fields The profile's metadata fields, in their order; empty when there are none.
 	Fields []ProfileField `json:"fields"`
 
+	// FollowRequestsCount The number of follow requests that await the account's approval. Only the owner sees
+	// it. Accepting or rejecting a request takes it out of the count. Like `followers_count`,
+	// it also counts the requests of deactivated accounts, which `GET /follow_requests`
+	// leaves out.
+	FollowRequestsCount int64 `json:"follow_requests_count"`
+
 	// FollowersCount The number of accounts that actively follow the account, as far as the instance
 	// knows. Present on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) and left out where accounts are listed or embedded.

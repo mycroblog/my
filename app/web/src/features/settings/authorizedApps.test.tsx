@@ -170,7 +170,8 @@ describe("authorized apps", () => {
     );
     await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    // Signed out, the landing page opens (/login would start signing in again).
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(revoked).toEqual([web.id]);
   });
 });

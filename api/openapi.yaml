@@ -15229,6 +15229,7 @@ components:
             - posting
             - permissions
             - statuses_count
+            - follow_requests_count
           properties:
             discoverable:
               description: Whether the account may be suggested to others and listed in directories.
@@ -15254,6 +15255,15 @@ components:
                 The number of the account's own posts that are not deleted, of every visibility.
                 Only the owner sees it; other accounts do not carry it. A client that creates a post
                 adds one to it, so a count of 1 after the create is the account's first post.
+              type: integer
+              format: int64
+              minimum: 0
+            follow_requests_count:
+              description: |
+                The number of follow requests that await the account's approval. Only the owner sees
+                it. Accepting or rejecting a request takes it out of the count. Like `followers_count`,
+                it also counts the requests of deactivated accounts, which `GET /follow_requests`
+                leaves out.
               type: integer
               format: int64
               minimum: 0

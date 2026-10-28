@@ -9,7 +9,7 @@ import { errorMessage } from "../../../lib/errors";
 import { useFederation } from "../../../lib/federation";
 import { isRemoteAcct } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
-import { profilePath } from "../../../lib/paths";
+import { profilePath, signInPath } from "../../../lib/paths";
 import { useViewer } from "../../session";
 import {
   type Account,
@@ -106,7 +106,7 @@ export function useRelationship(account: Account): RelationshipState {
   if (session === "signed-out") {
     return {
       kind: "signed-out",
-      signInHref: `/login?${new URLSearchParams({ return_to: profilePath(account.acct) }).toString()}`,
+      signInHref: signInPath(profilePath(account.acct)),
     };
   }
   if (viewer.status === "error") return { kind: "error", message: viewer.message };

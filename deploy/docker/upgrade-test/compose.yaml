@@ -9,6 +9,9 @@
 #              (`up --no-deps my`); a release may lack `my db upgrade`, so the one-off my db services do not run
 #   candidate  `up my` with the candidate's images runs upgrade-check, schema, and upgrade, then starts the server
 #
+# scripts/restore-drill.sh runs the same stack with this tree's images alone: it backs up a filled instance, removes
+# every container and volume, and restores the backup into new ones (docs/operations/backup.md, "Recovery drill").
+#
 # remote.test is a static ActivityPub server (Caddy with a certificate of the private CA): one Person, carol, whose
 # inbox takes every POST with 202. The server trusts only that CA and may reach this network's private addresses.
 #

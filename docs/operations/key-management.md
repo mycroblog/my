@@ -53,7 +53,7 @@ The KEK is a secret setting, so it can be passed only through the environment va
 - Keep the KEK somewhere other than where the database backups live (a password manager, offline media, a secret store in another account, and so on).
   If both are in one place, a leak of that place makes the database encryption pointless.
 - During a rotation, include the `kek_previous` keys in the backup for as long as ciphertext wrapped with them remains in the database.
-- Include the KEK in your restore procedure, and test restores regularly. After restoring a database, set the KEK (and `kek_previous`) that was in use at backup time to the same values.
+- Include the KEK in your restore procedure, and test restores regularly ([Backup and restore](backup.md#recovery-drill)). After restoring a database, set the KEK (and `kek_previous`) that was in use at backup time to the same values.
   With a different KEK, anything that reads a secret fails with an `unknown key-encryption key` error that names the key ID.
 
 ## Rotate the KEK
@@ -64,10 +64,30 @@ So that a rolling deploy, where old and new processes run side by side, never pr
 1. Generate a new KEK and back it up.
 2. Restart every process with `MY_KEK=<old KEK>` and `MY_KEK_PREVIOUS=<new KEK>`. Now every process can decrypt with the new KEK.
 3. Restart every process with `MY_KEK=<new KEK>` and `MY_KEK_PREVIOUS=<old KEK>`. From now on secrets are wrapped with the new KEK, and ciphertext of the old KEK is still readable.
-4. Keep the old KEK in `kek_previous`, and keep its backup. You can remove the old KEK only after every ciphertext in the database has been re-wrapped with the new KEK.
-   There is no command yet to re-wrap existing ciphertext in bulk, so keep the old KEK in `kek_previous`.
+4. Re-wrap the stored secrets with the new KEK: run `my kek rewrap` once, with the same configuration as step 3 (see [Re-wrap the stored secrets](#re-wrap-the-stored-secrets)).
+   When it exits with 0, no secret in the database needs the old KEK any more.
+5. Wait at least 30 minutes after step 3, so that the short-lived sign-in tokens issued with the old KEK have expired, then restart every process with `MY_KEK=<new KEK>` and no `kek_previous`.
+   Media proxy URLs signed with the old KEK stop working; clients receive new URLs the next time they load the posts.
+   Keep the backup of the old KEK for as long as you keep database backups taken before step 4: restoring one of them needs it again.
 
 `kek_previous` accepts several comma-separated keys. Listing the same key twice, or listing the same key as `kek`, prevents startup.
+
+### Re-wrap the stored secrets
+
+`my kek rewrap` replaces only the wrapped data-encryption key of each secret and keeps its ciphertext; it never writes or prints a secret.
+
+```sh
+my kek status   # count the stored secrets by the key ID of the KEK that wraps them; decrypts nothing
+my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
+```
+
+- `my kek status` prints one line per column and key ID, marks the key ID of `kek` with `(current)`, and ends by telling whether any secret still needs a key of `kek_previous`.
+  A key ID that is neither `kek` nor in `kek_previous` means a KEK is missing from the configuration.
+- `my kek rewrap` reads the secrets in batches of 100 and writes each batch in one short transaction. It prints, per column, how many secrets it re-wrapped and how many were already wrapped with `kek`.
+  It can run while the server is serving, and it is safe to stop or to run again at any time: it skips the secrets already wrapped with `kek`, and a secret that the server rewrote in the meantime is left as the server wrote it.
+- A secret that cannot be re-wrapped is left unchanged and reported with its row ID, and the command exits with 1. Either its KEK is not configured
+  (the message names the key ID: add that KEK to `kek_previous` and run it again), or the stored value is damaged or was copied from another row.
+  Do not remove a KEK from `kek_previous` while `my kek status` still counts secrets under it.
 
 ## If the KEK leaks
 
