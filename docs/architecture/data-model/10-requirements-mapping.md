@@ -26,6 +26,7 @@
 | FR-201〜204 タイムライン | M | `feed_entries`, `feed_direct_recipients`, `feed_tag_entries`, `feed_follow_edges`, `feed_exclusions`, `feed_author_restrictions`, `feed_domain_restrictions` |
 | FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers` |
 | FR-206 Web Push | S | `push_subscriptions`, `push_subscription_alerts` |
+| FR-210 通知の設定 | S | `notification_settings`、`user_tokens.unsubscribe_category` |
 | FR-208 言語フィルタ | S | `user_timeline_languages`, `feed_entries.language` |
 | FR-301〜302 フォロー・リクエスト | M | `follows`, `follow_acceptances`, `follow_rejections`, `follow_terminations`, `follow_edges` |
 | FR-303 ブロック・ミュート | M | `blocks`, `block_retractions`, `block_edges`, `mutes` |

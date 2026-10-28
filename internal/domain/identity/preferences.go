@@ -29,9 +29,6 @@ type Preferences struct {
 	DefaultPostLanguage string
 	// RequireMediaDescription makes clients ask for a description before attaching media.
 	RequireMediaDescription bool
-	// EmailModeratorNotifications sends the moderator notifications (admin_report, admin_sign_up)
-	// that the user gets also by email (FR-712).
-	EmailModeratorNotifications bool
 	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077). Off for a new user.
 	TimelineAutoInsert bool
 	UpdatedAt          time.Time

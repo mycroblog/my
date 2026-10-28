@@ -22,15 +22,14 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 		return err
 	}
 	err = q.InsertUserPreferences(ctx, postgresgen.InsertUserPreferencesParams{
-		UserID:                      p.UserID,
-		Locale:                      p.Locale,
-		DefaultVisibility:           string(p.DefaultVisibility),
-		DefaultQuotePolicy:          string(p.DefaultQuotePolicy),
-		DefaultPostLanguage:         p.DefaultPostLanguage,
-		RequireMediaDescription:     p.RequireMediaDescription,
-		EmailModeratorNotifications: p.EmailModeratorNotifications,
-		TimelineAutoInsert:          p.TimelineAutoInsert,
-		UpdatedAt:                   p.UpdatedAt,
+		UserID:                  p.UserID,
+		Locale:                  p.Locale,
+		DefaultVisibility:       string(p.DefaultVisibility),
+		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
+		DefaultPostLanguage:     p.DefaultPostLanguage,
+		RequireMediaDescription: p.RequireMediaDescription,
+		TimelineAutoInsert:      p.TimelineAutoInsert,
+		UpdatedAt:               p.UpdatedAt,
 	})
 	if err != nil {
 		return wrap(err, "insert preferences")
@@ -45,15 +44,14 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 		return err
 	}
 	n, err := q.UpdateUserPreferences(ctx, postgresgen.UpdateUserPreferencesParams{
-		UserID:                      p.UserID,
-		Locale:                      p.Locale,
-		DefaultVisibility:           string(p.DefaultVisibility),
-		DefaultQuotePolicy:          string(p.DefaultQuotePolicy),
-		DefaultPostLanguage:         p.DefaultPostLanguage,
-		RequireMediaDescription:     p.RequireMediaDescription,
-		EmailModeratorNotifications: p.EmailModeratorNotifications,
-		TimelineAutoInsert:          p.TimelineAutoInsert,
-		UpdatedAt:                   p.UpdatedAt,
+		UserID:                  p.UserID,
+		Locale:                  p.Locale,
+		DefaultVisibility:       string(p.DefaultVisibility),
+		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
+		DefaultPostLanguage:     p.DefaultPostLanguage,
+		RequireMediaDescription: p.RequireMediaDescription,
+		TimelineAutoInsert:      p.TimelineAutoInsert,
+		UpdatedAt:               p.UpdatedAt,
 	})
 	if err != nil {
 		return wrap(err, "update preferences")
@@ -134,17 +132,16 @@ func userPreferencesFrom(ctx context.Context, q *postgresgen.Queries, row postgr
 		return identity.Preferences{}, wrap(err, "get time zone")
 	}
 	return identity.Preferences{
-		UserID:                      row.UserID,
-		TimeZone:                    tz,
-		TimeZoneChosen:              chosen,
-		Locale:                      row.Locale,
-		DefaultVisibility:           identity.Visibility(row.DefaultVisibility),
-		DefaultQuotePolicy:          identity.QuotePolicy(row.DefaultQuotePolicy),
-		DefaultPostLanguage:         row.DefaultPostLanguage,
-		RequireMediaDescription:     row.RequireMediaDescription,
-		EmailModeratorNotifications: row.EmailModeratorNotifications,
-		TimelineAutoInsert:          row.TimelineAutoInsert,
-		UpdatedAt:                   utc(row.UpdatedAt),
+		UserID:                  row.UserID,
+		TimeZone:                tz,
+		TimeZoneChosen:          chosen,
+		Locale:                  row.Locale,
+		DefaultVisibility:       identity.Visibility(row.DefaultVisibility),
+		DefaultQuotePolicy:      identity.QuotePolicy(row.DefaultQuotePolicy),
+		DefaultPostLanguage:     row.DefaultPostLanguage,
+		RequireMediaDescription: row.RequireMediaDescription,
+		TimelineAutoInsert:      row.TimelineAutoInsert,
+		UpdatedAt:               utc(row.UpdatedAt),
 	}, nil
 }
 

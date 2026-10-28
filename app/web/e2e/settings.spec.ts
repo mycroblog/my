@@ -77,7 +77,6 @@ async function signedInServer(
     default_visibility: "public",
     default_post_language: "und",
     require_media_description: false,
-    email_moderator_notifications: false,
     ...(emailSuppression === undefined ? {} : { email_suppression: emailSuppression }),
     timeline_auto_insert: false,
     timeline_languages: [] as string[],
@@ -363,11 +362,6 @@ function message(key: string): string {
   const text = catalog[key]?.defaultMessage;
   if (text === undefined) throw new Error(`no message ${key} in ${projectLocale()}`);
   return text;
-}
-
-/** The switch that also sends the moderator notifications by email. */
-function moderatorEmailSwitch(page: Page) {
-  return page.getByRole("main").getByRole("switch", { name: message("settings.moderator_notifications.email") });
 }
 
 /** The button that switches the time zone to the browser's, shown only when they differ. */
@@ -667,9 +661,6 @@ test.describe("display language", () => {
       - group:
         - list
     `);
-    // A viewer without moderator permissions has no moderator notifications to switch.
-    await expect(moderatorEmailSwitch(page)).toHaveCount(0);
-
     // The names of the display languages are in their own language, whatever the page's locale.
     const target = locale === "ja" ? { locale: "en", name: "English" } : { locale: "ja", name: "日本語" };
     const select = page.locator('main button[aria-haspopup="listbox"]').first();
@@ -900,50 +891,6 @@ test.describe("email suppression", () => {
     await expect(
       page.getByRole("main").getByRole("region", { name: message("settings.email_suppression.title"), exact: true }),
     ).toHaveCount(0);
-  });
-});
-
-test.describe("moderator notifications by email", () => {
-  test("a moderator switches them on, and they stay on after a reload", async ({ page, makeAxeBuilder }) => {
-    const changes = await signedInServer(page, projectLocale(), { permissions: ["manage_reports"] });
-    await page.goto("/settings/preferences");
-    const toggle = moderatorEmailSwitch(page);
-    await expect(toggle).not.toBeChecked();
-    // The section of the moderator notifications follows the languages group, under its own heading.
-    await expect(page.getByRole("main")).toMatchAriaSnapshot(`
-      - group:
-        - list
-      - region:
-        - heading [level=2]
-        - switch
-    `);
-    await expectNoAxeViolations(makeAxeBuilder);
-    await expectNoHorizontalScroll(page);
-
-    // Space toggles a switch (WAI-ARIA APG, Switch pattern); the input under the label takes the focus.
-    await toggle.focus();
-    await page.keyboard.press("Space");
-    await expect(toggle).toBeChecked();
-    await expect.poll(() => changes).toEqual([{ email_moderator_notifications: true }]);
-
-    await page.reload();
-    await expect(moderatorEmailSwitch(page)).toBeChecked();
-  });
-
-  test("says why there is no switch when the server sends no email", async ({ page, makeAxeBuilder }) => {
-    await signedInServer(page, projectLocale(), { permissions: ["manage_accounts"], sendsEmail: false });
-    await page.goto("/settings/preferences");
-    const section = page
-      .getByRole("main")
-      .getByRole("region", { name: message("settings.moderator_notifications.title"), exact: true });
-    await expect(section).toMatchAriaSnapshot(`
-      - region:
-        - heading [level=2]
-        - paragraph
-    `);
-    await expect(section.getByRole("switch")).toHaveCount(0);
-    await expectNoAxeViolations(makeAxeBuilder);
-    await expectNoHorizontalScroll(page);
   });
 });
 

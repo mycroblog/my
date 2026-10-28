@@ -903,6 +903,59 @@ paths:
                 $ref: '#/components/schemas/BadgeChoice'
         default:
           $ref: '#/components/responses/Problem'
+  /preferences/notifications:
+    get:
+      operationId: getNotificationSettings
+      summary: Get the authenticated user's notification settings
+      description: |
+        Whether the user gets each kind of notification in the app and by email, for the kinds
+        the user gets.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          description: The settings.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateNotificationSettings
+      summary: Change the authenticated user's notification settings
+      description: |
+        Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+        row the user does not get or a channel that is fixed; nothing is changed then.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsUpdate'
+      responses:
+        '200':
+          description: The settings after the change.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        default:
+          $ref: '#/components/responses/Problem'
   /preferences/supporter_listing:
     get:
       operationId: getSupporterListing
@@ -16079,8 +16132,8 @@ components:
         sends_email:
           description: |
             Whether the instance sends email (the server setting `mail` is not `none`). Without
-            email, the moderator notifications come only in the app, so clients do not offer
-            the preference `email_moderator_notifications`.
+            email, notifications come only in the app, so clients do not offer the email column of
+            the notification settings (`GET /preferences/notifications`).
           type: boolean
         push_server_key:
           description: |
@@ -17192,6 +17245,42 @@ components:
         error_group:
           description: What an `admin_error_group` tells of; omitted for the other types.
           $ref: '#/components/schemas/NotificationErrorGroup'
+    NotificationGroup:
+      description: |
+        A row of the notification settings: one or more notification types that the user turns on
+        and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+        `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+        `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+        `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+        `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+        notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+        `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+        `service_closure`, and `supporter` (the `supporter_*` types).
+      type: string
+      enum:
+        - mention
+        - follow
+        - follow_request
+        - follow_accepted
+        - boost
+        - favourite
+        - reaction
+        - quote
+        - poll_closed
+        - account_moved
+        - voice
+        - admin_report
+        - admin_sign_up
+        - admin_appeal
+        - admin_webhook_disabled
+        - admin_custom_emoji_request
+        - admin_account_moved
+        - admin_service_closure_due
+        - admin_error_group
+        - moderation
+        - service_closure
+        - supporter
     NotificationMarker:
       description: How far the authenticated user has read the notifications.
       type: object
@@ -17226,6 +17315,104 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Notification'
+    NotificationSettingCell:
+      description: One channel of one row of the notification settings.
+      type: object
+      required:
+        - enabled
+        - fixed
+      properties:
+        enabled:
+          description: Whether the user gets the row's notifications through the channel.
+          type: boolean
+        fixed:
+          description: |
+            Whether the channel is always on and cannot be changed: clients show it on and
+            disabled.
+          type: boolean
+    NotificationSettingRow:
+      description: |
+        One row of the notification settings with its channels. `in_app` creates the notifications:
+        turned off, the row's notifications are not created, so neither Web Push nor email delivers
+        them, and clients show the row's other channels disabled; the notifications from before stay.
+        `email` sends each notification to the primary address once it is confirmed and while emails
+        reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
+        emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+        the read marker and not dismissed); the moderator notifications are emailed at once. Clients
+        offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
+        each subscription (`putPushSubscription`).
+      type: object
+      required:
+        - group
+        - section
+        - types
+        - in_app
+        - email
+      properties:
+        group:
+          $ref: '#/components/schemas/NotificationGroup'
+        section:
+          description: |
+            The kind of the row: `ordinary` (what other users did; in the app on and email off by
+            default), `moderator` (to the holders of the permission it needs; both on by default),
+            or `instance` (the instance's notices to the user; always in the app).
+          type: string
+          enum:
+            - ordinary
+            - moderator
+            - instance
+        types:
+          description: The notification types of the row.
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+        in_app:
+          $ref: '#/components/schemas/NotificationSettingCell'
+        email:
+          $ref: '#/components/schemas/NotificationSettingCell'
+    NotificationSettings:
+      description: |
+        The authenticated user's notification settings: the rows the user gets, in the order to
+        show them. The moderator rows are only those whose permission the user's roles grant, and
+        `supporter` is there only while the supporter program is enabled (`Instance.supporters_enabled`).
+      type: object
+      required:
+        - rows
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationSettingRow'
+    NotificationSettingsUpdate:
+      description: Changes of the authenticated user's notification settings.
+      type: object
+      required:
+        - changes
+      properties:
+        changes:
+          description: |
+            The cells to change; the others keep their values. Each names a row the user gets and a
+            channel that is not fixed.
+          type: array
+          maxItems: 64
+          items:
+            type: object
+            required:
+              - group
+              - channel
+              - enabled
+            properties:
+              group:
+                $ref: '#/components/schemas/NotificationGroup'
+              channel:
+                description: The channel to change.
+                type: string
+                enum:
+                  - in_app
+                  - email
+              enabled:
+                description: Whether the user gets the row's notifications through the channel.
+                type: boolean
     NotificationType:
       description: |
         The kind of a notification. `account` is the account that acted: the follower
@@ -18030,7 +18217,6 @@ components:
         - default_quote_policy
         - default_post_language
         - require_media_description
-        - email_moderator_notifications
         - timeline_auto_insert
         - timeline_languages
       properties:
@@ -18056,12 +18242,6 @@ components:
           type: string
         require_media_description:
           description: Whether clients ask for a description before posting media without one.
-          type: boolean
-        email_moderator_notifications:
-          description: |
-            Whether the moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
-            `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
-            primary address. Off for a new user.
           type: boolean
         email_suppression:
           description: |
@@ -19937,9 +20117,6 @@ components:
           type: string
         require_media_description:
           description: Whether clients ask for a description before posting media without one.
-          type: boolean
-        email_moderator_notifications:
-          description: Whether the moderator notifications also come by email.
           type: boolean
         timeline_auto_insert:
           description: Whether the web client inserts new timeline posts without asking.

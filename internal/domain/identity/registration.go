@@ -206,14 +206,9 @@ const (
 )
 
 // UnsubscribeCategory is a category of email that its recipient can turn off from the email
-// itself (ADR-0086 §4). Each one is the preference of user_preferences that turns it off.
+// itself (ADR-0086 §4, user_tokens.unsubscribe_category): a group of the notification settings
+// whose email the user chooses (ADR-0109 §4), such as "mention" or "admin_report".
 type UnsubscribeCategory string
-
-// Unsubscribe categories (user_tokens.unsubscribe_category).
-const (
-	// UnsubscribeModeratorNotifications is the moderator notification emails (FR-712).
-	UnsubscribeModeratorNotifications UnsubscribeCategory = "email_moderator_notifications"
-)
 
 // UserToken is a token sent to a user, such as the link of a verification email (data-model
 // §4.1, user_tokens). Only the SHA-256 digest of the token is stored (ADR-0019 §4).

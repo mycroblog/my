@@ -606,11 +606,11 @@ func (l *Localizer) ServerAuthLinkNewTab() string {
 	return l.format("server:auth.link.new_tab", nil)
 }
 
-// ServerAuthMailUnsubscribeDoneModeratorNotifications formats "server:auth.mail_unsubscribe.done_moderator_notifications". Body of the page after an unsubscribe link stopped the moderator notification emails.
+// ServerAuthMailUnsubscribeDone formats "server:auth.mail_unsubscribe.done". Body of the page after an unsubscribe link stopped the emails of a kind of notification. {group} is the name of the kind, as the notification settings name it (such as Mentions).
 //
-//	en: You no longer get moderator notifications by email. You can turn them back on in your preferences.
-func (l *Localizer) ServerAuthMailUnsubscribeDoneModeratorNotifications() string {
-	return l.format("server:auth.mail_unsubscribe.done_moderator_notifications", nil)
+//	en: You no longer get emails of “{group}” notifications. You can turn them back on in your notification settings.
+func (l *Localizer) ServerAuthMailUnsubscribeDone(group string) string {
+	return l.format("server:auth.mail_unsubscribe.done", map[string]any{"group": group})
 }
 
 // ServerAuthMailUnsubscribeDoneTitle formats "server:auth.mail_unsubscribe.done_title". Title and heading of the page after an unsubscribe link stopped its emails.
@@ -627,11 +627,11 @@ func (l *Localizer) ServerAuthMailUnsubscribeInvalid() string {
 	return l.format("server:auth.mail_unsubscribe.invalid", nil)
 }
 
-// ServerAuthMailUnsubscribePromptModeratorNotifications formats "server:auth.mail_unsubscribe.prompt_moderator_notifications". Text above the button that stops the moderator notification emails, on the page of their unsubscribe link.
+// ServerAuthMailUnsubscribePrompt formats "server:auth.mail_unsubscribe.prompt". Text above the button that stops the emails of a kind of notification, on the page of their unsubscribe link. {group} is the name of the kind, as the notification settings name it (such as Mentions).
 //
-//	en: Stop getting moderator notifications by email? They still appear in the app.
-func (l *Localizer) ServerAuthMailUnsubscribePromptModeratorNotifications() string {
-	return l.format("server:auth.mail_unsubscribe.prompt_moderator_notifications", nil)
+//	en: Stop getting emails of “{group}” notifications? They still appear in the app.
+func (l *Localizer) ServerAuthMailUnsubscribePrompt(group string) string {
+	return l.format("server:auth.mail_unsubscribe.prompt", map[string]any{"group": group})
 }
 
 // ServerAuthMailUnsubscribeSubmit formats "server:auth.mail_unsubscribe.submit". Button that stops the emails of an unsubscribe link.
@@ -2475,6 +2475,13 @@ func (l *Localizer) ServerHealthUnavailable() string {
 	return l.format("server:health.unavailable", nil)
 }
 
+// ServerMailActionOpenNotification formats "server:mail.action.open_notification". Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications.
+//
+//	en: Open
+func (l *Localizer) ServerMailActionOpenNotification() string {
+	return l.format("server:mail.action.open_notification", nil)
+}
+
 // ServerMailActionOpenNotifications formats "server:mail.action.open_notifications". Label of the link in an email that opens the notifications of the web client.
 //
 //	en: Open your notifications
@@ -2608,6 +2615,153 @@ func (l *Localizer) ServerMailAdminWebhookDisabledSubject(instance string) strin
 	return l.format("server:mail.admin_webhook_disabled.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailGroupAccountMoved formats "server:mail.group.account_moved". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Accounts you follow moving
+func (l *Localizer) ServerMailGroupAccountMoved() string {
+	return l.format("server:mail.group.account_moved", nil)
+}
+
+// ServerMailGroupAdminAccountMoved formats "server:mail.group.admin_account_moved". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Limited accounts moving
+func (l *Localizer) ServerMailGroupAdminAccountMoved() string {
+	return l.format("server:mail.group.admin_account_moved", nil)
+}
+
+// ServerMailGroupAdminAppeal formats "server:mail.group.admin_appeal". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: New appeals
+func (l *Localizer) ServerMailGroupAdminAppeal() string {
+	return l.format("server:mail.group.admin_appeal", nil)
+}
+
+// ServerMailGroupAdminCustomEmojiRequest formats "server:mail.group.admin_custom_emoji_request". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Custom emoji requests
+func (l *Localizer) ServerMailGroupAdminCustomEmojiRequest() string {
+	return l.format("server:mail.group.admin_custom_emoji_request", nil)
+}
+
+// ServerMailGroupAdminErrorGroup formats "server:mail.group.admin_error_group". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: New and recurring errors
+func (l *Localizer) ServerMailGroupAdminErrorGroup() string {
+	return l.format("server:mail.group.admin_error_group", nil)
+}
+
+// ServerMailGroupAdminReport formats "server:mail.group.admin_report". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: New reports
+func (l *Localizer) ServerMailGroupAdminReport() string {
+	return l.format("server:mail.group.admin_report", nil)
+}
+
+// ServerMailGroupAdminServiceClosureDue formats "server:mail.group.admin_service_closure_due". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Closing date passed
+func (l *Localizer) ServerMailGroupAdminServiceClosureDue() string {
+	return l.format("server:mail.group.admin_service_closure_due", nil)
+}
+
+// ServerMailGroupAdminSignUp formats "server:mail.group.admin_sign_up". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Registrations awaiting approval
+func (l *Localizer) ServerMailGroupAdminSignUp() string {
+	return l.format("server:mail.group.admin_sign_up", nil)
+}
+
+// ServerMailGroupAdminWebhookDisabled formats "server:mail.group.admin_webhook_disabled". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Disabled webhooks
+func (l *Localizer) ServerMailGroupAdminWebhookDisabled() string {
+	return l.format("server:mail.group.admin_webhook_disabled", nil)
+}
+
+// ServerMailGroupBoost formats "server:mail.group.boost". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Boosts
+func (l *Localizer) ServerMailGroupBoost() string {
+	return l.format("server:mail.group.boost", nil)
+}
+
+// ServerMailGroupFavourite formats "server:mail.group.favourite". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Favourites
+func (l *Localizer) ServerMailGroupFavourite() string {
+	return l.format("server:mail.group.favourite", nil)
+}
+
+// ServerMailGroupFollow formats "server:mail.group.follow". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: New followers
+func (l *Localizer) ServerMailGroupFollow() string {
+	return l.format("server:mail.group.follow", nil)
+}
+
+// ServerMailGroupFollowAccepted formats "server:mail.group.follow_accepted". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Accepted follow requests
+func (l *Localizer) ServerMailGroupFollowAccepted() string {
+	return l.format("server:mail.group.follow_accepted", nil)
+}
+
+// ServerMailGroupFollowRequest formats "server:mail.group.follow_request". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Follow requests
+func (l *Localizer) ServerMailGroupFollowRequest() string {
+	return l.format("server:mail.group.follow_request", nil)
+}
+
+// ServerMailGroupMention formats "server:mail.group.mention". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Mentions
+func (l *Localizer) ServerMailGroupMention() string {
+	return l.format("server:mail.group.mention", nil)
+}
+
+// ServerMailGroupModeration formats "server:mail.group.moderation". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Notices from the moderators
+func (l *Localizer) ServerMailGroupModeration() string {
+	return l.format("server:mail.group.moderation", nil)
+}
+
+// ServerMailGroupPollClosed formats "server:mail.group.poll_closed". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Ended polls
+func (l *Localizer) ServerMailGroupPollClosed() string {
+	return l.format("server:mail.group.poll_closed", nil)
+}
+
+// ServerMailGroupQuote formats "server:mail.group.quote". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Quotes
+func (l *Localizer) ServerMailGroupQuote() string {
+	return l.format("server:mail.group.quote", nil)
+}
+
+// ServerMailGroupReaction formats "server:mail.group.reaction". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Emoji reactions
+func (l *Localizer) ServerMailGroupReaction() string {
+	return l.format("server:mail.group.reaction", nil)
+}
+
+// ServerMailGroupVoice formats "server:mail.group.voice". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Voice chats
+func (l *Localizer) ServerMailGroupVoice() string {
+	return l.format("server:mail.group.voice", nil)
+}
+
+// ServerMailNotificationBody formats "server:mail.notification.body". Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: You have a notification on {instance} that you have not read yet.
+func (l *Localizer) ServerMailNotificationBody(instance string) string {
+	return l.format("server:mail.notification.body", map[string]any{"instance": instance})
+}
+
 // ServerMailPasswordChangedBody formats "server:mail.password_changed.body". First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: The password of your account on {instance} was changed, and your other sessions and apps were signed out.
@@ -2685,11 +2839,11 @@ func (l *Localizer) ServerMailReasonAccount(instance string) string {
 	return l.format("server:mail.reason.account", map[string]any{"instance": instance})
 }
 
-// ServerMailReasonModeratorNotifications formats "server:mail.reason.moderator_notifications". Why a moderator who chose to get moderator notifications by email gets an email about a new item.
+// ServerMailReasonNotification formats "server:mail.reason.notification". Sentence of the signature of a notification email: why it comes. {group} is the name of the kind of notification, as the notification settings name it (such as Mentions).
 //
-//	en: You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
-func (l *Localizer) ServerMailReasonModeratorNotifications() string {
-	return l.format("server:mail.reason.moderator_notifications", nil)
+//	en: You get this email because email is on for “{group}” in your notification settings. You can turn it off there.
+func (l *Localizer) ServerMailReasonNotification(group string) string {
+	return l.format("server:mail.reason.notification", map[string]any{"group": group})
 }
 
 // ServerMailReasonSupporter formats "server:mail.reason.supporter". Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none.

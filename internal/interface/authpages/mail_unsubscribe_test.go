@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/authpages"
 )
 
-// fakeUnsubscribe knows the unsubscribe token "my_eut_good" of the moderator notification
+// fakeUnsubscribe knows the unsubscribe token "my_eut_good" of the admin_report notification
 // emails and counts the unsubscribes.
 type fakeUnsubscribe struct{ unsubscribes int }
 
@@ -23,7 +23,7 @@ func (f *fakeUnsubscribe) CheckUnsubscribeToken(_ context.Context, token string)
 	if token != "my_eut_good" {
 		return "", appidentity.ErrInvalidToken
 	}
-	return identity.UnsubscribeModeratorNotifications, nil
+	return "admin_report", nil
 }
 
 func (f *fakeUnsubscribe) Unsubscribe(ctx context.Context, token string) (identity.UnsubscribeCategory, error) {
@@ -67,7 +67,7 @@ func TestMailUnsubscribe(t *testing.T) {
 		t.Fatalf("GET = %d with %d unsubscribes, want 200 and none", w.Code, f.unsubscribes)
 	}
 	wantContains(t, w.Body.String(), `action="/mail/unsubscribe?token=my_eut_good"`, `name="List-Unsubscribe" value="One-Click"`,
-		"moderator notifications by email")
+		"emails of “New reports” notifications")
 
 	// The one-click POST stops the emails, and again with the same token answers the same.
 	for i := 1; i <= 2; i++ {
@@ -75,7 +75,7 @@ func TestMailUnsubscribe(t *testing.T) {
 		if w.Code != http.StatusOK || f.unsubscribes != i {
 			t.Fatalf("POST %d = %d with %d unsubscribes, want 200", i, w.Code, f.unsubscribes)
 		}
-		wantContains(t, w.Body.String(), "You no longer get moderator notifications by email.")
+		wantContains(t, w.Body.String(), "You no longer get emails of “New reports” notifications.")
 	}
 
 	// The button of the page sends the same POST from the browser.

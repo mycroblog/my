@@ -137,7 +137,6 @@ async function moderatorServer(page: Page) {
         default_visibility: "public",
         default_post_language: "und",
         require_media_description: false,
-        email_moderator_notifications: false,
         timeline_auto_insert: false,
         timeline_languages: [],
       });

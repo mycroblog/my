@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The authenticated user's notification settings: the rows the user gets, in the order to
+  show them. The moderator rows are only those whose permission the user's roles grant, and
+  `supporter` is there only while the supporter program is enabled (`Instance.supporters_enabled`).
+type: object
+required: [rows]
+properties:
+  rows:
+    type: array
+    items:
+      $ref: ./NotificationSettingRow.yaml

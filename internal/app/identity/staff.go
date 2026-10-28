@@ -12,8 +12,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// What the moderator notifications read of the identity module (FR-712): who holds a permission,
-// whether they want the notifications by email and where, and how many registrations await a
+// What the notifications read of the identity module (FR-712, ADR-0109 §4): who holds a
+// permission, where a user's notification emails go, and how many registrations await a
 // decision.
 
 // EventRegistrationPending follows a sign-up whose registration awaits a moderator's decision.
@@ -55,13 +55,10 @@ type PermissionHolder struct {
 	UserID string
 	// AccountID is the user's local account.
 	AccountID string
-	// EmailModeratorNotifications is the user's preference of that name.
-	EmailModeratorNotifications bool
 }
 
 // PermissionHolders returns inside tx the users whose current roles grant p, with their local
-// accounts and whether they want the moderator notifications by email. A user without a local
-// account is left out.
+// accounts. A user without a local account is left out.
 func (s *Service) PermissionHolders(ctx context.Context, tx uow.Tx, p identity.Permission) ([]PermissionHolder, error) {
 	ids, err := s.d.Repository.ListUserIDsWithPermission(ctx, tx, p)
 	if err != nil {
@@ -76,11 +73,7 @@ func (s *Service) PermissionHolders(ctx context.Context, tx uow.Tx, p identity.P
 		case err != nil:
 			return nil, err
 		}
-		prefs, err := s.d.Repository.FindPreferences(ctx, id)
-		if err != nil && !errors.Is(err, ErrNotFound) {
-			return nil, err
-		}
-		out = append(out, PermissionHolder{UserID: id, AccountID: la.AccountID, EmailModeratorNotifications: prefs.EmailModeratorNotifications})
+		out = append(out, PermissionHolder{UserID: id, AccountID: la.AccountID})
 	}
 	return out, nil
 }
@@ -93,19 +86,18 @@ type Mailbox struct {
 	Locale         string
 }
 
-// ModeratorMailbox returns where a user's moderator notifications are sent by email. ok is
-// false when the user does not want them by email, has no primary address, where an
-// unverified address keeps users out, has not verified it, or when the suppression of the
-// address stops notifications (ADR-0086 §5).
-func (s *Service) ModeratorMailbox(ctx context.Context, userID string) (box Mailbox, ok bool, err error) {
+// NotificationMailbox returns where a user's notification emails are sent (ADR-0109 §4): the
+// primary address once verified, in the user's locale. ok is false when the user has no
+// preferences or no primary address, has not verified it, or when the suppression of the
+// address stops notifications (ADR-0086 §5). Whether the user wants a notification by email is
+// the notification settings' to say.
+func (s *Service) NotificationMailbox(ctx context.Context, userID string) (box Mailbox, ok bool, err error) {
 	prefs, err := s.d.Repository.FindPreferences(ctx, userID)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return Mailbox{}, false, nil
 	case err != nil:
 		return Mailbox{}, false, err
-	case !prefs.EmailModeratorNotifications:
-		return Mailbox{}, false, nil
 	}
 	email, verified, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
 	switch {
@@ -113,7 +105,7 @@ func (s *Service) ModeratorMailbox(ctx context.Context, userID string) (box Mail
 		return Mailbox{}, false, nil
 	case err != nil:
 		return Mailbox{}, false, err
-	case s.d.RequireEmailVerification && !verified:
+	case !verified:
 		return Mailbox{}, false, nil
 	}
 	if stopped, err := s.mailStopped(ctx, email.ID, identity.MailNotification); err != nil || stopped {

@@ -237,6 +237,52 @@ func (r *NotificationRepository) FindReadMarker(ctx context.Context, accountID s
 	return notification.ReadMarker{AccountID: row.AccountID, LastReadID: row.LastReadID}, nil
 }
 
+// SaveNotificationSettings implements notification.Repository.
+func (r *NotificationRepository) SaveNotificationSettings(ctx context.Context, tx uow.Tx, settings []notification.Setting, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	for _, s := range settings {
+		err := q.UpsertNotificationSetting(ctx, postgresgen.UpsertNotificationSettingParams{
+			AccountID: s.AccountID, NotificationGroup: string(s.Group), Channel: string(s.Channel),
+			Enabled: s.Enabled, UpdatedAt: at,
+		})
+		if err != nil {
+			return wrap(err, "upsert notification setting")
+		}
+	}
+	return nil
+}
+
+// NotificationSettingsTx implements notification.Repository.
+func (r *NotificationRepository) NotificationSettingsTx(ctx context.Context, tx uow.Tx, accountID string) ([]notification.Setting, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	return notificationSettings(q.ListNotificationSettings(ctx, accountID))
+}
+
+// NotificationSettings implements notification.Repository.
+func (r *NotificationRepository) NotificationSettings(ctx context.Context, accountID string) ([]notification.Setting, error) {
+	return notificationSettings(r.db.reader().ListNotificationSettings(ctx, accountID))
+}
+
+func notificationSettings(rows []postgresgen.NotificationSetting, err error) ([]notification.Setting, error) {
+	if err != nil {
+		return nil, wrap(err, "list notification settings")
+	}
+	out := make([]notification.Setting, len(rows))
+	for i, row := range rows {
+		out[i] = notification.Setting{
+			AccountID: row.AccountID, Group: notification.Group(row.NotificationGroup), Channel: notification.Channel(row.Channel),
+			Enabled: row.Enabled,
+		}
+	}
+	return out, nil
+}
+
 func notificationFrom(row postgresgen.Notification) notification.Notification {
 	return notification.Notification{
 		ID: row.ID, RecipientAccountID: row.RecipientAccountID, Type: notification.Type(row.Type),

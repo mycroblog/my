@@ -13,9 +13,6 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。
   ルートは `requireSignIn` のあと、loader で閲覧者を読み、権限があるときだけ一覧を読み込む（`routes/-admin/adminRoute.tsx`）。権限がなければ、要求を送らずに理由（権限の名前）を出す。
   守るのはサーバーで、権限が途中で外れて 403 `missing-permission` が返ったときは、ルートの `errorComponent` が同じ理由を出す。
-- **モデレーターへの通知のメール**（設定の「表示と投稿」、`features/settings` の `useModeratorEmail`）: モデレーターへの通知が届く権限（`manage_reports` か `manage_accounts`）を持つ閲覧者にだけ、
-  「モデレーターへの通知」の区画（`h2` の `section`）を出し、`email_moderator_notifications` の `Switch` を置く。ほかの設定と同じく、変えたとたんに保存する。
-  `GET /instance` の `sends_email` が `false`（サーバーの `mail = none`）なら、切り替えの代わりに、通知がアプリの中にだけ届く理由を出す。
 - **区分の画面**（`/moderation` はナビゲーションの「モデレーション」、`/admin` は「管理」）: 閲覧者のロールが使えるその区分の画面へのリンクを、設定の画面のその区分の区画と同じ一覧で並べる
   （モデレーションは `ModerationMenu` / `ModerationPages`、サーバー管理は `AdminMenu` / `AdminPages`。どちらも `features/moderation` の `StaffMenuSection` / `StaffPages` で組む）。
   設定の画面は「モデレーション」「管理」の順に 2 つの区画（`h2` の `section`）を出し、使える画面のない区分の区画は出さない。

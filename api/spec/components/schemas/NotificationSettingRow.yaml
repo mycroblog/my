@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+description: |
+  One row of the notification settings with its channels. `in_app` creates the notifications:
+  turned off, the row's notifications are not created, so neither Web Push nor email delivers
+  them, and clients show the row's other channels disabled; the notifications from before stay.
+  `email` sends each notification to the primary address once it is confirmed and while emails
+  reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
+  emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+  the read marker and not dismissed); the moderator notifications are emailed at once. Clients
+  offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
+  each subscription (`putPushSubscription`).
+type: object
+required: [group, section, types, in_app, email]
+properties:
+  group:
+    $ref: ./NotificationGroup.yaml
+  section:
+    description: |
+      The kind of the row: `ordinary` (what other users did; in the app on and email off by
+      default), `moderator` (to the holders of the permission it needs; both on by default),
+      or `instance` (the instance's notices to the user; always in the app).
+    type: string
+    enum: [ordinary, moderator, instance]
+  types:
+    description: The notification types of the row.
+    type: array
+    items:
+      $ref: ./NotificationType.yaml
+  in_app:
+    $ref: ./NotificationSettingCell.yaml
+  email:
+    $ref: ./NotificationSettingCell.yaml

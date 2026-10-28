@@ -167,3 +167,12 @@ SELECT CAST(COALESCE((SELECT notices FROM error_group_notice_hours WHERE hour_st
 
 -- name: DeleteErrorGroupNoticesBefore :execrows
 DELETE FROM error_group_notice_hours WHERE hour_start < ?;
+
+-- ListNotificationSettings returns the channels a local account chose (FR-210).
+-- name: ListNotificationSettings :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id = ? ORDER BY notification_group, channel;
+
+-- name: UpsertNotificationSetting :exec
+INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at;

@@ -18,8 +18,12 @@ type Deps struct {
 	Repository Repository
 	Clock      kernel.Clock
 	// Staff reads the permissions of the recipients of the moderator notifications, which the
-	// list leaves out once the recipient no longer holds them; nil holds none.
+	// list leaves out once the recipient no longer holds them, and which offer the moderator rows
+	// of the notification settings; nil holds none.
 	Staff Staff
+	// SupportersEnabled reports whether the supporter program is on, which offers the supporter
+	// row of the notification settings; nil means it is off.
+	SupportersEnabled func(ctx context.Context) (bool, error)
 }
 
 // Service runs the notification module's use cases of a local account's own notifications

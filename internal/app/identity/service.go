@@ -130,6 +130,9 @@ type Deps struct {
 	// user cannot ask for a password reset link by email, and only an administrator issues one
 	// (IssuePasswordResetLink); no password change is notified by email.
 	EmailDelivery bool
+	// Unsubscriptions turns off the emails of the category of an unsubscribe link (ADR-0086 §4,
+	// ADR-0109 §4); nil issues no unsubscribe links and accepts none.
+	Unsubscriptions EmailUnsubscriptions
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle
 	// BaseURL is the origin that links in emails point to, such as https://social.example.
