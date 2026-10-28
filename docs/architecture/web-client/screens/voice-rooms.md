@@ -1,3 +1,10 @@
+---
+start: "/voice"
+persona: "yuki"
+paths: ["app/web/src/features/voice/**", "app/ui/src/VoiceRoomCard.tsx", "app/ui/src/LivePill.tsx"]
+unavailable: {"ナビゲーションから来て、開いているルームの 1 つに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "名前を付けてルームを開く（ルームを開ける利用者）": "opening a room joins its host to the call, which needs a microphone in the agent's browser", "通話の途中に、参加中のルームを一覧で見つけて、その画面に戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
+---
+
 ## 通話のルームの一覧（`/voice`）
 
 いま開いている通話のルームを並べ、ルームに入る入口と、ルームを開く入口を置く画面（ADR-0100 §8）。

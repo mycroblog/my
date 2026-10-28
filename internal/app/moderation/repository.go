@@ -91,11 +91,14 @@ type Repository interface {
 	FindReportStatus(ctx context.Context, reportID string) (moderation.ReportStatus, error)
 	// CountReports counts the reports in a state.
 	CountReports(ctx context.Context, state moderation.ReportState) (int64, error)
+	// OldestReportFiledAt returns when the oldest report in a state was filed; it fails with
+	// ErrNotFound when no report is in the state.
+	OldestReportFiledAt(ctx context.Context, state moderation.ReportState) (time.Time, error)
 	// ListReportsOf returns the reports of a target account with their statuses, oldest first.
 	ListReportsOf(ctx context.Context, targetAccountID string) ([]moderation.Report, error)
-	// ListReports returns up to limit reports with their statuses and states, newest first:
-	// those in q.State (any state when empty) whose ID is below q.Before (from the newest when
-	// empty).
+	// ListReports returns up to limit reports with their statuses and states that q selects,
+	// newest first (oldest first when q.OldestFirst): those past the report q.After in that
+	// order (from the first when empty).
 	ListReports(ctx context.Context, q ReportQuery, limit int) ([]moderation.ReportRecord, error)
 	// ListReportsByReporter returns up to limit reports that reporterAccountID filed, with their
 	// statuses and states, newest first: those whose ID is below before (from the newest when
@@ -135,8 +138,12 @@ type Repository interface {
 
 // ReportQuery selects the reports of a list.
 type ReportQuery struct {
-	State  moderation.ReportState // "" for any
-	Before string                 // a report ID; "" for the first page
+	State          moderation.ReportState // "" for any
+	Category       moderation.Category    // "" for any
+	AssigneeUserID string                 // the user the reports are assigned to; "" for anyone
+	Unassigned     bool                   // only the reports that nobody handles
+	OldestFirst    bool                   // the oldest report first rather than the newest
+	After          string                 // the last report ID of the previous page; "" for the first page
 }
 
 // ActionQuery selects the actions on accounts of a list.

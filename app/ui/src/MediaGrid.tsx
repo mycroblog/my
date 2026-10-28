@@ -5,6 +5,7 @@ import { tv } from "tailwind-variants";
 import { AudioPlayer, type AudioPlayerLabels } from "./AudioPlayer";
 import { Blurhash } from "./Blurhash";
 import { formatClock } from "./clock";
+import { ExternalLink } from "./ExternalLink";
 import { AltTextIcon, HideMediaIcon, PlayIcon } from "./Icons";
 import { MediaLoadFailure } from "./MediaLoadFailure";
 import { MediaViewer, type MediaViewerLabels } from "./MediaViewer";
@@ -39,6 +40,12 @@ const mediaGrid = tv({
     badgeButton: [
       "absolute inset-e-1 bottom-1 z-10 grid size-8 cursor-default place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm",
       "data-focus-visible:focus-ring data-hovered:bg-toast pointer-coarse:size-11 [&>svg]:size-4",
+    ],
+    // The mark of the attachments that the grid leaves out, a link to the post that has them, in the top-end corner,
+    // over the mark of a cell that could not load.
+    more: [
+      "absolute inset-e-1.5 top-1.5 z-20 min-h-6 gap-1 rounded-md bg-media-chip px-2 text-xs font-bold text-toast-fg tabular-nums no-underline shadow-sm",
+      "data-hovered:text-toast-fg data-hovered:underline pointer-coarse:min-h-11 [&>svg]:size-3.5",
     ],
     toggle:
       "absolute cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
@@ -128,6 +135,12 @@ export type MediaGridProps = Omit<ComponentPropsWithRef<"div">, "children"> & {
   viewerLabels?: MediaViewerLabels | undefined;
   /** The texts of the player of an audio file, whose load texts also mark a picture that could not load. */
   audioLabels: AudioPlayerLabels;
+  /**
+   * The attachments that the grid does not have, such as those of a remote post after the four that the server
+   * keeps: a mark in the top-end corner shows `text` ("+2") and links to `href`, the post that has them, in a new
+   * tab. `label` names the link and must contain `text` ("+2 more — see the original post").
+   */
+  more?: { text: string; label: string; href: string } | undefined;
 };
 
 type MediaCellProps = {
@@ -142,6 +155,8 @@ type MediaCellProps = {
   onOpenDescription?: (() => void) | undefined;
   /** The name of the description mark as a button ("Show description"). */
   descriptionLabel?: string | undefined;
+  /** Whether the mark of the left-out attachments covers the cell's top-end corner, where a video shows its length. */
+  underMore?: boolean;
 };
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
@@ -176,6 +191,7 @@ function PlaybackCell({
   count,
   noDescriptionLabel,
   audioLabels,
+  underMore = false,
 }: MediaCellProps & { playback: MediaPlayback }) {
   const [loaded, setLoaded] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -249,7 +265,7 @@ function PlaybackCell({
                   <PlayIcon />
                 </span>
               )}
-              {!playing && !loops && Number.isFinite(length) && length > 0 && (
+              {!playing && !loops && !underMore && Number.isFinite(length) && length > 0 && (
                 <span aria-hidden="true" className={slots.length()}>
                   {formatClock(locale, length)}
                 </span>
@@ -366,6 +382,7 @@ function MediaCell({
  * exposed and each cell shows the blur of its picture, and the button keeps its place in the tab order and its focus when it is pressed.
  * With `viewerLabels`, each shown picture that has an `original` is a button that opens it at its original size in a
  * modal viewer (`MediaViewer`), which steps through the post's other pictures; a concealed picture does not open.
+ * With `more`, a mark in the top-end corner says how many attachments the grid leaves out and links to the post that has them.
  */
 export function MediaGrid({
   items,
@@ -377,6 +394,7 @@ export function MediaGrid({
   onRevealedChange,
   viewerLabels,
   audioLabels,
+  more,
   className,
   ...props
 }: MediaGridProps) {
@@ -419,7 +437,7 @@ export function MediaGrid({
 
   return (
     <div {...props} className={slots.base({ className })}>
-      {shown.map((item) =>
+      {shown.map((item, index) =>
         item.playback === undefined ? (
           <MediaCell
             key={item.id}
@@ -444,8 +462,16 @@ export function MediaGrid({
             count={count}
             noDescriptionLabel={noDescriptionLabel}
             audioLabels={audioLabels}
+            // The top-end cell: the second of two or more, or the only one.
+            underMore={more !== undefined && index === Math.min(1, shown.length - 1)}
           />
         ),
+      )}
+      {more !== undefined && (
+        <ExternalLink href={more.href} aria-label={more.label} variant="standalone" className={slots.more()}>
+          {/* Isolated, so that "+2" keeps its sign before the number in right-to-left text. */}
+          <bdi>{more.text}</bdi>
+        </ExternalLink>
       )}
       {sensitive && (
         // Once the media are shown it is only an icon, which shows its name as a tooltip (G12).

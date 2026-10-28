@@ -1,3 +1,10 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/voice/**", "app/ui/src/MiniPlayer.tsx", "app/ui/src/CallDock.tsx", "app/ui/src/CallConnectionBadge.tsx"]
+unavailable: {"ほかの画面から、通話のルームの画面に戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ほかの画面で、自分のマイクをオフにする（話者）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ほかの画面から、通話を退出する（ホストでない人）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ほかの画面にいる間に通話が終わった知らせを読み、閉じる": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
+---
+
 ## ミニプレイヤー（通話中の、ルームの画面以外のすべての画面）
 
 通話がページを越えて続く間、ルームの画面以外のすべての画面の `main` の最後に浮かぶ小さなカード（`VoiceCallBar`、見た目は `@my/ui` の `MiniPlayer`）。

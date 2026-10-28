@@ -64,14 +64,21 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
       Administration: ["/admin"],
       Operations: ["/admin/jobs"],
     });
-    expect(await within(screen.getByRole("main")).findByRole("link", { name: "Jobs" })).toHaveAccessibleDescription(
-      "Background jobs waiting, running, retrying and failed, why they failed, and running failed ones again.",
-    );
+    // The overview says how the server runs, each number a link to its screen; it is not a copy of the menu.
+    const health = within(await screen.findByRole("region", { name: "Server health" }));
+    expect(health.getByRole("link", { name: "Failed jobs" })).toHaveAttribute("href", "/admin/jobs?state=dead");
+    expect(health.getByRole("link", { name: "Longest job wait" })).toHaveAttribute("href", "/admin/jobs");
+    expect(within(screen.getByRole("main")).queryByRole("link", { name: "Jobs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Moderation" })).not.toBeInTheDocument();
   });
 
   test("a moderator has Moderation alone, with the screens of their permissions", async () => {
-    server.use(operatorHandler(["manage_reports", "manage_accounts", "view_audit"]));
+    server.use(
+      operatorHandler(["manage_reports", "manage_accounts", "view_audit"]),
+      http.get(`${apiBase}/admin/counts`, () =>
+        HttpResponse.json({ open_reports: 2, pending_registrations: 0, pending_appeals: 1 }),
+      ),
+    );
     await renderApp({ path: "/moderation" });
 
     await screen.findByRole("group", { name: "Moderation" });
@@ -79,16 +86,20 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
       Moderation: ["/moderation", "/moderation/reports", "/moderation/appeals", "/moderation/audit-log"],
       "Accounts and sign-ups": ["/moderation/accounts", "/moderation/registrations", "/moderation/signup-blocks"],
     });
-    const main = within(screen.getByRole("main"));
-    expect(await main.findByRole("link", { name: "Audit log" })).toHaveAccessibleDescription(
-      "Who did what in the administration, and when.",
+    // The overview: a tile for each queue, a link to it, with a warning word where something waits.
+    const waiting = within(await screen.findByRole("region", { name: "Waiting for you" }));
+    const reports = await waiting.findByRole("link", { name: "Open reports" });
+    expect(reports).toHaveAttribute("href", "/moderation/reports");
+    expect(waiting.getByRole("link", { name: "Registrations awaiting approval" })).toHaveAttribute(
+      "href",
+      "/moderation/registrations",
     );
-    expect(main.getByRole("link", { name: "Registrations" })).toHaveAccessibleDescription(
-      "Sign-ups that await approval, and approving or rejecting them.",
+    expect(waiting.getByRole("link", { name: "Appeals awaiting a decision" })).toHaveAttribute(
+      "href",
+      "/moderation/appeals",
     );
-    expect(main.getByRole("link", { name: "Appeals" })).toHaveAccessibleDescription(
-      "Review appeals of moderation actions and uphold or overturn them.",
-    );
+    expect(waiting.getAllByText("Waiting")).toHaveLength(2);
+    expect(screen.getByRole("region", { name: "Reports to handle first" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Administration" })).not.toBeInTheDocument();
   });
 

@@ -115,7 +115,9 @@ type App struct {
 	// (ADR-0092 §1).
 	SearchTerms   *account.SearchTermProjector
 	AccountSearch *account.PrefixSearch
-	Identity      *identity.Service
+	// AccountSuggestions suggests accounts to follow (FR-308).
+	AccountSuggestions *account.Suggestions
+	Identity           *identity.Service
 	// AccountAdmin is the moderators' account management (FR-714).
 	AccountAdmin *identity.AccountAdmin
 	// Exports builds the archives of the users' data (FR-008).

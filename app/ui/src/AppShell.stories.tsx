@@ -37,6 +37,7 @@ import {
 import { Link } from "./Link";
 import { OfflineBanner } from "./OfflineBanner";
 import { PageHeading } from "./PageHeading";
+import { Radio, RadioGroup } from "./RadioGroup";
 import { ServerNameLink } from "./ServerNameLink";
 import { atViewport, shellParameters } from "./storyViewports";
 import { Switch } from "./Switch";
@@ -100,6 +101,13 @@ function SignedOutNav({ menuOpen = false }: { menuOpen?: boolean }) {
       header={<Brand name="my example" />}
       topMenu={{ label: "Menu", isOpen, onOpenChange: setIsOpen }}
       topAction={<AppNavTopAction href="#signup" label="Create an account" />}
+      topTools={
+        <RadioGroup label="Theme" orientation="horizontal" value="system" onChange={() => undefined}>
+          <Radio value="system">System</Radio>
+          <Radio value="light">Light</Radio>
+          <Radio value="dark">Dark</Radio>
+        </RadioGroup>
+      }
     >
       <AppNavItem href="#local" icon={<LocalIcon />} label="Local" current />
       <AppNavItem href="#federated" icon={<FederatedIcon />} label="Federated" />

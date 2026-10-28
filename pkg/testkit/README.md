@@ -39,6 +39,14 @@ with STARTTLS on a certificate of a CA made for the test (`Server.TLSConfig` tru
 `opts` ask, and reads the messages it received over its REST API (`Messages`, `Message`, `Raw`, `WaitFor`). The tests
 run only with `TEST_MAIL=container` (`scripts/task.sh go:test-mail`, CI in the slow suite); otherwise they are skipped.
 
+## S3-compatible object storage
+
+`s3test.New(t)` (package `pkg/testkit/s3test`) starts a container of [Garage](https://garagehq.deuxfleurs.fr/)
+(`dxflrs/garage`, pinned by tag and digest in `DefaultImage`), an S3-compatible server whose keys are a flat namespace
+like Amazon S3's, with the key `AccessKeyID`; `Server.NewBucket(t)` makes it an empty bucket for each store under test.
+The tests run only with `TEST_S3=container` (`scripts/task.sh go:test-blob`, CI in the slow suite); otherwise they are
+skipped.
+
 ## A whole server in the test process
 
 testkit holds no server: it depends only on application ports and domain types, never on the composition root

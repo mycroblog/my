@@ -1,3 +1,10 @@
+---
+start: "/voice"
+persona: "yuki"
+paths: ["app/web/src/features/voice/**", "app/ui/src/StageAvatar.tsx", "app/ui/src/CallDock.tsx", "app/ui/src/CallConnectionBadge.tsx", "app/ui/src/LivePill.tsx"]
+unavailable: {"開いているルームに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者になり、マイクをオンにする（話者を自由に許すルーム）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "挙手する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者から、聞くだけに戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "自分のマイクをオフにする（話者）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ホストとして、挙手した人に発言を許可する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ほかのルームの通話中に、このルームへ移る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "退出する（ホストでない人）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "終わったルームの画面から、開いているルームの一覧へ行く": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
+---
+
 ## 通話のルーム（`/voice/{id}`）
 
 ルームの画面をステージにし、参加・発言・聞く・ホストの操作・退出を、ページの最後のドックとアバターのメニューで行う画面（ADR-0100 §5〜§10、ADR-0101 §7）。

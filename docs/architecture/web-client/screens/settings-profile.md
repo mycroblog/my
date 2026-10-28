@@ -1,3 +1,10 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+unavailable: {"アイコンの画像を選び直して保存する（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none"}
+---
+
 ## プロフィール（`/settings/profile`）
 
 自分のプロフィール（FR-006）を編集する設定の画面。すべての値をまとめて保存する。すぐ保存するバッジとサポーターの一覧は、別の画面（[badges.md](badges.md)）にする。

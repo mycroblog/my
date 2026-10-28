@@ -7,27 +7,13 @@
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
-import { personas } from "../demo/scenario.ts";
+import { persona, signIn } from "./demo.ts";
 import { expect, test } from "./fixtures";
-import { readCatalog } from "./catalog.ts";
 import { mailpit, myBin, serverEnv } from "./server-cli.ts";
 import { demoServerURL } from "./server-origin.ts";
 
 test.use({ baseURL: demoServerURL });
 test.describe.configure({ mode: "serial" });
-
-/** The client message `key` (the project is in English). */
-function message(key: string): string {
-  const text = readCatalog("en")[key]?.defaultMessage;
-  if (text === undefined) throw new Error(`no message ${key}`);
-  return text;
-}
-
-function persona(username: string) {
-  const p = personas.find((x) => x.username === username);
-  if (p === undefined) throw new Error(`no persona ${username}`);
-  return p;
-}
 
 /** Runs demo/seed.ts against the demo server with `args` and returns its output. */
 function runSeed(...args: string[]): string {
@@ -42,17 +28,6 @@ function runSeed(...args: string[]): string {
     ],
     { env: { ...serverEnv("demo"), DEMO_MY_BIN: myBin }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
   );
-}
-
-/** Signs in to the app through the server's sign-in screen and waits for the home page. */
-async function signIn(page: Page, email: string, password: string): Promise<void> {
-  await page.goto("/login");
-  await page.getByRole("main").getByRole("button").click();
-  await page.locator('input[type="email"][autocomplete="username"]').fill(email);
-  await page.locator('input[type="password"][autocomplete="current-password"]').fill(password);
-  await page.locator('main button[type="submit"]').first().click();
-  await expect(page).toHaveURL(`${demoServerURL}/home`);
-  await expect(page.getByRole("main").getByRole("heading", { level: 1, name: message("home.title") })).toBeVisible();
 }
 
 /** A message in Mailpit, as its REST API lists it. */

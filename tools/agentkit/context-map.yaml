@@ -298,7 +298,7 @@ entries:
     userdocs: ["docs/operations/supporters.md"]
   - name: module-voice
     paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_*contract.go", "pkg/testkit/livekittest/**", "internal/platform/adapters_*voice_livekit.go", "internal/platform/adapters_*voice_sora.go", "internal/platform/config/adapters_no_voice_*.go", "internal/interface/clientapi/voice*.go", "api/spec/paths/voice_*.yaml", "api/spec/components/*/Voice*.yaml", "app/web/src/features/voice/**"]
-    docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0102-voice-chat-sfu-adapters.md", "docs/architecture/web-client/screens/voice-rooms.md", "docs/architecture/web-client/screens/voice-room.md", "docs/architecture/web-client/screens/voice-mini-player.md"]
+    docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0102-voice-chat-sfu-adapters.md"]
     notes:
       - "Every place that shows a room or lets someone join or speak goes through voice.CanSee and voice.CanSpeakFreely (ADR-0100 §4); internal/app/voice gathers the facts."
       - "A command writes the rows of its events, then emits the matching voice event in the same transaction; the projectors rebuild voice_room_heads and voice_room_participants with the same SQL as the rebuild."
@@ -342,9 +342,11 @@ entries:
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
   - name: adapter-media
-    paths: ["internal/adapter/blob/**", "internal/adapter/media/**"]
-    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md"]
-    userdocs: ["docs/operations/cdn.md"]
+    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go"]
+    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
+    userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md"]
+    notes:
+      - "blob = s3 (internal/adapter/blob/s3) uses the AWS SDK for Amazon S3 against any S3-compatible endpoint; the bucket stays private and the server serves media/ under /media/. Its unit tests run testkit.BlobStoreContract on an in-memory fake of S3; the contract also runs on a Garage container (pkg/testkit/s3test) only with TEST_S3=container: `scripts/task.sh go:test-blob` (CI job blob-contract in the slow suite)."
   - name: adapter-federation
     paths: ["internal/adapter/httpsig/**", "internal/adapter/jsonld/**", "internal/adapter/htmlsanitizer/**", "internal/adapter/keymanager/**"]
     docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
@@ -504,10 +506,10 @@ entries:
     checks: [ui, web]
   - name: web-client
     paths: ["app/web/**"]
-    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
+    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則", "docs/architecture/web-client/screens/README.md"]
     checks: [web]
     notes:
-      - "A UI change needs its screen's L1 in docs/architecture/web-client/screens/ (README.md there); add the screen file to this entry's docs when written."
+      - "A UI change needs its screen's L1, docs/architecture/web-client/screens/*.md (one file per screen; the template, the rules, and the front matter in README.md there): read the screen's file before changing it."
       - "Follow docs/architecture/web-client/ (the principles in its README.md and the section of the screen); never write React from memory. User-facing strings go through `client*` messages."
   - name: web-tests
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
@@ -517,7 +519,7 @@ entries:
     docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/adr/0117-demo-environment.md", "docs/architecture/web-client/screens/README.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
-      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); app/web/l4/screens.ts gives each screen its start, the person of the scenario it signs in as (or none), the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new L1 adds an entry there (check with DRY_RUN=1; l4/screens.test.ts checks the task names)."
+      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); the front matter of each screen's L1 (parsed by app/web/l4/screens.ts, documented in screens/README.md) gives its start, the person of the scenario it signs in as (or none), the code that SINCE watches, the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new screen touches only its own L1 file (check with DRY_RUN=1; l4/screens.test.ts checks every L1's front matter)."
       - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
   - name: web-demo
     paths: ["app/web/demo/**"]
@@ -541,7 +543,7 @@ entries:
       - "The API client, the token refresh after a 401, problem parsing, and the event stream are @mycroblog/mykit's (pkg/mykit/ts); app/web keeps the wording, the reports to lib/network and lib/maintenance, and openapi-react-query. The API types come from `@mycroblog/mykit`."
   - name: web-feature-admin
     paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
-    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面", "docs/architecture/web-client/screens/admin-settings.md"]
+    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
@@ -562,13 +564,13 @@ entries:
     docs: ["docs/architecture/web-client/17-reports.md#17-通報", "docs/architecture/web-client/18-account-status-and-appeals.md#18-アカウントの状態と異議申し立て"]
   - name: web-feature-settings
     paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
-    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/architecture/web-client/screens/badges.md", "docs/architecture/web-client/screens/settings-menu.md", "docs/architecture/web-client/screens/settings.md", "docs/architecture/web-client/screens/settings-preferences.md", "docs/architecture/web-client/screens/settings-notifications.md", "docs/architecture/web-client/screens/settings-profile.md", "docs/architecture/web-client/screens/settings-auto-delete.md"]
+    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証"]
   - name: web-feature-supporters
     paths: ["app/web/src/features/supporters/**"]
-    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md", "docs/architecture/web-client/screens/badges.md"]
+    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md"]
   - name: web-feature-public
     paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
-    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md", "docs/architecture/web-client/screens/landing.md"]
+    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md"]
 
   # --- Deployment -----------------------------------------------------------------------------------------
   - name: deploy
