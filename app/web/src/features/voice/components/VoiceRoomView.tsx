@@ -7,6 +7,7 @@
 import { Callout, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
 import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
+import { signInPath } from "../../../lib/paths";
 import { voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
 import { AccountLink } from "./VoiceRoomAside";
@@ -86,10 +87,7 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
               <Callout>
                 <p>{t("client:voice.room.open")}</p>
                 <p>{t("client:voice.room.local_only")}</p>
-                <Link
-                  href={`/login?${new URLSearchParams({ return_to: voiceRoomPath(id) }).toString()}`}
-                  variant="standalone"
-                >
+                <Link href={signInPath(voiceRoomPath(id))} variant="standalone">
                   {t("client:voice.room.sign_in")}
                 </Link>
               </Callout>

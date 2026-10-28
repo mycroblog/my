@@ -83,8 +83,6 @@ export type Landing = {
   /** The people who run the server; empty while they load, when they fail, and when the server hides them. */
   operators: readonly Operator[];
   recentPosts: RecentPosts;
-  /** Where users get the source code the server runs (AGPL-3.0 section 13); undefined until the instance loads. */
-  sourceUrl: string | undefined;
 };
 
 /**
@@ -179,6 +177,5 @@ export function useLanding(): Landing {
         badges: account.badges.map((b) => ({ id: b.role_id, label: b.label, color: b.color })),
       })) ?? noOperators,
     recentPosts,
-    sourceUrl: instance?.source_url,
   };
 }

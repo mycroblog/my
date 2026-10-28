@@ -23,12 +23,9 @@ const appShell = tv({
     // bar (min-h-16 and its border; min-h-12 on short screens) and, while the floating button shows (data-compose-fab),
     // the button (3rem) above it; from md the button in the corner; from xl nothing. Each gap is 1rem (0.5rem on short
     // screens). The app's stylesheet clears focused elements of the same (scroll-padding-block-end).
-    main: [
-      "mx-auto flex w-full min-w-0 flex-col gap-4 px-4 pt-6 md:px-8 md:pb-6",
-      "pb-[calc(5rem+env(safe-area-inset-bottom))] short:pb-[calc(4rem+env(safe-area-inset-bottom))]",
-      "data-compose-fab:pb-[calc(9rem+env(safe-area-inset-bottom))] data-compose-fab:short:pb-[calc(7rem+env(safe-area-inset-bottom))]",
-      "data-compose-fab:md:pb-[calc(5.5rem+env(safe-area-inset-bottom))] data-compose-fab:xl:pb-6",
-    ],
+    main: "mx-auto flex w-full min-w-0 flex-col gap-4 px-4 pt-6 md:px-8 md:pb-6",
+    // The top bar's footer (the server's information, its documents and the software), in the page's column.
+    footer: "mx-auto w-full min-w-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-8",
     aside: "sticky top-under-bar flex h-svh-under-bar flex-col gap-6 overflow-y-auto border-s border-border p-6",
     floating: [
       "fixed inset-e-[max(1rem,env(safe-area-inset-right))] bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10",
@@ -37,10 +34,22 @@ const appShell = tv({
   },
   variants: {
     // `side`: the navigation is the tab bar, then the rail beside the page. `top`: the signed-out top bar above it.
-    navigationPlacement: { side: { base: "md:grid md:grid-cols-[auto_minmax(0,1fr)]" }, top: {} },
+    // The top bar's pages have no tab bar to clear and nothing floats over them; `main` grows, so that a short page
+    // still has its footer at the bottom edge.
+    navigationPlacement: {
+      side: {
+        base: "md:grid md:grid-cols-[auto_minmax(0,1fr)]",
+        main: [
+          "pb-[calc(5rem+env(safe-area-inset-bottom))] short:pb-[calc(4rem+env(safe-area-inset-bottom))]",
+          "data-compose-fab:pb-[calc(9rem+env(safe-area-inset-bottom))] data-compose-fab:short:pb-[calc(7rem+env(safe-area-inset-bottom))]",
+          "data-compose-fab:md:pb-[calc(5.5rem+env(safe-area-inset-bottom))] data-compose-fab:xl:pb-6",
+        ],
+      },
+      top: { base: "flex flex-col", main: "flex-1 pb-6" },
+    },
     withAside: { true: {} },
     // The column's width: `narrow` for reading, `wide` for a page with something beside its text (the signed-out landing).
-    width: { narrow: { main: "max-w-2xl" }, wide: { main: "max-w-5xl" } },
+    width: { narrow: { main: "max-w-2xl", footer: "max-w-2xl" }, wide: { main: "max-w-5xl", footer: "max-w-5xl" } },
   },
   compoundVariants: [
     { navigationPlacement: "side", withAside: true, class: { base: "xl:grid-cols-[auto_minmax(0,1fr)_24rem]" } },
@@ -65,9 +74,15 @@ export type AppShellProps = {
   mainRef?: Ref<HTMLElement>;
   /**
    * The third column, sticky and as tall as the screen; pass it only on screens that show it (xl). The app gives it
-   * the new-post form and the server's information (`AsidePanel`).
+   * the new-post form and the server's information (`AsidePanel`). Only the `side` placement has a third column: the
+   * top bar's pages are one column, and the shell leaves it out there.
    */
   aside?: ReactNode;
+  /**
+   * The `top` placement's footer, the `contentinfo` landmark after `main` in the page's column: the links to the
+   * server's information and documents. The `side` placement has none: its menu and third column carry them.
+   */
+  footer?: ReactNode;
   /**
    * The slot that floats over the page's end corner: above the tab bar below md, in the corner from md. The app puts
    * the new-post button there on screens without the third column. The slot may hold nothing visible.
@@ -78,7 +93,8 @@ export type AppShellProps = {
 };
 
 /**
- * The app's frame: the skip link, the navigation, `main` and the third column or the floating slot. Render the
+ * The app's frame: the skip link, the navigation, `main`, the third column (`side`) or the footer (`top`), and the
+ * floating slot. Render the
  * connection bar (`OfflineBanner`) before it, since it pads for the top safe-area inset itself; the shell takes the
  * screen's height under the bar.
  */
@@ -93,8 +109,11 @@ export function AppShell({
   floatingVisible = false,
   navigationPlacement = "side",
   width = "narrow",
+  footer,
 }: AppShellProps) {
-  const slots = appShell({ navigationPlacement, width, withAside: aside !== undefined });
+  const side = navigationPlacement === "side";
+  const withAside = side && aside !== undefined;
+  const slots = appShell({ navigationPlacement, width, withAside });
   return (
     <div className={slots.base()}>
       {/* The first focusable element of the page; visible only while focused. */}
@@ -111,7 +130,8 @@ export function AppShell({
       >
         {children}
       </main>
-      {aside !== undefined && <div className={slots.aside()}>{aside}</div>}
+      {!side && footer !== undefined && <footer className={slots.footer()}>{footer}</footer>}
+      {withAside && <div className={slots.aside()}>{aside}</div>}
       {floating !== undefined && <div className={slots.floating()}>{floating}</div>}
     </div>
   );

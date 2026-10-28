@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/projection"
+	"github.com/mycroblog/my/internal/app/rewrap"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/voice"
@@ -59,6 +60,7 @@ type repositories struct {
 	retention    retentionRepositories
 	projections  projection.Store
 	dataUpgrades dbupgrade.Repository
+	sealedValues rewrap.Store
 }
 
 // openDatabase connects the database that cfg.DB selects and returns its repositories. With

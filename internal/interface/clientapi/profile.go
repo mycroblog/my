@@ -36,7 +36,8 @@ type PostCounts interface {
 
 // newCredentialAccount presents the viewer's own actor as the CredentialAccount schema: the
 // account with its follow counts and images (newProfile), the source of its profile, its
-// posting limits, the count of its own posts, and the permissions of the user's roles.
+// posting limits, the count of its own posts and of its pending follow requests, and the
+// permissions of the user's roles.
 func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appaccount.Actor) (CredentialAccount, error) {
 	base, err := s.newProfile(ctx, a)
 	if err != nil {
@@ -54,6 +55,10 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 	if err != nil {
 		return CredentialAccount{}, err
 	}
+	requests, err := s.o.Graph.FollowRequestCount(ctx, a.Account.ID)
+	if err != nil {
+		return CredentialAccount{}, fmt.Errorf("clientapi: follow request count of %s: %w", a.Account.ID, err)
+	}
 	out := CredentialAccount{
 		Id: base.Id, Username: base.Username, Acct: base.Acct, DisplayName: base.DisplayName, Note: base.Note,
 		Url: base.Url, Locked: base.Locked, Bot: base.Bot, CreatedAt: base.CreatedAt, Fields: base.Fields, Emojis: base.Emojis,
@@ -61,7 +66,7 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		Avatar: base.Avatar, Header: base.Header,
 		FollowersCount: base.FollowersCount, FollowingCount: base.FollowingCount,
 		Source: AccountSource{Fields: []AccountFieldSource{}}, Posting: posting, Permissions: permissions,
-		StatusesCount: statuses,
+		StatusesCount: statuses, FollowRequestsCount: requests,
 	}
 	p := a.Profile
 	if p == nil {

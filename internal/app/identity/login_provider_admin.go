@@ -43,9 +43,9 @@ func IsLoginProviderValidation(err error) bool {
 	return false
 }
 
-// sealLoginProviderSecretAAD is the additional authenticated data of a sealed client secret:
+// LoginProviderSecretAAD is the additional authenticated data of a sealed client secret:
 // its row and column.
-func sealLoginProviderSecretAAD(secretID string) []byte {
+func LoginProviderSecretAAD(secretID string) []byte {
 	return kernel.AAD(secretID, identity.LoginProviderSecretColumn)
 }
 
@@ -89,7 +89,7 @@ func (s *Service) sealLoginProviderSecret(ctx context.Context, providerID, secre
 		return identity.LoginProviderSecret{}, errors.New("identity: no sealer for the client secrets of login providers")
 	}
 	row := identity.LoginProviderSecret{ID: s.d.IDs.NewID(), ProviderID: providerID, CreatedByUserID: byUserID, CreatedAt: now}
-	sealed, err := s.d.Sealer.Seal(ctx, []byte(secret), sealLoginProviderSecretAAD(row.ID))
+	sealed, err := s.d.Sealer.Seal(ctx, []byte(secret), LoginProviderSecretAAD(row.ID))
 	if err != nil {
 		return identity.LoginProviderSecret{}, fmt.Errorf("identity: seal the client secret: %w", err)
 	}

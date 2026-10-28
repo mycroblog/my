@@ -19,6 +19,14 @@ export function followListPath(acct: string, list: "followers" | "following"): s
  */
 export const accountStatusPath = "/settings/account-status";
 
+/**
+ * The link that signs in and comes back to `returnTo` (a path of this app): `/login`, which starts the server's
+ * sign-in at once (routes/login.tsx).
+ */
+export function signInPath(returnTo: string): string {
+  return `/login?${new URLSearchParams({ return_to: returnTo }).toString()}`;
+}
+
 /** The instance's information page (FR-718), which the shell's third column and the landing page link to. */
 export const aboutPath = "/about";
 

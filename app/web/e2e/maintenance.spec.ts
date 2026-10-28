@@ -52,6 +52,7 @@ const alice: Schemas["CredentialAccount"] = {
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
   statuses_count: 12,
+  follow_requests_count: 0,
 };
 
 const post: Schemas["Status"] = {

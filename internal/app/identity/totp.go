@@ -77,8 +77,8 @@ var SecondFactorLimit = kernel.Limit{Name: "login.second_factor", Max: 10, Windo
 // totpSetupAAD binds a setup token to its user.
 func totpSetupAAD(userID string) []byte { return kernel.AAD(userID, "totp_setup") }
 
-// totpSecretAAD binds a sealed secret to its enrollment (ADR-0019 §6).
-func totpSecretAAD(enrollmentID string) []byte {
+// TOTPSecretAAD binds a sealed secret to its enrollment (ADR-0019 §6).
+func TOTPSecretAAD(enrollmentID string) []byte {
 	return kernel.AAD(enrollmentID, identity.TOTPSecretColumn)
 }
 
@@ -238,7 +238,7 @@ func (s *Service) openSetup(ctx context.Context, userID, token string) ([]byte, 
 // newEnrollment seals secret for a new enrollment of userID and generates its recovery codes.
 func (s *Service) newEnrollment(ctx context.Context, userID string, secret []byte, now time.Time) (identity.TOTPEnrollment, []string, [][]byte, error) {
 	e := identity.TOTPEnrollment{ID: s.d.IDs.NewID(), UserID: userID, EnrolledAt: now}
-	sealed, err := s.d.Sealer.Seal(ctx, secret, totpSecretAAD(e.ID))
+	sealed, err := s.d.Sealer.Seal(ctx, secret, TOTPSecretAAD(e.ID))
 	if err != nil {
 		return identity.TOTPEnrollment{}, nil, nil, err
 	}

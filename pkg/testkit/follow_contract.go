@@ -257,6 +257,7 @@ func followLocked(t *testing.T, e *followEnv) {
 	if err != nil || len(reqs) != 1 || reqs[0].FollowerAccountID != alice || reqs[0].State != graph.StatePending {
 		t.Fatalf("FollowRequests(bob) = %+v, %v; want alice", reqs, err)
 	}
+	checkFollowRequestCount(t, e, bob, 1)
 
 	e.clock.Advance(time.Minute)
 	rel, err = e.graph.AcceptFollowRequest(ctx, bob, alice)
@@ -266,6 +267,7 @@ func followLocked(t *testing.T, e *followEnv) {
 	checkRelationship(t, e, alice, bob, graph.StateActive, graph.StateNone)
 	checkCounters(t, e, alice, 0, 1)
 	checkCounters(t, e, bob, 1, 0)
+	checkFollowRequestCount(t, e, bob, 0)
 	hs := e.histories(t, alice, bob)
 	if len(hs) != 1 || hs[0].Acceptance == nil || hs[0].Acceptance.AcceptedBy != graph.AcceptedByFollowee {
 		t.Fatalf("history = %+v, want one follow accepted by the followee", hs)
@@ -294,6 +296,7 @@ func followRejects(t *testing.T, e *followEnv) {
 		t.Fatalf("RejectFollowRequest = %+v, %v; want no relationship", rel, err)
 	}
 	checkRelationship(t, e, alice, bob, graph.StateNone, graph.StateNone)
+	checkFollowRequestCount(t, e, bob, 0)
 	if _, err := e.graph.RejectFollowRequest(ctx, bob, alice); !errors.Is(err, appgraph.ErrNotFound) {
 		t.Errorf("RejectFollowRequest again = %v, want ErrNotFound", err)
 	}
@@ -829,4 +832,12 @@ func snapshotFollowProjections(t *testing.T, repo appgraph.Repository) followPro
 		t.Fatalf("ListCounters = %v", err)
 	}
 	return followProjections{edges: edges, counters: counters}
+}
+
+// checkFollowRequestCount checks the number of pending follow requests to accountID.
+func checkFollowRequestCount(t *testing.T, e *followEnv, accountID string, want int64) {
+	t.Helper()
+	if n, err := e.graph.FollowRequestCount(t.Context(), accountID); err != nil || n != want {
+		t.Errorf("FollowRequestCount(%s) = %d, %v; want %d", accountID, n, err, want)
+	}
 }

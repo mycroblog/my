@@ -8,6 +8,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { expectSignInStarted } from "../../test/signIn";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -234,9 +235,8 @@ describe("permissions", () => {
 
   test("a signed-out user is sent to sign in first", async () => {
     server.resetHandlers();
-    const { router } = await renderApp({ path: "/moderation/instances" });
+    const { leftTo } = await renderApp({ path: "/moderation/instances" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ return_to: "/moderation/instances" });
+    await expectSignInStarted(leftTo, "/moderation/instances");
   });
 });
