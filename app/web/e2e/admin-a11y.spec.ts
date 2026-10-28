@@ -1056,8 +1056,8 @@ test.describe("handling a report with the keyboard alone", () => {
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
 
-    // The moderation page leads to the report queue.
-    await tabTo(page, main.locator('a[href="/moderation/reports"]'));
+    // The moderation overview leads to the report queue: its tile of the open reports comes first.
+    await tabTo(page, main.locator('a[href="/moderation/reports"]').first());
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/moderation\/reports$/);
     const queue = main.getByRole("table");
