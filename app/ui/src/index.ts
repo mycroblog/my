@@ -282,7 +282,6 @@ export { SettingsLayout, type SettingsLayoutProps } from "./SettingsLayout";
 // The frame of the admin and moderation mode and the parts its list screens share.
 export { AdminNavBack, AdminShell, type AdminNavBackProps, type AdminShellProps } from "./AdminShell";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
-export { FeatureCard, type FeatureCardProps } from "./FeatureCard";
 // An open voice chat room in a list (ADR-0100 §8).
 export { VoiceRoomCard, type VoiceRoomCardProps } from "./VoiceRoomCard";
 // The stage of a voice chat room and the controls of its call.
@@ -296,9 +295,11 @@ export {
   type StageGridProps,
 } from "./StageAvatar";
 export { CallDock, CallDockButton, type CallDockButtonProps, type CallDockProps } from "./CallDock";
-export { Hero, type HeroProps } from "./Hero";
 export { Cluster, type ClusterProps } from "./Cluster";
 export { InfoPage, type InfoPageProps } from "./InfoPage";
+// The landing page's parts read in order, and the steps that follow an action (web-client/screens/landing.md).
+export { SectionProgress, type SectionProgressPart, type SectionProgressProps } from "./SectionProgress";
+export { Steps, type Step, type StepsProps } from "./Steps";
 export { Grid, type GridProps } from "./Grid";
 export type { LayoutElement, Space } from "./layout";
 export { Stack, type StackProps } from "./Stack";

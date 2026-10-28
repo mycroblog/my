@@ -423,7 +423,7 @@ describe("the sidebar's server and viewer", () => {
     expect(name).toHaveAccessibleDescription("Top page of this server");
 
     await user.click(name);
-    expect(await screen.findByRole("heading", { level: 1, name: "Welcome to my example" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
     // On the landing page, the name marks the place.
     expect(within(navigation()).getByRole("link", { name: "my example" })).toHaveAttribute("aria-current", "page");

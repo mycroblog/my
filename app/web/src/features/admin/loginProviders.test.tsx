@@ -443,7 +443,8 @@ describe("the login providers screen", () => {
     expect(dialog).toHaveAccessibleDescription(/2 linked users can no longer sign in with it/u);
     await user.click(within(dialog).getByRole("button", { name: "Disable" }));
 
-    const list = screen.getByRole("region", { name: "Login providers of this server" });
+    // The page is hidden from assistive technology until the dialog has closed.
+    const list = await screen.findByRole("region", { name: "Login providers of this server" });
     await user.click(await within(list).findByRole("button", { name: `Enable ${name}` }));
     expect(await within(list).findByRole("button", { name: `Disable ${name}` })).toBeInTheDocument();
     expect(within(list).getByRole("status")).toHaveTextContent("is enabled.");

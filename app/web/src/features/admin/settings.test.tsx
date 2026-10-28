@@ -361,6 +361,25 @@ describe("the server's policies", () => {
     expect(settings.patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
   });
 
+  test("hides the counts or the operators on the landing page, both shown by default", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const landing = await screen.findByRole("region", { name: "Landing page" });
+    const counts = within(landing).getByRole("checkbox", { name: "Show the numbers of the server" });
+    const operators = within(landing).getByRole("checkbox", { name: "Show who runs the server" });
+    expect(counts).toBeChecked();
+    expect(operators).toBeChecked();
+    expect(operators).toHaveAccessibleDescription(/never listed/u);
+
+    await user.click(operators);
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { public_operators: "false" } }]);
+  });
+
   test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

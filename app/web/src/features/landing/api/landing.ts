@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server data of the landing page (web-client/README.md S1): the instance (its description, rules and how people sign
-// up) and a few of the newest posts of the local timeline as a sample of the server.
+// up), its counts and the people who run it, and a few of the newest posts of the local timeline as a sample of the server.
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
 
@@ -10,12 +10,20 @@ export type Instance = components["schemas"]["Instance"];
 /** A post of the sample of the local timeline. */
 export type RecentPost = components["schemas"]["Status"];
 
+/** The counts and the operators of the instance, as GET /instance/overview returns them. */
+export type InstanceOverview = components["schemas"]["InstanceOverview"];
+
 /** How many recent posts the landing page shows. */
-const recentPostsLimit = 4;
+const recentPostsLimit = 3;
 
 /** The instance: its name, description, rules, registration mode and the public timelines it serves. */
 export function instanceQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/instance");
+}
+
+/** How many members, how many public posts lately, since when, and who runs it; each part only while the server shows it. */
+export function overviewQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/instance/overview");
 }
 
 /**
