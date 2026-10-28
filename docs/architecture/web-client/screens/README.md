@@ -40,3 +40,8 @@
 
 - [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
 - [設定のメニュー（`/settings` と各画面の横）](settings-menu.md)
+- [設定のトップ（`/settings`）](settings.md)
+- [表示・投稿・タイムライン（`/settings/preferences`）](settings-preferences.md)
+- [通知（`/settings/notifications`）](settings-notifications.md)
+- [プロフィール（`/settings/profile`）](settings-profile.md)
+- [古い投稿の自動削除（`/settings/auto-delete`）](settings-auto-delete.md)
