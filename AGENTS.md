@@ -48,11 +48,10 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 
 1. Only take issues labeled **`agent:ready`** with no assignee. Never take `status:needs-decision`.
 2. Branch `<type>/<issue>-<slug>`; never push to `main`.
-3. Before every commit, run the checks of the contexts you touched (`scripts/task.sh go:check`, `scripts/task.sh web:check`, ...) or
-   `scripts/task.sh check:changed`; the PR's CI runs only a preflight, and the compile, type, lint, and test checks run in the
-   merge queue, so this local run keeps a broken PR out of the queue. Run the full `scripts/task.sh check`
-   when the change touches shared configuration. When the change touches TypeScript or JavaScript, run
-   `scripts/task.sh web:fmt` (`bun fmt`) first; after resolving a conflict in such a file, run it again.
+3. No local `check` run is required before a commit, a push, or a PR ([ADR-0119](docs/adr/0119-merge-queue-only-gate.md)): the merge
+   queue's full check is the only gate, and the PR's CI runs only a preflight. Run `scripts/task.sh check:changed`, `go:check`, `web:check`, ...
+   to reproduce a CI failure or to iterate on what you are writing. When the change touches TypeScript or JavaScript, run
+   `scripts/task.sh web:fmt` (`bun fmt`) first, since the preflight checks it; after resolving a conflict in such a file, run it again.
 4. Open a PR using the template, with `Closes #N` and the acceptance criteria checked, and wait for its CI to pass.
    Pull requests run the `check` gate as a preflight of under 2 minutes ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md);
    the label `ci:full` runs the merge queue's full check on the PR too) but not the web E2E: in single-issue work, for a

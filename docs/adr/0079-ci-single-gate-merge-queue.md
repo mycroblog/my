@@ -1,6 +1,6 @@
 # ADR-0079: CI の検査を Merge Queue に一本化する
 
-- Status: Accepted（ジョブの中身を `task ci:<ジョブ>` 1 つにする部分を ADR-0083（CI のジョブはワークフローのステップで組み、go-task は手元の入口にする） が置き換える）
+- Status: Accepted（ジョブの中身を `task ci:<ジョブ>` 1 つにする部分を ADR-0083（CI のジョブはワークフローのステップで組み、go-task は手元の入口にする） が、手元の `check:changed` を Merge Queue の前の関門にする部分を ADR-0119（Merge Queue の検査を唯一の関門にし、手元の検査を必須にしない） が置き換える）
 - Date: 2026-10-23
 - Deciders: @rosylilly
 - Issue: #1052

@@ -39,7 +39,7 @@ Workflow (instead of gh / scripts/task.sh loops):
                                                        4 when cancelled with no newer run)
   pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, conflicting, ci-failed,
                                                        ci-cancelled, ci-green, dequeued (for the Monitor tool)
-  check [--base origin/main]                           scripts/task.sh check:changed with a summary, the
+  check [--base origin/main]                           optional: scripts/task.sh check:changed with a summary, the
                                                        failing lines, and the unchanged documents of docs impact
   regen [--base origin/main] [--dry-run]               run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
