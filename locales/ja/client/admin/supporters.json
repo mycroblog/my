@@ -375,13 +375,17 @@
     "defaultMessage": "プラン",
     "description": "Heading of the list of the plans that are not retired."
   },
+  "admin.supporters.plans.count": {
+    "defaultMessage": "{count, plural, other {プラン # 件}}",
+    "description": "Read for the count beside the heading of the list of plans that are not retired. {count} is the number of plans."
+  },
   "admin.supporters.plans.empty": {
     "defaultMessage": "まだプランがありません",
     "description": "Empty state of the list of plans."
   },
   "admin.supporters.plans.empty.description": {
-    "defaultMessage": "上のフォームでプランを作成します。",
-    "description": "Description of the empty list of plans."
+    "defaultMessage": "作成すると、加入を受け付けられます。",
+    "description": "Description of the empty list of plans, above the button that creates one."
   },
   "admin.supporters.retired.title": {
     "defaultMessage": "廃止したプラン",
@@ -445,7 +449,7 @@
   },
   "admin.supporters.cancel": {
     "defaultMessage": "キャンセル",
-    "description": "Button that closes a dialog of the supporters screen without doing anything."
+    "description": "Button that closes a dialog or the add panel of the supporters screen without doing anything."
   },
   "admin.supporters.close": {
     "defaultMessage": "閉じる",

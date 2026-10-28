@@ -2,11 +2,13 @@
 // The supporters screen below its heading (ADR-0072, manage_supporters): the supporter program (whether it is enabled,
 // its payment provider, what it needs, and enabling or disabling it), the state of the configured payment provider
 // (its mode, its last webhook, its last reconciliation with how to fix its failure, and the signs of a webhook that is
-// not set up right) with reconciling with it now (ADR-0074 §4), the form that creates a plan, the plans by rank
-// with changing and retiring them, the retired plans, and the subscriptions narrowed to a plan and a state with ending
-// one at once. The plans' names and descriptions are the administrators' text, shown with dir="auto". What a change did
-// stays in a StatusMessage (role="status"), and a refusal is said in the server's words next to its field or under the
-// form (role="alert"). Retiring a plan and ending a subscription ask first in an alert dialog: neither can be undone.
+// not set up right) with reconciling with it now (ADR-0074 §4), the plans by rank in the list-and-add part
+// (`ListSection`, web-client/screens/admin-supporters.md) whose one primary action opens the form that creates a plan in
+// place, with changing and retiring them, the retired plans, and the subscriptions narrowed to a plan and a state with
+// ending one at once. The plans' names and descriptions are the administrators' text, shown with dir="auto". What a
+// change to a plan did shows above the plans, and what another change did stays in a StatusMessage (role="status"); a
+// refusal is said in the server's words next to its field or under the form (role="alert"). Retiring a plan and ending
+// a subscription ask first in an alert dialog: neither can be undone.
 import {
   Button,
   Card,
@@ -17,10 +19,12 @@ import {
   Dialog,
   DialogTrigger,
   EmptyState,
+  FormActionBar,
   Heading,
   Hint,
   InlineError,
   Link,
+  ListSection,
   ListToolbar,
   Radio,
   RadioGroup,
@@ -162,11 +166,6 @@ export function SupporterSettings({ filter, onFilterChange }: SupporterSettingsP
           </Card>
         </Section>
         <PaymentProvider />
-        <Section surface="card" title={t("client:admin.supporters.new.title")}>
-          <Card>
-            <NewPlanForm />
-          </Card>
-        </Section>
         <Plans />
         <Section surface="card" title={t("client:admin.supporters.subscriptions.title")}>
           <Subscriptions filter={filter} onFilterChange={onFilterChange} />
@@ -515,55 +514,61 @@ function PlanFields({ draft, change, error, isNew, autoFocus = false }: PlanFiel
   );
 }
 
-function NewPlanForm() {
+/** The form that creates a plan, in the add panel of the plans: it closes once the plan is created. */
+function NewPlanForm({ form, close }: { form: NewPlanFormState; close: () => void }) {
   const t = useT();
-  const form = useNewPlanForm();
   return (
-    <Stack as="form" container gap="4" onSubmit={form.submit} noValidate>
+    <Stack
+      as="form"
+      container
+      gap="4"
+      onSubmit={(event) => {
+        form.submit(event, close);
+      }}
+      noValidate
+    >
       <Hint size="inherit">{t("client:admin.supporters.new.description")}</Hint>
       <PlanFields draft={form.draft} change={form.change} error={form.error} isNew />
-      <div>
+      <FormActionBar>
         <Button type="submit" variant="primary" isPending={form.isPending}>
           {t("client:admin.supporters.new.submit")}
         </Button>
-      </div>
-      <StatusMessage>{form.status}</StatusMessage>
+        <Button onPress={close}>{t("client:admin.supporters.cancel")}</Button>
+      </FormActionBar>
     </Stack>
   );
 }
+
+type NewPlanFormState = ReturnType<typeof useNewPlanForm>;
 
 function Plans() {
   const t = useT();
   const { active, retired } = useSupporterPlans();
   const actions = usePlanActions();
+  const form = useNewPlanForm(actions.report);
   const list = (items: SupporterPlan[]) => ({ items, hasMore: false, isLoadingMore: false, loadMore: () => undefined });
+  let result: { tone: "success" | "danger"; message: string } | undefined;
+  if (actions.error !== undefined)
+    result = { tone: "danger", message: t("client:admin.supporters.plan.change_failed", { reason: actions.error }) };
+  else if (actions.status !== undefined) result = { tone: "success", message: actions.status };
   return (
     <>
-      <Section surface="card" title={t("client:admin.supporters.plans.title")}>
-        <Stack gap="3">
-          <StatusMessage>{actions.status}</StatusMessage>
-          {actions.error !== undefined && (
-            <InlineError size="inherit" alert>
-              {t("client:admin.supporters.plan.change_failed", { reason: actions.error })}
-            </InlineError>
-          )}
-          <Card>
-            <RecordList
-              list={list(active)}
-              getId={(plan) => plan.id}
-              empty={
-                <EmptyState
-                  headingLevel={3}
-                  heading={t("client:admin.supporters.plans.empty")}
-                  description={t("client:admin.supporters.plans.empty.description")}
-                />
-              }
-            >
-              {(plan) => <PlanRow plan={plan} actions={actions} />}
-            </RecordList>
-          </Card>
-        </Stack>
-      </Section>
+      <ListSection
+        title={t("client:admin.supporters.plans.title")}
+        items={active}
+        itemKey={(plan) => plan.id}
+        renderItem={(plan) => <PlanRow plan={plan} actions={actions} />}
+        countLabel={t("client:admin.supporters.plans.count", { count: active.length })}
+        empty={{
+          heading: t("client:admin.supporters.plans.empty"),
+          description: t("client:admin.supporters.plans.empty.description"),
+        }}
+        add={{
+          label: t("client:admin.supporters.new.title"),
+          panel: (close) => <NewPlanForm form={form} close={close} />,
+        }}
+        result={result}
+      />
       {retired.length > 0 && (
         <Section surface="card" title={t("client:admin.supporters.retired.title")}>
           <Card>

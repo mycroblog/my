@@ -57,31 +57,34 @@ const emptyDraft: Draft = { file: null, shortcode: "", category: "", aliases: ""
 export type CustomEmojiForm = {
   draft: Draft;
   change: (change: Partial<Draft>) => void;
-  /** Uploads the image and registers the emoji, once the browser has checked the fields and an image is chosen. */
-  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  /**
+   * Uploads the image and registers the emoji, once the browser has checked the fields and an image is chosen;
+   * `onAdded` runs once it is registered (to close the add panel).
+   */
+  submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => void;
   isPending: boolean;
   /** That no image is chosen, after a submit without one. */
   missingImage: boolean;
   /** Why registering failed, localized; the draft stays. */
   error: string | undefined;
-  /** What the last registration did, for the form's StatusMessage. */
-  status: string | undefined;
 };
 
-/** The form of a new local emoji. A success empties it and says so once the lists and the audit log are fetched again. */
-export function useCustomEmojiForm(): CustomEmojiForm {
+/**
+ * The form of a new local emoji. A success empties it and gives what it did to `onCreated` (the list's result) once the
+ * lists and the audit log are fetched again.
+ */
+export function useCustomEmojiForm(onCreated: (message: string) => void): CustomEmojiForm {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [missingImage, setMissingImage] = useState(false);
-  const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...createCustomEmojiMutation(api),
     onSuccess: async (emoji) => {
       await cacheCreatedCustomEmoji(queryClient);
       setDraft(emptyDraft);
-      setStatus(t("client:admin.custom_emojis.created", { emoji: emojiInText(emoji) }));
+      onCreated(t("client:admin.custom_emojis.created", { emoji: emojiInText(emoji) }));
     },
   });
   return {
@@ -90,26 +93,28 @@ export function useCustomEmojiForm(): CustomEmojiForm {
       setDraft((previous) => ({ ...previous, ...change }));
       if (change.file !== undefined) setMissingImage(false);
     },
-    submit: (event) => {
+    submit: (event, onAdded) => {
       event.preventDefault();
+      if (mutation.isPending) return;
       if (draft.file === null) {
         setMissingImage(true);
         return;
       }
-      setStatus(undefined);
       const category = draft.category.trim();
-      mutation.mutate({
-        file: draft.file,
-        shortcode: draft.shortcode.trim(),
-        aliases: parseAliases(draft.aliases),
-        visible_in_picker: draft.visibleInPicker,
-        ...(category === "" ? {} : { category }),
-      });
+      mutation.mutate(
+        {
+          file: draft.file,
+          shortcode: draft.shortcode.trim(),
+          aliases: parseAliases(draft.aliases),
+          visible_in_picker: draft.visibleInPicker,
+          ...(category === "" ? {} : { category }),
+        },
+        { onSuccess: () => onAdded?.() },
+      );
     },
     isPending: mutation.isPending,
     missingImage,
     error: mutation.isError ? failure(t, mutation.error) : undefined,
-    status,
   };
 }
 
@@ -128,8 +133,10 @@ export type CustomEmojiActions = {
   pendingId: string | undefined;
   /** Why the last change failed, localized, until the next change. */
   error: string | undefined;
-  /** What the last change did, for the list's StatusMessage. */
+  /** What the last change did, for the list's result. */
   status: string | undefined;
+  /** Shows and announces what a change made elsewhere (registering in the add panel) did, as the list's result. */
+  report: (message: string) => void;
 };
 
 /**
@@ -234,5 +241,12 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
     pendingId,
     error: failed === undefined ? undefined : failure(t, failed.error),
     status,
+    report: (message) => {
+      update.reset();
+      replace.reset();
+      remove.reset();
+      copy.reset();
+      report(message);
+    },
   };
 }

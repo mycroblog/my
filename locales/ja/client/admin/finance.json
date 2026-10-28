@@ -8,8 +8,20 @@
     "description": "Description of the costs screen in the administration menu of the settings."
   },
   "admin.finance.description": {
-    "defaultMessage": "このサーバーの運営にかかる費用（単発の支払いと定期的な支払い）を記録し、合計を見ます。項目とその名前・メモは公開されません。",
-    "description": "Introduction of the costs screen."
+    "defaultMessage": "このサーバーの運営にかかる費用と収入の合計を見て、費用（単発の支払いと定期的な支払い）を記録します。項目とその名前・メモは公開されません。",
+    "description": "Description of the costs screen, above its tabs."
+  },
+  "admin.finance.tabs.label": {
+    "defaultMessage": "費用",
+    "description": "Accessible name of the tabs of the costs screen: reading the costs and recording them."
+  },
+  "admin.finance.tabs.overview": {
+    "defaultMessage": "概要",
+    "description": "Tab of the costs screen with the totals of the costs and the income, what is published of them, and the payments and refunds."
+  },
+  "admin.finance.tabs.records": {
+    "defaultMessage": "記録",
+    "description": "Tab of the costs screen with the recorded costs, recording a new one, and the billing imports."
   },
   "admin.finance.visibility": {
     "defaultMessage": "{visibility, select, totals {情報ページはこの費用の合計を、内訳なしで公開しています。} breakdown {情報ページはこの費用の合計と、事業者・区分ごとの内訳を公開しています。} other {この費用は公開していません。}}",
@@ -260,8 +272,12 @@
     "description": "Error of a text that is too long on the costs screen."
   },
   "admin.finance.create": {
-    "defaultMessage": "費用を登録する",
-    "description": "Button that records a new cost on the costs screen."
+    "defaultMessage": "登録する",
+    "description": "Submit button of the form that records a cost."
+  },
+  "admin.finance.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the panel that records a cost without recording it."
   },
   "admin.finance.create_failed": {
     "defaultMessage": "費用を登録できませんでした：{reason}",
@@ -275,13 +291,21 @@
     "defaultMessage": "登録した費用",
     "description": "Heading of the list of recorded costs on the costs screen."
   },
+  "admin.finance.count": {
+    "defaultMessage": "{count, plural, other {登録した費用 # 件}}",
+    "description": "Read for the count beside the heading of the list of recorded costs. {count} is the number of items."
+  },
+  "admin.finance.count_at_least": {
+    "defaultMessage": "{count, plural, other {登録した費用 # 件以上}}",
+    "description": "Read for the count beside the heading of the list of recorded costs while more of them can be loaded. {count} is the number loaded."
+  },
   "admin.finance.empty": {
     "defaultMessage": "費用はまだありません",
     "description": "Heading of the empty list of costs on the costs screen."
   },
   "admin.finance.empty.description": {
-    "defaultMessage": "上のフォームからサーバーの費用を登録します。",
-    "description": "Explanation of the empty list of costs on the costs screen."
+    "defaultMessage": "サーバーにかかる費用を登録すると、合計が見られます。",
+    "description": "Description of the empty list of recorded costs, above the button that records one."
   },
   "admin.finance.every.once": {
     "defaultMessage": "単発",

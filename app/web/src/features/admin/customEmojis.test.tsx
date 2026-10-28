@@ -10,7 +10,7 @@ import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/m
 import { nodeUploadFile } from "../../test/multipart";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { expectSelectedTabControlsPanel } from "../../test/tabs";
+import { sectionHeadings } from "../../test/sections";
 import { adminCustomEmojiFixture } from "./test/handlers";
 
 const uploadedId = "0199f0e0-0000-7000-8000-00000000e0a1";
@@ -65,20 +65,27 @@ describe("the custom emoji screen", () => {
       }),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    const form = await screen.findByRole("region", { name: "Register a custom emoji" });
+    // docs/architecture/web-client/screens/admin-custom-emojis.md §3: the list first, adding is its one primary action.
+    const list = await screen.findByRole("region", { name: "Registered custom emoji" });
+    expect(sectionHeadings()).toEqual(["Registered custom emoji"]);
+    await user.click(within(list).getByRole("button", { name: "Register a custom emoji" }));
+    const form = within(list).getByRole("region", { name: "Register a custom emoji" });
+    expect(within(form).getByRole("button", { name: "Choose an image" })).toHaveFocus();
 
     await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
     await user.click(within(form).getByRole("button", { name: "Register" }));
-    expect(within(form).getByRole("alert")).toHaveTextContent("Choose an image.");
+    expect(within(form).getByText("Choose an image.")).toBeInTheDocument();
 
     await user.upload(fileInput(form), nodeUploadFile("png", "blobcat.png", "image/png"));
     expect(within(form).getByText("Chosen: blobcat.png")).toBeInTheDocument();
-    expect(within(form).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(form).queryByText("Choose an image.")).not.toBeInTheDocument();
     await user.type(within(form).getByRole("textbox", { name: "Category" }), "Blobs");
     await user.type(within(form).getByRole("textbox", { name: "Other names" }), "cat, kitty");
     await user.click(within(form).getByRole("button", { name: "Register" }));
 
-    expect(await within(form).findByText(/is registered\./)).toBeInTheDocument();
+    // The panel closes; the result shows above the list and focus is back on the button.
+    expect(await within(list).findByRole("status")).toHaveTextContent(/is registered\./);
+    expect(within(list).queryByRole("region", { name: "Register a custom emoji" })).not.toBeInTheDocument();
     expect(purposes).toEqual(["emoji"]);
     expect(sent).toEqual({
       shortcode: "blobcat",
@@ -87,7 +94,8 @@ describe("the custom emoji screen", () => {
       aliases: ["cat", "kitty"],
       visible_in_picker: true,
     });
-    expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("");
+    await user.click(within(list).getByRole("button", { name: "Register a custom emoji" }));
+    expect(within(list).getByRole("textbox", { name: "Shortcode" })).toHaveValue("");
   });
 
   test("shows why the server refuses an emoji, and keeps the form", async () => {
@@ -107,14 +115,17 @@ describe("the custom emoji screen", () => {
       ),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    const form = await screen.findByRole("region", { name: "Register a custom emoji" });
+    await user.click(await screen.findByRole("button", { name: "Register a custom emoji" }));
+    const form = screen.getByRole("region", { name: "Register a custom emoji" });
     await user.upload(fileInput(form), nodeUploadFile("png", "blobcat.png", "image/png"));
     await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
     await user.click(within(form).getByRole("button", { name: "Register" }));
 
-    expect(await within(form).findByRole("alert")).toHaveTextContent(
-      "Could not register the custom emoji: A custom emoji of this server already has this shortcode.",
-    );
+    expect(
+      await within(form).findByText(
+        "Could not register the custom emoji: A custom emoji of this server already has this shortcode.",
+      ),
+    ).toBeInTheDocument();
     expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("blobcat");
   });
 
@@ -164,18 +175,24 @@ describe("the custom emoji screen", () => {
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("rowheader", { name: ":blobcat:" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { level: 3, name: ":blobcat:" })).not.toBeInTheDocument();
     });
     expect(deleted).toBe("e1");
-    expect(screen.getByRole("rowheader", { name: ":blobfox:" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit ⁦:blobfox:⁩" })).toHaveFocus();
   });
 
-  test("keeps the origin tab wired to its panel after switching", async () => {
+  test("shows the emoji of other servers from the toolbar, where the reason to copy stands for adding", async () => {
     server.use(http.get(`${apiBase}/admin/custom_emojis`, () => HttpResponse.json({ items: [] })));
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
-    await user.click(await screen.findByRole("tab", { name: "Other servers" }));
+    await user.click(await screen.findByRole("button", { name: /^This server/ }));
+    await user.click(await screen.findByRole("option", { name: "Other servers" }));
 
-    expectSelectedTabControlsPanel("Other servers");
+    expect(
+      await screen.findByRole("heading", { level: 3, name: "No custom emoji of other servers" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Register a custom emoji" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Copy one to use it on this server\./)).toBeInTheDocument();
   });
 
   test("disables an emoji of another server", async () => {

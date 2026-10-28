@@ -1,7 +1,8 @@
 ---
 start: "/admin"
 persona: "hana"
-paths: ["app/web/src/routes/admin.supporters.tsx", "app/web/src/features/admin/components/SupporterSettings.tsx", "app/web/src/features/admin/components/PublicationSettings.tsx", "app/web/src/features/admin/hooks/useSupporters.ts", "app/web/src/features/admin/hooks/usePublicationSettings.ts", "app/web/src/features/admin/api/supporters.ts"]
+paths: ["app/web/src/routes/admin.supporters.tsx", "app/web/src/features/admin/components/SupporterSettings.tsx", "app/web/src/features/admin/components/PublicationSettings.tsx", "app/web/src/features/admin/hooks/useSupporters.ts", "app/web/src/features/admin/hooks/usePublicationSettings.ts", "app/web/src/features/admin/api/supporters.ts", "app/ui/src/ListSection.tsx"]
+unavailable: {"プランを作成する": "a new plan needs a role that nobody holds, and the demo scenario has none"}
 ---
 
 ## サポーター（`/admin/supporters`）
@@ -19,21 +20,25 @@ paths: ["app/web/src/routes/admin.supporters.tsx", "app/web/src/features/admin/c
 | 加入者を状態で絞り込む | 2 |
 | 決済の事業者の照合が成功しているかを知る | 1 |
 | サポーターの一覧をサインインした人に公開する | 3 |
+| プランを作成する | 6 |
 
-どれもメニューで画面を開く 1 つから。絞り込みは状態を選ぶ 1 つ。公開は「サインインした人」を選ぶ 1 つと「公開範囲を保存」の 1 つ（`manage_settings` のある人だけ）。
+どれもメニューで画面を開く 1 つから。絞り込みは状態を選ぶ 1 つ。プランの作成は、「プランを作成する」を押す 1 つ、ロールのキー・名前・月額を入れる 3 つ、「プランを作成する」を送る 1 つ（通貨・割引率・上限・順位・公開は既定のまま）。公開は「サインインした人」を選ぶ 1 つと「公開範囲を保存」の 1 つ（`manage_settings` のある人だけ）。
 
 ### 3. 情報の優先順位とまとまり
 
 1. 課金: 有効か、事業者、続いている加入の数、警告と、有効・無効の切り替え。
 2. 決済の事業者: 設定の事業者があるときだけ。状態・最後の照合と「今すぐ照合する」。
-3. プランを作成する: 作成のフォーム。
-4. プラン・廃止したプラン: 順位の順。編集と廃止。
+3. プラン: 一覧と追加の部品（`ListSection`）。見出しの隣に件数、見出しの行の終わりに「プランを作成する」。その下に、作成・編集・廃止の結果と、順位の順のプラン（編集と廃止）。
+   空のときは、空の状態（作成へ導く 1 文と「プランを作成する」）。
+4. 廃止したプラン: 廃止したプランがあるときだけ。操作を持たない。
 5. 加入者: 新しい順。プランと状態の絞り込みと、すぐの解約。
 6. サポーターの一覧: 一覧を見られる人。`manage_settings` のある人にはフォーム、ほかの人には今の値の文。
 
+「プランを作成する」を押すと、そのボタンの場所に追加の区画（`h3`）が開き、作成のフォームと「プランを作成する」と「キャンセル」の送信の帯を置く。
+
 ### 4. 主な操作と保存の仕方
 
-- 主な操作は、区画ごとに 1 つ（課金の切り替え、プランの作成、公開範囲の保存）。
+- 主な操作は、区画ごとに 1 つ（課金の切り替え、プランの作成、公開範囲の保存）。プランの作成は区画に 1 か所だけ置き（一覧があれば見出しの行、空なら空の状態）、追加の区画が開いている間は消える。
 - フォームはまとめて保存する。廃止とすぐの解約は確認のダイアログを経る。
 
 ### 5. 操作ごとの結果の出し方
@@ -41,7 +46,8 @@ paths: ["app/web/src/routes/admin.supporters.tsx", "app/web/src/features/admin/c
 | 操作 | 結果（その場・トースト・画面の遷移） |
 | --- | --- |
 | 課金を切り替える | その場。区画の中 |
-| プランを作成・編集・廃止する | その場。区画の中 |
+| プランを作成する | その場。追加の区画が閉じてフォーカスが「プランを作成する」に戻り、プランの一覧の上に結果。拒否の理由はその欄 |
+| プランを編集・廃止する | その場。プランの一覧の上 |
 | 加入者を絞り込む | その場。一覧を読み直す（URL が変わる） |
 | 公開範囲を保存する | その場。フォームの `FormActionBar` |
 

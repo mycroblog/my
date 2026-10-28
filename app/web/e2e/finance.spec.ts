@@ -307,7 +307,12 @@ test.describe("costs", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    const form = main.getByRole("region", { name: message("admin.finance.new.title"), exact: true });
+    // Recording is the other tab; its one primary action opens the form in place of the button.
+    await main.getByRole("tab", { name: message("admin.finance.tabs.records"), exact: true }).click();
+    await expect(page).toHaveURL(/tab=records/u);
+    const list = main.getByRole("region", { name: message("admin.finance.list.title"), exact: true });
+    await list.getByRole("button", { name: message("admin.finance.new.title"), exact: true }).click();
+    const form = list.getByRole("region", { name: message("admin.finance.new.title"), exact: true });
     await form.getByRole("textbox", { name: message("admin.finance.name"), exact: true }).fill("example.com");
     await form.getByRole("textbox", { name: message("admin.finance.provider"), exact: true }).fill("Registrar");
     const schedule = form.getByRole("radiogroup", { name: message("admin.finance.schedule"), exact: true });
@@ -319,8 +324,8 @@ test.describe("costs", () => {
     await form.getByRole("textbox", { name: message("admin.finance.amount"), exact: true }).fill("1650");
     await form.getByRole("textbox", { name: message("admin.finance.currency"), exact: true }).fill("JPY");
     await form.getByRole("button", { name: message("admin.finance.create"), exact: true }).click();
-    const list = main.getByRole("region", { name: message("admin.finance.list.title"), exact: true });
     await expect(list.getByRole("heading", { level: 3, name: "example.com" })).toBeVisible();
+    await expect(form).toBeHidden();
     expect(sent).toContain("create years 1650 JPY");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

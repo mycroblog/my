@@ -8,8 +8,20 @@
     "description": "Description of the costs screen in the administration menu of the settings."
   },
   "admin.finance.description": {
-    "defaultMessage": "Record the costs of running this server, paid once or regularly, and see their totals. The items, their names and memos are never published.",
-    "description": "Introduction of the costs screen."
+    "defaultMessage": "See the totals of the costs of running this server and of its income, and record the costs, paid once or regularly. The items, their names and memos are never published.",
+    "description": "Description of the costs screen, above its tabs."
+  },
+  "admin.finance.tabs.label": {
+    "defaultMessage": "Costs",
+    "description": "Accessible name of the tabs of the costs screen: reading the costs and recording them."
+  },
+  "admin.finance.tabs.overview": {
+    "defaultMessage": "Overview",
+    "description": "Tab of the costs screen with the totals of the costs and the income, what is published of them, and the payments and refunds."
+  },
+  "admin.finance.tabs.records": {
+    "defaultMessage": "Records",
+    "description": "Tab of the costs screen with the recorded costs, recording a new one, and the billing imports."
   },
   "admin.finance.visibility": {
     "defaultMessage": "{visibility, select, totals {The about page publishes the totals of these costs, without their breakdown.} breakdown {The about page publishes the totals of these costs and their breakdown by provider and category.} other {These costs are not published.}}",
@@ -261,7 +273,11 @@
   },
   "admin.finance.create": {
     "defaultMessage": "Record the cost",
-    "description": "Button that records a new cost on the costs screen."
+    "description": "Submit button of the form that records a cost."
+  },
+  "admin.finance.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the panel that records a cost without recording it."
   },
   "admin.finance.create_failed": {
     "defaultMessage": "Could not record the cost: {reason}",
@@ -275,13 +291,21 @@
     "defaultMessage": "Recorded costs",
     "description": "Heading of the list of recorded costs on the costs screen."
   },
+  "admin.finance.count": {
+    "defaultMessage": "{count, plural, one {# recorded cost} other {# recorded costs}}",
+    "description": "Read for the count beside the heading of the list of recorded costs. {count} is the number of items."
+  },
+  "admin.finance.count_at_least": {
+    "defaultMessage": "{count, plural, one {At least # recorded cost} other {At least # recorded costs}}",
+    "description": "Read for the count beside the heading of the list of recorded costs while more of them can be loaded. {count} is the number loaded."
+  },
   "admin.finance.empty": {
     "defaultMessage": "No costs yet",
     "description": "Heading of the empty list of costs on the costs screen."
   },
   "admin.finance.empty.description": {
-    "defaultMessage": "Record what the server costs with the form above.",
-    "description": "Explanation of the empty list of costs on the costs screen."
+    "defaultMessage": "Record what the server costs to see its totals.",
+    "description": "Description of the empty list of recorded costs, above the button that records one."
   },
   "admin.finance.every.once": {
     "defaultMessage": "Once",
