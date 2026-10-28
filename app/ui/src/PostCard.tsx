@@ -24,8 +24,9 @@ const postCard = tv({
     // time (a full date) wraps inside at most half of the row instead of pushing the card wider.
     header: "flex min-w-0 items-baseline gap-x-2 self-center",
     author: "min-w-0 flex-1 wrap-anywhere",
-    // The time, and under it the visibility, both at the end of the row.
-    time: "flex max-w-1/2 shrink-0 flex-col items-end text-sm text-fg-muted",
+    // The time, and under it the visibility, both at the end of the row. It is never narrower than its longest word,
+    // so that a date without breaks ("2026/10/16") on a narrow card takes room from the author instead of covering it.
+    time: "flex max-w-1/2 min-w-min shrink-0 flex-col items-end text-sm text-fg-muted",
     body: "col-span-2 min-w-0 @md:col-span-1 @md:col-start-2",
     details: "col-span-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-sm text-fg-muted @md:col-span-1 @md:col-start-2",
     reactions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 @md:col-span-1 @md:col-start-2",
