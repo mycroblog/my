@@ -35,7 +35,7 @@ import type { VoiceCallControl } from "../hooks/useVoiceCall";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
 import { callEndText } from "../hooks/useVoiceCallProvider";
 import { useVoiceInvite, type VoiceModeration } from "../hooks/useVoiceModeration";
-import { CallErrors, hasCallErrors, LeaveCallButton, PlaybackButton } from "./VoiceCallParts";
+import { CallErrors, CallNotice, hasCallErrors, LeaveCallButton, PlaybackButton } from "./VoiceCallParts";
 import { RaisedHandList } from "./VoiceRoomAside";
 
 type Outside = Extract<VoiceCallControl, { status: "outside" }>;
@@ -88,8 +88,9 @@ export function CallDockControls({ room, call, controls, moderation, hands }: Ca
   const t = useT();
   const raised = call.self?.hand_raised === true;
   const notice =
-    controls.playbackBlocked || hasCallErrors(controls, call.actionError) ? (
+    controls.notice !== undefined || controls.playbackBlocked || hasCallErrors(controls, call.actionError) ? (
       <Stack gap="2">
+        <CallNotice controls={controls} />
         {controls.playbackBlocked && (
           <Cluster gap="3" align="center" justify="between">
             <Text as="p">{t("client:voice.call.playback_blocked")}</Text>

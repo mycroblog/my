@@ -47,6 +47,7 @@ export {
   type AnnouncerProviderProps,
   type Politeness,
 } from "./Announcer";
+export { useNotice, type Notice } from "./Notice";
 export { Dialog, DialogTrigger, Sheet, type DialogProps, type DialogTriggerProps, type SheetProps } from "./Dialog";
 export {
   Menu,
@@ -105,6 +106,16 @@ export { Spinner, type SpinnerProps } from "./Spinner";
 export { BrandMark, type BrandMarkProps } from "./BrandMark";
 export { Wordmark, type WordmarkProps } from "./Wordmark";
 export { StatusMessage, type StatusMessageProps } from "./StatusMessage";
+export {
+  AutosaveControl,
+  SaveIndicator,
+  type AutosaveControlProps,
+  type SaveIndicatorLabels,
+  type SaveIndicatorProps,
+  type SaveState,
+} from "./SaveIndicator";
+export { ChangeNotice, type ChangeNoticeProps } from "./ChangeNotice";
+export { FormActionBar, type FormActionBarProps, type FormActionResult } from "./FormActionBar";
 export { VisuallyHidden, type VisuallyHiddenProps } from "./VisuallyHidden";
 
 // Data visualisation (ADR-0113): numbers, trends, shares and amounts, each with its values in text.

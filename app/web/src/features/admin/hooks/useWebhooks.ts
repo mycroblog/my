@@ -3,7 +3,7 @@
 // disabling, deleting it, giving it a new secret and sending it a test; and the deliveries of one, with sending one
 // again. A new secret is kept to show once, until the next change. What each change did is announced and kept in a
 // StatusMessage; a refused setting stays next to its field.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -180,12 +180,12 @@ export function useWebhookActions(onDeleted: (id: string) => void): WebhookActio
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [secret, setSecret] = useState<ShownSecret | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const update = useMutation(updateWebhookMutation(api));
   const enable = useMutation(setWebhookEnabledMutation(api));
@@ -290,7 +290,7 @@ export function useRedeliver(webhookId: string) {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...redeliverWebhookMutation(api),
@@ -301,7 +301,7 @@ export function useRedeliver(webhookId: string) {
       await refreshWebhookDeliveries(queryClient, webhookId);
       const message = t("client:admin.webhooks.deliveries.redelivered");
       setStatus(message);
-      announce(message);
+      notice.inPlace(message);
     },
   });
   return {

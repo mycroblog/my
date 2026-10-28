@@ -2,7 +2,7 @@
 // The user's own OAuth apps (ADR-0090 §1, §2): the list, the form that registers one, and what a row does: change it,
 // delete it, give it a new secret, and issue tokens of it to the user. A secret and the tokens are kept on the screen
 // only until the user leaves or dismisses them (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -163,7 +163,7 @@ export function useUpdateApp(): UpdateApp {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const update = useMutation({
     ...updateOAuthAppMutation(api),
     onSuccess: async () => {
@@ -188,7 +188,7 @@ export function useUpdateApp(): UpdateApp {
         {
           onSuccess: (saved) => {
             onDone();
-            announce(t("client:settings.apps.saved", { name: saved.name }));
+            notice.inPlace(t("client:settings.apps.saved", { name: saved.name }));
           },
         },
       );
@@ -211,7 +211,7 @@ export function useDeleteApp(): DeleteApp {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const remove = useMutation({
     ...deleteOAuthAppMutation(api),
     onSuccess: async () => {
@@ -226,7 +226,7 @@ export function useDeleteApp(): DeleteApp {
       remove.mutate(app.id, {
         onSuccess: () => {
           onDone();
-          announce(t("client:settings.apps.deleted", { name: app.name }));
+          notice.inPlace(t("client:settings.apps.deleted", { name: app.name }));
         },
       });
     },

@@ -3,7 +3,8 @@
 // this browser (lib/storage's navigationKey) like the theme, so that it applies at once and outlives the session.
 // The stored value is checked against the items that exist: an unknown ID is dropped, a missing item takes its
 // place in the default order, and Settings is never hidden, so that the user can always come back to undo a change.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
+import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { navigationKey, type StoredNavigation, useStorage } from "../../../lib/storage";
 
@@ -85,17 +86,24 @@ export type NavigationSettings = {
   setShown: (id: NavigationEntryId, shown: boolean) => void;
   /** Puts back the default order with every item shown. */
   reset: () => void;
+  /**
+   * What the last change here changed, for its saved mark (web-client/16-look-states-and-wording.md G24): an item, or
+   * every item (`all`, the reset); nothing before the first change.
+   */
+  changed: NavigationEntryId | "all" | undefined;
 };
 
 /** The arrangement of the navigation's items, for its settings. */
 export function useNavigationSettings(): NavigationSettings {
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const stored = useStorage(navigationKey);
   const entries = navigationEntriesOf(stored);
+  const [changed, setChanged] = useState<NavigationEntryId | "all" | undefined>(undefined);
   return {
     entries,
     isDefault: stored === null,
+    changed,
     move: (id, step) => {
       const from = entries.findIndex((entry) => entry.id === id);
       const to = from + step;
@@ -103,7 +111,9 @@ export function useNavigationSettings(): NavigationSettings {
       if (moved === undefined || to < 0 || to >= entries.length) return;
       const next = entries.toSpliced(from, 1).toSpliced(to, 0, moved);
       save(next);
-      announce(
+      setChanged(id);
+      // The list shows the item in its new place, with its saved mark.
+      notice.inPlace(
         t("client:settings.navigation.moved", {
           name: t(navigationEntryLabels[id]),
           position: to + 1,
@@ -114,10 +124,12 @@ export function useNavigationSettings(): NavigationSettings {
     setShown: (id, shown) => {
       if (id === alwaysShownEntry) return;
       save(entries.map((entry) => (entry.id === id ? { ...entry, shown } : entry)));
+      setChanged(id);
     },
     reset: () => {
       navigationKey.remove();
-      announce(t("client:settings.navigation.reset_done"));
+      setChanged("all");
+      notice.inPlace(t("client:settings.navigation.reset_done"));
     },
   };
 }

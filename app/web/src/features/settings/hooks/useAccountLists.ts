@@ -2,7 +2,7 @@
 // The lists of blocked and muted accounts and of follow requests, and their actions (FR-302, FR-303). An
 // account that an action takes off a list leaves the cached pages at once, and the caller moves focus to the
 // next row, so that it is not lost with the removed row.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { type InfiniteData, useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -81,7 +81,7 @@ function useListAction(options: {
 }): AccountAction {
   const api = useApi();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   return {
     pendingId: options.pendingId,
     run: (account, onDone) => {
@@ -89,11 +89,11 @@ function useListAction(options: {
         onSuccess: () => {
           removeFromList(queryClient, api, options.change, account.id);
           onDone();
-          announce(options.done(account.display_name || account.username));
+          notice.inPlace(options.done(account.display_name || account.username));
         },
         // A failure keeps the row and its focus, and says why (web-client/README.md E2).
         onError: (error) => {
-          announce(errorMessage(error), "assertive");
+          notice.inPlace(errorMessage(error), "assertive");
         },
       });
     },

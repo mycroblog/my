@@ -8,7 +8,7 @@
 // region (web-client/README.md Y7). While a call lasts, closing or reloading the tab asks first (beforeunload), a
 // page that goes away leaves the room with a request that outlives it (pagehide), signing out leaves it before the
 // token is revoked, and the maintenance or the closure of the server, whose screens replace the pages, end it.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, use, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useApi, useSession, useSessionStatus } from "../../../lib/auth/SessionProvider";
@@ -67,7 +67,16 @@ export type VoiceCallState = {
   leaveError: string | undefined;
   /** Forgets the failure of the last leave (the dialog closed). */
   resetLeave: () => void;
+  /**
+   * The last change that others made to the user in the call ("The host turned your microphone off"), for the notice
+   * of the dock or the mini-player (web-client/16-look-states-and-wording.md G25); undefined for none.
+   */
+  callNotice: VoiceCallNoticeView | undefined;
+  dismissCallNotice: () => void;
 };
+
+/** A notice of the call as it shows: its words, and an id that tells a new notice of the same words apart. */
+export type VoiceCallNoticeView = { id: number; text: string };
 
 export const VoiceCallContext = createContext<VoiceCallState | null>(null);
 
@@ -143,7 +152,7 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
   const session = useSession();
   const queryClient = useQueryClient();
   const signedIn = useSessionStatus() === "signed-in";
-  const announce = useAnnouncer();
+  const notices = useNotice();
   const t = useT();
   // The words of the announcements follow the locale the app shows now, also for a call joined in another one.
   const tRef = useRef(t);
@@ -151,6 +160,9 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
     tRef.current = t;
   }, [t]);
   const [active, setActive] = useState<VoiceCall | null>(null);
+  // The last change that others made to the user in the call, until it is dismissed, another replaces it, or the call ends.
+  const [callNotice, setCallNotice] = useState<VoiceCallNoticeView | undefined>(undefined);
+  const nextNoticeIdRef = useRef(0);
   // Joins counted by the user: a join that answers after the user changed is not this user's call.
   const userGenerationRef = useRef(0);
   // Once the user signs out (also to switch accounts), the call is over.
@@ -185,7 +197,10 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
       join: joined,
       environment,
       onNotice: (notice) => {
-        announce(noticeText(tRef.current, notice));
+        // Shown on the dock or the mini-player (callNotice) and read out with it.
+        const text = noticeText(tRef.current, notice);
+        setCallNotice({ id: nextNoticeIdRef.current++, text });
+        notices.inPlace(text);
       },
       server: {
         join: () => joinVoiceRoomMutation(api, roomId).mutationFn(),
@@ -200,7 +215,9 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
         },
         onEnd: () => {
           const end = next.getSnapshot().end;
-          if (end !== undefined) announce(callEndText(tRef.current, end), "assertive");
+          setCallNotice(undefined);
+          // Shown by the room's page (its join dock) or, on any other page, the mini-player's notice of the end.
+          if (end !== undefined) notices.inPlace(callEndText(tRef.current, end), "assertive");
           void refreshVoiceRoom(api, queryClient, roomId);
         },
       },
@@ -208,6 +225,7 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
     // Joining another room left the previous one on the server (moved); its call ends here (the effect closes it).
     next.start();
     setActive(next);
+    setCallNotice(undefined);
   };
 
   const join = useMutation({
@@ -224,7 +242,9 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
     onSuccess: async (_, { roomId }) => {
       call?.close();
       setActive(null);
-      announce(tRef.current("client:voice.call.left"));
+      setCallNotice(undefined);
+      // The mini-player or the dock goes away, and the room's page shows its join button again.
+      notices.inPlace(tRef.current("client:voice.call.left"));
       await refreshVoiceRoom(api, queryClient, roomId);
     },
   });
@@ -302,6 +322,10 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
     leaveError: leave.isError ? errorMessage(leave.error) : undefined,
     resetLeave: () => {
       leave.reset();
+    },
+    callNotice: inCall ? callNotice : undefined,
+    dismissCallNotice: () => {
+      setCallNotice(undefined);
     },
   };
 }

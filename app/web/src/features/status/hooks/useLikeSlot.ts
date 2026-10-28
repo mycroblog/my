@@ -2,7 +2,7 @@
 // The viewer's Like slot of a post (ADR-0052 §1): a favourite or one emoji reaction, never both. Favouriting,
 // reacting, changing the emoji and taking either back all change the one slot, optimistically in every cached copy
 // of the post (web-client/README.md S8), one change at a time per post in the order pressed, so that the last press wins.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -42,7 +42,7 @@ export function useLikeSlot(post: Status): LikeSlotControl {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const toast = useToast();
   const mutationKey = ["status", post.id, "like-slot"] as const;
   const { mutate } = useMutation({
@@ -56,7 +56,7 @@ export function useLikeSlot(post: Status): LikeSlotControl {
       // The last press is the only one still running.
       const last = queryClient.isMutating({ mutationKey, exact: true }) <= 1;
       cacheLikeSlotAnswer(queryClient, post.id, answer, last);
-      announce(slotMessage(t, slot, previous));
+      notice.inPlace(slotMessage(t, slot, previous));
     },
     onError: (error, { previous }) => {
       restoreLikeSlot(queryClient, post.id, previous);

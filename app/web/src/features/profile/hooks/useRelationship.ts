@@ -2,7 +2,7 @@
 // The viewer's relationship with the account of a profile, and the changes to it (FR-301 to FR-303).
 // The relationship is server data read from the query cache (web-client/README.md S2); a change shows the
 // pending action until the server answers (S8) and then stores the relationship the server returns.
-import { useAnnouncer, useToast } from "@my/ui";
+import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -82,7 +82,7 @@ export function useRelationship(account: Account): RelationshipState {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const toast = useToast();
   const session = useSessionStatus();
   const viewer = useViewer();
@@ -96,7 +96,7 @@ export function useRelationship(account: Account): RelationshipState {
       // a page opened next shows it at once (web-client/README.md S1).
       if (viewer.status === "signed-in")
         await storeRelationship(queryClient, api, relationship, action, viewer.account.id);
-      announce(doneMessage(t, action, relationship, nameOf(account)));
+      notice.inPlace(doneMessage(t, action, relationship, nameOf(account)));
     },
     onError: (error) => {
       toast.show({ message: t("client:profile.change_failed", { reason: errorMessage(error) }), tone: "danger" });

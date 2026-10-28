@@ -857,6 +857,11 @@
           {
             "selector": "CallExpression > MemberExpression.callee[property.name=/^(setQueryData|setQueriesData|invalidateQueries|refetchQueries|resetQueries|removeQueries|cancelQueries)$/]",
             "message": "Do not change the query cache in a hook or a component; call the cache function next to the write in features/<x>/api (e.g. cachePostedStatus) from onSuccess (web-client/README.md S1)."
+          },
+          // G25, P2: a result is shown, not only read out; useNotice names where it shows.
+          {
+            "selector": "CallExpression[callee.name='useAnnouncer']",
+            "message": "Do not read a result out with useAnnouncer alone; use useNotice of @my/ui, whose inPlace or toast says where the result shows (web-client/16-look-states-and-wording.md G25)."
           }
         ]
       }

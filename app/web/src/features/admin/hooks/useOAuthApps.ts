@@ -2,7 +2,7 @@
 // The OAuth apps of the admin screen (ADR-0090 §1, manage_oauth_apps): the clients under a registration route,
 // disabling one and lifting that, and denying and allowing the host of Client ID Metadata Documents. What each
 // change did is announced and kept in a StatusMessage; a refusal is said in the server's words next to the list.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -68,11 +68,11 @@ export function useOAuthAppActions(): OAuthAppActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const disabling = useMutation(setOAuthClientDisabledMutation(api));
   const denying = useMutation(denyHostMutation(api));

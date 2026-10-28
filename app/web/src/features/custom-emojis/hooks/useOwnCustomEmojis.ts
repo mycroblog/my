@@ -3,7 +3,7 @@
 // the form that requests a new emoji, their requests with withdrawing a pending one, and the emoji they made with
 // changing their settings, requesting a new image, and deleting them. What each change did is announced and kept in a
 // StatusMessage; a failure stays next to its cause.
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -124,7 +124,7 @@ export function useCustomEmojiRequestActions(): CustomEmojiRequestActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const withdraw = useMutation(withdrawCustomEmojiRequestMutation(api));
   return {
@@ -134,7 +134,7 @@ export function useCustomEmojiRequestActions(): CustomEmojiRequestActions {
           void cacheWithdrawnCustomEmojiRequest(queryClient, saved).then(() => {
             const message = t("client:custom_emojis.withdrawn", { emoji: emojiInText(saved) });
             setStatus(message);
-            announce(message);
+            notice.inPlace(message);
           });
         },
       });
@@ -168,11 +168,11 @@ export function useOwnCustomEmojiActions(onDeleted: (id: string) => void): OwnCu
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const report = (message: string) => {
     setStatus(message);
-    announce(message);
+    notice.inPlace(message);
   };
   const update = useMutation(updateOwnCustomEmojiMutation(api));
   const image = useMutation(requestCustomEmojiMutation(api));

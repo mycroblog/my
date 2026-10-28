@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-import { useAnnouncer } from "@my/ui";
+import { useNotice } from "@my/ui";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
@@ -72,7 +72,7 @@ export function useAttachments(store: DraftStore, attachments: readonly Attachme
   const api = useApi();
   const queryClient = useQueryClient();
   const t = useT();
-  const announce = useAnnouncer();
+  const notice = useNotice();
   const upload = useMutation({
     mutationFn: ({ file, poster }: PreparedMedia) => uploadMedia(api, file, poster),
     onSuccess: (media) => {
@@ -125,11 +125,12 @@ export function useAttachments(store: DraftStore, attachments: readonly Attachme
     add(files) {
       const accepted = files.filter((file) => {
         if (mediaKind(file.type) !== null) return true;
-        announce(t("client:compose.media.unsupported", { name: file.name }), "assertive");
+        notice.inPlace(t("client:compose.media.unsupported", { name: file.name }), "assertive");
         return false;
       });
       const room = maxAttachments - store.getSnapshot().draft.attachments.length;
-      if (accepted.length > room) announce(t("client:compose.media.too_many", { max: maxAttachments }), "assertive");
+      if (accepted.length > room)
+        notice.inPlace(t("client:compose.media.too_many", { max: maxAttachments }), "assertive");
       for (const file of accepted.slice(0, Math.max(0, room))) start(file);
     },
     remove(key) {
